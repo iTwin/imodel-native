@@ -35,10 +35,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct PerformancePrimArrayJsonVsECDTests : ECDbTestFixture
     {
 protected:
-    enum class ECDPersistenceMode
+    enum class ColumnMode
         {
-        AsIs,
-        AsBase64StringInJson
+        Regular,
+        Overflow
         };
 
 private:
@@ -64,13 +64,13 @@ protected:
 
     BentleyStatus SetupTest(Utf8CP fileName, ECDb::OpenParams const&);
 
-    BentleyStatus RunInsertECD(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode);
-    BentleyStatus RunInsertECD(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode);
+    BentleyStatus RunInsertECD(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
+    BentleyStatus RunInsertECD(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
     
-    BentleyStatus RunInsertJson(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount);
-    BentleyStatus RunInsertJson(StopWatch&, Utf8CP fileName, ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount);
-    BentleyStatus RunSelectECD(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode);
-    BentleyStatus RunSelectJson(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount);
+    BentleyStatus RunInsertJson(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
+    BentleyStatus RunInsertJson(StopWatch&, Utf8CP fileName, ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
+    BentleyStatus RunSelectECD(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
+    BentleyStatus RunSelectJson(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode);
 
 
     ECN::StandaloneECInstancePtr CreateECDArray(uint32_t& propIndex, ECN::PrimitiveType arrayType);
@@ -105,7 +105,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_SmallArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT));
+        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
+        }
+
+    for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
+        {
+        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
@@ -116,7 +121,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_LargeArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT));
+        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
+        }
+
+    for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
+        {
+        ASSERT_EQ(SUCCESS, RunInsertJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 //---------------------------------------------------------------------------------------
@@ -126,7 +136,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_SmallArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT));
+        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
+        }
+
+    for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
+        {
+        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
@@ -137,8 +152,14 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_LargeArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT));
+        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
         }
+
+    for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
+        {
+        ASSERT_EQ(SUCCESS, RunSelectJson(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
+        }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -148,12 +169,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_SmallArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsIs));
+        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
         }
 
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsBase64StringInJson));
+        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
@@ -164,12 +185,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_LargeArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsIs));
+        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
         }
 
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsBase64StringInJson));
+        ASSERT_EQ(SUCCESS, RunInsertECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
@@ -181,12 +202,12 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_SmallArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsIs));
+        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
         }
 
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsBase64StringInJson));
+        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, SMALLARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
@@ -197,43 +218,61 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_LargeArray)
     {
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsIs));
+        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Regular));
         }
 
     for (PrimitiveType testArrayType : GetTestPrimitiveTypes())
         {
-        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ECDPersistenceMode::AsBase64StringInJson));
+        ASSERT_EQ(SUCCESS, RunSelectECD(testArrayType, LARGEARRAYLENGTH, OPCOUNT, ColumnMode::Overflow));
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(PrimitiveType arrayType, uint32_t arraySize, int rowCount)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     Utf8String fileName;
-    fileName.Sprintf("json_insert_%s_array_%" PRIu32 "_opcount_%d.ecdb", PrimitiveTypeToString(arrayType), arraySize, rowCount);
+    fileName.Sprintf("json_insert_%s_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
+                     mode == ColumnMode::Regular ? "regular" : "overflow",
+                     PrimitiveTypeToString(arrayType), arraySize, rowCount);
 
     StopWatch timer;
-    if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount))
+    if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    LogTiming(timer, "INSERT - JSON", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - JSON - regular" : "INSERT - ECD - overflow", 
+              arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
         return ERROR;
 
     timer.Start();
 
+    Utf8CP insertSql = nullptr;
+    switch (mode)
+        {
+            case ColumnMode::Regular:
+                insertSql = "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)";
+                break;
+
+            case ColumnMode::Overflow:
+                insertSql = "INSERT INTO " JSONTABLE_NAME "(val) VALUES(json_object('primarray', ?))";
+                break;
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)"))
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), insertSql))
         return ERROR;
 
     rapidjson::Document json;
@@ -346,13 +385,15 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType arrayType, uint32_t arraySize, int rowCount)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     Utf8String fileName;
-    fileName.Sprintf("json_select_%s_array_%" PRIu32 "_opcount_%d.ecdb", PrimitiveTypeToString(arrayType), arraySize, rowCount);
+    fileName.Sprintf("json_select_%s_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
+                     mode == ColumnMode::Regular ? "regular" : "overflow",
+                     PrimitiveTypeToString(arrayType), arraySize, rowCount);
 
     StopWatch timer;
-    if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount))
+    if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
     Utf8String filePath = GetECDb().GetDbFileName();
@@ -362,8 +403,24 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
         return ERROR;
 
     timer.Start();
+    Utf8CP selSql = nullptr;
+    switch (mode)
+        {
+            case ColumnMode::Regular:
+                selSql = "SELECT val FROM " JSONTABLE_NAME;
+                break;
+
+            case ColumnMode::Overflow:
+                selSql = "SELECT json_extract(val,'$.primarray') FROM " JSONTABLE_NAME;
+                break;
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
+
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT val FROM " JSONTABLE_NAME))
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), selSql))
         return ERROR;
 
     rapidjson::Document arrayJson;
@@ -508,32 +565,32 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, "SELECT - JSON", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - JSON - regular" : "SELECT - ECD - overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode mode)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     Utf8String fileName;
-    fileName.Sprintf("%s_insert_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
-                     mode == ECDPersistenceMode::AsIs ? "ecd" : "ecdbase64json",
+    fileName.Sprintf("ecd_insert_%s_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
+                     mode == ColumnMode::Regular ? "regular" : "overflow",
                      PrimitiveTypeToString(arrayType), arraySize, rowCount);
 
     StopWatch timer;
     if (SUCCESS != RunInsertECD(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    LogTiming(timer, mode == ECDPersistenceMode::AsIs ? "INSERT - ECD" : "INSERT - ECD as Base64 JSON", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - ECD - regular" : "INSERT - ECD - overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode mode)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer, Utf8CP fileName, PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
         return ERROR;
@@ -543,11 +600,11 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
     Utf8CP insertSql = nullptr;
     switch (mode)
         {
-            case ECDPersistenceMode::AsIs:
+            case ColumnMode::Regular:
                 insertSql = "INSERT INTO " ECDTABLE_NAME "(val) VALUES(?)";
                 break;
 
-            case ECDPersistenceMode::AsBase64StringInJson:
+            case ColumnMode::Overflow:
                 insertSql = "INSERT INTO " JSONTABLE_NAME "(val) VALUES(json_object('primarray', BlobToBase64(?)))";
                 break;
 
@@ -592,11 +649,11 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode mode)
+BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ColumnMode mode)
     {
     Utf8String fileName;
-    fileName.Sprintf("%s_select_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
-                     mode == ECDPersistenceMode::AsIs ? "ecd" : "ecdbase64json",
+    fileName.Sprintf("ecd_select_%s_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
+                     mode == ColumnMode::Regular ? "regular" : "overflow",
                      PrimitiveTypeToString(arrayType), arraySize, rowCount);
 
     StopWatch timer;
@@ -620,11 +677,11 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
     Utf8CP selSql = nullptr;
     switch (mode)
         { 
-            case ECDPersistenceMode::AsIs:
+            case ColumnMode::Regular:
                 selSql = "SELECT val FROM " ECDTABLE_NAME;
                 break;
 
-            case ECDPersistenceMode::AsBase64StringInJson:
+            case ColumnMode::Overflow:
                 selSql = "SELECT Base64ToBlob(json_extract(val,'$.primarray')) FROM " JSONTABLE_NAME;
                 break;
 
@@ -779,7 +836,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, mode == ECDPersistenceMode::AsIs ? "SELECT - ECD" : "SELECT - ECD as Base64 JSON", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - ECD - regular" : "SELECT - ECD - overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
