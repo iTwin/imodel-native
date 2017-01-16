@@ -62,7 +62,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct FileData;
 
         struct FailedObject;
-        typedef bvector<FailedObject> FailedObjects;
+        class FailedObjects;
 
         typedef Error& ErrorR;
         typedef const Error& ErrorCR;
@@ -434,6 +434,21 @@ struct ICachingDataSource::FailedObject
         WSCACHE_EXPORT ObjectIdCR   GetObjectId() const;
         WSCACHE_EXPORT Utf8StringCR GetObjectLabel() const;
         WSCACHE_EXPORT ErrorCR      GetError() const;
+    };
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+class ICachingDataSource::FailedObjects : public bvector<FailedObject>
+    {
+    public:
+        FailedObjects AppendFailures(FailedObjectsCR failedObjects)
+            {
+            if (!failedObjects.empty())
+                this->insert(this->end(), failedObjects.begin(), failedObjects.end());
+            return *this;
+            }
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
