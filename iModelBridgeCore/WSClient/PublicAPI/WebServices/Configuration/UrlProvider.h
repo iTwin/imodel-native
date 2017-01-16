@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/UrlProvider.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,6 +100,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectShare;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
