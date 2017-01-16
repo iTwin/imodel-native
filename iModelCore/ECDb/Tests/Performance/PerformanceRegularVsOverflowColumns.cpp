@@ -24,10 +24,10 @@ struct PerformanceRegularVsOverflowColumns : ECDbTestFixture
         Overflow
         };
 
-    static const int s_initialInstanceCount = 100;
+    static const int s_initialInstanceCount = 1000000;
     static const int64_t s_firstInstanceId = 2000000;
-    static const int s_insertCount = 100;
-    static const int s_readCount = 50;
+    static const int s_insertCount = 100000;
+    static const int s_readCount = 50000;
 
 
     void RunIntegerTest(int intValues[], Scenario, bool getReadTime);
