@@ -128,6 +128,9 @@ private:
     bool                            m_geometryParamsValid;
 
     DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams) { if (nullptr != geometryParams) m_geometryParams = *geometryParams; }
+
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
+
 public:
     static DisplayParamsPtr Create() { return Create(Render::GraphicParams(), nullptr); }
     static DisplayParamsPtr Create(ColorDef fillColor, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
