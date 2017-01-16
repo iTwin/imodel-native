@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,17 +18,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SystemPropertyExpIndexMap : NonCopyableClass
     {
     private:
-        bmap<ECSqlSystemPropertyInfo, size_t, ECSqlSystemPropertyInfo::LessThan> m_sysPropIndexMap;
+        bmap<ECSqlSystemPropertyInfo const*, size_t> m_sysPropIndexMap;
 
     public:
         SystemPropertyExpIndexMap() {}
 
-        template<typename TSysProp>
-        bool Contains(TSysProp info) const { return m_sysPropIndexMap.find(ECSqlSystemPropertyInfo(info)) != m_sysPropIndexMap.end(); }
+        bool Contains(ECSqlSystemPropertyInfo const& info) const { return m_sysPropIndexMap.find(&info) != m_sysPropIndexMap.end(); }
         
         //!@return non-negative index if found. -1 else.
-        template<typename TSysProp>
-        int GetIndex(TSysProp info) const { auto it = m_sysPropIndexMap.find(ECSqlSystemPropertyInfo(info)); return it == m_sysPropIndexMap.end() ? -1 : (int) it->second; }
+        int GetIndex(ECSqlSystemPropertyInfo const& info) const { auto it = m_sysPropIndexMap.find(&info); return it == m_sysPropIndexMap.end() ? -1 : (int) it->second; }
 
         void AddIfSystemProperty(PropertyNameExp const&, size_t index);
         void AddIfSystemProperty(ECDbSchemaManager const&, ECN::ECPropertyCR, size_t index);

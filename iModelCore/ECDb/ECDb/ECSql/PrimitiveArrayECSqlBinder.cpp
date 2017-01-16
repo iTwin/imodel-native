@@ -265,7 +265,7 @@ StandaloneECInstance& PrimitiveArrayECSqlBinder::ElementBinder::GetArrayInstance
     {
     if (m_arrayInstance == nullptr)
         {
-        ECClassCP arrayStorageClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(m_ecdb, m_arrayTypeInfo.GetPrimitiveType());
+        ECClassCP arrayStorageClass = m_ecdb.Schemas().GetReader().GetSystemSchemaHelper().GetClassForPrimitiveArrayPersistence(m_arrayTypeInfo.GetPrimitiveType());
         BeAssert(arrayStorageClass != nullptr);
         m_arrayInstance = arrayStorageClass->GetDefaultStandaloneEnabler()->CreateInstance();
         }

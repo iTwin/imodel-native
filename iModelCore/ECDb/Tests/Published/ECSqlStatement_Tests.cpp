@@ -1880,6 +1880,42 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
+    {
+    ECDbR ecdb = SetupECDb("ecinstanceidbindnull.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    auto assertSequence = [] (ECDbCR ecdb, BeInt64Id expectedSequenceValue)
+        {
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_ecinstanceidsequence'");
+        ASSERT_TRUE(stmt != nullptr);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(expectedSequenceValue.GetValue(), stmt->GetValueUInt64(0));
+        };
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(?)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)

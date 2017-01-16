@@ -31,10 +31,11 @@ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) cons
     if (!m_isValid)
         return ERROR;
 
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper();
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECPropertyCP prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
-        if (prop->GetName().Equals(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
+        if (systemSchemaHelper.GetSystemPropertyInfo(*prop) == ECSqlSystemPropertyInfo::ECInstanceId())
             {
             id = m_ecSqlStatement.GetValueId<ECInstanceId>(i);
             return SUCCESS;
@@ -107,73 +108,17 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     return instance;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Carole.MacDonald                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                01/2017
+//+---------------+---------------+---------------+---------------+---------------+-
+ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstance(ECN::IECInstanceR ecInstance) const
     {
-    if (!m_ecSqlStatement.IsPrepared())
+    if (!m_isValid)
         return ERROR;
 
-    bool isSingleClassSelectClause = true;
-    ECClassCP targetClassInSelectClause = nullptr;
-    ECDbSchemaManager const& schemaManager = m_ecSqlStatement.GetECDb()->Schemas();
-    for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
-        {
-        ECSqlColumnInfo const& columnInfo = m_ecSqlStatement.GetColumnInfo(i);
-        ECPropertyCP prop = columnInfo.GetProperty();
-        if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Class::ECInstanceId))
-            m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetInstanceId);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId))
-            m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipSource);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::SourceECClassId))
-            {
-            m_columnHandlers.push_back(nullptr);
-            m_sourceECClassIdColumnIndex = i;
-            }
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId))
-            m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipTarget);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
-            {
-            m_columnHandlers.push_back(nullptr);
-            m_targetECClassIdColumnIndex = i;
-            }
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Class::ECClassId))
-            {
-            m_columnHandlers.push_back(nullptr);
-            m_ecClassIdColumnIndex = i;
-            }
-        else if (prop->GetIsNavigation())
-            m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetNavigationValue);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Navigation::Id) ||
-                 ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Navigation::RelECClassId))
-            {
-            LOG.error("ECInstanceECSqlSelectAdapter does not support members of a NavigationECProperty in the SELECT clause. Only the NavigationECProperty itself may be specified in the SELECT clause.");
-            return ERROR;
-            }
-        else
-            {
-            m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetPropertyData);
-
-            if (isSingleClassSelectClause)
-                {
-                if (!columnInfo.IsGeneratedProperty())
-                    {
-                    if (targetClassInSelectClause == nullptr)
-                        targetClassInSelectClause = &columnInfo.GetRootClass();
-                    else
-                        isSingleClassSelectClause = ECInstanceAdapterHelper::Equals(*targetClassInSelectClause, columnInfo.GetRootClass());
-                    }
-                else
-                    isSingleClassSelectClause = false;
-                }
-            }
-        }
-
-    m_isSingleClassSelectClause = isSingleClassSelectClause;
-    return SUCCESS;
+    return SetInstanceData(ecInstance, true);
     }
-
+ 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -189,21 +134,12 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceData(IECInstanceR instanc
         if (nullptr != m_columnHandlers[i])
             {
             ColumnHandler handler = m_columnHandlers[i];
-            const auto stat = (this->*handler)(instance, value);
-            if (stat != SUCCESS)
-                return stat;
+            if (SUCCESS != (this->*handler)(instance, value))
+                return ERROR;
             }
         }
 
     return SUCCESS;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instance, IECSqlValue const& value) const
-    {
-    return SetPropertyData(instance, nullptr, value);
     }
 
 //--------------------------------------------------------------------------------------
@@ -498,6 +434,117 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget(ECN::IECInstan
         }
 
     return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Carole.MacDonald                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
+    {
+    if (!m_ecSqlStatement.IsPrepared())
+        return ERROR;
+
+    bool isSingleClassSelectClause = true;
+    ECClassCP targetClassInSelectClause = nullptr;
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper();
+    for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
+        {
+        ECSqlColumnInfo const& columnInfo = m_ecSqlStatement.GetColumnInfo(i);
+        ECPropertyCP prop = columnInfo.GetProperty();
+        ECSqlSystemPropertyInfo const& sysPropInfo = systemSchemaHelper.GetSystemPropertyInfo(*prop);
+        if (!sysPropInfo.IsSystemProperty())
+            {
+            if (prop->GetIsNavigation())
+                m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetNavigationValue);
+            else
+                {
+                m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetPropertyData);
+
+                if (isSingleClassSelectClause)
+                    {
+                    if (!columnInfo.IsGeneratedProperty())
+                        {
+                        if (targetClassInSelectClause == nullptr)
+                            targetClassInSelectClause = &columnInfo.GetRootClass();
+                        else
+                            isSingleClassSelectClause = ECInstanceAdapterHelper::Equals(*targetClassInSelectClause, columnInfo.GetRootClass());
+                        }
+                    else
+                        isSingleClassSelectClause = false;
+                    }
+                }
+            continue;
+            }
+
+        switch (sysPropInfo.GetType())
+            {
+                case ECSqlSystemPropertyInfo::Type::Class:
+                {
+                switch (sysPropInfo.GetClass())
+                    {
+                        case ECSqlSystemPropertyInfo::Class::ECInstanceId:
+                        {
+                        m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetInstanceId);
+                        continue;
+                        }
+
+                        case ECSqlSystemPropertyInfo::Class::ECClassId:
+                        {
+                        m_columnHandlers.push_back(nullptr);
+                        m_ecClassIdColumnIndex = i;
+                        continue;
+                        }
+
+                        default:
+                            BeAssert(false);
+                            return ERROR;
+                    }
+                }
+
+                case ECSqlSystemPropertyInfo::Type::Relationship:
+                {
+                switch (sysPropInfo.GetRelationship())
+                    {
+                        case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
+                        {
+                        m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipSource);
+                        continue;
+                        }
+                        case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
+                        {
+                        m_columnHandlers.push_back(nullptr);
+                        m_sourceECClassIdColumnIndex = i;
+                        continue;
+                        }
+                        case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
+                        {
+                        m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipTarget);
+                        continue;
+                        }
+                        case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
+                        {
+                        m_columnHandlers.push_back(nullptr);
+                        m_targetECClassIdColumnIndex = i;
+                        continue;
+                        }
+
+                        default:
+                            BeAssert(false);
+                            return ERROR;
+
+
+                    }
+                case ECSqlSystemPropertyInfo::Type::Navigation:
+                {
+                LOG.error("ECInstanceECSqlSelectAdapter does not support members of a NavigationECProperty in the SELECT clause. Only the NavigationECProperty itself may be specified in the SELECT clause.");
+                return ERROR;
+                }
+                }
+            }
+        }
+
+    m_isSingleClassSelectClause = isSingleClassSelectClause;
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

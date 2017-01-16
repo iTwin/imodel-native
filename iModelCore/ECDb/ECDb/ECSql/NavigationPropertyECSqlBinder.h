@@ -22,13 +22,11 @@ struct NavigationPropertyECSqlBinder : public ECSqlBinder
     private:
         std::unique_ptr<IdECSqlBinder> m_idBinder;
         std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder;
-
         NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
         BentleyStatus Initialize(ECSqlPrepareContext&);
 
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
-
         virtual ECSqlStatus _BindNull() override;
         virtual ECSqlStatus _BindBoolean(bool value) override;
         virtual ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;

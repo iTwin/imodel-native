@@ -143,6 +143,59 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, NavPropForVirtualRelClassId)
+    {
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='DgnModel'>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='DgnElement'>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "        <ECNavigationProperty propertyName='Model' relationshipName='ParentHasChildren' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ParentHasChildren' strength='Referencing'  modifier='Sealed'>"
+        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
+        "          <Class class ='DgnModel' />"
+        "      </Source>"
+        "      <Target multiplicity='(0..*)' polymorphic='False' roleLabel='Element'>"
+        "          <Class class ='DgnElement' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "NavPropForVirtualRelClassId.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ECInstanceKey modelKey;
+
+    ECClassId parentHasChildrenRelClassId = db.Schemas().GetECClassId("TestSchema", "ParentHasChildren");
+    ASSERT_TRUE(parentHasChildrenRelClassId.IsValid());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.DgnModel(Name) VALUES('TestVal-1')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(modelKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.DgnElement(Model.Id, Model.RelECClassId,Code) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, parentHasChildrenRelClassId));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "TestVal-2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT * FROM ts.DgnElement WHERE Model IS NULL"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
