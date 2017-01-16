@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECJsonUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -47,6 +47,26 @@ BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value c
 
     Utf8String base64Str = json.asString();
     Base64Utilities::Decode(binary, base64Str);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::JsonToBinary(ByteStream& byteStream, Json::Value const& json)
+    {
+    if (json.isNull())
+        {
+        byteStream.clear();
+        return SUCCESS;
+        }
+
+    if (!json.isString())
+        return ERROR;
+
+    Utf8CP base64Str = json.asCString();
+    Base64Utilities::Decode(byteStream, base64Str, strlen(base64Str));
     return SUCCESS;
     }
 
@@ -482,6 +502,25 @@ BentleyStatus ECRapidJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJso
 
     if (json.IsNull())
         return SUCCESS;
+
+    Base64Utilities::Decode(binary, json.GetString(), (size_t) json.GetStringLength());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECRapidJsonUtilities::JsonToBinary(ByteStream& binary, RapidJsonValueCR json)
+    {
+    if (!json.IsString())
+        return ERROR;
+
+    if (json.IsNull())
+        {
+        binary.Clear();
+        return SUCCESS;
+        }
 
     Base64Utilities::Decode(binary, json.GetString(), (size_t) json.GetStringLength());
     return SUCCESS;
