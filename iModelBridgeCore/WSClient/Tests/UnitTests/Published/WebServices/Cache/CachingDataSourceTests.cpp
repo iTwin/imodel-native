@@ -224,6 +224,22 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMe
     CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
     }
 
+TEST_F(CachingDataSourceTests, FailedObjects_AppendFailures_ItemsAddedAtTheEnd)
+    {
+    ICachingDataSource::FailedObjects failedObjects;
+    failedObjects.push_back({{"Schema.Class", "A"}, "ItemA", ICachingDataSource::Error()});
+    EXPECT_THAT(failedObjects, SizeIs(1));
+
+    ICachingDataSource::FailedObjects moreFailedObjects;
+    moreFailedObjects.push_back({{"Schema.Class", "B"}, "ItemB", ICachingDataSource::Error()});
+    moreFailedObjects.push_back({{"Schema.Class", "C"}, "ItemC", ICachingDataSource::Error()});
+    EXPECT_THAT(moreFailedObjects, SizeIs(2));
+
+    failedObjects.AppendFailures(moreFailedObjects);
+    EXPECT_THAT(failedObjects, SizeIs(3));
+    EXPECT_EQ(failedObjects.at(2).GetObjectLabel(), "ItemC");
+    }
+
 TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesETagsForRequests)
     {
     auto client = MockWSRepositoryClient::Create();

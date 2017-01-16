@@ -62,7 +62,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct FileData;
 
         struct FailedObject;
-        class FailedObjects;
+        struct FailedObjects;
 
         typedef Error& ErrorR;
         typedef const Error& ErrorCR;
@@ -440,10 +440,10 @@ struct ICachingDataSource::FailedObject
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-class ICachingDataSource::FailedObjects : public bvector<FailedObject>
+struct ICachingDataSource::FailedObjects : public bvector<FailedObject>
     {
     public:
-        FailedObjects AppendFailures(FailedObjectsCR failedObjects)
+        FailedObjects& AppendFailures(FailedObjectsCR failedObjects)
             {
             if (!failedObjects.empty())
                 this->insert(this->end(), failedObjects.begin(), failedObjects.end());
