@@ -130,10 +130,10 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnExtrusion)
 TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRotationalsweep)
     {
     
-    CurveVectorPtr ellipse = CurveVector::CreateRectangle(1,2,3,4,0.5);
+    CurveVectorPtr rect = CurveVector::CreateRectangle(1,2,3,4,0.5);
     DPoint3d center = DPoint3d::From(0, 0, 0);
     DVec3d   axis = DVec3d::From(0, 1, 0);
-    DgnRotationalSweepDetail rotationalSweepData(ellipse, center, axis, Angle::Pi(), false);
+    DgnRotationalSweepDetail rotationalSweepData(rect, center, axis, Angle::Pi(), false);
     ISolidPrimitivePtr mySweepData = ISolidPrimitive::CreateDgnRotationalSweep(rotationalSweepData);
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(brep, *mySweepData));
@@ -166,6 +166,37 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRuledSweep)
     ASSERT_EQ(12, BRepUtil::GetBodyEdges(NULL, *brep));
     ASSERT_EQ(8, BRepUtil::GetBodyVertices(NULL, *brep));
     ASSERT_FALSE(BRepUtil::IsDisjointBody(*brep));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFrom_BSurface)
+    {
+    ICurvePrimitivePtr curvep=ICurvePrimitive::CreateLine(DSegment3d::From(0,1,0,5,5,0));
+    MSBsplineSurfacePtr sp=MSBsplineSurface::CreateLinearSweep(*curvep, DVec3d::From(0,1,0));
+    IBRepEntityPtr brep;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromBSurface(brep, *sp));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(1, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFromAndToCurveVector)
+    {
+    CurveVectorPtr rect = CurveVector::CreateRectangle(1, 2, 3, 4, 0.5);
+    IBRepEntityPtr brep;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromCurveVector(brep, *rect));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(1, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
+    CurveVectorPtr result =BRepUtil::Create::BodyToCurveVector(*brep);
+    ASSERT_TRUE(!result.IsNull());
+    ASSERT_EQ(CurveVector::BOUNDARY_TYPE_Outer,result->GetBoundaryType());
+    ASSERT_EQ(rect->Length(), result->Length());
     }
 #endif
 
