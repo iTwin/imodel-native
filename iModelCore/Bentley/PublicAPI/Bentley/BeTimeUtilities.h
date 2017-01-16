@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTimeUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include "Bentley.h"
 #include "WString.h"
 #include <time.h>
+#include <chrono>
 
 //__PUBLISH_SECTION_END__
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -34,24 +35,27 @@ BEGIN_BENTLEY_NAMESPACE
 //! @ingroup GROUP_Time
 //=======================================================================================    
 struct BeTimeUtilities
-    {
+{
     //! @name Elapsed time
     //! @{
 
     //! Get a value that represents elapsed time since some /i unspecified start time, expressed as a 1/1000th of a second.
     //! @return a number of clock ticks in 1/1000ths of a second
+    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
     BENTLEYDLL_EXPORT static uint64_t QueryMillisecondsCounter();
 
     //! Get a value that represents elapsed time in seconds and fractions of seconds since some unspecified start time.
     //! @return a number of seconds.
-    BENTLEYDLL_EXPORT static double QuerySecondsCounter() {return QueryMillisecondsCounter() / 1000.0;}
+    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
+    static double QuerySecondsCounter() {return QueryMillisecondsCounter() / 1000.0;}
 
     //! Get a value that represents elapsed time since some unspecified start time, expressed as a 1/1000th of a second.
     //! @remarks This version of the function returns its result as a 32-bit integer. Therefore, if a session were to continue for 49 days,
     //! the tick count returned by this function would overflow and wrap around. This is only a problem if the program were to compare a
     //! tick count obtained before the values wrapped around to one obtained after.
     //! @return a number of ticks in 1/1000ths of a second
-    BENTLEYDLL_EXPORT static uint32_t QueryMillisecondsCounterUInt32() {return (uint32_t)((0xffffffff & QueryMillisecondsCounter()));}
+    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
+    static uint32_t QueryMillisecondsCounterUInt32() {return (uint32_t)((0xffffffff & QueryMillisecondsCounter()));}
 
     /// @}
 
@@ -119,56 +123,53 @@ struct BeTimeUtilities
     //! @param  [in] unixMilliseconds The \ref UnixTimeMillis to convert
     //! @return SUCCESS if the conversion was successful
     BENTLEYDLL_EXPORT static BentleyStatus ConvertUnixMillisToLocalTime(struct tm& localTime, uint64_t unixMilliseconds);
-
     /// @}
-    };
+};
 
 /*=================================================================================**//**
 * Measures elapsed time
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct StopWatch : NonCopyableClass
-    {
+{
+    typedef std::chrono::high_resolution_clock::time_point TimePoint;
 private:
-    Utf8CP      m_description;
-    uint64_t    m_start;
-    uint64_t    m_stop;
-    uint64_t    m_frequency;
-
-protected:
-    //! Sets the internal frequency to match the high-resolution performance counter, if one exists.
-    BENTLEYDLL_EXPORT void SetFrequency();
+    Utf8CP m_description = nullptr;
+    TimePoint m_start = TimePoint();
+    TimePoint m_stop = TimePoint();
+    static double ToSecondsDouble(std::chrono::nanoseconds val) {return std::chrono::duration<double>(val).count();}
 
 public:
-    //! Return the current time.  On Windows this is the current value of the high-resolution performance counter.  
-    //! On Unix it is the current time in milliseconds.
-    BENTLEYDLL_EXPORT static uint64_t Now();
+    //! Return the current time.
+    static TimePoint Now() {return std::chrono::high_resolution_clock::now();}
 
-    //! Initialize the stopwatch.  If true is passed as start then it will start it as well.  Called from the constructor.
-    void Init(bool start) {m_start=m_stop=0; SetFrequency(); if (start) Start();}
+    //! Initialize the stopwatch. If true is passed as start then it will start it as well.
+    void Init(bool start) {if (start) Start();}
 
     //! Create a named stopwatch and possibly start it.
-    //! @param[in] description A name for the stopwatch that can be retrieved later.  This is a convenience.
+    //! @param[in] description A name for the stopwatch that can be retrieved later
     //! @param[in] startImmediately Pass true to start the stopwatch on creation
     explicit StopWatch(Utf8CP description=nullptr, bool startImmediately=false) : m_description(description) {Init(startImmediately);}
 
     //! Create a named stopwatch and possibly start it.
-    StopWatch(bool startImmediately) {Init(startImmediately);}
+    explicit StopWatch(bool startImmediately) {Init(startImmediately);}
 
     //! Get the description provided to the constructor
     Utf8CP GetDescription() {return m_description;}
 
-    //! Start or restart the stopwatch.  Any future time measurements will be based on this new value.
-    void Start(){m_start = Now();}
+    //! Start or restart the stopwatch. Any future time measurements will be based on this new value.
+    void Start() {m_start = Now();}
 
     //! Stop the stopwatch so that the duration can be viewed later.
     void Stop() {m_stop = Now();}
 
-    //! Get the elapsed seconds since Start() on a running timer.
-    double GetCurrentSeconds() {return (Now() - m_start) / (double)m_frequency;}
+    //! Get the elapsed time since Start() on a running timer.
+    std::chrono::nanoseconds GetCurrent() {return Now() - m_start;}
+    double GetCurrentSeconds() {return ToSecondsDouble(GetCurrent());}
 
-    //! Get the elapsed seconds between Start() and Stop() on this timer.
-    double GetElapsedSeconds() {return (m_stop - m_start) / (double)m_frequency;}
-    };
+    //! Get the elapsed time between Start() and Stop() on this timer.
+    std::chrono::nanoseconds GetElapsed() {return m_stop - m_start;}
+    double GetElapsedSeconds() {return ToSecondsDouble(GetElapsed());}
+};
 
 END_BENTLEY_NAMESPACE

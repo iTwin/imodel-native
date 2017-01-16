@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeThread.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include "BeAtomic.h"
 #include "RefCounted.h"
 #include "WString.h"
+#include <chrono>
 
 #if defined (_WIN32) && defined(_MANAGED)
     //=======================================================================================
@@ -216,7 +217,9 @@ struct  BeThreadUtilities
 
     //! Suspend the current thread for a specified amount of time
     //! @param[in] millis   Duration of sleep in milliseconds
-    BENTLEYDLL_EXPORT static void BeSleep(uint32_t millis);
+    BENTLEYDLL_EXPORT static void BeSleep(std::chrono::milliseconds millis);
+
+    static void BeSleep(uint32_t millis){BeSleep(std::chrono::milliseconds(millis));}
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();
