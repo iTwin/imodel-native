@@ -565,7 +565,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - JSON - regular" : "SELECT - ECD - overflow", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - JSON - regular" : "SELECT - JSON - overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
