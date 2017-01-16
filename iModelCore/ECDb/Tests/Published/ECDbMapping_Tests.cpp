@@ -2725,7 +2725,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     ASSERT_EQ(pI, stmt.GetValueInt(idx++));         //I
     ASSERT_EQ(pL, stmt.GetValueInt64(idx++));       //L
     ASSERT_EQ(pD, stmt.GetValueDouble(idx++));      //D
-    ASSERT_EQ(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
+    ASSERT_EQ(pDt, stmt.GetValueDateTime(idx++));   //DT
     ASSERT_EQ(pB, stmt.GetValueBoolean(idx++));     //B
     ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
     ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
@@ -2741,7 +2741,8 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     int i = 0;
     for (auto itor : arrayOfP3dv)
         {
-        ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
+        ASSERT_TRUE(pArrayOfP3d[i].AlmostEqual(itor->GetPoint3d())) << i;
+        i++;
         }
     ASSERT_EQ(3, i);
 
@@ -2750,9 +2751,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     for (auto itor : arrayOfST1v)
         {
         ASSERT_EQ(pArrayOfST1_D1[i], itor->GetStruct().GetValue(0).GetDouble());//ST1P.D1
-        ASSERT_EQ(pArrayOfST1_P2D[i], itor->GetStruct().GetValue(1).GetPoint2d());//ST1P.P2D
+        ASSERT_TRUE(pArrayOfST1_P2D[i].AlmostEqual(itor->GetStruct().GetValue(1).GetPoint2d()));//ST1P.P2D
         ASSERT_EQ(pArrayOfST1_D2[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(0).GetDouble());//ST1P.STP2.D2
-        ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
+        ASSERT_TRUE(pArrayOfST1_P3D[i].AlmostEqual(itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d()));//ST1P.STP2.P3D
         i++;
         }
     ASSERT_EQ(3, i);

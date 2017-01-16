@@ -413,7 +413,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
                     case PRIMITIVETYPE_IGeometry:
                     {
                     bvector<Byte> fb;
-                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                    BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                     if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
                         return ERROR;
@@ -539,11 +539,11 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     if (!it->IsString())
                         return ERROR;
 
-                    bvector<Byte> fb;
+                    ByteStream fb;
                     if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(fb, *it))
                         return ERROR;
 
-                    IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
+                    IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry(fb.data());
                     if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                         return ERROR;
 

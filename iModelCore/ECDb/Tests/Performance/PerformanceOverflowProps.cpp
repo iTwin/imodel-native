@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceOverflowProps.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -535,11 +535,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
                     return ERROR;
 
                 BeAssert(blobSize > 0);
-                const size_t blobSizeU = (size_t) blobSize;
-                bvector<Byte> byteVec;
-                byteVec.reserve(blobSizeU);
-                byteVec.assign(blob, blob + blobSizeU);
-                IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(byteVec);
+                IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry(blob);
                 if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                     return ERROR;
 
@@ -669,7 +665,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 case PRIMITIVETYPE_Binary:
                 {
                 Utf8CP base64Str = stmt.GetValueText(0);
-                bvector<Byte> blob;
+                ByteStream blob;
                 Base64Utilities::Decode(blob, base64Str, strlen(base64Str));
 
                 if (blob.size() != GetTestBlobSize() || memcmp(blob.data(), GetTestBlob(), GetTestBlobSize()) != 0)
@@ -707,10 +703,10 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 case PRIMITIVETYPE_IGeometry:
                 {
                 Utf8CP base64Str = stmt.GetValueText(0);
-                bvector<Byte> fb;
+                ByteStream fb;
                 Base64Utilities::Decode(fb, base64Str, strlen(base64Str));
 
-                IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
+                IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry(fb.data());
                 if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                     return ERROR;
 
@@ -891,7 +887,7 @@ BentleyStatus PerformanceOverflowPropsTests::BindRegularPropsForInsert(Statement
                 case PRIMITIVETYPE_IGeometry:
                 {
                 bvector<Byte> fb;
-                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                 if (BE_SQLITE_OK != stmt.BindBlob(parameterIndex, fb.data(), (int) fb.size(), Statement::MakeCopy::Yes))
                     return ERROR;
@@ -1017,7 +1013,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 case PRIMITIVETYPE_IGeometry:
                 {
                 bvector<Byte> fb;
-                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                 Utf8String blobStr;
                 Base64Utilities::Encode(blobStr, fb.data(), fb.size());
@@ -1116,7 +1112,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 case PRIMITIVETYPE_IGeometry:
                 {
                 bvector<Byte> fb;
-                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                 if (ECRapidJsonUtilities::BinaryToJson(v, fb.data(), fb.size(), json.GetAllocator()))
                     return ERROR;
@@ -1215,7 +1211,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 case PRIMITIVETYPE_IGeometry:
                 {
                 bvector<Byte> fb;
-                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                 if (SUCCESS != ECJsonUtilities::BinaryToJson(val, fb.data(), fb.size()))
                     return ERROR;

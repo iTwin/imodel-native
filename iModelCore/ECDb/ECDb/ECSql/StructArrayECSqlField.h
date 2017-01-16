@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
+#include <Bentley/ByteStream.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -47,7 +48,7 @@ struct PrimitiveJsonECSqlValue : public JsonECSqlValue, public IECSqlPrimitiveVa
     {
 private:
     DateTime::Info m_datetimeMetadata;
-    mutable bvector<Byte> m_blobCache;
+    mutable ByteStream m_blobCache;
 
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
 
