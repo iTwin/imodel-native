@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,8 +65,13 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
                                             MeshIndexType;    
     MeshIndexType&                         m_rIndex;
 
-    explicit                                ScalableMeshPointStorageEditor    (MeshIndexType&                 pi_rIndex)
-        :   m_rIndex(pi_rIndex) {}
+    size_t m_totalSources;
+    size_t m_totalBytesToImport;
+    size_t m_nSourcesImported;
+
+
+    explicit                                ScalableMeshPointStorageEditor    (MeshIndexType&                 pi_rIndex, size_t nSources)
+        : m_rIndex(pi_rIndex), m_totalSources(nSources), m_totalBytesToImport(0), m_nSourcesImported(0) {}
 
     virtual void                            _Assign                    (const Memory::PacketGroup&      pi_rSrc) override
         {
@@ -74,12 +79,31 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
         m_pointPacket.AssignTo(pi_rSrc[0]);
         }
 
+    virtual void                            _NotifyImportProgress(size_t currentlyImportedBytes) 
+        {
+        if (m_rIndex.m_progress != nullptr && m_totalBytesToImport > 0 && m_totalSources> 0)
+            m_rIndex.m_progress->Progress() = (float)(m_nSourcesImported + (float)currentlyImportedBytes / m_totalBytesToImport) / m_totalSources;
+        };
+
     virtual void                            _Write                     () override
         {
+
         const bool Success = m_rIndex.AddArray(m_pointPacket.Get(), m_pointPacket.GetSize(), m_is3dData, m_isGridData);
 
         // TDORAY: Throw on failures?
         assert(Success);
+        }
+
+    virtual bool                           _IsAcceptingData() { return m_rIndex.m_progress == nullptr || !m_rIndex.m_progress->IsCanceled(); }
+
+    virtual void                            _NotifyImportSourceStarted(size_t totalBytes) 
+        {
+        m_totalBytesToImport = totalBytes;
+        };
+
+    virtual void                            _NotifySourceImported() override
+        {
+        m_nSourcesImported++;
         }
     };
 
@@ -95,7 +119,7 @@ class ScalableMeshPointNonDestructiveStorageEditor : public ScalableMeshPointSto
     friend class                            ScalableMeshNonDestructiveEditStorage<PtType>;
 
     explicit                                ScalableMeshPointNonDestructiveStorageEditor(MeshIndexType&                 pi_rIndex)
-        : ScalableMeshPointStorageEditor(pi_rIndex)
+        : ScalableMeshPointStorageEditor(pi_rIndex, 0)
         {}
 
     virtual void                            _Write                     () override
@@ -211,10 +235,11 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      MeshIndexType&                              m_rIndex;
      size_t     m_importedFeatures;
+     size_t m_totalSources;
 
      explicit                                ScalableMeshLinearStorageEditor
-         (MeshIndexType&                  pi_rFeatureIndex)
-         : m_rIndex(pi_rFeatureIndex), m_importedFeatures(0)
+         (MeshIndexType&                  pi_rFeatureIndex, size_t nSources)
+         : m_rIndex(pi_rFeatureIndex), m_importedFeatures(0), m_totalSources(nSources)
          {}
 
      virtual void                            _Assign(const Memory::PacketGroup&  pi_rSrc) override
@@ -248,6 +273,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
          // TDORAY: Throw on failures?
          }
+     virtual bool                           _IsAcceptingData() { return m_rIndex.m_progress == nullptr || !m_rIndex.m_progress->IsCanceled(); }
      };
 
  /*---------------------------------------------------------------------------------**//**
@@ -271,6 +297,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
      Memory::ConstPacketProxy <DPoint2d>
          m_uvPacket;
 
+     size_t m_totalSources;
 
      typedef SMMeshIndex<PtType, Extent3dType>
          MeshIndexType;
@@ -278,8 +305,9 @@ class GenericLinearStorageEditor : public Import::BackInserter
      MeshIndexType&                              m_rIndex;
 
      explicit                                ScalableMeshMeshStorageEditor
-         (MeshIndexType&                  pi_rFeatureIndex)
-         : m_rIndex(pi_rFeatureIndex)
+         (MeshIndexType&                  pi_rFeatureIndex,
+         size_t nSources)
+         : m_rIndex(pi_rFeatureIndex), m_totalSources(nSources)
          {}
 
      virtual void                            _Assign(const Memory::PacketGroup&  pi_rSrc) override
@@ -337,6 +365,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 #endif
          // TDORAY: Throw on failures?
          }
+     virtual bool                           _IsAcceptingData() { return m_rIndex.m_progress == nullptr || !m_rIndex.m_progress->IsCanceled(); }
      };
 
 
@@ -353,7 +382,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      explicit                                ScalableMeshNonDestructiveLinearStorageEditor
          (MeshIndexType&                  pi_rFeatureIndex)
-         : ScalableMeshLinearStorageEditor(pi_rFeatureIndex)
+         : ScalableMeshLinearStorageEditor(pi_rFeatureIndex,0)
          {}
 
 
@@ -447,11 +476,11 @@ class ScalableMeshStorage : public IStorage
         //TDORAY: Ensure that type can be found in layer before returning
 
         if (PointTypeFactory().Create() == type)
-            return (0 != m_pPointIndex) ? new ScalableMeshPointStorageEditor<PtType>(*m_pPointIndex) : 0;
+            return (0 != m_pPointIndex) ? new ScalableMeshPointStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
         if (LinearTypeFactory().Create() == type)
-            return (0 != m_pPointIndex) ? new ScalableMeshLinearStorageEditor<PtType>(*m_pPointIndex) : 0;
+            return (0 != m_pPointIndex) ? new ScalableMeshLinearStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
         if (MeshTypeFactory().Create() == type)
-            return (0 != m_pPointIndex) ? new ScalableMeshMeshStorageEditor<PtType>(*m_pPointIndex) : 0;
+            return (0 != m_pPointIndex) ? new ScalableMeshMeshStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
         return 0;
         }
 
@@ -461,6 +490,7 @@ public:
                                                                         const GeoCoords::GCS&           pi_rGeoCoordSys)
         :   m_pPointIndex(&pi_rIndex),
             m_geoCoordSys(pi_rGeoCoordSys)
+            
         {
         
         }

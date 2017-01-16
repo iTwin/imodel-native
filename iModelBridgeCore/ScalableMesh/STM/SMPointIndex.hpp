@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#include "ScalableMeshQuadTreeQueries.h"
 using namespace ISMStore;
 
 //=======================================================================================
@@ -7344,7 +7345,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
         Load();
 
     HINVARIANTS;
-    if (m_SMIndex->IsCanceled()) return;
+    if (m_SMIndex->m_progress->IsCanceled()) return;
+
+    size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t) 0);
 
     if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level <= pi_levelToFilter)
         {
@@ -7374,6 +7377,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
 
                         if (s_useThreadsInFiltering)
                             {
+                            m_SMIndex->m_nFilteredNodes++;
+                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+
+                            if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                             RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<POINT, EXTENT>* node, vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>& subNodes, size_t threadId) ->void
                                 {
                                 node->m_filter->Filter(node, subNodes, 1);
@@ -7385,6 +7392,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                             }
                         else
                             {
+                            m_SMIndex->m_nFilteredNodes++;
+                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes / nOfNodes) * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes / nOfNodes) * 1 / 3;
+
+                            if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                             m_filter->Filter(this, pSubNodes, 1);
                             m_nodeHeader.m_filtered = true;
 
@@ -7421,7 +7432,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         subNodes[indexNodes] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_apSubNodes[indexNodes]);
                     if (s_useThreadsInFiltering)
                         {
-                        if (!m_SMIndex->IsCanceled())
+                        m_SMIndex->m_nFilteredNodes++;
+                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+
+                        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
+                        if (!m_SMIndex->m_progress->IsCanceled())
                             RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<POINT, EXTENT>* node, vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>& subNodes, size_t threadId) ->void
                             {
                             node->m_filter->Filter(node, subNodes, node->m_nodeHeader.m_numberOfSubNodesOnSplit);
@@ -7433,6 +7448,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         }
                     else
                         {
+                        m_SMIndex->m_nFilteredNodes++;
+                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+
+                        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                         m_filter->Filter(this, subNodes, m_nodeHeader.m_numberOfSubNodesOnSplit);
                         m_nodeHeader.m_filtered = true;
 
@@ -7472,6 +7491,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
             }
         else
             {
+            m_SMIndex->m_nFilteredNodes++;
+            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+
+            if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
             if (m_filter->FilterLeaf (this))
                 SetDirty (true);
 
@@ -8081,6 +8104,23 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     assert(!"Should not be called. Not yet implemented. Implementation should be similar to SMMeshIndex::CreateNewNode");
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode;
     return pNewNode;
+    }
+
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCounts()
+    {
+    m_countsOfNodesAtLevel.resize(GetDepth()+1);
+
+    for (size_t level = 0; level < GetDepth()+1; ++level)
+        {
+        vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode> nodes;
+        ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT> query(GetIndexExtent(), level, true, true);
+        Query(&query, nodes);
+        m_countsOfNodesAtLevel[level] = nodes.size();
+        }
+
+    m_nMeshedNodes = 0;
+    m_nFilteredNodes = 0;
+    m_nStitchedNodes = 0;
     }
 
 
@@ -9213,6 +9253,11 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::RemovePoin
     return (nbPoints != 0);
     }
 
+
+template<class POINT, class EXTENT> void  SMPointIndex<POINT, EXTENT>::SetProgressCallback(IScalableMeshProgress* progress)
+    {
+    m_progress = progress;
+    }
 
 
 

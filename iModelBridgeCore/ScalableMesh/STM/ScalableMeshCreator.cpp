@@ -332,6 +332,7 @@ StatusInt IScalableMeshCreator::SetGCS(const GeoCoords::GCS& gcs)
     return 0;
     }
 
+#if 0
 bool IScalableMeshCreator::IsCanceled()
     {
     return m_implP->IsCanceled();
@@ -340,6 +341,12 @@ bool IScalableMeshCreator::IsCanceled()
 void IScalableMeshCreator::Cancel()
     {
     return m_implP->Cancel();
+    }
+#endif
+
+IScalableMeshProgress* IScalableMeshCreator::GetProgress()
+    {
+    return m_implP->GetProgress();
     }
 
 /*----------------------------------------------------------------------------+
@@ -363,6 +370,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     s_useThreadsInMeshing = true;
     s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
+    m_progress.ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+    m_progress.Progress() = 0;
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -600,7 +609,8 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false,
                                        pMesher2_5d,
                                        pMesher3d);
-
+        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+        dataStore->SetProjectFilesPath(projectFilesPath, true);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -623,6 +633,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
         pDataIndex->SetGenerating(true);        
         }           
+    if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
 
     return SUCCESS;
     }
@@ -811,6 +822,11 @@ void IScalableMeshCreator::Impl::Cancel()
     if (m_dataIndex) m_dataIndex->SetCanceled(true);
     }
 
+ScalableMeshProgress* IScalableMeshCreator::Impl::GetProgress()
+    {
+    return const_cast<ScalableMeshProgress*>(&m_progress);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre  04/2011
@@ -849,6 +865,73 @@ void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration,
     MessageBoxA(NULL, msg.c_str(), "Information", MB_ICONINFORMATION | MB_OK);
     }
 
+
+bool IScalableMeshProgress::IsCanceled() const
+    {
+    return _IsCanceled();
+    }
+
+void IScalableMeshProgress::Cancel()
+    {
+    return _Cancel();
+    }
+
+std::atomic<int> const& IScalableMeshProgress::GetProgressStep() const
+    {
+    return _GetProgressStep();
+    }
+
+int IScalableMeshProgress::GetTotalNumberOfSteps() const
+    {
+    return _GetTotalNumberOfSteps();
+    }
+
+std::atomic<float> const& IScalableMeshProgress::GetProgress() const
+    {
+    return _GetProgress();
+    }
+
+std::atomic<float>& IScalableMeshProgress::Progress()
+    {
+    return _Progress();
+    }
+
+std::atomic<int>& IScalableMeshProgress::ProgressStep()
+    {
+    return _ProgressStep();
+    }
+
+
+bool ScalableMeshProgress::_IsCanceled() const
+    {
+    return m_canceled;
+    }
+
+void ScalableMeshProgress::_Cancel()
+    {
+    m_canceled = true;
+    }
+
+std::atomic<int> const& ScalableMeshProgress::_GetProgressStep() const
+    {
+    return m_currentStep;
+    }
+
+
+std::atomic<float> const& ScalableMeshProgress::_GetProgress() const
+    {
+    return m_progressInStep;
+    }
+
+std::atomic<float>& ScalableMeshProgress::_Progress()
+    {
+    return m_progressInStep;
+    }
+
+std::atomic<int>& ScalableMeshProgress::_ProgressStep()
+    {
+    return m_currentStep;
+    }
 /*==================================================================*/
 /*        MRDTM CREATOR SECTION - END                               */
 /*==================================================================*/

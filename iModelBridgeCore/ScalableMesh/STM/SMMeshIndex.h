@@ -32,6 +32,7 @@
 #include "ScalableMeshDraping.h"
 
 
+
 namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ScalableMesh
@@ -329,11 +330,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void  BuildSkirts();
 
+#if 0
     void CreateSkirtsForMatchingTerrain();
 
     SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
 
     void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
+#endif
 
     bool HasClip(uint64_t clipId);
 
@@ -856,7 +859,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
         
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
-        void                SetClipRegistry(ClipRegistry* registry);        
+        void                SetClipRegistry(ClipRegistry* registry);       
+
 
         SMMemoryPoolPtr GetMemoryPool() const { return m_smMemoryPool; }                                
 
@@ -909,10 +913,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
-
+#if 0
         void SetSMTerrainMesh(IScalableMesh* terrainP);
         IScalableMesh* GetSMTerrainMesh();
-
+#endif
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -922,17 +926,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
-
         size_t m_texId = 0;
 
         SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
         bvector < RefCountedPtr<EditOperation> > m_edits;
-
+#if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;
         IScalableMesh* m_smTerrainMesh;
-
+#endif
     };
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>

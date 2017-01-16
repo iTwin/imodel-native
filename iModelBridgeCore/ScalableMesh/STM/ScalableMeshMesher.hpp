@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -51,6 +51,9 @@ extern bool s_useSpecialTriangulationOnGrids;
  will compute the sub-resolution and the view oriented parameters.
  -----------------------------------------------------------------------------*/
 bool firstTile = false;
+
+
+
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;

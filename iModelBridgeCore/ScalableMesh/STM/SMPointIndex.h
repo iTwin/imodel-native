@@ -29,6 +29,8 @@
 #include "Stores\SMSQLiteStore.h"
 #include "SMNodeGroup.h"
 
+#include <ScalableMesh\IScalableMeshCreator.h>
+
 class DataSourceAccount;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -1191,7 +1193,8 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
 
     template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>
     {
-
+    friend class SMPointIndexNode<POINT, EXTENT>;
+    friend class SMMeshIndexNode<POINT, EXTENT>;
 public:
 
     static map<void*, int> s_allNodes;
@@ -1340,6 +1343,8 @@ public:
     void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
 
+
+    void GatherCounts();
 
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
@@ -1506,6 +1511,10 @@ public:
         return m_isCanceled;
         }
 
+    void               SetProgressCallback(IScalableMeshProgress* progress);
+
+    IScalableMeshProgress* m_progress = nullptr;
+
     HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
 #ifndef NDEBUG
@@ -1554,6 +1563,15 @@ protected:
     bool                    m_propagatesDataDown; 
 
     std::atomic<bool>       m_isCanceled;
+
+
+    //progress info
+    bvector<size_t> m_countsOfNodesAtLevel;
+
+    std::atomic<size_t> m_nMeshedNodes;
+    std::atomic<size_t> m_nStitchedNodes;
+    std::atomic<size_t> m_nFilteredNodes;
+
     };
 
 

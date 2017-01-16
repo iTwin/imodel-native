@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter_dgndb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -557,8 +557,11 @@ class DEMRasterPointExtractor : public InputExtractorBase
     auto_ptr<HUTDEMRasterXYZPointsIterator>
                                     m_pPtsIterator;
 
+    uint64_t m_width, m_height;
+
     PODPacketProxy<DPoint3d>        m_pointPacket;
     size_t                          m_maxPtQty;
+    size_t m_totalPtQty;
 
     /*---------------------------------------------------------------------------------**//**
     * @description
@@ -577,6 +580,19 @@ class DEMRasterPointExtractor : public InputExtractorBase
         {
         const size_t PtQty = m_pPtsIterator->GetXYZPoints(m_pointPacket.Edit(), m_maxPtQty);
         m_pointPacket.SetSize(PtQty);
+        m_totalPtQty += PtQty;
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        uint64_t nPt;
+        m_pPtsIterator->GetNumberOfFilteredPoints(&nPt);
+        return nPt;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return m_totalPtQty;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -593,9 +609,12 @@ public:
     * @description
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        DEMRasterPointExtractor              (HUTDEMRasterXYZPointsIterator*   pi_pPointIterator)
+    explicit                        DEMRasterPointExtractor(HUTDEMRasterXYZPointsIterator*   pi_pPointIterator, uint64_t width, uint64_t height)
         :   m_pPtsIterator(pi_pPointIterator),
-            m_maxPtQty(pi_pPointIterator->GetMaxXYZPointQty())
+            m_maxPtQty(pi_pPointIterator->GetMaxXYZPointQty()),
+            m_width(width),
+            m_height(height),
+            m_totalPtQty(0)
         {
 
         }
@@ -645,7 +664,9 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
         if (0 == pIterator.get())
             return 0;
 
-        return new DEMRasterPointExtractor(pIterator.release());
+        uint64_t width, height;
+        sourceBase.GetPointExtractor().GetDimensionInPixels(&width, &height);
+        return new DEMRasterPointExtractor(pIterator.release(), width, height);
         }
 
     };

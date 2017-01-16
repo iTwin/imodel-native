@@ -1071,7 +1071,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
     HINVARIANTS;
 
     //deal with cancelling generation while it is still in progress
-    if (m_SMIndex->IsCanceled()) return;
+    if (m_SMIndex->m_progress->IsCanceled()) return;
 
     // If there are sub-nodes and these need filtering then first do the subnodes
     if (HasRealChildren())
@@ -1106,10 +1106,16 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
     else
         {
         assert(this->NeedsMeshing() == true);
+
+
+        m_SMIndex->m_nMeshedNodes++;
+        float progressForLevel = (float)m_SMIndex->m_nMeshedNodes / m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level];
+
+        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForLevel;
         //assert(this->m_nodeHeader.m_balanced == true);
         if (s_useThreadsInMeshing)
             {
-            if (!m_SMIndex->IsCanceled())
+            if (!m_SMIndex->m_progress->IsCanceled())
                 RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
                 {
                 bool isMeshed;
@@ -1121,6 +1127,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
                     {
                     isMeshed = node->m_mesher2_5d->Mesh(node);
                     }
+
 
                 if (isMeshed)
                     {
@@ -1175,7 +1182,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 
     HINVARIANTS;
 
-    if (m_SMIndex->IsCanceled()) return;
+    if (m_SMIndex->m_progress->IsCanceled()) return;
 //    size_t nodeInd;
 
     if (pi_levelToStitch == -1 || this->m_nodeHeader.m_level == pi_levelToStitch && this->GetNbObjects() > 0)
@@ -1198,6 +1205,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
                     isStitched = m_mesher3d->Stitch(this);
                     }
 
+                size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t)0);
+                m_SMIndex->m_nStitchedNodes++;
+                float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+
+                if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                 if (isStitched)
                     SetDirty(true);
 
@@ -1229,7 +1241,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 #endif                
                         if (this->m_nodeHeader.m_level == 0 && nodesToStitch == 0 && pi_levelToStitch > 1 && s_useThreadsInStitching)
                             {
-                            if (!m_SMIndex->IsCanceled())
+                            if (!m_SMIndex->m_progress->IsCanceled())
                                 RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, int pi_levelToStitch, size_t threadId) ->void
                                 {
                                 node->Stitch(pi_levelToStitch, 0);
@@ -3935,7 +3947,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             }
     }
 
-
+#if 0
 template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>* SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNode()
     {
     auto firstNode = dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(m_SMIndex)->GetSMTerrain()->FindNode(m_nodeHeader.m_nodeExtent, m_nodeHeader.m_level, true);
@@ -4017,6 +4029,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
         }
 
     }
+#endif
 
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
     {
@@ -4701,6 +4714,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
     result = m_mesher3d->Init(*this);
     assert(result == true);
 
+
     // Check if root node is present
     if (m_pRootNode != NULL)
         {
@@ -4923,7 +4937,7 @@ template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POIN
     return index;
     }
 
-
+#if 0
 template<class POINT, class EXTENT> void  SMMeshIndex<POINT, EXTENT>::SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP)
     {
     m_smTerrain = terrainP;
@@ -4944,3 +4958,5 @@ template<class POINT, class EXTENT> IScalableMesh*  SMMeshIndex<POINT, EXTENT>::
     return m_smTerrainMesh;
 
     }
+#endif
+

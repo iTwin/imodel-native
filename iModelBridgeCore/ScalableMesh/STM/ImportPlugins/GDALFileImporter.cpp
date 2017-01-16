@@ -6,7 +6,7 @@
 |       $Date: 2015/04/07 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -301,6 +301,16 @@ private:
                         }
                     }
                 return true;
+                }
+
+            virtual size_t              _GetPhysicalSize() override
+                {
+                return 0;
+                }
+
+            virtual size_t              _GetReadPosition() override
+                {
+                return 0;
                 }
 
             /*---------------------------------------------------------------------------------**//**

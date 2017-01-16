@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -256,22 +256,33 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         DPoint3d   m_viewBox[8];         
         ClipVectorCP m_extent3d;
         bool m_useAllRes;
+        bool m_alwaysVisible;
+        bool m_ignoreFaceIndexes;
 
     public:
 
                             ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent, 
                                                               size_t         level,                                                     
                                                               const DPoint3d viewBox[]) 
-                                                              : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr)
+                                                              : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_ignoreFaceIndexes(false)
                                 {                                                             
                                 memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);                                
                                 }    
 
                             ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
                                                                     size_t         level,
+                                                                    bool alwaysVisible,
+                                                                    bool ignoreIndexes)
+                                                                    : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_ignoreFaceIndexes(ignoreIndexes)
+                                {
+                                
+                                }
+
+                            ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+                                                                    size_t         level,
                                                                     ClipVectorCP extent3d,
                                                                     bool useAllResolutions)
-                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d)
+                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_ignoreFaceIndexes(false)
                                 {
 
                                 }

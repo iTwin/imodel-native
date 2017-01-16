@@ -474,6 +474,16 @@ private:
         {
         return false;
         }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
     };
 
 

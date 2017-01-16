@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:46:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -24,10 +24,12 @@ struct Sink::Impl
     {
     ContentDescriptor           m_descriptor;
     bool                        m_isDescriptorUpToDate;
+    size_t      m_expectedNSources;
 
     explicit                    Impl           ()
         :   m_descriptor(L""),
-            m_isDescriptorUpToDate(false)
+            m_isDescriptorUpToDate(false),
+            m_expectedNSources(0)
         {
         
         }
@@ -88,6 +90,16 @@ BackInserterPtr Sink::CreateBackInserterFor(const PacketGroup&      src,
     return inserterPtr;
     }
 
+void                       Sink::SetTotalNumberOfExpectedSources(size_t nSources)
+    {
+    m_pImpl->m_expectedNSources = nSources;
+    }
+
+
+size_t                       Sink::GetTotalNumberOfExpectedSources() const
+    {
+    return m_pImpl->m_expectedNSources;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @description  
 *

@@ -6,7 +6,7 @@
 |       $Date: 2016/06/29 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -370,6 +370,16 @@ private:
                 m_metadataPacket.AssignTo(rawEntities[2]);
                 m_texPacket.AssignTo(rawEntities[3]);
                 m_uvPacket.AssignTo(rawEntities[4]);
+                }
+
+            virtual size_t              _GetPhysicalSize() override
+                {
+                return 0;
+                }
+
+            virtual size_t              _GetReadPosition() override
+                {
+                return 0;
                 }
 
             /*---------------------------------------------------------------------------------**//**

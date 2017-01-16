@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -565,6 +565,16 @@ class DEMRasterPointExtractor : public InputExtractorBase
         {
         const size_t PtQty = m_pPtsIterator->GetXYZPoints(m_pointPacket.Edit(), m_maxPtQty);
         m_pointPacket.SetSize(PtQty);
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
 
     /*---------------------------------------------------------------------------------**//**

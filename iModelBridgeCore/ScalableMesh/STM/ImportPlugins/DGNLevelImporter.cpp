@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DGNLevelImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -681,6 +681,16 @@ private:
         m_pointPacket.SetSize(m_pointArray.GetSize());
         }
 
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -787,6 +797,16 @@ private:
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -928,6 +948,16 @@ private:
 
         m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
         m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
 
     /*---------------------------------------------------------------------------------**//**

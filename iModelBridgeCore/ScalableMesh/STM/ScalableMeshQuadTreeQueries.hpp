@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:34 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -471,7 +471,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
         }
 
 
-    bool isVisible = m_extent3d != nullptr || GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
+    bool isVisible = m_alwaysVisible || m_extent3d != nullptr || GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
 
     if (m_extent3d != nullptr)
         {
@@ -493,7 +493,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
             m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
-            if (node->m_nodeHeader.m_nbFaceIndexes > 0)
+            if (node->m_nodeHeader.m_nbFaceIndexes > 0 || m_ignoreFaceIndexes)
                 {
                 meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 }

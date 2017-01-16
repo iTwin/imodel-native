@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:21:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -380,9 +380,11 @@ void ImporterImpl::Import  (uint32_t                        sourceLayerID,
     sinkInserterPtr->SetIs3dData(is3D);
     sinkInserterPtr->SetIsGridData(data.IsGridData());
 
-    for (bool HasData = true; HasData; HasData = sourceExtractorPtr->Next())
+    sinkInserterPtr->NotifyImportSourceStarted(sourceExtractorPtr->GetPhysicalSize());
+    for (bool HasData = true; HasData && sinkInserterPtr->IsAcceptingData() ; HasData = sourceExtractorPtr->Next())
         {
         sourceExtractorPtr->Read();
+        sinkInserterPtr->NotifyImportProgress(sourceExtractorPtr->GetReadPosition());
         filter->Run();
         // Filter points
         if(data.GetUpToDateState() == UpToDateState::PARTIAL_ADD)
