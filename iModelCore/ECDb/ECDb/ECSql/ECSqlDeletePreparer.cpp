@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -132,7 +132,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
 
-            if (propertyExpsInWhereClause.size() == 1 && static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->GetSystemPropertyInfo() == ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId))
+            if (propertyExpsInWhereClause.size() == 1 && static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->GetSystemPropertyInfo() == ECSqlSystemPropertyInfo::ECInstanceId())
                 {
                 //WhereClause only consists of ECInstanceId exp
                 ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);

@@ -91,7 +91,6 @@
 #include "ECSql/StructArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
 
-#include "ECSql/IECSqlPrimitiveBinder.h"
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/ECSqlBinderFactory.h"
 #include "ECSql/IdECSqlBinder.h"

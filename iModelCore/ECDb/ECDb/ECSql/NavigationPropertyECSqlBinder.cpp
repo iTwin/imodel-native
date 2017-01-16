@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, false, false), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
+    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, false), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
-    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::Id));
+    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo::NavigationId());
     if (m_idBinder == nullptr)
         return ERROR;
 
@@ -42,7 +42,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap->GetRelECClassIdPropertyMap();
-    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::RelECClassId));
+    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo::NavigationRelECClassId());
     if (m_relECClassIdBinder == nullptr)
         return ERROR;
 
@@ -89,25 +89,7 @@ ECSqlStatus NavigationPropertyECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& NavigationPropertyECSqlBinder::_BindPrimitive()
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to a NavigationECProperty parameter.");
-    return NoopECSqlBinder::Get().BindPrimitive();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlArrayBinder& NavigationPropertyECSqlBinder::_BindArray(uint32_t initialCapacity)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to a NavigationECProperty parameter.");
-    return NoopECSqlBinder::Get().BindArray(initialCapacity);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(Utf8CP navPropMemberPropertyName)
+IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(Utf8CP navPropMemberPropertyName)
     {
     if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, navPropMemberPropertyName) == 0)
         {
@@ -129,15 +111,15 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(Utf8CP navPropMemberProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(ECN::ECPropertyId navPropMemberPropertyId)
+IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(ECN::ECPropertyId navPropMemberPropertyId)
     {
-    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::Id)->GetId())
+    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId())->GetId())
         {
         BeAssert(m_idBinder != nullptr);
         return *m_idBinder;
         }
 
-    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::RelECClassId)->GetId())
+    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId())->GetId())
         {
         BeAssert(m_relECClassIdBinder != nullptr);
         return *m_relECClassIdBinder;
@@ -145,6 +127,113 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(ECN::ECPropertyId navPro
 
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to NavigationECProperty member. Member with property index %s is not valid. Only %s and %s are valid members.",
                                                        navPropMemberPropertyId.ToString().c_str(), ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindBoolean(bool value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind boolean value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindZeroBlob(int blobSize)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const&)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const&)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindDouble(double value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind double value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindInt(int value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind integer value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindInt64(int64_t value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind int64_t value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind string value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindPoint2d(DPoint2dCR value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point2d value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_BindPoint3d(DPoint3dCR value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3d value to navigation property parameter.");
+    return ECSqlStatus::Error;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2014
+//---------------------------------------------------------------------------------------
+IECSqlBinder& NavigationPropertyECSqlBinder::_AddArrayElement()
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to navigation property parameter.");
     return NoopECSqlBinder::Get();
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaReader.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,6 +100,7 @@ struct ECDbSchemaReader
         mutable std::map<ECN::ECEnumerationId, std::unique_ptr<DbECEnumEntry>> m_ecEnumCache;
         mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<DbKindOfQuantityEntry>> m_koqCache;
         mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
+        ECDbSystemSchemaHelper m_systemSchemaHelper;
 
         ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetECClass(Context&, ECN::ECClassId) const;
@@ -123,7 +124,7 @@ struct ECDbSchemaReader
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
     public:
-        explicit ECDbSchemaReader(ECDbCR ecdb) :m_ecdb(ecdb) {}
+        explicit ECDbSchemaReader(ECDbCR ecdb) :m_ecdb(ecdb), m_systemSchemaHelper(ecdb) {}
         ~ECDbSchemaReader() {}
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
@@ -143,6 +144,9 @@ struct ECDbSchemaReader
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
         bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema) const;
+
+        ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
+
         void ClearCache() const;
     };
 

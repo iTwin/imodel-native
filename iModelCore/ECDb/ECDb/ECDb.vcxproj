@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChangeSummary.cpp" />
+    <ClCompile Include="ChangeSummaryImpl.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapper.cpp" />
@@ -143,6 +143,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
+    <ClInclude Include="ChangeSummaryImpl.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapper.h" />
@@ -189,7 +190,6 @@
     <ClInclude Include="ECSql\ExpHelper.h" />
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
     <ClInclude Include="ECSql\IdECSqlBinder.h" />
-    <ClInclude Include="ECSql\IECSqlPrimitiveBinder.h" />
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
     <ClInclude Include="ECSql\InsertStatementExp.h" />
     <ClInclude Include="ECSql\JoinExp.h" />

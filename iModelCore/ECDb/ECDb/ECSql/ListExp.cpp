@@ -3,7 +3,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -192,7 +192,7 @@ void ValueExpListExp::_DoToECSql(Utf8StringR ecsql) const
 void SystemPropertyExpIndexMap::AddIfSystemProperty(PropertyNameExp const& exp, size_t index)
     {
     if (exp.GetSystemPropertyInfo().IsSystemProperty())
-        m_sysPropIndexMap[exp.GetSystemPropertyInfo()] = index;
+        m_sysPropIndexMap[&exp.GetSystemPropertyInfo()] = index;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -200,9 +200,9 @@ void SystemPropertyExpIndexMap::AddIfSystemProperty(PropertyNameExp const& exp, 
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SystemPropertyExpIndexMap::AddIfSystemProperty(ECDbSchemaManager const& schemaManager, ECN::ECPropertyCR prop, size_t index)
     {
-    ECSqlSystemPropertyInfo sysPropInfo;
-    if (ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(sysPropInfo, schemaManager, prop))
-        m_sysPropIndexMap[sysPropInfo] = index;
+    ECSqlSystemPropertyInfo const& sysPropInfo = schemaManager.GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(prop);
+    if (sysPropInfo.IsSystemProperty())
+        m_sysPropIndexMap[&sysPropInfo] = index;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

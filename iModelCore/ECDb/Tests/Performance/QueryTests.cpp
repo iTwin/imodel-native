@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/QueryTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Maha Nasir                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PopulateKitchenSinkDb : public ::testing::Test
+struct PopulateKitchenSinkDb : ECDbTestFixture
     {
     protected:
         void PopulateDb(ECDbR ecdb)
@@ -90,50 +90,50 @@ struct PopulateKitchenSinkDb : public ::testing::Test
 
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(3, i + 200));
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(4, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(4);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindDateTime(DateTime::GetCurrentTimeUtc()));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindDateTime(DateTime::GetCurrentTimeUtc()));
                     }
                 }
 
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(5, DateTime::GetCurrentTimeUtc()));
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(6, i / val));
                 {
-                IECSqlStructBinder& StructBinder = stmt.BindStruct(7);
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct1BoolMember").BindBoolean(false));
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct1IntMember").BindInt(i + 1));
+                IECSqlBinder& structBinder = stmt.GetBinder(7);
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct1BoolMember"].BindBoolean(false));
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct1IntMember"].BindInt(i + 1));
                 }
 
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(8, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(8);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindInt(i + 10));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(i + 10));
                     }
                 }
 
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(9, DPoint3d::From((i + 2) / val, (i + 3) / val, (i + 4) / val)));
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(10, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(10);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindInt(i + 300));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(i + 300));
                     }
                 }
 
                 {
-                IECSqlStructBinder& StructBinder = stmt.BindStruct(11);
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct3DoubleMember").BindDouble(i + 10 / val));
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct3IntMember").BindInt(i + 400));
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct3BoolMember").BindBoolean(true));
+                IECSqlBinder& structBinder = stmt.GetBinder(11);
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct3DoubleMember"].BindDouble(i + 10 / val));
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct3IntMember"].BindInt(i + 400));
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct3BoolMember"].BindBoolean(true));
                 }
 
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(12, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(12);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindInt(i + 500));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(i + 500));
                     }
                 }
 
@@ -141,40 +141,40 @@ struct PopulateKitchenSinkDb : public ::testing::Test
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(14, i + 100000));
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(15, i + 700));
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(16, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(16);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindInt(i + 800));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(i + 800));
                     }
                 }
 
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(17, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(17);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
                     }
                 }
 
                 {
-                IECSqlStructBinder& StructBinder = stmt.BindStruct(18);
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct1BoolMember").BindBoolean(true));
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct1IntMember").BindInt(i + 1000));
+                IECSqlBinder& structBinder = stmt.GetBinder(18);
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct1BoolMember"].BindBoolean(true));
+                ASSERT_EQ(ECSqlStatus::Success, structBinder["Struct1IntMember"].BindInt(i + 1000));
                 }
 
                 {
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(19, arraySize);
+                IECSqlBinder& arrayBinder = stmt.GetBinder(19);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindInt(i + 2000));
+                    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(i + 2000));
                     }
                 }
 
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(20, DPoint3d::From((i + 10) / val, (i + 100) / val, (i + 1000) / val)));
                 {
                 StringArray.Sprintf("Sample-%d", i);
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(21, arraySize);
-                ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindText(StringArray.c_str(), IECSqlBinder::MakeCopy::No));
+                IECSqlBinder& arrayBinder = stmt.GetBinder(21);
+                ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText(StringArray.c_str(), IECSqlBinder::MakeCopy::No));
                 }
 
                 {
@@ -184,10 +184,9 @@ struct PopulateKitchenSinkDb : public ::testing::Test
 
                 {
                 StringVal.Sprintf("Sample-%d", i + 1000);
-                IECSqlArrayBinder& ArrayBinder = stmt.BindArray(23, arraySize);
-                IECSqlStructBinder& StructBinder = ArrayBinder.AddArrayElement().BindStruct();
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct2StringMember").BindText(StringVal.c_str(), IECSqlBinder::MakeCopy::No));
-                ASSERT_EQ(ECSqlStatus::Success, StructBinder.GetMember("Struct2DoubleMember").BindDouble(i + 10000 / val));
+                IECSqlBinder& arrayElementBinder = stmt.GetBinder(23).AddArrayElement();
+                ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["Struct2StringMember"].BindText(StringVal.c_str(), IECSqlBinder::MakeCopy::No));
+                ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["Struct2DoubleMember"].BindDouble(i + 10000 / val));
                 }
 
                 stmt.Step();
@@ -312,7 +311,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
 //---------------------------------------------------------------------------------------
 // @bsiClass                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECInstanceECSqlSelectAdapterTests : public PopulateKitchenSinkDb
+struct PerformanceQueryECInstanceECSqlSelectAdapterTests : public PopulateKitchenSinkDb
     {
     public:
         ECDb m_testDb;
@@ -325,7 +324,7 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public PopulateKitchenSink
             }
     };
 
-TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
+TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
     {
     SetUpDb();
     //printf ("Please attach to profiler and press any key...\r\n"); getchar ();
@@ -358,7 +357,7 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
+TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
     {
     std::function<void(IECSqlValue const&)> processECSqlValue;
     processECSqlValue = [&processECSqlValue] (IECSqlValue const& ecsqlValue)

@@ -55,6 +55,9 @@
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ChangeSummary">
+      <UniqueIdentifier>{ab551814-340e-4afa-abd0-bc5b227d4c11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -160,9 +163,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSystemSchemaHelper.h">
-      <Filter>ECDbProfile</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
@@ -231,9 +231,6 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\IECSqlPrimitiveBinder.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
     <ClInclude Include="ECDbLogger.h" />
@@ -321,7 +318,6 @@
     <ClInclude Include="ViewGenerator.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ECSql\OptionsExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -414,6 +410,15 @@
     </ClInclude>
     <ClInclude Include="ClassMapColumnFactory.h">
       <Filter>ECDbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="ECDbSystemSchemaHelper.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ChangeSummaryImpl.h">
+      <Filter>ChangeSummary</Filter>
+    </ClInclude>
+    <ClInclude Include="BeBriefcaseBasedIdSequence.h">
+      <Filter>ECDb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -526,9 +531,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp">
       <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbSystemSchemaHelper.cpp">
-      <Filter>ECDbProfile</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlFieldFactory.cpp">
       <Filter>ECSql\Fields</Filter>
@@ -670,8 +672,6 @@
     <ClCompile Include="ViewGenerator.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ChangeSummary.cpp" />
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\OptionsExp.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
@@ -756,6 +756,15 @@
     </ClCompile>
     <ClCompile Include="ClassMapColumnFactory.cpp">
       <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbSystemSchemaHelper.cpp">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ChangeSummaryImpl.cpp">
+      <Filter>ChangeSummary</Filter>
+    </ClCompile>
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp">
+      <Filter>ECDb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

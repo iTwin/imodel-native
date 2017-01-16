@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSqlStatement.doxpage $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,7 +35,6 @@
 
     In %ECDb @ref ECSqlECInstanceIdDetails "ECSQL's ECInstanceId" is always a @b numeric value and serves
     as the primary key of the table that corresponds to the domain @ref BentleyApi::ECN::ECClass "ECClasses".
-    Furthermore it is <b>unique across the entire @ref ECDbFile "ECDb file"</b>.
 
     @e Details
     @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case, the ECInstanceId

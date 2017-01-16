@@ -406,37 +406,6 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ASSERT_EQ(0, structArrayVal.GetArrayLength());
         }
 
-    //*** empty arrays
-    for (Utf8CP testClassName : testClassNames)
-        {
-        Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO ts.%s(L_Array, Struct.L_Array, Struct.Struct_Array, Struct_Array) "
-                      "VALUES(?,?,?,?)", testClassName);
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-
-        stmt.BindArray(1, 0);
-        stmt.BindArray(2, 0);
-        stmt.BindArray(3, 0);
-        stmt.BindArray(4, 0);
-
-        ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
-        stmt.Finalize();
-
-        ecsql.Sprintf("SELECT L_Array, Struct.l_array, Struct.struct_array, Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
-                      testClassName, key.GetECInstanceId().ToString().c_str());
-
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        for (int i = 0; i < stmt.GetColumnCount(); i++)
-            {
-            ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
-            IECSqlArrayValue const& arrayVal = stmt.GetValueArray(i);
-            ASSERT_EQ(0, arrayVal.GetArrayLength());
-            }
-        }
-
     //*** array with one null element
     for (Utf8CP testClassName : testClassNames)
         {
@@ -448,9 +417,8 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
 
         for (int i = 1; i <= 4; i++)
             {
-            IECSqlArrayBinder& arrayBinder = stmt.BindArray(i, 1);
-            IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-            arrayElementBinder.BindNull();
+            IECSqlBinder& arrayBinder = stmt.GetBinder(i);
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
             }
 
         ECInstanceKey key;
@@ -492,9 +460,8 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
 
-        IECSqlArrayBinder& arrayBinder = stmt.BindArray(1, 1);
-        IECSqlStructBinder& elementBinder = arrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.GetMember("struct_array").BindNull());
+        IECSqlBinder& elementBinder = stmt.GetBinder(1).AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder["struct_array"].BindNull());
         
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
@@ -529,10 +496,10 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
 
-        IECSqlArrayBinder& arrayBinder = stmt.BindArray(1, 1);
-        IECSqlStructBinder& elementBinder = arrayBinder.AddArrayElement().BindStruct();
+        IECSqlBinder& arrayElementBinder = stmt.GetBinder(1).AddArrayElement();
         //Set StructArray[0].struct_array[0].i=3
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.GetMember("struct_array").BindArray(1).AddArrayElement().BindStruct().GetMember("i").BindInt(3));
+        IECSqlBinder& nestedArrayElementBinder = arrayElementBinder["struct_array"].AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, nestedArrayElementBinder["i"].BindInt(3));
 
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
@@ -1712,26 +1679,54 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
     const int count = 3;
 
     ECDbIssueListener issueListener(ecdb);
-    auto& arrayBinder = statement.BindArray(2, (uint32_t) count);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
+
     for (int i = 0; i < count; i++)
         {
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
-        auto stat = structBinder.GetMember("d").BindDouble(i * PI);
+        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(i * 2);
+        stat = arrayElementBinder["i"].BindInt(i * 2);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(i * 3);
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InvalidBindArrayCalls)
+    {
+    ECDbCR ecdb = SetupECDb("invalidbindarraycalls.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSA(I_Array, PStruct_Array) VALUES(?,?)"));
+
+    IECSqlBinder& primArrayBinder = statement.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Error, primArrayBinder.BindInt(1)) << "Cannot call BindXXX before calling AddArrayElement on prim array parameter";
+    ASSERT_EQ(ECSqlStatus::Error, primArrayBinder["i"].BindInt(1)) << "Cannot call [] before calling AddArrayElement on prim array parameter";
+    IECSqlBinder& primArrayElementBinder = primArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, primArrayElementBinder.BindInt(1));
+    ASSERT_EQ(ECSqlStatus::Error, primArrayBinder["i"].BindInt(1)) << "Cannot [] on prim array parameter";
+
+    IECSqlBinder& structArrayBinder = statement.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Error, structArrayBinder.BindInt(1)) << "Cannot call BindXXX before calling AddArrayElement on struct array parameter";
+    ASSERT_EQ(ECSqlStatus::Error, structArrayBinder["i"].BindInt(1)) << "Cannot call BindXXX before calling AddArrayElement on struct array parameter";
+
+    IECSqlBinder& structArrayElementBinder = structArrayBinder.AddArrayElement();
+
+    ASSERT_EQ(ECSqlStatus::Error, structArrayElementBinder.BindInt(1)) << "Cannot bind prim to struct";
+    ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["i"].BindInt(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1753,21 +1748,21 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUpdate)
 
     //add three array elements
     const uint32_t arraySize = 3;
-    auto& arrayBinder = statement.BindArray(2, arraySize);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < arraySize; i++)
         {
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
-        auto stat = structBinder.GetMember("d").BindDouble(i * PI);
+        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(i * 2);
+        stat = arrayElementBinder["i"].BindInt(i * 2);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(i * 3);
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -1885,6 +1880,42 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
+    {
+    ECDbR ecdb = SetupECDb("ecinstanceidbindnull.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    auto assertSequence = [] (ECDbCR ecdb, BeInt64Id expectedSequenceValue)
+        {
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_ecinstanceidsequence'");
+        ASSERT_TRUE(stmt != nullptr);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(expectedSequenceValue.GetValue(), stmt->GetValueUInt64(0));
+        };
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(?)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+    assertSequence(ecdb, key.GetECInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
@@ -1983,21 +2014,18 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
     ECInstanceKey ecInstanceKey;
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PA (I_Array,S_Array) VALUES(:ia,:sa)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PA (I_Array,S_Array) VALUES(:ia,:sa)"));
 
-    auto& arrayBinderI = statement.BindArray(1, (int) expectedIntArray.size());
+    IECSqlBinder& arrayBinderI = statement.GetBinder(1);
     for (int arrayElement : expectedIntArray)
         {
-        auto& elementBinder = arrayBinderI.AddArrayElement();
-        elementBinder.BindInt(arrayElement);
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinderI.AddArrayElement().BindInt(arrayElement));
         }
 
-    auto& arrayBinderS = statement.BindArray(2, (int) expectedStringArray.size());
+    IECSqlBinder& arrayBinderS = statement.GetBinder(2);
     for (Utf8StringCR arrayElement : expectedStringArray)
         {
-        auto& elementBinder = arrayBinderS.AddArrayElement();
-        elementBinder.BindText(arrayElement.c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinderS.AddArrayElement().BindText(arrayElement.c_str(), IECSqlBinder::MakeCopy::No));
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(ecInstanceKey));
@@ -2053,30 +2081,30 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
 
 
     ECDbIssueListener issueListener(ecdb);
-    auto& arrayBinderDt = statement.BindArray(1, 3);
+    IECSqlBinder& arrayBinderDt = statement.GetBinder(1);
     ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
-        auto& elementBinder = arrayBinderDt.AddArrayElement();
+        IECSqlBinder& arrayElementBinder = arrayBinderDt.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Local ? ECSqlStatus::Error : ECSqlStatus::Success;
-        ASSERT_EQ(expectedStat, elementBinder.BindDateTime(testDate));
+        ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate));
         issueListener.Reset();
         }
 
 
-    auto& arrayBinderDtUtc = statement.BindArray(2, 3);
+    IECSqlBinder& arrayBinderDtUtc = statement.GetBinder(2);
     ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
-        auto& elementBinder = arrayBinderDtUtc.AddArrayElement();
+        IECSqlBinder& arrayElementBinder = arrayBinderDtUtc.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::Error;
-        ASSERT_EQ(expectedStat, elementBinder.BindDateTime(testDate));
+        ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate));
         issueListener.Reset();
         }
 
@@ -2100,11 +2128,11 @@ TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
         statement.Reset();
         statement.ClearBindings();
 
-        auto& arrayBinder = statement.BindArray(1, 5);
+        IECSqlBinder& arrayBinder = statement.GetBinder(1);
         for (int i = 0; i < count; i++)
             {
-            auto& elementBinder = arrayBinder.AddArrayElement();
-            elementBinder.BindInt(i);
+            if (ECSqlStatus::Success != arrayBinder.AddArrayElement().BindInt(i))
+                return BE_SQLITE_ERROR;
             }
 
         return statement.Step();
@@ -2143,11 +2171,11 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
         statement.Reset();
         statement.ClearBindings();
 
-        IECSqlArrayBinder& arrayBinder = statement.BindArray(1, 5);
+        IECSqlBinder& arrayBinder = statement.GetBinder(1);
         for (int i = 0; i < count; i++)
             {
-            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-            elementBinder.BindStruct().GetMember("i").BindInt(i);
+            if (ECSqlStatus::Success != arrayBinder.AddArrayElement()["i"].BindInt(i))
+                return BE_SQLITE_ERROR;
             }
 
         return statement.Step();
@@ -2527,9 +2555,9 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName=?"));
-    IECSqlStructBinder& binder = stmt.BindStruct(1);
-    binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
-    binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder = stmt.GetBinder(1);
+    binder["First"].BindText("John", IECSqlBinder::MakeCopy::No);
+    binder["Last"].BindText("Myer", IECSqlBinder::MakeCopy::No);
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0));
@@ -2538,9 +2566,9 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName<>?"));
-    IECSqlStructBinder& binder = stmt.BindStruct(1);
-    binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
-    binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder = stmt.GetBinder(1);
+    binder["First"].BindText("John", IECSqlBinder::MakeCopy::No);
+    binder["Last"].BindText("Myer", IECSqlBinder::MakeCopy::No);
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetNativeSql();
@@ -2550,17 +2578,17 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName IN (?,?,?)"));
 
-    IECSqlStructBinder& binder1 = stmt.BindStruct(1);
-    binder1.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
-    binder1.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder1 = stmt.GetBinder(1);
+    binder1["First"].BindText("John", IECSqlBinder::MakeCopy::No);
+    binder1["Last"].BindText("Myer", IECSqlBinder::MakeCopy::No);
 
-    IECSqlStructBinder& binder2 = stmt.BindStruct(2);
-    binder2.GetMember("First").BindText("Rich", IECSqlBinder::MakeCopy::No);
-    binder2.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder2 = stmt.GetBinder(2);
+    binder2["First"].BindText("Rich", IECSqlBinder::MakeCopy::No);
+    binder2["Last"].BindText("Myer", IECSqlBinder::MakeCopy::No);
 
-    IECSqlStructBinder& binder3 = stmt.BindStruct(3);
-    binder3.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
-    binder3.GetMember("Last").BindText("Smith", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder3 = stmt.GetBinder(3);
+    binder3["First"].BindText("John", IECSqlBinder::MakeCopy::No);
+    binder3["Last"].BindText("Smith", IECSqlBinder::MakeCopy::No);
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(2, stmt.GetValueInt(0));
@@ -2570,9 +2598,9 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Person SET FullName.[Last]='Meyer' WHERE FullName=?"));
 
-    IECSqlStructBinder& binder = stmt.BindStruct(1);
-    binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
-    binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+    IECSqlBinder& binder = stmt.GetBinder(1);
+    binder["First"].BindText("John", IECSqlBinder::MakeCopy::No);
+    binder["Last"].BindText("Myer", IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
@@ -3593,13 +3621,12 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
 
-    IECSqlArrayBinder& arrayBinder = statement.BindArray(2, 3);
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
     for (auto& geom : expectedGeoms)
         {
         ECDbIssueListener issueListener(ecdb);
-        auto& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
-        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3614,14 +3641,13 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
 
     ECDbIssueListener issueListener(ecdb);
-    IECSqlArrayBinder& arrayBinder = statement.BindArray(2, 3);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::BindArray is expected to succeed";
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
         issueListener.Reset();
-        auto& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
-        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
@@ -3634,20 +3660,19 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
     ECDbIssueListener issueListener(ecdb);
-    IECSqlStructBinder& structBinder = statement.BindStruct(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::BindStruct is expected to succeed";
+    IECSqlBinder& structBinder = statement.GetBinder(1);
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetBinder for struct is expected to succeed";
 
-    ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("Geometry").BindGeometry(*expectedGeomSingle));
+    ASSERT_EQ(ECSqlStatus::Success, structBinder["Geometry"].BindGeometry(*expectedGeomSingle));
 
     issueListener.Reset();
-    IECSqlArrayBinder& arrayBinder = structBinder.GetMember("Geometry_Array").BindArray(3);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::BindArray is expected to succeed";
+    IECSqlBinder& arrayBinder = structBinder["Geometry_Array"];
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
         issueListener.Reset();
-        auto& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
-        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3781,19 +3806,18 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflowColumns)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Element(Geom,GeomArray,Geom_Overflow,GeomArray_Overflow) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
-    IECSqlArrayBinder& arrayBinder = statement.BindArray(2, 3);
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
     for (IGeometryPtr& geom : expectedGeoms)
         {
-        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
         }
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(3, *expectedGeomSingle));
-    IECSqlArrayBinder& arrayBinder2 = statement.BindArray(4, 3);
+    IECSqlBinder& arrayBinder2 = statement.GetBinder(4);
     for (IGeometryPtr& geom : expectedGeoms)
         {
-        IECSqlBinder& arrayElementBinder = arrayBinder2.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindGeometry(*geom));
+
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key)) << statement.GetECSql() << " " << statement.GetNativeSql();
@@ -3865,30 +3889,28 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     ECDbIssueListener issueListener(ecdb);
-    IECSqlStructBinder& saStructBinder = statement.BindStruct(1); //SAStructProp
+    IECSqlBinder& saStructBinder = statement.GetBinder(1); //SAStructProp
     ECDbIssue lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
-    IECSqlStructBinder& pStructBinder = saStructBinder.GetMember("PStructProp").BindStruct();
-    stat = pStructBinder.GetMember("i").BindInt(99);
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+    ASSERT_FALSE(lastIssue.IsIssue()) << lastIssue.GetMessage();
+    ASSERT_EQ(ECSqlStatus::Success, saStructBinder["PStructProp"]["i"].BindInt(99));
 
     //add three array elements
     const int count = 3;
     issueListener.Reset();
-    auto& arrayBinder = saStructBinder.GetMember("PStruct_Array").BindArray((uint32_t) count);
+    IECSqlBinder& arrayBinder = saStructBinder["PStruct_Array"];
     lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.IsIssue()) << "BindArray failed: " << lastIssue.GetMessage();
+    ASSERT_FALSE(lastIssue.IsIssue()) << lastIssue.GetMessage();
     for (int i = 0; i < count; i++)
         {
         issueListener.Reset();
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
         lastIssue = issueListener.GetIssue();
         ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("d").BindDouble(i * PI));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("i").BindInt(i * 2));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("l").BindInt64(i * 3));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1)));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["d"].BindDouble(i * PI));
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["i"].BindInt(i * 2));
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["l"].BindInt64(i * 3));
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1)));
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "Step for '" << ecsql << "' failed";
@@ -3918,22 +3940,22 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
 
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = statement.BindArray(1, (uint32_t) count);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    IECSqlBinder& arrayBinder = statement.GetBinder(1);
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < count; i++)
         {
         issueListener.Reset();
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
-        auto stat = structBinder.GetMember("d").BindDouble(i * PI);
+        auto stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(i * 2);
+        stat = arrayElementBinder["i"].BindInt(i * 2);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(i * 3);
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -4039,19 +4061,19 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
 
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = statement.BindArray(1, (uint32_t) count);
+    auto& arrayBinder = statement.GetBinder(1);
     for (int i = 0; i < count; i++)
         {
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        stat = structBinder.GetMember("d").BindDouble(i * PI);
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(i * 2);
+        stat = arrayElementBinder["i"].BindInt(i * 2);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(i * 3);
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -4142,19 +4164,19 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
 
     //add three array elements
     int count = 3;
-    auto& arrayBinder = insertStatement.BindArray(1, (uint32_t) count);
+    IECSqlBinder& arrayBinder = insertStatement.GetBinder(1);
     for (int i = 0; i < count; i++)
         {
-        auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        stat = structBinder.GetMember("d").BindDouble(i * PI);
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(i * 2);
+        stat = arrayElementBinder["i"].BindInt(i * 2);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(i * 3);
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -4173,19 +4195,19 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
     ecsql = "UPDATE ONLY ecsql.SA SET SAStructProp.PStruct_Array=?";
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(ecdb, ecsql)) << ecsql;
     count = 3;
-    auto& updateArrayBinder = updateStatement.BindArray(1, (uint32_t) count);
+    IECSqlBinder& updateArrayBinder = updateStatement.GetBinder(1);
     for (int i = 0; i < count; i++)
         {
-        auto& structBinder = updateArrayBinder.AddArrayElement().BindStruct();
-        stat = structBinder.GetMember("d").BindDouble(-count);
+        IECSqlBinder& arrayElementBinder = updateArrayBinder.AddArrayElement();
+        stat = arrayElementBinder["d"].BindDouble(-count);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("i").BindInt(-count);
+        stat = arrayElementBinder["i"].BindInt(-count);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("l").BindInt64(-count);
+        stat = arrayElementBinder["l"].BindInt64(-count);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -4339,18 +4361,16 @@ TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No));
 
-    auto& arrayBinderS = stmt.BindArray(2, (int) expectedStringArray.size());
+    IECSqlBinder& arrayBinderS = stmt.GetBinder(2);
     for (Utf8StringCR arrayElement : expectedStringArray)
         {
-        auto& elementBinder = arrayBinderS.AddArrayElement();
-        elementBinder.BindText(arrayElement.c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinderS.AddArrayElement().BindText(arrayElement.c_str(), IECSqlBinder::MakeCopy::No));
         }
 
-    IECSqlArrayBinder& arrayBinderI = stmt.BindArray(3, (int) expectedIntArray.size());
+    IECSqlBinder& arrayBinderI = stmt.GetBinder(3);
     for (int arrayElement : expectedIntArray)
         {
-        IECSqlBinder& elementBinder = arrayBinderI.AddArrayElement();
-        elementBinder.BindInt(arrayElement);
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinderI.AddArrayElement().BindInt(arrayElement));
         }
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();

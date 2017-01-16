@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,13 +15,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_classRefExp(nullptr)
+PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_classRefExp(nullptr)
+PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     m_propertyPath.Push(propertyName);
     }
@@ -30,7 +30,7 @@ PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_clas
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
-    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
+    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     Utf8String propName = derivedPropExp.GetName();
     //WIP: Affan, why do we have to remove the square brackets?
@@ -44,7 +44,7 @@ PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPro
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
-    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
+    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     m_propertyPath.Push(propertyName);
     if (m_propertyPath.Resolve(classMap) != SUCCESS)
@@ -89,7 +89,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
-    ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(m_sysPropInfo, ctx.GetECDb().Schemas(), GetPropertyMap().GetProperty());
+    m_sysPropInfo = &ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(GetPropertyMap().GetProperty());
     return FinalizeParseStatus::Completed;
     }
 
@@ -301,6 +301,20 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
 
     BeAssert(false && "Case not handled");
     return *((PropertyMap const*) (nullptr));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
+    {
+    if (FindParent(Exp::Type::Insert))
+        return GetParent()->GetType() == Exp::Type::PropertyNameList;
+
+    if (FindParent(Exp::Type::Update))
+        return GetParent()->GetType() == Exp::Type::Assignment;
+
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------

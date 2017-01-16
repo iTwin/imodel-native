@@ -74,7 +74,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     BeAssert(classMap.IsRelationshipClassMap());
 
     SystemPropertyExpIndexMap const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
-    if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId))
+    if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
         return ECSqlStatus::InvalidECSql;
@@ -109,14 +109,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
     std::vector<size_t> expIndexSkipList;
     //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings
-    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyInfo::Class::ECInstanceId);
+    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
     if (ecinstanceIdExpIndex >= 0)
         expIndexSkipList.push_back((size_t) ecinstanceIdExpIndex);
 
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
-    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId : ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId);
-    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
-    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
+    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId());
+    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
+    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
     ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
 
     if (foreignEndECInstanceIdIndex >= 0)
@@ -489,7 +489,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
 
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
     PropertyNameListExp const* propNameListExp = exp.GetPropertyNameListExp();
-    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::Class::ECInstanceId);
+    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
     if (ecinstanceIdExpIndex < 0)
         return ECInstanceIdMode::NotUserProvided; //-> auto-generate
 

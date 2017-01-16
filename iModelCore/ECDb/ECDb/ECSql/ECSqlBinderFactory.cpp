@@ -135,8 +135,8 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
         //* this end's class id (foreign end class id) as it is the same the end's class ECClassId. It cannot be set through
         //an ECSQL INSERT INTO ECRel.
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (propMap.GetClassMap());
-        if (sysPropertyInfo == ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId) || 
-            sysPropertyInfo == ECSqlSystemPropertyInfo(relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
+        if (sysPropertyInfo == ECSqlSystemPropertyInfo::ECInstanceId() || 
+            sysPropertyInfo == (relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId()))
             return true;
         }
 
