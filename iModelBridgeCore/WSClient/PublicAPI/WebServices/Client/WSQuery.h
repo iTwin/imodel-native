@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSQuery.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,7 +62,7 @@ struct WSQuery
         WSCLIENT_EXPORT WSQuery(ECN::ECClassCR ecClass, bool polymorphic = false);
 
         //! Construct query for given object
-        WSCLIENT_EXPORT WSQuery(ObjectIdCR objectId);
+        WSCLIENT_EXPORT WSQuery(ObjectIdCR objectId, bool polymorphic = false);
 
         WSCLIENT_EXPORT Utf8StringCR GetSchemaName() const;
         WSCLIENT_EXPORT const std::set<Utf8String>& GetClasses() const;

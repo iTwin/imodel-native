@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSQueryTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSQueryTests.h"
@@ -63,6 +63,14 @@ TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"));
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
+    EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['TestId']");
+    }
+
+TEST_F(WSQueryTests, Ctor_ObjectIdPassedWithPolymorphicTrue_SetsSchemaAndClassAndFilter)
+    {
+    WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"), true);
+    EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
+    EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
     EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['TestId']");
     }
 #endif
