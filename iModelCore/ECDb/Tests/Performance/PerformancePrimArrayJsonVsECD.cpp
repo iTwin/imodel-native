@@ -241,7 +241,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(PrimitiveType ar
     if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - JSON - regular" : "INSERT - ECD - overflow", 
+    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - JSON - regular" : "INSERT - JSON - overflow", 
               arrayType, arraySize, rowCount);
     return SUCCESS;
     }
