@@ -617,7 +617,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, b
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, bool allowPreDownloadRevisions, Http::Request::ProgressCallbackCR callback,
+DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::OpenBriefcase";
@@ -668,11 +668,11 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
                 finalResult->SetError(validationResult.GetError());
                 return;
                 }
-            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue(), allowPreDownloadRevisions);
+            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
             if (doSync)
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
-                briefcase->PullAndMerge(callback, cancellationToken)->Then([=] (const DgnDbServerRevisionsResult& result)
+                briefcase->PullAndMerge(callback, cancellationToken)->Then([=] (const DgnRevisionsResult& result)
                     {
                     if (result.IsSuccess())
                         {
@@ -811,64 +811,65 @@ DgnDbServerStatusResult DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnection
     if (!doSync)
         return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
 
-    DgnDbServerRevisionsTaskPtr pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
     DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
-    DgnDbServerRevisionsResult pullResult = pullTask->GetResult();
-
     if (!briefcaseResult.IsSuccess())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
         return briefcaseResult;
         }
-    if (!pullResult.IsSuccess())
-        {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullResult.GetError().GetMessage().c_str());
-        return DgnDbServerStatusResult::Error(pullResult.GetError());
-        }
-
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
 
     BeSQLite::DbResult status;
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-    if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        {
-        db->Txns().EnableTracking(true);
-#if defined (ENABLE_BIM_CRASH_TESTS)
-        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterOpenBriefcaseForMerge);
-#endif
-        bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
-        RevisionStatus mergeStatus = RevisionStatus::Success;
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging revisions.");
-        if (!revisions.empty())
-            {
-            for (auto revision : revisions)
-                {
-                mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
-                if (mergeStatus != RevisionStatus::Success)
-                    break; // TODO: Use the information on the revision that actually failed. 
-                }
-            }
-#if defined (ENABLE_BIM_CRASH_TESTS)
-        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
-#endif
-        db->CloseDb();
-
-        if (RevisionStatus::Success == mergeStatus)
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-            return DgnDbServerStatusResult::Success();
-            }
-
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-        return DgnDbServerStatusResult::Error(mergeStatus);
-        }
-    else
+    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         DgnDbServerStatusResult result = DgnDbServerStatusResult::Error(DgnDbServerError(*db, status));
         if (!result.IsSuccess())
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return result;
         }
+
+    DgnRevisionsTaskPtr pullTask = connection->DownloadRevisionsAfterId(db->Revisions().GetParentRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
+    DgnRevisionsResult pullResult = pullTask->GetResult();
+    if (!pullResult.IsSuccess())
+        {
+        if (db.IsValid())
+            db->CloseDb();
+
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullResult.GetError().GetMessage().c_str());
+        return DgnDbServerStatusResult::Error(pullResult.GetError());
+        }
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
+
+    db->Txns().EnableTracking(true);
+#if defined (ENABLE_BIM_CRASH_TESTS)
+    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterOpenBriefcaseForMerge);
+#endif
+    DgnRevisions revisions = pullTask->GetResult().GetValue();
+    RevisionStatus mergeStatus = RevisionStatus::Success;
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging revisions.");
+    if (!revisions.empty())
+        {
+        for (auto revision : revisions)
+            {
+            mergeStatus = db->Revisions().MergeRevision(*revision);
+            if (mergeStatus != RevisionStatus::Success)
+                break; // TODO: Use the information on the revision that actually failed. 
+            }
+        }
+#if defined (ENABLE_BIM_CRASH_TESTS)
+    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
+#endif
+    db->CloseDb();
+
+    if (RevisionStatus::Success == mergeStatus)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+        return DgnDbServerStatusResult::Success();
+        }
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+    return DgnDbServerStatusResult::Error(mergeStatus);
     }
 
 //---------------------------------------------------------------------------------------

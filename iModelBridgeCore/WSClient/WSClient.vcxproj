@@ -189,7 +189,6 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp" />
-    <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerRevisionEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp" />
@@ -340,7 +339,6 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryManager.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerError.h" />
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />

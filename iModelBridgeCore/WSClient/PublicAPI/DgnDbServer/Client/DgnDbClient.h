@@ -190,12 +190,11 @@ public:
     //! Create a DgnDbBriefcase instance from a previously downloaded DgnDb file.
     //! @param[in] db Previously downloaded briefcase file. See DgnDbClient::AcquireBriefcase.
     //! @param[in] doSync If set to true, it will download all of the incomming revisions and merge locally.
-    //! @param[in] allowPreDownloadRevisions If set to true, API will pre-download available revisions to temporary dir.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase instance as result. See DgnDbBriefcase.
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, bool allowPreDownloadRevisions = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Redownload briefcase file
     //! @param[in] db Previously downloaded briefcase file. See DgnDbClient::AcquireBriefcase.
