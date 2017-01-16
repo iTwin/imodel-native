@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSQuery.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -50,8 +50,8 @@ polymorphic
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSQuery::WSQuery(ObjectIdCR objectId) :
-WSQuery(objectId.schemaName, objectId.className)
+WSQuery::WSQuery(ObjectIdCR objectId, bool polymorphic) :
+WSQuery(objectId.schemaName, objectId.className, polymorphic)
     {
     SetFilter("$id+in+['" + EscapeValue(objectId.remoteId) + "']");
     }
