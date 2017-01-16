@@ -2,7 +2,7 @@
  |
  |     $Source: Bentley/nonport/Base64Utilities.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <stdlib.h>
@@ -18,6 +18,24 @@ USING_NAMESPACE_BENTLEY
 static const Utf8String base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
                                         "0123456789+/";
+
+//base64 char to blob char look-up index. For a given base64 char, its ASCII code is the index into
+//the look-up array. The value at the index is the ASCII code of the blob character.
+//This is a faster (0(1)) than calling find on base64_char O(n)
+static const Byte base64_decodeindex[] {
+    //ASCII code of base64 char:    0 1 2                                                    41 42   
+    (Byte) -1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    //43 44 45 46  47  48                                  57 58                64
+    // +           /   0   1   2 ...                       9
+      62, 0, 0, 0, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0,
+    //65 66                                                                                     90 91             96
+    //A  B  ...                                                                                 Z
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0, 0, 0, 0, 0, 0,
+    //97  98                                                                                             122
+    //a   b  ...                                                                                          z
+      26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
+
+static_assert(sizeof(base64_decodeindex)/sizeof(Byte) == 123, "base64decodelookup is expected to have (int) 'z' + 1 elements");
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -42,7 +60,7 @@ void Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, s
     if (byteArray == nullptr || byteCount == 0)
         return;
 
-    size_t nEncodedBytes = static_cast<size_t>(4.0 * ((byteCount + 2) / 3.0));
+    size_t nEncodedBytes = (size_t) (4.0 * ((byteCount + 2) / 3.0));
     encodedString.reserve(nEncodedBytes);
 
     Byte byte_array_3[3];
@@ -90,12 +108,12 @@ void Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, s
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Base64Utilities::Decode(Utf8CP encodedString, size_t encodedStringLength)
     {
-    bvector<Byte> byteArray;
-    Decode(byteArray, encodedString, encodedStringLength);
-    if (byteArray.empty())
+    ByteStream byteStream;
+    Decode(byteStream, encodedString, encodedStringLength);
+    if (byteStream.empty())
         return Utf8String();
-    else
-        return Utf8String((Utf8CP) byteArray.data(), byteArray.size());
+
+    return Utf8String((Utf8CP) byteStream.data(), byteStream.size());
     }
 
 //--------------------------------------------------------------------------------------
@@ -114,38 +132,44 @@ template<typename T> static void base64_decode(T& byteArray, Utf8CP encodedStrin
 
     while (encodedStringLength-- && (encodedString[in_] != '=') && is_base64(encodedString[in_]))
         {
-        byte_array_4[i++] = encodedString[in_]; in_++;
-        if (i == 4)
+        byte_array_4[i++] = encodedString[in_];
+        in_++;
+        if (i != 4)
+            continue;
+
+        for (i = 0; i < 4; i++)
             {
-            for (i = 0; i < 4; i++)
-                byte_array_4[i] = (Byte) base64_chars.find(byte_array_4[i]);
-
-            byte_array_3[0] = (byte_array_4[0] << 2) + ((byte_array_4[1] & 0x30) >> 4);
-            byte_array_3[1] = ((byte_array_4[1] & 0xf) << 4) + ((byte_array_4[2] & 0x3c) >> 2);
-            byte_array_3[2] = ((byte_array_4[2] & 0x3) << 6) + byte_array_4[3];
-
-            for (i = 0; (i < 3); i++)
-                byteArray.push_back(byte_array_3[i]);
-            i = 0;
+            byte_array_4[i] = base64_decodeindex[byte_array_4[i]];
             }
-        }
-
-    if (i)
-        {
-        for (j = i; j < 4; j++)
-            byte_array_4[j] = 0;
-
-        for (j = 0; j < 4; j++)
-            byte_array_4[j] = (Byte) base64_chars.find(byte_array_4[j]);
 
         byte_array_3[0] = (byte_array_4[0] << 2) + ((byte_array_4[1] & 0x30) >> 4);
         byte_array_3[1] = ((byte_array_4[1] & 0xf) << 4) + ((byte_array_4[2] & 0x3c) >> 2);
-        byte_array_3[2] = 0xFF & (((byte_array_4[2] & 0x3) << 6) + byte_array_4[3]);
+        byte_array_3[2] = ((byte_array_4[2] & 0x3) << 6) + byte_array_4[3];
 
+        for (i = 0; (i < 3); i++)
+            byteArray.push_back(byte_array_3[i]);
 
-        for (j = 0; (j < i - 1); j++)
-            byteArray.push_back(byte_array_3[j]);
+        i = 0;
         }
+
+    if (i == 0)
+        return;
+
+    for (j = i; j < 4; j++)
+        byte_array_4[j] = 0;
+
+    for (j = 0; j < 4; j++)
+        {
+        byte_array_4[j] = base64_decodeindex[byte_array_4[j]];
+        }
+
+    byte_array_3[0] = (byte_array_4[0] << 2) + ((byte_array_4[1] & 0x30) >> 4);
+    byte_array_3[1] = ((byte_array_4[1] & 0xf) << 4) + ((byte_array_4[2] & 0x3c) >> 2);
+    byte_array_3[2] = 0xFF & (((byte_array_4[2] & 0x3) << 6) + byte_array_4[3]);
+
+
+    for (j = 0; (j < i - 1); j++)
+        byteArray.push_back(byte_array_3[j]);
     }
 
 //--------------------------------------------------------------------------------------
@@ -165,7 +189,7 @@ struct ByteStreamAdapter
 
     ByteStreamAdapter(ByteStream& buffer, size_t srcLen) : m_buffer(buffer)
         {
-        uint32_t nDecodedBytes = static_cast<uint32_t>((3.0/4.0) * srcLen);
+        uint32_t nDecodedBytes = (uint32_t) ((3.0/4.0) * srcLen);
         m_buffer.Reserve(nDecodedBytes);
         }
 
