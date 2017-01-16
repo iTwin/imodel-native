@@ -201,7 +201,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //root class (no base class)
 
-    ColumnLists columns(*this);
+    ColumnLists columns(*this, relClassMappingInfo);
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
         return ClassMappingStatus::Error;
 
@@ -1732,7 +1732,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 	{
 	const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;		
 	const DbColumn::Type colType = DbColumn::Type::Integer;
-
+	
 	if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
 		return table.CreateColumn(colName, colType, position, colKind, persType);
 
@@ -1810,8 +1810,8 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
 		if (ClassMapCP classMap = m_relMap.GetDbMap().GetClassMap(*constraintClass))
 			{
 			DbTable const& table = classMap->GetJoinedTable();
-			if (table.GetPersistenceType() == PersistenceType::Virtual)
-				continue;
+			//if (table.GetPersistenceType() == PersistenceType::Virtual)
+			//	continue;
 
 			ECClassCP currentClass = &classMap->GetClass();
 			bset<ClassMapCP>& classMapSet = m_constraintClassMaps[&table];

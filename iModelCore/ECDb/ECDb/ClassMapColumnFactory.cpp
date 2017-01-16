@@ -568,7 +568,7 @@ BentleyStatus ClassMapColumnFactory::ComputeRelevantClassMaps(bmap<ECN::ECClassC
 		ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetECClass(relKey.first);
 		BeAssert(relClass != nullptr);
 		ClassMap const* relMap = m_classMap.GetDbMap().GetClassMap(*relClass);
-		if (relMap == nullptr)
+		if (relMap == nullptr || relMap->GetTables().empty())
 			continue;
 
 		if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)

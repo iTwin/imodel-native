@@ -132,7 +132,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 					}
 
 			public:
-                explicit ColumnLists(RelationshipClassEndTableMap const& relMap) : m_columnFactory(relMap) {}
+                explicit ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo) : m_columnFactory(relMap, relInfo) {}
 
 				void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
 				void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
