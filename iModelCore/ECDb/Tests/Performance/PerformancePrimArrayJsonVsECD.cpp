@@ -92,7 +92,8 @@ protected:
                 ECN::PrimitiveType::PRIMITIVETYPE_Double,
                 ECN::PrimitiveType::PRIMITIVETYPE_String,
                 ECN::PrimitiveType::PRIMITIVETYPE_Point3d,
-                ECN::PrimitiveType::PRIMITIVETYPE_Binary};
+                ECN::PrimitiveType::PRIMITIVETYPE_Binary,
+                ECN::PrimitiveType::PRIMITIVETYPE_IGeometry};
         }
     };
 
@@ -277,7 +278,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                     case PRIMITIVETYPE_IGeometry:
                     {
                     bvector<Byte> fb;
-                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+                    BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                     if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
                         return ERROR;
@@ -372,6 +373,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
         if (arrayJson.Parse<0>(stmt.GetValueText(0)).HasParseError())
             return ERROR;
 
+        ByteStream blobBuffer;
         for (auto it = arrayJson.Begin(); it != arrayJson.End(); ++it)
             {
             switch (arrayType)
@@ -381,12 +383,12 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     if (!it->IsString())
                         return ERROR;
 
-                    bvector<Byte> blob;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blob, *it))
+                    blobBuffer.Resize(0);
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blobBuffer, *it))
                         return ERROR;
 
-                    if (blob.size() != GetTestBlobSize() ||
-                        memcmp(GetTestBlob(), blob.data(), GetTestBlobSize()) != 0)
+                    if (blobBuffer.size() != GetTestBlobSize() ||
+                        memcmp(GetTestBlob(), blobBuffer.data(), GetTestBlobSize()) != 0)
                         return ERROR;
 
                     break;
@@ -431,11 +433,12 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     if (!it->IsString())
                         return ERROR;
 
-                    bvector<Byte> fb;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(fb, *it))
+
+                    blobBuffer.Resize(0);
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blobBuffer, *it))
                         return ERROR;
 
-                    IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
+                    IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry((Byte const*) blobBuffer.data());
                     if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                         return ERROR;
 
