@@ -788,12 +788,7 @@ ICancellationTokenPtr ct
                 auto status = txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct);
                 if (CacheStatus::OK != status)
                     {
-                    if (CacheStatus::DataNotCached == status)
-                        {
-                        result->SetError({ ICachingDataSource::Status::DataNotCached, ct });
-                        return;
-                        }
-                    result->SetError({ ICachingDataSource::Status::InternalCacheError, ct });
+                    result->SetError({status, ct});
                     return;
                     }
 
