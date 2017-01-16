@@ -635,7 +635,8 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         }
 
     ECInstanceECSqlSelectAdapter adapter(*stmt); // This adapter extracts the values from the statement and sets them into the ECDBuffer
-    adapter.SetInstanceData(*this, true);
+    if (BSISUCCESS != adapter.GetInstance(*this))
+        return BSIERROR;
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer; // initial state should InBuffer, not Dirty
 

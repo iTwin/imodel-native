@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -576,7 +576,7 @@ public:
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
-        virtual RefCountedPtr<TileViewport> _CreateTileViewport() {return nullptr;}
+        virtual TileViewportPtr _CreateTileViewport() {return nullptr;}
 
         Host()
             {

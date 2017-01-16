@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,7 +109,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
-    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
@@ -302,9 +301,6 @@ public:
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
 /** @} */
 
-    //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
-    void AddTextString(TextStringCR textString) {_AddTextString(textString);}
-
     StatusInt VisitElement(DgnElementId elementId, bool allowLoad) {return _VisitElement(elementId, allowLoad);}
 
     bool CheckStop() {return _CheckStop();}
@@ -458,10 +454,14 @@ struct DecorateContext : RenderContext
 private:
     bool    m_isFlash = false;
     Render::Decorations& m_decorations;
+    Render::GraphicBranch* m_viewlet = nullptr;
+
+    StatusInt VisitSheetHit(HitDetailCR hit);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+
 public:
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

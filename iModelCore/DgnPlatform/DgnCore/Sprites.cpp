@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sprites.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -129,7 +129,7 @@ ISpriteP SnapContext::GetSnapSprite(SnapMode snapMode)
         return nullptr;
 
     initKeypointSprites();
-    return s_keypointSprites[keypointType]->GetISpriteP ();
+    return s_keypointSprites[keypointType]->GetISpriteP();
     }
 
 //---------------------------------------------------------------------------------------

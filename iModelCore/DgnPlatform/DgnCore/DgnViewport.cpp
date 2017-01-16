@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1228,6 +1228,30 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform TileViewport::GetTransformToSheet(DgnViewportCR sheetVp)
+    {
+    Frustum frust = GetFrustum(DgnCoordSystem::Npc).TransformBy(m_toParent);
+    sheetVp.WorldToView(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    Transform tileToSheet = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
+    tileToSheet.ScaleMatrixColumns(1.0/m_rect.corner.x, 1.0/m_rect.corner.y, 1.0/frust.m_pts[NPC_LeftTopFront].z);
+    return tileToSheet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d TileViewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld)
+    {
+    DPoint3d point = WorldToView(tileWorld);
+    GetTransformToSheet(sheetVp).Multiply(point);   
+    point = sheetVp.ViewToWorld(point);
+    point.z = 0.0; // sheets are always 2d
+    return point;
     }
 
 /*---------------------------------------------------------------------------------**//**

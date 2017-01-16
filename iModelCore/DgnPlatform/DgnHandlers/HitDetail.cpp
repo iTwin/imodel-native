@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -382,6 +382,14 @@ HitDetail::HitDetail(DgnViewportR viewport, DgnViewportP sheetVp, GeometrySource
     m_testPoint         = testPoint;
     m_geomDetail        = geomDetail;
     m_subSelectionMode  = SubSelectionMode::None;
+
+    if (nullptr != sheetVp)
+        {
+        TileViewportR tileVp = (TileViewportR) viewport;
+        m_testPoint = tileVp.ToSheetPoint(*sheetVp, testPoint);   
+        m_geomDetail.SetClosestPoint(tileVp.ToSheetPoint(*sheetVp, geomDetail.GetClosestPoint())); 
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,7 +406,7 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_she
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
+* @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitDetail::~HitDetail() {}
 
@@ -599,7 +607,7 @@ SnapDetail* SnapDetail::_Clone() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3dCR SnapDetail::_GetHitPoint() const
     {
-    return (IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint());
+    return IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -591,14 +591,14 @@ private:
     double      m_maxCompress;
     double      m_totalLength;      // length of entire element.
     double      m_xElemPhase;       // where we left off from last element (for compound elements)
+    double      m_styleWidth;
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
+    bool        m_useStroker;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
-    bool        m_useStroker;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
-
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -621,6 +621,7 @@ public:
     double GetMaxCompress() const {return m_maxCompress;}
     int GetNumIterations() const {return m_nIterate;}
     DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetStyleWidth() const {return m_styleWidth;}
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
@@ -669,7 +670,7 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
-    bool UseStroker() const {return m_useStroker;}
+    bool GetUseStroker() const {return m_useStroker;}
     void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
@@ -879,9 +880,9 @@ public:
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
-    int32_t GetNetDisplayPriority(ViewContextR context) {Resolve(context); return m_netPriority;} // Resolve and return net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
+    bool IsResolved() const {return m_resolved;}
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
@@ -1659,6 +1660,17 @@ struct GraphicBranch
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct ViewletPosition
+{
+    DPoint3d m_center;
+    double m_width;
+    double m_height;
+    ViewletPosition(DPoint3dCR center, double width, double height) : m_center(center), m_width(width), m_height(height) {}
+};
+
+//=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 //! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -1680,7 +1692,7 @@ struct System
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
-    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, TransformCR, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1735,7 +1747,6 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool m_abort;
-    bool m_tileTarget = false;
     int  m_id; // for debugging
     System& m_system;
     DevicePtr m_device;
@@ -1789,6 +1800,7 @@ public:
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetTileRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
@@ -1807,7 +1819,6 @@ public:
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
-    void SetTileTarget() {m_tileTarget=true;}
 
     static double DefaultFrameRateGoal()
         {
@@ -1827,8 +1838,7 @@ public:
     uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
-    DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
+    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {_RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
 
     //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture

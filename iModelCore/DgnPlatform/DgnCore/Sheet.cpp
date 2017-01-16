@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sheet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -172,6 +172,43 @@ DgnDbStatus Sheet::ViewAttachment::CheckValid() const
         return DgnDbStatus::WrongModel;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr Sheet::ViewAttachment::GetClip() const
+    {
+    auto clipJsonStr = GetPropertyValueString("Clip");
+    if (clipJsonStr.empty())
+        return nullptr;
+
+    Json::Value clipJson(Json::arrayValue);
+    if (!Json::Reader::Parse(clipJsonStr, clipJson))
+        return nullptr;
+
+    ClipVectorPtr clip = ClipVector::Create();
+    JsonUtils::ClipVectorFromJson(*clip, clipJson);
+    return clip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Sheet::ViewAttachment::SetClip(ClipVectorCR clipVector)
+    {
+    Json::Value clipJson(Json::arrayValue);
+    JsonUtils::ClipVectorToJson(clipJson, clipVector);
+
+    return SetPropertyValue("Clip", Json::FastWriter::ToString(clipJson).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewAttachment::ClearClip()
+    {
+    SetPropertyValue("Clip", ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -459,6 +496,8 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_viewport->m_biasDistance = m_biasDistance; // for flashing hits
+
     m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
     m_loResBiasDistance = m_hiResBiasDistance * 2.0;
     }

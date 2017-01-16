@@ -742,21 +742,6 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddTextString(TextStringCR text)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    text.GetGlyphSymbology(GetCurrentGeometryParams());
-    CookGeometryParams();
-
-    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
-    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
-    text.DrawTextAdornments(*this);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
@@ -1174,6 +1159,9 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryParams::Resolve(ViewContextR context)
     {
+    if (m_resolved)
+        return; // Already resolved...
+
     Resolve(context.GetDgnDb(), context.GetViewport());
 
     if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
@@ -1218,6 +1206,12 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
+    if (nullptr != m_viewlet)
+        {
+        m_viewlet->Add(graphic);
+        return;
+        }
+
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 
