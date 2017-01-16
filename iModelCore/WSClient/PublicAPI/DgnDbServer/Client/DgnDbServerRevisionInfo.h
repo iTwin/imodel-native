@@ -16,6 +16,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct DgnDbServerRevisionInfo> DgnDbServerRevisionInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerRevisionInfo);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionInfoPtr, DgnDbServerRevisionInfo);
+DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionInfoPtr>, DgnDbServerRevisionsInfo);
+typedef bvector<Dgn::DgnRevisionPtr> DgnRevisions;
+DEFINE_TASK_TYPEDEFS(DgnRevisions, DgnRevisions);
+typedef std::shared_ptr<struct DgnDbServerRevisionInfo> DgnDbServerRevisionInfoPtr;
+DEFINE_TASK_TYPEDEFS(Dgn::DgnRevisionPtr, DgnRevision);
 
 //=======================================================================================
 //! Information about revision.
