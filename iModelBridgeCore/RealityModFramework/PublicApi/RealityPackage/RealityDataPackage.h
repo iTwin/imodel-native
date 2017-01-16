@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPackage/RealityDataPackage.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,10 +33,10 @@ public:
     //! Create a polygon from points. Duplication will be forced on first/last point. 
     //! Return NULL if count is less than 3, if points value are not within long/lat range or
     //! if the points form an invalid polygon that is autoconguous or autcrosses.
-    REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(DPoint2dCP pPoints, size_t count);
+    REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(GeoPoint2dCP pPoints, size_t count);
 
     //! The polygon points in lat/long including the duplicated closing point.
-    REALITYPACKAGE_EXPORT DPoint2dCP GetPointCP() const;
+    REALITYPACKAGE_EXPORT GeoPoint2dCP GetPointCP() const;
 
     //! The number of points including duplicated closing point.
     REALITYPACKAGE_EXPORT size_t GetPointCount() const;
@@ -53,11 +53,11 @@ public:
 
 private:
     BoundingPolygon(){};
-    BoundingPolygon(bvector<DPoint2d>& pts):m_points(std::move(pts)){};
-    BoundingPolygon(DPoint2dCP pPoints, size_t count);
+    BoundingPolygon(bvector<GeoPoint2d>& pts):m_points(std::move(pts)){};
+    BoundingPolygon(GeoPoint2dCP pPoints, size_t count);
     ~BoundingPolygon();
 
-    bvector<DPoint2d> m_points;
+    bvector<GeoPoint2d> m_points;
 };
 
 
@@ -243,29 +243,29 @@ struct ImageryData: public RealityData
             };
 
         //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-        //! the pointer given must point to 4 consecutive DPoint2d structures in an array.
-        REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
+        //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array.
+        REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, GeoPoint2dCP pCorners);
     
         //! Imagery corners in lat/long.
         //! May return NULL. In such case the corners should be read from the file header. The pointer returned is the 
-        //! start of a 4 DPoint2d array.
-        REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
+        //! start of a 4 GeoPoint2d array.
+        REALITYPACKAGE_EXPORT GeoPoint2dCP GetCornersCP() const;
 
         //! Set Imagery corners. nullptr can be passed to remove corners. If corners are provided then
-        //! the pointer given must point to 4 consecutive DPoint2d structures in an array.
-        REALITYPACKAGE_EXPORT void SetCorners(DPoint2dCP pCorners);
+        //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array.
+        REALITYPACKAGE_EXPORT void SetCorners(GeoPoint2dCP pCorners);
        
         static Utf8CP ElementName; 
 
     private:
         explicit ImageryData(){InvalidateCorners();}; // for persistence.
-        ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners);
+        ImageryData(RealityDataSourceR dataSource, GeoPoint2dCP pCorners);
         virtual ~ImageryData();
 
-        static bool HasValidCorners(DPoint2dCP pCorners);
+        static bool HasValidCorners(GeoPoint2dCP pCorners);
         void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
 
-        DPoint2d m_corners[4];
+        GeoPoint2d m_corners[4];
     };
 
 //=====================================================================================
@@ -309,12 +309,12 @@ struct PinnedData : public RealityData
         REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
 
         //! Get the object location in long/lat coordinate. 
-        REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
+        REALITYPACKAGE_EXPORT GeoPoint2dCR GetLocation() const; 
  
         //! Set the position of the pin. It is expressed as pair of numbers longitude/latitude.
         //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
         //! False is returned if location is invalid.
-        REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location);
+        REALITYPACKAGE_EXPORT bool SetLocation(GeoPoint2dCR location);
 
         //! Returns true if the location has a defined area (a polygon).
         REALITYPACKAGE_EXPORT bool HasArea() const;
@@ -332,11 +332,11 @@ struct PinnedData : public RealityData
         static Utf8CP ElementName;
 
     private:
-        explicit PinnedData(){m_location.Zero();}; // for persistence
+        explicit PinnedData(){m_location.Init(0.0, 0.0);}; // for persistence
         PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
         virtual ~PinnedData();
 
-        DPoint2d            m_location;
+        GeoPoint2d            m_location;
         BoundingPolygonPtr  m_area;
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealitySerializationV2.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined(ANDROID)
@@ -147,16 +147,16 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
         }
 
         // Read ImageryData specific.
-        DPoint2dP corners = NULL;
+        GeoPoint2dP corners = NULL;
         BeXmlNodeP pCornerNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Corners);
         if (NULL != pCornerNode)
             {
-            corners = new DPoint2d[4];
+            corners = new GeoPoint2d[4];
             RealityPackageStatus status = RealityPackageStatus::Success;
-            if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerLeft].x, corners[ImageryData::Corners::LowerLeft].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerRight].x, corners[ImageryData::Corners::LowerRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperLeft].x, corners[ImageryData::Corners::UpperLeft].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperRight].x, corners[ImageryData::Corners::UpperRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
+            if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerLeft].longitude, corners[ImageryData::Corners::LowerLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
+                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerRight].longitude, corners[ImageryData::Corners::LowerRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
+                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperLeft].longitude, corners[ImageryData::Corners::UpperLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
+                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperRight].longitude, corners[ImageryData::Corners::UpperRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
                 {
                 return status;
                 }
@@ -336,11 +336,11 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
 
         // Read PinnedData specific.
         // Position.
-        DPoint2d location; location.x = 0.0; location.y = 0.0;
-        if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(location.x, location.y, *pDataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Position)))
+        GeoPoint2d location; location.longitude = 0.0; location.latitude = 0.0;
+        if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(location.longitude, location.latitude, *pDataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Position)))
             return status;  // Location is mandatory for pinned data.
 
-        if (!RealityDataSerializer::IsValidLongLat(location.x, location.y))
+        if (!RealityDataSerializer::IsValidLongLat(location.longitude, location.latitude))
             return RealityPackageStatus::InvalidLongitudeLatitude;
 
         // Area.
@@ -356,7 +356,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
             }
 
         // Create pinned data and add alternate sources.
-        PinnedDataPtr pPinnedData = PinnedData::Create(*pSources[0], location.x, location.y);
+        PinnedDataPtr pPinnedData = PinnedData::Create(*pSources[0], location.longitude, location.latitude);
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pPinnedData->AddSource(*pSources[i]);
@@ -545,15 +545,15 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
             }
 
         // Write ImageryData specific.
-        DPoint2dCP pCorners = pImgData->GetCornersCP();
+        GeoPoint2dCP pCorners = pImgData->GetCornersCP();
         if (NULL == pCorners)
             continue;  // Corners are optional.
 
         BeXmlNodeP pCornerNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Corners);
-        if (RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, pCorners[ImageryData::Corners::LowerLeft].x, pCorners[ImageryData::Corners::LowerLeft].y)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerRight, pCorners[ImageryData::Corners::LowerRight].x, pCorners[ImageryData::Corners::LowerRight].y)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, pCorners[ImageryData::Corners::UpperLeft].x, pCorners[ImageryData::Corners::UpperLeft].y)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperRight, pCorners[ImageryData::Corners::UpperRight].x, pCorners[ImageryData::Corners::UpperRight].y)))
+        if (RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, pCorners[ImageryData::Corners::LowerLeft].longitude, pCorners[ImageryData::Corners::LowerLeft].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerRight, pCorners[ImageryData::Corners::LowerRight].longitude, pCorners[ImageryData::Corners::LowerRight].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, pCorners[ImageryData::Corners::UpperLeft].longitude, pCorners[ImageryData::Corners::UpperLeft].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperRight, pCorners[ImageryData::Corners::UpperRight].longitude, pCorners[ImageryData::Corners::UpperRight].latitude)))
             {
             pDataNode->RemoveChildNode(pCornerNode);
             continue;
@@ -668,9 +668,9 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
             }
 
         // Write PinnedData specific.
-        DPoint2dCR location = pPinnedData->GetLocation();
-        BeAssert(RealityDataSerializer::IsValidLongLat(location.x, location.y));
-        RealityDataSerializer::WriteLongLat(*pDataNode, PACKAGE_ELEMENT_Position, location.x, location.y);
+        GeoPoint2dCR location = pPinnedData->GetLocation();
+        BeAssert(RealityDataSerializer::IsValidLongLat(location.longitude, location.latitude));
+        RealityDataSerializer::WriteLongLat(*pDataNode, PACKAGE_ELEMENT_Position, location.longitude, location.latitude);
         }
 
     return RealityPackageStatus::Success;

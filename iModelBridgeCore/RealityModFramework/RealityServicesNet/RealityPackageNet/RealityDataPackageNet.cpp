@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/RealityDataPackageNet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -218,13 +218,13 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     List<double>^ corners = managedData->GetCornersCP();
     if (0 != corners->Count)
         {
-        DPoint2d cornerPts[4];
+        GeoPoint2d cornerPts[4];
 
         int j = 0;
         for (int i = 0; i < 4; ++i)
             {
-            cornerPts[i].x = corners[j++];
-            cornerPts[i].y = corners[j++];
+            cornerPts[i].longitude = corners[j++];
+            cornerPts[i].latitude = corners[j++];
             }
 
         pData->SetCorners(cornerPts);
@@ -328,19 +328,19 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
 
     // Set location.
     List<double>^ location = managedData->GetLocation();
-    DPoint2d longlat;
-    longlat.x = location[0];
-    longlat.y = location[1];
+    GeoPoint2d longlat;
+    longlat.longitude = location[0];
+    longlat.latitude = location[1];
     pData->SetLocation(longlat);
 
     // Set area.
     List<double>^ polygonPts = managedData->GetAreaCP();
-    DPoint2d pts[4];
+    GeoPoint2d pts[4];
     int j = 0;
     for (int i = 0; i < polygonPts->Count; ++i)
         {
-        pts[i].x = polygonPts[j++];
-        pts[i].y = polygonPts[j++];
+        pts[i].longitude = polygonPts[j++];
+        pts[i].latitude = polygonPts[j++];
         }
     pData->SetArea(*BoundingPolygon::Create(pts, polygonPts->Count));
 
@@ -592,8 +592,8 @@ List<double>^ RealityDataPackageNet::GetBoundingPolygon()
     BoundingPolygonCR polygon = (*m_pPackage)->GetBoundingPolygon();
     for (int i = 0; i < polygon.GetPointCount(); ++i)
         {
-        polygonPts->Add(polygon.GetPointCP()[i].x);
-        polygonPts->Add(polygon.GetPointCP()[i].y);
+        polygonPts->Add(polygon.GetPointCP()[i].longitude);
+        polygonPts->Add(polygon.GetPointCP()[i].latitude);
         }
     
     return polygonPts;
@@ -604,11 +604,11 @@ List<double>^ RealityDataPackageNet::GetBoundingPolygon()
 //-------------------------------------------------------------------------------------
 void RealityDataPackageNet::SetBoundingPolygon(List<double>^ polygonPts)
     {
-    DPoint2d pts[4];
-    pts[0].x = polygonPts[0]; pts[0].y = polygonPts[1];
-    pts[1].x = polygonPts[2]; pts[1].y = polygonPts[3];
-    pts[2].x = polygonPts[4]; pts[2].y = polygonPts[5];
-    pts[3].x = polygonPts[6]; pts[3].y = polygonPts[7];
+    GeoPoint2d pts[4];
+    pts[0].longitude = polygonPts[0]; pts[0].latitude = polygonPts[1];
+    pts[1].longitude = polygonPts[2]; pts[1].latitude = polygonPts[3];
+    pts[2].longitude = polygonPts[4]; pts[2].latitude = polygonPts[5];
+    pts[3].longitude = polygonPts[6]; pts[3].latitude = polygonPts[7];
 
     BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(pts, 4);
     (*m_pPackage)->SetBoundingPolygon(*pBoundingPolygon);
@@ -813,13 +813,13 @@ List<double>^ ImageryDataNet::GetCornersCP()
     {
     List<double>^ managedCorners = gcnew List<double>();
 
-    DPoint2dCP pNativeCorners = (*m_pImageryData)->GetCornersCP();
+    GeoPoint2dCP pNativeCorners = (*m_pImageryData)->GetCornersCP();
     if (pNativeCorners != NULL)
         {
         for (size_t i = 0; i < 4; ++i)
             {
-            managedCorners->Add(pNativeCorners[i].x);
-            managedCorners->Add(pNativeCorners[i].y);
+            managedCorners->Add(pNativeCorners[i].longitude);
+            managedCorners->Add(pNativeCorners[i].latitude);
             }
         }
 
@@ -833,13 +833,13 @@ void ImageryDataNet::SetCorners(List<double>^ corners)
     {
     BeAssert(8 == corners->Count);
 
-    DPoint2d cornerPts[4];
+    GeoPoint2d cornerPts[4];
 
     int j = 0;
     for (int i = 0; i < 4; ++i)
         {
-        cornerPts[i].x = corners[j++];
-        cornerPts[i].y = corners[j++];
+        cornerPts[i].longitude = corners[j++];
+        cornerPts[i].latitude = corners[j++];
         }
 
     (*m_pImageryData)->SetCorners(cornerPts);
@@ -856,7 +856,7 @@ ImageryDataNet::ImageryDataNet(RealityDataSourceNet^ dataSource, List<double>^ c
 
 
     // Managed to native corners.
-    DPoint2d cornerPts[4];
+    GeoPoint2d cornerPts[4];
     if (0 != corners->Count)
         {
         BeAssert(8 == corners->Count);        
@@ -864,8 +864,8 @@ ImageryDataNet::ImageryDataNet(RealityDataSourceNet^ dataSource, List<double>^ c
         int j = 0;
         for (int i = 0; i < 4; ++i)
             {
-            cornerPts[i].x = corners[j++];
-            cornerPts[i].y = corners[j++];
+            cornerPts[i].longitude = corners[j++];
+            cornerPts[i].latitude = corners[j++];
             }
         }
 
@@ -954,10 +954,10 @@ List<double>^ PinnedDataNet::GetLocation()
     {
     List<double>^ location = gcnew List<double>();
 
-    DPoint2dCR nativeLocation = (*m_pPinnedData)->GetLocation();
+    GeoPoint2dCR nativeLocation = (*m_pPinnedData)->GetLocation();
 
-    location->Add(nativeLocation.x);
-    location->Add(nativeLocation.y);
+    location->Add(nativeLocation.longitude);
+    location->Add(nativeLocation.latitude);
 
     return location;
     }
@@ -967,9 +967,9 @@ List<double>^ PinnedDataNet::GetLocation()
 //-------------------------------------------------------------------------------------
 bool PinnedDataNet::SetLocation(double longitude, double latitude)
     {
-    DPoint2d location;
-    location.x = longitude;
-    location.y = latitude;
+    GeoPoint2d location;
+    location.longitude = longitude;
+    location.latitude = latitude;
 
     return (*m_pPinnedData)->SetLocation(location);
     }
@@ -992,8 +992,8 @@ List<double>^ PinnedDataNet::GetAreaCP()
     BoundingPolygonCP polygon = (*m_pPinnedData)->GetAreaCP();
     for (int i = 0; i < polygon->GetPointCount(); ++i)
         {
-        polygonPts->Add(polygon->GetPointCP()[i].x);
-        polygonPts->Add(polygon->GetPointCP()[i].y);
+        polygonPts->Add(polygon->GetPointCP()[i].longitude);
+        polygonPts->Add(polygon->GetPointCP()[i].latitude);
         }
 
     return polygonPts;
@@ -1004,13 +1004,13 @@ List<double>^ PinnedDataNet::GetAreaCP()
 //-------------------------------------------------------------------------------------
 bool PinnedDataNet::SetArea(List<double>^ polygonPts)
     {
-    DPoint2d pts[4];
+    GeoPoint2d pts[4];
 
     int j = 0;
     for (int i = 0; i < polygonPts->Count; ++i)
         {
-        pts[i].x = polygonPts[j++];
-        pts[i].y = polygonPts[j++];
+        pts[i].longitude = polygonPts[j++];
+        pts[i].latitude = polygonPts[j++];
         }
 
     BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(pts, polygonPts->Count);

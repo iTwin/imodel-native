@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPackage/RealityDataPackageTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -164,12 +164,12 @@ TEST_F(PackageTestFixture, InvalidLongLat)
 //----------------------------------------------------------------------------------------
 TEST_F (PackageTestFixture, BoundingPolygonTest)
     {
-    DPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
+    GeoPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
     BoundingPolygonPtr pPoly = BoundingPolygon::Create(polygon, 4);
     ASSERT_TRUE(pPoly.IsValid() && pPoly->IsValid());
 
     // invalid Lat.
-    polygon[3].x = -10009.066252;
+    polygon[3].longitude = -10009.066252;
     //ASSERT_DEATH(BoundingPolygon::Create(polygon, 4), "");
     pPoly = BoundingPolygon::Create(polygon, 4);
     ASSERT_TRUE(!pPoly.IsValid()); 
@@ -179,7 +179,7 @@ TEST_F (PackageTestFixture, BoundingPolygonTest)
     ASSERT_TRUE(pPoly.IsValid() && pPoly->IsValid());
 
     // invalid Long.
-    polygon[2].y = 1111.066252;
+    polygon[2].latitude = 1111.066252;
     pPoly = BoundingPolygon::Create(polygon, 3);
     ASSERT_TRUE(!pPoly.IsValid());
 
@@ -329,14 +329,14 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetNumSources() == 1);
     ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ("image/jpeg", pPackage->GetImageryGroup()[0]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_JPEG_LR_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_JPEG_UL_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].longitude, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].latitude, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].longitude, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].latitude, RPACKAGE_JPEG_LR_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].longitude, RPACKAGE_JPEG_UL_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].latitude, RPACKAGE_JPEG_UL_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].longitude, RPACKAGE_JPEG_UR_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].latitude, RPACKAGE_JPEG_UR_y, LONGLAT_EPSILON);
 
     ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetNumSources() == 1);
     ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
@@ -351,14 +351,14 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetNumSources() == 1);
     ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ("image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_HOUSE_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().latitude, RPACKAGE_HOUSE_LAT, LONGLAT_EPSILON);
 
     ASSERT_TRUE(pPackage->GetPinnedGroup()[1]->GetNumSources() == 1);
     ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ("video/avi", pPackage->GetPinnedGroup()[1]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().longitude, RPACKAGE_TRAFFIC_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().latitude, RPACKAGE_TRAFFIC_LAT, LONGLAT_EPSILON);
 
     // Terrain
     ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetNumSources() == 1);
@@ -1925,14 +1925,14 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
 
 
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_IMDATA_B_CORNER_LL_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_IMDATA_B_CORNER_LL_LAT, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_IMDATA_B_CORNER_LR_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_IMDATA_B_CORNER_LR_LAT, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_IMDATA_B_CORNER_UL_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_IMDATA_B_CORNER_UL_LAT, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_IMDATA_B_CORNER_UR_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_IMDATA_B_CORNER_UR_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].longitude, RPACKAGE_IMDATA_B_CORNER_LL_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].latitude, RPACKAGE_IMDATA_B_CORNER_LL_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].longitude, RPACKAGE_IMDATA_B_CORNER_LR_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].latitude, RPACKAGE_IMDATA_B_CORNER_LR_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].longitude, RPACKAGE_IMDATA_B_CORNER_UL_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].latitude, RPACKAGE_IMDATA_B_CORNER_UL_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].longitude, RPACKAGE_IMDATA_B_CORNER_UR_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].latitude, RPACKAGE_IMDATA_B_CORNER_UR_LAT, LONGLAT_EPSILON);
     //ASSERT_STREQ(RPACKAGE_WMS_URI2, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     //ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetSource(0).GetType().c_str());
 
@@ -1943,12 +1943,12 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     // Pinned
     ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_PINDATA_A_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().latitude, RPACKAGE_PINDATA_A_LAT, LONGLAT_EPSILON);
     ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_PART1, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[1]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_PINDATA_B_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_PINDATA_B_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().longitude, RPACKAGE_PINDATA_B_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().latitude, RPACKAGE_PINDATA_B_LAT, LONGLAT_EPSILON);
 
     // Terrain
     ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
@@ -1984,12 +1984,12 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
     pPackage->SetId("123asd789avbdlk");
     ASSERT_STREQ("123asd789avbdlk", pPackage->GetId().c_str()); 
 
-    DPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
+    GeoPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
     BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(polygon, 4);
     pPackage->SetBoundingPolygon(*pBoundingPolygon);
     ASSERT_EQ(4+1/*closure point*/, pPackage->GetBoundingPolygon().GetPointCount()); 
-    ASSERT_DOUBLE_EQ(polygon[2].x, pPackage->GetBoundingPolygon().GetPointCP()[2].x);
-    ASSERT_DOUBLE_EQ(polygon[3].y, pPackage->GetBoundingPolygon().GetPointCP()[3].y);
+    ASSERT_DOUBLE_EQ(polygon[2].longitude, pPackage->GetBoundingPolygon().GetPointCP()[2].longitude);
+    ASSERT_DOUBLE_EQ(polygon[3].latitude, pPackage->GetBoundingPolygon().GetPointCP()[3].latitude);
 
     // **** Data sources
     RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create("./imagery/map.jpeg", "image/jpeg");
@@ -2017,7 +2017,7 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
     ASSERT_TRUE(pMyHouseDataDataSource.IsValid());
 
     // *** Reality entries
-    DPoint2d jpegCorners[4] = {{5.123456789, 4.987654321}, {55.4554, 22.44}, {111.22, 15.4551234}, {5.14, 89.999}};
+    GeoPoint2d jpegCorners[4] = {{5.123456789, 4.987654321}, {55.4554, 22.44}, {111.22, 15.4551234}, {5.14, 89.999}};
     ImageryDataPtr pJpegImagery = ImageryData::Create(*pJpegDataSource, jpegCorners);
     ASSERT_TRUE(pJpegImagery.IsValid());
     pPackage->GetImageryGroupR().push_back(pJpegImagery);
@@ -2078,8 +2078,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
     ASSERT_EQ(pPackage->GetBoundingPolygon().GetPointCount(), pReadPackage->GetBoundingPolygon().GetPointCount());
     for(size_t index=0; index < pPackage->GetBoundingPolygon().GetPointCount(); ++index)
         {
-        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].x, pReadPackage->GetBoundingPolygon().GetPointCP()[index].x, LONGLAT_EPSILON);
-        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].y, pReadPackage->GetBoundingPolygon().GetPointCP()[index].y, LONGLAT_EPSILON);
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].longitude, pReadPackage->GetBoundingPolygon().GetPointCP()[index].longitude, LONGLAT_EPSILON);
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].latitude, pReadPackage->GetBoundingPolygon().GetPointCP()[index].latitude, LONGLAT_EPSILON);
         }
 
     // *** Imagery Data
@@ -2095,14 +2095,14 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
         ASSERT_EQ(0 != (pLeft->GetCornersCP()), 0 != (pRight->GetCornersCP()));
         if(pLeft->GetCornersCP())
             {
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].x, pRight->GetCornersCP()[ImageryData::LowerRight].x, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].y, pRight->GetCornersCP()[ImageryData::LowerRight].y, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].x, pRight->GetCornersCP()[ImageryData::UpperLeft].x, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].y, pRight->GetCornersCP()[ImageryData::UpperLeft].y, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].x, pRight->GetCornersCP()[ImageryData::UpperRight].x, LONGLAT_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].y, pRight->GetCornersCP()[ImageryData::UpperRight].y, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].longitude, pRight->GetCornersCP()[ImageryData::LowerLeft].longitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].latitude, pRight->GetCornersCP()[ImageryData::LowerLeft].latitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].longitude, pRight->GetCornersCP()[ImageryData::LowerRight].longitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].latitude, pRight->GetCornersCP()[ImageryData::LowerRight].latitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].longitude, pRight->GetCornersCP()[ImageryData::UpperLeft].longitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].latitude, pRight->GetCornersCP()[ImageryData::UpperLeft].latitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].longitude, pRight->GetCornersCP()[ImageryData::UpperRight].longitude, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].latitude, pRight->GetCornersCP()[ImageryData::UpperRight].latitude, LONGLAT_EPSILON);
             }
         }
     
@@ -2126,8 +2126,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 
         ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
         ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
-        ASSERT_NEAR(pLeft->GetLocation().x, pRight->GetLocation().x, LONGLAT_EPSILON);
-        ASSERT_NEAR(pLeft->GetLocation().y, pRight->GetLocation().y, LONGLAT_EPSILON);
+        ASSERT_NEAR(pLeft->GetLocation().longitude, pRight->GetLocation().longitude, LONGLAT_EPSILON);
+        ASSERT_NEAR(pLeft->GetLocation().latitude, pRight->GetLocation().latitude, LONGLAT_EPSILON);
         }
 
     // *** Terrain data.
@@ -2175,12 +2175,12 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //    pPackage->SetId("123asd789avbdlk");
 //    ASSERT_STREQ("123asd789avbdlk", pPackage->GetId().c_str());
 //
-//    DPoint2d polygon[4] = { { 1.0252, 53.04 },{ 41.024452, 53.0444 },{ 44, -55.54 },{ -19.066252, -73.0666664 } };
+//    GeoPoint2d polygon[4] = { { 1.0252, 53.04 },{ 41.024452, 53.0444 },{ 44, -55.54 },{ -19.066252, -73.0666664 } };
 //    BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(polygon, 4);
 //    pPackage->SetBoundingPolygon(*pBoundingPolygon);
 //    ASSERT_EQ(4 + 1/*closure point*/, pPackage->GetBoundingPolygon().GetPointCount());
-//    ASSERT_DOUBLE_EQ(polygon[2].x, pPackage->GetBoundingPolygon().GetPointCP()[2].x);
-//    ASSERT_DOUBLE_EQ(polygon[3].y, pPackage->GetBoundingPolygon().GetPointCP()[3].y);
+//    ASSERT_DOUBLE_EQ(polygon[2].x, pPackage->GetBoundingPolygon().GetPointCP()[2].longitude);
+//    ASSERT_DOUBLE_EQ(polygon[3].latitude, pPackage->GetBoundingPolygon().GetPointCP()[3].latitude);
 //
 //    // **** Data sources
 //    RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create(*Uri::Create("./imagery/map.jpeg"), "image/jpeg");
@@ -2211,7 +2211,7 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //    ASSERT_TRUE(pMyHouseDataDataSource.IsValid());
 //
 //    // *** Reality entries
-//    DPoint2d jpegCorners[4] = { { 5.123456789, 4.987654321 },{ 55.4554, 22.44 },{ 111.22, 15.4551234 },{ 5.14, 89.999 } };
+//    GeoPoint2d jpegCorners[4] = { { 5.123456789, 4.987654321 },{ 55.4554, 22.44 },{ 111.22, 15.4551234 },{ 5.14, 89.999 } };
 //    ImageryDataPtr pJpegImagery = ImageryData::Create(*pJpegDataSource, jpegCorners);
 //    pJpegImagery->SetDataId("SomeId");
 //    ASSERT_STREQ("SomeId", pJpegImagery->GetDataId().c_str());
@@ -2280,8 +2280,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //    ASSERT_EQ(pPackage->GetBoundingPolygon().GetPointCount(), pReadPackage->GetBoundingPolygon().GetPointCount());
 //    for (size_t index = 0; index < pPackage->GetBoundingPolygon().GetPointCount(); ++index)
 //    {
-//        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].x, pReadPackage->GetBoundingPolygon().GetPointCP()[index].x, LONGLAT_EPSILON);
-//        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].y, pReadPackage->GetBoundingPolygon().GetPointCP()[index].y, LONGLAT_EPSILON);
+//        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].longitude, pReadPackage->GetBoundingPolygon().GetPointCP()[index].longitude, LONGLAT_EPSILON);
+//        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].latitude, pReadPackage->GetBoundingPolygon().GetPointCP()[index].latitude, LONGLAT_EPSILON);
 //    }
 //
 //    // *** Imagery Data
@@ -2297,14 +2297,14 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //        ASSERT_EQ(0 != (pLeft->GetCornersCP()), 0 != (pRight->GetCornersCP()));
 //        if (pLeft->GetCornersCP())
 //        {
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].x, pRight->GetCornersCP()[ImageryData::LowerRight].x, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].y, pRight->GetCornersCP()[ImageryData::LowerRight].y, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].x, pRight->GetCornersCP()[ImageryData::UpperLeft].x, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].y, pRight->GetCornersCP()[ImageryData::UpperLeft].y, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].x, pRight->GetCornersCP()[ImageryData::UpperRight].x, LONGLAT_EPSILON);
-//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].y, pRight->GetCornersCP()[ImageryData::UpperRight].y, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].longitude, pRight->GetCornersCP()[ImageryData::LowerLeft].longitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].latitude, pRight->GetCornersCP()[ImageryData::LowerLeft].latitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].longitude, pRight->GetCornersCP()[ImageryData::LowerRight].longitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].latitude, pRight->GetCornersCP()[ImageryData::LowerRight].latitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].longitude, pRight->GetCornersCP()[ImageryData::UpperLeft].longitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].latitude, pRight->GetCornersCP()[ImageryData::UpperLeft].latitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].longitude, pRight->GetCornersCP()[ImageryData::UpperRight].longitude, LONGLAT_EPSILON);
+//            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].latitude, pRight->GetCornersCP()[ImageryData::UpperRight].latitude, LONGLAT_EPSILON);
 //        }
 //    }
 //
@@ -2328,8 +2328,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //
 //        ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
 //        ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
-//        ASSERT_NEAR(pLeft->GetLocation().x, pRight->GetLocation().x, LONGLAT_EPSILON);
-//        ASSERT_NEAR(pLeft->GetLocation().y, pRight->GetLocation().y, LONGLAT_EPSILON);
+//        ASSERT_NEAR(pLeft->GetLocation().longitude, pRight->GetLocation().longitude, LONGLAT_EPSILON);
+//        ASSERT_NEAR(pLeft->GetLocation().latitude, pRight->GetLocation().latitude, LONGLAT_EPSILON);
 //    }
 //
 //    // *** Terrain data.

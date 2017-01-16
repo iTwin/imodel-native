@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityAdmin/ContextServicesWorkbench.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@
 #include <curl/curl.h>
 
 //! Callback function to filter spatialentities
-typedef std::function<bool(RealityPlatform::SpatioTemporalDataPtr entity)> ContextServicesWorkbench_FilterFunction;
+typedef std::function<bool(RealityPlatform::SpatialEntityPtr entity)> ContextServicesWorkbench_FilterFunction;
 
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
@@ -68,7 +68,7 @@ struct GeoCoordinationParams
 struct ContextServicesWorkbench
     {
     private:
-        static bool default_filter(RealityPlatform::SpatioTemporalDataPtr entity) { return false; }
+        static bool default_filter(RealityPlatform::SpatialEntityPtr entity) { return false; }
         Json::Value m_errorObj;
         Utf8String m_authorizationToken;
         BeFileName m_certificatePath;

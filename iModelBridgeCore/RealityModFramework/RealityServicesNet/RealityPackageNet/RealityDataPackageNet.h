@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/RealityDataPackageNet.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -130,16 +130,16 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-            //! the pointer given must point to 4 consecutive DPoint2d structures in an array
+            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
             static ImageryDataNet^ Create(RealityDataSourceNet^ dataSource, System::Collections::Generic::List<double>^ corners);
 
             //! Imagery corners in lat/long.
             //! May return NULL. In such a case the corners should be read from the file header. The pointer returned is the 
-            //! start of a 4 DPoint2d array.
+            //! start of a 4 GeoPoint2d array.
             System::Collections::Generic::List<double>^ GetCornersCP();
 
             //! Set Imagery corners. nullptr can be passed to remove corners. If corners are provided then
-            //! the pointer given must point to 4 consecutive DPoint2d structures in an array
+            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
             void SetCorners(System::Collections::Generic::List<double>^ pCorners);
 
             static Utf8CP ElementName;
@@ -159,7 +159,7 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-            //! the pointer given must point to 4 consecutive DPoint2d structures in an array
+            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
             static ModelDataNet^ Create(RealityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;
@@ -179,7 +179,7 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-            //! the pointer given must point to 4 consecutive DPoint2d structures in an array
+            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
             static PinnedDataNet^ Create(RealityDataSourceNet^ dataSource, double longitude, double latitude);
 
             //! Get the object location in long/lat coordinate. 
@@ -220,7 +220,7 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-            //! the pointer given must point to 4 consecutive DPoint2d structures in an array
+            //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
             static TerrainDataNet^ Create(RealityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatform/RealityConversionToolsTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -46,12 +46,17 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntity)
     ASSERT_EQ(spatialData->GetDate(), date);
     ASSERT_EQ(spatialData->GetApproximateFileSize(), 7066);
     ASSERT_EQ(spatialData->GetResolution(), "24.2x30.922");
-    bvector<DPoint2d> footprint = bvector<DPoint2d>();
-    footprint.push_back(DPoint2d::From(-92, 39));
-    footprint.push_back(DPoint2d::From(-92, 38));
-    footprint.push_back(DPoint2d::From(-93, 38));
-    footprint.push_back(DPoint2d::From(-93, 39));
-    footprint.push_back(DPoint2d::From(-92, 39));
-    ASSERT_EQ(spatialData->GetFootprint(), footprint);
+    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+    footprint.push_back(GeoPoint2d::From(-92, 39));
+    footprint.push_back(GeoPoint2d::From(-92, 38));
+    footprint.push_back(GeoPoint2d::From(-93, 38));
+    footprint.push_back(GeoPoint2d::From(-93, 39));
+    footprint.push_back(GeoPoint2d::From(-92, 39));
+
+    for (int i = 0 ; i != footprint.size(); i++)
+        {
+        ASSERT_EQ(spatialData->GetFootprint()[i].longitude, footprint[i].longitude);
+        ASSERT_EQ(spatialData->GetFootprint()[i].latitude, footprint[i].latitude);
+        }
     }
 

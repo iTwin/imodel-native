@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/SpatialEntity.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -493,6 +493,14 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create();
 
+    // Creator for spatio temporal selector ... fills out some of the most basic fields
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "");
+
+    //! Get/Set
+    //! Identifier of spatial entity
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
+    REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
+
     //! Get/Set
     //! Name of spatial entity
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
@@ -503,6 +511,10 @@ public:
     //! The first double indicates the resolution in meter in the first axis and the second in the second axis.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetResolution() const; // in meters.
     REALITYDATAPLATFORM_EXPORT void SetResolution(Utf8CP resolution); // in meters.
+
+    //! Returns the mean squared of x and y resolution in the field
+    REALITYDATAPLATFORM_EXPORT double GetResolutionValue() const; // in meters.
+
 
     //! Get/Set
     //! A string containing a key to the data provider. Keys are informally attributed and must 
@@ -563,8 +575,8 @@ public:
     //! The footprint of the spatial entity. A list of points in longitude/latitude pairs that define the boundary of the data.
     //! The path defined by the given polygon must not autocross, contains segments that overlap.
     //! The final clossing point is mandatory.
-    REALITYDATAPLATFORM_EXPORT const bvector<DPoint2d>& GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<DPoint2d>& footprint);
+    REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
+    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint);
 
     //! Get/Set
     //! Indicates if the footprint is approximate or not. A typical approximate footprint 
@@ -600,8 +612,11 @@ public:
 protected:
     SpatialEntity();
 
+    Utf8String m_identifier;
     Utf8String m_name;
     Utf8String m_resolution;
+    mutable bool m_resolutionValueUpToDate;
+    mutable double m_resolutionValue;
     Utf8String m_provider;
     Utf8String m_providerName;
     Utf8String m_dataType;
@@ -610,7 +625,7 @@ protected:
     Utf8String m_dataset;
     Utf8String m_thumbnailURL;
     Utf8String m_thumbnailLoginKey;
-    bvector<DPoint2d> m_footprint;
+    bvector<GeoPoint2d> m_footprint;
     DRange2d m_footprintExtents;
     bool m_approximateFootprint;
     uint64_t m_approximateFileSize;

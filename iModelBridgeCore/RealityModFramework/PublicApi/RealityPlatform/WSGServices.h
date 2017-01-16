@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/WSGServices.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,7 +111,7 @@ public:
     Utf8StringCR GetHttpRequestString() const 
         {
         if (!m_validRequestString)
-            _PrepareHttpRequestString();
+            _PrepareHttpRequestStringAndPayload();
 
         BeAssert(m_validRequestString);
         BeAssert(m_httpRequestString.size() != 0);
@@ -122,7 +122,7 @@ public:
     Utf8StringCR GetRequestPayload() const
         {
         if (!m_validRequestString)
-            _PrepareHttpRequestString();
+            _PrepareHttpRequestStringAndPayload();
 
         BeAssert(m_validRequestString);
 
@@ -132,7 +132,7 @@ public:
     bmap<Utf8String, Utf8String> const & GetRequestHeader() const
         {
         if (!m_validRequestString)
-            _PrepareHttpRequestString();
+            _PrepareHttpRequestStringAndPayload();
 
         BeAssert(m_validRequestString);
 

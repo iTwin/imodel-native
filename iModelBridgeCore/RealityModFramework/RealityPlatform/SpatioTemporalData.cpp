@@ -2,10 +2,12 @@
 |
 |     $Source: RealityPlatform/SpatioTemporalData.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
+#include <RealityPlatform/SpatialEntity.h>
+
 #include <RealityPlatform/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -13,9 +15,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
+SpatialEntityDatasetPtr SpatialEntityDataset::CreateFromJson(Utf8CP data)
     {
-    SpatioTemporalDatasetPtr dataset = new SpatioTemporalDataset();
+    SpatialEntityDatasetPtr dataset = new SpatialEntityDataset();
 
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
@@ -115,9 +117,9 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
 
         // Add data to corresponding group.
         if (classification.EqualsI("Imagery"))
-            dataset->m_imageryGroup.push_back(SpatioTemporalData::Create(identifier, date, resolution, footprint, name, properties));
+            dataset->m_imageryGroup.push_back(SpatialEntity::Create(identifier, date, resolutionStr, footprint, name)); //, properties));
         else if (classification.EqualsI("Terrain"))
-            dataset->m_terrainGroup.push_back(SpatioTemporalData::Create(identifier, date, resolution, footprint, name, properties));
+            dataset->m_terrainGroup.push_back(SpatialEntity::Create(identifier, date, resolutionStr, footprint, name)); //, properties));
         }
 
     return dataset;
@@ -126,75 +128,24 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-const bvector<SpatioTemporalDataPtr>&   SpatioTemporalDataset::GetImageryGroup() const { return m_imageryGroup; }
-bvector<SpatioTemporalDataPtr>&         SpatioTemporalDataset::GetImageryGroupR() { return m_imageryGroup; }
-const bvector<SpatioTemporalDataPtr>&   SpatioTemporalDataset::GetTerrainGroup() const { return m_terrainGroup; }
-bvector<SpatioTemporalDataPtr>&         SpatioTemporalDataset::GetTerrainGroupR() { return m_terrainGroup; }
+const bvector<SpatialEntityPtr>&   SpatialEntityDataset::GetImageryGroup() const { return m_imageryGroup; }
+bvector<SpatialEntityPtr>&         SpatialEntityDataset::GetImageryGroupR() { return m_imageryGroup; }
+const bvector<SpatialEntityPtr>&   SpatialEntityDataset::GetTerrainGroup() const { return m_terrainGroup; }
+bvector<SpatialEntityPtr>&         SpatialEntityDataset::GetTerrainGroupR() { return m_terrainGroup; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalDataset::SpatioTemporalDataset()
+SpatialEntityDataset::SpatialEntityDataset()
     {
     // Init.
-    //m_imageryGroup = bvector<SpatioTemporalData>();
-    //m_terrainGroup = bvector<SpatioTemporalData>();
+    //m_imageryGroup = bvector<SpatialEntity>();
+    //m_terrainGroup = bvector<SpatialEntity>();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalDataset::~SpatioTemporalDataset()
+SpatialEntityDataset::~SpatialEntityDataset()
     {}
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
-//-------------------------------------------------------------------------------------
-SpatioTemporalDataPtr SpatioTemporalData::Create(Utf8StringCR identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name, Json::Value entityJson)
-    {
-    return new SpatioTemporalData(identifier, date, resolution, footprint, name, entityJson);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-Utf8StringCR    SpatioTemporalData::GetIdentifier() const { return m_identifier; }
-Utf8StringCR    SpatioTemporalData::GetName() const { return m_name; }
-const DateTime& SpatioTemporalData::GetDate() const { return m_date; }
-const double&   SpatioTemporalData::GetResolution() const { return m_resolution; }
-HFCPtr<HGF2DShape>  SpatioTemporalData::GetFootprint() const { return m_footprint; }
-Json::Value     SpatioTemporalData::GetRawJson() const { return m_entityWithDetailsView; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason         	        11/2016
-//-------------------------------------------------------------------------------------
-Json::Value SpatioTemporalData::GetValueFromJson(Utf8String propertyName) const
-    {
-    return (m_entityWithDetailsView.isMember(propertyName) && !m_entityWithDetailsView[propertyName].isNull()) ? m_entityWithDetailsView[propertyName] : Json::Value();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
-//-------------------------------------------------------------------------------------
-SpatioTemporalData::SpatioTemporalData(Utf8StringCR identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name, Json::Value entityJson)
-    : m_identifier(identifier),
-      m_date(date),
-      m_resolution(resolution),
-      m_name(name),
-      m_entityWithDetailsView(entityJson)
-    {
-    // Convert GeoPoint2d vector to HGF2DShape.
-    HGF2DPositionCollection ptsCollection;
-    for (const auto& point : footprint)
-        {
-        ptsCollection.push_back(HGF2DCoord<double>(point.longitude, point.latitude));
-        }
-
-    m_footprint = new HGF2DPolygonOfSegments(HGF2DPolySegment(ptsCollection));
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
-//-------------------------------------------------------------------------------------
-SpatioTemporalData::~SpatioTemporalData()
-    {}

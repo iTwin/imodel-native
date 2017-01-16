@@ -2,12 +2,14 @@
 |
 |     $Source: RealityAdmin/ContextServicesWorkbench.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <RealityAdmin/ContextServicesWorkbench.h>
 #include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/SpatioTemporalData.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -188,15 +190,15 @@ void ContextServicesWorkbench::FilterSpatialEntity(ContextServicesWorkbench_Filt
     {
     BeAssert(m_downloadedSEWD);
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(m_spatialEntityWithDetailsJson.c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(m_spatialEntityWithDetailsJson.c_str());
     if (dataset.IsNull())
         return;
 
     auto imageryIt(dataset->GetImageryGroupR().begin());
     while (imageryIt != dataset->GetImageryGroupR().end())
         {
-        Json::Value occlusion = (*imageryIt)->GetValueFromJson("Occlusion");
-        if((occlusion.isNumeric() && occlusion.asFloat()  > 50.0) || pi_func(*imageryIt))
+        double occlusion = (*imageryIt)->GetOcclusion();
+        if((occlusion  > 50.0) || pi_func(*imageryIt))
             {
             imageryIt = dataset->GetImageryGroupR().erase(imageryIt);
             }

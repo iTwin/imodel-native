@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityAdmin/ContextServicesTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -144,7 +144,7 @@ TEST_F(ContextServicesTestFixture, ConceptStationTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -175,7 +175,7 @@ TEST_F(ContextServicesTestFixture, ConceptStationTest)
     i = high.size();
     ASSERT_TRUE(i >= 216);
 
-    cswBench->FilterSpatialEntity([](SpatioTemporalDataPtr entity) -> bool { Json::Value provider = entity->GetValueFromJson("DataProvider"); return provider.isString() ? provider.asString().EqualsI("Amazon Landsat 8") : false; });
+    cswBench->FilterSpatialEntity([](SpatialEntityPtr entity) -> bool { Json::Value provider = entity->GetProvider(); return provider.isString() ? provider.asString().EqualsI("Amazon Landsat 8") : false; });
 
     selectedIds = cswBench->GetSelectedIds();
 
@@ -243,7 +243,7 @@ TEST_F(ContextServicesTestFixture, FilterTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&$filter=Classification+eq+'Terrain'"));
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -269,7 +269,7 @@ TEST_F(ContextServicesTestFixture, USTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -308,7 +308,7 @@ TEST_F(ContextServicesTestFixture, AustraliaTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -347,7 +347,7 @@ TEST_F(ContextServicesTestFixture, ChinaTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -386,7 +386,7 @@ TEST_F(ContextServicesTestFixture, SourceTest)
     size_t midSize = medium.size();
     size_t highSize = high.size();
 
-    cswBench->FilterSpatialEntity([](SpatioTemporalDataPtr entity) -> bool { Json::Value provider = entity->GetValueFromJson("DataProvider"); return provider.isString() ? !provider.asString().ToUpper().EqualsI("USGS") : false; });
+    cswBench->FilterSpatialEntity([](SpatialEntityPtr entity) -> bool { Json::Value provider = entity->GetProvider(); return provider.isString() ? !provider.asString().ToUpper().EqualsI("USGS") : false; });
 
     selectedIds = cswBench->GetSelectedIds();
 
@@ -414,7 +414,7 @@ TEST_F(ContextServicesTestFixture, USGSTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&source=usgsapi"));
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
@@ -447,7 +447,7 @@ TEST_F(ContextServicesTestFixture, IndexTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&source=index"));
 
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+    SpatialEntityDatasetPtr dataset = SpatialEntityDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
     size_t i = dataset->GetImageryGroup().size();
 
