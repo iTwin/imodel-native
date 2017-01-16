@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1076,6 +1076,110 @@ TEST_F(MemoryLayoutTests, AddRemoveArrayUsingInteropHelper)
     EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "FixedArrayFixedElement", 0));
     EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "VariableArrayFixedElement", 1));
     EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "ManufacturerArray", 1));
+    }
+
+//---------------------------------------------------------------------------------------
+// This test came about because of a memory leak within ECDBuffer. It was moving more memory than
+// was allocated for the array. It had to do with the number of NullflagsBitmasks removed during
+// array entry removal.
+// @bsimethod                                   Caleb.Shafer                     01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, AddRemoveLargeNumberOfArrayEntries)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECStructClass typeName='ArrayTest'>"
+        "        <ECArrayProperty propertyName='FixedArrayFixedElement' typeName='int' minOccurs='10' maxOccurs='100'/>"
+        "   </ECStructClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("ArrayTest");
+
+    Utf8String accessorString("FixedArrayFixedElement");
+    Utf8String formatString = accessorString + "[%d]";
+
+    // Test moving the array by a bulk number of bitmasks, from 2 to 0 and 3 to 0. 
+    // Each nullflag bitmask handles 32 array elements since a single bit is used for each element. 
+    // Going one above that threshold means we need another 4-byte bitmask.
+    {
+    bvector<int> numOfArrayEntriesList = {33, 65}; 
+    for (int numOfArrayEntriesToAdd : numOfArrayEntriesList)
+        {
+        StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+        ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+        ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::AddArrayElements(*instance, accessorString.c_str(), numOfArrayEntriesToAdd)) << "Failed to add " << numOfArrayEntriesToAdd << " array element(s) to " << accessorString.c_str() << ".";
+
+        for (int intVal = 0; intVal < numOfArrayEntriesToAdd; intVal++)
+            {
+            Utf8String formattedString;
+            formattedString.Sprintf(formatString.c_str(), intVal);
+
+            ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, formattedString.c_str(), intVal)) << "Failed to set the value of " << formattedString.c_str() << " to " << intVal << ".";
+
+            int retrievedIntValue = 0;
+            ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, retrievedIntValue, formattedString.c_str())) << "Failed to get value of " << formattedString.c_str();
+            ASSERT_TRUE(retrievedIntValue == intVal) << "Value was not as expected of " << formattedString.c_str() << " even though success was returned";
+            }
+
+        ECValue arrValue;
+        instance->GetValue(arrValue, accessorString.c_str());
+        EXPECT_TRUE(arrValue.IsArray()) << "The value is not an array value when it should be.";
+        ArrayInfo arrInfo = arrValue.GetArrayInfo();
+        EXPECT_EQ(numOfArrayEntriesToAdd, arrInfo.GetCount()) << "Array count is wrong even though all the elements were added successfully";;
+
+        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::ClearArray(*instance, accessorString.c_str())) << "Failed to clear the array.";
+
+        arrValue.Clear();
+
+        instance->GetValue(arrValue, accessorString.c_str());
+        EXPECT_TRUE(arrValue.IsArray()) << "The value is not an array value when it should be.";
+        arrInfo = arrValue.GetArrayInfo();
+        EXPECT_EQ(0, arrInfo.GetCount()) << "Array count is wrong even though all the elements were successfully removed.";;
+        }
+    }
+
+    // Tests decreasing the number of nullflag bitmasks incrementally from 4 down to zero
+    {
+    int numOfArrayEntries = 97; // Has to be 2 above the 96=32*3 to get 4 nullflag bitmask bytes in the array
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::AddArrayElements(*instance, accessorString.c_str(), numOfArrayEntries)) << "Failed to add " << numOfArrayEntries << " array element(s) to " << accessorString.c_str() << ".";
+
+    for (int intVal = 0; intVal < numOfArrayEntries; intVal++)
+        {
+        Utf8String formattedString;
+        formattedString.Sprintf(formatString.c_str(), intVal);
+
+        ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, formattedString.c_str(), intVal)) << "Failed to set the value of " << formattedString.c_str() << " to " << intVal << ".";
+
+        int retrievedIntValue = 0;
+        ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, retrievedIntValue, formattedString.c_str())) << "Failed to get value of " << formattedString.c_str();
+        ASSERT_TRUE(retrievedIntValue == intVal) << "Value was not as expected of " << formattedString.c_str() << " even though success was returned";
+        }
+
+    ECValue arrValue;
+    instance->GetValue(arrValue, accessorString.c_str());
+    EXPECT_TRUE(arrValue.IsArray()) << "The value is not an array value when it should be.";
+    ArrayInfo arrInfo = arrValue.GetArrayInfo();
+    ASSERT_EQ(97, arrInfo.GetCount()) << "Array count is wrong even though all the elements were added successfully";
+
+    for (int intValue = 0; intValue < numOfArrayEntries; intValue++)
+        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, accessorString.c_str(), 0)) << "Failed to remove array entity " << intValue << " from the array.";
+
+    arrValue.Clear();
+
+    instance->GetValue(arrValue, accessorString.c_str());
+    EXPECT_TRUE(arrValue.IsArray()) << "The value is not an array value when it should be.";
+    arrInfo = arrValue.GetArrayInfo();
+    EXPECT_EQ(0, arrInfo.GetCount()) << "Array count is wrong even though all the elements were successfully removed.";
+    }
     }
 
 //---------------------------------------------------------------------------------------

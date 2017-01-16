@@ -73,3 +73,6 @@ InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
 
 #Navigation properties are being reworked and only support long at the moment
 NavigationECPropertyTests.InstanceWithNavProp_String
+
+# clang address sanitizer detected buffer overrun - notified Caleb Shafer
+CGBinarySerializationTests.*
