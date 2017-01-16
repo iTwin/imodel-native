@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -74,6 +74,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
+    "Mobile.ConnectWsgProjectShare",
+    "https://dev-projectsharestorage-eus.cloudapp.net",
+    "https://qa-projectsharestorage-eus.cloudapp.net",
+    "https://connect-projectsharestorage.bentley.com",
     &s_urlRegistry
     );
 

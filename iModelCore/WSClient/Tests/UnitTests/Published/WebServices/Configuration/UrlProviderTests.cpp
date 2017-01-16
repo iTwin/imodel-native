@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
@@ -16,6 +16,8 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_BENTLEY_MOBILEDGN
+
+#define URL_COUNT 15
 
 #ifdef USE_GTEST
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
@@ -153,7 +155,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
-    EXPECT_CALL(*client, GetUrl(_, _)).Times(14).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(URL_COUNT).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
         {
         EXPECT_TRUE(urlNames.find(urlName) == urlNames.end());
         urlNames.insert(urlName);
@@ -167,6 +169,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectShare.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
@@ -182,6 +185,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectShare.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
@@ -202,7 +206,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(14)
+        .Times(URL_COUNT)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
@@ -212,6 +216,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectShare.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
@@ -225,7 +230,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::CleanUpUrlCache();
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(14)
+        .Times(URL_COUNT)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Urls::ConnectEula.Get().c_str();
@@ -233,6 +238,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::Urls::ConnectWsgGlobal.Get().c_str();
     UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str();
     UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str();
+    UrlProvider::Urls::ConnectWsgProjectShare.Get().c_str();
     UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
     UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str();
     UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str();
