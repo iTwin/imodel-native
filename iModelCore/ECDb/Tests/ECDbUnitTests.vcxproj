@@ -36,10 +36,12 @@
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceOverflowProps.cpp" />
     <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp" />
+    <ClCompile Include="Performance\PerformanceRegularVsOverflowColumns.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp" />
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
+    <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />

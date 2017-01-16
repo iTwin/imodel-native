@@ -226,6 +226,12 @@
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceRegularVsOverflowColumns.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeSummary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
