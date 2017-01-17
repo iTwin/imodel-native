@@ -549,30 +549,14 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/16
+// @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
-struct TileViewport : DgnViewport
+struct OffscreenViewport : DgnViewport
 {
     BSIRect m_rect;
-    Transform m_toParent = Transform::FromIdentity(); // tile NPC to sheet world
-    double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
-    Render::GraphicListPtr m_terrain;
-
-    virtual void _QueueScene();
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
     BSIRect _GetViewRect() const override {return m_rect;}
-    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
-    void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetTileRect(rect);}
-    TileViewport();
-
-    //! Get the transfrom from attachment view coordinates to sheet view coordinates
-    DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);
-
-    //! Get the transfrom from sheet view coordinates to attachment view coordinates
-    Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
-
-    //! Convert a point from tile world coordinates to sheet world coordinates (z will always be 0).
-    DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
+    void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
+    OffscreenViewport();
 };
 
 //=======================================================================================

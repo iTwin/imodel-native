@@ -238,11 +238,10 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraViewDefinition::Camera const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
-    DVec3d    xVector, yVector, zVector;
+    DVec3d xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
 
-    DPoint3d xExtent, yExtent, zExtent;
-    DPoint3d origin;
+    DPoint3d origin, xExtent, yExtent, zExtent;
 
     // Compute root vectors along edges of view frustum.
     if (camera)
@@ -1231,30 +1230,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform TileViewport::GetTransformToSheet(DgnViewportCR sheetVp)
-    {
-    Frustum frust = GetFrustum(DgnCoordSystem::Npc).TransformBy(m_toParent);
-    sheetVp.WorldToView(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
-    Transform tileToSheet = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
-    tileToSheet.ScaleMatrixColumns(1.0/m_rect.corner.x, 1.0/m_rect.corner.y, 1.0/frust.m_pts[NPC_LeftTopFront].z);
-    return tileToSheet;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d TileViewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld)
-    {
-    DPoint3d point = WorldToView(tileWorld);
-    GetTransformToSheet(sheetVp).Multiply(point);   
-    point = sheetVp.ViewToWorld(point);
-    point.z = 0.0; // sheets are always 2d
-    return point;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Frustum::ScaleAboutCenter(double scale)
@@ -1269,4 +1244,18 @@ void Frustum::ScaleAboutCenter(double scale)
     m_pts[NPC_101].Interpolate(orig.GetCorner(NPC_010), f, orig.GetCorner(NPC_101));
     m_pts[NPC_011].Interpolate(orig.GetCorner(NPC_100), f, orig.GetCorner(NPC_011));
     m_pts[NPC_111].Interpolate(orig.GetCorner(NPC_000), f, orig.GetCorner(NPC_111));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DMap4d Frustum::ToDMap4d() const
+    {
+    DPoint3d org = GetCorner(NPC_LeftBottomRear);
+    DVec3d xVec = DVec3d::FromStartEnd(org, GetCorner(NPC_RightBottomRear));
+    DVec3d yVec = DVec3d::FromStartEnd(org, GetCorner(NPC_LeftTopRear));
+    DVec3d zVec = DVec3d::FromStartEnd(org, GetCorner(NPC_LeftBottomFront));
+    DMap4d map;
+    bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
+    return map;
     }
