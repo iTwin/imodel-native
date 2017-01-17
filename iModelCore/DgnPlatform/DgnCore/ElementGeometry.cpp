@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -4451,79 +4451,9 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, bool ignoreSymbology, bool ignoreInitialSymbology)
     {
-    DgnGeometryPartCPtr partGeometry = db.Elements().Get<DgnGeometryPart>(partId);
-
-    if (!partGeometry.IsValid())
-        return false;
-
-    GeometryStreamIO::Collection collection(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
-    size_t basicSymbCount = 0;
-
-    GeometryStreamIO::Collection partCollection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
-    auto partIter = partCollection.begin();
-
-    for (auto const& egOp : collection)
-        {
-        switch (egOp.m_opCode)
-            {
-            case GeometryStreamIO::OpCode::Header:
-                break; // Part iter already advanced past header...
-
-            case GeometryStreamIO::OpCode::SubGraphicRange:
-                break; // Skip...
-
-            case GeometryStreamIO::OpCode::GeometryPartInstance:
-                return false; // Nested parts are invalid...
-
-            case GeometryStreamIO::OpCode::BasicSymbology:
-                {
-                if (ignoreSymbology)
-                    break;
-
-                basicSymbCount++;
-
-                if (1 == basicSymbCount && ignoreInitialSymbology)
-                    break;
-
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
-                }
-
-            case GeometryStreamIO::OpCode::LineStyleModifiers:
-            case GeometryStreamIO::OpCode::AreaFill:
-            case GeometryStreamIO::OpCode::Pattern:
-            case GeometryStreamIO::OpCode::Material:
-                {
-                if (ignoreSymbology)
-                    break;
-
-                if (1 == basicSymbCount && ignoreInitialSymbology)
-                    break;
-
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
-                }
-
-            default:
-                {
-                ++partIter;
-
-                if (partIter == partCollection.end())
-                    return false;
-
-                GeometryStreamIO::Operation const& partEgOp = *partIter;
-
-                if (partEgOp.m_opCode != egOp.m_opCode)
-                    return false;
-
-                if (partEgOp.m_dataSize != egOp.m_dataSize)
-                    return false;
-
-                // NEEDSWORK: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
-                break;
-                }
-            }
-        }
-
-    return true;
+    // Would need geometry compare from bim0200 for all boundary cases.
+    // Without a foolproof compare, don't bother on Q4.
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
