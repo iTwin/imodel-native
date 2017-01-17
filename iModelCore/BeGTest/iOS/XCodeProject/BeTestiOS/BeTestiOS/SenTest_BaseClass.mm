@@ -59,7 +59,7 @@
 }
 
 + (void) begtest_uninitialize {
-    #ifdef TEST_FRAMEWORK_SQLANG_DEF
+    #ifdef TEST_FRAMEWORK_SQLANG
     BeSQLite::L10N::Shutdown();
     #endif
     BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider ();
