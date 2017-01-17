@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -2203,6 +2203,9 @@ public:
     //! Removes the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECEntityClassCR classConstraint);
+
+    //! Removes all constraint classes.
+    void RemoveConstraintClasses() { m_constraintClasses.clear(); }
 
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT const ECConstraintClassesList GetClasses() const;
