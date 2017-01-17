@@ -1573,16 +1573,6 @@ struct Decorations
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/16
-//=======================================================================================
-struct Redraws
-{
-    GraphicListPtr m_erase;
-    GraphicListPtr m_draw;
-    GraphicListPtr m_change;
-};
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct FrustumPlanes
@@ -1796,7 +1786,6 @@ public:
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
-    virtual void _Redraw(Redraws&) = 0;
     virtual void _DrawFrame(StopWatch&, double sceneSecondsElapsed) = 0;
     virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
