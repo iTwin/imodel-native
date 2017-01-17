@@ -22,6 +22,63 @@ TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
     ////  demo print
+
+    LOG.infov("There are %d prime factors", FactorizedNumber::GetPrimeCount());
+    int ival = 128;
+    FactorizedNumber fan = FactorizedNumber(ival);
+    LOG.infov("Value %d  (factors) %s ", ival, fan.ToText());
+    LOG.infov("%s", FactorizedNumber(75).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(11925).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(117).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(119).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(113).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(219).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(218).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(211).DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(32*25*9*121).DebugText().c_str());
+
+    FactorizedNumber fz1 = FactorizedNumber(32 * 25 * 9 * 121);
+    FactorizedNumber fz2 = FactorizedNumber(8 * 125 * 81 * 11);
+    size_t gcf = fz1.GetGreatestCommonFactor(fz2);
+    LOG.infov("GreatestCommonFactor of %d and %d = %d", fz1.GetValue(), fz2.GetValue(), gcf);
+
+    LOG.infov("%s", fz1.DebugText().c_str());
+    LOG.infov("%s", fz2.DebugText().c_str());
+    LOG.infov("%s", FactorizedNumber(gcf).DebugText().c_str());
+
+
+    double fval = sqrt(2.0);
+    FractionalNumeric fn = FractionalNumeric(fval, 4);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    fval *= 3.5;
+
+    fn = FractionalNumeric(fval, 16);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fn = FractionalNumeric(fval, 32);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fn = FractionalNumeric(fval, 8);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fn = FractionalNumeric(fval, 3);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fn = FractionalNumeric(fval, 7);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fn = FractionalNumeric(fval, 16);
+    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fval = 15.0 + (32.0*25.0*3.0) / (64.0*125.0*3.0);
+    fn = FractionalNumeric(fval, 256);
+    LOG.infov("Fractional Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+    fval = 15.0 + 14.0 / 16.0;
+    fn = FractionalNumeric(fval, 256);
+    LOG.infov("Fractional Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+
+
 #if defined FORMAT_DEBUG_PRINT
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8));

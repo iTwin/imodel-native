@@ -22,6 +22,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormat)
 FORMATTING_TYPEDEFS(StdFormatSet)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 //===================================================
 //
 // Enumerations
@@ -349,6 +350,46 @@ struct Utils
     //#endif
     };
 
+struct FactorPower
+    {
+private:
+    size_t m_divisor;  // the value of divisor
+    size_t m_power;    // the degree of the divisor
+    int m_index;    // the index of the divisor in the prime set
+    static size_t GetMin(size_t i1, size_t i2) { return (i1 <= i2) ? i1 : i2; }
+public:
+    FactorPower() { m_divisor = 0; m_power = 0; m_index = -1; }
+    FactorPower(size_t div, size_t pow, int ind) : m_divisor(div), m_power(pow), m_index(ind) {}
+    void CopyValues(FactorPowerP other);
+    void Merge(FactorPowerP fp1, FactorPowerP fp2);
+    const int GetDivisor() { return static_cast<int>(m_divisor); }
+    const size_t GetPower() { return m_power; }
+    const int GetIndex() { return m_index; }
+    const size_t GetFactor();
+    UNITS_EXPORT Utf8String ToText(Utf8Char pref);
+    };
+
+struct FactorizedNumber
+    {
+private:
+    size_t m_ival;
+    bvector<FactorPower> m_factors;
+    static const size_t* GetPrimes(int* length);
+    static size_t PowerOfPrime(size_t ival, size_t prim, size_t* result);
+    size_t RestoreNumber();
+
+public:
+    UNITS_EXPORT static size_t GetPrimeCount();
+    UNITS_EXPORT FactorizedNumber(size_t ival);
+    UNITS_EXPORT bvector<FactorPower> GetFactors() { return m_factors; }
+    UNITS_EXPORT void ResetFactors(bvector<FactorPower> fact);
+    UNITS_EXPORT FactorPowerP FindDivisor(int div);
+    UNITS_EXPORT size_t GetGreatestCommonFactor(FactorizedNumber other);
+    UNITS_EXPORT size_t GetValue() { return m_ival; }
+    UNITS_EXPORT Utf8String ToText();
+    UNITS_EXPORT Utf8String DebugText();
+    };
+
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
@@ -359,8 +400,12 @@ private:
     double m_integral;
     int m_numerator;
     int m_denominator;
+
+    static void Reduction();
 public:
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
+    UNITS_EXPORT FractionalNumeric(double dval, int denominator);
+    UNITS_EXPORT Utf8String ToTextDefault();
     };
 
 //=======================================================================================
@@ -447,7 +492,7 @@ public:
     bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
     UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
-    UNITS_EXPORT int FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
+    UNITS_EXPORT int static FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
     UNITS_EXPORT int FormatDouble(double dval, CharP buf, int bufLen, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String RefFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
