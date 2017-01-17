@@ -52,6 +52,16 @@ def checkLogFileForFailures(logfilename):
                 failedTests = failedTests + comma + err.group(1) + "." + err.group(2)
                 comma = ', '
                 failed = True
+       
+            crashmsg = 'unexpected exit or crash in '
+            icrashmsg = lline.find(crashmsg)
+	    if icrashmsg != -1:
+                failed = True
+                itnamestart = icrashmsg + len(crashmsg)
+                itnameend = lline.find(';')
+                failedTests = failedTests + comma + line[itnamestart:itnameend]
+                comma = ', '
+                
      
     if foundTerminator  == False:
         failed = True
