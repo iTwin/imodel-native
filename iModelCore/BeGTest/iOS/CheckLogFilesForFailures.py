@@ -17,7 +17,9 @@ def checkLogFileForFailures(logfilename):
     xctestproj = ''
     lastLine = ''
     failed = False
+    foundCrash = False
     foundTerminator = False
+    foundAddressSanitizerErrors = False
     failedTests = ''
     comma = ''
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
@@ -38,6 +40,10 @@ def checkLogFileForFailures(logfilename):
 
             lline = line.lower()
 
+            if -1 != lline.find('summary: addresssanitizer'):
+                foundAddressSanitizerErrors = True
+		failed = True
+
             # We get ** test failed ** if the build or the prep or the tests failed
             if -1 != lline.find('** test failed **'):
                 failed = True
@@ -52,6 +58,17 @@ def checkLogFileForFailures(logfilename):
                 failedTests = failedTests + comma + err.group(1) + "." + err.group(2)
                 comma = ', '
                 failed = True
+       
+            crashmsg = 'unexpected exit or crash in '
+            icrashmsg = lline.find(crashmsg)
+	    if icrashmsg != -1:
+                failed = True
+                foundCrash = True
+                itnamestart = icrashmsg + len(crashmsg)
+                itnameend = lline.find(';')
+                failedTests = failedTests + comma + line[itnamestart:itnameend] + '(*)'
+                comma = ', '
+                
      
     if foundTerminator  == False:
         failed = True
@@ -63,11 +80,16 @@ def checkLogFileForFailures(logfilename):
             report = report + "    " + xctestproj
             report = report + "and re-run the following tests:\n"
             report = report + failedTests + "\n"
+            if foundCrash:
+                report = report + "(*) crashed."
+            if foundAddressSanitizerErrors:
+                report = report + '*** ADDRESS SANITIZER ERRORS DETECTED ***\nSee log for details.'
         else:
             report = report + "*** BUILD FAILURE OR CRASH ***\n"
             report = report + "See " + logfilename + " for details\n"
     else:
         report = report + lastLine
+
 
     return failed, report
 
