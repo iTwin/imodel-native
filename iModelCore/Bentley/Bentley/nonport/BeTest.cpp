@@ -1206,7 +1206,7 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
-        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime[s], TestDescription, opCount\n");
+        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime(s), TestDescription, opCount\n");
 
     fprintf(logFile, "%s, %s, %s, %.6lf, \"%s\", %d\n", DateTime::GetCurrentTimeUtc().ToString().c_str(), testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
 
