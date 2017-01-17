@@ -3777,7 +3777,11 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
     {
     if (hasHandler(instance.GetClass()))
         return DgnDbStatus::MissingHandler;
-    T_Super::SetAspect(el, *new GenericUniqueAspect(instance));
+    auto newAspect = new GenericUniqueAspect(instance);
+    GenericUniqueAspect* currentAspect = dynamic_cast<GenericUniqueAspect*>(T_Super::GetAspectP(el,instance.GetClass()));
+    if (nullptr != currentAspect)
+        newAspect->m_instanceId = currentAspect->m_instanceId;
+    T_Super::SetAspect(el, *newAspect);
     return DgnDbStatus::Success;
     }
 
@@ -3794,6 +3798,7 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR e
         return DgnDbStatus::NotFound;
     ECInstanceECSqlSelectAdapter adapter(*stmt);
     m_instance = adapter.GetInstance();
+    adapter.GetInstanceId(m_instanceId);
     return m_instance.IsValid()? DgnDbStatus::Success: DgnDbStatus::ReadError;
     }
 

@@ -42,4 +42,3 @@ EcutilsTests.ConvertECValueToJson
     #       Which is: 32768
     # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
 
-ElementAspectTests.GenericUniqueAspect_CRUD #TFS 642436
