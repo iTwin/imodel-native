@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1651,10 +1651,12 @@ ECSchemaReadContextCR schemaContext
             continue;
             }
 
+        SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionMajor(), key.GetVersionWrite(), key.GetVersionMinor());
+        SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionMajor(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
         //If key matches, OR the legacy compatible match evaluates true
-        if (key.Matches(desiredSchemaKey, matchType) ||
+        if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
             (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestCompatible &&
-             0 == key.m_schemaName.CompareTo(desiredSchemaKey.m_schemaName) && key.m_versionMajor == desiredSchemaKey.m_versionMajor))
+             0 == ciKey.m_schemaName.CompareTo(ciDesiredSchemaKey.m_schemaName) && key.m_versionMajor == desiredSchemaKey.m_versionMajor))
             {
             foundFiles.push_back(CandidateSchema());
             auto& candidate = foundFiles.back();
