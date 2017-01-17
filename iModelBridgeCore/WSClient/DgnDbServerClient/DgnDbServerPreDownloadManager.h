@@ -17,8 +17,6 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 struct DgnDbServerPreDownloadManager
     {
     private:
-       static const int                           s_maxCacheSize = 1024 * 1024 * 10; // 10 MB
-
        //! Gets path for pre-downloaded revision
        BeFileName static BuildRevisionPreDownloadPathname(Utf8String revisionId);
 

@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/Logging.h>
 #include <thread>
 #include <random>
+#include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include "DgnDbServerEventManager.h"
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
@@ -27,7 +28,8 @@ DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr co
     m_db = db;
     m_repositoryConnection = connection;
 
-    m_repositoryConnection->SubscribeRevisionsDownload();
+    if (DgnDbServerConfiguration::GetPreDownloadRevisionsEnabled())
+        m_repositoryConnection->SubscribeRevisionsDownload();
     }
 
 //---------------------------------------------------------------------------------------

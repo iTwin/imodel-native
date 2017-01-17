@@ -9,6 +9,7 @@
 #include "DgnDbServerPreDownloadManager.h"
 #include <DgnDbServer/Client/Logging.h>
 #include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
+#include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include <Bentley/BeFileListIterator.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
@@ -131,10 +132,12 @@ bvector<BeFileName> DgnDbServerPreDownloadManager::GetOrderedCacheFiles(BeFileNa
 void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) const
     {
     auto directoryName = revisionFileName.GetDirectoryName();
-    directoryName.AppendToPath(L"*");
+    directoryName.AppendToPath(L"*.rev");
 
     uint64_t cacheSize = GetCacheSize(directoryName);
-    if (cacheSize > s_maxCacheSize)
+    int maxCacheSize = DgnDbServerConfiguration::GetPreDownloadRevisionsCacheSize();
+
+    if (cacheSize > maxCacheSize)
         {
         // Delete oldest files from cache
         auto cacheFiles = GetOrderedCacheFiles(directoryName);
@@ -149,13 +152,24 @@ void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) 
             // Update remaining cache size
             currentFile.GetFileSize(currentFileSize);
             cacheSize -= currentFileSize;
+            
+            // Get lock for the file
+            FileLock lock(currentFile);
+            if (0 != BeStringUtilities::Wcsicmp(currentFile.GetName(), revisionFileName.GetName()))
+                {
+                if (!lock.Lock())
+                    {
+                    BeAssert(false && "Could not get lock for the file.");
+                    break;
+                    }
+                }
 
             // Delete file from cache
             BeFileNameStatus deleteStatus = currentFile.BeDeleteFile();
             BeAssert(BeFileNameStatus::Success == deleteStatus);
             cacheFiles.erase(it);
 
-            if (cacheSize <= s_maxCacheSize)
+            if (cacheSize <= maxCacheSize)
                 break;
             }
         }
