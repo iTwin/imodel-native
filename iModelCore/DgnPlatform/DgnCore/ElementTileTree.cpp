@@ -497,6 +497,7 @@ enum class InstancingOptions
     AsGraphics,
     // Add each instance as a sub-graphic with a transform
     // Downside: qv_pushTransclip() is inordinately slow.
+    // Upside: we're no longer using QVis, so downside is inapplicable
     AsSubGraphics,
     // Transform instanced geometry in place, then add as a subgraphic with identity transform
     // Downside: Separate QvElem for each subgraphic; slower tile generation due to applying the transform. Probably best bet for now
@@ -506,7 +507,7 @@ enum class InstancingOptions
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
 static bool s_cacheInstances = true;
-static InstancingOptions s_instancingOptions = InstancingOptions::AsPreTransformedSubGraphics;
+static InstancingOptions s_instancingOptions = InstancingOptions::AsSubGraphics;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
