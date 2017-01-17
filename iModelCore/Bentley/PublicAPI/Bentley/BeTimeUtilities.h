@@ -135,8 +135,8 @@ struct StopWatch : NonCopyableClass
     typedef std::chrono::high_resolution_clock::time_point TimePoint;
 private:
     Utf8CP m_description = nullptr;
-    TimePoint m_start = TimePoint();
-    TimePoint m_stop = TimePoint();
+    TimePoint m_start;
+    TimePoint m_stop;
     static double ToSecondsDouble(std::chrono::nanoseconds val) {return std::chrono::duration<double>(val).count();}
 
 public:
@@ -151,7 +151,7 @@ public:
     //! @param[in] startImmediately Pass true to start the stopwatch on creation
     explicit StopWatch(Utf8CP description=nullptr, bool startImmediately=false) : m_description(description) {Init(startImmediately);}
 
-    //! Create a named stopwatch and possibly start it.
+    //! Create an unnamed stopwatch and possibly start it.
     explicit StopWatch(bool startImmediately) {Init(startImmediately);}
 
     //! Get the description provided to the constructor
