@@ -40,7 +40,7 @@ def checkLogFileForFailures(logfilename):
 
             lline = line.lower()
 
-            if -1 != lline.find('summary: address sanitizer'):
+            if -1 != lline.find('summary: addresssanitizer'):
                 foundAddressSanitizerErrors = True
 		failed = True
 
