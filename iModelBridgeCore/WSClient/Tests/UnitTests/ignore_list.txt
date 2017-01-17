@@ -62,6 +62,15 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
     #            Actual: never called - unsatisfied and active
     # *********************************************************************************
 
+#Following tests were disabled and are added to ignore list instead
+ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
+ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
+DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
+WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString
+
 ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
     # bim0200dev, x86, DEBUG
     # End of tests reports:
