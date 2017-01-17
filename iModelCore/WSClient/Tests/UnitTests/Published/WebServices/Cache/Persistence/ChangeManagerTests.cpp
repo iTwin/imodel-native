@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1313,7 +1313,7 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectModified_Modified)
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, status);
     }
 
-TEST_F(ChangeManagerTests, DISABLED_GetObjectChangeStatus_ObjectDeleted_Deleted)
+TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectDeleted_Deleted)
     {
     // Arrange
     auto cache = GetTestCache();
@@ -1325,7 +1325,7 @@ TEST_F(ChangeManagerTests, DISABLED_GetObjectChangeStatus_ObjectDeleted_Deleted)
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, status);
     }
 
-TEST_F(ChangeManagerTests, DISABLED_GetObjectChangeStatus_CreatedObjectDeleted_Deleted)
+TEST_F(ChangeManagerTests, GetObjectChangeStatus_CreatedObjectDeleted_Deleted)
     {
     // Arrange
     auto cache = GetTestCache();
