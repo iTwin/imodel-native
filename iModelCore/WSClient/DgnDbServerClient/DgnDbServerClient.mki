@@ -37,7 +37,8 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionInfo.h
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionInfo.h         \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerConfiguration.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -74,6 +75,8 @@ $(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerEventManager$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerPreDownloadManager$(oext)   : $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerConfiguration$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerConfiguration.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventParser$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerEventParser.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
