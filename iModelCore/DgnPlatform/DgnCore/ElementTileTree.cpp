@@ -2182,11 +2182,20 @@ BentleyStatus Loader::_LoadTile()
             gfParams.SetWidth(0);
             gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
+#define RANGEBOX_AS_SUBGRAPHIC
+#if defined(RANGEBOX_AS_SUBGRAPHIC)
             auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+#else
+            auto subGraphic = system._CreateGraphic(Graphic::CreateParams());
+#endif
             subGraphic->ActivateGraphicParams(gfParams);
             subGraphic->AddRangeBox(tile.GetRange());
             subGraphic->Close();
+#if defined(RANGEBOX_AS_SUBGRAPHIC)
             graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), gfParams);
+#else
+            tile.AddGraphic(*subGraphic);
+#endif
             }
 
         graphic->Close();
