@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnProject_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -297,28 +297,6 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
     DgnDbPtr dgnProj1 = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_BUSY, status) << status;
     ASSERT_TRUE( dgnProj1 == NULL);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                            Julija.Suboc                08/13
-* Covers GetAzimuth(), GetLatitude() and GetLongitude() in DgnDb
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, GetCoordinateSystemProperties)
-    {
-#ifdef WIP_NO_PRE_PUBLISHED_FILES
-    SetupWithPrePublishedFile(L"GeoCoordinateSystem.i.ibim", L"GetCoordinateSystemProperties.ibim", BeSQLite::Db::OpenMode::Readonly);
-    DgnGCS* dgnGCS = m_db->Units().GetDgnGCS();
-    double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
-    double azimuthExpected = 178.29138626108181;
-    double eps = 0.0001;
-    EXPECT_TRUE(fabs(azimuthExpected - azimuth) < eps) << "Expected different azimuth ";
-    GeoPoint gorigin;
-    m_db->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
-    double const latitudeExpected = 42.3413;
-    EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
-    double const longitudeExpected = -71.0806;
-    EXPECT_TRUE(fabs(longitudeExpected - gorigin.longitude) < eps)<<"Expected diffrent longitude ";
-#endif
     }
 
 //----------------------------------------------------------------------------------------

@@ -591,14 +591,14 @@ private:
     double      m_maxCompress;
     double      m_totalLength;      // length of entire element.
     double      m_xElemPhase;       // where we left off from last element (for compound elements)
+    double      m_styleWidth;
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
+    bool        m_useStroker;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
-    bool        m_useStroker;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
-
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -621,6 +621,7 @@ public:
     double GetMaxCompress() const {return m_maxCompress;}
     int GetNumIterations() const {return m_nIterate;}
     DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetStyleWidth() const {return m_styleWidth;}
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
@@ -669,7 +670,7 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
-    bool UseStroker() const {return m_useStroker;}
+    bool GetUseStroker() const {return m_useStroker;}
     void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
@@ -879,9 +880,9 @@ public:
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
-    int32_t GetNetDisplayPriority(ViewContextR context) {Resolve(context); return m_netPriority;} // Resolve and return net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
+    bool IsResolved() const {return m_resolved;}
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
@@ -1797,7 +1798,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
-    virtual void _SetTileRect(BSIRect rect) {}
+    virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
     DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
