@@ -321,7 +321,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      {
      size_t res = 1;
      
-     for(int i = 0; i < m_power; i++)
+     for(size_t i = 0; i < m_power; i++)
          {
          res *= m_divisor;
          }
@@ -372,7 +372,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      int i = 0;
      if (0 != pref)
          buf[i++] = pref;
-     for (int n = 0; n < m_power; n++)
+     for (size_t n = 0; n < m_power; n++)
          {
          if (n > 0)
              buf[i++] = 'x';
@@ -554,7 +554,7 @@ size_t FactorizedNumber::GetPrimeCount()
          fact2[fpp->GetIndex()].CopyValues(fpp);
          }
      size_t fact = 1;
-     for (int i = 0; i < primN; i++)
+     for (size_t i = 0; i < primN; i++)
          {
          fact3[i].Merge(&fact1[i], &fact2[i]);
          fact *= fact3[i].GetFactor();
