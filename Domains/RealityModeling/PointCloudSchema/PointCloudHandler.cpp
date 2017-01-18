@@ -333,3 +333,155 @@ void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
     m_properties.FromJson(val[JSON_PointCloudModel]);
     }
 
+#ifdef WIP
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     08/2016
+//=======================================================================================
+struct  PublishTileNode : ModelTileNode
+{
+
+    PublishTileNode(PointCloudModel const& model, DRange3dCR range, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+        : ModelTileNode(model, range, transformDbToTile, depth, siblingIndex, parent, 0.0) { }
+
+
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
+    {
+    PublishableTileGeometry     publishableGeometry;
+    TileMeshList&               tileMeshes =  publishableGeometry.Meshes();
+    static size_t               s_tilePointCount = 20000;
+    Transform                   worldToScene;
+    DRange3d                    sceneRange;
+
+    worldToScene.InverseOf (m_model->GetSceneToWorld());
+    worldToScene.Multiply (sceneRange, m_dgnRange);
+    
+    PointCloudQueryHandlePtr                queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange));
+    RefCountedPtr<PointCloudQueryBuffers>   queryBuffers = PointCloudQueryBuffers::Create(s_tilePointCount, (uint32_t) PointCloudChannelId::Xyz);
+
+    uint64_t numQueryPoints = queryBuffers->GetPoints(queryHandle->GetHandle());
+
+   
+    return publishableGeometry;
+    }
+
+};  //  PublishTileNode
+
+typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     10/2016
+//=======================================================================================
+struct PublishPointCloudContext
+{
+    PointCloudModelCPtr             m_model;
+    TransformCR                     m_transformDbToTile;
+    TileGenerator::ITileCollector&  m_collector;
+    ITileGenerationProgressMonitorR m_progressMeter;
+    uint32_t                        m_totalTiles;
+    BeAtomic<uint32_t>              m_completedTiles;
+    StopWatch                       m_progressTimer;
+    
+    PublishPointCloudContext (PointCloudModelCR model, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) :
+                         m_model(&model), m_transformDbToTile(transformDbToTile), m_collector(collector), m_progressMeter(progressMeter), m_totalTiles(1), m_progressTimer(true) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t siblingIndex)
+    { 
+    double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    DRange3d        dgnRange;
+
+    m_scene.GetLocation().Multiply (dgnRange, node.GetRange());
+
+    tile.SetDgnRange (dgnRange);
+    tile.SetTolerance (tolerance);
+
+    if (node._HasChildren() && node.IsNotLoaded())
+        m_scene.LoadNodeSynchronous(node);
+
+
+    static size_t       s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+
+    if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
+        {
+        size_t      childIndex = 0;
+        depth++;
+        for (auto& child : *node._GetChildren(true))
+            {
+            NodeR   childNode = (NodeR) *child;
+
+            if (childNode._HasChildren())
+                {
+                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex, &tile, m_tileClip);
+
+                m_totalTiles++;
+                tile.GetChildren().push_back(childTile);
+                ProcessTile(*childTile, (NodeR) *child,  depth+1, childIndex++);
+                }
+            }
+        }                                                             
+    folly::via(&BeFolly::ThreadPool::GetIoPool(), [&]()  
+        {  
+        m_collector._AcceptTile(tile);  
+        m_completedTiles++;
+        });
+
+    IndicateProgress();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    IndicateProgress()
+    {
+    // No.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ProcessingRemains()
+    {
+    if (m_completedTiles >= m_totalTiles)
+        return false;
+
+    IndicateProgress();
+    return true;
+    }
+
+
+};  // PublishPointCloudContext
+
+END_UNNAMED_NAMESPACE
+
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeneratorStatus PointCloudModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
+    {
+#ifdef WIP
+    PublishPointCloudContext   publishContext (*this, transformDbToTile, collector, progressMeter);
+
+    T_PublishTilePtr    rootPublishTile =  new PublishTileNode(*this, GetRange(PointCloudModel::Unit::World), transformDbToTile, 0, 0, nullptr);
+
+    rootTile = rootPublishTile;
+
+    publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0, 0);
+
+    static const uint32_t s_sleepMillis = 1000.0;
+    while (publishContext.ProcessingRemains())
+        BeThreadUtilities::BeSleep(s_sleepMillis);
+
+    return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
+#else
+    return TileGeneratorStatus::NoGeometry;
+#endif
+    }
+
