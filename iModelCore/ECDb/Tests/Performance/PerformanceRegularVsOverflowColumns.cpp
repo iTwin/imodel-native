@@ -480,9 +480,9 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intV
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
-        for (int parameterIndex = 2; parameterIndex <= (propertiesCount + 1); parameterIndex++)
+        for (size_t parameterIndex = 2; parameterIndex <= (propertiesCount + 1); parameterIndex++)
             {
-            if (!statement.BindInt(parameterIndex, intValues[i]).IsSuccess())
+            if (!statement.BindInt((int)parameterIndex, intValues[i]).IsSuccess())
                 {
                 ASSERT_TRUE(false);
                 return;
@@ -526,11 +526,11 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intV
             int columnCount = statement.GetColumnCount();
             ASSERT_EQ((int) propertiesCount, columnCount);
 
-            for (int parameterIndex = 0; parameterIndex < propertiesCount; parameterIndex++)
+            for (size_t parameterIndex = 0; parameterIndex < propertiesCount; parameterIndex++)
                 {
                 //printf("intValues[i*instanceIdIncrement] : %d\n", intValues[i*instanceIdIncrement]);
                 //printf("statement.GetValueInt(parameterIndex) : %d\n", statement.GetValueInt(parameterIndex));
-                if (intValues[i*instanceIdIncrement] != statement.GetValueInt(parameterIndex))
+                if (intValues[i*instanceIdIncrement] != statement.GetValueInt((int)parameterIndex))
                     {
                     ASSERT_TRUE(false);
                     return;
