@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/TestUtils/GenericLogProviderActivator.h $
+|     $Source: Tests/CompatibilityTests/Logging/GenericLogProviderActivator.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

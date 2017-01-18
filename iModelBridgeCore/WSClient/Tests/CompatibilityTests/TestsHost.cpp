@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.cpp $
+|     $Source: Tests/CompatibilityTests/TestsHost.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,9 +11,10 @@
 #include <MobileDgn/MobileDgnCommon.h>
 #include <MobileDgn/MobileDgnL10N.h>
 
-#include "GenericLogProviderActivator.h"
-#include "../../UnitTests/Published/Utils/TestAppPathProvider.h"
-#include "../Cache/Logging.h"
+#include "../UnitTests/Published/Utils/TestAppPathProvider.h"
+
+#include "Logging/GenericLogProviderActivator.h"
+#include "Logging/Logging.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC

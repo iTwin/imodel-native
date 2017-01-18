@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/Cache/RepositoryCompatibilityTests.cpp $
+|     $Source: Tests/CompatibilityTests/RepositoryCompatibilityTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,11 +11,12 @@
 #include <WebServices/Cache/CachingDataSource.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 
-#include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
-#include "../TestUtils/TestsHelper.h"
-#include "../TestUtils/TestsHost.h"
-#include "ArgumentParser.h"
-#include "DiskRepositoryClient.h"
+#include "../UnitTests/Published/WebServices/Connect/StubLocalState.h"
+
+#include "TestsHelper.h"
+#include "TestsHost.h"
+#include "Parser/ArgumentParser.h"
+#include "Disk/DiskRepositoryClient.h"
 
 bvector<TestRepositories> s_createTestData;
 bvector<TestRepositories> s_upgradeTestData;
