@@ -196,6 +196,31 @@ public:
 namespace Attachment
 {
     //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   11/16
+    //=======================================================================================
+    struct Viewport : OffscreenViewport
+    {
+        Transform m_toParent = Transform::FromIdentity(); // tile NPC to sheet world
+        double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
+        Render::GraphicListPtr m_terrain;
+
+        virtual void _QueueScene();
+        virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
+        void _AdjustAspectRatio(Dgn::ViewControllerR viewController, bool expandView) override {}
+
+        //! Get the transfrom from attachment view coordinates to sheet view coordinates
+        DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);
+
+        //! Get the transfrom from sheet view coordinates to attachment view coordinates
+        Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
+
+        //! Convert a point from tile world coordinates to sheet world coordinates (z will always be 0).
+        DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
+
+        DGNVIEW_EXPORT Viewport();
+    };
+
+    //=======================================================================================
     //! TileTree for displaying raster tiles generated from a sheet's view attachment
     // @bsiclass                                                    Keith.Bentley   11/16
     //=======================================================================================
@@ -203,7 +228,7 @@ namespace Attachment
     {
         DEFINE_T_SUPER(TileTree::QuadTree::Root)
         DgnElementId m_attachmentId;
-        RefCountedPtr<Dgn::TileViewport> m_viewport;
+        RefCountedPtr<Viewport> m_viewport;
         DPoint2d m_scale; // scale factors to make square tiles
         uint32_t m_pixels;
         bool m_sceneQueued = false;

@@ -19,10 +19,10 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct SnapContext : NullContext
 {
 protected:
-    SnapDetailP     m_snapPath; // result of the snap
-    double          m_snapAperture;
-    SnapMode        m_snapMode;
-    int             m_snapDivisor;
+    SnapDetailP m_snapPath; // result of the snap
+    double m_snapAperture;
+    SnapMode m_snapMode;
+    int m_snapDivisor;
 
 public:
     virtual ~SnapContext() {}
