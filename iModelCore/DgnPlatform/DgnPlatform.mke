@@ -337,7 +337,7 @@ $(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(Dgn
 
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+$(CoreObjs)CodeSpec$(oext) :                        $(DgnCoreDir)CodeSpec.cpp $(DgnPlatformAPISrc)CodeSpec.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 

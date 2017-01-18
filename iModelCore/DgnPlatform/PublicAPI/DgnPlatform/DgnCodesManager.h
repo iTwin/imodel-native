@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnAuthority.h>
+#include <DgnPlatform/CodeSpec.h>
 
 DGNPLATFORM_TYPEDEFS(DgnCodeState);
 DGNPLATFORM_TYPEDEFS(DgnCodeInfo);

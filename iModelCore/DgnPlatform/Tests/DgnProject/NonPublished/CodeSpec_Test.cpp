@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/NonPublished/DgnAuthority_Test.cpp $
+|  $Source: Tests/DgnProject/NonPublished/CodeSpec_Test.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

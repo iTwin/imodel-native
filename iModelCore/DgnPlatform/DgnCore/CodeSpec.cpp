@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnAuthority.cpp $
+|     $Source: DgnCore/CodeSpec.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -266,8 +266,10 @@ void CodeSpec::ToPropertiesJson(JsonValueR json) const
     for (CodeFragmentSpecCR fragmentSpec : GetFragmentSpecs())
         fragmentSpecArray.append(fragmentSpec.ToJson());
 
-    json["specVersion"] = BeVersion(1, 0).ToString();
-    json["fragmentSpecs"] = fragmentSpecArray;
+    if (fragmentSpecArray.size() > 0)
+        json["fragmentSpecs"] = fragmentSpecArray;
+
+    json["specVersion"] = BeVersion(1, 0).ToMajorMinorString();
     json["scopeSpecType"] = (int)GetScope().GetType();
     }
 
@@ -536,8 +538,12 @@ Json::Value CodeFragmentSpec::ToJson() const
     json["type"] = (int)GetType();
     json["prompt"] = GetPrompt();
     json["inSequenceMask"] = IsInSequenceMask();
-    json["minChars"] = GetMinChars();
-    json["maxChars"] = GetMaxChars();
+
+    if (MIN_MinChars != GetMinChars())
+        json["minChars"] = GetMinChars();
+
+    if (MAX_MaxChars != GetMaxChars())
+        json["maxChars"] = GetMaxChars();
 
     switch (GetType())
         {

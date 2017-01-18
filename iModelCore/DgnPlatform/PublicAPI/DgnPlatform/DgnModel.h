@@ -10,7 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
-#include "DgnAuthority.h"
+#include "CodeSpec.h"
 #include "ECSqlClassParams.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
