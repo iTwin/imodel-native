@@ -9,7 +9,6 @@
 #include <DgnPlatform/RevisionManager.h>
 #include <WebServices/Client/WSChangeset.h>
 #include "DgnDbServerUtils.h"
-#include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <DgnDbServer/Client/Logging.h>
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 #include "DgnDbServerEventManager.h"
@@ -779,20 +778,30 @@ ICancellationTokenPtr           cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisionFile
+DgnRevisionTaskPtr DgnDbRepositoryConnection::DownloadRevisionFile
 (
-DgnDbServerRevisionPtr          revision,
+DgnDbServerRevisionInfoPtr        revision,
 Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr           cancellationToken
+ICancellationTokenPtr             cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionFile";
-    auto revisionFileName = revision->GetRevision()->GetRevisionChangesFile();
 
-    if (s_preDownloadManager->TryGetRevisionFile(revisionFileName, revision->GetRevision()->GetId()))
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
+    RevisionStatus revisionStatus;
+    DgnRevisionPtr dgnRevisionptr = DgnRevision::Create(&revisionStatus, revision->GetId(), revision->GetParentRevisionId(), revision->GetDbGuid());
+    auto revisionFileName = dgnRevisionptr->GetRevisionChangesFile();
 
-    return DownloadRevisionFileInternal(revision->GetRevision()->GetId(), revision->GetURL(), revisionFileName, callback, cancellationToken);
+    if (s_preDownloadManager->TryGetRevisionFile(revisionFileName, revision->GetId()))
+        return CreateCompletedAsyncTask<DgnRevisionResult>(DgnRevisionResult::Success(dgnRevisionptr));
+
+    return DownloadRevisionFileInternal(revision->GetId(), revision->GetUrl(), revisionFileName, callback, cancellationToken)
+        ->Then<DgnRevisionResult>([=](DgnDbServerStatusResultCR downloadResult)
+        {
+        if (!downloadResult.IsSuccess())
+            return DgnRevisionResult::Error(downloadResult.GetError());
+
+        return DgnRevisionResult::Success(dgnRevisionptr);
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1847,7 +1856,7 @@ ICancellationTokenPtr cancellationToken
     std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
     return ExecutionManager::ExecuteWithRetry<DgnDbCodeLockSetResultInfo>([=]()
         {
-        return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
+        return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionInfoResultCR revisionResult)
             {
             uint64_t revisionIndex = 0;
             if (!revisionResult.IsSuccess() && revisionResult.GetError().GetId() != DgnDbServerError::Id::InvalidRevision)
@@ -2067,40 +2076,9 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerRevisionPtr ParseRevision (WSObjectsReader::Instance instance)
-    {
-    RapidJsonValueCR properties = instance.GetProperties();
-    RevisionStatus status;
- DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, properties[ServerSchema::Property::Id].GetString(),
-    properties[ServerSchema::Property::ParentId].GetString(), properties[ServerSchema::Property::MasterFileId].GetString()));
-
-    if (RevisionStatus::Success == status)
-        {
-        indexedRevision->GetRevision()->SetSummary(properties[ServerSchema::Property::Description].GetString());
-        DateTime pushDate = DateTime();
-        DateTime::FromString(pushDate, properties[ServerSchema::Property::PushDate].GetString());
-        indexedRevision->GetRevision()->SetDateTime(pushDate);
-        indexedRevision->GetRevision()->SetUserName(properties[ServerSchema::Property::UserCreated].GetString());
-        Utf8String url = properties[ServerSchema::Property::URL].IsString() ? properties[ServerSchema::Property::URL].GetString() : "";
-        indexedRevision->SetURL(url);
-
-        Utf8String revIndex = properties[ServerSchema::Property::Index].GetString();
-        if (!revIndex.empty())
-            {
-            uint64_t index;
-            BeStringUtilities::ParseUInt64(index, revIndex.c_str());
-            indexedRevision->SetIndex(index);
-            }
-        }
-    return indexedRevision;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
+DgnDbServerRevisionsInfoTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetAllRevisions";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -2111,7 +2089,7 @@ DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancell
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionTaskPtr DgnDbRepositoryConnection::GetRevisionById
+DgnDbServerRevisionInfoTaskPtr DgnDbRepositoryConnection::GetRevisionById
 (
 Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
@@ -2122,49 +2100,12 @@ ICancellationTokenPtr cancellationToken
     if (revisionId.empty())
         {
         // Don't log error here since this is a valid case then there are no revisions locally.
-        return CreateCompletedAsyncTask<DgnDbServerRevisionResult>(DgnDbServerRevisionResult::Error(DgnDbServerError::Id::InvalidRevision));
-        }
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    ObjectId revisionObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
-    return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbServerRevisionResult>
-        ([=] (WSObjectsResult& revisionResult)
-        {
-        if (revisionResult.IsSuccess())
-            {
-            auto revision = ParseRevision(*revisionResult.GetValue().GetInstances().begin());
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-            return DgnDbServerRevisionResult::Success(revision);
-            }
-        else
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
-            return DgnDbServerRevisionResult::Error(revisionResult.GetError());
-            }
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
-//---------------------------------------------------------------------------------------
-DgnDbServerRevisionInfoTaskPtr DgnDbRepositoryConnection::GetRevisionInfoById
-(
-Utf8StringCR          revisionId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionInfoById";
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (revisionId.empty())
-        {
-        // Don't log error here since this is a valid case then there are no revisions locally.
         return CreateCompletedAsyncTask<DgnDbServerRevisionInfoResult>(DgnDbServerRevisionInfoResult::Error(DgnDbServerError::Id::InvalidRevision));
         }
-
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     ObjectId revisionObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
     return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbServerRevisionInfoResult>
-        ([=](WSObjectsResult& revisionResult)
+        ([=] (WSObjectsResult& revisionResult)
         {
         if (revisionResult.IsSuccess())
             {
@@ -2663,13 +2604,13 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(Dg
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::RevisionsFromQuery
+DgnDbServerRevisionsInfoTaskPtr DgnDbRepositoryConnection::RevisionsFromQuery
 (
 const WebServices::WSQuery& query,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
-    return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
+    return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionInfoPtr>>([=]()
         {
         return RevisionsFromQueryInternal(query, cancellationToken);
         });
@@ -2678,35 +2619,35 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::RevisionsFromQueryInternal
+DgnDbServerRevisionsInfoTaskPtr DgnDbRepositoryConnection::RevisionsFromQueryInternal
 (
 const WebServices::WSQuery& query,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::RevisionsFromQuery";
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRevisionsResult>
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRevisionsInfoResult>
         ([=](const WSObjectsResult& revisionsInfoResult)
         {
         if (revisionsInfoResult.IsSuccess())
             {
-            bvector<DgnDbServerRevisionPtr> indexedRevisions;
+            bvector<DgnDbServerRevisionInfoPtr> indexedRevisions;
             if (!revisionsInfoResult.GetValue().GetRapidJsonDocument().IsNull())
                 {
                 for (auto const& value : revisionsInfoResult.GetValue().GetInstances())
-                    indexedRevisions.push_back(ParseRevision(value));
+                    indexedRevisions.push_back(DgnDbServerRevisionInfo::Parse(value));
                 }
 
-            std::sort(indexedRevisions.begin(), indexedRevisions.end(), [](DgnDbServerRevisionPtr a, DgnDbServerRevisionPtr b)
+            std::sort(indexedRevisions.begin(), indexedRevisions.end(), [](DgnDbServerRevisionInfoPtr a, DgnDbServerRevisionInfoPtr b)
                 {
                 return a->GetIndex() < b->GetIndex();
                 });
-            return DgnDbServerRevisionsResult::Success(indexedRevisions);
+            return DgnDbServerRevisionsInfoResult::Success(indexedRevisions);
             }
         else
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsInfoResult.GetError().GetMessage().c_str());
-            return DgnDbServerRevisionsResult::Error(revisionsInfoResult.GetError());
+            return DgnDbServerRevisionsInfoResult::Error(revisionsInfoResult.GetError());
             }
         });
     }
@@ -2715,7 +2656,7 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetRevisionsAfterId
+DgnDbServerRevisionsInfoTaskPtr DgnDbRepositoryConnection::GetRevisionsAfterId
 (
 Utf8StringCR          revisionId,
 BeGuidCR              fileId,
@@ -2725,7 +2666,7 @@ ICancellationTokenPtr cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionsAfterId";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
+    std::shared_ptr<DgnDbServerRevisionsInfoResult> finalResult = std::make_shared<DgnDbServerRevisionsInfoResult>();
 
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
     BeGuid id = fileId;
@@ -2739,9 +2680,9 @@ ICancellationTokenPtr cancellationToken
             ServerSchema::Property::Id, revisionId.c_str());
     query.SetFilter(queryFilter);
 
-    return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
+    return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionInfoPtr>>([=]()
         {
-        return RevisionsFromQueryInternal(query, cancellationToken)->Then([=](DgnDbServerRevisionsResultCR revisionsResult)
+        return RevisionsFromQueryInternal(query, cancellationToken)->Then([=](DgnDbServerRevisionsInfoResultCR revisionsResult)
             {
             if (revisionsResult.IsSuccess())
                 {
@@ -2754,7 +2695,7 @@ ICancellationTokenPtr cancellationToken
                 finalResult->SetError(revisionsResult.GetError());
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
                 }
-            })->Then<DgnDbServerRevisionsResult>([=]()
+            })->Then<DgnDbServerRevisionsInfoResult>([=]()
                 {
                 return *finalResult;
                 });
@@ -2764,9 +2705,9 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisions
+DgnRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisions
 (
-const bvector<DgnDbServerRevisionPtr>& revisions,
+const bvector<DgnDbServerRevisionInfoPtr>& revisions,
 Http::Request::ProgressCallbackCR      callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
@@ -2774,30 +2715,53 @@ ICancellationTokenPtr                  cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisions";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     bset<std::shared_ptr<AsyncTask>> tasks;
+    bmap<Utf8String, int64_t> revisionIdIndexMap;
     for (auto& revision : revisions)
-        tasks.insert(DownloadRevisionFile(revision, callback, cancellationToken));
-    return AsyncTask::WhenAll(tasks)->Then<DgnDbServerStatusResult>([=] ()
         {
+        tasks.insert(DownloadRevisionFile(revision, callback, cancellationToken));
+        revisionIdIndexMap.Insert(revision->GetId(), revision->GetIndex());
+        }
+
+    return AsyncTask::WhenAll(tasks)->Then<DgnRevisionsResult>([=] ()
+        {
+        DgnRevisions resultRevisions;
         for (auto task : tasks)
             {
-            auto result = dynamic_pointer_cast<DgnDbServerStatusTask>(task)->GetResult();
+            auto result = dynamic_pointer_cast<DgnRevisionTask>(task)->GetResult();
             if (!result.IsSuccess())
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerStatusResult::Error(result.GetError());
+                return DgnRevisionsResult::Error(result.GetError());
                 }
+            resultRevisions.push_back(result.GetValue());
             }
+
+        std::sort(resultRevisions.begin(), resultRevisions.end(), [revisionIdIndexMap](DgnRevisionPtr a, DgnRevisionPtr b)
+            {
+            auto itemA = revisionIdIndexMap.find(a->GetId());
+            auto itemB = revisionIdIndexMap.find(b->GetId());
+
+            if (revisionIdIndexMap.end() == itemA || revisionIdIndexMap.end() == itemB)
+                {
+                BeAssert(false && "Revision not found in the map.");
+                return true;
+                }
+
+            return itemA->second < itemB->second;
+            });
+
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-        return DgnDbServerStatusResult::Success();
+        return DgnRevisionsResult::Success(resultRevisions);
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisionsAfterId
+DgnRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisionsAfterId
 (
 Utf8StringCR                        revisionId,
 BeGuidCR                            fileId,
@@ -2808,18 +2772,18 @@ ICancellationTokenPtr               cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionsAfterId";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
-    return GetRevisionsAfterId(revisionId, fileId, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
+    std::shared_ptr<DgnRevisionsResult> finalResult = std::make_shared<DgnRevisionsResult>();
+    return GetRevisionsAfterId(revisionId, fileId, cancellationToken)->Then([=] (DgnDbServerRevisionsInfoResultCR revisionsResult)
         {
         if (revisionsResult.IsSuccess())
             {
-            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
+            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnRevisionsResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     {
                     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                    finalResult->SetSuccess(revisionsResult.GetValue());
+                    finalResult->SetSuccess(downloadResult.GetValue());
                     }
                 else
                     {
@@ -2833,7 +2797,7 @@ ICancellationTokenPtr               cancellationToken
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
             finalResult->SetError(revisionsResult.GetError());
             }
-        })->Then<DgnDbServerRevisionsResult>([=] ()
+        })->Then<DgnRevisionsResult>([=] ()
             {
             return *finalResult;
             });

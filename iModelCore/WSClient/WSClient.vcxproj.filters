@@ -378,9 +378,6 @@
     <ClCompile Include="Connect\ConnectSignInManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -520,6 +517,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerPreDownloadManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerConfiguration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -959,9 +962,6 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1179,6 +1179,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerRevisionEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerConfiguration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

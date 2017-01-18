@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/Logging.h>
 #include <thread>
 #include <random>
+#include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include "DgnDbServerEventManager.h"
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
@@ -22,27 +23,27 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions)
+DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
     {
     m_db = db;
     m_repositoryConnection = connection;
 
-    if (allowPreDownloadRevisions)
+    if (DgnDbServerConfiguration::GetPreDownloadRevisionsEnabled())
         m_repositoryConnection->SubscribeRevisionsDownload();
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions)
+DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
     {
-    return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection, allowPreDownloadRevisions));
+    return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+DgnRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::Pull";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -51,22 +52,22 @@ DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallback
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionsResult>(DgnDbServerRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionsResult>(DgnDbServerRevisionsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Briefcase is read only.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionsResult>(DgnDbServerRevisionsResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
     if (!m_db->Txns().IsTracking())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionsResult>(DgnDbServerRevisionsResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
     CheckCreatingRevision();
 
@@ -74,12 +75,12 @@ DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallback
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastRevisionId.c_str()) ? "No revisions pulled yet" : "Downloading revisions after revision ", lastRevisionId.c_str());
 
     return m_repositoryConnection->DownloadRevisionsAfterId(lastRevisionId, GetDgnDb().GetDbGuid(), callback, cancellationToken)
-        ->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
+        ->Then<DgnRevisionsResult>([=] (DgnRevisionsResultCR result)
         {
         if (!result.IsSuccess())
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return DgnDbServerRevisionsResult::Error(result.GetError());
+            return DgnRevisionsResult::Error(result.GetError());
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -91,7 +92,7 @@ DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallback
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(bvector<DgnDbServerRevisionPtr> const& revisions) const
+DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(DgnRevisions const& revisions) const
     {
     const Utf8String methodName = "DgnDbBriefcase::Merge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -124,7 +125,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(bvector<DgnDbServerRevisionPtr> c
         {
         for (auto revision : revisions)
             {
-            mergeStatus = m_db->Revisions().MergeRevision(*(revision->GetRevision()));
+            mergeStatus = m_db->Revisions().MergeRevision(*revision);
             if (mergeStatus != RevisionStatus::Success)
                 break; // TODO: Use the information on the revision that actually failed. 
             }
@@ -245,7 +246,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+DgnRevisionsTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullAndMerge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -259,7 +260,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
     if (!result.IsSuccess())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Pull failed.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(result.GetError()));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
         }
 
     auto serverRevisions = result.GetValue();
@@ -268,19 +269,19 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
     if (!mergeResult.IsSuccess())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(mergeResult.GetError()));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(mergeResult.GetError()));
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Revisions merged successfully.");
-    return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Success(serverRevisions));
+    return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Success(serverRevisions));
 
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, 
+DgnRevisionsTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
                                                                  Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPush";
@@ -351,7 +352,7 @@ void DgnDbBriefcase::UnsubscribeRevisionEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
+DgnRevisionsTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
                                                                      ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushRepeated";
@@ -361,14 +362,14 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
     if (result.IsSuccess())
         {
         UnsubscribeRevisionEvents();
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Success(result.GetValue()));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Success(result.GetValue()));
         }
 
     if (attempt >= attemptsCount)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Too many unsuccessful attempts.");
         UnsubscribeRevisionEvents();
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(result.GetError()));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
         }
 
     DgnDbServerError::Id errorId = result.GetError().GetId();
@@ -383,7 +384,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             UnsubscribeRevisionEvents();
-            return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(result.GetError()));
+            return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
             }
         }
 
@@ -427,27 +428,27 @@ void DgnDbBriefcase::CheckCreatingRevision() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
+DgnRevisionsTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
     Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushInternal";
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Briefcase is read only.");
-        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
-    std::shared_ptr<DgnDbServerRevisionMergeResult> finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
-    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (DgnDbServerRevisionMergeResultCR result)
+    std::shared_ptr<DgnRevisionsResult> finalResult = std::make_shared<DgnRevisionsResult>();
+    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (DgnRevisionsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -481,7 +482,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
                 }
             });
 
-        })->Then<DgnDbServerRevisionMergeResult>([=] ()
+        })->Then<DgnRevisionsResult>([=] ()
         {
         return *finalResult;
         });
@@ -509,7 +510,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
     //Needswork: think how to optimize this so that we would not need to download all revisions
     auto lastPulledRevision = GetLastRevisionPulled();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting revisions after revision %s.", lastPulledRevision.c_str());
-    return m_repositoryConnection->GetRevisionsAfterId(lastPulledRevision, GetDgnDb().GetDbGuid(), cancellationToken)->Then<DgnDbServerBoolResult> ([=](DgnDbServerRevisionsResultCR result)
+    return m_repositoryConnection->GetRevisionsAfterId(lastPulledRevision, GetDgnDb().GetDbGuid(), cancellationToken)->Then<DgnDbServerBoolResult> ([=](DgnDbServerRevisionsInfoResultCR result)
         {
         if (result.IsSuccess())
             {

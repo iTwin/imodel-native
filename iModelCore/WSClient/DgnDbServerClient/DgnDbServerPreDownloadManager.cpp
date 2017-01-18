@@ -9,25 +9,10 @@
 #include "DgnDbServerPreDownloadManager.h"
 #include <DgnDbServer/Client/Logging.h>
 #include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
+#include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include <Bentley/BeFileListIterator.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
-//---------------------------------------------------------------------------------------
-std::shared_ptr<BeMutex> DgnDbServerPreDownloadManager::GetRevisionMutex(Utf8String revisionId)
-    {
-    BeMutexHolder lock(m_revisionMutex);
-
-    auto existingMutex = m_revisionMutexSet.find(revisionId);
-    if (existingMutex != m_revisionMutexSet.end())
-        return existingMutex->second;
-
-    std::shared_ptr<BeMutex> mutex = std::make_shared<BeMutex>();
-    m_revisionMutexSet.Insert(revisionId, mutex);
-    return mutex;
-    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
@@ -36,8 +21,13 @@ bool DgnDbServerPreDownloadManager::TryGetRevisionFile(BeFileName revisionFileNa
     {
     auto preDownloadPath = BuildRevisionPreDownloadPathname(revisionId);
     
-    auto mutex = GetRevisionMutex(revisionId);
-    BeMutexHolder lock(*mutex);
+    FileLock fileLock(preDownloadPath);
+    bool lockResult = fileLock.Lock();
+    if (!lockResult)
+        {
+        BeAssert(false && "File lock failed");
+        return false;
+        }
 
     if (!preDownloadPath.DoesPathExist() || revisionFileName.DoesPathExist())
         return false;
@@ -59,8 +49,15 @@ void DgnDbServerPreDownloadManager::SubscribeRevisionsDownload(DgnDbRepositoryCo
         auto revisionEventPtr = DgnDbServerEventParser::GetRevisionEvent(event);
         auto revisionId = revisionEventPtr->GetRevisionId();
 
-        auto mutex = GetRevisionMutex(revisionId);
-        BeMutexHolder lock(*mutex);
+        auto preDownloadPath = BuildRevisionPreDownloadPathname(revisionId);
+        FileLock fileLock(preDownloadPath);
+        bool lockResult = fileLock.Lock();
+        if (!lockResult)
+            {
+            BeAssert(false && "File lock failed");
+            return;
+            }
+            
         if (revisionEventPtr && repositoryConnectionP)
             {
             PreDownloadRevision(repositoryConnectionP, revisionId)->GetResult();
@@ -135,10 +132,12 @@ bvector<BeFileName> DgnDbServerPreDownloadManager::GetOrderedCacheFiles(BeFileNa
 void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) const
     {
     auto directoryName = revisionFileName.GetDirectoryName();
-    directoryName.AppendToPath(L"*");
+    directoryName.AppendToPath(L"*.rev");
 
     uint64_t cacheSize = GetCacheSize(directoryName);
-    if (cacheSize > s_maxCacheSize)
+    int maxCacheSize = DgnDbServerConfiguration::GetPreDownloadRevisionsCacheSize();
+
+    if (cacheSize > maxCacheSize)
         {
         // Delete oldest files from cache
         auto cacheFiles = GetOrderedCacheFiles(directoryName);
@@ -153,13 +152,24 @@ void DgnDbServerPreDownloadManager::CheckCacheSize(BeFileName revisionFileName) 
             // Update remaining cache size
             currentFile.GetFileSize(currentFileSize);
             cacheSize -= currentFileSize;
+            
+            // Get lock for the file
+            FileLock lock(currentFile);
+            if (0 != BeStringUtilities::Wcsicmp(currentFile.GetName(), revisionFileName.GetName()))
+                {
+                if (!lock.Lock())
+                    {
+                    BeAssert(false && "Could not get lock for the file.");
+                    break;
+                    }
+                }
 
             // Delete file from cache
             BeFileNameStatus deleteStatus = currentFile.BeDeleteFile();
             BeAssert(BeFileNameStatus::Success == deleteStatus);
             cacheFiles.erase(it);
 
-            if (cacheSize <= s_maxCacheSize)
+            if (cacheSize <= maxCacheSize)
                 break;
             }
         }
@@ -194,7 +204,7 @@ ICancellationTokenPtr             cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
 
-    return repositoryConnectionP->GetRevisionInfoById(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionInfoResultCR revisionResult)
+    return repositoryConnectionP->GetRevisionById(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionInfoResultCR revisionResult)
         {
         if (!revisionResult.IsSuccess())
             {
@@ -223,4 +233,47 @@ ICancellationTokenPtr             cancellationToken
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+FileLock::FileLock(BeFileName filePath)
+    {
+    m_lockFilePath = filePath;
+    m_lockFilePath.AppendExtension(L"lock");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+bool FileLock::Lock()
+    {
+    BeFile lockFile;
+
+    int maxIterations = 100;
+    while (maxIterations > 0)
+        {
+        if (BeFileStatus::Success == lockFile.Create(m_lockFilePath, false))
+            {
+            m_locked = true;
+            return true;
+            }
+
+        BeThreadUtilities::BeSleep(50);
+        maxIterations--;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+FileLock::~FileLock()
+    {
+    if (m_locked && m_lockFilePath.DoesPathExist())
+        {
+        m_lockFilePath.BeDeleteFile();
+        }
     }
