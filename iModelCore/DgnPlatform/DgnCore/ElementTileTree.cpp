@@ -2137,6 +2137,7 @@ BentleyStatus Loader::_LoadTile()
             }
         }
 
+    bool addAsSubGraphics = false;
     for (auto const& mesh : geometry.Meshes())
         {
         bool haveMesh = !mesh->Triangles().empty();
@@ -2147,22 +2148,27 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsNull())
             graphic = system._CreateGraphic(Graphic::CreateParams());
 
-        auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
+        Render::GraphicBuilderPtr thisGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
+        thisGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
 
         if (haveMesh)
             {
             if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
-                subGraphic->AddTriMesh(meshArgs);
+                thisGraphic->AddTriMesh(meshArgs);
             }
         else
             {
             BeAssert(havePolyline);
-            polylineArgs.InitAndApply(*subGraphic, *mesh);
+            polylineArgs.InitAndApply(*thisGraphic, *mesh);
             }
 
-        subGraphic->Close();
-        graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+        if (addAsSubGraphics)
+            {
+            thisGraphic->Close();
+            graphic->AddSubGraphic(*thisGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+            }
+
+        addAsSubGraphics = true;
         }
 
 #if defined(DRAW_EMPTY_RANGE_BOXES)
@@ -2182,20 +2188,14 @@ BentleyStatus Loader::_LoadTile()
             gfParams.SetWidth(0);
             gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-#define RANGEBOX_AS_SUBGRAPHIC
-#if defined(RANGEBOX_AS_SUBGRAPHIC)
-            auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-#else
-            auto subGraphic = system._CreateGraphic(Graphic::CreateParams());
-#endif
-            subGraphic->ActivateGraphicParams(gfParams);
-            subGraphic->AddRangeBox(tile.GetRange());
-            subGraphic->Close();
-#if defined(RANGEBOX_AS_SUBGRAPHIC)
-            graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), gfParams);
-#else
-            tile.AddGraphic(*subGraphic);
-#endif
+            Render::GraphicBuilderPtr rangeGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
+            rangeGraphic->ActivateGraphicParams(gfParams);
+            rangeGraphic->AddRangeBox(tile.GetRange());
+            if (addAsSubGraphics)
+                {
+                rangeGraphic->Close();
+                graphic->AddSubGraphic(*rangeGraphic, Transform::FromIdentity(), gfParams);
+                }
             }
 
         graphic->Close();
@@ -3243,6 +3243,7 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
     TileMeshArgs meshArgs;
     TilePolylineArgs polylineArgs;
 
+    bool asSubGraphic = false;
     MeshList meshes = ToMeshes(options, tolerance);
     for (auto const& mesh : meshes)
         {
@@ -3251,7 +3252,7 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
         if (!haveMesh && !havePolyline)
             continue;
 
-        auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
+        Render::GraphicBuilderPtr subGf = asSubGraphic ? gf.CreateSubGraphic(Transform::FromIdentity()) : &gf;
         subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
 
         if (havePolyline)
@@ -3259,8 +3260,13 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
         else if (meshArgs.Init(*mesh, system, GetDgnDb()))
             subGf->AddTriMesh(meshArgs);
 
-        subGf->Close();
-        gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+        if (asSubGraphic)
+            {
+            subGf->Close();
+            gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+            }
+
+        asSubGraphic = true;
         }
     }
 
