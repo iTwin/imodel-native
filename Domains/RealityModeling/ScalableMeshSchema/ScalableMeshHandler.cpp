@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1551,6 +1551,10 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     }
     }
 
+void ScalableMeshModel::ReloadMesh() // force to reload the entire mesh data
+    {
+    m_forceRedraw = true;
+    }
 
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
