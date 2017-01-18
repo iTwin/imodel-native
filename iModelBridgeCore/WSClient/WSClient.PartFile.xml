@@ -5,13 +5,26 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-
+    
     <Part Name="WebServicesClient">
+        <SubPart PartName="WebServicesClient-PC" />
+        <SubPart PartName="WebServicesClient-iOS" LibType="Static"/>
+    </Part>
+
+    <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="WebServicesClient-Library" />
+        <SubPart PartName="WebServicesClient-Library"/>
         <SubPart PartName="WebServicesClient-Library-Android" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
+
+    <Part Name="WebServicesClient-iOS" OnlyPlatforms="iOS*">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="WebServicesClient-Library"/>
+        <SubPart PartName="WebServicesClient-Library-Android" />
+        <SubPart PartName="WSClient-Xliffs" />
+    </Part>
+
 
     <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
         <Bindings>
