@@ -40,7 +40,7 @@ struct PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture : ECDbTestFixtu
         void RunInsertAllCols(Scenario scenario, int colCount) const;
         void RunInsertSingleCol(Scenario scenario, int colCount) const;
         void RunSelectSingleCol(Scenario scenario, int colCount) const;
-        void RunSelectWhereSingleCol(Scenario scenario, int colCount) const;
+        void RunSelectWhereSingleCol(Scenario scenario, int colCount, int opCount) const;
         void RunUpdateSingleCol(Scenario scenario, int colCount) const;
         void RunUpdateAllCols(Scenario scenario, int colCount) const;
 
@@ -106,12 +106,12 @@ TEST_F(PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture, SelectWhereSin
     std::vector<int> testColCounts = GetTestColumnCounts();
     for (int colCount : testColCounts)
         {
-        RunSelectWhereSingleCol(Scenario::Physical, colCount);
+        RunSelectWhereSingleCol(Scenario::Physical, colCount, 1000);
         }
 
     for (int colCount : testColCounts)
         {
-        RunSelectWhereSingleCol(Scenario::Overflow, colCount);
+        RunSelectWhereSingleCol(Scenario::Overflow, colCount, 1000);
         }
     }
 
@@ -333,7 +333,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunSelectSingleC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunSelectWhereSingleCol(Scenario scenario, int colCount) const
+void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunSelectWhereSingleCol(Scenario scenario, int colCount, int opCount) const
     {
     Db db;
     SetupTestDb(db, scenario, colCount);
@@ -364,7 +364,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunSelectWhereSi
     StopWatch timer(true);
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
-    for (int i = 0; i < s_opCount; i++)
+    for (int i = 0; i < opCount; i++)
         {
         const int value = ComputeValue(i, insertColNo);
         stmt.BindInt(1, value);
@@ -374,7 +374,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunSelectWhereSi
         }
 
     timer.Stop();
-    LogTiming(timer, scenario, "SELECT WHERE single col", colCount, s_initialRowCount, s_opCount);
+    LogTiming(timer, scenario, "SELECT WHERE single col", colCount, s_initialRowCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -529,7 +529,7 @@ Utf8String PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::GetColumnN
 void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::LogTiming(StopWatch& timer, Scenario scenario, Utf8CP operation, int colCount, int initialRowCount, int opCount) const
     {
     Utf8String descr;
-    descr.Sprintf("%s, %s, %d, %d", operation, scenario == Scenario::Overflow ? "Overflow" : "Physical",
+    descr.Sprintf("%s, %s, %d columns, initial row count %d", operation, scenario == Scenario::Overflow ? "Overflow" : "Physical",
                   colCount, initialRowCount);
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), descr.c_str(), opCount);
