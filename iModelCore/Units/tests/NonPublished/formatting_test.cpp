@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
-#define FORMAT_DEBUG_PRINT
+//#define FORMAT_DEBUG_PRINT
 
 #undef LOG
 //#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
@@ -28,7 +28,7 @@ TEST(FormattingTest, Simple)
     LOG.infov("size of int %d ", sizeof(int));
     LOG.infov("size of size_t %d ", sizeof(size_t));
     FactorizedNumber fan = FactorizedNumber(ival);
-    LOG.infov("Value %d  (factors) %s ", ival, fan.ToText());
+    LOG.infov("Value %d  (factors) %s ", ival, fan.ToText().c_str());
     LOG.infov("%s", FactorizedNumber(75).DebugText().c_str());
     LOG.infov("%s", FactorizedNumber(11925).DebugText().c_str());
     LOG.infov("%s", FactorizedNumber(117).DebugText().c_str());
@@ -91,23 +91,23 @@ TEST(FormattingTest, Simple)
 #endif
 
 #if defined FORMAT_DEBUG_PRINT
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real").c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0).c_str());
 
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0));
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0).c_str());
     LOG.info("Scientific");
     LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sci", 5).c_str());
     LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sciN", 5).c_str());
