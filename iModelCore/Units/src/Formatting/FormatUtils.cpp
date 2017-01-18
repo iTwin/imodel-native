@@ -213,19 +213,36 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  // FractionalNumeric
  //
  //===================================================
+
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 01/17
+ //----------------------------------------------------------------------------------------
+ size_t FractionalNumeric::GCF(size_t numer, size_t denom)
+     {
+     FactorizedNumber numF = FactorizedNumber(numer);
+     FactorizedNumber denF = FactorizedNumber(denom);
+     return numF.GetGreatestCommonFactor(denF);
+     }
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
  FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
      {
-      m_denominator = Utils::FractionalPrecisionDenominator(fprec);
-      double fract = modf(fabs(dval), &m_integral);
-      if (0 > dval)
-          m_integral = -m_integral;
-      double numer = floor(fract * m_denominator + FormatConstant::FPV_RoundFactor());
-      m_numerator = static_cast<int>(numer);
+     m_denominator = Utils::FractionalPrecisionDenominator(fprec);
+     double fract = modf(fabs(dval), &m_integral);
+     double numer = floor(fract * m_denominator + FormatConstant::FPV_RoundFactor());
+     m_numerator = static_cast<int>(numer);
+     m_gcf = 1;
+     if ((m_numerator / m_denominator) == 1)
+         {
+         m_numerator = 0;
+         m_integral += 1.0;
+         }
+     else
+         m_gcf = GCF(m_numerator, m_denominator);
+     if (0 > dval)
+         m_integral = -m_integral;
      }
-
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
@@ -235,22 +252,14 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      double fract = modf(fabs(dval), &m_integral);
      double numer = floor(fract * m_denominator + FormatConstant::FPV_RoundFactor());
      m_numerator = static_cast<int>(numer);
+     m_gcf = 1;
      if ((m_numerator / m_denominator) == 1)
          {
          m_numerator = 0;
          m_integral += 1.0;
          }
      else
-         {
-         FactorizedNumber numF = FactorizedNumber(m_numerator);
-         FactorizedNumber denF = FactorizedNumber(m_denominator);
-         size_t gcf = numF.GetGreatestCommonFactor(denF);
-         if (gcf > 1)
-             {
-             m_numerator /= static_cast<int>(gcf);
-             m_denominator /= static_cast<int>(gcf);
-             }
-         }
+         m_gcf = GCF(m_numerator, m_denominator);
      if (0 > dval)
          m_integral = -m_integral;
      }
@@ -258,23 +267,47 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
- Utf8String FractionalNumeric::ToTextDefault()
+ FractionalNumeric FractionalNumeric::Create(double dval, int denominatorBase, double precision)
      {
-     char buf[256];
-     if(m_numerator > 0)
-        sprintf(buf, "%d %d/%d", static_cast<int>(m_integral), m_numerator, m_denominator);
-     else
-         sprintf(buf, "%d (0/%d)", static_cast<int>(m_integral), m_denominator);
-     return Utf8String(buf);
+     double maxPrec = 1.0;
+     denominatorBase = abs(denominatorBase); // it must be positive
+     double absDenom = (double)denominatorBase;
+     int denominator = denominatorBase;
+     if (denominator > 0)
+        maxPrec /= absDenom;
+
+     if (!FormatConstant::IsNegligible(precision))
+         {
+         while (maxPrec > precision)
+             {
+             maxPrec /= absDenom;
+             denominator *= denominatorBase;
+             }
+         }
+     return FractionalNumeric(dval, denominator);
      }
+
 
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
- void FractionalNumeric::Reduction()
+ Utf8String FractionalNumeric::ToTextDefault(bool reduce)
      {
-
+     char buf[256];
+     size_t numer = m_numerator;
+     size_t denom = m_denominator;
+     if (reduce && m_gcf > 1)
+         {
+         numer /= m_gcf;
+         denom /= m_gcf;
+         }
+     if(m_numerator > 0)
+        sprintf(buf, "%d %d/%d", static_cast<int>(m_integral), static_cast<int>(numer), static_cast<int>(denom));
+     else
+         sprintf(buf, "%d (0/%d)", static_cast<int>(m_integral), static_cast<int>(denom));
+     return Utf8String(buf);
      }
+
 
  //===================================================
  //

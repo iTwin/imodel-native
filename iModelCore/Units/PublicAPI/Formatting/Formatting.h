@@ -327,6 +327,9 @@ public:
     static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
     UNITS_EXPORT static bool GetTrailingBits(unsigned char c, CharP outBits);
     UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
+    static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
 };
 
 struct Utils
@@ -398,14 +401,17 @@ struct FractionalNumeric
     {
 private:
     double m_integral;
-    int m_numerator;
-    int m_denominator;
+    size_t m_numerator;
+    size_t m_denominator;
+    size_t m_gcf;
 
-    static void Reduction();
+    size_t GCF(size_t numer, size_t denom);
 public:
+    size_t GetDenominator() { return m_denominator; }
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
     UNITS_EXPORT FractionalNumeric(double dval, int denominator);
-    UNITS_EXPORT Utf8String ToTextDefault();
+    UNITS_EXPORT static FractionalNumeric Create(double dval, int denominatorBase, double precision);
+    UNITS_EXPORT Utf8String ToTextDefault(bool reduce);
     };
 
 //=======================================================================================
@@ -426,7 +432,7 @@ private:
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
 
-    double EffectiveRoundFactor(double rnd) { return IsIgnored(rnd) ? m_roundFactor : rnd; }
+    double EffectiveRoundFactor(double rnd) { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
     UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
     UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
@@ -486,9 +492,9 @@ public:
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
-    static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-    static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-    static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
+    //static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    //static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    //static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
     bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
     UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);

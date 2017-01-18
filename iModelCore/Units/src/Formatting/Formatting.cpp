@@ -100,7 +100,7 @@ void NumericFormat::SetAlias(Utf8CP alias)
 //----------------------------------------------------------------------------------------
 double NumericFormat::RoundDouble(double dval, double roundTo)
     {
-    if (IsNegligible(roundTo))
+    if (FormatConstant::IsNegligible(roundTo))
         return dval;
     roundTo = fabs(roundTo);
     double rnd = FormatConstant::FPV_RoundFactor() + (fabs(dval) / roundTo);
@@ -554,7 +554,7 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
     bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
 
-    if (IsApplyRounding() || !IsIgnored(round))
+    if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
 
     if (sci)

@@ -22,7 +22,7 @@ TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
     ////  demo print
-
+#if defined FORMAT_DEBUG_PRINT
     LOG.infov("There are %d prime factors", FactorizedNumber::GetPrimeCount());
     int ival = 128;
     FactorizedNumber fan = FactorizedNumber(ival);
@@ -49,35 +49,44 @@ TEST(FormattingTest, Simple)
 
     double fval = sqrt(2.0);
     FractionalNumeric fn = FractionalNumeric(fval, 4);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
     fval *= 3.5;
 
     fn = FractionalNumeric(fval, 16);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fn = FractionalNumeric(fval, 32);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fn = FractionalNumeric(fval, 8);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fn = FractionalNumeric(fval, 3);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fn = FractionalNumeric(fval, 7);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fn = FractionalNumeric(fval, 16);
-    LOG.infov("Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fval = 15.0 + (32.0*25.0*3.0) / (64.0*125.0*3.0);
     fn = FractionalNumeric(fval, 256);
-    LOG.infov("Fractional Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Fractional Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
     fval = 15.0 + 14.0 / 16.0;
     fn = FractionalNumeric(fval, 256);
-    LOG.infov("Fractional Value %.6f  (real) %s ", fval, fn.ToTextDefault());
+    LOG.infov("Fractional Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
+    fn = FractionalNumeric::Create(fval, 2, 0.005);
+    LOG.infov("Fractional Value(2) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
+
+    fn = FractionalNumeric::Create(fval, 7, 0.005);
+    LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
+
+    fn = FractionalNumeric::Create(fval, 7, 0.1);
+    LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
+#endif
 
 #if defined FORMAT_DEBUG_PRINT
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
@@ -112,6 +121,19 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sciN", 5).c_str());
 #endif
     /////  end of demo print
+        /*Value 1.414214  (denom 4) 1 1 / 2
+        Value 4.949747  (denom 16) 4 15 / 16
+        Value 4.949747  (denom 32) 4 15 / 16
+        Value 4.949747  (denom 8) 5 (0 / 8)
+        Value 4.949747  (denom 3) 5 (0 / 3)
+        Value 4.949747  (denom 7) 5 (0 / 7)
+        Value 4.949747  (denom 16) 4 15 / 16
+        Fractional Value 15.100000  (denom 256) 15 13 / 128
+        Fractional Value 15.875000  (denom 256) 15 7 / 8
+        Fractional Value(2) 15.875000  (denom 256) 15 7 / 8
+        Fractional Value(7) 15.875000  (denom 343) 15 300 / 343
+        Fractional Value(7) 15.875000  (denom 49) 15 43 / 49*/
+
 
     EXPECT_STREQ ("1414.213562", NumericFormat::RefFormatDouble(testV, "real").c_str());
     EXPECT_STREQ ("1414.21356237", NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
