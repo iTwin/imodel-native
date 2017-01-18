@@ -566,6 +566,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
         GetProgress()->Progress() = 0.0;
 
+        CachedDataEventTracer::GetInstance()->start();
+
         for (int level = (int)depth; level >= 0; level--)
             {
 
@@ -581,8 +583,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
-                return BSIERROR;
+ //           if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+ //               return BSIERROR;
 
             if (GetProgress()->IsCanceled()) return BSISUCCESS;
 

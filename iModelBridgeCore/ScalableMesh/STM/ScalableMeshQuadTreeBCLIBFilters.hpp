@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <windows.h> //for showing info.
@@ -293,7 +293,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                                     size_t numSubNodes) const
 
     {
-    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>,SMPointIndexNode<POINT, EXTENT>>(parentNode);
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+
     // Compute the number of points in sub-nodes
     size_t totalNumberOfPoints = 0;
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
@@ -311,7 +314,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         // We then promote then all so they are given a high importance to make sure some terrain
         // representativity is retained in this area.
         DRange3d extent = DRange3d::NullRange();
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
         parentPointsPtr->clear();
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
             {
@@ -336,7 +338,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         size_t pointArrayInitialNumber[8];
         DRange3d extent = DRange3d::NullRange();
 
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
         parentPointsPtr->clear();
         parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
@@ -348,6 +349,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+
 
                 if (subNodePointsPtr->size() == 0)
                     continue;
@@ -370,7 +372,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 
                     size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
 
-                   parentPointsPtr = parentNode->GetPointsPtr();
+
                     parentPointsPtr->push_back(&points[0], std::min(count, points.size()));
 
                 }               
@@ -378,7 +380,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
 
         }
-        
+
+        SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
+        parentPointsPtr = 0;
+        pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
         {
         pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);

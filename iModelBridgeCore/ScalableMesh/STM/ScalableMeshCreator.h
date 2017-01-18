@@ -123,6 +123,14 @@ struct ScalableMeshProgress : public IScalableMeshProgress
 
     virtual std::atomic<float>& _Progress() override;
     virtual std::atomic<int>& _ProgressStep() override;
+
+    public:
+        ScalableMeshProgress()
+            {
+            m_canceled = false;
+            m_currentStep = 0;
+            m_progressInStep = 0;
+            }
     };
 
 /*---------------------------------------------------------------------------------**//**

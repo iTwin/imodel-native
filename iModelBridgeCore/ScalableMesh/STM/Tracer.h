@@ -112,7 +112,7 @@ public:
     void analyze()
     {
         std::ofstream traceFile;
-        traceFile.open("c:\\work\\2016q4\\LumenVRAMPool\\LumenTrace\\trace.log", std::ios_base::app);
+        traceFile.open("e:\\trace.log", std::ios_base::app);
         bmap<uint64_t, bvector<std::string>> eventsByVal;
         for (TraceEvent* init = ring.data(); init != current; ++init)
         {
@@ -123,7 +123,7 @@ public:
             eventsByVal[init->objVal].push_back(str.str());
         }
         traceFile.close();
-        traceFile.open("c:\\work\\2016q4\\LumenVRAMPool\\LumenTrace\\traceByObj.log", std::ios_base::app);
+        traceFile.open("e:\\traceByObj.log", std::ios_base::app);
         for (auto& obj : eventsByVal)
         {
             for (auto& str : obj.second)
@@ -138,15 +138,18 @@ public:
 
 };
 
-#define THREAD_ID() (uint64_t)std::hash<std::thread::id>()(std::this_thread::get_id())
+
+
+#define THREAD_ID() ((uint64_t)std::hash<std::thread::id>()(std::this_thread::get_id()))
+
 
 #if TRACE_ON
-#define TRACEPOINT(thread,type,id,meshid,texid,poolid,val, rc) \
+#define TRACEPOINT(threadt,type,id,meshid,texid,poolid,val, rc) \
 {  \
 TraceEvent e; \
 e.type = (type); \
 e.refCount = (rc); \
-e.threadId = (uint64_t)(thread);\
+e.threadId = (uint64_t)(threadt);\
 e.nodeId = (id); \
 e.texId = (texid); \
 e.meshId = (meshid); \
@@ -162,3 +165,5 @@ CachedDataEventTracer::GetInstance()->logEvent(e); \
 #endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH

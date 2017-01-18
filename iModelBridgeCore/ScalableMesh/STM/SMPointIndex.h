@@ -1140,13 +1140,16 @@ protected:
         //Should be accessed using GetParentNode.        
         bool m_isParentNodeSet;
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pParentNode;      // Parent node      
-        SMMemoryPoolItemId m_pointsPoolItemId;
         uint64_t           m_nodeId; 
         bool               m_isDirty;
         std::mutex         m_ptsLock;
         
         static std::map<size_t, SMNodeGroup*> s_OpenGroups;
         static int s_GroupID;    
+
+
+        public:
+            SMMemoryPoolItemId m_pointsPoolItemId;
     };
 
 

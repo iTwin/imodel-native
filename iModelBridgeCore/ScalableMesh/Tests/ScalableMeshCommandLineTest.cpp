@@ -1239,8 +1239,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     RunPrecisionTest(stmFileName);*/
 
 
-    RunDTMClipTest();
-    //RunDTMTriangulateTest();
+    //RunDTMClipTest();
+    RunDTMTriangulateTest();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();

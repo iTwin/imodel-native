@@ -1266,7 +1266,7 @@ class SMMemoryPool : public RefCountedBase
                 {
                 poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();       
 
-                TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
+               TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
 
                 }
 

@@ -503,8 +503,37 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 SetGroundDetectionDuration(0.0);
                 clock_t t = clock();
 
+                bool importInProgress = true;
+                std::thread mythread([&importInProgress, &creatorPtr] ()
+                    {
+                    float lastProgress = 0;
+                    int lastStep = 0;
+                    while (importInProgress)
+                        {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                      
+                            {
+                            float progress = 0;
+                            int step = 0;
+                            int nSteps = 0;
+                            if (!creatorPtr.IsValid() || creatorPtr->GetProgress() == nullptr) continue;
+
+                            progress = creatorPtr->GetProgress()->GetProgress();
+                            step = creatorPtr->GetProgress()->GetProgressStep();
+                            nSteps = creatorPtr->GetProgress()->GetTotalNumberOfSteps();
+                            if ((fabs(progress - lastProgress) > 0.01 || abs(step - lastStep) > 0))
+                                {
+                                std::cout << " PROGRESS: " << progress * 100.0 << " % ON STEP " << step << " OUT OF " << nSteps << std::endl;
+                                lastProgress = progress;
+                                lastStep = step;
+                                }
+                            }
+                        }
+                    });
 
                 StatusInt status = creatorPtr->Create(isSingleFile);
+                importInProgress = false;
+                mythread.join();
 
                 t = clock() - t;
                 double delay = (double)t / CLOCKS_PER_SEC;
