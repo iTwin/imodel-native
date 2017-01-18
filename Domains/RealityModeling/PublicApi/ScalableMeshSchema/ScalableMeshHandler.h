@@ -179,6 +179,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
         
+        SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
+
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial

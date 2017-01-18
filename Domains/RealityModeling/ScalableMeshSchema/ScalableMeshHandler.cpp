@@ -1561,6 +1561,10 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     }
     }
 
+void ScalableMeshModel::ReloadMesh() // force to reload the entire mesh data
+    {
+    m_forceRedraw = true;
+    }
 
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/CameraDevice.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -205,7 +205,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
 
         DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
-
         //! Get the id of this CameraDevice
         DATACAPTURE_EXPORT CameraDeviceModelElementId GetId() const;
 
@@ -337,6 +336,9 @@ public:
     DATACAPTURE_EXPORT static CameraDevice::ShotIterator MakeShotIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId);
 
     DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
+
+    //! Get the Field of view of a camera
+    DATACAPTURE_EXPORT static DPoint2d ComputeFieldOfView(CameraDeviceCR camDevice);
 
     //! Get the id of this CameraDevice
     DATACAPTURE_EXPORT CameraDeviceElementId GetId() const;
