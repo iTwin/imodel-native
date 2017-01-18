@@ -38,10 +38,15 @@ struct PerformanceRegularVsOverflowColumns : ECDbTestFixture
     void RunPoint2dTest(std::vector<DPoint2d> const& point2dValues, Scenario, bool getReadTime);
     void RunPoint3dTest(std::vector<DPoint3d> const& point3dValues, Scenario, bool getReadTime);
     void RunBlobTest(Utf8String stringValues[], Scenario, bool getReadTime);
-
     void SetUpTestDb(Utf8String seedDbName, Utf8CP schemaXml, Utf8String destFileName);
+
+    void RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime);
+    void SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount);
+    void GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql);
+
     void ReopenECDb();
 
+    void GetRandomIntegers(int intValues[], int count);
     void GetRandomStrings(Utf8String stringValues[]);
 
     static void GetTestSchemaXml(Utf8StringR schemaXml, PrimitiveType, Scenario);
@@ -50,9 +55,6 @@ struct PerformanceRegularVsOverflowColumns : ECDbTestFixture
     static Utf8CP PrimitiveTypeToXmlString(PrimitiveType);
     static Utf8CP ScenarioToString(Scenario scenario) { return scenario == Scenario::Regular ? "regular" : "overflow"; }
     };
-
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
@@ -466,6 +468,89 @@ void PerformanceRegularVsOverflowColumns::RunBlobTest(Utf8String stringValues[],
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime)
+    {
+    Utf8String insertECSql;
+    Utf8String selectECSql;
+    GetECSqlStatements(insertECSql, selectECSql);
+
+    StopWatch timer(true);
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), insertECSql.c_str()));
+    for (int i = 0; i < s_insertCount; i++)
+        {
+        statement.BindInt64(1, s_firstInstanceId + i);
+        for (int parameterIndex = 2; parameterIndex <= (propertiesCount + 1); parameterIndex++)
+            {
+            if (!statement.BindInt(parameterIndex, intValues[i]).IsSuccess())
+                {
+                ASSERT_TRUE(false);
+                return;
+                }
+            }
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+
+        statement.Reset();
+        statement.ClearBindings();
+        }
+    timer.Stop();
+    statement.Finalize();
+
+    Utf8String testDescription;
+    testDescription.Sprintf("Insert_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+
+    ReopenECDb();
+
+    if (getReadTime)
+        {
+        const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
+        //printf("SelectECSql : %s\n", selectECSql.c_str());
+        timer.Start();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), selectECSql.c_str()));
+        for (int i = 0; i < s_readCount; i++)
+            {
+            if (!statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement).IsSuccess())
+                {
+                FAIL();
+                return;
+                }
+
+            DbResult stat = statement.Step();
+            if (stat != BE_SQLITE_ROW && stat != BE_SQLITE_DONE)
+                {
+                FAIL();
+                return;
+                }
+
+            int columnCount = statement.GetColumnCount();
+            ASSERT_EQ((int) propertiesCount, columnCount);
+
+            for (int parameterIndex = 0; parameterIndex < propertiesCount; parameterIndex++)
+                {
+                //printf("intValues[i*instanceIdIncrement] : %d\n", intValues[i*instanceIdIncrement]);
+                //printf("statement.GetValueInt(parameterIndex) : %d\n", statement.GetValueInt(parameterIndex));
+                if (intValues[i*instanceIdIncrement] != statement.GetValueInt(parameterIndex))
+                    {
+                    ASSERT_TRUE(false);
+                    return;
+                    }
+                }
+
+            statement.Reset();
+            statement.ClearBindings();
+            }
+        timer.Stop();
+        statement.Finalize();
+
+        testDescription.Sprintf("Read_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance)
     {
     // get random int values between minimum and maximum integer
@@ -488,7 +573,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance)
     fileName.Sprintf("int_OverflowColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Integer, Scenario::Overflow);
 
-    SetUpTestDb(fileName, testSchemaXml.c_str(),"intinsertperformanceoverflowcolumn.ecdb");
+    SetUpTestDb(fileName, testSchemaXml.c_str(), "intinsertperformanceoverflowcolumn.ecdb");
 
     RunIntegerTest(intValues, Scenario::Overflow, true);
     GetECDb().CloseDb();
@@ -698,6 +783,39 @@ TEST_F(PerformanceRegularVsOverflowColumns, BlobPerformance)
     GetECDb().CloseDb();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance_VaryProperties_VarySharedColumns)
+    {
+    int intValues[s_insertCount];
+    GetRandomIntegers(intValues, s_insertCount);
+
+    Utf8String dbName;
+
+    // varing properties count from [0-60]
+    // all properties mapping to physical Columns
+    for (int propertyCount = 1; propertyCount <= 60; propertyCount++)
+        {
+        dbName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties.ecdb", 0, propertyCount);
+        SetUpDbWithSpecifiedSchema(dbName.c_str(), propertyCount, 0);
+        ASSERT_TRUE(GetECDb().IsDbOpen());
+        RunIntegerTestSpecifiedSchema(intValues, propertyCount, 0, true);
+        GetECDb().CloseDb();
+        }
+
+    // varying propertyCount [0-60] and columnCount [0-60]
+    // all properties mapping to sharedColumns
+    for (int count = 1; count <= 60; count++)
+        {
+        dbName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties.ecdb", count + 1, count);
+        SetUpDbWithSpecifiedSchema(dbName.c_str(), count, count + 1);
+        ASSERT_TRUE(GetECDb().IsDbOpen());
+        RunIntegerTestSpecifiedSchema(intValues, count, count + 1, true);
+        GetECDb().CloseDb();
+        }
+    }
+
 //------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 01/17
 //+---------------+---------------+---------------+---------------+---------------+---
@@ -750,8 +868,112 @@ void PerformanceRegularVsOverflowColumns::SetUpTestDb(Utf8String seedDbName, Utf
         GetECDb().CloseDb();
         }
 
-
     ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceRegularVsOverflowColumns::SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount)
+    {
+    Utf8String seedFileName;
+    seedFileName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties_seed%d.ecdb", sharedColumnsCount, propertiesCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
+
+    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+
+    if (!seedFilePath.DoesPathExist())
+        {
+        SetupECDb(seedFileName.c_str());
+
+        ECSchemaPtr testSchema = nullptr;
+        ECEntityClassP testClass = nullptr;
+
+        ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0);
+        ASSERT_TRUE(testSchema.IsValid());
+
+        ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(testClass, "TestClass"));
+
+
+        ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+        readContext->AddSchema(*testSchema);
+
+        if (sharedColumnsCount > 0)
+            {
+            readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+            SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
+            ECSchemaPtr ecdbMapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
+            ASSERT_TRUE(ecdbMapSchema.IsValid());
+            testSchema->AddReferencedSchema(*ecdbMapSchema);
+
+            StandaloneECInstancePtr tablePerHierarchyCA = ecdbMapSchema->GetClassCP("ClassMap")->GetDefaultStandaloneEnabler()->CreateInstance();
+            ASSERT_TRUE(tablePerHierarchyCA != nullptr);
+            ASSERT_TRUE(tablePerHierarchyCA->SetValue("MapStrategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
+            ASSERT_TRUE(testClass->SetCustomAttribute(*tablePerHierarchyCA) == ECObjectsStatus::Success);
+
+            StandaloneECInstancePtr sharedColumnCA = ecdbMapSchema->GetClassCP("ShareColumns")->GetDefaultStandaloneEnabler()->CreateInstance();
+            ASSERT_TRUE(sharedColumnCA != nullptr);
+            ASSERT_TRUE(sharedColumnCA->SetValue("SharedColumnCount", ECValue(sharedColumnsCount)) == ECObjectsStatus::Success);
+            ASSERT_TRUE(testClass->SetCustomAttribute(*sharedColumnCA) == ECObjectsStatus::Success);
+            }
+
+        PrimitiveECPropertyP primitiveP;
+        for (size_t i = 0; i < propertiesCount; i++)
+            {
+            Utf8String temp;
+            temp.Sprintf("_Property%d", i);
+            Utf8String propName = testClass->GetName().c_str();
+            propName.append(temp);
+            testClass->CreatePrimitiveProperty(primitiveP, propName, PrimitiveType::PRIMITIVETYPE_Integer);
+            }
+
+        EXPECT_EQ(BentleyStatus::SUCCESS, GetECDb().Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        EXPECT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
+
+        GetECDb().CloseDb();
+        }
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(GetECDb(), seedDbName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceRegularVsOverflowColumns::GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql)
+    {
+    ECSchemaCP ecSchema = GetECDb().Schemas().GetECSchema("TestSchema", true);
+    for (ECClassCP testClass : ecSchema->GetClasses())
+        {
+        Utf8StringCR className = testClass->GetECSqlName();
+
+        insertECSql = Utf8String("INSERT INTO ");
+        insertECSql.append(className).append(" (ECInstanceId, ");
+        Utf8String insertValuesSql(") VALUES (?, ");
+
+        selectECSql = Utf8String("SELECT ");
+
+        bool isFirstItem = true;
+        for (auto prop : testClass->GetProperties(true))
+            {
+            if (!isFirstItem)
+                {
+                insertECSql.append(", ");
+                insertValuesSql.append(", ");
+
+                selectECSql.append(", ");
+                }
+
+            insertECSql.append(prop->GetName());
+            insertValuesSql.append("?");
+
+            selectECSql.append(prop->GetName());
+
+            isFirstItem = false;
+            }
+
+        insertECSql.append(insertValuesSql).append(")");
+
+        selectECSql.append(" FROM ONLY ").append(className).append(" WHERE ECInstanceId=?");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -784,6 +1006,19 @@ void PerformanceRegularVsOverflowColumns::GetRandomStrings(Utf8String stringValu
         stringValues[j] = string;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceRegularVsOverflowColumns::GetRandomIntegers(int intValues[], int count)
+    {
+    // get random int values between minimum and maximum integer
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(std::numeric_limits<int>().min(), std::numeric_limits<int>().max());
+    for (int i = 0; i < count; i++)
+        intValues[i] = dist(rd);
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 01/17
 //+---------------+---------------+---------------+---------------+---------------+------
