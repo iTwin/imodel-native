@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
-#define FORMAT_DEBUG_PRINT
+//#define FORMAT_DEBUG_PRINT
 
 #undef LOG
 //#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
