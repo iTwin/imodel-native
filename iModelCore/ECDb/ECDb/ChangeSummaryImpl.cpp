@@ -45,6 +45,7 @@ TableMapPtr TableMap::Create(ECDbCR ecdb, Utf8StringCR tableName)
 void TableMap::Initialize(Utf8StringCR tableName)
     {
     DbSchema const& dbSchema = m_ecdb.Schemas().GetDbMap().GetDbSchema();
+    m_tableName = tableName;
 
     DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
     if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
@@ -55,8 +56,7 @@ void TableMap::Initialize(Utf8StringCR tableName)
 
     m_isMapped = true;
     m_dbTable = dbTable;
-    m_tableName = tableName;
-
+    
     InitColumnIndexByName();
     InitSystemColumnMaps();
     InitForeignKeyRelClassMaps();
@@ -851,14 +851,15 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         {
         if (!rowEntry.IsMapped())
             {
-            if (rowEntry.GetTableName().StartsWith("ec_"))
-                {
-                rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
-                BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summaries are not reliable.");
-                return ERROR;
-                }
+            LOG.warningv("ChangeSet includes changes to unmapped table %s", rowEntry.GetTableName().c_str());
+            continue; // There are tables which are just not mapped to EC that we simply don't care about (e.g., be_Prop table)
+            }
 
-            BeAssert(false && "Found unmapped entries in the change set. Change summary will not be complete!");
+        if (rowEntry.GetTableName().StartsWith("ec_"))
+            {
+            rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
+            LOG.errorv("ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.", rowEntry.GetTableName().c_str());
+            BeAssert(false && "ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.");
             return ERROR;
             }
 
@@ -866,7 +867,8 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            BeAssert(false && "Couldn't determine the primary instance corresponding to a change.");
+            LOG.errorv("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
+            BeAssert(false && "Could not determine the primary instance corresponding to a change.");
             return ERROR;
             }
 
@@ -1918,11 +1920,7 @@ void ChangeIterator::RowEntry::Initialize()
 
     InitSqlChange();
 
-    Utf8StringCR tableName = m_sqlChange->GetTableName();
-    if (tableName.StartsWith("ec_"))
-        return;
-
-    m_tableMap = m_iterator.GetTableMap(tableName);
+    m_tableMap = m_iterator.GetTableMap(m_sqlChange->GetTableName());
     BeAssert(m_tableMap != nullptr);
 
     if (m_tableMap->IsMapped())
@@ -2010,7 +2008,7 @@ Utf8StringCR ChangeIterator::RowEntry::GetTableName() const
         return s_emptyString;
         }
 
-    return m_tableMap->GetDbTable()->GetName(); 
+    return m_tableMap->GetTableName();
     }
 
 //---------------------------------------------------------------------------------------

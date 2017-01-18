@@ -18,7 +18,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsiclass                                                 Ramanujam.Raman   12/16
 //=======================================================================================
 struct ChangeSummaryTestFixture : public ECDbTestFixture
-    {};
+    {
+    protected:
+        BentleyStatus ImportSchemas(ECDbR ecdb, SchemaItem const& schemaItem);
+    };
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   12/16
@@ -47,6 +50,68 @@ struct TestChangeTracker : BeSQLite::ChangeTracker
         return OnCommitStatus::Continue;
         }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/17
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryTestFixture::ImportSchemas(ECDbR ecdb, SchemaItem const& schemaItem)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+
+    for (Utf8StringCR schemaXml : schemaItem.m_schemaXmlList)
+        {
+        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
+            return ERROR;
+        }
+
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/16
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, InvalidSummary)
+    {
+    ECDbR ecdb = SetupECDb("invalidsummarytest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    // Test1: Change to be_Prop table - should cause empty change summary without errors
+    TestChangeTracker tracker(ecdb);
+    tracker.EnableTracking(true);
+
+    DbResult result = ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue");
+    EXPECT_EQ(BE_SQLITE_OK, result);
+
+    TestChangeSet changeSet;
+    result = changeSet.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
+
+    ChangeSummary changeSummary(ecdb);
+    BentleyStatus status = changeSummary.FromChangeSet(changeSet);
+    ASSERT_TRUE(SUCCESS == status);
+
+    // Test2: Change to ec_ tables - should cause an error creating a change summary
+    tracker.Restart();
+
+    status = ImportSchemas(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "</ECSchema>"));
+
+    changeSet.Free();
+    result = changeSet.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
+
+    changeSummary.Free();
+    BeTest::SetFailOnAssert(false);
+    status = changeSummary.FromChangeSet(changeSet);
+    BeTest::SetFailOnAssert(true);
+    ASSERT_TRUE(ERROR == status);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
