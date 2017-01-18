@@ -126,6 +126,27 @@ struct BeTimeUtilities
     /// @}
 };
 
+//=======================================================================================
+//! A duration, in seconds, double precision. This is a std::chrono::duration<double> with operators for converting to double and other std::chrono durations.
+//! @note this is not the same as std::chrono::seconds, where the resolution is integer seconds.
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct BeDuration : std::chrono::duration<double>
+{
+    using std::chrono::duration<double>::duration;
+    BeDuration() : std::chrono::duration<double>() {}
+    BeDuration(double val) : std::chrono::duration<double>(val) {}
+    operator double() const {return count();}
+    operator std::chrono::nanoseconds() const {return std::chrono::duration_cast<std::chrono::nanoseconds>(*this);}
+    operator std::chrono::microseconds() const {return std::chrono::duration_cast<std::chrono::microseconds>(*this);}
+    operator std::chrono::milliseconds() const {return std::chrono::duration_cast<std::chrono::milliseconds>(*this);}
+    operator std::chrono::seconds() const {return std::chrono::duration_cast<std::chrono::seconds>(*this);}
+
+    std::chrono::milliseconds ToMilliSeconds() const {return (std::chrono::milliseconds)(*this);}
+    std::chrono::seconds ToSecondsInt() const {return (std::chrono::seconds)(*this);}
+    std::chrono::nanoseconds ToNanoSeconds() const {return (std::chrono::nanoseconds)(*this);}
+};
+
 /*=================================================================================**//**
 * Measures elapsed time
 * @bsiclass
@@ -137,7 +158,6 @@ private:
     Utf8CP m_description = nullptr;
     TimePoint m_start;
     TimePoint m_stop;
-    static double ToSecondsDouble(std::chrono::nanoseconds val) {return std::chrono::duration<double>(val).count();}
 
 public:
     //! Return the current time.
@@ -164,12 +184,12 @@ public:
     void Stop() {m_stop = Now();}
 
     //! Get the elapsed time since Start() on a running timer.
-    std::chrono::nanoseconds GetCurrent() {return Now() - m_start;}
-    double GetCurrentSeconds() {return ToSecondsDouble(GetCurrent());}
+    BeDuration GetCurrent() {return Now() - m_start;}
+    double GetCurrentSeconds() {return GetCurrent();}
 
     //! Get the elapsed time between Start() and Stop() on this timer.
-    std::chrono::nanoseconds GetElapsed() {return m_stop - m_start;}
-    double GetElapsedSeconds() {return ToSecondsDouble(GetElapsed());}
+    BeDuration GetElapsed() {return m_stop - m_start;}
+    double GetElapsedSeconds() {return GetElapsed();}
 };
 
 END_BENTLEY_NAMESPACE
