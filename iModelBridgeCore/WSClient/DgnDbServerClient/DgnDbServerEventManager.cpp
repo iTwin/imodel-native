@@ -150,7 +150,7 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Stop()
         BeThreadUtilities::BeSleep(50);
         maxIterations--;
         }
-    BeAssert(1 == m_eventManagerContext.use_count() && "Events thread not finished!");
+    BeAssert(1 >= m_eventManagerContext.use_count() && "Events thread not finished!");
 
     m_eventManagerContext = nullptr;
     DgnDbServerLogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "DgnDbServerEventManager::Stop", "Stop");
