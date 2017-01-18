@@ -834,7 +834,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime(), m_clip.get());
+    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime().ToMilliSeconds(), m_clip.get());
     Draw(args);
     DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
@@ -857,7 +857,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
 ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime().ToMilliSeconds());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 

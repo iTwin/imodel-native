@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SpatialViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -565,14 +565,14 @@ void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
     DEBUG_PRINTF("Query started, target=%d", m_plan.GetTargetNumElements());
     Start(m_view);
 
-    uint64_t endTime = m_plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + m_plan.GetTimeout()) : 0;
+    uint64_t endTime = m_plan.GetTimeout().count() ? (BeTimeUtilities::QueryMillisecondsCounter() + m_plan.GetTimeout().count()) : 0;
 
     m_minScore = 0.0;
     m_hitLimit = m_plan.GetTargetNumElements();
 
-    if (endTime && m_hitLimit > (m_view.m_queryElementPerSecond * m_plan.GetTimeout()))
+    if (endTime && m_hitLimit > (m_view.m_queryElementPerSecond * m_plan.GetTimeout().count()))
         {
-        m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond * m_plan.GetTimeout());
+        m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond * m_plan.GetTimeout().count());
         DEBUG_PRINTF("limiting to %d", m_hitLimit);
         }
 

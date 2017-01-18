@@ -159,7 +159,7 @@ struct UpdatePlan
 {
     struct Query
     {
-        uint32_t m_maxTime = 2000;    // maximum time query should run (milliseconds)
+        std::chrono::milliseconds m_maxTime = std::chrono::seconds(2);    // maximum time query should run (milliseconds)
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
@@ -168,14 +168,14 @@ struct UpdatePlan
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
-        uint32_t GetTimeout() const {return m_maxTime;}
+        std::chrono::milliseconds GetTimeout() const {return m_maxTime;}
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
         void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetTimeout(uint32_t maxTime) {m_maxTime=maxTime;}
+        void SetTimeout(std::chrono::milliseconds maxTime) {m_maxTime=maxTime;}
         void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
@@ -226,7 +226,7 @@ public:
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetCreateSceneTimeoutMillis(uint32_t milliseconds) { m_timeout = milliseconds; m_timeoutIsPct=false;}
+    void SetCreateSceneTimeoutMillis(std::chrono::milliseconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
     uint32_t GetCreateSceneTimeout() const { return m_timeout; }
     bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}

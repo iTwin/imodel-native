@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipVector.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,6 +32,7 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow = NULL, double* zHigh = NULL);
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateCopy(ClipVectorCR vector);
 
+    DGNPLATFORM_EXPORT ClipVectorPtr Clone(TransformCP trans) const;
     DGNPLATFORM_EXPORT bool PointInside(DPoint3dCR point, double onTolerance = 0.0) const;
     DGNPLATFORM_EXPORT BentleyStatus TransformInPlace(TransformCR transform);
     DGNPLATFORM_EXPORT void Append(ClipVectorCR clip);
@@ -46,7 +47,6 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyPointContainment (DPoint3dCP points, size_t nPoints, bool ignoreMasks = false) const;
     DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyRangeContainment (DRange3dCR, bool ignoreMasks = false) const;
 
-
     // Treat each plane as a homogeneous row vector ax,ay,az,aw.
     // Multiply [ax,ay,az,aw]*matrix
     DGNPLATFORM_EXPORT BentleyStatus MultiplyPlanesTimesMatrix (DMatrix4dCR matrix);
@@ -56,10 +56,10 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
 
     DGNPLATFORM_EXPORT bool IsAnyPointInside(DEllipse3dCR arc, bool closed);
     DGNPLATFORM_EXPORT bool IsCompletelyContained (DEllipse3dCR, bool closed);
-
     DGNPLATFORM_EXPORT bool IsAnyPointInside(MSBsplineCurveCR curve);
     DGNPLATFORM_EXPORT bool IsCompletelyContained(MSBsplineCurveCR curve);
-
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT static ClipVectorPtr FromJson(JsonValueCR);
 };
 
 END_BENTLEY_DGN_NAMESPACE
