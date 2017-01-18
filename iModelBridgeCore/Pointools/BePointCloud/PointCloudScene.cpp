@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudScene.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BePointCloudInternal.h>
@@ -176,6 +176,14 @@ void PointCloudScene::GetRange (DRange3d& range) const
 void PointCloudScene::SetFrustumQueryHandle(PointCloudQueryHandleP handle)
     {
     m_frustumQueryHandle = handle;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR range) const 
+    {
+    return PointCloudQueryHandle::Create(ptCreateBoundingBoxQuery(range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
     }
 
 /*---------------------------------------------------------------------------------**//**

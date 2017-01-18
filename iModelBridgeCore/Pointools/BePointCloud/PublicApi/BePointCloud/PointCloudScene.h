@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudScene.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,6 +61,7 @@ struct PointCloudScene : public RefCounted<IPointCloudFileEdit>
         BEPOINTCLOUD_EXPORT     PointCloudQueryHandleP  GetVisiblePointsQueryHandle() const;
         BEPOINTCLOUD_EXPORT     PointCloudQueryHandleP  PeekVisiblePointsQueryHandle() const { return m_visiblePointsQueryHandle.get(); }
 
+        BEPOINTCLOUD_EXPORT     PointCloudQueryHandlePtr CreateBoundingBoxQuery(DRange3dCR range) const;
 /* POINTCLOUD_WIP_GR06 - SceneHandleDescr
         RefCountedPtr<SceneHandleDescr> GetSceneHandleDescr() const;
 */
