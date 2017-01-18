@@ -16,6 +16,7 @@
 #include "TxnManager.h"
 #include "SolidKernel.h"
 #include "DgnViewport.h"
+#include "Sheet.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
 
@@ -619,7 +620,7 @@ public:
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
-        virtual RefCountedPtr<TileViewport> _CreateTileViewport() {return nullptr;}
+        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
         Host()
             {

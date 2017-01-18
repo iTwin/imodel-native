@@ -16,11 +16,16 @@ HANDLER_DEFINE_MEMBERS(Element);
 HANDLER_DEFINE_MEMBERS(AttachmentElement)
 HANDLER_DEFINE_MEMBERS(Model)
 }
+namespace SheetStrings
+{
+static Utf8CP str_Clip() {return "Clip";}
+};
 END_SHEET_NAMESPACE
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
+using namespace SheetStrings;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
@@ -163,7 +168,7 @@ double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Sheet::ViewAttachment::CheckValid() const
+DgnDbStatus ViewAttachment::CheckValid() const
     {
     if (!GetAttachedViewId().IsValid())
         return DgnDbStatus::ViewNotFound;
@@ -172,6 +177,43 @@ DgnDbStatus Sheet::ViewAttachment::CheckValid() const
         return DgnDbStatus::WrongModel;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ViewAttachment::GetClip() const
+    {
+    auto clipJsonStr = GetPropertyValueString(str_Clip());
+    if (clipJsonStr.empty())
+        return nullptr;
+
+    Json::Value clipJson(Json::arrayValue);
+    if (!Json::Reader::Parse(clipJsonStr, clipJson))
+        return nullptr;
+
+    ClipVectorPtr clip = ClipVector::Create();
+    JsonUtils::ClipVectorFromJson(*clip, clipJson);
+    return clip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
+    {
+    Json::Value clipJson(Json::arrayValue);
+    JsonUtils::ClipVectorToJson(clipJson, clipVector);
+
+    return SetPropertyValue(str_Clip(), Json::FastWriter::ToString(clipJson).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachment::ClearClip()
+    {
+    SetPropertyValue(str_Clip(), ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,7 +443,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         return;
         }
 
-    m_viewport = T_HOST._CreateTileViewport();
+    m_viewport = T_HOST._CreateSheetAttachViewport();
     if (!m_viewport.IsValid())
         return;
 
@@ -450,11 +492,22 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
     auto& box = attach->GetPlacement().GetElementBox();
-    auto range = attach->GetPlacement().CalculateRange();
-    range.low.z = 0.0; // make sure we're exactly on the sheet.
-    m_viewport->m_toParent = Transform::From(range.low);
-    m_viewport->m_toParent.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
-    SetLocation(m_viewport->m_toParent);
+    AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
+
+    range.low.z = 0;
+    Transform trans = Transform::From(range.low);
+    trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    SetLocation(trans);
+
+#if defined (NEEDS_WORK_RANGE_INDEX)
+    range = attach->GetPlacement().CalculateRange();
+    trans = Transform::From(range.low);
+    trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, range.ZLength());
+#endif
+    
+    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   
+    trans.form3d[2][3] = m_viewport->GetWorldToNpcMap()->M1.coff[2][3];
+    m_viewport->m_toParent = trans;
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
@@ -544,4 +597,31 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         if (attach->Pick((PickContext&)context))
             return;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
+    {
+    Frustum frust = GetFrustum(DgnCoordSystem::Npc).TransformBy(m_toParent);
+    sheetVp.WorldToView(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    Transform tileToSheet = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
+    tileToSheet.ScaleMatrixColumns(1.0/m_rect.corner.x, 1.0/m_rect.corner.y, 1.0);
+
+    tileToSheet.form3d[2][2] = 1.0; // always make 1 : 1  in z
+    tileToSheet.form3d[2][3] = 0.0;
+    return tileToSheet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d Viewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR attachWorld)
+    {
+    DPoint3d point = WorldToView(attachWorld);
+    GetTransformToSheet(sheetVp).Multiply(point);   
+    point = sheetVp.ViewToWorld(point);
+    point.z = 0.0; // sheets are always 2d
+    return point;
     }

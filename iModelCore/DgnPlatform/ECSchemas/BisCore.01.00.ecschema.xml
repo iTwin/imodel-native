@@ -1243,6 +1243,7 @@
         <ECProperty propertyName="Details" typeName="string" />
         <ECProperty propertyName="DisplayPriority" typeName="int" />
         <ECProperty propertyName="Scale" typeName="double" />
+        <ECProperty propertyName="Clip" typeName="string" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding" modifier="Sealed">
