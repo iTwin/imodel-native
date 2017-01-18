@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,8 +94,10 @@ namespace dgn_ElementHandler
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
     public:
-        //! Register get and set functions for each custom-handled property.
-        //! @note You must also invoke T_Super::_RegisterPropertyAccessors!
+        //! This function is called when a handler is registered by its domain in order to allow the handler to refister get and set functions 
+        //! for custom-handled properties or validator functions for auto-handled properties.
+        //! @note The implementation must also invoke T_Super::_RegisterPropertyAccessors
+        //! @see ECSqlClassInfo::RegisterPropertyAccessors, ECSqlClassInfo::RegisterPropertyValidator
         DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
         //! Create a new instance of a DgnElement from a CreateParams. 

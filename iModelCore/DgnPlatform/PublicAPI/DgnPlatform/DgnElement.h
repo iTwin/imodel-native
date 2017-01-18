@@ -1102,7 +1102,17 @@ protected:
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() {m_code = DgnCode();} //!< @private
     
-    static CreateParams InitCreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus*);
+    //! A utility function to set up CreateParams from the properties of the specified instance. The input properties must include Model, CodeAuthority, CodeNamespace, and CodeValue.
+    //! The value of CodeNamespace may be the empty string. If CodeNamespace is the empty string, then the value of CodeValue may be null. CodeValue may not be the empty string.
+    //! The class is taken from the class of the instance.
+    //! If the instance has an ECInstanceId, then DgnElementId is taken from that.
+    //! @param db The BIM that will contain the new element
+    //! @param instance The properties that will be used to create the new element
+    //! @param initError if not null, a non-zero error status is returned here if input properties are invalid. Possible errors include:
+    //! * DgnDbStatus::BadModel in case the Model property is not missing or invalid, or
+    //! * DgnDbStatus::MissingId if CodeAuthority is missing or invalid or if CodeNamespace or CodeValue is missing.
+    //! @return a CreateParams object or an invalid object in case of errors.
+    DGNPLATFORM_EXPORT static CreateParams InitCreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR instance, DgnDbStatus* initError);
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);

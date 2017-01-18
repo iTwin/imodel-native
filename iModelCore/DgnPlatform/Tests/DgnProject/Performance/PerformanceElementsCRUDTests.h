@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -38,6 +38,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         DgnDbStatus SetPerfElementSub2PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPerfElementSub3PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPropertyValues(Utf8CP className, DgnElementPtr element, bool update = false) const;
+        Dgn::PhysicalElementPtr CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId) const;
 
         static DgnElementId generateTimeBasedId(int counter);
         static DgnElementId generateAlternatingBriefcaseId(int counter);

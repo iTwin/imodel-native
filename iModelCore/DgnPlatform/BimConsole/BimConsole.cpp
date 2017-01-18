@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/BimConsole.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -10,7 +10,6 @@
 #include "BimConsole.h"
 #include <Bentley/BeTimeUtilities.h>
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 
@@ -29,6 +28,21 @@ bool Session::IsFileLoaded(bool printMessageIfFalse) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    01/2017
+//---------------------------------------------------------------------------------------
+bool Session::IsECDbFileLoaded(bool printMessageIfFalse) const
+    {
+    if (!IsFileLoaded(printMessageIfFalse))
+        return false;
+
+    const bool isECDbFile = m_file->GetECDbHandle() != nullptr;
+    if (!isECDbFile && printMessageIfFalse)
+        Console::WriteErrorLine("Command requires BIM or ECDb, but currently opened file is only a BeSQLite file.");
+
+    return isECDbFile;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    07/2016
 //---------------------------------------------------------------------------------------
 BentleyStatus Session::SetFile(std::unique_ptr<SessionFile> file)
@@ -36,9 +50,33 @@ BentleyStatus Session::SetFile(std::unique_ptr<SessionFile> file)
     if (file == nullptr)
         return ERROR;
 
-    m_file = std::move(file); 
-    m_file->GetHandleR().AddIssueListener(m_issueListener);
+    m_file = std::move(file);
+    ECDb* ecdb = m_file->GetECDbHandleP();
+    if (ecdb != nullptr)
+        ecdb->AddIssueListener(m_issueListener);
+
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    01/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8CP SessionFile::TypeToString(Type type)
+    {
+    switch (type)
+        {
+            case Type::Bim:
+                return "BIM";
+            case Type::ECDb:
+                return "ECDb";
+            case Type::BeSQLite:
+                return "BeSQLite";
+
+            default:
+                BeAssert(false);
+                return "error";
+        }
     }
 
 //******************** BimConsole ***********************
@@ -50,42 +88,42 @@ void BimConsole::Setup()
     {
     Console::WriteLine(" --------------------------------------------------------------------------- ");
     Console::WriteLine(" BimConsole.exe v1.0");
-    Console::WriteLine(" Copyright (c) Bentley Systems 2016. All rights reserved. www.Bentley.com.");
+    Console::WriteLine(" Copyright (c) Bentley Systems 2017. All rights reserved. www.Bentley.com.");
     Console::WriteLine(" ----------------------------------------------------------------------------");
     Console::WriteLine();
     Console::WriteLine("    .help for help, .exit to exit program");
     Console::WriteLine();
 
-    auto helpCommand = make_shared<HelpCommand>(m_commands);
+    auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
     AddCommand(".h", helpCommand); //add same command with alternative command name
 
-    AddCommand(make_shared<OpenCommand>());
-    AddCommand(make_shared<CloseCommand>());
-    AddCommand(make_shared<CreateCommand>());
-    AddCommand(make_shared<FileInfoCommand>());
+    AddCommand(std::make_shared<OpenCommand>());
+    AddCommand(std::make_shared<CloseCommand>());
+    AddCommand(std::make_shared<CreateCommand>());
+    AddCommand(std::make_shared<FileInfoCommand>());
 
-    AddCommand(make_shared<ECSqlCommand>());
+    AddCommand(std::make_shared<ECSqlCommand>());
 
-    auto metadataCommand = make_shared<MetadataCommand>();
+    auto metadataCommand = std::make_shared<MetadataCommand>();
     AddCommand(metadataCommand);
     AddCommand(".meta", metadataCommand); //add same command with alternative command name
 
-    AddCommand(make_shared<CommitCommand>());
-    AddCommand(make_shared<RollbackCommand>());
+    AddCommand(std::make_shared<CommitCommand>());
+    AddCommand(std::make_shared<RollbackCommand>());
 
-    AddCommand(make_shared<ImportCommand>());
-    AddCommand(make_shared<ExportCommand>());
+    AddCommand(std::make_shared<ImportCommand>());
+    AddCommand(std::make_shared<ExportCommand>());
 
-    AddCommand(make_shared<ParseCommand>());
-    AddCommand(make_shared<CreateECClassViewsCommand>());
+    AddCommand(std::make_shared<ParseCommand>());
+    AddCommand(std::make_shared<CreateECClassViewsCommand>());
 
-    AddCommand(make_shared<SqliteCommand>());
-    AddCommand(make_shared<DbSchemaCommand>());
+    AddCommand(std::make_shared<SqliteCommand>());
+    AddCommand(std::make_shared<DbSchemaCommand>());
 
-    AddCommand(make_shared<DebugCommand>());
+    AddCommand(std::make_shared<DebugCommand>());
 
-    auto exitCommand = make_shared<ExitCommand>();
+    auto exitCommand = std::make_shared<ExitCommand>();
     AddCommand(exitCommand);
     AddCommand(".quit", exitCommand); //add same command with alternative command name
     AddCommand(".q", exitCommand); //add same command with alternative command name
@@ -105,7 +143,7 @@ int BimConsole::Run(int argc, WCharP argv[])
         {
         Command const* openCommand = GetCommand(".open");
         BeAssert(openCommand != nullptr);
-        vector<Utf8String> args;
+        std::vector<Utf8String> args;
         args.push_back(openCommand->GetName());
         args.push_back(Utf8String(argv[1]));
 
@@ -153,7 +191,7 @@ void BimConsole::RunCommand(Utf8CP cmd)
 
     Command const* command = nullptr;
 
-    vector<Utf8String> args;
+    std::vector<Utf8String> args;
     if (isECSqlCommand)
         {
         args.push_back(cmd);
@@ -215,7 +253,7 @@ bool BimConsole::ReadLine(Utf8StringR cmd)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-bool BimConsole::TokenizeCommandline(vector<Utf8String>& tokens, Utf8StringCR cmd)
+bool BimConsole::TokenizeCommandline(std::vector<Utf8String>& tokens, Utf8StringCR cmd)
     {
     Utf8String cur;
     int state = 0;

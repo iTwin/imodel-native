@@ -655,7 +655,7 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
     auto uaspectclassWithHandler = TestUniqueAspect::GetECClass(*m_db);
     ASSERT_TRUE(nullptr != uaspectclassWithHandler);
     BeFileName fileName = m_db->GetFileName();
-    DgnElementCPtr persistEl;
+    DgnElementId elementId;
     if (true)
     {
         TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
@@ -673,16 +673,18 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestUniqueAspectProperty"));
         ASSERT_STREQ("foo", value.ToString().c_str());
 
-        persistEl = tempEl->Insert();
+        auto el = tempEl->Insert();
+        ASSERT_TRUE(el.IsValid());
+        elementId = el->GetElementId();
         m_db->SaveChanges();
     }
 
-    ASSERT_TRUE(persistEl.IsValid());
+    ASSERT_TRUE(elementId.IsValid());
 
     if (true)
     {
         // Check that we can find the same aspect from the persistent element 
-        auto editEl = m_db->Elements().GetForEdit<DgnElement>(persistEl->GetElementId());
+        auto editEl = m_db->Elements().GetForEdit<DgnElement>(elementId);
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspectNoHandler WHERE Element.Id=?");
         stmt->BindId(1, editEl->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
@@ -701,14 +703,15 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
         ASSERT_STREQ("foo-changed", value.ToString().c_str());
         ASSERT_TRUE(editEl->Update().IsValid());
         m_db->SaveChanges();
-        m_db->CloseDb();
     }
+
+    m_db->CloseDb();
 
     if (true)
     {
         m_db = nullptr;
         OpenDb(m_db,fileName, Db::OpenMode::ReadWrite, true);
-        auto el = m_db->Elements().GetForEdit<DgnElement>(persistEl->GetElementId());
+        auto el = m_db->Elements().GetForEdit<DgnElement>(elementId);
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspectNoHandler WHERE Element.Id=?");
         stmt->BindId(1, el->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());

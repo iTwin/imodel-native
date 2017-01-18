@@ -1708,7 +1708,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
                 if (root.IsValid())
                     m_totalTiles += root->GetNodeCount();
 
-                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, *pCollector, GetProgressMeter());
+                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, leafTolerance, *pCollector, GetProgressMeter());
                 }
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
