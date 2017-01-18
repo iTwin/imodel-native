@@ -150,12 +150,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override;
 
     public:
-        ScalableMeshDTM(IScalableMeshPtr scMesh)
-            {
-            m_draping = new ScalableMeshDraping(scMesh);
-            m_dtmVolume = new ScalableMeshVolume(scMesh);
-            m_scMesh = scMesh.get();
-            }
+
+        ScalableMeshDTM(IScalableMeshPtr& scMesh);            
 
         virtual ~ScalableMeshDTM()
             {
@@ -166,19 +162,14 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
             {
             return new ScalableMeshDTM(scMesh);
-            }
-
-        void SetStorageToUors(DMatrix4d& storageToUors)
-            {
-            m_transformToUors.InitFrom(storageToUors);
-            m_draping->SetTransform(m_transformToUors);
-            ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
-            }
+            }        
 
         void SetAnalysisType(DTMAnalysisType type)
             {
             m_draping->SetAnalysisType(type);
             }
+
+        void SetStorageToUors(DMatrix4d& storageToUors);
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh

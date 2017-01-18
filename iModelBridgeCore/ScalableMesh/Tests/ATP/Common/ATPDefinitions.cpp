@@ -555,7 +555,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         meshCreator->SetBaseExtraFilesPath(stmFileName);
                         WString url = WString(mapBoxPath.c_str(), true);
                         if (stat == SUCCESS)
-                            meshCreator->SetTextureStreamFromUrl(url, Transform::FromIdentity());
+                            meshCreator->SetTextureStreamFromUrl(url);
                         }
 
                     stmFile = 0;
@@ -4712,9 +4712,9 @@ void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     printf("Saving to Azure... container: %ls  directory: %ls", azureContainer.c_str(), directory.c_str());
 
-    StatusInt status = SUCCESS;
+    //StatusInt status = SUCCESS;
     bool allTestPass = true;
-    double t = 0, t_up = 0, t_down = 0;
+    double /*t = 0,*/ t_up = 0, t_down = 0;
 
     // remove trailing slashes if any
     size_t position;
@@ -5198,7 +5198,7 @@ void PerformMapboxTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         meshCreator->SetBaseExtraFilesPath(stmFileName);
         WString url = WString(mapBoxPath.c_str(), true);
         if (stat == SUCCESS)
-            meshCreator->SetTextureStreamFromUrl(url, Transform::FromIdentity());
+            meshCreator->SetTextureStreamFromUrl(url);
 
     stmFile = 0;
         }

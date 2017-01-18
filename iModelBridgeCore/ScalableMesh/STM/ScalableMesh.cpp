@@ -1099,9 +1099,22 @@ template <class POINT> void ScalableMesh<POINT>::CreateSpatialIndexFromExtents(l
         }
     }
 
+
+ScalableMeshDTM::ScalableMeshDTM(IScalableMeshPtr& scMesh)
+    {
+    m_draping = new ScalableMeshDraping(scMesh);
+    m_dtmVolume = new ScalableMeshVolume(scMesh);
+    m_scMesh = scMesh.get();   
+    }
+
+void ScalableMeshDTM::SetStorageToUors(DMatrix4d& storageToUors)
+    {
+    m_transformToUors.InitFrom(storageToUors);
+    m_draping->SetTransform(m_transformToUors);
+    ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
+    }
+
 /*-------------------Methods inherited from IDTM-----------------------------*/
-
-
 int64_t ScalableMeshDTM::_GetPointCount()
     {
     return m_scMesh->GetPointCount();
@@ -1417,7 +1430,7 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
 
 template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type)
     {
-    m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
+    //m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
     return m_scalableMeshDTM[type].get();
     }
 
@@ -2289,18 +2302,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     m_reprojectionTransform = approximateTransform;
     for (size_t i = 0; i < DTMAnalysisType::Qty; ++i)
         {
-        Transform tr;
-        if (m_scalableMeshDTM[i]->GetTransformation(tr))
-            {
-            tr.FromProduct(tr, approximateTransform);
-            auto mat4d = DMatrix4d::From(tr);
-            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
-            }
-        else
-            {
-            auto mat4d = DMatrix4d::From(approximateTransform);
-            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
-            }
+
+        auto mat4d = DMatrix4d::From(approximateTransform);
+        m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
         }
 
     return ERROR;
