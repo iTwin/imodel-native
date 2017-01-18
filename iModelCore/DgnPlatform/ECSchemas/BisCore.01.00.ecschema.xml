@@ -474,7 +474,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -796,7 +796,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -892,7 +892,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1463,7 +1463,6 @@
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <!-- WIP: MinimumSharedColumnCount? -->
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>8</SharedColumnCount>
