@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/Pose.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,7 +105,8 @@ public:
     DATACAPTURE_EXPORT YawPitchRollAngles       GetYawPitchRoll() const;
     DATACAPTURE_EXPORT void                     SetYawPitchRoll(YawPitchRollAnglesCR angles);
 
-
+    DATACAPTURE_EXPORT GeoPoint                 GetCenterAsLatLongValue() const;
+    DATACAPTURE_EXPORT void                     SetCenterFromLatLongValue(GeoPointCR geoPoint);
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;
     };

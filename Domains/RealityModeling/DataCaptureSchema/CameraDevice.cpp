@@ -871,25 +871,14 @@ CameraDevice::ShotIterator CameraDevice::MakeShotIterator(Dgn::DgnDbCR dgndb, Ca
 * @bsimethod                                                     Daniel.McKenzie 01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d CameraDevice::ComputeFieldOfView(CameraDeviceCR camDevice)
-{
-    const double ratio = (double)camDevice.GetImageHeight() / (double)camDevice.GetImageWidth();
-
+    {
     DPoint2d fieldofView;
 
-    //NEEDSWORK : Where does the sensorSize comes from?
-    if (1 > ratio)
-    {
-        fieldofView.x = atan2(1/*sensorInfo.sensorSize*/, (2 * camDevice.GetFocalLength()));
-        fieldofView.y = atan2((1/*sensorInfo.sensorSize*/ * ratio), (2 * camDevice.GetFocalLength()));
-    }
-    else
-    {
-        fieldofView.y = atan2(1/*sensorInfo.sensorSize*/, (2 * camDevice.GetFocalLength()));
-        fieldofView.x = atan2((1/*sensorInfo.sensorSize*/ * ratio), (2 * camDevice.GetFocalLength()));
-    }
-
+    //Everything must be in pixels
+    fieldofView.x = atan2(camDevice.GetImageWidth(), 2 * camDevice.GetFocalLength());
+    fieldofView.y = atan2(camDevice.GetImageHeight(), 2 * camDevice.GetFocalLength());
     return fieldofView;
-}
+    }
 
 
 END_BENTLEY_DATACAPTURE_NAMESPACE

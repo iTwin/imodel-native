@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/DataCaptureSchemaDefinitions.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,8 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnModel.h>
 
+#include <DgnPlatform/DgnGeoCoord.h>
+#include <Geom/GeomApi.h>
 
 #ifdef __DATACAPTURE_BUILD__
 #define DATACAPTURE_EXPORT EXPORT_ATTRIBUTE

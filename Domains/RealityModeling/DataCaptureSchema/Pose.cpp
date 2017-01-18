@@ -88,6 +88,48 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                  01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GeoPoint Pose::GetCenterAsLatLongValue() const
+    {
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
+
+    GeoPoint geopoint;
+    geopoint.Init(0, 0, 0);
+
+    if (!gcs.IsValid()) //gcs is not valid return an empty GeoPoint
+        {
+        BeAssert(!L"DGNGCS is not valid");
+        return geopoint;;
+        }
+
+    if (SUCCESS != gcs->LatLongFromUors(geopoint, GetCenter()))
+        BeAssert(!L"Does not support latlong");
+
+    return geopoint;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                  01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetCenterFromLatLongValue(GeoPointCR geoPoint)
+    {
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();
+
+    if (!gcs.IsValid())
+        {
+        BeAssert(!L"DGNGCS is not valid");
+        return;
+        }
+
+    DPoint3d point = {0,0,0};
+
+    if (SUCCESS != gcs->UorsFromLatLong(point, geoPoint))
+        BeAssert(!L"Does not support latlong");
+
+    SetCenter(point);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
