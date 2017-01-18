@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/Cache/ArgumentParser.cpp $
+|     $Source: Tests/CompatibilityTests/Parser/ArgumentParser.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

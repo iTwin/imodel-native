@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/Cache/Logging.h $
+|     $Source: Tests/CompatibilityTests/Logging/Logging.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

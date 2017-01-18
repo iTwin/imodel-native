@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/Cache/DiskRepositoryClientTests.cpp $
+|     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClientTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

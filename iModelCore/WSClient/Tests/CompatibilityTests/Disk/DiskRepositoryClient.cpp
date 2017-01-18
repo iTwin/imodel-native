@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/Cache/DiskRepositoryClient.cpp $
+|     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClient.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,7 +12,8 @@
 #include <ECObjects/ECSchema.h>
 
 #include "../../UnitTests/Published/Utils/StubInstances.h"
-#include "Logging.h"
+
+#include "../Logging/Logging.h"
 
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 USING_NAMESPACE_BENTLEY_EC

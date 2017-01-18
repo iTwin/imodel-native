@@ -7,27 +7,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Cache\ArgumentParser.cpp" />
-    <ClCompile Include="Cache\ArgumentParserTests.cpp" />
-    <ClCompile Include="Cache\DiskRepositoryClient.cpp" />
-    <ClCompile Include="Cache\DiskRepositoryClientTests.cpp" />
-    <ClCompile Include="TestUtils\GenericLogProvider.cpp" />
-    <ClCompile Include="Cache\RepositoryCompatibilityTests.cpp" />
-    <ClCompile Include="Cache\TestData.cpp" />
-    <ClCompile Include="TestUtils\TestMain.cpp" />
-    <ClCompile Include="TestUtils\TestsHelper.cpp" />
-    <ClCompile Include="TestUtils\TestsHost.cpp" />
+    <ClCompile Include="Parser\ArgumentParser.cpp" />
+    <ClCompile Include="Parser\ArgumentParserTests.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClient.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="Logging\GenericLogProvider.cpp" />
+    <ClCompile Include="RepositoryCompatibilityTests.cpp" />
+    <ClCompile Include="Parser\TestData.cpp" />
+    <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="TestsHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cache\ArgumentParser.h" />
-    <ClInclude Include="Cache\DiskRepositoryClient.h" />
-    <ClInclude Include="TestUtils\GenericLogProvider.h" />
-    <ClInclude Include="Cache\Logging.h" />
-    <ClInclude Include="Cache\RepositoryCompatibilityTests.h" />
-    <ClInclude Include="Cache\TestData.h" />
-    <ClInclude Include="TestUtils\GenericLogProviderActivator.h" />
-    <ClInclude Include="TestUtils\TestsHelper.h" />
-    <ClInclude Include="TestUtils\TestsHost.h" />
+    <ClInclude Include="Parser\ArgumentParser.h" />
+    <ClInclude Include="Disk\DiskRepositoryClient.h" />
+    <ClInclude Include="Logging\GenericLogProvider.h" />
+    <ClInclude Include="Logging\Logging.h" />
+    <ClInclude Include="RepositoryCompatibilityTests.h" />
+    <ClInclude Include="Parser\TestData.h" />
+    <ClInclude Include="Logging\GenericLogProviderActivator.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="TestsHost.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />

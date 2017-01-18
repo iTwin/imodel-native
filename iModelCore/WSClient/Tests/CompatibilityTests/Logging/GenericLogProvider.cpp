@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/TestUtils/GenericLogProvider.cpp $
+|     $Source: Tests/CompatibilityTests/Logging/GenericLogProvider.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
