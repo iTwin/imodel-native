@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
 #include "Constants.h"
+#include <crunch/CrnLib.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -100,6 +102,20 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
+#endif
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::PublisherContext::Statistics::~Statistics()
+    {
+#define STATISTICS
+#ifdef STATISTICS
+    if (0.0 != m_textureCompressionMegaPixels)
+        {
+        printf ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
+        printf ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
+        }
 #endif
     }
 
@@ -693,7 +709,6 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
 
-
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
     Utf8String  bvImageId = Utf8String ("imageBufferView") + suffix;
@@ -705,14 +720,12 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     tileData.m_json["textures"][textureId]["source"] = imageId;
 
     tileData.m_json["images"][imageId] = Json::objectValue;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
+
 
     DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
     Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
-    // This calculation should actually be made for each triangle and maximum used. 
+    // This calculation should actually be made for each triangle and maximum used.
     static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
     double      requiredSize = std::min (s_sizeLimit, s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * std::min (1.0, uvRange.DiagonalDistance())));
     DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
@@ -751,6 +764,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     ImageSource         imageSource = textureImage.GetImageSource();
     static const int    s_imageQuality = 50;
 
+
     if (targetImageSize.x != imageSize.x || targetImageSize.y != imageSize.y)
         {
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
@@ -758,13 +772,71 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
         }
 
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+    if (m_context.GetTextureMode() == PublisherContext::External ||
+        m_context.GetTextureMode() == PublisherContext::Compressed)
+        {
+        WString     name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
 
-    ByteStream const& imageData = imageSource.GetByteStream();
-    tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
-    tileData.m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
-    tileData.AddBinaryData (imageData.data(), imageData.size());
+        if (m_context.GetTextureMode() == PublisherContext::Compressed) 
+            {
+            extension = L"crn";
+
+            static crn_uint32       s_qualityLevel = 128;
+            static crn_dxt_quality  s_dxtQuality   = cCRNDXTQualitySuperFast;
+
+            Image       image (imageSource, Image::Format::Rgba);
+
+            crn_comp_params     compressParams;                                                                                                                 
+            
+            compressParams.m_width  = image.GetWidth(); 
+            compressParams.m_height = image.GetHeight();
+            compressParams.m_quality_level = s_qualityLevel; 
+            compressParams.m_dxt_quality = s_dxtQuality;
+            compressParams.m_file_type = cCRNFileTypeCRN;
+
+            compressParams.m_dxt_compressor_type = cCRNDXTCompressorCRN;
+            compressParams.m_pImages[0][0] = reinterpret_cast <crn_uint32 const*> (image.GetByteStream().GetData());
+
+            crn_uint32      compressedSize;
+            StopWatch       timer(true);
+            
+            void*   compressedData = crn_compress (compressParams, compressedSize);
+
+            BeMutexHolder lock(m_context.m_statistics.m_mutex);
+            m_context.m_statistics.m_textureCompressionSeconds    += timer.GetCurrentSeconds();
+            m_context.m_statistics.m_textureCompressionMegaPixels += (double) (image.GetWidth() * image.GetHeight()) / (1024.0 * 1024.0);
+
+             std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            fwrite (compressedData, 1, compressedSize, outputFile);
+            crn_free_block (compressedData);
+            fclose (outputFile);
+            }
+        else
+            {
+            extension = ImageSource::Format::Jpeg == imageSource.GetFormat() ? L"jpg" : L"png";
+            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            fwrite (imageSource.GetByteStream().GetData(), 1, imageSource.GetByteStream().GetSize(), outputFile);
+            fclose (outputFile);
+
+            }
+        tileData.m_json["images"][imageId]["uri"] = Utf8String(BeFileName(nullptr, nullptr, name.c_str(), extension.c_str()).c_str());
+        tileData.m_json["images"][imageId]["name"] = imageId; 
+        }
+    else
+        {
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
+
+
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+
+        ByteStream const& imageData = imageSource.GetByteStream();
+        tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
+        tileData.m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+        tileData.AddBinaryData (imageData.data(), imageData.size());
+        }
 
     m_textureImages.Insert (&textureImage, textureId);
 
@@ -1586,8 +1658,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental, TextureMode textureMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental), m_textureMode(textureMode)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();

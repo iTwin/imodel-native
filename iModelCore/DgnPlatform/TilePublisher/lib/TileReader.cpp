@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/TileReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
@@ -418,5 +418,24 @@ TileReader::Status  TileReader::ReadTile(TileMeshList& meshes, BeFileNameCR file
             }
         }
 
-    return Status::Success;     // WIP.
+    return Status::Success; 
     }
+#ifdef  WIP
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileReader::Status  TileReader::ReadTileSet(Json::Value& tileSet, BeFileNameCR fileName)
+    {
+    std::filebuf fb;
+    if (nullptr == fb.open (Utf8String(fileName.c_str()).c_str, std::ios::in))
+        return Status::UnableToOpenFile;
+
+
+    Json::Reader        reader;                                                                                                                        
+    std::istream        is(&fb);
+
+    return reader.parse (&is, tileSet) ? Status::Success : Status::TileSetParseError;
+    }
+
+
+#endif
