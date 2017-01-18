@@ -95,6 +95,8 @@ struct ScalableMeshModel : IMeshSpatialModel
     private:
 
         IScalableMeshPtr                        m_smPtr;
+        Transform                               m_smToModelUorTransform;
+        Transform                               m_modelUorToSmTransform;
         bool                                    m_tryOpen; 
         BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
@@ -107,7 +109,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         BeFileName                              m_path;
         bool                                    m_isProgressiveDisplayOn;     
-        bool                                    m_isInsertingClips;
+        bool                                    m_isInsertingClips;        
         
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
@@ -164,9 +166,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
-        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
-
-        SCALABLEMESH_SCHEMA_EXPORT Transform GetUorsToStorage();
+        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();        
 
         SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Shot.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -19,7 +19,6 @@ void ShotHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016

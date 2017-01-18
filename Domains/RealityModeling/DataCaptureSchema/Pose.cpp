@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Pose.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -46,9 +46,16 @@ PosePtr Pose::Create(Dgn::SpatialModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RotMatrix Pose::GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa)
     {
+    //NEEDSWORK: Only to make it work for the time beeing, should be changed later
+    YawPitchRollAngles angles(kappa, omega, phi);
+    RotMatrix rotation = angles.ToRotMatrix();
+    rotation.Transpose();
+
+#if 0
     RotMatrix rotation(RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity(), omega.Radians(), phi.Radians(), kappa.Radians()));
     //Not sure we need this - it was in MS Connect mdlApps\RMUtilImage.cpp on MS Connect on vancouver stream
     rotation.Transpose();
+#endif
     return rotation;
     }
 

@@ -224,7 +224,7 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 
 static bool s_waitCheckStop = false;
-static Byte s_transparency = 100;
+static Byte s_transparency = 0;
 static bool s_applyClip = false;
 static bool s_dontShowMesh = false;
 
@@ -234,7 +234,7 @@ static bool s_dontShowMesh = false;
 void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                               ViewContextR                                context, 
-                              const DMatrix4d&                            storageToUors,
+                              const Transform&                            smToDgnUorTransform,
                               ScalableMeshDisplayCacheManager*            mgr)
     {    
 
@@ -270,12 +270,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
             {
             }
         }
-
-
       
-    Transform storageToUorsTransform;
-    storageToUorsTransform.InitFrom(storageToUors);
-    context.PushTransform(storageToUorsTransform);
+    context.PushTransform(smToDgnUorTransform);
 
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
@@ -551,7 +547,7 @@ protected:
         
     IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-    const DMatrix4d&                        m_storageToUorsTransfo;
+    const Transform&                        m_smToDgnUorTransform;
     bool                                    m_hasFetchedFinalNode;
     bool                                    m_hasFetchedFinalTerrainNode;
     IScalableMeshDisplayCacheManager*       m_displayNodesCache;
@@ -559,9 +555,9 @@ protected:
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                     ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                    DMatrix4d&                              storageToUorsTransfo,
-                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
-    : m_storageToUorsTransfo(storageToUorsTransfo)
+                                    Transform&                              smToDgnUorTransform,
+                                    IScalableMeshDisplayCacheManagerPtr&    cacheManager)
+    : m_smToDgnUorTransform(smToDgnUorTransform)
         { 
         DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
 
@@ -663,13 +659,13 @@ virtual Completion _Process(ViewContextR viewContext) override
     else    
     if (s_drawInProcess)
         {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
         if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
             {
             for (auto& clip : m_currentDrawingInfoPtr->m_coverageClips)
                 {
                 viewContext.PushClip(*clip);
-                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
+                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
                 viewContext.PopTransformClip();
                 }
             }
@@ -683,13 +679,13 @@ virtual Completion _Process(ViewContextR viewContext) override
 //----------------------------------------------------------------------------------------
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                      DMatrix4d&                              storageToUorsTransfo, 
+                      Transform&                              smToDgnUorTransform,
                       ViewContextR                            context,
                       IScalableMeshDisplayCacheManagerPtr& cacheManager)
     {
     RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
                                                                                                         currentDrawingInfoPtr,
-                                                                                                        storageToUorsTransfo,
+                                                                                                        smToDgnUorTransform,
                                                                                                         cacheManager));
     
     context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
@@ -823,13 +819,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
             if (!clipFromCoverageSet.empty())
                 {
                 for (auto& clip : clipFromCoverageSet)
                     {
                     context.PushClip(*clip);
-                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
                     context.PopTransformClip();
                     }
                 }
@@ -857,8 +853,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         return;
         }
-        */
-
+        */    
+    
     DMatrix4d localToView(context.GetLocalToView());
                                    
     bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
@@ -899,14 +895,11 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }            
         */
 
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
+    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));    
+    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
     
-    Transform rootToStorageTransform; 
-    bool result = rootToStorageTransform.InitFrom (rootToStorage); 
-    assert(result == true);
 
-    clipVectorCopy->TransformInPlace(rootToStorageTransform);
-    
+        
     viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
                           
     m_currentDrawingInfoPtr->m_overviewNodes.clear();
@@ -1036,13 +1029,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     else isTerrainComplete = true;
 
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
         {
         for (auto&clip : clipFromCoverageSet)
             {            
             context.PushClip(*clip);
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
             context.PopTransformClip();
             }
         }
@@ -1050,7 +1043,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (needProgressive)
         {
         IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());
-        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
+        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache);
         }
 
     }                 
@@ -1252,13 +1245,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
+
+    DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
     
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
-
-        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        
         if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
             DRange3d smExtent, smExtentUors;
@@ -1273,17 +1267,35 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
             StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
             if (0 == status || 1 == status)
-                m_smPtr->SetReprojection(*projGCS, approxTransform);
+                {                
+                DRange3d smExtentInDestGCS1;
+                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);                
+                m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
+
+                DRange3d smExtentInDestGCS;
+                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);                
+                }
+            }
+        else
+            {            
+            m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
             }
         }
     else
-        {                
+        {                        
         dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        assert(scale.x == 1 && scale.y == 1 && scale.z == 1);
+        m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
            
+    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
+
     DPoint3d translation = {0,0,0};
     
-    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
+    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                    
+
+    bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
+    assert(invertResult);
     
     // NEEDS_WORK_SM
     BeFileName dbFileName(dgnProject.GetDbFileName());
@@ -1332,18 +1344,6 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     dgnDb.SaveChanges();
     return model;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-Transform ScalableMeshModel::GetUorsToStorage()
-    {
-    Transform t;
-    t.InitFrom(m_storageToUorsTransfo);
-    t = t.ValidatedInverse();
-    return t;
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016

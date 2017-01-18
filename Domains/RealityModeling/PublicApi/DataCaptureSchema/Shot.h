@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/Shot.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -89,7 +89,6 @@ protected:
     virtual void _OnDeleted() const override;
 
     virtual Dgn::DgnCode _GenerateDefaultCode() const override;
-
 
 public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Shot)
