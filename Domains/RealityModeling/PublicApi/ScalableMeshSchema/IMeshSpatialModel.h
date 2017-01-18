@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ScalableMeshSchema/IMeshSpatialModel.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,7 +64,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
     protected:
         IMeshSpatialModel(CreateParams const& params) : Dgn::SpatialModel(params){};
         virtual bool _IsMultiResolution() const = 0;
-        virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const = 0;
+        virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const = 0;
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const = 0;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const = 0;
         //virtual BentleyStatus _GetMeshPartUnderClipMask(bvector<DPoint3d>& vertices,
@@ -81,7 +81,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
 
     public:
         SCALABLEMESH_SCHEMA_EXPORT bool IsMultiResolution() const{ return _IsMultiResolution();}
-        SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3dCR GetRange() const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3d GetRange() const;
         
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const;
 

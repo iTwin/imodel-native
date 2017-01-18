@@ -97,8 +97,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         IScalableMeshPtr                        m_smPtr;
         Transform                               m_smToModelUorTransform;
         Transform                               m_modelUorToSmTransform;
-        bool                                    m_tryOpen; 
-        BentleyApi::Dgn::AxisAlignedBox3d       m_range;
+        bool                                    m_tryOpen;         
 
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
         IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
@@ -130,7 +129,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual void _ReadJsonProperties(Json::Value const&) override;
      
         virtual bool _IsMultiResolution() const { return true; };
-        virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const override;
+        virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 

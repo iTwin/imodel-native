@@ -42,10 +42,16 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
+AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     {
-    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
-    return m_range;
+    AxisAlignedBox3d range;
+
+    if (m_smPtr.IsValid()) 
+        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(range));
+
+    m_smPtr->GetReprojectionTransform().Multiply(range, range);
+                
+    return range;
     }
 
 //----------------------------------------------------------------------------------------
@@ -137,7 +143,11 @@ BentleyStatus ScalableMeshModel::_CreateIterator(ITerrainTileIteratorPtr& iterat
 TerrainModel::IDTM* ScalableMeshModel::_GetDTM(ScalableMesh::DTMAnalysisType type)
     {
     if (nullptr == m_smPtr.get()) return nullptr;
-    return m_smPtr->GetDTMInterface(m_storageToUorsTransfo, type);
+
+    DMatrix4d storageToUor; 
+    storageToUor.InitFrom(m_smToModelUorTransform);    
+
+    return m_smPtr->GetDTMInterface(storageToUor, type);
     }
 
 //----------------------------------------------------------------------------------------

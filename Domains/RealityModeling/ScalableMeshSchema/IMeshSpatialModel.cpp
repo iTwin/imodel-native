@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/IMeshSpatialModel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -81,7 +81,7 @@ bool IMeshSpatialModel::UnregisterTilesChangedEventListener(ITerrainTileChangedH
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3dCR IMeshSpatialModel::GetRange() const
+AxisAlignedBox3d IMeshSpatialModel::GetRange() const
 {
 return _GetRange();
 }
