@@ -26,8 +26,8 @@ struct PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture : ECDbTestFixtu
             Overflow
             };
 
-        static const int s_initialRowCount = 1000000;
-        static const int s_opCount = 100000;
+        static const int s_initialRowCount = 100000;
+        static const int s_opCount = 50000;
 
     private:
         static int ComputeValue(int rowNo, int colNumber);
@@ -43,8 +43,9 @@ struct PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture : ECDbTestFixtu
         void RunSelectWhereSingleCol(Scenario scenario, int colCount, int opCount) const;
         void RunUpdateSingleCol(Scenario scenario, int colCount) const;
         void RunUpdateAllCols(Scenario scenario, int colCount) const;
+        void RunDelete(Scenario scenario, int colCount) const;
 
-        static std::vector<int> GetTestColumnCounts() { return std::vector<int> {1, 5, 10, 30, 60}; }
+        static std::vector<int> GetTestColumnCounts() { return std::vector<int> {1, 10, 30, 60}; }
     };
 
 //---------------------------------------------------------------------------------------
@@ -106,12 +107,12 @@ TEST_F(PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture, SelectWhereSin
     std::vector<int> testColCounts = GetTestColumnCounts();
     for (int colCount : testColCounts)
         {
-        RunSelectWhereSingleCol(Scenario::Physical, colCount, 1000);
+        RunSelectWhereSingleCol(Scenario::Physical, colCount, 5);
         }
 
     for (int colCount : testColCounts)
         {
-        RunSelectWhereSingleCol(Scenario::Overflow, colCount, 1000);
+        RunSelectWhereSingleCol(Scenario::Overflow, colCount, 5);
         }
     }
 
@@ -146,6 +147,23 @@ TEST_F(PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture, UpdateSingleCo
     for (int colCount : testColCounts)
         {
         RunUpdateSingleCol(Scenario::Overflow, colCount);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture, Delete)
+    {
+    std::vector<int> testColCounts = GetTestColumnCounts();
+    for (int colCount : testColCounts)
+        {
+        RunDelete(Scenario::Physical, colCount);
+        }
+
+    for (int colCount : testColCounts)
+        {
+        RunDelete(Scenario::Overflow, colCount);
         }
     }
 
@@ -487,6 +505,30 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunUpdateAllCols
     timer.Stop();
     db.AbandonChanges();
     LogTiming(timer, scenario, "UPDATE all cols", colCount, s_initialRowCount, s_opCount);
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                  Krischan.Eberle     01/2017
+    //---------------------------------------------------------------------------------------
+void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::RunDelete(Scenario scenario, int colCount) const
+    {
+    Db db;
+    SetupTestDb(db, scenario, colCount);
+    ASSERT_TRUE(db.IsDbOpen());
+
+    StopWatch timer(true);
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "DELETE FROM " TESTTABLE_NAME " WHERE rowid=?"));
+    for (int i = 0; i < s_opCount; i++)
+        {
+        stmt.BindInt(1, i + 1); //where rowid=?
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+    timer.Stop();
+    db.AbandonChanges();
+    LogTiming(timer, scenario, "DELETE", colCount, s_initialRowCount, s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
