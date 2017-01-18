@@ -201,20 +201,20 @@ bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite:
 //---------------------------------------------------------------------------------------
 bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate)
     {
-    BeInt64Id      authorityId;
-    Utf8String     nameSpace = "";
+    BeInt64Id      codeSpecId;
+    Utf8String     scope = "";
     Utf8String     value = "";
     Utf8String     valuePattern = "";
 
-    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]))
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::Scope]))
         return false;
 
     if (!StringFromJson(value, serverJson[ServerSchema::Property::Value]) &&
         !StringFromJson(valuePattern, serverJson[ServerSchema::Property::ValuePattern]))
         return false;
     
-    codeTemplate = DgnDbCodeTemplate(DgnAuthorityId(authorityId.GetValue()), nameSpace, value, valuePattern);
+    codeTemplate = DgnDbCodeTemplate(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
 
     return true;
     }
@@ -276,16 +276,16 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR reservedValue, 
 //---------------------------------------------------------------------------------------
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
-    BeInt64Id               authorityId;
-    Utf8String              nameSpace = "";
+    BeInt64Id               codeSpecId;
+    Utf8String              scope = "";
 
-    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+    if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::Scope) ||
         !serverJson.HasMember(ServerSchema::Property::Values) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
         !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
         return false;
 
-    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::Scope]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
         return false;
@@ -302,7 +302,7 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
         {
         Utf8String value = "";
         StringFromJson(value, *it);
-        codeSet.insert(DgnCode(DgnAuthorityId(authorityId.GetValue()), value, nameSpace));
+        codeSet.insert(DgnCode(CodeSpecId(codeSpecId.GetValue()), value, scope));
         }
 
     return true;
@@ -313,17 +313,17 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
 //---------------------------------------------------------------------------------------
 bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
-    BeInt64Id      authorityId;
-    Utf8String     nameSpace = "";
+    BeInt64Id      codeSpecId;
+    Utf8String     scope = "";
     Utf8String     value = "";
 
-    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+    if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::Scope) ||
         !serverJson.HasMember(ServerSchema::Property::Value) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
         !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
         return false;
 
-    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::Scope]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
@@ -333,7 +333,7 @@ bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeSt
     if (serverJson.HasMember(ServerSchema::Property::StateRevision))
         StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
 
-    code = DgnCode(DgnAuthorityId(authorityId.GetValue()), value, nameSpace);
+    code = DgnCode(CodeSpecId(codeSpecId.GetValue()), value, scope);
     
     return true;
     }
