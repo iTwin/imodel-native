@@ -11,11 +11,11 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
-//#define FORMAT_DEBUG_PRINT
+#define FORMAT_DEBUG_PRINT
 
 #undef LOG
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
-//#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
+//#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 TEST(FormattingTest, Simple)
@@ -25,6 +25,8 @@ TEST(FormattingTest, Simple)
 #if defined FORMAT_DEBUG_PRINT
     LOG.infov("There are %d prime factors", FactorizedNumber::GetPrimeCount());
     int ival = 128;
+    LOG.infov("size of int %d ", sizeof(int));
+    LOG.infov("size of size_t %d ", sizeof(size_t));
     FactorizedNumber fan = FactorizedNumber(ival);
     LOG.infov("Value %d  (factors) %s ", ival, fan.ToText());
     LOG.infov("%s", FactorizedNumber(75).DebugText().c_str());
@@ -78,13 +80,13 @@ TEST(FormattingTest, Simple)
     fn = FractionalNumeric(fval, 256);
     LOG.infov("Fractional Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
-    fn = FractionalNumeric::Create(fval, 2, 0.005);
+    fn = FractionalNumeric(fval, 2, 0.005);
     LOG.infov("Fractional Value(2) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
-    fn = FractionalNumeric::Create(fval, 7, 0.005);
+    fn = FractionalNumeric(fval, 7, 0.005);
     LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 
-    fn = FractionalNumeric::Create(fval, 7, 0.1);
+    fn = FractionalNumeric(fval, 7, 0.1);
     LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
 #endif
 
