@@ -213,7 +213,6 @@ DGNPLATFORM_TYPEDEFS(Subject)
 DGNPLATFORM_TYPEDEFS(TerrainContext)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
-DGNPLATFORM_TYPEDEFS(TileViewport)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
 DGNPLATFORM_TYPEDEFS(TxnManager)
 DGNPLATFORM_TYPEDEFS(UrlLink)
@@ -291,6 +290,7 @@ DGNPLATFORM_REF_COUNTED_PTR(SectionDrawing)
 DGNPLATFORM_REF_COUNTED_PTR(Session)
 DGNPLATFORM_REF_COUNTED_PTR(SessionModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(SnapDetail)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationPartition)
@@ -301,13 +301,18 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(Subject)
 DGNPLATFORM_REF_COUNTED_PTR(TextString)
 DGNPLATFORM_REF_COUNTED_PTR(TextStringStyle)
-DGNPLATFORM_REF_COUNTED_PTR(TileViewport)
 DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR(UrlLink)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
 BEGIN_SHEET_NAMESPACE
+    namespace Attachment
+    {
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Viewport);
+    DEFINE_REF_COUNTED_PTR(Viewport);
+    };
+
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewAttachment);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewController);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Model);
@@ -563,13 +568,16 @@ struct Frustum
     DPoint3dP GetPtsP() {return m_pts;}
     DPoint3dCR GetCorner(int i) const {return *(m_pts+i);}
     DPoint3dR GetCornerR(int i) {return *(m_pts+i);}
-    DPoint3d GetCenter() const {DPoint3d center; center.Interpolate(m_pts[NPC_111], 0.5, m_pts[NPC_000]); return center;}
+    DPoint3d GetCenter() const {DPoint3d center; center.Interpolate(GetCorner(NPC_RightTopFront), 0.5, GetCorner(NPC_LeftBottomRear)); return center;}
+    double Distance(int corner1, int corner2) const {return GetCorner(corner1).Distance(GetCorner(corner2));}
+    double GetFraction() const {return Distance(NPC_LeftTopFront,NPC_RightBottomFront) / Distance(NPC_LeftTopRear,NPC_RightBottomRear);}
     void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
     void ToRangeR(DRange3dR range) const {range.InitFrom(m_pts, 8);}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
     DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
+    DGNPLATFORM_EXPORT DMap4d ToDMap4d() const;
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
