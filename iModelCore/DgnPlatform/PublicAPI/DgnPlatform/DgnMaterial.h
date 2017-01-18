@@ -73,7 +73,7 @@ public:
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="",
                     DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
 
-        Utf8String GetPaletteName() const { return m_code.GetNamespace(); } //!< Return the palette name
+        Utf8String GetPaletteName() const { return m_code.GetScope(); } //!< Return the palette name
         Utf8String GetMaterialName() const { return m_code.GetValue(); } //!< Return the material name
     };
 
@@ -91,7 +91,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !authority.IsNullAuthority(); }
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     
 //__PUBLISH_SECTION_END__
 public:
@@ -102,7 +102,7 @@ public:
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
     DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the Id of this material.
-    Utf8String GetPaletteName() const { return GetCode().GetNamespace(); } //!< Returns the palette name
+    Utf8String GetPaletteName() const { return GetCode().GetScope(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 
     Utf8StringCR GetValue() const { return m_data.m_value; } //!< Returns the material data as a JSON string
@@ -137,7 +137,7 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a DgnCode for a material. The palette name serves as the namespace, and the material name as the value.
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) {return CodeSpec::CreateCode(db, BIS_AUTHORITY_MaterialElement, materialName, paletteName);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) {return CodeSpec::CreateCode(db, BIS_CODESPEC_MaterialElement, materialName, paletteName);}
 
     //! Looks up the ID of the material with the specified code.
     DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code);

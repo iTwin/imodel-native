@@ -100,7 +100,7 @@ public:
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
     //! Create a new CodeSpec
-    static DgnAuthorityId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);
+    static CodeSpecId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);
     
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);
@@ -115,7 +115,7 @@ public:
     static int SelectCountFromTable(DgnDbR, Utf8CP tableName);
 
     //! Return true if any element has the specified CodeValue.
-    //! @note CodeNamespace and CodeAuthorityId are not considered
+    //! @note CodeScope and CodeSpecId are not considered
     static bool CodeValueExists(DgnDbR, Utf8CP codeValue);
 };
 

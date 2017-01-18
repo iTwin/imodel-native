@@ -69,12 +69,14 @@ DGNPLATFORM_TYPEDEFS(CategorySelector)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
+DGNPLATFORM_TYPEDEFS(CodeSpec)
+DGNPLATFORM_TYPEDEFS(CodeFragmentSpec)
+DGNPLATFORM_TYPEDEFS(CodeScopeSpec)
 DGNPLATFORM_TYPEDEFS(ColorDef)
 DGNPLATFORM_TYPEDEFS(DecorateContext)
 DGNPLATFORM_TYPEDEFS(DefinitionElement)
 DGNPLATFORM_TYPEDEFS(DefinitionPartition)
 DGNPLATFORM_TYPEDEFS(Dgn3DInputEvent)
-DGNPLATFORM_TYPEDEFS(DgnAuthority)
 DGNPLATFORM_TYPEDEFS(DgnButtonEvent)
 DGNPLATFORM_TYPEDEFS(DgnCode)
 DGNPLATFORM_TYPEDEFS(DgnColorMap)
@@ -226,13 +228,13 @@ DGNPLATFORM_TYPEDEFS(ViewManager)
 
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement)
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
+DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
 DGNPLATFORM_REF_COUNTED_PTR(CameraViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
-DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
+DGNPLATFORM_REF_COUNTED_PTR(CodeSpec)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionPartition)
-DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR(DgnDbExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
@@ -366,18 +368,18 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id 
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
-BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
+BESERVER_ISSUED_ID_CLASS(CodeSpecId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
-namespace dgn_AuthorityHandler {struct Authority;};
+namespace dgn_CodeSpecHandler {struct CodeSpec;};
 typedef struct dgn_ElementHandler::Element* ElementHandlerP;
 typedef struct dgn_ElementHandler::Element& ElementHandlerR;
 typedef struct dgn_ModelHandler::Model* ModelHandlerP;
 typedef struct dgn_ModelHandler::Model& ModelHandlerR;
-typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
-typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
+typedef struct dgn_CodeSpecHandler::CodeSpec* CodeSpecHandlerP;
+typedef struct dgn_CodeSpecHandler::CodeSpec& CodeSpecHandlerR;
 typedef Byte const* ByteCP;
 
 typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement

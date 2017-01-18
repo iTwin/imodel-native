@@ -131,7 +131,7 @@ public:
     DgnCategoryId   m_alternateCategoryId;
     ElemInfo        m_elem1Info;
     ElemInfo        m_elem2Info;
-    DgnAuthorityId  m_authorityId;
+    CodeSpecId      m_codeSpecId;
 
     template<typename T> void CreateElement(ElemInfo& info, DgnDbR db);
     DgnElementId CreatePhysicalElement(DgnDbR db, DgnElementId parentId = DgnElementId());
@@ -194,11 +194,11 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
     m_alternateCategoryId = DgnDbTestUtils::InsertSpatialCategory(db, "AltCategory");
 
-    auto authority = CodeSpec::Create(db, "MissingHandlerTest");
-    ASSERT_TRUE(authority.IsValid());
-    EXPECT_EQ(DgnDbStatus::Success, db.Authorities().Insert(*authority));
-    m_authorityId = authority->GetAuthorityId();
-    ASSERT_TRUE(m_authorityId.IsValid());
+    auto codeSpec = CodeSpec::Create(db, "MissingHandlerTest");
+    ASSERT_TRUE(codeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, db.CodeSpecs().Insert(*codeSpec));
+    m_codeSpecId = codeSpec->GetCodeSpecId();
+    ASSERT_TRUE(m_codeSpecId.IsValid());
 
     CreateElement<Elem1>(m_elem1Info, db);
     CreateElement<Elem2>(m_elem2Info, db);
@@ -274,7 +274,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     // Change code
     static char s_codeChar = 'A';
     Utf8String codeValue(1, s_codeChar++);
-    auto code = db.Authorities().GetAuthority(m_authorityId)->CreateCode(codeValue);
+    auto code = db.CodeSpecs().GetCodeSpec(m_codeSpecId)->CreateCode(codeValue);
     status = pElem->SetCode(code);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetCode));
 

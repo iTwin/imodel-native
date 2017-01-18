@@ -89,9 +89,9 @@ namespace dgn_AspectHandler
 HANDLER_DEFINE_MEMBERS(Aspect)
 };
 
-namespace dgn_AuthorityHandler
+namespace dgn_CodeSpecHandler
 {
-HANDLER_DEFINE_MEMBERS(Authority)
+HANDLER_DEFINE_MEMBERS(CodeSpec)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -201,7 +201,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
-    RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
+    RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
     
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

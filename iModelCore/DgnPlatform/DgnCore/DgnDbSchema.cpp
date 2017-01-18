@@ -183,10 +183,10 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
-    DgnCode partitionCode(Authorities().QueryAuthorityId(BIS_AUTHORITY_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
+    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeAuthority.Id,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeSpec.Id,CodeScope,CodeValue) VALUES(?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECCrudWriteToken()))
         {
@@ -197,8 +197,8 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(1, partitionId);
     statement.BindId(2, DgnModel::RepositoryModelId());
     statement.BindId(3, Elements().GetRootSubjectId());
-    statement.BindId(4, partitionCode.GetAuthority());
-    statement.BindText(5, partitionCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(4, partitionCode.GetCodeSpecId());
+    statement.BindText(5, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
@@ -270,12 +270,12 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     {
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    DgnAuthorityId authorityId = Authorities().QueryAuthorityId(BIS_AUTHORITY_Subject);
-    DgnCode elementCode = DgnCode(authorityId, params.m_rootSubjectName, elementId);
+    CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
+    DgnCode elementCode = DgnCode(codeSpecId, params.m_rootSubjectName, elementId);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeAuthority.Id,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -283,8 +283,8 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 
     statement.BindId(1, elementId);
     statement.BindId(2, modelId);
-    statement.BindId(3, elementCode.GetAuthority());
-    statement.BindText(4, elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(3, elementCode.GetCodeSpecId());
+    statement.BindText(4, elementCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
 
@@ -321,8 +321,8 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     importBisCoreSchema(*this);
 
-    // Every DgnDb has a few built-in authorities for element codes
-    CreateAuthorities();
+    // Every DgnDb has a few built-in CodeSpec for element codes
+    CreateCodeSpecs();
 
     // Every DgnDb has a RepositoryModel and a DictionaryModel
     ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other

@@ -23,7 +23,7 @@ CodeSpecId DgnPlatformLib::Host::CodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECC
     if (!inputClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
         return CodeSpecId();
 
-    return CodeSpec::GetNullAuthorityId();
+    return CodeSpec::GetNullCodeSpecId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,9 +35,9 @@ DgnDbStatus DgnElement::GenerateCode(bool replaceExistingCode)
         return DgnDbStatus::BadRequest;
 
     CodeSpecId codeSpecId = T_HOST.GetCodeAdmin()._GetDefaultCodeSpecId(GetDgnDb(), *GetElementClass());
-    CodeSpecCPtr codeSpec = GetDgnDb().Authorities().GetAuthority(codeSpecId);
+    CodeSpecCPtr codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecId);
     if (!codeSpec.IsValid())
-        return DgnDbStatus::InvalidCodeAuthority;
+        return DgnDbStatus::InvalidCodeSpec;
 
     DgnCode code = T_HOST.GetCodeAdmin()._GenerateCode(*this, *codeSpec);
     if (!code.IsValid())
@@ -106,7 +106,7 @@ DgnCode DgnPlatformLib::Host::CodeAdmin::_GenerateCode(DgnElementCR element, Cod
 
     DgnElementId scopeElementId = GetCodeScopeElementId(element, codeSpec.GetScope());
     if (scopeElementId.IsValid())
-        return DgnCode(codeSpec.GetAuthorityId(), codeValue, scopeElementId);
+        return DgnCode(codeSpec.GetCodeSpecId(), codeValue, scopeElementId);
 
     BeAssert(false);
     return DgnCode();
@@ -199,9 +199,9 @@ DgnElementId DgnPlatformLib::Host::CodeAdmin::GetCodeScopeElementId(DgnElementCR
 //---------------------------------------------------------------------------------------
 DgnDbStatus DgnElement::ValidateCode() const
     {
-    CodeSpecCPtr codeSpec = GetCodeAuthority();
-    if (codeSpec.IsNull() || !SupportsCodeAuthority(*codeSpec))
-        return DgnDbStatus::InvalidCodeAuthority;
+    CodeSpecCPtr codeSpec = GetCodeSpec();
+    if (codeSpec.IsNull() || !SupportsCodeSpec(*codeSpec))
+        return DgnDbStatus::InvalidCodeSpec;
 
     DgnDbStatus status = codeSpec->ValidateCode(*this); // WIP: do we need this any longer?
     if (DgnDbStatus::Success != status)

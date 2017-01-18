@@ -279,15 +279,15 @@ DgnCategoryId DgnDbTestUtils::GetFirstSpatialCategoryId(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnAuthorityId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP authorityName)
+CodeSpecId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP codeSpecName)
     {
-    MUST_HAVE_HOST(DgnAuthorityId());
-    DgnAuthorityPtr authority = CodeSpec::Create(db, authorityName);
-    EXPECT_TRUE(authority.IsValid());
-    DgnDbStatus status = authority->Insert();
-    EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - Authority insert into %ls failed with %x", WString(authorityName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();
-    EXPECT_TRUE(authority->GetAuthorityId().IsValid());
-    return authority->GetAuthorityId();
+    MUST_HAVE_HOST(CodeSpecId());
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, codeSpecName);
+    EXPECT_TRUE(codeSpec.IsValid());
+    DgnDbStatus status = codeSpec->Insert();
+    EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - CodeSpec insert into %ls failed with %x", WString(codeSpecName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();
+    EXPECT_TRUE(codeSpec->GetCodeSpecId().IsValid());
+    return codeSpec->GetCodeSpecId();
     }
 
 //---------------------------------------------------------------------------------------

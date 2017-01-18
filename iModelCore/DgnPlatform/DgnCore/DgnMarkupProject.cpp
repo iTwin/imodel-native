@@ -157,7 +157,7 @@ static void createImageCategory(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-static void createRedlineCodeAuthority(DgnDbR db)
+static void createRedlineCodeSpec(DgnDbR db)
     {
     CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline);
     if (codeSpec.IsValid())
@@ -170,7 +170,7 @@ static void createRedlineCodeAuthority(DgnDbR db)
 void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     {
     createImageCategory(db);
-    createRedlineCodeAuthority(db);
+    createRedlineCodeSpec(db);
     }
 
 /*---------------------------------------------------------------------------------**//**

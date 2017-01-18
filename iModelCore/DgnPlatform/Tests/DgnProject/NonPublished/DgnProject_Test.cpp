@@ -720,7 +720,7 @@ struct ElementUriTests : ::testing::Test
     static void TearDownTestCase();
 
     ScopedDgnHost m_host;
-    Dgn::CodeSpecPtr m_codeAuthority;
+    Dgn::CodeSpecPtr m_codeSpec;
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
@@ -732,13 +732,13 @@ struct ElementUriTests : ::testing::Test
 
     CodeSpec& GetTestCodeSpec(DgnDbR db)
         {
-        if (!m_codeAuthority.IsValid())
+        if (!m_codeSpec.IsValid())
             {
-            m_codeAuthority = CodeSpec::Create(db, "TestCodeSpec");
-            DgnDbStatus status = m_codeAuthority->Insert();
+            m_codeSpec = CodeSpec::Create(db, "TestCodeSpec");
+            DgnDbStatus status = m_codeSpec->Insert();
             BeAssert(status == DgnDbStatus::Success);
             }
-        return *m_codeAuthority;
+        return *m_codeSpec;
         }
 
     DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)

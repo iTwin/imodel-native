@@ -17,8 +17,8 @@ protected:
 
     PhysicalModelPtr m_defaultModel;
 
-    CodeSpecId m_defaultAuthorityId;
-    CodeSpecCPtr m_defaultAuthority;
+    CodeSpecId m_defaultCodeSpecId;
+    CodeSpecCPtr m_defaultCodeSpec;
 
     virtual void _SetupDgnDb();
 

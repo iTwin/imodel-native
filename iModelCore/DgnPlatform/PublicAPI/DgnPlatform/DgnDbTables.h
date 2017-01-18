@@ -22,9 +22,9 @@
 #define BIS_CLASS_AnnotationFrameStyle      "AnnotationFrameStyle"
 #define BIS_CLASS_AnnotationLeaderStyle     "AnnotationLeaderStyle"
 #define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
-#define BIS_CLASS_Authority                 "Authority"
 #define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_CategorySelector          "CategorySelector"
+#define BIS_CLASS_CodeSpec                  "CodeSpec"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
@@ -66,7 +66,6 @@
 #define BIS_CLASS_MaterialElement           "MaterialElement"
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelSelector             "ModelSelector"
-#define BIS_CLASS_NullAuthority             "NullAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
@@ -144,49 +143,41 @@ struct DgnImportContext;
 struct ModelIterator;
 
 //=======================================================================================
-//! A DgnCode is an identifier associated with some object in a DgnDb and issued by a
-//! DgnAuthority according to some scheme. The meaning of a DgnCode is determined by the
-//! issuing authority. The issuing authority determines
-//! how (or if) an object's code is transformed when the object is cloned.
+//! A DgnCode is a structure that holds the "name" of an element in a DgnDb.
+//! The DgnCode is stored as a three-part identifier: CodeSpecId, scope, and value.
+//! The combination of the three must be unique across all elements within a DgnDb. 
+//! The meaning of a DgnCode is determined by the CodeSpec.
 //!
-//! The DgnCode is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
-//! The combination of the three must be unique within all objects of a given type
-//! (e.g., Elements, Models) within a DgnDb. 
+//! The CodeSpecId must be non-null and identify a valid CodeSpec.
+//! The scope must not be null and identifies the uniqueness scope for the value.
+//! The value may be null if the element does not have a name. The value may not be an empty string.
 //!
-//! The authority Id must be non-null and identify a valid authority.
-//! The namespace may not be null, but may be a blank string.
-//! The value may be null if and only if the namespace is blank, signifying that the authority
-//! assigns no special meaning to the object's code.
-//! The value may not be an empty string.
-//!
-//! To obtain a DgnCode, talk to the relevant DgnAuthority.
+//! @see CodeSpec
 // @bsiclass                                                     Paul.Connelly  09/15
 //=======================================================================================
 struct DgnCode
 {               
 private:
-    DgnAuthorityId  m_authority;
-    Utf8String      m_value;
-    Utf8String      m_nameSpace;
+    CodeSpecId m_codeSpecId;
+    Utf8String m_value;
+    Utf8String m_scope;
 
 public:
     //! Constructs an invalid code
     DgnCode() {}
 
     //! Constructor
-    DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) {}
+    DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope) : m_codeSpecId(codeSpecId), m_value(value), m_scope(scope) {}
 
-    //! Construct a code with the specified Id as its namespace
-    DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeInt64Id namespaceId);
+    //! Construct a code with the specified Id as its scope
+    DGNPLATFORM_EXPORT DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, BeInt64Id scopeId);
 
-    //! Determine whether this DgnCode is valid. A valid code has a valid authority Id and either:
-    //!     - An empty namespace and value; or
-    //!     - A non-empty value
-    bool IsValid() const {return m_authority.IsValid();}
+    //! Determine whether this DgnCode is valid.
+    bool IsValid() const {return m_codeSpecId.IsValid();}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
-    bool IsEmpty() const {return m_authority.IsValid() && m_value.empty();}
+    bool IsEmpty() const {return m_codeSpecId.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
-    bool operator==(DgnCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+    bool operator==(DgnCode const& other) const {return m_codeSpecId==other.m_codeSpecId && m_value==other.m_value && m_scope==other.m_scope;}
     //! Determine if two DgnCodes are not equivalent
     bool operator!=(DgnCode const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
@@ -195,14 +186,14 @@ public:
     //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
-    //! Get the namespace for this DgnCode
-    Utf8StringCR GetNamespace() const {return m_nameSpace;}
-    //! Get the DgnAuthorityId of the DgnAuthority that issued this DgnCode.
-    DgnAuthorityId GetAuthority() const {return m_authority;}
+    //! Get the scope for this DgnCode
+    Utf8StringCR GetScope() const {return m_scope;}
+    //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
+    CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
     void RelocateToDestinationDb(DgnImportContext&);
 
     //! Re-initialize to the specified values.
-    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace);
+    void From(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope);
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
@@ -216,10 +207,10 @@ public:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) {}
 
     public:
-        DgnAuthorityId GetAuthorityId() const {return m_statement->GetValueId<DgnAuthorityId>(0);}
+        CodeSpecId GetCodeSpecId() const {return m_statement->GetValueId<CodeSpecId>(0);}
         Utf8CP GetValue() const {return m_statement->GetValueText(1);}
-        Utf8CP GetNamespace() const {return m_statement->GetValueText(2);}
-        DgnCode GetCode() const {return DgnCode(GetAuthorityId(), GetValue(), GetNamespace());}
+        Utf8CP GetScope() const {return m_statement->GetValueText(2);}
+        DgnCode GetCode() const {return DgnCode(GetCodeSpecId(), GetValue(), GetScope());}
     };
 
     struct Iterator : ECSqlStatementIterator<Entry>
@@ -536,55 +527,45 @@ public:
 };
 
 //=======================================================================================
-//! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
-//! elements in the DgnDb. The meaning of the code is determined by the "authority" by which
-//! the code was assigned. Therefore the code includes the Id of the authority.
-//! DgnAuthorities holds all such authorities associated with a DgnDb. The name of an authority
-//! must be unique. An optional URI can be provided to specify how to contact the authority.
-//! @see DgnDb::Authorities
+//! A DgnElement within a DgnDb can be identified by a DgnCode which is unique among all
+//! elements in the DgnDb. The meaning of the code is determined by the CodeSpec by which
+//! the code was assigned. Therefore the DgnCode includes the Id of the CodeSpec.
+//! DgnCodeSpecs holds all such CodeSpecs associated with a DgnDb. The name of a CodeSpec
+//! must be unique.
+//! @see DgnDb::CodeSpecs
 //=======================================================================================
-struct DgnAuthorities : DgnDbTable
+struct DgnCodeSpecs : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnCodeSpecs(DgnDbR db) : DgnDbTable(db) {}
 
-    typedef bvector<DgnAuthorityPtr> LoadedAuthorities;
+    typedef bvector<CodeSpecPtr> LoadedCodeSpecs;
 
-    LoadedAuthorities   m_loadedAuthorities;
+    LoadedCodeSpecs m_loadedCodeSpecs;
     BeSQLite::BeDbMutex m_mutex;
 
-    DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
+    CodeSpecPtr LoadCodeSpec(CodeSpecId codeSpecId, DgnDbStatus* status = nullptr);
 
 public:
+    //! Look up the Id of the CodeSpec with the specified name.
+    DGNPLATFORM_EXPORT CodeSpecId QueryCodeSpecId(Utf8CP name) const;
 
-    //! Look up the Id of the authority with the specified name.
-    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8CP name) const;
+    //! Look up an CodeSpec by Id. The CodeSpec will be loaded from the database if necessary.
+    //! @param[in] codeSpecId The Id of the CodeSpec to load
+    //! @returns The CodeSpec with the specified Id, or nullptr if the CodeSpec could not be loaded
+    DGNPLATFORM_EXPORT CodeSpecCPtr GetCodeSpec(CodeSpecId codeSpecId);
 
-    //! Look up an authority by Id. The authority will be loaded from the database if necessary.
-    //! @param[in] authorityId The Id of the authority to load
-    //! @returns The DgnAuthority with the specified Id, or nullptr if the authority could not be loaded
-    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
+    //! Look up an CodeSpec by name. The CodeSpec will be loaded from the database if necessary.
+    //! @param[in] name The name of the CodeSpec to load
+    //! @returns The CodeSpec with the specified name, or nullptr if the CodeSpec could not be loaded
+    DGNPLATFORM_EXPORT CodeSpecCPtr GetCodeSpec(Utf8CP name);
 
-    //! Look up an authority by name. The authority will be loaded from the database if necessary.
-    //! @param[in] name The name of the authority to load
-    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
-    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8CP name);
-
-    //! Look up an authority of a particular type by Id. The authority will be loaded from the database if necessary.
-    //! @param[in] authorityId The Id of the authority to load
-    //! @returns The DgnAuthority with the specified Id, or nullptr if the authority could not be loaded or is not of the desired type.
-    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) {return dynamic_cast<T const*>(GetAuthority(authorityId).get());}
-
-    //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
-    //! @param[in] name The name of the authority to load
-    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
-    template<typename T> RefCountedCPtr<T> Get(Utf8CP name) {return dynamic_cast<T const*>(GetAuthority(name).get());}
-    //! Add a new Authority to the table.
-    //! @param[in]  authority The new entry to add.
+    //! Add a new CodeSpec to the table.
+    //! @param[in]  codeSpec The new entry to add.
     //! @return The result of the insert operation.
-    //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
-    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
+    //! @remarks If successful, this method will assign a valid CodeSpecId to the supplied CodeSpec
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(CodeSpecR codeSpec);
 };
 
 //=======================================================================================

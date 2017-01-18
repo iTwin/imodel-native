@@ -37,8 +37,8 @@ void ChangeTestFixture::_SetupDgnDb()
 
     TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
 
-    m_defaultAuthorityId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestAuthority");
-    ASSERT_TRUE(m_defaultAuthorityId.IsValid());
+    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestCodeSpec");
+    ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
 
     m_db->SaveChanges();
 
@@ -61,8 +61,8 @@ void ChangeTestFixture::OpenDgnDb()
     m_db = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    m_defaultAuthority = m_db->Authorities().GetAuthority(m_defaultAuthorityId);
-    ASSERT_TRUE(m_defaultAuthority.IsValid());
+    m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
+    ASSERT_TRUE(m_defaultCodeSpec.IsValid());
 
     m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
     ASSERT_TRUE(m_defaultModel.IsValid());
@@ -76,7 +76,7 @@ void ChangeTestFixture::CloseDgnDb()
     m_db->CloseDb();
     m_db = nullptr;
     m_defaultModel = nullptr;
-    m_defaultAuthority = nullptr;
+    m_defaultCodeSpec = nullptr;
     }
 
 //---------------------------------------------------------------------------------------

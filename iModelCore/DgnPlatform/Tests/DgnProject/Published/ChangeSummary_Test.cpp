@@ -225,23 +225,23 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:9;BisCore:PhysicalPartition:283;Insert;No
-                CodeAuthority.Id;NULL;22
-                CodeNamespace;NULL;"1"
+                CodeSpec.Id;NULL;22
+                CodeScope;NULL;"1"
                 CodeValue;NULL;"ChangeSummaryModel"
                 LastMod;NULL;2.45775e+06
                 Model.Id;NULL;1
                 Parent.Id;NULL;1
         0:11;BisCore:SubCategory:310;Insert;No
-                CodeAuthority.Id;NULL;23
-                CodeNamespace;NULL;"1000000000a"
+                CodeSpec.Id;NULL;23
+                CodeScope;NULL;"1000000000a"
                 CodeValue;NULL;"ChangeSummaryCategory"
                 LastMod;NULL;2.45775e+06
                 Model.Id;NULL;16
                 Parent.Id;NULL;1099511627786
                 Properties;NULL;"{"color":16777215}"
         0:10;BisCore:SpatialCategory:258;Insert;No
-                CodeAuthority.Id;NULL;13
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;13
+                CodeScope;NULL;""
                 CodeValue;NULL;"ChangeSummaryCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45775e+06
@@ -255,8 +255,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 Category.Id;NULL;1099511627786
-                CodeAuthority.Id;NULL;1
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;1
+                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45775e+06
@@ -273,8 +273,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 ModeledElement.RelECClassId;NULL;BisCore:ModelModelsElement:173
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"mm","num":1000.0,"sys":2}}}"
                 Visibility;NULL;1
-        0:9;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:ElementScopeAuthority:252
+        0:9;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:CodeSpec:252
                 SourceECInstanceId;NULL;0:22
                 TargetECClassId;NULL;BisCore:PhysicalPartition:283
                 TargetECInstanceId;NULL;0:9
@@ -293,8 +293,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;BisCore:PhysicalPartition:283
                 TargetECInstanceId;NULL;0:9
-        0:11;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:ElementScopeAuthority:252
+        0:11;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:CodeSpec:252
                 SourceECInstanceId;NULL;0:23
                 TargetECClassId;NULL;BisCore:SubCategory:310
                 TargetECInstanceId;NULL;0:11
@@ -313,8 +313,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 SourceECInstanceId;NULL;0:10
                 TargetECClassId;NULL;BisCore:SubCategory:310
                 TargetECInstanceId;NULL;0:11
-        0:10;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:DatabaseScopeAuthority:225
+        0:10;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:CodeSpec:225
                 SourceECInstanceId;NULL;0:13
                 TargetECClassId;NULL;BisCore:SpatialCategory:258
                 TargetECInstanceId;NULL;0:10
@@ -323,8 +323,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 SourceECInstanceId;NULL;0:16
                 TargetECClassId;NULL;BisCore:SpatialCategory:258
                 TargetECInstanceId;NULL;0:10
-        0:12;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:NullAuthority:273
+        0:12;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:NullCodeSpec:273
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;Generic:PhysicalObject:327
                 TargetECInstanceId;NULL;0:12
@@ -383,8 +383,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;-0.5;NULL
                 BBoxLow.Z;-0.5;NULL
                 Category.Id;1099511627786;NULL
-                CodeAuthority.Id;1;NULL
-                CodeNamespace;"";NULL
+                CodeSpec.Id;1;NULL
+                CodeScope;"";NULL
                 GeometryStream;...;NULL
                 InSpatialIndex;1;NULL
                 LastMod;2.45775e+06;NULL
@@ -395,8 +395,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 Pitch;0;NULL
                 Roll;0;NULL
                 Yaw;0;NULL
-        0:12;BisCore:AuthorityIssuesElementCode:168;Delete;No
-                SourceECClassId;BisCore:NullAuthority:273;NULL
+        0:12;BisCore:CodeSpecDeterminesElementCode:168;Delete;No
+                SourceECClassId;BisCore:NullCodeSpec:273;NULL
                 SourceECInstanceId;0:1;NULL
                 TargetECClassId;Generic:PhysicalObject:327;NULL
                 TargetECInstanceId;0:12;NULL
@@ -443,8 +443,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 Category.Id;NULL;1099511627779
-                CodeAuthority.Id;NULL;1
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;1
+                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45775e+06
@@ -455,8 +455,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 Pitch;NULL;0
                 Roll;NULL;0
                 Yaw;NULL;0
-        0:6;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:NullAuthority:273
+        0:6;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:NullCodeSpec:273
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;Generic:PhysicalObject:327
                 TargetECInstanceId;NULL;0:6
@@ -493,8 +493,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 Category.Id;NULL;1099511627779
-                CodeAuthority.Id;NULL;1
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;1
+                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45775e+06
@@ -505,8 +505,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 Pitch;NULL;0
                 Roll;NULL;0
                 Yaw;NULL;0
-        0:6;BisCore:AuthorityIssuesElementCode:168;Insert;No
-                SourceECClassId;NULL;BisCore:NullAuthority:273
+        0:6;BisCore:CodeSpecDeterminesElementCode:168;Insert;No
+                SourceECClassId;NULL;BisCore:NullCodeSpec:273
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;Generic:PhysicalObject:327
                 TargetECInstanceId;NULL;0:6

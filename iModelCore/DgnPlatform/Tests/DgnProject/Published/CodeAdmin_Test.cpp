@@ -52,7 +52,7 @@ void CodeAdminTests::RoundtripCodeFragmentSpec(CodeFragmentSpecCR specIn, CodeFr
 struct TestCodeAdmin : DgnPlatformLib::Host::CodeAdmin
 {
     DEFINE_T_SUPER(DgnPlatformLib::Host::CodeAdmin)
-    bmap<Utf8CP, Utf8CP, ECN::less_str> m_classToAuthorityMap;
+    bmap<Utf8CP, Utf8CP, ECN::less_str> m_classToCodeSpecMap;
 
     TestCodeAdmin();
     DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName) override;
@@ -75,7 +75,7 @@ TestCodeAdmin::TestCodeAdmin()
 //---------------------------------------------------------------------------------------
 DgnDbStatus TestCodeAdmin::_RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName)
     {
-    m_classToAuthorityMap[className] = codeSpecName;
+    m_classToCodeSpecMap[className] = codeSpecName;
     return DgnDbStatus::Success;
     }
 
@@ -88,9 +88,9 @@ CodeSpecId TestCodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputC
         return CodeSpecId();
 
     Utf8PrintfString className("%s.%s", inputClass.GetSchema().GetName().c_str(), inputClass.GetName().c_str());
-    auto found = m_classToAuthorityMap.find(className.c_str());
-    if (m_classToAuthorityMap.end() != found)
-        return db.Authorities().QueryAuthorityId(found->second);
+    auto found = m_classToCodeSpecMap.find(className.c_str());
+    if (m_classToCodeSpecMap.end() != found)
+        return db.CodeSpecs().QueryCodeSpecId(found->second);
 
     if (inputClass.HasBaseClasses())
         return _GetDefaultCodeSpecId(db, *inputClass.GetBaseClasses()[0]);

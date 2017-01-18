@@ -120,7 +120,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DrawingCategory::CreateCode(DgnModelCR model, Utf8StringCR categoryName)
     {
-    return CodeSpec::CreateCode(BIS_AUTHORITY_DrawingCategory, *model.GetModeledElement(), categoryName);
+    return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, *model.GetModeledElement(), categoryName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode SpatialCategory::CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace)
     {
-    return CodeSpec::CreateCode(db, BIS_AUTHORITY_SpatialCategory, categoryName, nameSpace);
+    return CodeSpec::CreateCode(db, BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +303,7 @@ DgnCode DgnSubCategory::CreateCode(DgnDbR db, DgnCategoryId categoryId, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnSubCategory::CreateCode(DgnCategoryCR category, Utf8StringCR subCategoryName)
     {
-    return CodeSpec::CreateCode(BIS_AUTHORITY_SubCategory, category, subCategoryName);
+    return CodeSpec::CreateCode(BIS_CODESPEC_SubCategory, category, subCategoryName);
     }
 
 /*---------------------------------------------------------------------------------**//**

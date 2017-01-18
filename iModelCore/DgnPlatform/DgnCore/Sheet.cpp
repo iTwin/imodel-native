@@ -27,7 +27,7 @@ using namespace Attachment;
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_AUTHORITY_Sheet, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Sheet, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
