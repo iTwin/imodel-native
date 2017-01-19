@@ -390,6 +390,7 @@ struct  PublishTileNode : ModelTileNode
     PublishTileNode(DgnModelCR model, SceneR scene, NodeR node, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent, ClipVectorCP clip)
         : ModelTileNode(model, DRange3d::NullRange(), transformDbToTile, depth, siblingIndex, parent, 0.0), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
+    virtual WString _GetFileExtension() const override { return L"b3dm"; }
 
     void    SetTolerance (double tolerance) { m_tolerance = tolerance; }
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
