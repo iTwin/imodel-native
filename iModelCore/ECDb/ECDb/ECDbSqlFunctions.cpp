@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSqlFunctions.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -102,7 +102,7 @@ void Base64ToBlob::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     if (base64StrLen < 0)
         base64StrLen = (int) strlen(base64Str);
     
-    bvector<Byte> blob;
+    ByteStream blob;
     Base64Utilities::Decode(blob, base64Str, (size_t) base64StrLen);
     ctx.SetResultBlob(blob.data(), (int) blob.size(), DbFunction::Context::CopyData::Yes);
     }

@@ -136,6 +136,7 @@ void const* PrimitiveJsonECSqlValue::_GetBlob(int* blobSize) const
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Binary))
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
 
+    m_blobCache.Resize(0);
     if (SUCCESS != ECJsonUtilities::JsonToBinary(m_blobCache, GetJson()))
         {
         Utf8String msg;
@@ -281,17 +282,10 @@ IGeometryPtr PrimitiveJsonECSqlValue::_GetGeometry() const
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_IGeometry))
         return NoopECSqlValue::GetSingleton().GetGeometry();
 
-    bvector<IGeometryPtr> geoms;
-    if (!BentleyGeometryJson::TryJsonValueToGeometry(GetJson(), geoms) || geoms.size() != 1)
-        {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetGeometry failed for '%s'. Invalid JSON format for IGeometry.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetGeometry();
-        }
+    int blobSize = -1;
+    void const* fbBlob = _GetBlob(&blobSize);
 
-    return geoms[0];
+    return BentleyGeometryFlatBuffer::BytesToGeometry((Byte const*) fbBlob);
     }
 
 //-----------------------------------------------------------------------------------------
