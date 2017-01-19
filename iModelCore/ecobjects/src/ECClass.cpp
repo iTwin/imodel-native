@@ -1496,6 +1496,7 @@ bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
             ( (0 == thisClass->GetName().compare(thatClass->GetName())) &&
               (0 == thisClass->GetSchema().GetName().compare(thatClass->GetSchema().GetName())) &&
               (thisClass->GetSchema().GetVersionRead() == thatClass->GetSchema().GetVersionRead()) &&
+              (thisClass->GetSchema().GetVersionWrite() == thatClass->GetSchema().GetVersionWrite()) &&
               (thisClass->GetSchema().GetVersionMinor() == thatClass->GetSchema().GetVersionMinor())));
     }
 
@@ -2209,6 +2210,43 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
         ecProperty = nullptr;
         }
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEntityClass::CanApply(ECEntityClassCR mixinClass) const
+    {
+    if (!mixinClass.IsMixin())
+        return false;
+
+    IECInstancePtr caInstance = mixinClass.GetCustomAttribute("CoreCustomAttributes", "IsMixin");
+    if (!caInstance.IsValid())
+        return false;
+
+    ECValue appliesToValue;
+    caInstance->GetValue(appliesToValue, "AppliesToEntityClass");
+    if (appliesToValue.IsNull() || !appliesToValue.IsString())
+        return false;
+
+    Utf8String alias;
+    Utf8String className;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
+        return false;
+
+    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
+    if (nullptr == resolvedSchema)
+        return false;
+
+    ECClassCP appliesToClass = resolvedSchema->GetClassCP(className.c_str());
+    if (nullptr == appliesToClass)
+        return false;
+
+    ECEntityClassCP appliesToEntityClass = appliesToClass->GetEntityClassCP();
+    if (nullptr == appliesToEntityClass)
+        return false;
+
+    return Is(appliesToEntityClass);
     }
 
 //---------------------------------------------------------------------------------------

@@ -1200,7 +1200,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopu
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr);

@@ -981,6 +981,74 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    pClass = new ECEntityClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = nullptr;
+        return status;
+        }
+
+    pClass->SetClassModifier(ECClassModifier::Abstract);
+
+    IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+    if (!mixinInstance.IsValid())
+        {
+        delete pClass;
+        pClass = nullptr;
+        return ECObjectsStatus::UnableToSetMixinCustomAttribute;
+        }
+
+    auto& coreCA = mixinInstance->GetClass().GetSchema();
+    if (!ECSchema::IsSchemaReferenced(*this, coreCA))
+        this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
+
+    auto& appliesToClassSchema = appliesTo.GetSchema();
+    if (!ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
+        {
+        status = this->AddReferencedSchema(const_cast<ECSchemaR>(appliesToClassSchema));
+        if (ECObjectsStatus::Success != status)
+            {
+            delete pClass;
+            pClass = nullptr;
+            return status;
+            }
+        }
+
+    ECValue appliesToClass(ECClass::GetQualifiedClassName(*this, appliesTo).c_str());
+    status = mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = nullptr;
+        return status;
+        }
+
+    if (ECObjectsStatus::Success != pClass->SetCustomAttribute(*mixinInstance))
+        {
+        delete pClass;
+        pClass = nullptr;
+        return status;
+        }
+
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringCR name)
@@ -992,7 +1060,7 @@ ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringC
     if (ECObjectsStatus::Success != status)
         {
         delete pClass;
-        pClass = NULL;
+        pClass = nullptr;
         return status;
         }
 
@@ -1610,6 +1678,23 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             {
             if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
                 return ECObjectsStatus::SchemaInUse;
+
+            if (ECClass::ClassesAreEqualByName(&ca->GetClass(), CoreCustomAttributeHelper::GetCustomAttributeClass("IsMixin")))
+                {
+                ECValue appliesToValue;
+                ca->GetValue(appliesToValue, "AppliesToEntityClass");
+                if (appliesToValue.IsNull() || !appliesToValue.IsString())
+                    continue;
+
+                Utf8String alias;
+                Utf8String className;
+                if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
+                    continue;
+
+                ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
+                if (nullptr != resolvedSchema && resolvedSchema == foundSchema.get())
+                    return ECObjectsStatus::SchemaInUse;
+                }
             }
 
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
