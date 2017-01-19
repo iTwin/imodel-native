@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,7 +83,8 @@ private:
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
-    static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
+
+    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { SchemaVersion unused(0, 0, 0, 0); return ECDbProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
 
     ECDbSchemaManager const& Schemas() const { return *m_schemaManager; }
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }
@@ -105,13 +106,17 @@ private:
     DbResult OnDbCreated() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
-    DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeECProfile(m_ecdb, params); }
+    DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeProfile(m_ecdb, params); }
 
     DbResult InitializeSequences() const;
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
+
+    static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
+
 public:
     ~Impl() {}
+
 
     ECDbMap const& GetECDbMap() const;
 

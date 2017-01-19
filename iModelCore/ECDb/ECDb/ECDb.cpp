@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,10 +21,7 @@ ECDb::ECDb() : Db(), m_pimpl(nullptr) { m_pimpl = new Impl(*this); }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::~ECDb()
-    {
-    Destroy();
-    }
+ECDb::~ECDb() { Destroy(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
@@ -42,12 +39,11 @@ void ECDb::Destroy()
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
+// @bsimethod                                Krischan.Eberle                01/2017
 //---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+DbResult ECDb::CheckECDbProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const
     {
-    return Impl::Initialize(ecdbTempDir, hostAssetsDir, logSqliteErrors);
+    return m_pimpl->CheckProfileVersion(fileIsAutoUpgradable, openModeIsReadonly);
     }
 
 //--------------------------------------------------------------------------------------
@@ -209,6 +205,16 @@ ECDb::Impl& ECDb::GetECDbImplR() const
     return *m_pimpl;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                09/2012
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+    {
+    return Impl::Initialize(ecdbTempDir, hostAssetsDir, logSqliteErrors);
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015
 //---------------------------------------------------------------------------------------
@@ -216,6 +222,7 @@ void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP messag
     {
     _OnIssueReported(severity, message);
     }
+
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

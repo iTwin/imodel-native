@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -71,7 +71,7 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ECDbProfileManager::CreateECProfile(m_ecdb);
+    return ECDbProfileManager::CreateProfile(m_ecdb);
     }
 
 //--------------------------------------------------------------------------------------
