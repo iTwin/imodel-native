@@ -454,16 +454,16 @@ TEST_F (ECRelationshipTests, DumpToString)
     Utf8String outStr = relationshipInstance->ToString ("~!@");
     bvector<Utf8String> strSplit = split (outStr, '\n');
     Utf8String strMatches[] = { "^~!@================== ECInstance Dump #\\d+ =============================$",
-        "^~!@ECClass=ALikesB at address = 0x[a-f0-9]{2,8}$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[   5\\] Nullflags\\[0\\] = 0x[a-f0-9]{1,8}$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[   4\\] p = 42$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[   8\\] SourceOrderId = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  12\\] TargetOrderId = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  16\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  36\\] Name = Some value 1$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  20\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  62\\] ArrayProperty = Count: 0 IsFixedSize: 0$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  24\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Source ECPointer = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  28\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Target ECPointer = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  32\\] Offset of TheEnd = 62$", };
+        "^~!@ECClass=ALikesB at address = 0x[a-f0-9]{2,16}$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[   0\\] Nullflags\\[0\\] = 0x[a-f0-9]{1,8}$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[   4\\] p = 42$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[   8\\] SourceOrderId = <null>$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  12\\] TargetOrderId = <null>$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  16\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  36\\] Name = Some value 1$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  20\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  49\\] ArrayProperty = Count: 0 IsFixedSize: 0$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  24\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Source ECPointer = <null>$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  28\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Target ECPointer = <null>$",
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  32\\] Offset of TheEnd = 49$", };
 
     EXPECT_EQ (sizeof(strMatches) / sizeof(strMatches[0]), strSplit.size ());
     size_t check_size = sizeof(strMatches) / sizeof(strMatches[0]) < strSplit.size () ? sizeof(strMatches) / sizeof(strMatches[0]) : strSplit.size ();
