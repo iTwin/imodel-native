@@ -303,6 +303,7 @@ public:
     static const Utf8Char FPV_DecimalSeparator() { return '.'; }
     static const Utf8Char FPV_ThousandSeparator() { return ','; }
     static const Utf8CP DefaultName() { return "*"; }
+    static const Utf8CP EmptyString() { return ""; }
     static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
     static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
     static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
@@ -400,18 +401,26 @@ public:
 struct FractionalNumeric
     {
 private:
-    double m_integral;
+    int64_t m_integral;
     size_t m_numerator;
     size_t m_denominator;
     size_t m_gcf;
+    bvector<Utf8String> m_textParts;
 
-    size_t GCF(size_t numer, size_t denom);
+    void Calculate(double dval, int denominator);
+    size_t GCF(size_t numer, size_t denom); 
 public:
     size_t GetDenominator() { return m_denominator; }
+    size_t GetNumerator() { return m_numerator; }
+    int64_t GetIntegral() { return m_integral; }
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
     UNITS_EXPORT FractionalNumeric(double dval, int denominator);
-    UNITS_EXPORT static FractionalNumeric Create(double dval, int denominatorBase, double precision);
+    UNITS_EXPORT FractionalNumeric(double dval, int denominatorBase, double precision);
     UNITS_EXPORT Utf8String ToTextDefault(bool reduce);
+    UNITS_EXPORT Utf8CP GetIntegerText();
+    UNITS_EXPORT Utf8CP GetDenominatorText();
+    UNITS_EXPORT Utf8CP GetNumeratorText();
+    UNITS_EXPORT void FormTextParts(bool reduce);
     };
 
 //=======================================================================================
