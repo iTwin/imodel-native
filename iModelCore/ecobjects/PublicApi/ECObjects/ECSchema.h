@@ -2118,7 +2118,6 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
-/*__PUBLISH_SECTION_END__*/
 friend struct ECRelationshipClass;
 
 private:
@@ -2142,6 +2141,7 @@ private:
     ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
+/*__PUBLISH_SECTION_END__*/
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint; }
