@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnImportContext_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -480,24 +480,24 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-TEST_F(ImportTest, ImportElementsWithAuthorities)
+TEST_F(ImportTest, ImportElementsWithCodeSpecs)
 {
     SetupSeedProject();
 
     // ******************************
-    //  Create some Authorities. 
-    DgnAuthorityId sourceAuthorityId;
-    RefCountedPtr<DatabaseScopeAuthority> auth1;
+    //  Create some CodeSpecs. 
+    CodeSpecId sourceCodeSpecId;
+    RefCountedPtr<CodeSpec> codeSpec1;
     {
-        auto auth0 = DatabaseScopeAuthority::Create("TestAuthority_NotUsed", *m_db);
-        auth1 = DatabaseScopeAuthority::Create("TestAuthority", *m_db);
-        auto auth2 = DatabaseScopeAuthority::Create("TestAuthority_AlsoNotUsed", *m_db);
-        ASSERT_EQ(DgnDbStatus::Success, auth0->Insert());
-        ASSERT_EQ(DgnDbStatus::Success, auth1->Insert());
-        ASSERT_EQ(DgnDbStatus::Success, auth2->Insert());
+        auto codeSpec0 = CodeSpec::Create(*m_db, "TestCodeSpec_NotUsed");
+        codeSpec1 = CodeSpec::Create(*m_db, "TestCodeSpec");
+        auto codeSpec2 = CodeSpec::Create(*m_db, "TestCodeSpec_AlsoNotUsed");
+        ASSERT_EQ(DgnDbStatus::Success, codeSpec0->Insert());
+        ASSERT_EQ(DgnDbStatus::Success, codeSpec1->Insert());
+        ASSERT_EQ(DgnDbStatus::Success, codeSpec2->Insert());
 
-        // We'll use the *second one*, so that the source and destination authority IDs will be different.
-        sourceAuthorityId = auth1->GetAuthorityId();
+        // We'll use the *second one*, so that the source and destination CodeSpecIds will be different.
+        sourceCodeSpecId = codeSpec1->GetCodeSpecId();
     }
 
     // ******************************
@@ -507,7 +507,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 
     // Put an element with an Item into moddel1
     {
-        DgnCode code = auth1->CreateCode("TestElement");
+        DgnCode code = codeSpec1->CreateCode("TestElement");
         DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());
@@ -518,10 +518,10 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     {
         DgnElementCPtr el = getSingleElementInModel(*model1);
         ASSERT_TRUE(el.IsValid());
-        DgnAuthorityId said = el->GetCode().GetAuthority();
-        ASSERT_TRUE(said == sourceAuthorityId);
-        auto sourceAuthority = m_db->Authorities().GetAuthority(sourceAuthorityId);
-        ASSERT_STREQ(sourceAuthority->GetName().c_str(), "TestAuthority");
+        CodeSpecId said = el->GetCode().GetCodeSpecId();
+        ASSERT_TRUE(said == sourceCodeSpecId);
+        auto sourceCodeSpec = m_db->CodeSpecs().GetCodeSpec(sourceCodeSpecId);
+        ASSERT_STREQ(sourceCodeSpec->GetName().c_str(), "TestCodeSpec");
     }
 
     //  *******************************
@@ -542,12 +542,12 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
         DgnElementCPtr el = getSingleElementInModel(*model3);
         ASSERT_TRUE(el.IsValid());
 
-        // Verify that Authority was copied over
-        DgnAuthorityId daid = el->GetCode().GetAuthority();
+        // Verify that CodeSpec was copied over
+        CodeSpecId daid = el->GetCode().GetCodeSpecId();
         ASSERT_TRUE(daid.IsValid());
-        ASSERT_NE(daid, sourceAuthorityId) << "Authority ID should have been remapped";
-        auto destAuthority = db2->Authorities().GetAuthority(daid);
-        ASSERT_STREQ(destAuthority->GetName().c_str(), "TestAuthority");
+        ASSERT_NE(daid, sourceCodeSpecId) << "CodeSpec ID should have been remapped";
+        auto destCodeSpec = db2->CodeSpecs().GetCodeSpec(daid);
+        ASSERT_STREQ(destCodeSpec->GetName().c_str(), "TestCodeSpec");
         db2->SaveChanges();
     }
 }

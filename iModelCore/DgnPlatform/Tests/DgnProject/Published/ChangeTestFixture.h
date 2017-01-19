@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ChangeTestFixture.h $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -17,8 +17,8 @@ protected:
 
     PhysicalModelPtr m_defaultModel;
 
-    DgnAuthorityId m_defaultAuthorityId;
-    DatabaseScopeAuthorityCPtr m_defaultAuthority;
+    CodeSpecId m_defaultCodeSpecId;
+    CodeSpecCPtr m_defaultCodeSpec;
 
     virtual void _SetupDgnDb();
 
@@ -27,7 +27,6 @@ protected:
     void CloseDgnDb();
         
     DgnCategoryId InsertCategory(Utf8CP categoryName);
-    DgnAuthorityId InsertDatabaseScopeAuthority(Utf8CP authorityName);
     DgnElementId InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);
     
     void CreateDefaultView(DgnModelId defaultModelId);
@@ -39,4 +38,3 @@ public:
     virtual void SetUp() override {}
     virtual void TearDown() override { if (m_db.IsValid()) m_db->SaveChanges("Saving DgnDb at end of test"); }
 };
-

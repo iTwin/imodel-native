@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnJsApi/ts/DgnJsApi.d.ts $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /** @namespace Bentley::Dgn Types defined by the Bentley DgnPlatform TypeScript/JavaScript API
@@ -451,11 +451,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
           */
         static FromJson(db: DgnDbP, json: Bentley_Utf8String): DgnCodeP;
 
-        /** The CodeAuthority of this code */
-        Authority: DgnObjectIdP;
+        /** The CodeSpecId of this code */
+        CodeSpecId: DgnObjectIdP;
 
-        /** The Namespace of this code */
-        Namespace: Bentley_Utf8String;
+        /** The Scope of this code */
+        Scope: Bentley_Utf8String;
 
         /** The Value of this code */
         Value: Bentley_Utf8String;

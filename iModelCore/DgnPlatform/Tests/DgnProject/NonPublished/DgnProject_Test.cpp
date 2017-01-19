@@ -698,7 +698,7 @@ struct ElementUriTests : ::testing::Test
     static void TearDownTestCase();
 
     ScopedDgnHost m_host;
-    Dgn::DatabaseScopeAuthorityPtr m_codeAuthority;
+    Dgn::CodeSpecPtr m_codeSpec;
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
@@ -708,20 +708,20 @@ struct ElementUriTests : ::testing::Test
         DgnPlatformTestDomain::Register();
         }
 
-    DatabaseScopeAuthority& GetTestCodeAuthority(DgnDbR db)
+    CodeSpec& GetTestCodeSpec(DgnDbR db)
         {
-        if (!m_codeAuthority.IsValid())
+        if (!m_codeSpec.IsValid())
             {
-            m_codeAuthority = DatabaseScopeAuthority::Create("TestAuthority", db);
-            DgnDbStatus status = m_codeAuthority->Insert();
+            m_codeSpec = CodeSpec::Create(db, "TestCodeSpec");
+            DgnDbStatus status = m_codeSpec->Insert();
             BeAssert(status == DgnDbStatus::Success);
             }
-        return *m_codeAuthority;
+        return *m_codeSpec;
         }
 
     DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
         {
-        return GetTestCodeAuthority(db).CreateCode(elementCode, ns);
+        return GetTestCodeSpec(db).CreateCode(elementCode, ns);
         }
 
 };
@@ -812,10 +812,10 @@ TEST_F(ElementUriTests, Test1)
         ASSERT_EQ(BSISUCCESS, db->Elements().CreateElementUri(dbUri, *el, true, true));
         ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI(dbUri.c_str()));
 
-        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI("/DgnDb?Code=E1&A=TestAuthority&N=TestNS"));
+        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI("/DgnDb?Code=E1&A=TestCodeSpec&N=TestNS"));
 
         BeTest::SetFailOnAssert(false);
-        ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestAuthority&N=TestNS").IsValid());
+        ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestCodeSpec&N=TestNS").IsValid());
         BeTest::SetFailOnAssert(true);
         }
 

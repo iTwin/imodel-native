@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnHandlers.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -27,6 +27,7 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert(NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin();
     BeAssert(NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin();
     BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
+    BeAssert(NULL == m_codeAdmin);             m_codeAdmin             = &_SupplyCodeAdmin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,6 +52,7 @@ void DgnPlatformLib::Host::Terminate(bool onProgramExit)
     ON_HOST_TERMINATE(m_formatterAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_scriptingAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_repositoryAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_codeAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
     IECSymbolProvider::UnRegisterExternalSymbolPublisher();

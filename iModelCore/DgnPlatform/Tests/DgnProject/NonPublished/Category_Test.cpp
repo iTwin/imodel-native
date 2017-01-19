@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Category_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,7 +52,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetNamespace(), other.GetCode().GetNamespace());
+            EXPECT_EQ(subcat->GetCode().GetScope(), other.GetCode().GetScope());
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }
@@ -455,7 +455,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
     DgnCode code;    // invalid code
-    EXPECT_EQ(DgnDbStatus::InvalidCodeAuthority, defaultSubCat1Edit->SetCode(code));
+    EXPECT_EQ(DgnDbStatus::InvalidCodeSpec, defaultSubCat1Edit->SetCode(code));
 
     code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2"); // Duplicate code
     EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));

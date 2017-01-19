@@ -346,7 +346,7 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestSpatialLocationPtr TestSpatialLocation::Create(SpatialLocationModelR model, DgnCategoryId categoryId)
+TestSpatialLocationPtr TestSpatialLocation::Create(SpatialModelR model, DgnCategoryId categoryId)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(TestSpatialLocationHandler::GetHandler());

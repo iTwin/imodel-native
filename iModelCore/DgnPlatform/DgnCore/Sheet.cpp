@@ -32,7 +32,7 @@ using namespace SheetStrings;
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Sheet, model, name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Sheet, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**

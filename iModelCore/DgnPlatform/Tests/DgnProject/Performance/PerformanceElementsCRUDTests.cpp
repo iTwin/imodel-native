@@ -296,7 +296,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
         if (addExtKey)
             {
-            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
+            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(CodeSpecId((uint64_t) 1), "TestExtKey");
             ASSERT_TRUE(extkeyAspect.IsValid());
             element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
             }
