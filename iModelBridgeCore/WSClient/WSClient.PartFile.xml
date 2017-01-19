@@ -2,15 +2,21 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+    
+    <Part Name="WebServiceClientComponents" Sequential="true">
+        <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="ConnectWebServicesClientC" />
+    </Part>
+            
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PC" />
-        <SubPart PartName="WebServicesClient-iOS" LibType="Static"/>
+        <SubPart PartName="WebServicesClient-iOS" LibType="Static"/>        
     </Part>
-
+    
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="WebServicesClient-Library"/>
@@ -21,7 +27,6 @@
     <Part Name="WebServicesClient-iOS" OnlyPlatforms="iOS*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="WebServicesClient-Library"/>
-        <SubPart PartName="WebServicesClient-Library-Android" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
@@ -38,7 +43,7 @@
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="DgnDbServerClient-PublicAPI"/>
-        <!--<SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>-->
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
@@ -156,9 +161,19 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="ConnectWebServicesClientC">
+        <SubPart PartName="ConnectWebServicesClientC-PC" />
+        <SubPart PartName="ConnectWebServicesClientC-iOS" LibType="Static"/>
+    </Part>
+    
+    <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />
         <SubPart PartName="ConnectWebServicesClientC-Library-Android" />
+    </Part>
+    
+    <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
+        <SubPart PartName="ConnectWebServicesClientC-Library" />        
     </Part>
 
     <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
@@ -535,7 +550,7 @@
         
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <!--<SubPart PartName="ConnectWebServicesClientC" />-->
+        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
