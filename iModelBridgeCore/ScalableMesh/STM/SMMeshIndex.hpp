@@ -3545,17 +3545,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     //get overlap between node and raster extent
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
-
-    Transform t;
-    t.InverseOf(unitTransform);
-    t.Multiply(contentExtent.low, contentExtent.low);
-    t.Multiply(contentExtent.high, contentExtent.high);
+    
+    unitTransform.Multiply(contentExtent.low, contentExtent.low);
+    unitTransform.Multiply(contentExtent.high, contentExtent.high);
     if (!rasterBox.IntersectsWith(contentExtent)) return;
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
     
-
-
-
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
     bvector<uint8_t> tex;
@@ -3585,8 +3580,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             points[i] = DPoint3d::From(PointOp<POINT>::GetX(pointsPtr->operator[](i)), PointOp<POINT>::GetY(pointsPtr->operator[](i)), PointOp<POINT>::GetZ(pointsPtr->operator[](i)));
         vector<int32_t> indicesOfTexturedRegion;
         vector<DPoint2d> uvsOfTexturedRegion(points.size());
-        unitTransform.Multiply(contentExtent.low, contentExtent.low);
-        unitTransform.Multiply(contentExtent.high, contentExtent.high);
+
+        Transform t;
+        t.InverseOf(unitTransform);              
+
+        t.Multiply(contentExtent.low, contentExtent.low);
+        t.Multiply(contentExtent.high, contentExtent.high);
         for (size_t i = 0; i < existingFaces->size(); i+=3)
             {
             DPoint3d face[3];
@@ -3623,10 +3622,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
-    template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
 
-        TextureFromRaster(sourceRasterP, unitTransform);
+    TextureFromRaster(sourceRasterP, unitTransform);
 
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {

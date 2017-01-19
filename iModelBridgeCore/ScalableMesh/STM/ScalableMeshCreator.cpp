@@ -298,20 +298,20 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
-StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
+StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP)
     {
-    return m_implP->SetTextureMosaic(mosaicP, unitTransform);
+    return m_implP->SetTextureMosaic(mosaicP);
     }
 
 
-StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider)
     {
-    return m_implP->SetTextureProvider(provider, unitTransform);
+    return m_implP->SetTextureProvider(provider);
     }
 
-StatusInt IScalableMeshCreator::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+StatusInt IScalableMeshCreator::SetTextureStreamFromUrl(WString url)
     {
-    return m_implP->SetTextureStreamFromUrl(url, unitTransform);
+    return m_implP->SetTextureStreamFromUrl(url);
     }
 
 
@@ -400,15 +400,15 @@ IScalableMeshCreator::Impl::~Impl()
     m_scmPtr = 0;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
-    m_scmPtr->TextureFromRaster(mosaicPtr, unitTransform);
+    m_scmPtr->TextureFromRaster(mosaicPtr);
     return SUCCESS;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
     DRange3d range;
@@ -416,14 +416,14 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url, Trans
     BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
     ITextureProviderPtr mapboxPtr = new MapBoxTextureProvider(url, range, cs);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Streaming);
-    m_scmPtr->TextureFromRaster(mapboxPtr, unitTransform);
+    m_scmPtr->TextureFromRaster(mapboxPtr);
     return SUCCESS;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(provider, unitTransform);
+    m_scmPtr->TextureFromRaster(provider);
     return SUCCESS;
     }
 
