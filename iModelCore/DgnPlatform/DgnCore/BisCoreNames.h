@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/BisCoreNames.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,3 +27,5 @@
 #define GEOM3_Yaw "Yaw"
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
+
+#define PHYSICAL_PhysicalType   "PhysicalType"
