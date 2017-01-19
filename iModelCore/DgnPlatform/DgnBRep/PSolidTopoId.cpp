@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidTopoId.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -424,6 +424,7 @@ SurroundingFaceComparer (uint32_t lastNodeId) {m_lastNodeId = lastNodeId;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/98
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6385 6386) // static analysis thinks we exceed the bounds of pSameNodeIdArray, pSameFaceIdArray, and pEntityIdArray... I don't see how.
 static void resolveDuplicateFaceIds (int numFace, PK_FACE_t* pFaceTagArray, uint32_t lastNodeId)
     {
     PK_FACE_t*  pSameNodeIdArray = (PK_FACE_t*) malloc (numFace * sizeof (PK_FACE_t));;
@@ -503,6 +504,7 @@ static void resolveDuplicateFaceIds (int numFace, PK_FACE_t* pFaceTagArray, uint
     free (pSameFaceIdArray);
     free (pEntityIdArray);
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12

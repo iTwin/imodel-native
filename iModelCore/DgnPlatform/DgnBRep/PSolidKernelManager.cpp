@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidKernelManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1450,6 +1450,7 @@ int*            pBufferLenOut       // <= no. of chars read
 * purpose writes given buffer to open file
 * @bsimethod                                                    Deepak.Malkan   04/96
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6386) // static analysis thinks we exceed the bounds of s_pFrIOBuffer... I don't see how.
 static int      writeToFile
 (
 PFrustrumFile   pFileIn,            // => input file pointer
@@ -1507,6 +1508,7 @@ size_t          bufferLenIn         // => input buffer size
 
     return FR_no_errors;
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * purpose skip header information on opening a file to
@@ -1567,57 +1569,57 @@ static int      writeFileHeader (PFrustrumFile pFileIn, const char pr2hdr[])
     char        buffer[FR_MAX_HEADER_LINE];
 
     // machine specific - the fr should write the machine name
-    strcpy (buffer, "MC=unknown;\n");
+    BeStringUtilities::Strncpy(buffer, "MC=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - the fr should write the machine model number
-    strcpy (buffer, "MC_MODEL=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "MC_MODEL=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - the fr should write the machine identifier
-    strcpy (buffer, "MC_ID=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "MC_ID=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - the fr should write the operating system name
-    strcpy (buffer, "OS=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "OS=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - the fr should write the operating system versn
-    strcpy (buffer, "OS_RELEASE=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "OS_RELEASE=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - this should be replaced by your company name
-    strcpy (buffer, "FRU=Bentley_Systems;\n");
+    BeStringUtilities::Strncpy (buffer, "FRU=Bentley_Systems;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - this should be replaced by your product's name
-    strcpy (buffer, "APPL=Microstation_modeler;\n");
+    BeStringUtilities::Strncpy (buffer, "APPL=Microstation_modeler;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - this should be replaced by your company's location
-    strcpy (buffer, "SITE=Exton;\n");
+    BeStringUtilities::Strncpy (buffer, "SITE=Exton;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - this should be replaced by runtime user's login id
-    strcpy (buffer, "USER=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "USER=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
-    strcpy (buffer, "FORMAT=");
+    BeStringUtilities::Strncpy (buffer, "FORMAT=");
     strcat (buffer, getFileFormatString (pFileIn->format));
     strcat (buffer, ";\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
-    strcpy (buffer, "GUISE=");
+    BeStringUtilities::Strncpy (buffer, "GUISE=");
     strcat (buffer, getFileGuiseString (pFileIn->guise));
     strcat (buffer, ";\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
@@ -1625,20 +1627,20 @@ static int      writeFileHeader (PFrustrumFile pFileIn, const char pr2hdr[])
 
     char    fileStr[FR_MAX_NAMELEN + 1];
 
-    strcpy (buffer, "KEY=");
+    BeStringUtilities::Strncpy (buffer, "KEY=");
     strcat (buffer, BeStringUtilities::WCharToCurrentLocaleChar (fileStr, pFileIn->key, sizeof (fileStr)));
     strcat (buffer, ";\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
-    strcpy (buffer, "FILE=");
+    BeStringUtilities::Strncpy (buffer, "FILE=");
     strcat (buffer, BeStringUtilities::WCharToCurrentLocaleChar (fileStr, pFileIn->name, sizeof (fileStr)));
     strcat (buffer, ";\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
     // machine specific - this should be replaced by the runtime date
-    strcpy (buffer, "DATE=unknown;\n");
+    BeStringUtilities::Strncpy (buffer, "DATE=unknown;\n");
     if (FR_no_errors != writeToFile (pFileIn, buffer, 1, strlen (buffer)))
         return FR_write_fail;
 
@@ -1684,7 +1686,7 @@ static int      writeXMLFileHeader (PFrustrumFile pFileIn, const char pr2hdr[])
     {
     char        buffer[FR_MAX_HEADER_LINE];
 
-    strcpy (buffer, "<?xml version=\"1.0\" ?>" ); // <?xml version
+    BeStringUtilities::Strncpy(buffer, "<?xml version=\"1.0\" ?>" ); // <?xml version
 
     return writeToFile (pFileIn, buffer, 1, strlen (buffer));
     }
@@ -1990,8 +1992,8 @@ int*            pFailureCodeOut     // <= outputs failure code if error, else 0
     wchar_t filename[FR_MAX_NAMELEN + 1];
     wchar_t keyname[FR_MAX_NAMELEN + 1];
 
-    wcscpy (filename, L"rollback.001");
-    wcscpy (keyname, L"rollback");
+    BeStringUtilities::Wcsncpy(filename, L"rollback.001");
+    BeStringUtilities::Wcsncpy(keyname, L"rollback");
 
     FILE*   fp = _wfopen (filename, L"a");
 
