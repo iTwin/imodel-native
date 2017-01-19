@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/JsonUtils.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -195,102 +195,6 @@ static void TransformToJson(JsonValueR outValue, TransformCR trans)
     {
     for (int x = 0; x < 3; ++x)
         TransformRowToJson(outValue[x], trans.form3d[x]);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-static void ClipPlaneToJson(JsonValueR outValue, ClipPlaneCR clipPlane)
-    {
-    DVec3dToJson(outValue["normal"], clipPlane.m_normal);
-    outValue["distance"] = clipPlane.m_distance;
-    if (clipPlane.GetIsInterior())
-        outValue["interior"] = true;
-    if (clipPlane.GetIsInvisible())
-        outValue["invisible"] = true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-static ClipPlane ClipPlaneFromJson(JsonValueCR inValue)
-    {
-    ClipPlane clipPlane;
-    DVec3dFromJson(clipPlane.m_normal, inValue["normal"]);
-    clipPlane.m_distance = GetDouble(inValue["distance"], 0.0);
-    bool invisible = inValue.isMember("invisible");
-    bool interior = inValue.isMember("interior");
-    clipPlane.SetFlags(invisible, interior);
-    return clipPlane;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-static void ClipPlanesToJson(JsonValueR outValue, T_ClipPlanes const& planes)
-    {
-    for (size_t i=0; i<planes.size(); ++i)
-        {
-        ClipPlaneToJson(outValue[(Json::ArrayIndex)i], planes[i]);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-static void ClipPlanesFromJson(T_ClipPlanes& planes, JsonValueCR inValue)
-    {
-    if (!inValue.isArray())
-        return;
-    for (Json::ArrayIndex i=0; i<inValue.size(); ++i)
-        {
-        planes.push_back(ClipPlaneFromJson(inValue[(int)i]));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.wilson      3/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ClipVectorToJson(Json::Value& val, ClipVector const& clipVector)
-    {
-    Json::ArrayIndex i = 0;
-    for (auto clipPrimitive : clipVector)
-        {
-        Json::Value& clipPrimitiveJson = val[i++];
-
-        //! A ClipPlaneSet is an array of ConvexClipPlaneSet representing the union of all of these sets.
-        ClipPlaneSetCP clipPlaneSet = clipPrimitive->GetClipPlanes();
-        if (clipPlaneSet != NULL)
-            {
-            //! A ConvexClipPlaneSet is an array of planes oriented so the intersection of their inside halfspaces is a convex volume.
-            Json::ArrayIndex j = 0;
-            for (auto convexSet : *clipPlaneSet)
-                {
-                JsonUtils::ClipPlanesToJson(clipPrimitiveJson[j++], convexSet);
-                }
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.wilson      3/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ClipVectorFromJson(ClipVector& clipVector, Json::Value const& val)
-    {
-    for (Json::ArrayIndex i = 0; i < val.size(); ++i)
-        {
-        Json::Value const& clipPrimitiveJson = val[i];
-        
-        ClipPlaneSet clipPlaneSet;
-        for (Json::ArrayIndex j = 0; j < clipPrimitiveJson.size(); ++j)
-            {
-            ConvexClipPlaneSet convexSet;
-            JsonUtils::ClipPlanesFromJson(convexSet, clipPrimitiveJson[j]);
-            clipPlaneSet.push_back(convexSet);
-            }
-
-        clipVector.push_back(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
-        }
     }
 
 //---------------------------------------------------------------------------------------

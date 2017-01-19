@@ -70,6 +70,13 @@ struct  PublishTileData
 //=======================================================================================
 struct PublisherContext : TileGenerator::ITileCollector
 {
+    enum TextureMode
+        {
+        Embedded = 0,
+        External,
+        Compressed,         
+        };
+
     enum class Status
         {
         Success = SUCCESS,
@@ -81,6 +88,16 @@ struct PublisherContext : TileGenerator::ITileCollector
         ErrorWritingNode,
         CantOpenOutputFile,
         };
+
+    struct  Statistics
+        {
+        TILEPUBLISHER_EXPORT ~Statistics();
+
+        BeMutex     m_mutex;
+        double      m_textureCompressionSeconds = 0.0;
+        double      m_textureCompressionMegaPixels = 0.0;
+        };
+    Statistics                              m_statistics;
 
 protected:
     DgnDbR                                  m_db;
@@ -96,8 +113,9 @@ protected:
     BeMutex                                 m_mutex;
     bool                                    m_publishSurfacesOnly;
     bool                                    m_publishIncremental;
+    TextureMode                             m_textureMode;
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, bool publishIncremental = true, TextureMode textureMode = TextureMode::Embedded);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
@@ -130,6 +148,7 @@ public:
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
+    TextureMode GetTextureMode() const { return m_textureMode; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
@@ -229,7 +248,6 @@ private:
 
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
-
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
@@ -291,12 +309,14 @@ public:
         BatchTableParseError,
         SceneParseError,
         SceneDataError,
+        TileSetParseError,
         };
 
 
     TileReader() : m_file(nullptr) { }
     ~TileReader();
     TILEPUBLISHER_EXPORT Status  ReadTile(TileMeshList& meshes, BeFileNameCR file);
+    TILEPUBLISHER_EXPORT Status  TileReader::ReadTileSet(Json::Value& tileSet, BeFileNameCR fileName);
 
 };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/Command.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,7 @@ struct Command
         Command() {}
 
         static Utf8String ConcatArgs(size_t startIndex, std::vector<Utf8String> const& args);
-
+        static bool GetArgAsBool(Utf8StringCR arg) { return arg.EqualsIAscii("true") || arg.EqualsIAscii("1") || arg.EqualsIAscii("yes"); }
     public:
         virtual ~Command() {}
 
@@ -143,6 +143,7 @@ struct ImportCommand : public Command
     {
     private:
         static Utf8CP const ECSCHEMA_SWITCH;
+        static Utf8CP const CSV_SWITCH;
 
         virtual Utf8String _GetName() const override { return ".import"; }
         virtual Utf8String _GetUsage() const override;
@@ -150,6 +151,11 @@ struct ImportCommand : public Command
 
         void RunImportSchema(Session&, BeFileNameCR ecschemaPath) const;
         static BentleyStatus DeserializeECSchema(ECN::ECSchemaReadContextR readContext, BeFileNameCR ecschemaFilePath);
+
+        void RunImportCsv(Session&, Utf8StringCR tableName, Utf8StringCR delimiter, bool hasColumnHeader, bool doEscapeDelimiter, BeFileNameCR csvFilePath) const;
+        BentleyStatus SetupCsvImport(Session&, BeSQLite::Statement& insertStmt, Utf8StringCR tableName, uint32_t columnCount, std::vector<Utf8String> const* header) const;
+        BentleyStatus InsertCsvRow(Session&, BeSQLite::Statement&, int columnCount, std::vector<Utf8String> const& tokens, int rowNumber) const;
+
     public:
         ImportCommand() : Command() {}
         ~ImportCommand() {}
@@ -322,7 +328,7 @@ struct DbSchemaCommand : public Command
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
         void Search(Session&, std::vector<Utf8String> const& args) const;
-        void Search(BeSQLite::EC::ECDb const&, Utf8CP searchTerm) const;
+        void Search(BeSQLite::Db const&, Utf8CP searchTerm) const;
 
     public:
         DbSchemaCommand() : Command() {}

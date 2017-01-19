@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipVector.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -99,7 +99,7 @@ ClipVectorPtr ClipVector::CreateFromCurveVector(CurveVectorCR curveVector, doubl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr   ClipVector::CreateCopy(ClipVectorCR inputVector)
+ClipVectorPtr ClipVector::CreateCopy(ClipVectorCR inputVector)
     {
     ClipVectorP clipVector = new ClipVector();
     clipVector->AppendCopy(inputVector);
@@ -107,9 +107,20 @@ ClipVectorPtr   ClipVector::CreateCopy(ClipVectorCR inputVector)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ClipVector::Clone(TransformCP trans) const
+    {
+    ClipVectorPtr clone = CreateCopy(*this);
+    if (trans)
+        clone->TransformInPlace(*trans);
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::AppendCopy(ClipVectorCR clip)
+void ClipVector::AppendCopy(ClipVectorCR clip)
     {
     for (ClipPrimitivePtr const& primitive: clip)
         push_back(ClipPrimitive::CreateCopy(*primitive));
@@ -118,7 +129,7 @@ void    ClipVector::AppendCopy(ClipVectorCR clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::Append(ClipVectorCR clip)
+void ClipVector::Append(ClipVectorCR clip)
     {
     for (ClipPrimitivePtr const& primitive: clip)
         push_back(primitive);
@@ -127,7 +138,7 @@ void    ClipVector::Append(ClipVectorCR clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus    ClipVector::AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible)
+BentleyStatus ClipVector::AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible)
     {
     if (!clip.IsValid())
         clip = new ClipVector();
@@ -314,11 +325,11 @@ void ClipVector::ParseClipPlanes()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClipVector::MultiplyPlanesTimesMatrix (DMatrix4dCR matrix)
+BentleyStatus ClipVector::MultiplyPlanesTimesMatrix(DMatrix4dCR matrix)
     {
     int numErrors = 0;
     for (ClipPrimitivePtr& primitive: *this)
-        if (SUCCESS != primitive->MultiplyPlanesTimesMatrix (matrix))
+        if (SUCCESS != primitive->MultiplyPlanesTimesMatrix(matrix))
             numErrors++;
     return numErrors == 0 ? SUCCESS : ERROR;
     }
@@ -326,13 +337,13 @@ BentleyStatus ClipVector::MultiplyPlanesTimesMatrix (DMatrix4dCR matrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneContainment    ClipVector::ClassifyPointContainment (DPoint3dCP points, size_t nPoints, bool ignoreMasks) const
+ClipPlaneContainment    ClipVector::ClassifyPointContainment(DPoint3dCP points, size_t nPoints, bool ignoreMasks) const
     {
     ClipPlaneContainment        currentContainment = ClipPlaneContainment_Ambiguous;
 
     for (ClipPrimitivePtr const& primitive: *this)
         {
-        ClipPlaneContainment    thisContainment = primitive->ClassifyPointContainment (points, nPoints, ignoreMasks);
+        ClipPlaneContainment    thisContainment = primitive->ClassifyPointContainment(points, nPoints, ignoreMasks);
 
         if (ClipPlaneContainment_Ambiguous == thisContainment)
             return ClipPlaneContainment_Ambiguous;
@@ -348,40 +359,48 @@ ClipPlaneContainment    ClipVector::ClassifyPointContainment (DPoint3dCP points,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneContainment ClipVector::ClassifyRangeContainment (DRange3dCR range, bool ignoreMasks) const
+ClipPlaneContainment ClipVector::ClassifyRangeContainment(DRange3dCR range, bool ignoreMasks) const
     {
     DPoint3d    corners[8];
-
-    range.Get8Corners (corners);
-
-    return ClassifyPointContainment (corners, 8, ignoreMasks);
+    range.Get8Corners(corners);
+    return ClassifyPointContainment(corners, 8, ignoreMasks);
     }
 
-
-bool ClipVector::IsAnyLineStringPointInside (DPoint3dCP points, size_t n, bool closed)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClipVector::IsAnyLineStringPointInside(DPoint3dCP points, size_t n, bool closed)
     {
     DSegment3d segment;
     for (ClipPrimitivePtr const& primitive : *this)
         {
-        auto clipPlaneSet = primitive->GetClipPlanes ();
+        auto clipPlaneSet = primitive->GetClipPlanes();
         for (size_t i = 0; i + 1 < n; i++)
             {
-            segment.Init (points[i], points[i+1]);
-            if (clipPlaneSet->IsAnyPointInOrOn (segment))
+            segment.Init(points[i], points[i+1]);
+            if (clipPlaneSet->IsAnyPointInOrOn(segment))
                 return true;
             }
         }
     return false;
     }
-double SumSizes (bvector<DSegment1d> &intervals, size_t iBegin, size_t iEnd)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+double SumSizes(bvector<DSegment1d> &intervals, size_t iBegin, size_t iEnd)
     {
     double s = 0.0;
     for (size_t i = iBegin; i < iEnd; i++)
-        s += intervals[i].Delta ();
+        s += intervals[i].Delta();
     return s;
     }
+
 #define TARGET_FRACTION_SUM (0.99999999)
-bool ClipVector::IsCompletelyContained (DPoint3dCP points, size_t n, bool closed)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClipVector::IsCompletelyContained(DPoint3dCP points, size_t n, bool closed)
     {
     DSegment3d segment;
     for (size_t i = 0; i + 1 < n; i++)
@@ -395,8 +414,8 @@ bool ClipVector::IsCompletelyContained (DPoint3dCP points, size_t n, bool closed
             {
             auto clipPlaneSet = primitive->GetClipPlanes();
             clipPlaneSet->AppendIntervals(segment, m_clipIntervals);
-            size_t index1 = m_clipIntervals.size ();
-            fractionSum += SumSizes (m_clipIntervals, index0, index1);
+            size_t index1 = m_clipIntervals.size();
+            fractionSum += SumSizes(m_clipIntervals, index0, index1);
             index0 = index1;
             // ASSUME primitives are non-overlapping ...
             if (fractionSum >= TARGET_FRACTION_SUM)
@@ -408,6 +427,9 @@ bool ClipVector::IsCompletelyContained (DPoint3dCP points, size_t n, bool closed
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipVector::IsAnyPointInside(DEllipse3dCR arc, bool closed)
     {
     for (ClipPrimitivePtr const& primitive : *this)
@@ -419,6 +441,9 @@ bool ClipVector::IsAnyPointInside(DEllipse3dCR arc, bool closed)
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipVector::IsCompletelyContained(DEllipse3dCR arc, bool closed)
     {
     m_clipIntervals.clear();
@@ -439,7 +464,9 @@ bool ClipVector::IsCompletelyContained(DEllipse3dCR arc, bool closed)
     return fractionSum >= TARGET_FRACTION_SUM;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipVector::IsAnyPointInside(MSBsplineCurveCR arc)
     {
     for (ClipPrimitivePtr const& primitive : *this)
@@ -451,6 +478,9 @@ bool ClipVector::IsAnyPointInside(MSBsplineCurveCR arc)
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipVector::IsCompletelyContained(MSBsplineCurveCR arc)
     {
     m_clipIntervals.clear();
@@ -470,3 +500,32 @@ bool ClipVector::IsCompletelyContained(MSBsplineCurveCR arc)
         }
     return fractionSum >= TARGET_FRACTION_SUM;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value ClipVector::ToJson() const
+    {
+    Json::Value val = Json::arrayValue;
+    for (auto clipPrimitive : *this)
+        val.append(clipPrimitive->ToJson());
+
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ClipVector::FromJson(JsonValueCR json) 
+    {
+    ClipVectorPtr clip = new ClipVector();
+    for (Json::ArrayIndex i = 0; i<json.size(); ++i)
+        {
+        auto primitive = ClipPrimitive::FromJson(json[i]);
+        if (primitive.IsValid())
+            clip->push_back(primitive);
+        }
+
+    return clip->empty() ? nullptr : clip;
+    }
+

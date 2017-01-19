@@ -1667,7 +1667,8 @@ struct ViewletPosition
     DPoint3d m_center;
     double m_width;
     double m_height;
-    ViewletPosition(DPoint3dCR center, double width, double height) : m_center(center), m_width(width), m_height(height) {}
+    ClipVectorCPtr m_clip;
+    ViewletPosition(DPoint3dCR center, double width, double height, ClipVectorCP clip) : m_center(center), m_width(width), m_height(height), m_clip(clip) {}
 };
 
 //=======================================================================================

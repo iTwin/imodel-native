@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UnitTests/ScopedDgnHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +35,7 @@ struct ScopedDgnHost
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
     DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
+    DGNPLATFORM_EXPORT void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin*);
     DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
     DGNPLATFORM_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();
 
