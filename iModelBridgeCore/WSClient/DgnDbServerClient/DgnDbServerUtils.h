@@ -97,8 +97,8 @@ namespace ServerSchema
         static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP EventTypes = "EventTypes";
         static Utf8CP IsReadOnly = "IsReadOnly";
-        static Utf8CP CodeSpecId = "CodeSpecId";
-        static Utf8CP Scope = "Scope";
+        static Utf8CP AuthorityId = "AuthorityId";
+        static Utf8CP Namespace = "Namespace";
         static Utf8CP Value = "Value";
         static Utf8CP Values = "Values";
         static Utf8CP ValuePattern = "ValuePattern";
