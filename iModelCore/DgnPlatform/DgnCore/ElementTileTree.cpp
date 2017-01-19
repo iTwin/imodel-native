@@ -2137,7 +2137,7 @@ BentleyStatus Loader::_LoadTile()
             }
         }
 
-    bool addAsSubGraphics = false;
+    bool addAsSubGraphics = true;
     for (auto const& mesh : geometry.Meshes())
         {
         bool haveMesh = !mesh->Triangles().empty();
@@ -3243,7 +3243,7 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
     TileMeshArgs meshArgs;
     TilePolylineArgs polylineArgs;
 
-    bool asSubGraphic = false;
+    bool asSubGraphic = true;
     MeshList meshes = ToMeshes(options, tolerance);
     for (auto const& mesh : meshes)
         {
