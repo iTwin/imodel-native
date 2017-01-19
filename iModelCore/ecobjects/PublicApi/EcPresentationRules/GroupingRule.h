@@ -257,6 +257,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         bool                    m_createGroupForSingleItem;
         bool                    m_createGroupForUnspecifiedValues;
         PropertyGroupingValue   m_groupingValue;
+        PropertyGroupingValue   m_sortingValue;
         Utf8String              m_propertyName;
         PropertyRangeGroupList  m_ranges;
 
@@ -309,6 +310,12 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! Set the property grouping value type.
         void SetPropertyGroupingValue(PropertyGroupingValue value) {m_groupingValue = value;}
+        
+        //! Get the sorting value type.
+        PropertyGroupingValue GetSortingValue() const {return m_sortingValue;}
+
+        //! Set the sorting value type.
+        void SetSortingValue(PropertyGroupingValue value) {m_sortingValue = value;}
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
         ECOBJECTS_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;

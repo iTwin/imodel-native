@@ -105,6 +105,7 @@
 #define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
 
 #define PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE                                    "GroupingValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE                                     "SortingValue"
 #define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE                "PropertyValue"
 #define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL                 "DisplayLabel"
 
