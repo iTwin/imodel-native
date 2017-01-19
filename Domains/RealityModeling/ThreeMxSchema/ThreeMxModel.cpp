@@ -299,7 +299,7 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
         JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
 
     if (m_clip.IsValid())
-        JsonUtils::ClipVectorToJson(val[JSON_CLIP()], *m_clip);
+        val[JSON_CLIP()] = m_clip->ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,11 +316,7 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
         m_location.InitIdentity();
 
     if (val.isMember(JSON_CLIP()))
-        {
-        ClipVectorPtr clip = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson(*clip, val[JSON_CLIP()]);
-        m_clip = clip;
-        }
+        m_clip = ClipVector::FromJson(val[JSON_CLIP()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
