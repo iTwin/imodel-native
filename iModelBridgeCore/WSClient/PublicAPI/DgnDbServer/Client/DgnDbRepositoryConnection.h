@@ -98,28 +98,28 @@ struct DgnDbCodeTemplate
         };
 
 private:
-    DgnAuthorityId m_authorityId;
-    Utf8String   m_nameSpace;
-    Utf8String   m_valuePattern;
-    Utf8String   m_value;
+    CodeSpecId m_codeSpecId;
+    Utf8String m_scope;
+    Utf8String m_valuePattern;
+    Utf8String m_value;
 
 public:
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValue() const { return m_value; }
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValuePattern() const { return m_valuePattern; }
-    DGNDBSERVERCLIENT_EXPORT DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
-    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetNamespace() const { return m_nameSpace; }
+    DGNDBSERVERCLIENT_EXPORT CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetScope() const { return m_scope; }
 
     //! Determine if two DgnDbTemplates are equivalent
-    bool operator==(DgnDbCodeTemplate const& other) const { return m_authorityId == other.m_authorityId && m_value == other.m_value && m_nameSpace == other.m_nameSpace && m_valuePattern == other.m_valuePattern;}
+    bool operator==(DgnDbCodeTemplate const& other) const { return m_codeSpecId == other.m_codeSpecId && m_value == other.m_value && m_scope == other.m_scope && m_valuePattern == other.m_valuePattern;}
     //! Determine if two DgnDbTemplates are not equivalent
     bool operator!=(DgnDbCodeTemplate const& other) const { return !(*this == other); }
     //! Perform ordered comparison, e.g. for inclusion in associative containers
     DGNDBSERVERCLIENT_EXPORT bool operator<(DgnDbCodeTemplate const& rhs) const;
     
     //! Creates DgnDbCodeTemplate instance.
-    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate() : m_value(""), m_nameSpace(""), m_valuePattern("") {};
-    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_valuePattern(valuePattern), m_nameSpace(nameSpace), m_value("") {};
-    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR value, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_value(value), m_nameSpace(nameSpace), m_valuePattern(valuePattern) {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate() : m_value(""), m_scope(""), m_valuePattern("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_valuePattern(valuePattern), m_scope(scope), m_value("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_value(value), m_scope(scope), m_valuePattern(valuePattern) {};
     };
 
 //=======================================================================================

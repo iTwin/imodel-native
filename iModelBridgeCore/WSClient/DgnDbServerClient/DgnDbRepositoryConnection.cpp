@@ -80,8 +80,8 @@ void DgnDbCodeLockSetResultInfo::Insert(const DgnDbCodeLockSetResultInfo& result
 //---------------------------------------------------------------------------------------
 bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
     {
-    if (GetAuthorityId().GetValueUnchecked() != rhs.GetAuthorityId().GetValueUnchecked())
-        return GetAuthorityId().GetValueUnchecked() < rhs.GetAuthorityId().GetValueUnchecked();
+    if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
+        return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();
 
     int cmp = GetValuePattern().CompareTo(rhs.GetValuePattern());
     if (0 != cmp)
@@ -91,7 +91,7 @@ bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
     if (0 != cmp)
         return cmp < 0;
 
-    return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
+    return GetScope().CompareTo(rhs.GetScope()) < 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -980,8 +980,8 @@ bool                         queryOnly
     bool reserved, used;
     CodeStateToReservedUsed(state, &reserved, &used);
 
-    properties[ServerSchema::Property::AuthorityId]   = firstCode->GetAuthority().GetValue();
-    properties[ServerSchema::Property::Namespace]     = firstCode->GetNamespace();
+    properties[ServerSchema::Property::AuthorityId]   = firstCode->GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::Namespace]     = firstCode->GetScope();
     properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
     properties[ServerSchema::Property::Reserved]      = reserved;
     properties[ServerSchema::Property::Used]          = used;
@@ -1043,22 +1043,22 @@ Utf8String UriEncode(Utf8String input)
 //---------------------------------------------------------------------------------------
 Utf8String FormatCodeId
 (
-uint64_t                         authorityId,
-Utf8StringCR                     nameSpace,
+uint64_t                         codeSpecId,
+Utf8StringCR                     scope,
 Utf8StringCR                     value
 )
     {
     Utf8String idString;
 
-    Utf8String encodedNamespace(nameSpace.c_str());
-    EncodeIdString(encodedNamespace);
-    encodedNamespace = UriEncode(encodedNamespace);
+    Utf8String encodedScope(scope.c_str());
+    EncodeIdString(encodedScope);
+    encodedScope = UriEncode(encodedScope);
 
     Utf8String encodedValue(value.c_str());
     EncodeIdString(encodedValue);
     encodedValue = UriEncode(encodedValue);
     
-    idString.Sprintf("%d-%s-%s", authorityId, encodedNamespace.c_str(), encodedValue.c_str());
+    idString.Sprintf("%d-%s-%s", codeSpecId, encodedScope.c_str(), encodedValue.c_str());
 
     return idString;
     }
@@ -1068,14 +1068,14 @@ Utf8StringCR                     value
 //---------------------------------------------------------------------------------------
 Utf8String FormatCodeId
 (
-uint64_t                         authorityId,
-Utf8StringCR                     nameSpace,
+uint64_t                         codeSpecId,
+Utf8StringCR                     scope,
 Utf8StringCR                     value,
 BeBriefcaseId                    briefcaseId
 )
     {
     Utf8String idString;
-    idString.Sprintf("%s-%d", FormatCodeId(authorityId, nameSpace, value).c_str(), briefcaseId.GetValue());
+    idString.Sprintf("%s-%d", FormatCodeId(codeSpecId, scope, value).c_str(), briefcaseId.GetValue());
 
     return idString;
     }
@@ -1112,7 +1112,7 @@ bmap<Utf8String, bvector<DgnCode>>* groupedCodes,
 DgnCode searchCode
 )
     {
-    Utf8String searchKey = FormatCodeId(searchCode.GetAuthority().GetValue(), searchCode.GetNamespace(), "");
+    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId().GetValue(), searchCode.GetScope(), "");
     auto it = groupedCodes->find(searchKey);
     if (it == groupedCodes->end())
         {
@@ -1164,8 +1164,8 @@ Json::Value CreateCodeTemplateJson
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetAuthorityId().GetValue();
-    properties[ServerSchema::Property::Namespace] = codeTemplate.GetNamespace();
+    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::Namespace] = codeTemplate.GetScope();
     properties[ServerSchema::Property::ValuePattern] = codeTemplate.GetValuePattern();
     properties[ServerSchema::Property::Type] = (int)templateType;
 
@@ -1257,9 +1257,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetAuthority().GetValue(), code.GetNamespace(), code.GetValue(), *briefcaseId).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScope(), code.GetValue(), *briefcaseId).c_str());
     else
-        idString.Sprintf("%s", FormatCodeId(code.GetAuthority().GetValue(), code.GetNamespace(), code.GetValue()).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScope(), code.GetValue()).c_str());
 
     return ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Code, idString);
     }
