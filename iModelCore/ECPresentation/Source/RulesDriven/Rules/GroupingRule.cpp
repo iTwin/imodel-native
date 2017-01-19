@@ -328,7 +328,7 @@ Utf8StringCR ClassGroup::GetBaseClassName (void) const             { return m_ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup ()
     : GroupSpecification (), m_imageId (""), m_createGroupForSingleItem (false), m_propertyName (""), 
-    m_groupingValue(PropertyGroupingValue::DisplayLabel)
+    m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
 
@@ -338,7 +338,7 @@ PropertyGroup::PropertyGroup ()
 PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
     : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), 
     m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true), 
-    m_propertyName (propertyName), m_groupingValue(PropertyGroupingValue::DisplayLabel)
+    m_propertyName (propertyName), m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
 
@@ -348,7 +348,7 @@ PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageI
 PropertyGroup::PropertyGroup(PropertyGroupCR other)
     : m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
     m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName), 
-    m_groupingValue(PropertyGroupingValue::DisplayLabel)
+    m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
     CommonTools::CopyRules(m_ranges, other.m_ranges);
     }
@@ -375,6 +375,34 @@ CharCP PropertyGroup::_GetXmlElementName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static PropertyGroupingValue GetPropertyGroupingValueFromString(Utf8StringCR str)
+    {
+    if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
+        return PropertyGroupingValue::DisplayLabel;
+    else if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
+        return PropertyGroupingValue::PropertyValue;
+
+    BeAssert(false);
+    return PropertyGroupingValue::DisplayLabel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8CP GetPropertyGroupingValueAsString(PropertyGroupingValue value)
+    {
+    switch (value)
+        {
+        case PropertyGroupingValue::PropertyValue:  return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE;
+        case PropertyGroupingValue::DisplayLabel:   return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
+        }
+    BeAssert(false);
+    return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
@@ -398,12 +426,11 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
     
     Utf8String groupingValueStr;
     if (BEXML_Success == xmlNode->GetAttributeStringValue(groupingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE))
-        {
-        if (groupingValueStr.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
-            m_groupingValue = PropertyGroupingValue::DisplayLabel;
-        else if (groupingValueStr.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
-            m_groupingValue = PropertyGroupingValue::PropertyValue;
-        }
+        m_groupingValue = GetPropertyGroupingValueFromString(groupingValueStr);
+    
+    Utf8String sortingValueStr;
+    if (BEXML_Success == xmlNode->GetAttributeStringValue(sortingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE))
+        m_sortingValue = GetPropertyGroupingValueFromString(sortingValueStr);
 
     //Load Ranges
     CommonTools::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
@@ -420,14 +447,8 @@ void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM,        m_createGroupForSingleItem);
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES, m_createGroupForUnspecifiedValues);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME,                   m_propertyName.c_str ());
-
-    Utf8String groupingValueStr;
-    switch (m_groupingValue)
-        {
-        case PropertyGroupingValue::PropertyValue: groupingValueStr = PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE; break;
-        default: groupingValueStr = PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
-        }
-    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE, groupingValueStr.c_str());
+    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE,            GetPropertyGroupingValueAsString(m_groupingValue));
+    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE,             GetPropertyGroupingValueAsString(m_sortingValue));
 
     CommonTools::WriteRulesToXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges);
     }
