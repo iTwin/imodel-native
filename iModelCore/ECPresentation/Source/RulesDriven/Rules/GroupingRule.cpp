@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/GroupingRule.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -327,7 +327,8 @@ Utf8StringCR ClassGroup::GetBaseClassName (void) const             { return m_ba
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup ()
-    : GroupSpecification (), m_imageId (""), m_createGroupForSingleItem (false), m_propertyName ("")
+    : GroupSpecification (), m_imageId (""), m_createGroupForSingleItem (false), m_propertyName (""), 
+    m_groupingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
 
@@ -335,7 +336,9 @@ PropertyGroup::PropertyGroup ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
-    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true), m_propertyName (propertyName)
+    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), 
+    m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true), 
+    m_propertyName (propertyName), m_groupingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
 
@@ -344,7 +347,8 @@ PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageI
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup(PropertyGroupCR other)
     : m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
-    m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName)
+    m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName), 
+    m_groupingValue(PropertyGroupingValue::DisplayLabel)
     {
     CommonTools::CopyRules(m_ranges, other.m_ranges);
     }
@@ -391,6 +395,15 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
     
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForUnspecifiedValues, GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES))
         m_createGroupForUnspecifiedValues = true;
+    
+    Utf8String groupingValueStr;
+    if (BEXML_Success == xmlNode->GetAttributeStringValue(groupingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE))
+        {
+        if (groupingValueStr.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
+            m_groupingValue = PropertyGroupingValue::DisplayLabel;
+        else if (groupingValueStr.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
+            m_groupingValue = PropertyGroupingValue::PropertyValue;
+        }
 
     //Load Ranges
     CommonTools::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
@@ -407,6 +420,15 @@ void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM,        m_createGroupForSingleItem);
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES, m_createGroupForUnspecifiedValues);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME,                   m_propertyName.c_str ());
+
+    Utf8String groupingValueStr;
+    switch (m_groupingValue)
+        {
+        case PropertyGroupingValue::PropertyValue: groupingValueStr = PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE; break;
+        default: groupingValueStr = PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
+        }
+    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE, groupingValueStr.c_str());
+
     CommonTools::WriteRulesToXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges);
     }
 
