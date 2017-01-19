@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2589,6 +2589,11 @@ ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECEntityClassCR classCons
     {
     return m_constraintClasses.Remove(classConstraint);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECRelationshipConstraint::RemoveConstraintClasses() { m_constraintClasses.clear(); }
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
