@@ -980,8 +980,8 @@ bool                         queryOnly
     bool reserved, used;
     CodeStateToReservedUsed(state, &reserved, &used);
 
-    properties[ServerSchema::Property::CodeSpecId]   = firstCode->GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::Scope]         = firstCode->GetScope();
+    properties[ServerSchema::Property::AuthorityId]   = firstCode->GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::Namespace]     = firstCode->GetScope();
     properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
     properties[ServerSchema::Property::Reserved]      = reserved;
     properties[ServerSchema::Property::Used]          = used;
@@ -1164,8 +1164,8 @@ Json::Value CreateCodeTemplateJson
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::CodeSpecId] = codeTemplate.GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::Scope] = codeTemplate.GetScope();
+    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::Namespace] = codeTemplate.GetScope();
     properties[ServerSchema::Property::ValuePattern] = codeTemplate.GetValuePattern();
     properties[ServerSchema::Property::Type] = (int)templateType;
 
