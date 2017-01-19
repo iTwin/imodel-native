@@ -250,7 +250,7 @@ public:
     void SetExpirationTime(BeDuration val) {m_expirationTime = val;}
 
     //! Get expiration time for unused Tiles, in seconds.
-    BeDuration GetExpirationTime() const {return m_expirationTime;}
+    std::chrono::milliseconds GetExpirationTime() const {return m_expirationTime.ToMilliSeconds();}
 
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.

@@ -518,13 +518,14 @@ Json::Value ClipVector::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ClipVector::FromJson(JsonValueCR json) 
     {
-    auto clip = new ClipVector();
+    ClipVectorPtr clip = new ClipVector();
     for (Json::ArrayIndex i = 0; i<json.size(); ++i)
         {
         auto primitive = ClipPrimitive::FromJson(json[i]);
         if (primitive.IsValid())
             clip->push_back(primitive);
         }
-    return clip;
+
+    return clip->empty() ? nullptr : clip;
     }
 
