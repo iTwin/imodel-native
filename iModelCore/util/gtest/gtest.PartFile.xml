@@ -65,14 +65,14 @@
         <ProductDirectory Name="TestBin"                    Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="google_gtest_lib" BentleyBuildMakeFile="gtestlib.mke" BMakeOptions="" ExcludePlatforms="iOS*,WinRT*">
+    <Part Name="google_gtest_lib" DeferType="BuildUnitTests" BentleyBuildMakeFile="gtestlib.mke" BMakeOptions="" ExcludePlatforms="iOS*,WinRT*">
         <SubPart PartName="google_gtest"/>
         <Bindings>
             <Libs ProductDirectoryName="UnitTestLibs" Required="false">Delivery/$(stlibprefix)gtest$(stlibext)</Libs>
         </Bindings>
     </Part>
 
-    <Part Name="bentley_gtest" BentleyBuildMakeFile="bentleytest.prewire.mke">
+    <Part Name="bentley_gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="bentleytest.prewire.mke">
         <SubPart PartName="google_gtest"/>
         <Bindings>
             <PublicAPI Domain="BentleyTest"/>
@@ -80,7 +80,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="google_gtest" BentleyBuildMakeFile="google_gtest.prewire.mke">
+    <Part Name="google_gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="google_gtest.prewire.mke">
         <Bindings>
             <VendorAPI Domain="gtest"/>
             <Directory SourceName="Delivery/google_gtest" SubPartDirectory="google_gtest" Required="false"/>
