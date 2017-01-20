@@ -41,12 +41,12 @@ struct BeTimeUtilities
 
     //! Get a value that represents elapsed time since some /i unspecified start time, expressed as a 1/1000th of a second.
     //! @return a number of clock ticks in 1/1000ths of a second
-    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
+    //! @note this method is deprecated, use BeTimePoint::Now() instead.
     BENTLEYDLL_EXPORT static uint64_t QueryMillisecondsCounter();
 
     //! Get a value that represents elapsed time in seconds and fractions of seconds since some unspecified start time.
     //! @return a number of seconds.
-    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
+    //! @note this method is deprecated, use BeTimePoint::Now() instead.
     static double QuerySecondsCounter() {return QueryMillisecondsCounter() / 1000.0;}
 
     //! Get a value that represents elapsed time since some unspecified start time, expressed as a 1/1000th of a second.
@@ -54,7 +54,7 @@ struct BeTimeUtilities
     //! the tick count returned by this function would overflow and wrap around. This is only a problem if the program were to compare a
     //! tick count obtained before the values wrapped around to one obtained after.
     //! @return a number of ticks in 1/1000ths of a second
-    //! @note this method is deprecated, use std::chrono::steady_clock::now() instead.
+    //! @note this method is deprecated, use BeTimePoint::Now() instead.
     static uint32_t QueryMillisecondsCounterUInt32() {return (uint32_t)((0xffffffff & QueryMillisecondsCounter()));}
 
     /// @}
@@ -127,41 +127,61 @@ struct BeTimeUtilities
 };
 
 //=======================================================================================
-//! A duration, in seconds, double precision. This is a std::chrono::duration<double> with operators for converting to double and other std::chrono durations.
-//! @note this is not the same as std::chrono::seconds, where the resolution is integer seconds.
+//! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with special
+//! constructors for integer and doubles with units of *seconds*.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
-struct BeDuration : std::chrono::duration<double>
+struct BeDuration : std::chrono::steady_clock::duration
 {
-    using std::chrono::duration<double>::duration;
-    BeDuration() : std::chrono::duration<double>() {}
-    BeDuration(double val) : std::chrono::duration<double>(val) {}
-    operator double() const {return count();}
-    operator std::chrono::nanoseconds() const {return std::chrono::duration_cast<std::chrono::nanoseconds>(*this);}
-    operator std::chrono::microseconds() const {return std::chrono::duration_cast<std::chrono::microseconds>(*this);}
-    operator std::chrono::milliseconds() const {return std::chrono::duration_cast<std::chrono::milliseconds>(*this);}
-    operator std::chrono::seconds() const {return std::chrono::duration_cast<std::chrono::seconds>(*this);}
+    DEFINE_T_SUPER(std::chrono::steady_clock::duration)
+    using T_Super::duration;
 
-    std::chrono::milliseconds ToMilliSeconds() const {return (std::chrono::milliseconds)(*this);}
-    std::chrono::seconds ToSecondsInt() const {return (std::chrono::seconds)(*this);}
-    std::chrono::nanoseconds ToNanoSeconds() const {return (std::chrono::nanoseconds)(*this);}
+    //! construct a BeDuration with 0 seconds
+    explicit constexpr BeDuration() : T_Super() {}
+
+    //! construct a BeDuration with an integer number of *seconds* (not nanoseconds!)
+    explicit constexpr BeDuration(int val) : T_Super(std::chrono::seconds(val)) {}
+    //! construct a BeDuration with an double number of *seconds* (not nanoseconds!)
+    explicit constexpr BeDuration(double val) : T_Super(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val))) {}
+
+    //! cast this duration to a double number of *seconds* (not nanoseconds!)
+    constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();} 
+    //! get this duration in double *seconds* (not nanoseconds!)
+    constexpr double ToSeconds() const {return (double) *this;}
+
+    constexpr operator std::chrono::nanoseconds() const {return std::chrono::duration_cast<std::chrono::nanoseconds>(*this);} 
+    constexpr operator std::chrono::microseconds() const {return std::chrono::duration_cast<std::chrono::microseconds>(*this);}
+    constexpr operator std::chrono::milliseconds() const {return std::chrono::duration_cast<std::chrono::milliseconds>(*this);}
+    constexpr operator std::chrono::seconds() const {return std::chrono::duration_cast<std::chrono::seconds>(*this);}
+};
+
+//=======================================================================================
+//! a time point in steady_clock units (usually nanoseconds). This is a std::chrono::steady_clock::time_point
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct BeTimePoint : std::chrono::steady_clock::time_point
+{
+    DEFINE_T_SUPER(std::chrono::steady_clock::time_point)
+    using T_Super::time_point;
+    static BeTimePoint Now() {return std::chrono::steady_clock::now();}
+    static BeTimePoint FromNow(BeDuration val) {return Now()+val;}
+    static BeTimePoint BeforeNow(BeDuration val) {return Now()-val;}
+    bool IsValid() const {return 0 != time_since_epoch().count();}
 };
 
 /*=================================================================================**//**
-* Measures elapsed time
+* Measures elapsed time using std::chrono::steady_clock (not std::chrono::high_resolution_clock).
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct StopWatch : NonCopyableClass
 {
-    typedef std::chrono::high_resolution_clock::time_point TimePoint;
 private:
     Utf8CP m_description = nullptr;
-    TimePoint m_start;
-    TimePoint m_stop;
+    BeTimePoint m_start;
+    BeTimePoint m_stop;
 
 public:
-    //! Return the current time.
-    static TimePoint Now() {return std::chrono::high_resolution_clock::now();}
+    static BeTimePoint Now () {return BeTimePoint::Now();}
 
     //! Initialize the stopwatch. If true is passed as start then it will start it as well.
     void Init(bool start) {if (start) Start();}

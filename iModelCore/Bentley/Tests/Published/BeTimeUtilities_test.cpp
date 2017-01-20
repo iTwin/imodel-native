@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeTimeUtilities_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -23,7 +23,45 @@ TEST(BeTimeUtilitiesTests, QueryMillisecondsCounterUInt32)
     uint32_t t2 = BeTimeUtilities::QueryMillisecondsCounterUInt32();
 
     ASSERT_GE(t2, t1);
-    SUCCEED();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeTimeUtilitiesTests, BeTimePoint)
+    {
+    BeTimePoint invalid;
+    ASSERT_TRUE(!invalid.IsValid());
+
+    BeDuration zero;
+    ASSERT_TRUE(zero == std::chrono::seconds(0));
+
+    BeDuration threeSeconds(3); // integer constructor
+    BeDuration twoSeconds(2.0); // double constructor
+    BeDuration negative1(-1);
+    ASSERT_TRUE(threeSeconds == std::chrono::seconds(3));
+    ASSERT_TRUE(twoSeconds == std::chrono::seconds(2));
+    ASSERT_TRUE(negative1 == std::chrono::seconds(-1));
+
+    double two = twoSeconds;
+    ASSERT_TRUE(two == 2.0);
+
+    BeDuration twoandhalf(2.5);
+    ASSERT_TRUE(twoandhalf == 2.5);
+    ASSERT_TRUE(twoandhalf == std::chrono::milliseconds(2500));
+    ASSERT_TRUE(twoandhalf.ToSeconds() == 2.5);
+
+    std::chrono::milliseconds twoInMillis = twoSeconds;
+    ASSERT_TRUE(twoInMillis == std::chrono::milliseconds(2000));
+
+    BeTimePoint t1 = BeTimePoint::Now();
+    BeTimePoint t2 = BeTimePoint::Now();
+    BeTimePoint t3 = BeTimePoint::FromNow(BeDuration(3));
+
+    ASSERT_TRUE(t1.IsValid());
+    ASSERT_GE(t2, t1);
+    double diff = BeDuration(t3-t2);
+    ASSERT_TRUE(diff>3.0 && diff<4.0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,7 +73,6 @@ TEST(BeTimeUtilitiesTests, QueryMillisecondsCounter)
     uint64_t t2 = BeTimeUtilities::QueryMillisecondsCounter();
 
     ASSERT_GE(t2, t1);
-    SUCCEED();
     }
 
 //---------------------------------------------------------------------------------------
