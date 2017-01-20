@@ -127,8 +127,8 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
             {
             ASSERT_EQ(s_opCount, actualOpCount) << "Unexpected actual op count";
             Utf8String totalTestDescr;
-            totalTestDescr.Sprintf("%s [initial instance count: %d]", testDescription, s_initialInstanceCount);
-            LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), actualOpCount, totalTestDescr);
+            totalTestDescr.Sprintf("%s, initial instance count %d", testDescription, s_initialInstanceCount);
+            LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), actualOpCount, totalTestDescr.c_str());
             }
     };
 

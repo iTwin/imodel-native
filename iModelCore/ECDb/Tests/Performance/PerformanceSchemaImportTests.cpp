@@ -213,10 +213,10 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         ASSERT_TRUE(ecschema != nullptr);
 
         Utf8String testDescription;
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property", i, i);
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property", i, i);
         LOGTODB(TEST_DETAILS, importTime, i, testDescription.c_str());
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
         LOGTODB(TEST_DETAILS, schemaExportTime, i, testDescription.c_str());
         ecdb.CloseDb();
         }

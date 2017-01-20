@@ -291,7 +291,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlDeletePerformance)
         ASSERT_GE(m_deleteTime, 0.0) << "SQL DELETE test failed";
 
         testDescription.Sprintf("SQL DELETE against table ECClass with %d properties.", m_propertiesPerClass);
-        LOGTODB(TEST_DETAILS, m_deleteTim, (int) m_instancesPerClasse, testDescription.c_str());
+        LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, testDescription.c_str());
         }
     }
 
