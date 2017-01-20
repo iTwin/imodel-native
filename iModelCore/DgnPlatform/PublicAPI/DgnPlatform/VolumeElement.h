@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/VolumeElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,8 +37,8 @@ public:
         double m_height;
 
     protected:
-        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), DgnCode const& code = DgnCode(), Utf8CP label = nullptr, DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, classId, category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), DgnCode const& code = DgnCode(), Utf8CP label = nullptr, DgnElementId parent = DgnElementId(), DgnClassId parentRelClassId=DgnClassId()) :
+            T_Super(db, modelId, classId, category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent, parentRelClassId), m_origin(origin), m_shape(shape), m_height(height) {}
 
     public:
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params, DgnCategoryId(), Placement3d()) {}
@@ -53,8 +53,8 @@ public:
         //! @param label Label of the volume.
         //! @param code Code
         //! @param parent Parent ElementId
-        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label = nullptr, DgnCategoryId category = DgnCategoryId(), DgnCode const& code = DgnCode(), DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, VolumeElement::QueryClassId(db), category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height)
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label = nullptr, DgnCategoryId category = DgnCategoryId(), DgnCode const& code = DgnCode(), DgnElementId parent = DgnElementId(), DgnClassId parentRelClassId=DgnClassId()) :
+            T_Super(db, modelId, VolumeElement::QueryClassId(db), category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent, parentRelClassId), m_origin(origin), m_shape(shape), m_height(height)
             {}
 
         CreateParams(CreateParams const& params) : T_Super(params), m_origin(params.m_origin), m_shape(params.m_shape), m_height(params.m_height) {}

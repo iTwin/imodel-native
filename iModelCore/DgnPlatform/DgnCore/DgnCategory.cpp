@@ -287,6 +287,7 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
     : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, catId, name), nullptr, catId), m_data(app, descr)
     {
+    m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_CategoryOwnsSubCategories);
     }
 
 /*---------------------------------------------------------------------------------**//**

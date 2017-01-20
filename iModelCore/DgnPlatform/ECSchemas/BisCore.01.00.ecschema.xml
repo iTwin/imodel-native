@@ -283,7 +283,12 @@
     <ECEntityClass typeName="IModellableElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can be modeled (by a "sub" Model) -->
         <!-- Mutually exclusive with IParentElement -->
-        <!-- WIP: Need to mark interface as only valid for Elements -->
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <!-- Only subclasses of bis:Element can implement the IModellableElement interface -->
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <ECCustomAttributes>
@@ -518,6 +523,23 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="Subject" modifier="Sealed">
+        <BaseClass>InformationReferenceElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="InformationPartitionElement"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
@@ -582,14 +604,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="Subject" modifier="Sealed">
-        <BaseClass>InformationReferenceElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
@@ -1261,9 +1275,14 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="IParentElement" modifier="Abstract">
-        <!-- Interface implemented by Elements that can composite/own child elements -->
+        <!-- Interface implemented by Elements that can own child elements -->
         <!-- Mutually exclusive with IModellableElement -->
-        <!-- WIP: Need to mark interface as only valid for Elements -->
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <!-- Only subclasses of bis:Element can implement the IParentElement interface -->
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <!-- WIP: Should be abstract? -->
@@ -1483,10 +1502,11 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Category" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -1502,23 +1522,32 @@
     </ECEntityClass>
     <ECEntityClass typeName="DrawingCategory" modifier="Sealed">
         <!-- Category that only applies to drawing elements (2d) -->
+        <BaseClass>Category</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>Category</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialCategory" modifier="Sealed">
         <!-- Category that only applies to SpatialElements (3d) -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
         <BaseClass>Category</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CategoryOwnsSubCategories" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="Category"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="SubCategory"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1558,7 +1587,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="TrueColor">
+    <ECEntityClass typeName="TrueColor" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1572,11 +1601,12 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="MaterialElement">
+    <ECEntityClass typeName="MaterialElement" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1588,8 +1618,17 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+    <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="MaterialElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="MaterialElement"/>
+        </Target>
+    </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTextStyle">
+    <ECEntityClass typeName="AnnotationTextStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1607,7 +1646,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="AnnotationFrameStyle">
+    <ECEntityClass typeName="AnnotationFrameStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1625,7 +1664,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="AnnotationLeaderStyle">
+    <ECEntityClass typeName="AnnotationLeaderStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1643,7 +1682,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TextAnnotationSeed">
+    <ECEntityClass typeName="TextAnnotationSeed" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1661,7 +1700,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="LineStyle">
+    <ECEntityClass typeName="LineStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1670,7 +1709,7 @@
         <ECProperty propertyName="Data" typeName="string" description="Encoded style properties" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Texture">
+    <ECEntityClass typeName="Texture" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1723,7 +1762,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="LightDefinition">
+    <ECEntityClass typeName="LightDefinition" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
