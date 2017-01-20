@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/DateTime_performanceTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -34,7 +34,7 @@ TEST(Performance_DateTimeTests, FromString)
         }
 
         timer.Stop();
-        PERFORMANCELOG.infov("DateTime::FromString (\"%hs\"): %.4f msecs [%d repetitions].", testDate.c_str(), timer.GetElapsedSeconds() * 1000.0, repetitionCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDate.c_str(), repetitionCount);
+        PERFORMANCELOG.infov("DateTime::FromString (\"%s\"): %.4f msecs [%d repetitions].", testDate.c_str(), timer.GetElapsedSeconds() * 1000.0, repetitionCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, testDate.c_str());
     }
 }

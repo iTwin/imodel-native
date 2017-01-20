@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/bmap_performanceTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -23,21 +23,21 @@ TEST(PerformanceBentley, bmap)
         for (int i=0; i<s_niters; ++i)
             m[i].a = m[i].b = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Insert", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Insert");
 
         // access out of order
         timer.Start();
         for (int i=s_niters-1; i>=0; --i)
             ASSERT_EQ (m[i].a, (double)i);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Access out of order", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Access out of order");
 
         // access in order
         timer.Start();
         for (int i=0; i<s_niters; ++i)
             ASSERT_EQ (m[i].a, (double)i);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Access out in order", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Access out in order");
 
 
         // remove isolated elements
@@ -51,7 +51,7 @@ TEST(PerformanceBentley, bmap)
             }
         ASSERT_TRUE (m.size() == wasSize-nerased);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Remove Isolated elements", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Remove Isolated elements");
 
         // insert elements out of order
         timer.Start();
@@ -60,7 +60,7 @@ TEST(PerformanceBentley, bmap)
             ASSERT_TRUE( m.insert (make_bpair(i,Struct())).second == true );
             }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Insert out of order", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Insert out of order");
 
         }
 
