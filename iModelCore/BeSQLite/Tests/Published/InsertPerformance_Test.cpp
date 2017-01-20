@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/InsertPerformance_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -93,7 +93,7 @@ void InsertPerformanceTests::TearDownTestCase()
     {
     LOGTODB("", "", 0);
     for (auto entry : s_fileSizeMap)
-        LOGTODB("InsertPerformanceTests", entry.first.c_str(), 0, "FileSize:", (int)entry.second);
+        LOGTODB("InsertPerformanceTests", entry.first.c_str(), 0, (int) entry.second, "FileSize:");
     }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +125,7 @@ void InsertPerformanceTests::SetUpDb(Utf8CP dbName)
 void InsertPerformanceTests::StopTest(Utf8CP testName)
     {
     m_timer.Stop();
-    LOGTODB("InsertPerformanceTests", testName, m_timer.GetElapsedSeconds(), "", GetNumInserts());
+    LOGTODB("InsertPerformanceTests", testName, m_timer.GetElapsedSeconds(), GetNumInserts());
 
     if (m_db.IsDbOpen())
         {
