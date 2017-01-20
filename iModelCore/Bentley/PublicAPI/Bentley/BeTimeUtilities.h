@@ -149,8 +149,6 @@ struct BeDuration : std::chrono::steady_clock::duration
     //! get this duration in double *seconds* (not nanoseconds!)
     constexpr double ToSeconds() const {return (double) *this;}
 
-    constexpr operator std::chrono::nanoseconds() const {return std::chrono::duration_cast<std::chrono::nanoseconds>(*this);} 
-    constexpr operator std::chrono::microseconds() const {return std::chrono::duration_cast<std::chrono::microseconds>(*this);}
     constexpr operator std::chrono::milliseconds() const {return std::chrono::duration_cast<std::chrono::milliseconds>(*this);}
     constexpr operator std::chrono::seconds() const {return std::chrono::duration_cast<std::chrono::seconds>(*this);}
 };
