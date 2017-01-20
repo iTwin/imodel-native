@@ -379,7 +379,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WSClientTestAssets" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
+    <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
