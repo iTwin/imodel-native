@@ -61,7 +61,7 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     ASSERT_TRUE(t1.IsValid());
     ASSERT_GE(t2, t1);
     double diff = BeDuration(t3-t2);
-    ASSERT_TRUE(diff>3.0 && diff<4.0);
+    ASSERT_TRUE(diff>=3.0 && diff<4.0);
     }
 
 //---------------------------------------------------------------------------------------
