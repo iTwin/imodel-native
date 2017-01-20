@@ -555,9 +555,9 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementsCRUDTestFixture, InsertApi)
     {
-    //ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME);
-    //ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
-    //ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
     }
 
