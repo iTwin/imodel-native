@@ -181,9 +181,13 @@ void PointCloudScene::SetFrustumQueryHandle(PointCloudQueryHandleP handle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR range) const 
+PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR range, int densityType, float densityValue) const 
     {
-    return PointCloudQueryHandle::Create(ptCreateBoundingBoxQuery(range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
+    PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateBoundingBoxQuery(range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
+
+    ptSetQueryScope(queryHandle->GetHandle(), GetSceneHandle());
+    ptSetQueryDensity (queryHandle->GetHandle(), densityType, densityValue);
+    return queryHandle;
     }
 
 /*---------------------------------------------------------------------------------**//**

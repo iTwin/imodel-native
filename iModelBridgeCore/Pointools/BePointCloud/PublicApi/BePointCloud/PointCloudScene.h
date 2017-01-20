@@ -61,7 +61,7 @@ struct PointCloudScene : public RefCounted<IPointCloudFileEdit>
         BEPOINTCLOUD_EXPORT     PointCloudQueryHandleP  GetVisiblePointsQueryHandle() const;
         BEPOINTCLOUD_EXPORT     PointCloudQueryHandleP  PeekVisiblePointsQueryHandle() const { return m_visiblePointsQueryHandle.get(); }
 
-        BEPOINTCLOUD_EXPORT     PointCloudQueryHandlePtr CreateBoundingBoxQuery(DRange3dCR range) const;
+        BEPOINTCLOUD_EXPORT     PointCloudQueryHandlePtr CreateBoundingBoxQuery(DRange3dCR range, int densityType, float densityValue) const;
 /* POINTCLOUD_WIP_GR06 - SceneHandleDescr
         RefCountedPtr<SceneHandleDescr> GetSceneHandleDescr() const;
 */
