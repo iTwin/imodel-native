@@ -160,7 +160,6 @@ protected:
     void CreateTerrain(UpdatePlan const& plan);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
-    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context);
 
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
@@ -178,6 +177,7 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
+    DGNPLATFORM_EXPORT ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, RenderListContext& context);
     ProgressiveTask::Completion DoProgressiveTasks(Render::Task::Priority priority);
     DGNPLATFORM_EXPORT void ClearProgressiveTasks();
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
