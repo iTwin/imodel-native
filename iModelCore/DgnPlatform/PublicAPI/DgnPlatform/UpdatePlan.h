@@ -66,7 +66,7 @@ struct ProgressiveTask : RefCounted<NonCopyableClass>
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
     enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _DoProgressive(struct ProgressiveContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
+    virtual Completion _DoProgressive(struct RenderListContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 /*=================================================================================**//**
@@ -179,7 +179,7 @@ struct UpdatePlan
         void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
-        void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
+        void SetDelayAfter(uint32_t val) const {m_delayAfter=val;}
     };
 
     struct AbortFlags
@@ -211,6 +211,7 @@ struct UpdatePlan
 
     uint32_t    m_priority = 0;
     uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
+    BeTimePoint m_expirationTime;
     bool        m_timeoutIsPct = false;
     bool        m_hasSubRect = false;
     DRange3d    m_subRect;
@@ -228,7 +229,8 @@ public:
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void SetCreateSceneTimeoutMillis(std::chrono::milliseconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
-    uint32_t GetCreateSceneTimeout() const { return m_timeout; }
+    void SetExpirationTime(BeTimePoint end) {m_expirationTime = end;}
+    uint32_t GetCreateSceneTimeout() const {return m_timeout;}
     bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
 };

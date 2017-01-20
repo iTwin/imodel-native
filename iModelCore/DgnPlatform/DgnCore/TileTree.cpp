@@ -531,7 +531,7 @@ void Tile::SetAbandoned() const
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
+void Tile::_UnloadChildren(BeTimePoint olderThan) const
     {
     if (m_children.empty())
         return;
@@ -833,7 +833,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         return;
         }
 
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime(), m_clip.get());
     Draw(args);
     DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
@@ -854,9 +854,9 @@ void QuadTree::Root::DrawInView(RenderContextR context)
 * Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());

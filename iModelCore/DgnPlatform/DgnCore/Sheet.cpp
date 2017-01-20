@@ -354,7 +354,7 @@ struct SceneReadyTask : ProgressiveTask
 {
     Attachment::Tree& m_tree;
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
-    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& showFrame) override
         {
         // is the scene available yet?
         if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
@@ -369,15 +369,16 @@ struct SceneReadyTask : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderContextR context)
+void Attachment::Tree::Draw(TerrainContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
 
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
+        m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
 
     if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.

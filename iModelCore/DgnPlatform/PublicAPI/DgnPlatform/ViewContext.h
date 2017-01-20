@@ -88,7 +88,7 @@ protected:
     bool m_ignoreViewRange = false;
     bool m_scanRangeValid = false;
     bool m_stopAfterTimeout = false;
-    uint64_t m_endTime = 0;     // abort after this time.
+    BeTimePoint m_endTime;     // abort after this time.
     Render::ViewFlags m_viewflags;
     DrawPurpose m_purpose;
     DRange3d m_npcSubRange;
@@ -155,7 +155,7 @@ public:
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
     ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
-    void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
+    void EnableStopAfterTimout(std::chrono::milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, TransformCP trans=nullptr, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, trans, clips);}
@@ -166,63 +166,63 @@ public:
 /** @name Coordinate Query and Conversion */
 /** @{ */
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
-    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] npcPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
-    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] npcPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts  Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts     Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out]  viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
-    //! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
-    //!                             closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
+    //! @param[in] origin The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
+    //!                   closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
@@ -343,10 +343,10 @@ struct RenderListContext : RenderContext
 
 protected:
     bool m_wantStroke = true;
-    int32_t m_checkStopInterval;
+    std::chrono::milliseconds m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
-    uint64_t m_nextCheckStop;
+    BeTimePoint m_nextCheckStop;
     Render::GraphicListPtr m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
@@ -358,7 +358,7 @@ protected:
     bool DoCheckStop();
 
 public:    
-    void EnableCheckStop(int stopInterval, int const* motionTolerance);
+    void EnableCheckStop(std::chrono::milliseconds stopInterval, int const* motionTolerance);
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
     Render::GraphicListPtr GetList() const {return m_list;}
