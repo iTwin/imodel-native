@@ -191,6 +191,9 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::UnregisterBuiltinFunctions() const
     {
+    if (!m_ecdb.IsDbOpen())
+        return;
+
     m_ecdb.RemoveFunction(Base64ToBlob::GetSingleton());
     m_ecdb.RemoveFunction(BlobToBase64::GetSingleton());
     }

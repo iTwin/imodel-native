@@ -45,6 +45,7 @@ TableMapPtr TableMap::Create(ECDbCR ecdb, Utf8StringCR tableName)
 void TableMap::Initialize(Utf8StringCR tableName)
     {
     DbSchema const& dbSchema = m_ecdb.Schemas().GetDbMap().GetDbSchema();
+    m_tableName = tableName;
 
     DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
     if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
@@ -55,8 +56,7 @@ void TableMap::Initialize(Utf8StringCR tableName)
 
     m_isMapped = true;
     m_dbTable = dbTable;
-    m_tableName = tableName;
-
+    
     InitColumnIndexByName();
     InitSystemColumnMaps();
     InitForeignKeyRelClassMaps();
@@ -851,14 +851,15 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         {
         if (!rowEntry.IsMapped())
             {
-            if (rowEntry.GetTableName().StartsWith("ec_"))
-                {
-                rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
-                BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summaries are not reliable.");
-                return ERROR;
-                }
+            LOG.warningv("ChangeSet includes changes to unmapped table %s", rowEntry.GetTableName().c_str());
+            continue; // There are tables which are just not mapped to EC that we simply don't care about (e.g., be_Prop table)
+            }
 
-            BeAssert(false && "Found unmapped entries in the change set. Change summary will not be complete!");
+        if (rowEntry.GetTableName().StartsWith("ec_"))
+            {
+            rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
+            LOG.errorv("ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.", rowEntry.GetTableName().c_str());
+            BeAssert(false && "ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.");
             return ERROR;
             }
 
@@ -866,7 +867,8 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            BeAssert(false && "Couldn't determine the primary instance corresponding to a change.");
+            LOG.errorv("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
+            BeAssert(false && "Could not determine the primary instance corresponding to a change.");
             return ERROR;
             }
 
@@ -948,6 +950,29 @@ void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
+// static
+ECClassId ChangeExtractor::ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId)
+    {
+    ECClassIdPropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap();
+    if (classIdPropMap->IsVirtual(*rowEntry.GetTableMap()->GetDbTable()))
+        return classIdPropMap->GetDefaultECClassId();
+
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
+    classIdPropMap->AcceptVisitor(columnsDisp);
+    if (columnsDisp.GetColumns().size() != 1)
+        {
+        BeAssert(false);
+        return ECClassId();
+        }
+
+    DbColumn const* classIdColumn = columnsDisp.GetColumns()[0];
+    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumn->GetName().c_str(), instanceId);
+    return classId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     10/2015
+//---------------------------------------------------------------------------------------
 void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassEndTableMap const& relClassMap)
     {    
     ECClassId relClassId = relClassMap.GetClass().GetId();
@@ -957,6 +982,11 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     // Check that this end of the relationship matches the actual class found.
     ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
     if (!ClassIdMatchesConstraint(relClassId, thisEnd, thisEndClassId))
+        return;
+
+    // Check that the relationship class matches the class of the entry found
+    ECClassId foundClassId = ExtractClassId(rowEntry, relClassMap, relInstanceId);
+    if (relClassId != foundClassId)
         return;
 
     ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
@@ -1039,7 +1069,8 @@ void ChangeExtractor::RecordInstance(ChangeSummary::InstanceCR instance, ChangeI
     m_instancesTable.InsertOrUpdate(instance);
 
     bool updatedProperties = false;
-    for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakePrimaryColumnIterator())
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(classId);
+    for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakeColumnIterator(*ecClass))
         {
         if (columnEntry.IsPrimaryKeyColumn())
             continue;  // Primary key columns need not be included in the values table
@@ -1164,7 +1195,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
         return GetRelEndClassIdFromRelClass(relClassMap.GetClass().GetRelationshipClassCP(), relEnd);
         }
 
-    // Case #2: End is in only one table    
+    // Case #2: End is in only one table (Note: not in the current table the row belongs to, but some OTHER end table)
     const bool endIsInOneTable = classIdPropMap->GetTables().size() == 1;
     if (endIsInOneTable)
         {
@@ -1184,9 +1215,6 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
 
     // Case #3: End could be in many tables
     Utf8StringCR classIdColumnName = classIdColumn->GetName();
-    int classIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(classIdColumnName);
-    BeAssert(classIdColumnIndex >= 0);
-
     ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
     BeAssert(classId.IsValid());
     return classId;
@@ -1918,11 +1946,7 @@ void ChangeIterator::RowEntry::Initialize()
 
     InitSqlChange();
 
-    Utf8StringCR tableName = m_sqlChange->GetTableName();
-    if (tableName.StartsWith("ec_"))
-        return;
-
-    m_tableMap = m_iterator.GetTableMap(tableName);
+    m_tableMap = m_iterator.GetTableMap(m_sqlChange->GetTableName());
     BeAssert(m_tableMap != nullptr);
 
     if (m_tableMap->IsMapped())
@@ -2010,7 +2034,7 @@ Utf8StringCR ChangeIterator::RowEntry::GetTableName() const
         return s_emptyString;
         }
 
-    return m_tableMap->GetDbTable()->GetName(); 
+    return m_tableMap->GetTableName();
     }
 
 //---------------------------------------------------------------------------------------
