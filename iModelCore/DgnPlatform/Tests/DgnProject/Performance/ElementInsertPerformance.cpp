@@ -167,7 +167,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Single Insert (numeric parameters)", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Single Insert (numeric parameters)");
     }
 
 
@@ -239,7 +239,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Insert & Update sub props", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Insert and Update sub props");
     }
 
 //--------------------------------------------------------------------------------------
@@ -306,7 +306,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Single Insert (named parameters)", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Single Insert (named parameters)");
     }
 
 struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
