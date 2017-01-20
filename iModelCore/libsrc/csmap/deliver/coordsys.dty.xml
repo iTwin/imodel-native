@@ -349,37 +349,28 @@
                     <KeyName>EPSG:2040</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2041</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>EPSG:2042</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2043</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:2164</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2165</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Locodjo65.UTM-30N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Abidjan87.UTM-30N</KeyName>
+                    <KeyName>Abidjan1987.UTM-30N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Locodjo65.UTM-29N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Abidjan87.UTM-29N</KeyName>
+                    <KeyName>Abidjan1987.UTM-29N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Locodjo65.TM-5NW</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Abidjan87.TM-5NW</KeyName>
+                    <KeyName>Abidjan1987.TM-5NW</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -744,34 +735,13 @@
                     <KeyName>Merchich.NordMaroc</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26191</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Merchich.SudMaroc</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:26192</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Merchich.SaharaNord</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26194</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Merchich.SaharaSud</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:26195</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102191</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102192</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102193</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -1187,22 +1157,10 @@
                     <KeyName>Carthage.NordTunisie</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22391</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Carthage.SudTunisie</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22392</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Carthage.UTM-32N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:22332</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2088</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -22084,19 +22042,10 @@
                     <KeyName>SAIPAN</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>SAMOA</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>TRUK</KeyName>
                   </Member>
                   <Member>
                     <KeyName>YAP</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2155</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2194</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:2976</KeyName>
@@ -22177,10 +22126,7 @@
                     <KeyName>EPSG:3060</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>AmSamoa62.Samoa/Lambert</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3102</KeyName>
+                    <KeyName>Samoa1962/Lambert</KeyName>
                   </Member>
                   <Member>
                     <KeyName>VitiLevu12.VitiLevuGrid</KeyName>
@@ -22241,9 +22187,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:65061</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:65062</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:65161</KeyName>
@@ -22765,19 +22708,10 @@
                     <KeyName>PSAD56.PeruWest</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:24891</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>PSAD56.PeruCentral</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:24892</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>PSAD56.PeruEast</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:24893</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -22845,9 +22779,6 @@
                   </Member>
                   <Member>
                     <KeyName>PSAD56.IcnRegional</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2317</KeyName>
                   </Member>
                   <Member>
                     <KeyName>LaCanoa.UTM-18N</KeyName>
@@ -23024,42 +22955,6 @@
                       </Member>
                       <Member>
                         <KeyName>EPSG:29195</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24817</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24818</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24819</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24820</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24821</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24877</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24878</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24878</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24879</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24880</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24881</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:24882</KeyName>
                       </Member>
                     </Members>
                   </Group>
@@ -27424,6 +27319,114 @@
               <Member>
                 <KeyName>EPSG:31279</KeyName>
               </Member>
+              <Member>
+                <KeyName>SAMOA</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Abidjan87.UTM-30N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Abidjan87.UTM-29N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Abidjan87.TM-5NW</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AmSamoa62.Samoa/Lambert</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2041</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2043</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2088</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2155</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2165</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2194</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2317</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22332</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22391</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22392</KeyName>
+              </Member>
+              <Member>
+                 <KeyName>EPSG:24817</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24818</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24819</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24820</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24821</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24877</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24878</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24879</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24880</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24881</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24882</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24891</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24892</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:24893</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:26191</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:26192</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:26193</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:26194</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:26195</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3102</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:65062</KeyName>
+              </Member>
             </Members>
             <Groups>
               <Group>
@@ -28175,7 +28178,13 @@
                     <KeyName>Merchich.Sahara</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26193</KeyName>
+                    <KeyName>EPSG:102191</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102192</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102193</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30095,10 +30104,7 @@
                     <KeyName>EPSG:4142</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Abidjan87.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4143</KeyName>
+                    <KeyName>Abidjan1987.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4226</KeyName>
@@ -30394,9 +30400,6 @@
                     <KeyName>Carthage.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4223</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>EPSG:4816</KeyName>
                   </Member>
                 </Members>
@@ -30418,10 +30421,7 @@
             <Name>Antarctica</Name>
             <Members>
               <Member>
-                <KeyName>EPSG:4176</KeyName>
-              </Member>
-              <Member>
-                <KeyName>Antarctic98.LL</KeyName>
+                <KeyName>Antarctic1998.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>CampAreaAstro.LL</KeyName>
@@ -31178,7 +31178,7 @@
                          <KeyName>EPSG:4195</KeyName>
                        </Member>
                        <Member>
-                         <KeyName>Ammassalik58.LL</KeyName>
+                         <KeyName>Ammassalik58b.LL</KeyName>
                        </Member>
                        <Member>
                          <KeyName>EPSG:4196</KeyName>
@@ -32348,10 +32348,7 @@
                 <Name>Pacific Islands</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:4169</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>AmSamoa62.LL</KeyName>
+                    <KeyName>Samoa1962.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Tahiti.LL</KeyName>
@@ -32635,9 +32632,6 @@
               </Member>
               <Member>
                 <KeyName>LLSA69</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4248</KeyName>
               </Member>
               <Member>
                 <KeyName>SRG-SA/2000.LL</KeyName>
@@ -33257,9 +33251,6 @@
                 <KeyName>EPSG:37251</KeyName>
               </Member>
               <Member>
-                <KeyName>EPSG:37252</KeyName>
-              </Member>
-              <Member>
                 <KeyName>EPSG:37253</KeyName>
               </Member>
               <Member>
@@ -33588,6 +33579,36 @@
               </Member>
               <Member>
                 <KeyName>EPSG:4168</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Abidjan87.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AmSamoa62.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Antarctic98.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Ammassalik58.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4143</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4169</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4176</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4223</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4248</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37252</KeyName>
               </Member>
             </Members>
           </Group>
