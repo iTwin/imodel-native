@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlInsertTestDataset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlInsertTestDataset.h"
@@ -647,7 +647,9 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests()
     Utf8CP ecsql = "INSERT INTO ecsql.P (I, Bi) VALUES (123, ?)";
     auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql);
     Byte blob[] = {0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00};
-    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(blob, 10)));
+    ECValue binaryvalue;
+    binaryvalue.SetBinary(blob, 10, true);  // NB: Pass true for holdADuplicate, as the default is false
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(binaryvalue));
     }
 
     //Points
@@ -702,7 +704,9 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests()
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue("hello")));
     Byte blob[] = {0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00};
-    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(blob, 10)));
+    ECValue binaryvalue;
+    binaryvalue.SetBinary(blob, 10, true);  // NB: Pass true for holdADuplicate, as the default is false
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(binaryvalue));
     }
 
     //Date time <-> basic primitive types
