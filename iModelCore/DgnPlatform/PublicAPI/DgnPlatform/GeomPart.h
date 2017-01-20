@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomPart.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ElementGeometry.h>
-#include <DgnPlatform/DgnAuthority.h>
+#include <DgnPlatform/CodeSpec.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -75,7 +75,7 @@ public:
     Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_GeometryPart, db, name, nameSpace);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);

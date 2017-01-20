@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LineStyle.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1595,13 +1595,13 @@ struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
     
 private:
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_LineStyle, db, name); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(db, BIS_CODESPEC_LineStyle, name); }
 
 protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(Utf8String(GetDescription()).size() + Utf8String(GetData()).size() + 2); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle); }

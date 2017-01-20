@@ -300,7 +300,7 @@ DgnDbStatus DefinitionElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Session::CreateCode(DgnDbR db, Utf8StringCR name)
     {
-    return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_Session, db, name);
+    return CodeSpec::CreateCode(db, BIS_CODESPEC_Session, name);
     }
                                                                                                                                                     
 /*---------------------------------------------------------------------------------**//**
@@ -451,7 +451,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP name)
     {
-    return ElementScopeAuthority::CreateCode(BIS_AUTHORITY_InformationPartitionElement, parentSubject, name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_InformationPartitionElement, parentSubject, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,7 +685,7 @@ DgnDbStatus RoleElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Drawing, model, name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Drawing, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -963,8 +963,8 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthority), m_code.GetAuthority());
-    statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
+    statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
@@ -1358,7 +1358,7 @@ void DgnElement::CopyAppDataFrom(DgnElementCR source) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
-    m_authority = importer.RemapAuthorityId(m_authority);
+    m_codeSpecId = importer.RemapCodeSpecId(m_codeSpecId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1378,9 +1378,9 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
 DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const
     {
     CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId());
-    DgnAuthorityCPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority()) : nullptr;
-    if (authority.IsValid())
-        authority->CloneCodeForImport(parms.m_code, *this, destModel, importer);
+    CodeSpecCPtr codeSpec = GetCode().IsValid() ? GetDgnDb().CodeSpecs().GetCodeSpec(GetCode().GetCodeSpecId()) : nullptr;
+    if (codeSpec.IsValid())
+        codeSpec->CloneCodeForImport(parms.m_code, *this, destModel, importer);
 
     if (importer.IsBetweenDbs())
         parms.RelocateToDestinationDb(importer);
@@ -2408,14 +2408,14 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetAuthority(), value.ToString(), existingCode.GetNamespace());
+            DgnCode newCode(existingCode.GetCodeSpecId(), value.ToString(), existingCode.GetScope());
             return el.SetCode(newCode);
             });
 
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeNamespace,
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetUtf8CP(el.GetCode().GetNamespace().c_str());
+            value.SetUtf8CP(el.GetCode().GetScope().c_str());
             return DgnDbStatus::Success;
             },
         
@@ -2424,14 +2424,14 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetAuthority(), existingCode.GetValue(), value.ToString());
+            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetValue(), value.ToString());
             return el.SetCode(newCode);
             });
         
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthority, 
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeSpec, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetCode().GetAuthority());
+            value.SetNavigationInfo(el.GetCode().GetCodeSpecId());
             return DgnDbStatus::Success;
             },
         
@@ -2440,7 +2440,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(value.GetNavigationInfo().GetId<DgnAuthorityId>(), existingCode.GetValue(), existingCode.GetNamespace());
+            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetValue(), existingCode.GetScope());
             return el.SetCode(newCode);
             });
         
@@ -2665,15 +2665,15 @@ DgnElement::AppData::Key const& DgnElement::ExternalKeyAspect::GetAppDataKey()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
+DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(CodeSpecId codeSpecId, Utf8CP externalKey)
     {
-    if (!authorityId.IsValid() || !externalKey || !*externalKey)
+    if (!codeSpecId.IsValid() || !externalKey || !*externalKey)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new DgnElement::ExternalKeyAspect(authorityId, externalKey);
+    return new DgnElement::ExternalKeyAspect(codeSpecId, externalKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2681,13 +2681,13 @@ DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthor
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (Element.Id,Element.RelECClassId,AuthorityId,ExternalKey) VALUES (?,?,?,?)", element.GetDgnDb().GetECCrudWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (Element.Id,Element.RelECClassId,CodeSpecId,ExternalKey) VALUES (?,?,?,?)", element.GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
     statement->BindId(1, element.GetElementId());
     statement->BindId(2, element.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsExternalKeys));
-    statement->BindId(3, GetAuthorityId());
+    statement->BindId(3, GetCodeSpecId());
     statement->BindText(4, GetExternalKey(), IECSqlBinder::MakeCopy::No);
 
     ECInstanceKey key;
@@ -2702,14 +2702,14 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, CodeSpecId codeSpecId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND AuthorityId=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND CodeSpecId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, authorityId);
+    statement->BindId(2, codeSpecId);
 
     if (BE_SQLITE_ROW != statement->Step())
         return DgnDbStatus::ReadError;
@@ -2721,14 +2721,14 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, CodeSpecId codeSpecId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND AuthorityId=?", element.GetDgnDb().GetECCrudWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND CodeSpecId=?", element.GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, authorityId);
+    statement->BindId(2, codeSpecId);
 
     if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
@@ -2853,21 +2853,9 @@ DgnDbStatus DgnElement::SetCode(DgnCodeCR newCode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityCPtr DgnElement::GetCodeAuthority() const
+CodeSpecCPtr DgnElement::GetCodeSpec() const
     {
-    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ValidateCode() const
-    {
-    DgnAuthorityCPtr auth = GetCodeAuthority();
-    if (auth.IsNull() || !SupportsCodeAuthority(*auth))
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return auth->ValidateCode(*this);
+    return GetDgnDb().CodeSpecs().GetCodeSpec(GetCode().GetCodeSpecId());
     }
 
 /*---------------------------------------------------------------------------------**//**

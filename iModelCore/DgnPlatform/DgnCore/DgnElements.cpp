@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElements.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1129,8 +1129,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int {ClassId=0,ModelId=1,CodeAuthorityId=2,CodeNamespace=3,CodeValue=4,UserLabel=5,ParentId=6,FederationGuid=7};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,ParentId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,FederationGuid=7};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1138,7 +1138,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
         return nullptr;
 
     DgnCode code;
-    code.From(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::CodeValue), stmt->GetValueText(Column::CodeNamespace));
+    code.From(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueText(Column::CodeValue), stmt->GetValueText(Column::CodeScope));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
@@ -1518,25 +1518,25 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
 
-    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
+    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetValue(), code.GetScope());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(Utf8CP authority, Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnElementId DgnElements::QueryElementIdByCode(Utf8CP codeSpec, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
-    return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value, nameSpace);
+    return QueryElementIdByCode(GetDgnDb().CodeSpecs().QueryCodeSpecId(codeSpec), value, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnElementId DgnElements::QueryElementIdByCode(CodeSpecId codeSpec, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE CodeValue=? AND CodeAuthorityId=? AND CodeNamespace=? LIMIT 1"); // find first if code not unique
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE CodeValue=? AND CodeSpecId=? AND CodeScope=? LIMIT 1");
     statement->BindText(1, value, Statement::MakeCopy::No);
-    statement->BindId(2, authority);
+    statement->BindId(2, codeSpec);
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

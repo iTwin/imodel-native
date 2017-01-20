@@ -10,7 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
-#include "DgnAuthority.h"
+#include "CodeSpec.h"
 #include "ECSqlClassParams.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
@@ -470,6 +470,9 @@ public:
 
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
+
+    //! Get the DgnElement that this DgnModel is describing/modeling
+    DGNPLATFORM_EXPORT DgnElementCPtr GetModeledElement() const;
 
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}

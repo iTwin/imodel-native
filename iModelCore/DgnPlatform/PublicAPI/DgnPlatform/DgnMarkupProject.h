@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMarkupProject.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,7 +120,7 @@ public:
     //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
     DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return DatabaseScopeAuthority::CreateCode(MARKUP_AUTHORITY_Redline, db, value);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return CodeSpec::CreateCode(db, MARKUP_AUTHORITY_Redline, value);}
     };
 
 //=======================================================================================

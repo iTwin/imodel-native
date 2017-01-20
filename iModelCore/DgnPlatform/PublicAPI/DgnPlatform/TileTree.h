@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -208,7 +208,7 @@ protected:
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
-    std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
+    BeDuration m_expirationTime = BeDuration(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     BeConditionVariable m_cv;
@@ -247,10 +247,10 @@ public:
     DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
-    void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;}
+    void SetExpirationTime(BeDuration val) {m_expirationTime = val;}
 
     //! Get expiration time for unused Tiles, in seconds.
-    std::chrono::seconds GetExpirationTime() const {return m_expirationTime;}
+    std::chrono::milliseconds GetExpirationTime() const {return m_expirationTime.ToMilliSeconds();}
 
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
@@ -431,7 +431,7 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    ClipVectorCPtr m_clip;     //! clip volume applied to tiles, in tile coordinates
+    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
 
     virtual Utf8CP _GetName() const = 0;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}

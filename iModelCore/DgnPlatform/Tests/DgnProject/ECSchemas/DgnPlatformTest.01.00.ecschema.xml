@@ -245,12 +245,6 @@
             </ClassHasHandler>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TestAuthority">
-        <BaseClass>bis:Authority</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECStructClass typeName="TestStruct">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double"/>
         <ECProperty propertyName="TestStructIntMember" typeName="int"/>
@@ -289,9 +283,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Str" typeName="string"/>
-        <ECProperty propertyName="Long" typeName="long"/>
-        <ECProperty propertyName="Double" typeName="double"/>
+        <ECProperty propertyName="BaseStr" typeName="string"/>
+        <ECProperty propertyName="BaseLong" typeName="long"/>
+        <ECProperty propertyName="BaseDouble" typeName="double"/>
     </ECEntityClass>
     <ECEntityClass typeName="PerfElementSub1">
         <BaseClass>PerfElement</BaseClass>
@@ -320,6 +314,45 @@
         <ECProperty propertyName="Sub3Long" typeName="long"/>
         <ECProperty propertyName="Sub3Double" typeName="double"/>
     </ECEntityClass>
+    <!-- The following classes must be defined exactly the same as the corresponding classes with no "CH" in their names .. same number of properties with the same
+         names and types .., except each property in these classes has the CustomHandledProperty CA. -->
+    <ECEntityClass typeName="PerfElementCHBase">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStr" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseLong" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseDouble" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub1">
+        <BaseClass>PerfElementCHBase</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub1Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub2">
+        <BaseClass>PerfElementCHSub1</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub2Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub3">
+        <BaseClass>PerfElementCHSub2</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub3Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+
     <ECEntityClass typeName="TestOverrideAutohadledProperties">
         <BaseClass>TestElement</BaseClass>
         <ECProperty propertyName="p2d" typeName="point2d"/>

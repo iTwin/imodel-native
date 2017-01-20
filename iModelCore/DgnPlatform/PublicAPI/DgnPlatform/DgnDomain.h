@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -298,9 +298,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         //! Query whether this handler is substituting for one of its missing subclasses.
         virtual bool _IsMissingHandler() const { return false; }
 
-        virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
-        virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
-        virtual AuthorityHandlerP _ToAuthorityHandler() {return nullptr;}   //!< dynamic_cast this Handler to an AuthorityHandler
+        virtual ElementHandlerP _ToElementHandler() {return nullptr;}   //!< dynamic_cast this Handler to an ElementHandler
+        virtual ModelHandlerP _ToModelHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ModelHandler
+        virtual CodeSpecHandlerP _ToCodeSpecHandler() {return nullptr;} //!< dynamic_cast this Handler to an CodeSpecHandler
 
         DGNPLATFORM_EXPORT static Handler& z_GetHandlerInstance(); //!< @private
         static Handler& GetHandler() {return z_GetHandlerInstance();}//!< @private

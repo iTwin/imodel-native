@@ -426,8 +426,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 Category.Id;NULL;1099511627779
-                CodeAuthority.Id;NULL;1
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;1
+                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45777e+06
@@ -476,8 +476,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 Category.Id;NULL;1099511627779
-                CodeAuthority.Id;NULL;1
-                CodeNamespace;NULL;""
+                CodeSpec.Id;NULL;1
+                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45777e+06

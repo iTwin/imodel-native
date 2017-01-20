@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GraphiteResourceUri.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -620,14 +620,14 @@ static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encod
     {
     auto codeValue = BeStringUtilities::UriDecode(encodedCodeValue.c_str());
 
-    DgnResourceURI::UriToken authkeyword, encodedauthname;
+    DgnResourceURI::UriToken codeSpeckeyword, encodedcodeSpecname;
     char unused;
-    if (queryParser.ParseQueryParameter(authkeyword, encodedauthname, unused, true) != SUCCESS)
+    if (queryParser.ParseQueryParameter(codeSpeckeyword, encodedcodeSpecname, unused, true) != SUCCESS)
         {
         BeDataAssert(false && "bad Code URI");
         return DgnElementId();
         }
-    auto authorityName = BeStringUtilities::UriDecode(encodedauthname.GetString().c_str());
+    auto codeSpecName = BeStringUtilities::UriDecode(encodedcodeSpecname.GetString().c_str());
 
     DgnResourceURI::UriToken nskeyword, encodedns;
     if (queryParser.ParseQueryParameter(nskeyword, encodedns, unused, true) != SUCCESS)
@@ -637,12 +637,12 @@ static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encod
         }
     auto ns = BeStringUtilities::UriDecode(encodedns.GetString().c_str());
 
-    auto authorityId = db.Authorities().QueryAuthorityId(authorityName.c_str());
-    if (!authorityId.IsValid())
+    auto codeSpecId = db.CodeSpecs().QueryCodeSpecId(codeSpecName.c_str());
+    if (!codeSpecId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(CodeAuthorityId=? AND CodeNamespace=? AND CodeValue=?)");
-    codestmt->BindId(1, authorityId);
+    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(CodeSpecId=? AND CodeScope=? AND CodeValue=?)");
+    codestmt->BindId(1, codeSpecId);
     codestmt->BindText(2, ns.c_str(), Statement::MakeCopy::No);
     codestmt->BindText(3, codeValue.c_str(), Statement::MakeCopy::No);
     if (BE_SQLITE_ROW == codestmt->Step())
@@ -731,7 +731,7 @@ static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, D
         return DgnElementId();
         }
 
-    if (key.GetString().EqualsI("Code")) //  Db/Code=authority/namespace/
+    if (key.GetString().EqualsI("Code")) //  Db/Code=codeSpec/namespace/
         return queryElementIdByCodeComponents(db, value.GetString(), queryParser);
     
     if (key.GetString().EqualsI("FileName"))
@@ -941,17 +941,17 @@ static BentleyStatus makeElementByCode(Utf8StringR uriStr, DgnElementCR el)
     if (!code.IsValid() || code.GetValue().empty())
         return BSIERROR;
 
-    auto auth = el.GetCodeAuthority();
-    if (!auth.IsValid())
+    auto codeSpec = el.GetCodeSpec();
+    if (!codeSpec.IsValid())
         return BSIERROR;
 
     DgnResourceURI::Builder builder;
     builder.AppendEncodedPath(RT_DgnDb);
     builder.AppendQueryParameter("Code", BeStringUtilities::UriEncode(code.GetValueCP()));
     builder.AppendAndOperator();
-    builder.AppendQueryParameter("A", BeStringUtilities::UriEncode(auth->GetName().c_str()).c_str());
+    builder.AppendQueryParameter("A", BeStringUtilities::UriEncode(codeSpec->GetName().c_str()).c_str());
     builder.AppendAndOperator();
-    builder.AppendQueryParameter("N", BeStringUtilities::UriEncode(code.GetNamespace().c_str()).c_str());
+    builder.AppendQueryParameter("N", BeStringUtilities::UriEncode(code.GetScope().c_str()).c_str());
 
     uriStr = builder.ToEncodedString();
     return BSISUCCESS;

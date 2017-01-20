@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnJsApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -297,14 +297,14 @@ struct JsDgnCode : RefCountedBaseWithCreate
     bool IsValid() const {return m_code.IsValid();}
 
     Utf8String GetValue() const {return m_code.GetValue();}
-    Utf8String GetNamespace() const {return m_code.GetNamespace();}
-    JsDgnObjectIdP GetAuthority() {return new JsDgnObjectId(m_code.GetAuthority().GetValueUnchecked());}
+    Utf8String GetScope() const {return m_code.GetScope();}
+    JsDgnObjectIdP GetCodeSpecId() {return new JsDgnObjectId(m_code.GetCodeSpecId().GetValueUnchecked());}
 
     static JsDgnCode* FromJson(JsDgnDbP, Utf8StringCR json);
 
     STUB_OUT_SET_METHOD(Value,Utf8String)
-    STUB_OUT_SET_METHOD(Namespace,Utf8String)
-    STUB_OUT_SET_METHOD(Authority,JsDgnObjectIdP)
+    STUB_OUT_SET_METHOD(Scope,Utf8String)
+    STUB_OUT_SET_METHOD(CodeSpecId,JsDgnObjectIdP)
 };
 
 typedef JsDgnCode* JsDgnCodeP;

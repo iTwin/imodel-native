@@ -168,7 +168,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -329,7 +329,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingCategory : DgnCategory
     friend struct dgn_ElementHandler::DrawingCategory;
 
 protected:
-    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     explicit DrawingCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -372,7 +372,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialCategory : DgnCategory
     friend struct dgn_ElementHandler::SpatialCategory;
 
 protected:
-    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     explicit SpatialCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
