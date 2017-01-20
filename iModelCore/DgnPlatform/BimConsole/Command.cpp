@@ -6,10 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
-#include "Command.h"
-#include "BimConsole.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
+#include "Command.h"
+#include "BimConsole.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -27,12 +27,45 @@ void Command::Run(Session& session, std::vector<Utf8String> const& args) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     01/2017
+//---------------------------------------------------------------------------------------
+//static
+void Command::Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf8Char delimiter, Utf8Char delimiterEscapeChar)
+    {
+    Utf8String currentToken;
+    const bool doEscapeDelimiter = delimiterEscapeChar != '\0';
+    bool isEscaped = false;
+    for (size_t i = 0; i < string.size(); i++)
+        {
+        Utf8Char c = string[i];
+        if (doEscapeDelimiter && c == delimiterEscapeChar)
+            {
+            isEscaped = !isEscaped;
+            continue;
+            }
+
+        if (!isEscaped && c == delimiter)
+            {
+            currentToken.Trim();
+            tokens.push_back(currentToken);
+            currentToken.resize(0);
+            continue;
+            }
+
+        currentToken.append(1, c);
+        }
+
+    currentToken.Trim();
+    tokens.push_back(currentToken);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const& args)
+Utf8String Command::ConcatArgs(uint32_t startIndex, std::vector<Utf8String> const& args)
     {
-    const size_t count = args.size();
+    const uint32_t count = (uint32_t) args.size();
     if (startIndex > count)
         {
         BeAssert(false);
@@ -40,7 +73,7 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
         }
 
     Utf8String argStr;
-    for (size_t i = startIndex; i < count; i++)
+    for (uint32_t i = startIndex; i < count; i++)
         {
         argStr.append(args[i]);
 
@@ -59,30 +92,30 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
 void HelpCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
     {
     BeAssert(m_commandMap.size() == 22 && "Command was added or removed, please update the HelpCommand accordingly.");
-    Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".close")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".create")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".fileinfo")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".exit")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".close")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".create")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".fileinfo")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
+    BimConsole::WriteLine();
+    BimConsole::WriteLine(m_commandMap.at(".exit")->GetUsage().c_str());
     }
 
 //******************************* OpenCommand ******************
@@ -110,13 +143,13 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
     const auto argCount = args.size();
     if (argCount != 2 && argCount != 3)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
     if (session.IsFileLoaded())
         {
-        Console::WriteErrorLine("%s file '%s' already open. Close it first before opening another file.", session.GetFile().TypeToString(), session.GetFile().GetPath());
+        BimConsole::WriteErrorLine("%s file '%s' already open. Close it first before opening another file.", session.GetFile().TypeToString(), session.GetFile().GetPath());
         return;
         }
 
@@ -139,7 +172,7 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
     filePath.Trim(L"\"");
     if (!filePath.DoesPathExist())
         {
-        Console::WriteErrorLine("The path '%s' does not exist.", filePath.GetNameUtf8().c_str());
+        BimConsole::WriteErrorLine("The path '%s' does not exist.", filePath.GetNameUtf8().c_str());
         return;
         }
 
@@ -151,7 +184,7 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
     if (BE_SQLITE_OK == bimStat)
         {
         session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-        Console::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
         return;
         }
 
@@ -159,7 +192,7 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
     if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
         session.SetFile(std::move(ecdbFile));
-        Console::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
         return;
         }
     else
@@ -169,13 +202,13 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
     if (BE_SQLITE_OK == sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
         session.SetFile(std::move(sqliteFile));
-        Console::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
         return;
         }
     else
         sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
 
-    Console::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+    BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
     }
 
 
@@ -190,7 +223,7 @@ void CloseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
         Utf8String path(session.GetFile().GetPath());
         session.GetFile().GetHandleR().CloseDb();
-        Console::WriteLine("Closed '%s'.", path.c_str());
+        BimConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }
 
@@ -212,13 +245,13 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     {
     if (args.size() < 2)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
     if (session.IsFileLoaded())
         {
-        Console::WriteErrorLine("%s file %s already loaded. Please unload it first.", session.GetFile().TypeToString(), session.GetFile().GetPath());
+        BimConsole::WriteErrorLine("%s file %s already loaded. Please unload it first.", session.GetFile().TypeToString(), session.GetFile().GetPath());
         return;
         }
 
@@ -229,13 +262,13 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         {
         if (args.size() == 2)
             {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
         if (args.size() > 3)
             {
-            Console::WriteErrorLine("You can only specify a root subject label for BIM files. Usage: %s", GetUsage().c_str());
+            BimConsole::WriteErrorLine("You can only specify a root subject label for BIM files. Usage: %s", GetUsage().c_str());
             return;
             }
 
@@ -250,7 +283,7 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
             {
             if (args.size() != 4)
                 {
-                Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+                BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
                 return;
                 }
 
@@ -261,7 +294,7 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
             {
             if (args.size() != 3)
                 {
-                Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+                BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
                 return;
                 }
 
@@ -276,7 +309,7 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     filePath.Trim(L"\"");
     if (filePath.DoesPathExist())
         {
-        Console::WriteErrorLine("Cannot create %s file %s as it already exists.", SessionFile::TypeToString(fileType), filePath.GetNameUtf8().c_str());
+        BimConsole::WriteErrorLine("Cannot create %s file %s as it already exists.", SessionFile::TypeToString(fileType), filePath.GetNameUtf8().c_str());
         return;
         }
 
@@ -291,12 +324,12 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
             Dgn::DgnDbPtr bim = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
             if (BE_SQLITE_OK != fileStatus)
                 {
-                Console::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
+                BimConsole::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
                 return;
                 }
 
             session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-            Console::WriteLine("Successfully created BIM file %s", filePath.GetNameUtf8().c_str());
+            BimConsole::WriteLine("Successfully created BIM file %s", filePath.GetNameUtf8().c_str());
             return;
             }
 
@@ -306,12 +339,12 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
             const DbResult stat = ecdbFile->GetECDbHandleP()->CreateNewDb(filePath);
             if (BE_SQLITE_OK != stat)
                 {
-                Console::WriteErrorLine("Failed to create ECDb file %s. See log for details.", filePath.GetNameUtf8().c_str());
+                BimConsole::WriteErrorLine("Failed to create ECDb file %s. See log for details.", filePath.GetNameUtf8().c_str());
                 ecdbFile->GetECDbHandleP()->AbandonChanges();
                 return;
                 }
 
-            Console::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
+            BimConsole::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
             ecdbFile->GetECDbHandleP()->SaveChanges();
             session.SetFile(std::move(ecdbFile));
             }
@@ -322,12 +355,12 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         const DbResult stat = sqliteFile->GetHandleR().CreateNewDb(filePath);
         if (BE_SQLITE_OK != stat)
             {
-            Console::WriteErrorLine("Failed to create BeSQLite file %s. See log for details.", filePath.GetNameUtf8().c_str());
+            BimConsole::WriteErrorLine("Failed to create BeSQLite file %s. See log for details.", filePath.GetNameUtf8().c_str());
             sqliteFile->GetHandleR().AbandonChanges();
             return;
             }
 
-        Console::WriteLine("Successfully created BeSQLite file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("Successfully created BeSQLite file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
         sqliteFile->GetHandleR().SaveChanges();
         session.SetFile(std::move(sqliteFile));
         }
@@ -345,24 +378,24 @@ void FileInfoCommand::_Run(Session& session, std::vector<Utf8String> const& args
     if (!session.IsFileLoaded(true))
         return;
 
-    Console::WriteLine("Current file: ");
-    Console::WriteLine("  %s", session.GetFile().GetPath());
+    BimConsole::WriteLine("Current file: ");
+    BimConsole::WriteLine("  %s", session.GetFile().GetPath());
 
     SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
         {
-        Console::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
+        BimConsole::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
 
         if (session.GetFile().GetType() == SessionFile::Type::Bim)
             {
             Dgn::DgnDbCR bimFile = session.GetFile().GetAs<BimFile>().GetDgnDbHandle();
-            Console::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
+            BimConsole::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
             }
 
         Statement stmt;
         if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT StrData FROM be_Prop WHERE Namespace='ec_Db' AND Name='InitialSchemaVersion'"))
             {
-            Console::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+            BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
             return;
             }
 
@@ -374,18 +407,18 @@ void FileInfoCommand::_Run(Session& session, std::vector<Utf8String> const& args
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT sqlite_version()"))
         {
-        Console::WriteErrorLine("Could not execute SQL to retrieve SQLite version.");
+        BimConsole::WriteErrorLine("Could not execute SQL to retrieve SQLite version.");
         return;
         }
 
     if (BE_SQLITE_ROW == stmt.Step())
-        Console::WriteLine("  SQLite version: %s", stmt.GetValueText(0));
+        BimConsole::WriteLine("  SQLite version: %s", stmt.GetValueText(0));
 
     stmt.Finalize();
 
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion' ORDER BY Namespace"))
         {
-        Console::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
         return;
         }
 
@@ -432,22 +465,22 @@ void FileInfoCommand::_Run(Session& session, std::vector<Utf8String> const& args
             knownProfileInfos[knownProfile] = profileInfo;
         }
 
-    Console::WriteLine("  Profiles:");
+    BimConsole::WriteLine("  Profiles:");
     auto it = knownProfileInfos.find(KnownProfile::BeSQLite);
     if (it != knownProfileInfos.end())
-        Console::WriteLine(it->second.c_str());
+        BimConsole::WriteLine(it->second.c_str());
 
     it = knownProfileInfos.find(KnownProfile::ECDb);
     if (it != knownProfileInfos.end())
-        Console::WriteLine(it->second.c_str());
+        BimConsole::WriteLine(it->second.c_str());
 
     it = knownProfileInfos.find(KnownProfile::DgnDb);
     if (it != knownProfileInfos.end())
-        Console::WriteLine(it->second.c_str());
+        BimConsole::WriteLine(it->second.c_str());
 
     for (Utf8StringCR otherProfileInfo : otherProfileInfos)
         {
-        Console::WriteLine(otherProfileInfo.c_str());
+        BimConsole::WriteLine(otherProfileInfo.c_str());
         }
 
     }
@@ -462,7 +495,7 @@ void CommitCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     const auto argCount = args.size();
     if (argCount != 1)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -471,21 +504,21 @@ void CommitCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
 
     if (session.GetFile().GetHandle().IsReadonly())
         {
-        Console::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        BimConsole::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
     if (!session.GetFile().GetHandle().IsTransactionActive())
         {
-        Console::WriteErrorLine("Cannot commit because no transaction is active.");
+        BimConsole::WriteErrorLine("Cannot commit because no transaction is active.");
         return;
         }
 
     DbResult stat = session.GetFile().GetHandleR().SaveChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine("Commit failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
+        BimConsole::WriteErrorLine("Commit failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
     else
-        Console::WriteLine("Committed current transaction and restarted it.");
+        BimConsole::WriteLine("Committed current transaction and restarted it.");
     }
 
 //******************************* RollbackCommand ******************
@@ -506,7 +539,7 @@ void RollbackCommand::_Run(Session& session, std::vector<Utf8String> const& args
     const size_t argCount = args.size();
     if (argCount != 1)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -515,21 +548,21 @@ void RollbackCommand::_Run(Session& session, std::vector<Utf8String> const& args
 
     if (session.GetFile().GetHandle().IsReadonly())
         {
-        Console::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        BimConsole::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
     if (!session.GetFile().GetHandle().IsTransactionActive())
         {
-        Console::WriteErrorLine("Cannot roll back because no transaction is active.");
+        BimConsole::WriteErrorLine("Cannot roll back because no transaction is active.");
         return;
         }
 
     DbResult stat = session.GetFile().GetHandleR().AbandonChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine("Rollback failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
+        BimConsole::WriteErrorLine("Rollback failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
     else
-        Console::WriteLine("Rolled current transaction back and restarted it.");
+        BimConsole::WriteLine("Rolled current transaction back and restarted it.");
     }
 
 //******************************* ImportCommand ******************
@@ -553,8 +586,12 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "Imports the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are imported.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
-        "         csv <csv file path> <table name> <delimiter> [<doescapedelimiter> <hascolumnheader>]\r\n"
+        "         csv <csv file path> <table name> [<hascolumnheader> <delimiter> <delimiterescapechar>]\r\n"
         COMMAND_USAGE_IDENT "Imports the specified CSV file into a plain table.\r\n";
+        COMMAND_USAGE_IDENT "hascolumnheader: if true, the first line's values become the column names of the new table (default: false)\r\n";
+        COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n";
+        COMMAND_USAGE_IDENT "delimiterescapechar: if a string is enclosed by the escape char any delimiters\r\n"
+        COMMAND_USAGE_IDENT "within the string are not considered as delimiter. Default: no escape char\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -564,7 +601,7 @@ void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     {
     if (args.size() < 3 || (!args[1].EqualsIAscii(ECSCHEMA_SWITCH) && !args[1].EqualsIAscii(CSV_SWITCH)))
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -573,7 +610,15 @@ void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
 
     if (session.GetFile().GetHandle().IsReadonly())
         {
-        Console::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        BimConsole::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        return;
+        }
+
+    BeFileName path(args[2]);
+    path.Trim(L"\"");
+    if (!path.DoesPathExist())
+        {
+        BimConsole::WriteErrorLine("Import failed. Specified path '%s' does not exist.", path.GetNameUtf8().c_str());
         return;
         }
 
@@ -583,38 +628,13 @@ void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         if (!session.IsECDbFileLoaded(true))
             return;
 
-        BeFileName path(args[2]);
-        path.Trim(L"\"");
-        if (!path.DoesPathExist())
-            {
-            Console::WriteErrorLine("Import failed. Specified path '%s' does not exist.", path.GetNameUtf8().c_str());
-            return;
-            }
-
         RunImportSchema(session, path);
         return;
         }
 
     BeAssert(commandSwitch.EqualsIAscii(CSV_SWITCH));
-    if (args.size() != 7)
-        {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    BeFileName path(args[2]);
-    path.Trim(L"\"");
-    if (!path.DoesPathExist())
-        {
-        Console::WriteErrorLine("Import failed. Specified path '%s' does not exist.", path.GetNameUtf8().c_str());
-        return;
-        }
-
-    const bool doEscapeDelimiter = GetArgAsBool(args[5]);
-    const bool hasColumnHeader = GetArgAsBool(args[6]);
-    RunImportCsv(session, args[3], args[4], hasColumnHeader, doEscapeDelimiter, path);
+    RunImportCsv(session, path, args);
     }
-
 
 
 //---------------------------------------------------------------------------------------
@@ -634,7 +654,7 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         BeDirectoryIterator::WalkDirsAndMatch(ecschemaFilePaths, ecschemaPath, L"*.ecschema.xml", false);
         if (ecschemaFilePaths.empty())
             {
-            Console::WriteErrorLine("Import failed. Folder '%s' does not contain ECSchema XML files.", ecschemaPath.GetNameUtf8().c_str());
+            BimConsole::WriteErrorLine("Import failed. Folder '%s' does not contain ECSchema XML files.", ecschemaPath.GetNameUtf8().c_str());
             return;
             }
         }
@@ -646,10 +666,10 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
 
     for (BeFileName const& ecschemaFilePath : ecschemaFilePaths)
         {
-        Console::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8().c_str());
         if (SUCCESS != DeserializeECSchema(*context, ecschemaFilePath))
             {
-            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8().c_str());
+            BimConsole::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8().c_str());
             return;
             }
         }
@@ -658,22 +678,22 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
 
     if (BE_SQLITE_OK != session.GetFile().GetHandleR().SaveChanges())
         {
-        Console::WriteLine("Saving outstanding changes in the file failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
+        BimConsole::WriteLine("Saving outstanding changes in the file failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
         }
 
     if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
         {
         session.GetFile().GetHandleR().SaveChanges();
-        Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         return;
         }
 
     session.GetFile().GetHandleR().AbandonChanges();
     if (session.GetIssues().HasIssue())
-        Console::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+        BimConsole::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
     else
-        Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        BimConsole::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -691,56 +711,43 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportCsv(Session& session, Utf8StringCR tableName, Utf8StringCR delimiter, bool doEscapeDelimiter, bool hasColumnHeader, BeFileNameCR csvFilePath) const
+void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std::vector<Utf8String> const& args) const
     {
+    if(args.size() != 4)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    Utf8StringCR tableName = args[3];
+    const bool hasColumnHeader = args.size() == 5 ? GetArgAsBool(args[4]) : false;
+    Utf8CP delimiter = args.size() == 6 ? args[5].c_str() : ",";
+    Utf8CP escapeCharStr = args.size() == 7 ? args[6].c_str() : nullptr;
+    Utf8Char escapeChar = !Utf8String::IsNullOrEmpty(escapeCharStr) ? escapeCharStr[0] : '\0';
+
     BeFileStatus stat;
     BeTextFilePtr file = BeTextFile::Open(stat, csvFilePath.GetName(), TextFileOpenType::Read, TextFileOptions::KeepNewLine);
     if (BeFileStatus::Success != stat)
         {
-        Console::WriteErrorLine("Could not open CSV file %s.", csvFilePath.GetNameUtf8().c_str());
+        BimConsole::WriteErrorLine("Could not open CSV file %s.", csvFilePath.GetNameUtf8().c_str());
         return;
         }
 
-    WString lineW;
+    WString line;
     Statement stmt;
     int rowCount = 0;
     bool isFirstLine = true;
     int columnCount = -1;
-    while (TextFileReadStatus::Success == file->GetLine(lineW))
+    while (TextFileReadStatus::Success == file->GetLine(line))
         {
-        Utf8String line(lineW.c_str());
-
         std::vector<Utf8String> tokens;
+        Tokenize(tokens, Utf8String(line), delimiter[0], escapeChar);
 
-        Utf8String currentToken;
-        bool isEscaped = false;
-        for (size_t i = 0; i < line.size(); i++)
+        for (Utf8StringR token : tokens)
             {
-            Utf8Char c = line[i];
-            if (doEscapeDelimiter && c == '"')
-                {
-                isEscaped = !isEscaped;
-                continue;
-                }
-
-            if (!isEscaped && c == delimiter[0])
-                {
-                currentToken.ReplaceAll("[", "(");
-                currentToken.ReplaceAll("]", ")");
-                currentToken.Trim();
-                tokens.push_back(currentToken);
-                currentToken.resize(0);
-                continue;
-                }
-
-            currentToken.push_back(c);
+            token.ReplaceAll("[", "(");
+            token.ReplaceAll("]", ")");
             }
-
-        currentToken.ReplaceAll("[", "(");
-        currentToken.ReplaceAll("]", ")");
-        currentToken.Trim();
-        tokens.push_back(currentToken);
-
 
         if (isFirstLine)
             {
@@ -759,7 +766,7 @@ void ImportCommand::RunImportCsv(Session& session, Utf8StringCR tableName, Utf8S
             return;
         }
 
-    Console::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName, csvFilePath.GetNameUtf8().c_str());
+    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName, csvFilePath.GetNameUtf8().c_str());
     }
 
 
@@ -810,14 +817,14 @@ BentleyStatus ImportCommand::SetupCsvImport(Session& session, Statement& stmt, U
 
     if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
         {
-        Console::WriteErrorLine("Could not create table '%s' for CSV file: %s",
+        BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
                                tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
         return ERROR;
         }
 
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), insertSql.c_str()))
         {
-        Console::WriteErrorLine("Could not prepare CSV insert statement '%s': %s",
+        BimConsole::WriteErrorLine("Could not prepare CSV insert statement '%s': %s",
                                insertSql.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
         return ERROR;
         }
@@ -837,7 +844,7 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 
         if (BE_SQLITE_OK != stmt.BindText(i + 1, tokens[i], Statement::MakeCopy::Yes))
             {
-            Console::WriteErrorLine("Could not bind cell value [column %d, row %d] to insert statement: %s",
+            BimConsole::WriteErrorLine("Could not bind cell value [column %d, row %d] to insert statement: %s",
                                     i + 1, rowNumber, session.GetFile().GetHandle().GetLastError().c_str());
             return ERROR;
             }
@@ -845,7 +852,7 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 
     if (BE_SQLITE_DONE != stmt.Step())
         {
-        Console::WriteErrorLine("Could not insert row %d into table: %s",
+        BimConsole::WriteErrorLine("Could not insert row %d into table: %s",
                                 rowNumber, session.GetFile().GetHandle().GetLastError().c_str());
         return ERROR;
         }
@@ -882,7 +889,7 @@ void ExportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     const size_t argCount = args.size();
     if (!(argCount == 3 || (argCount == 4 && args[2].EqualsI("v2"))))
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -914,7 +921,7 @@ void ExportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         return;
         }
 
-    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -932,7 +939,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
     bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetECSchemas(true);
     if (schemas.empty())
         {
-        Console::WriteErrorLine("Failed to load schemas from file.");
+        BimConsole::WriteErrorLine("Failed to load schemas from file.");
         return;
         }
 
@@ -940,7 +947,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
     outFolder.SetNameUtf8(outFolderStr);
     if (BeFileName::IsDirectory(outFolder.GetName()))
         {
-        Console::WriteErrorLine("Folder %s already exists. Please delete it or specify and another folder.", outFolder.GetNameUtf8().c_str());
+        BimConsole::WriteErrorLine("Folder %s already exists. Please delete it or specify and another folder.", outFolder.GetNameUtf8().c_str());
         return;
         }
     else
@@ -956,7 +963,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
         BeFileName outPath(outFolder);
         outPath.AppendToPath(fileName.c_str());
         schema->WriteToXmlFile(outPath.GetName(), ecxmlVersion);
-        Console::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
         }
     }
 
@@ -968,7 +975,7 @@ void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
     BeFile file;
     if (file.Create(jsonFile, true) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine("Failed to create JSON file %s", jsonFile);
+        BimConsole::WriteErrorLine("Failed to create JSON file %s", jsonFile);
         return;
         }
 
@@ -984,12 +991,12 @@ void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
     auto jsonString = tableData.toStyledString();
     if (file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size())) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine("Failed to write to JSON file %s", jsonFile);
+        BimConsole::WriteErrorLine("Failed to write to JSON file %s", jsonFile);
         return;
         }
 
     file.Flush();
-    Console::WriteLine("Exported tables to '%s'", jsonFile);
+    BimConsole::WriteLine("Exported tables to '%s'", jsonFile);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1016,7 +1023,7 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                     {
                     if (SUCCESS != ECJsonUtilities::BinaryToJson(row[stmt.GetColumnName(i)], (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i)))
                         {
-                        Console::WriteErrorLine("Failed to export table %s", tableName);
+                        BimConsole::WriteErrorLine("Failed to export table %s", tableName);
                         return;
                         }
                     break;
@@ -1055,14 +1062,14 @@ void CreateECClassViewsCommand::_Run(Session& session, std::vector<Utf8String> c
 
     if (session.GetFile().GetHandle().IsReadonly())
         {
-        Console::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        BimConsole::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
     if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateECClassViewsInDb())
-        Console::WriteErrorLine("Failed to create ECClass views in the file.");
+        BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
     else
-        Console::WriteLine("Created or updated ECClass views in the file.");
+        BimConsole::WriteLine("Created or updated ECClass views in the file.");
     }
 
 
@@ -1084,7 +1091,7 @@ void MetadataCommand::_Run(Session& session, std::vector<Utf8String> const& args
     const size_t argSize = args.size();
     if (argSize <= 1)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1106,18 +1113,18 @@ void MetadataCommand::_Run(Session& session, std::vector<Utf8String> const& args
     if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
+            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            Console::WriteErrorLine("Failed to prepare ECSQL statement.");
+            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement.");
 
         return;
         }
 
-    Console::WriteLine();
-    Console::WriteLine("Column metadata");
-    Console::WriteLine("===============");
-    Console::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
-    Console::WriteLine("----------------------------------------------------------------------------------------------------------------------------------------------");
+    BimConsole::WriteLine();
+    BimConsole::WriteLine("Column metadata");
+    BimConsole::WriteLine("===============");
+    BimConsole::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
+    BimConsole::WriteLine("----------------------------------------------------------------------------------------------------------------------------------------------");
     const int columnCount = stmt.GetColumnCount();
     for (int i = 0; i < columnCount; i++)
         {
@@ -1134,10 +1141,10 @@ void MetadataCommand::_Run(Session& session, std::vector<Utf8String> const& args
         Utf8CP rootClassName = isGeneratedProp ? "generated" : columnInfo.GetRootClass().GetFullName();
         Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), typeName.c_str(), rootClassName, rootClassAlias);
+        BimConsole::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), typeName.c_str(), rootClassName, rootClassAlias);
         }
 
-    Console::WriteLine();
+    BimConsole::WriteLine();
     }
 
 //******************************* ParseCommand ******************
@@ -1160,7 +1167,7 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
     const size_t argCount = args.size();
     if (argCount < 2)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1172,7 +1179,7 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         {
         if (argCount < 3)
             {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
@@ -1182,19 +1189,19 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
             {
             if (session.GetIssues().HasIssue())
-                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
             else
-                Console::WriteErrorLine("Failed to parse ECSQL.");
+                BimConsole::WriteErrorLine("Failed to parse ECSQL.");
             return;
             }
 
-        Console::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
-        Console::WriteLine();
-        Console::WriteLine("ECSQL expression tree:");
+        BimConsole::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
+        BimConsole::WriteLine();
+        BimConsole::WriteLine("ECSQL expression tree:");
 
         Utf8String expTreeStr;
         ExpTreeToString(expTreeStr, expTree, 0);
-        Console::WriteLine("%s", expTreeStr.c_str());
+        BimConsole::WriteLine("%s", expTreeStr.c_str());
         return;
         }
 
@@ -1202,7 +1209,7 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         {
         if (argCount < 3)
             {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
@@ -1212,15 +1219,15 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
             {
             if (session.GetIssues().HasIssue())
-                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
             else
-                Console::WriteErrorLine("Failed to parse ECSQL.");
+                BimConsole::WriteErrorLine("Failed to parse ECSQL.");
 
             return;
             }
 
-        Console::WriteLine("Raw ECSQL parse tree:");
-        Console::WriteLine("%s", parseTree.c_str());
+        BimConsole::WriteLine("Raw ECSQL parse tree:");
+        BimConsole::WriteLine("%s", parseTree.c_str());
         return;
         }
 
@@ -1229,7 +1236,7 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
         {
         if (argCount < 3)
             {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
@@ -1245,11 +1252,11 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
     ECSqlStatus stat = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
     if (!stat.IsSuccess())
         if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+            BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
         else
-            Console::WriteErrorLine("Failed to parse ECSQL.");
+            BimConsole::WriteErrorLine("Failed to parse ECSQL.");
 
-    Console::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
+    BimConsole::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1308,7 +1315,7 @@ void SqliteCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     const size_t argSize = args.size();
     if (argSize <= 1)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1321,7 +1328,7 @@ void SqliteCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     DbResult status = stmt.Prepare(session.GetFile().GetHandle(), sql.c_str());
     if (status != BE_SQLITE_OK)
         {
-        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+        BimConsole::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
         }
 
@@ -1339,11 +1346,11 @@ void SqliteCommand::ExecuteSelect(Statement& statement) const
     const int columnCount = statement.GetColumnCount();
     for (int i = 0; i < columnCount; i++)
         {
-        Console::Write("%s\t", statement.GetColumnName(i));
+        BimConsole::Write("%s\t", statement.GetColumnName(i));
         }
 
-    Console::WriteLine();
-    Console::WriteLine("-------------------------------------------------------------");
+    BimConsole::WriteLine();
+    BimConsole::WriteLine("-------------------------------------------------------------");
 
     while (statement.Step() == BE_SQLITE_ROW)
         {
@@ -1358,7 +1365,7 @@ void SqliteCommand::ExecuteSelect(Statement& statement) const
             out.append("\t");
             }
 
-        Console::WriteLine(out.c_str());
+        BimConsole::WriteLine(out.c_str());
         }
     }
 
@@ -1369,7 +1376,7 @@ void SqliteCommand::ExecuteNonSelect(Session& session, Statement& statement) con
     {
     if (statement.Step() != BE_SQLITE_DONE)
         {
-        Console::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
+        BimConsole::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
         }
     }
@@ -1393,7 +1400,7 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
     {
     if (args.size() < 2)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1405,7 +1412,7 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
         return;
         }
 
-    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1419,12 +1426,12 @@ void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& ar
 
     if (isFileOpen && argSize != 3)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
     else if (!isFileOpen && argSize != 5)
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1453,7 +1460,7 @@ void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& ar
 
     if (filePaths.empty())
         {
-        Console::WriteErrorLine("Command failed. Folder '%s' does not contain files with extension *.%s.",
+        BimConsole::WriteErrorLine("Command failed. Folder '%s' does not contain files with extension *.%s.",
                                 folder.c_str(), fileFilter.c_str());
         return;
         }
@@ -1463,7 +1470,7 @@ void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& ar
         Db db;
         if (BE_SQLITE_OK != db.OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly)))
             {
-            Console::WriteErrorLine("Skipping file '%s', because it could not be opened.",
+            BimConsole::WriteErrorLine("Skipping file '%s', because it could not be opened.",
                                     path.GetNameUtf8().c_str());
             continue;
             }
@@ -1481,7 +1488,7 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(db, sql))
         {
-        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql, db.GetLastError().c_str());
+        BimConsole::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql, db.GetLastError().c_str());
         return;
         }
 
@@ -1490,20 +1497,20 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 
     if (BE_SQLITE_OK != stmt.BindText(1, searchTermWithWildcards, Statement::MakeCopy::No))
         {
-        Console::WriteErrorLine("Failed to bind search term '%s' to SQLite SQL statement %s: %s", searchTermWithWildcards.c_str(), sql, db.GetLastError().c_str());
+        BimConsole::WriteErrorLine("Failed to bind search term '%s' to SQLite SQL statement %s: %s", searchTermWithWildcards.c_str(), sql, db.GetLastError().c_str());
         return;
         }
 
     if (BE_SQLITE_ROW != stmt.Step())
         {
-        Console::WriteLine("The search term '%s' was not found in the DB schema elements of the file '%s'", searchTerm, db.GetDbFileName());
+        BimConsole::WriteLine("The search term '%s' was not found in the DB schema elements of the file '%s'", searchTerm, db.GetDbFileName());
         return;
         }
 
-    Console::WriteLine("In the file '%s' the following DB schema elements contain the search term %s:", db.GetDbFileName(), searchTerm);
+    BimConsole::WriteLine("In the file '%s' the following DB schema elements contain the search term %s:", db.GetDbFileName(), searchTerm);
     do
         {
-        Console::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
+        BimConsole::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
         } while (BE_SQLITE_ROW == stmt.Step());
     }
 

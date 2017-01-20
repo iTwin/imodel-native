@@ -30,14 +30,17 @@ struct Command
     protected:
         Command() {}
 
-        static Utf8String ConcatArgs(size_t startIndex, std::vector<Utf8String> const& args);
+        static Utf8String ConcatArgs(uint32_t startIndex, std::vector<Utf8String> const& args);
         static bool GetArgAsBool(Utf8StringCR arg) { return arg.EqualsIAscii("true") || arg.EqualsIAscii("1") || arg.EqualsIAscii("yes"); }
+
     public:
         virtual ~Command() {}
 
         Utf8String GetName() const { return _GetName(); }
         Utf8String GetUsage() const { return _GetUsage(); }
         void Run(Session& session, std::vector<Utf8String> const& args) const;
+
+        static void Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf8Char delimiter, Utf8Char delimiterEscapeChar);
     };
 
 //---------------------------------------------------------------------------------------
@@ -54,8 +57,7 @@ struct HelpCommand : public Command
 
     public:
         explicit HelpCommand(std::map<Utf8String, std::shared_ptr<Command>> const& commandMap)
-            : Command(), m_commandMap(commandMap)
-            {}
+            : Command(), m_commandMap(commandMap) {}
 
         ~HelpCommand() {}
     };
@@ -90,10 +92,7 @@ struct CloseCommand : public Command
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
     public:
-        CloseCommand()
-            : Command()
-            {}
-
+        CloseCommand() : Command() {}
         ~CloseCommand() {}
     };
 
@@ -152,7 +151,7 @@ struct ImportCommand : public Command
         void RunImportSchema(Session&, BeFileNameCR ecschemaPath) const;
         static BentleyStatus DeserializeECSchema(ECN::ECSchemaReadContextR readContext, BeFileNameCR ecschemaFilePath);
 
-        void RunImportCsv(Session&, Utf8StringCR tableName, Utf8StringCR delimiter, bool hasColumnHeader, bool doEscapeDelimiter, BeFileNameCR csvFilePath) const;
+        void RunImportCsv(Session&, BeFileNameCR csvFilePath, std::vector<Utf8String> const& args) const;
         BentleyStatus SetupCsvImport(Session&, BeSQLite::Statement& insertStmt, Utf8StringCR tableName, uint32_t columnCount, std::vector<Utf8String> const* header) const;
         BentleyStatus InsertCsvRow(Session&, BeSQLite::Statement&, int columnCount, std::vector<Utf8String> const& tokens, int rowNumber) const;
 
