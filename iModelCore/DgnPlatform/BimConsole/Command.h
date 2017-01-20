@@ -40,7 +40,7 @@ struct Command
         Utf8String GetUsage() const { return _GetUsage(); }
         void Run(Session& session, std::vector<Utf8String> const& args) const;
 
-        static void Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf8Char delimiter, Utf8Char delimiterEscapeChar);
+        static void Tokenize(std::vector<Utf8String>& tokens, WStringCR string, WChar delimiter, WChar delimiterEscapeChar);
     };
 
 //---------------------------------------------------------------------------------------

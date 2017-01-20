@@ -30,14 +30,19 @@ void Command::Run(Session& session, std::vector<Utf8String> const& args) const
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
 //static
-void Command::Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf8Char delimiter, Utf8Char delimiterEscapeChar)
+void Command::Tokenize(std::vector<Utf8String>& tokens, WStringCR string, WChar delimiter, WChar delimiterEscapeChar)
     {
-    Utf8String currentToken;
-    const bool doEscapeDelimiter = delimiterEscapeChar != '\0';
-    bool isEscaped = false;
-    for (size_t i = 0; i < string.size(); i++)
+    auto addToken = [] (std::vector<Utf8String>& tokens, WStringR token)
         {
-        Utf8Char c = string[i];
+        token.Trim();
+        tokens.push_back(Utf8String(token));
+        };
+
+    const bool doEscapeDelimiter = delimiterEscapeChar != L'\0';
+    bool isEscaped = false;
+    WString currentToken;
+    for (WChar c : string)
+        {
         if (doEscapeDelimiter && c == delimiterEscapeChar)
             {
             isEscaped = !isEscaped;
@@ -46,8 +51,7 @@ void Command::Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf
 
         if (!isEscaped && c == delimiter)
             {
-            currentToken.Trim();
-            tokens.push_back(currentToken);
+            addToken(tokens, currentToken);
             currentToken.resize(0);
             continue;
             }
@@ -55,8 +59,7 @@ void Command::Tokenize(std::vector<Utf8String>& tokens, Utf8StringCR string, Utf
         currentToken.append(1, c);
         }
 
-    currentToken.Trim();
-    tokens.push_back(currentToken);
+    addToken(tokens, currentToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -587,9 +590,9 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "in the folder are imported.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
         "         csv <csv file path> <table name> [<hascolumnheader> <delimiter> <delimiterescapechar>]\r\n"
-        COMMAND_USAGE_IDENT "Imports the specified CSV file into a plain table.\r\n";
-        COMMAND_USAGE_IDENT "hascolumnheader: if true, the first line's values become the column names of the new table (default: false)\r\n";
-        COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n";
+        COMMAND_USAGE_IDENT "Imports the specified CSV file into a plain table.\r\n"
+        COMMAND_USAGE_IDENT "hascolumnheader: if true, the first line's values become the column names of the new table (default: false)\r\n"
+        COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n"
         COMMAND_USAGE_IDENT "delimiterescapechar: if a string is enclosed by the escape char any delimiters\r\n"
         COMMAND_USAGE_IDENT "within the string are not considered as delimiter. Default: no escape char\r\n";
     }
@@ -721,9 +724,8 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
 
     Utf8StringCR tableName = args[3];
     const bool hasColumnHeader = args.size() == 5 ? GetArgAsBool(args[4]) : false;
-    Utf8CP delimiter = args.size() == 6 ? args[5].c_str() : ",";
-    Utf8CP escapeCharStr = args.size() == 7 ? args[6].c_str() : nullptr;
-    Utf8Char escapeChar = !Utf8String::IsNullOrEmpty(escapeCharStr) ? escapeCharStr[0] : '\0';
+    WChar delimiter = args.size() == 6 ? WString(args[5].c_str(), BentleyCharEncoding::Utf8)[0] : L',';
+    WChar escapeChar = args.size() == 7 ? WString(args[6].c_str(), BentleyCharEncoding::Utf8)[0] : L'\0';
 
     BeFileStatus stat;
     BeTextFilePtr file = BeTextFile::Open(stat, csvFilePath.GetName(), TextFileOpenType::Read, TextFileOptions::KeepNewLine);
@@ -741,7 +743,7 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
     while (TextFileReadStatus::Success == file->GetLine(line))
         {
         std::vector<Utf8String> tokens;
-        Tokenize(tokens, Utf8String(line), delimiter[0], escapeChar);
+        Tokenize(tokens, line, delimiter, escapeChar);
 
         for (Utf8StringR token : tokens)
             {

@@ -167,7 +167,7 @@ int BimConsole::WaitForUserInput(int argc, WCharP argv[])
     while (ReadLine(cmd))
         {
         cmd.Trim();
-        RunCommand(cmd.c_str());
+        RunCommand(cmd);
         }
 
     return 0;
@@ -191,14 +191,14 @@ void BimConsole::RunCommand(Utf8StringCR cmd)
         }
     else
         {
-        Command::Tokenize(args, cmd, ' ', '"');
+        Command::Tokenize(args, WString(cmd.c_str(), BentleyCharEncoding::Utf8), L' ', L'"');
         if (args.empty())
             {
             WriteErrorLine("Syntax error in command");
             return;
             }
 
-        command = GetCommand(args[0].c_str());
+        command = GetCommand(args[0]);
         }
 
     //Unsupported command, use help command to display available commands
