@@ -142,6 +142,9 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
 
+
+        virtual DgnDbStatus _OnDelete() override;
+
         SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
     public:
 
@@ -180,6 +183,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
         
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
+
+        static BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
 
     };
 
