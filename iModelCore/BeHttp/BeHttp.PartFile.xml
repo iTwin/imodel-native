@@ -353,7 +353,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Integration-Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x64">
+    <Part Name="Integration-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x64">
         <SubProduct ProductName="BeHttp-IntegrationTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -368,7 +368,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="IntegrationTests-Published" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi" OnlyPlatforms="x64">
+    <Part Name="IntegrationTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi" OnlyPlatforms="x64">
         <SubPart PartName="BeHttp" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
