@@ -1188,9 +1188,9 @@ void            BeTest::Log (Utf8CP category, LogPriority priority, Utf8CP messa
 * Writes time to a csv file
 *@bsimethod                                            Majd.Uddin          10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription, int opCount)
+void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount, Utf8CP testDescription, bool quoteTestDescription)
 {
-    FILE* logFile = NULL;
+    FILE* logFile = nullptr;
 
     BeFileName dir;
     BeTest::GetHost().GetOutputRoot(dir);
@@ -1206,10 +1206,10 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
-        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime(s), TestDescription, opCount\n");
+        fprintf(logFile, "DateTime,TestCaseName,TestName,ExecutionTime(s),opCount,TestDescription\n");
 
-    fprintf(logFile, "%s, %s, %s, %.6lf, \"%s\", %d\n", DateTime::GetCurrentTimeUtc().ToString().c_str(), testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
-
+    Utf8CP quotes = quoteTestDescription ? "\"" : "";
+    fprintf(logFile, "%s,%s,%s,%.6lf,%d,%s%s%s\n", DateTime::GetCurrentTimeUtc().ToString().c_str(), testcaseName, testName, timeInSeconds, opCount, quotes, testDescription, quotes);
     fclose(logFile);
 }
 

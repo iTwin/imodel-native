@@ -49,7 +49,7 @@ TEST(Performance_Base64Utilities, Encode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Encode without reusing resulting Utf8String", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Encode without reusing resulting Utf8String");
 
     timer.Start();
     Utf8String base64;
@@ -61,7 +61,7 @@ TEST(Performance_Base64Utilities, Encode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Encode with reusing resulting Utf8String", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Encode with reusing resulting Utf8String");
     }
 
 //---------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ TEST(Performance_Base64Utilities, Decode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Decode with ByteStream", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Decode with ByteStream");
 
     timer.Start();
     ByteStream actualBlob2;
@@ -109,7 +109,7 @@ TEST(Performance_Base64Utilities, Decode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Decode with preallocated and reused ByteStream", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Decode with preallocated and reused ByteStream");
 
     timer.Start();
     for (int i = 0; i < OPCOUNT; i++)
@@ -123,7 +123,7 @@ TEST(Performance_Base64Utilities, Decode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Decode with bvector<Byte>", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Decode with bvector<Byte>");
 
     timer.Start();
     bvector<Byte> actualBlob;
@@ -138,6 +138,6 @@ TEST(Performance_Base64Utilities, Decode)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Base64Utilities::Decode with preallocated and reused bvector<Byte>", OPCOUNT);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), OPCOUNT, "Base64Utilities::Decode with preallocated and reused bvector<Byte>");
 
     }

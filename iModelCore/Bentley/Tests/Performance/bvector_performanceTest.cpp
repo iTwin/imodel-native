@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/bvector_performanceTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -24,7 +24,7 @@ TEST(PerformanceBentley, bvector)
             v.push_back (i);
         ASSERT_EQ (v.size(), s_niters);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "push_back integers", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "push_back integers");
 
         bvector<Struct> vs;
         timer.Start();
@@ -32,7 +32,7 @@ TEST(PerformanceBentley, bvector)
             vs.push_back (Struct());
         ASSERT_EQ (v.size(), s_niters);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "push_back structs", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "push_back structs");
         }
 
     // push_back within allocated space
@@ -45,7 +45,7 @@ TEST(PerformanceBentley, bvector)
             v.push_back (i);
         ASSERT_EQ (v.size(), s_niters);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "push_back within allocated space. Integers", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "push_back within allocated space. Integers");
 
         bvector<Struct> vs;
         v.reserve (s_niters);
@@ -54,7 +54,7 @@ TEST(PerformanceBentley, bvector)
             vs.push_back (Struct());
         ASSERT_EQ (v.size(), s_niters);
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "push_back within allocated space. Structs", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "push_back within allocated space. Structs");
         }
 
     //  indexing
@@ -65,7 +65,7 @@ TEST(PerformanceBentley, bvector)
         for (int i=0; i<s_niters; ++i)
             v[i] = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing. Integers", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "indexing. Integers");
 
         for (int i=0; i<s_niters; ++i)
             ASSERT_EQ (v[i], (double)i);
@@ -75,7 +75,7 @@ TEST(PerformanceBentley, bvector)
         for (int i=0; i<s_niters; ++i)
             vs[i].a = vs[i].b = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing. Structs", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "indexing. Structs");
 
         for (int i=0; i<s_niters; ++i)
             ASSERT_EQ (vs[i].a, (double)i);
@@ -89,7 +89,7 @@ TEST(PerformanceBentley, bvector)
         for (int i=s_niters-1; i>=0; --i)
             v[i] = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing (down). Integers", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "indexing (down). Integers");
 
         for (int i=s_niters-1; i>=0; --i)
             ASSERT_EQ (v[i], (double)i);
@@ -99,7 +99,7 @@ TEST(PerformanceBentley, bvector)
         for (int i=s_niters-1; i>=0; --i)
             vs[i].a = vs[i].b = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing (down). Structs", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "indexing (down). Structs");
 
         for (int i=s_niters-1; i>=0; --i)
             ASSERT_EQ (vs[i].a, (double)i);
@@ -114,7 +114,7 @@ TEST(PerformanceBentley, bvector)
             ASSERT_EQ( *it, (double)(s_niters/2) );
             }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "find", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "find");
 
         }
     }
