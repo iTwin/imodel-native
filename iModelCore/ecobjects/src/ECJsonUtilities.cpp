@@ -947,7 +947,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 
         case PRIMITIVETYPE_DateTime:
             {
-            valueToPopulate[propertyName] = ecValue.GetDateTimeTicks();
+            valueToPopulate[propertyName] = ecValue.ToString();
             break;
             }
 
@@ -971,23 +971,12 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 
         case PRIMITIVETYPE_Point2d:
             {
-            DPoint2d    point2d = ecValue.GetPoint2d();
-
-            auto& structObj = valueToPopulate[propertyName] = Json::objectValue;
-            structObj["x"] = point2d.x;
-            structObj["y"] = point2d.y;
-            break;
+            return ECJsonUtilities::Point2dToJson(valueToPopulate[propertyName], ecValue.GetPoint2d());
             }
 
         case PRIMITIVETYPE_Point3d:
             {
-            DPoint3d    point3d = ecValue.GetPoint3d();
-
-            auto& structObj = valueToPopulate[propertyName] = Json::objectValue;
-            structObj["x"] = point3d.x;
-            structObj["y"] = point3d.y;
-            structObj["z"] = point3d.z;
-            break;
+            return ECJsonUtilities::Point3dToJson(valueToPopulate[propertyName], ecValue.GetPoint3d());
             }
 
         case PRIMITIVETYPE_String:
@@ -1077,7 +1066,7 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
                 BeAssert(false);
                 return ixwStatus;
                 }
-            arrayObj.append(entryObj);
+            arrayObj.append(entryObj[typeString]);
             }
         }
     else if (ARRAYKIND_Struct == arrayKind)
