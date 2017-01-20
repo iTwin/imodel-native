@@ -583,8 +583,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
- //           if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
- //               return BSIERROR;
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+                return BSIERROR;
 
             if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
