@@ -631,7 +631,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::SetupTestDb(Db& 
 
                     createTableSql.append(colName).append(" BLOB");
                     insertSql.append(colName);
-                    insertValuesSql.append("random()");
+                    insertValuesSql.append("random() / 1000");
                     }
 
                 createTableSql.append(")");
