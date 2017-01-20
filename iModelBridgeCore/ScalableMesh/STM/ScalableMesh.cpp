@@ -314,6 +314,11 @@ bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t cli
     return _ModifyClip(pts, ptsSize, clipID);
     }
 
+void IScalableMesh::SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
+    {
+    return _SynchronizeClipData(listOfClips, listOfSkirts);
+    }
+
 void IScalableMesh::ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions)
     {
     return _ModifyClipMetadata(clipId, importance, nDimensions);
@@ -1912,6 +1917,57 @@ template <class POINT> void ScalableMesh<POINT>::_ModifyClipMetadata(uint64_t cl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetClipMetadata(clipId, importance, nDimensions);
+    }
+
+
+template <class POINT>  void ScalableMesh<POINT>::_SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
+    {
+    SetIsInsertingClips(true);
+
+    bvector<uint64_t> existingClipIds;
+    GetAllClipIds(existingClipIds);
+    std::sort(existingClipIds.begin(), existingClipIds.end());
+
+    bset<uint64_t> foundIds;
+    
+    for (auto& clip : listOfClips)
+        {
+        uint64_t* addr = std::lower_bound(existingClipIds.begin(), existingClipIds.end(), clip.first);
+        if (addr == existingClipIds.end() || *addr != clip.first)
+            {
+            AddClip(clip.second.data(), clip.second.size(), clip.first);
+            }
+        else
+            {
+            foundIds.insert(clip.first);
+            ModifyClip(clip.second.data(), clip.second.size(), clip.first);
+            }
+        }
+
+    for (auto& skirt : listOfSkirts)
+        {
+        uint64_t* addr = std::lower_bound(existingClipIds.begin(), existingClipIds.end(), skirt.first);
+        if (addr == existingClipIds.end() || *addr != skirt.first)
+            {
+            AddSkirt(skirt.second, skirt.first);
+            }
+        else
+            {
+            foundIds.insert(skirt.first);
+            ModifySkirt(skirt.second, skirt.first);
+            }
+        }
+
+    for (auto& id : existingClipIds)
+        {
+        if (foundIds.count(id) == 0)
+            {
+            RemoveClip(id);
+            RemoveSkirt(id);
+            }
+        }
+
+    SetIsInsertingClips(false);
     }
 
 /*----------------------------------------------------------------------------+
