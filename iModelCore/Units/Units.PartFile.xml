@@ -92,11 +92,11 @@
         </Bindings>
     </Part>
 	
-    <Part Name="Tests">
+    <Part Name="Tests" DeferType="BuildUnitTests">
 		<SubPart PartName="UnitTests-NonPublished" />
     </Part>
 
-    <Part Name="TestDependencies" BentleyBuildMakeFile="tests/Prewire.mke">
+    <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/Prewire.mke">
         <SubPart PartName="UnitsNative" />
         <SubPart PartName="UnitsConversionData" />
         <Bindings>
@@ -197,6 +197,7 @@
 
     <Part
         Name="RunUwpTest"
+        DeferType="RunUnitTests"
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=Units-UwpTest"
         OnlyPlatforms="WinRT*"
