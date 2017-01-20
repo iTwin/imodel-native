@@ -280,17 +280,27 @@ int loadFunc(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DP
     return SUCCESS;
     }
 
+void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
+    {
+    s += tag;
+    s += " : ARRAY " + std::to_string((long long)polySize) + " POINTS \n";
+    for (int i = 0; i < polySize; i++)
+        {
+        s += "POINT (" + std::to_string(polyArray[i].x) + "," + std::to_string(polyArray[i].y) + "," + std::to_string(polyArray[i].z) + ")\n";
+        }
+    }
+
 void RunDTMClipTest()
     {
     WString pathMeshes = L"E:\\makeTM\\meshes\\";
     WString pathPolys = L"E:\\makeTM\\polys\\";
     bvector<int> meshes(1);
     meshes[0] = 0;
-    bvector<int> polys(1);
-    for (size_t polyn = 11; polyn < 12; polyn++)
-        polys[polyn-11] = (int)polyn;
-    polys.push_back(43);
-    //polys[1] = 1;
+    bvector<int> polys(2);
+   // for (size_t polyn = 0; polyn < 11; polyn++)
+   //     polys[polyn] = (int)polyn;
+    polys[0] = 7;
+    polys[1] = 9;
    // polys[2] = 2;
 
     bvector<bvector<DPoint3d>> polyDefs(polys.size());
@@ -361,17 +371,33 @@ void RunDTMClipTest()
             }*/
             userTag++;
             }
+
+                    {
+                    WString str(L"e:\\makeTM\\endtm");
+                    str.append(L".bcdtm");
+                    bcdtmWrite_toFileDtmObject(mesh->GetBcDTM()->GetTinHandle(), str.c_str());
+                        }
+
         BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*mesh->GetBcDTM());
         //en->SetUseRealPointIndexes(true);
         en->SetExcludeAllRegions();
         en->SetMaxTriangles(2000000);
         bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+        std::ofstream stats;
+        stats.open("E:\\makeTM\\stats.txt", std::ios_base::trunc);
         for (size_t i = 0; i < (size_t)mesh->GetBcDTM()->GetPointCount(); ++i)
             {
             DPoint3d pt;
             mesh->GetBcDTM()->GetPoint((int)i, pt);
             mapOfPoints[pt] = (int)i;
+
+            stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
+            std::string s;
+            print_polygonarray(s, "", &pt, 1);
+            stats << s;
             }
+        stats.close();
+
         bvector<DPoint3d> newVertices;
         bvector<int32_t> newIndices;
         std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
@@ -1239,8 +1265,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     RunPrecisionTest(stmFileName);*/
 
 
-    //RunDTMClipTest();
-    RunDTMTriangulateTest();
+    RunDTMClipTest();
+    //RunDTMTriangulateTest();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
