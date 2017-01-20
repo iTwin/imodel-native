@@ -113,6 +113,7 @@
     <Compile Include="Source\Helpers\InstanceComplement.cs" />
     <Compile Include="Source\Helpers\InstanceModifier.cs" />
     <Compile Include="Source\Helpers\InstanceOverrider.cs" />
+    <Compile Include="Source\Helpers\IRDSDataFetcher.cs" />
     <Compile Include="Source\Helpers\MimicTableAccessor.cs" />
     <Compile Include="Source\Helpers\MimicTableWriter.cs" />
     <Compile Include="Source\Helpers\Packager.cs" />
@@ -122,11 +123,13 @@
     <Compile Include="Source\Helpers\SourceStringMap.cs" />
     <Compile Include="Source\Helpers\SqlQueryHelpers.cs" />
     <Compile Include="Source\Helpers\TableAliasCreator.cs" />
+    <Compile Include="Source\IECInstanceExtension.cs" />
     <Compile Include="Source\IECPropertyExtension.cs" />
     <Compile Include="Source\IndexConstants.cs" />
     <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\JTokenExtension.cs" />
     <Compile Include="Source\Log.cs" />
+    <Compile Include="Source\QueryProviders\RdsAPIQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
     <Compile Include="Source\IndexECPlugin.cs" />

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/IUSGSDataFetcher.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -74,6 +74,7 @@ namespace IndexECPlugin.Source.Helpers
         //TODO : Add outputFormat=JSON in WebReq???
         const string WebReqCategories = "https://viewer.nationalmap.gov/tnmaccess/api/datasets?";
         const string WebReq = "https://viewer.nationalmap.gov/tnmaccess/api/products?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=_maxResults&offset=0&version=2";
+        const string ScienceBaseURL = "https://www.sciencebase.gov/catalog/item/_sourceID?format=json";
 
         //const string WebReqCategories = "http://tnmbeta.cr.usgs.gov/tnmaccess/api/datasets?";
         //const string WebReq = "http://tnmbeta.cr.usgs.gov/tnmaccess/api/products?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=_maxResults&offset=0&version=2";
@@ -168,7 +169,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <returns>The JObject read if the request was successful, null otherwise</returns>
         public JObject GetSciencebaseJson (string sourceID)
             {
-            string url = "https://www.sciencebase.gov/catalog/item/" + sourceID + "?format=json";
+            string url = ScienceBaseURL.Replace("_sourceID", sourceID);
 
             string jsonString = GetHttpResponse(url);
             if ( jsonString != null )

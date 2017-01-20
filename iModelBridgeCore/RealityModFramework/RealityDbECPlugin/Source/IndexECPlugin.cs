@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/IndexECPlugin.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -40,6 +40,7 @@ using System.Data.Common;
 using System.Data;
 using System.Security.Claims;
 using System.Threading;
+//using System.Net;
 
 #if !IMSOFF
 using System.IdentityModel.Configuration;
@@ -214,62 +215,38 @@ namespace IndexECPlugin.Source
 
                         }
 
-                    
+
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
                         {
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                         }
 
-                    string source;
+                    string[] sources;
 
                     if ( query.ExtendedData.ContainsKey("source") )
                         {
-                        source = query.ExtendedData["source"].ToString();
+                        sources = query.ExtendedData["source"].ToString().Split('&');
                         }
                     else
                         {
                         //TODO : We should rename queryType, as it has taken the role of a default parameter
-                        source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
+                        sources = new string[] { searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue };
                         }
 
-                    using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
+                    List<DataSource> sourcesList = new List<DataSource>();
+                    foreach ( string source in sources )
                         {
-                        switch ( source.ToLower() )
+                        try
                             {
-                            case "index":
-                                    {
-                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
-                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    //instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
-                                    //instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
-                                    return instances;
-                                    }
-
-                            case "usgsapi":
-                                    {
-                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                                    IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
-                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    //instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
-                                    //instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
-                                    return instances;
-                                    }
-                            case "all":
-                                    {
-
-                                    return QueryAllSources(query, querySettings, schema);
-
-                                    }
-                            default:
-                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                                throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                            sourcesList.Add(SourceStringMap.StringToSource(source));
+                            }
+                        catch ( NotImplementedException )
+                            {
+                            throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
                             }
                         }
+                    return QueryMultipleSources(query, querySettings, schema, sourcesList, Convert.ToBase64String(Encoding.UTF8.GetBytes(connection.ConnectionInfo.GetField("Token").Value)));
                     }
                 }
             catch ( Exception e )
@@ -280,8 +257,8 @@ namespace IndexECPlugin.Source
                         {
                         var sqlEx = e as SqlException;
                         Log.Logger.error(String.Format("Query {0} aborted. SqlException number : {3}. SqlException message : {1}. Stack Trace : {2}", query.ID, sqlEx.Message, sqlEx.StackTrace, sqlEx.Number));
-                        if(sqlEx.Number == 10928 || sqlEx.Number == 10929)
-                        throw new EnvironmentalException(String.Format("The server is currently busy. Please try again later"));
+                        if ( sqlEx.Number == 10928 || sqlEx.Number == 10929 )
+                            throw new EnvironmentalException(String.Format("The server is currently busy. Please try again later"));
                         }
                     else
                         {
@@ -300,6 +277,10 @@ namespace IndexECPlugin.Source
                     {
                     throw;
                     }
+                if ( e is EnvironmentalException )
+                    {
+                    throw;
+                    }
                 else
                     {
                     throw new Exception("Internal Error.");
@@ -307,65 +288,138 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private IEnumerable<IECInstance> QueryAllSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema)
+        private IEnumerable<IECInstance> QueryMultipleSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema, IEnumerable<DataSource> sources, string token)
             {
             List<IECInstance> instanceList = new List<IECInstance>();
 
             IEnumerable<IECInstance> indexInstances = null;
             List<Exception> exceptions = new List<Exception>();
             Object exceptionsLock = new Object();
-            Thread indexQuery = new Thread(() =>
-            {
-                try
-                    {
-                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
-                    indexInstances = helper.CreateInstanceList().ToList();
-                    //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
-                    //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
-                    }
-                catch ( Exception e )
-                    {
-                    indexInstances = new List<IECInstance>();
-                    lock ( exceptionsLock )
-                        {
-                        exceptions.Add(e);
-                        Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
-                        }
-                    }
-            });
 
+    //        ServicePointManager.ServerCertificateValidationCallback +=
+    //(sender, cert, chain, sslPolicyErrors) => true;
+
+            Thread indexQuery = null;
+            if ( sources.Contains(DataSource.Index) || sources.Contains(DataSource.All) )
+                {
+                indexQuery = new Thread(() =>
+                {
+                    try
+                        {
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
+                        indexInstances = helper.CreateInstanceList().ToList();
+                        //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
+                        //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
+                        }
+                    catch ( Exception e )
+                        {
+                        indexInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
+                }
             IEnumerable<IECInstance> usgsInstances = null;
-            Thread usgsQuery = new Thread(() =>
-            {
-                try
-                    {
-                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                    IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
-                    usgsInstances = helper.CreateInstanceList();
-                    //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
-                    //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
-                    }
-                catch ( Exception e )
-                    {
-                    usgsInstances = new List<IECInstance>();
-                    lock ( exceptionsLock )
+            Thread usgsQuery = null;
+            if ( sources.Contains(DataSource.USGS) || sources.Contains(DataSource.All) )
+                {
+
+                usgsQuery = new Thread(() =>
+                {
+                    try
                         {
-                        exceptions.Add(e);
-                        Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                        usgsInstances = helper.CreateInstanceList();
+                        //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                        //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
                         }
-                    }
-            });
-            indexQuery.Start();
-            usgsQuery.Start();
+                    catch ( Exception e )
+                        {
+                        usgsInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
 
-            indexQuery.Join();
-            usgsQuery.Join();
+                }
 
-            instanceList.AddRange(indexInstances);
-            instanceList.AddRange(usgsInstances);
+            IEnumerable<IECInstance> rdsInstances = null;
+            Thread rdsQuery = null;
+            if ( sources.Contains(DataSource.RDS) || sources.Contains(DataSource.All) )
+                {
+
+                rdsQuery = new Thread(() =>
+                {
+                    try
+                        {
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, ConnectionString, schema, token);
+                        rdsInstances = helper.CreateInstanceList();
+                        //instanceOverrider.Modify(usgsInstances, DataSource.RDS, ConnectionString);
+                        //instanceComplement.Modify(usgsInstances, DataSource.RDS, ConnectionString);
+                        }
+                    catch ( Exception e )
+                        {
+                        rdsInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("RDS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
+
+                }
+            if ( indexQuery != null )
+                {
+                indexQuery.Start();
+                }
+            if ( usgsQuery != null )
+                {
+                usgsQuery.Start();
+                }
+            if ( rdsQuery != null )
+                {
+                rdsQuery.Start();
+                }
+
+            if ( indexQuery != null )
+                {
+                indexQuery.Join();
+                }
+            if ( usgsQuery != null )
+                {
+                usgsQuery.Join();
+                }
+            if ( rdsQuery != null )
+                {
+                rdsQuery.Join();
+                }
+
+            if ( indexInstances != null )
+                {
+                instanceList.AddRange(indexInstances);
+                }
+
+            if ( usgsInstances != null )
+                {
+                instanceList.AddRange(usgsInstances);
+                }
+            if ( rdsInstances != null )
+                {
+                instanceList.AddRange(rdsInstances);
+                }
 
             if ( exceptions.Count != 0 )
                 {

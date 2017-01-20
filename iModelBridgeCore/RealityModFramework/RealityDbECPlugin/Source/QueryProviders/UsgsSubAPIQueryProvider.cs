@@ -24,13 +24,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
         IUSGSDataFetcher m_usgsDataFetcher;
 
-        const string termsOfUse = "https://www2.usgs.gov/laws/info_policies.html";
-        const string legalString = " courtesy of the U.S. Geological Survey";
-        const string subAPIString = "USGS";
-        const string rawMetadataFormatString = "FGDC";
-        const string rawMetadataURLEnding = "?format=fgdc";
-        const string dataProviderString = "USGS";
-        const string dataProviderNameString = "United States Geological Survey";
+
 
         /// <summary>
         /// UsgsSubAPIQueryProvider constructor
@@ -85,8 +79,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instanceSDS = QuerySingleSpatialDataSource(sourceID);
             PrepareInstanceForCaching(instanceSDS);
 
-
-            InitializePropertiesToNull(instance, ecClass);
+            instance.InitializePropertiesToNull();
 
             instance.InstanceId = sourceID;
 
@@ -118,9 +111,9 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["TermsOfUse"].StringValue = instanceMetadata["TermsOfUse"].StringValue;
 
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-            instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
-            instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
-            instance["SubAPI"].StringValue = subAPIString;
+            instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + IndexConstants.UsgsRawMetadataURLEnding;
+            instance["RawMetadataFormat"].StringValue = IndexConstants.UsgsRawMetadataFormatString;
+            instance["SubAPI"].StringValue = IndexConstants.UsgsSubAPIString;
 
             if ( instanceSEB["DataProvider"] != null && !instanceSEB["DataProvider"].IsNull )
                 {
@@ -137,6 +130,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             instance["Streamed"].NativeValue = false;
+
+            instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
             return instance;
 
@@ -157,13 +152,13 @@ namespace IndexECPlugin.Source.QueryProviders
             return json;
             }
 
-        private void InitializePropertiesToNull (IECInstance instance, IECClass ecClass)
-            {
-            foreach ( IECProperty prop in ecClass )
-                {
-                instance[prop.Name].SetToNull();
-                }
-            }
+        //private void InitializePropertiesToNull (IECInstance instance, IECClass ecClass)
+        //    {
+        //    foreach ( IECProperty prop in ecClass )
+        //        {
+        //        instance[prop.Name].SetToNull();
+        //        }
+        //    }
 
         /// <summary>
         /// Query a specific SpatialEntity by its ID.
@@ -183,7 +178,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             IECInstance instance = ecClass.CreateInstance();
 
-            InitializePropertiesToNull(instance, ecClass);
+            instance.InitializePropertiesToNull();
 
             instance.InstanceId = sourceID;
 
@@ -266,8 +261,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["DataSourceTypesAvailable"].StringValue = type;
                 }
 
-            instance["DataProvider"].StringValue = dataProviderString;
-            instance["DataProviderName"].StringValue = dataProviderNameString;
+            instance["DataProvider"].StringValue = IndexConstants.UsgsDataProviderString;
+            instance["DataProviderName"].StringValue = IndexConstants.UsgsDataProviderNameString;
 
             instance["ThumbnailURL"].SetToNull();
 
@@ -433,7 +428,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             IECInstance instance = ecClass.CreateInstance();
 
-            InitializePropertiesToNull(instance, ecClass);
+            instance.InitializePropertiesToNull();
 
             instance.InstanceId = sourceID;
 
@@ -475,10 +470,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( json["title"] != null )
                 {
-                instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
+                instance["Legal"].StringValue = json["title"].Value<string>() + IndexConstants.UsgsLegalString;
                 }
 
-            instance["TermsOfUse"].StringValue = termsOfUse;
+            instance["TermsOfUse"].StringValue = IndexConstants.UsgsTermsOfUse;
 
             //Lineage
 
@@ -513,7 +508,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             IECInstance instance = ecClass.CreateInstance();
 
-            InitializePropertiesToNull(instance, ecClass);
+            instance.InitializePropertiesToNull();
 
             instance.InstanceId = sourceID;
 
@@ -617,7 +612,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance.InstanceId = sourceID;
 
-            InitializePropertiesToNull(instance, ecClass);
+            instance.InitializePropertiesToNull();
 
             instance["Id"].StringValue = sourceID;
 
@@ -686,7 +681,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( json["title"] != null )
                 {
-                instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
+                instance["Legal"].StringValue = json["title"].Value<string>() + IndexConstants.UsgsLegalString;
                 }
 
             //AccessConstraints
@@ -772,7 +767,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         IECInstance instance = ecClass.CreateInstance();
 
-                        InitializePropertiesToNull(instance, ecClass);
+                        instance.InitializePropertiesToNull();
 
                         JToken jtoken = item.jToken;
 
@@ -800,9 +795,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         //instance["Name"].StringValue = jtoken.TryToGetString("title");
                         instance["Name"].StringValue = item.Title;
 
-                        instance["Legal"].StringValue = item.Title + legalString;
+                        instance["Legal"].StringValue = item.Title + IndexConstants.UsgsLegalString;
 
-                        instance["TermsOfUse"].StringValue = termsOfUse;
+                        instance["TermsOfUse"].StringValue = IndexConstants.UsgsTermsOfUse;
 
                         var bbox = jtoken["boundingBox"];
 
@@ -821,12 +816,12 @@ namespace IndexECPlugin.Source.QueryProviders
                             instance["ThumbnailURL"].StringValue = urls.TryToGetString("previewGraphicURL");
                             }
                         instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-                        instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
-                        instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
-                        instance["SubAPI"].StringValue = subAPIString;
+                        instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + IndexConstants.UsgsRawMetadataURLEnding;
+                        instance["RawMetadataFormat"].StringValue = IndexConstants.UsgsRawMetadataFormatString;
+                        instance["SubAPI"].StringValue = IndexConstants.UsgsSubAPIString;
 
-                        instance["DataProvider"].StringValue = dataProviderString;
-                        instance["DataProviderName"].StringValue = dataProviderNameString;
+                        instance["DataProvider"].StringValue = IndexConstants.UsgsDataProviderString;
+                        instance["DataProviderName"].StringValue = IndexConstants.UsgsDataProviderNameString;
                         instance["Dataset"].StringValue = bundle.Dataset;
 
                         if ( item.Date.HasValue )
@@ -945,9 +940,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         foreach ( IECInstance inst in cachedInstances )
                             {
                             inst["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + inst.InstanceId;
-                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + rawMetadataURLEnding;
-                            inst["RawMetadataFormat"].StringValue = rawMetadataFormatString;
-                            inst["SubAPI"].StringValue = subAPIString;
+                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + IndexConstants.UsgsRawMetadataURLEnding;
+                            inst["RawMetadataFormat"].StringValue = IndexConstants.UsgsRawMetadataFormatString;
+                            inst["SubAPI"].StringValue = IndexConstants.UsgsSubAPIString;
                             }
                         break;
                         }
@@ -1001,9 +996,9 @@ namespace IndexECPlugin.Source.QueryProviders
 
             SEInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
 
-            metadataInstance["Legal"].StringValue = item.Title + legalString;
+            metadataInstance["Legal"].StringValue = item.Title + IndexConstants.UsgsLegalString;
 
-            metadataInstance["TermsOfUse"].StringValue = termsOfUse;
+            metadataInstance["TermsOfUse"].StringValue = IndexConstants.UsgsTermsOfUse;
 
             if ( item.Date.HasValue )
                 {
@@ -1012,8 +1007,8 @@ namespace IndexECPlugin.Source.QueryProviders
             SEInstance["AccuracyInMeters"].SetToNull();
             SEInstance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
-            SEInstance["DataProvider"].StringValue = dataProviderString;
-            SEInstance["DataProviderName"].StringValue = dataProviderNameString;
+            SEInstance["DataProvider"].StringValue = IndexConstants.UsgsDataProviderString;
+            SEInstance["DataProviderName"].StringValue = IndexConstants.UsgsDataProviderNameString;
 
             SEInstance["Dataset"].StringValue = parentName;
 

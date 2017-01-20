@@ -73,13 +73,13 @@ namespace IndexECPlugin.Source.Helpers
                 }
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> indexRequestedEntities = new List<RequestedEntity>();
-            List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> subAPIRequestedEntities = new List<RequestedEntity>();
             for ( int i = 0; i < requestedEntitiesECArray.Count; i++ )
                 {
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
 
-                if ( requestedEntity.ID.Length != IndexConstants.USGSIdLenght )
+                if (!SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID))
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
                         {
@@ -94,7 +94,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID) )
                         {
-                        usgsRequestedEntities.Add(requestedEntity);
+                        subAPIRequestedEntities.Add(requestedEntity);
                         }
                     }
                 }
@@ -154,7 +154,7 @@ namespace IndexECPlugin.Source.Helpers
 
             List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, m_coordinateSystem, major);
 
-            realityDataNetList.AddRange(UsgsPackager(sender, connection, queryModule, usgsRequestedEntities));
+            realityDataNetList.AddRange(SubAPIPackager(sender, connection, queryModule, subAPIRequestedEntities));
 
             //List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
             if ( m_osm )
@@ -813,11 +813,11 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private List<RealityDataNet> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        private List<RealityDataNet> SubAPIPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities)
             {
             List<RealityDataNet> usgsSourceNetList = new List<RealityDataNet>();
 
-            if ( usgsRequestedEntities.Count == 0 )
+            if ( subAPIRequestedEntities.Count == 0 )
                 {
                 return usgsSourceNetList;
                 }
@@ -837,18 +837,18 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds"));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
 
             foreach ( var entity in queriedSpatialEntities )
                 {
-                IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
-                IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
+                //IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
+                //IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
-                GenericInfo genericInfo = ExtractGenericInfo(entity, usgsRequestedEntities.First(e => e.ID == entity.InstanceId));
+                GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
 
                 RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 

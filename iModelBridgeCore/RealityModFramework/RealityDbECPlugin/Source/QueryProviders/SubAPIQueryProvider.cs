@@ -10,6 +10,7 @@ using Bentley.ECObjects.Schema;
 using Bentley.ECSystem.Configuration;
 using Bentley.Exceptions;
 using IndexECPlugin.Source.Helpers;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace IndexECPlugin.Source.QueryProviders
@@ -232,7 +233,22 @@ namespace IndexECPlugin.Source.QueryProviders
             if ( instanceList == null )
                 {
                 // If we're here, that's because there was a polygon parameter in the extended data
-                //TODO : Implement this verification
+                // We verify that this is true
+
+                if(Query.ExtendedData.ContainsKey("polygon"))
+                    {
+                    //We verify that the polygon has a valid format
+                    string polygonString = Query.ExtendedData["polygon"].ToString();
+                    try
+                        {
+                        JsonConvert.DeserializeObject<PolygonModel>(polygonString);
+                        }
+                    catch ( JsonException )
+                        {
+                        throw new UserFriendlyException("The polygon format is not valid.");
+                        }
+                    }
+
                 switch ( ecClass.Name )
                     {
                     case "SpatialEntityWithDetailsView":
