@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -766,7 +766,7 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
     if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql).c_str(), suppressDiagnostics))
         return GetLastError(nullptr);
 
-    Utf8CP fmt = explainPlan ? "%s %s %s %s" : "%-3s %-12s %-4s %-4s";
+    Utf8CP fmt = explainPlan ? "%s %s %s %s %s %s %s %s" : "%-3s %-12s %-4s %-4s %s %s %s %s\n";
     Utf8String plan;
     bool isFirstRow = true;
     while (BE_SQLITE_ROW == queryPlan.Step())
@@ -774,7 +774,10 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
         if (!isFirstRow)
             plan.append(";");
 
-        plan.append(Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
+        plan.append(Utf8PrintfString(fmt, 
+                                     queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3), 
+                                     queryPlan.GetValueText(4), queryPlan.GetValueText(5), queryPlan.GetValueText(6), queryPlan.GetValueText(7)
+                                    ));
         isFirstRow = false;
         }
     return plan;
