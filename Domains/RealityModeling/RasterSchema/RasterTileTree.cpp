@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterTileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -148,9 +148,9 @@ RasterProgressive::~RasterProgressive()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.Marchand                9/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion RasterProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     TileTree::DrawArgs args(context, Transform::FromProduct(m_depthTrans, m_root.GetLocation()), m_root, now, now - m_root.GetExpirationTime());
     args.SetClip(m_root.GetModel().GetClip().GetClipVector());
 

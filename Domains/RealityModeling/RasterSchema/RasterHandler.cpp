@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -386,7 +386,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     Transform depthTransfo;
     ComputeDepthTransformation(depthTransfo, context);
 
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), *m_root, now, now - m_root->GetExpirationTime(), GetClip().GetClipVector());
 
     m_root->Draw(args);

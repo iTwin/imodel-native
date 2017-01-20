@@ -335,7 +335,7 @@ public:
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Mathieu.St-Pierre     02/2016
 //----------------------------------------------------------------------------------------
-ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
     {   
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
     uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();

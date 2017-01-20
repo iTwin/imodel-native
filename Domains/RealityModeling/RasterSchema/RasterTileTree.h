@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterTileTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -157,11 +157,11 @@ struct RasterProgressive : Dgn::ProgressiveTask
 {
     RasterRootR m_root;
     Dgn::TileTree::DrawArgs::MissingNodes m_missing;
-    Dgn::TileTree::TimePoint m_nextShow;
+    BeTimePoint m_nextShow;
     Dgn::TileTree::TileLoadStatePtr m_loads;
     Transform m_depthTrans;
 
-    Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
+    Completion _DoProgressive(Dgn::RenderListContext& context, WantShow&) override;
     RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes, Dgn::TileTree::TileLoadStatePtr loads, TransformCR depthTrans) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_depthTrans(depthTrans) {}
     ~RasterProgressive();
 };

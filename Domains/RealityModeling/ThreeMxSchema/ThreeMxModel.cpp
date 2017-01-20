@@ -134,21 +134,21 @@ struct ThreeMxProgressive : ProgressiveTask
 {
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
+    BeTimePoint m_nextShow;
     TileLoadStatePtr m_loads;
     ClipVectorCPtr m_clip;
 
     ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
     ~ThreeMxProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+    Completion _DoProgressive(RenderListContext& context, WantShow&) override;
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, m_scene.GetLocation(), m_scene, now, now-m_scene.GetExpirationTime(), m_clip.get());
 
     DEBUG_PRINTF("3MX progressive %d missing, ", m_missing.size());
@@ -256,7 +256,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     if (!m_scene.IsValid())
         return;
 
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, m_scene->GetLocation(), *m_scene, now, now-m_scene->GetExpirationTime(), m_clip.get());
     m_scene->Draw(args);
     DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->m_rootTile->CountTiles(), args.m_missing.size());
@@ -299,7 +299,7 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
         JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
 
     if (m_clip.IsValid())
-        JsonUtils::ClipVectorToJson(val[JSON_CLIP()], *m_clip);
+        val[JSON_CLIP()] = m_clip->ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,11 +316,7 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
         m_location.InitIdentity();
 
     if (val.isMember(JSON_CLIP()))
-        {
-        ClipVectorPtr clip = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson(*clip, val[JSON_CLIP()]);
-        m_clip = clip;
-        }
+        m_clip = ClipVector::FromJson(val[JSON_CLIP()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
