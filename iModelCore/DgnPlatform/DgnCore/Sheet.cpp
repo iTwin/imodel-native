@@ -192,9 +192,7 @@ ClipVectorPtr ViewAttachment::GetClip() const
     if (!Json::Reader::Parse(clipJsonStr, clipJson))
         return nullptr;
 
-    ClipVectorPtr clip = ClipVector::Create();
-    JsonUtils::ClipVectorFromJson(*clip, clipJson);
-    return clip;
+    return ClipVector::FromJson(clipJson);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,9 +200,7 @@ ClipVectorPtr ViewAttachment::GetClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
-    Json::Value clipJson(Json::arrayValue);
-    JsonUtils::ClipVectorToJson(clipJson, clipVector);
-
+    Json::Value clipJson = clipVector.ToJson();
     return SetPropertyValue(str_Clip(), Json::FastWriter::ToString(clipJson).c_str());
     }
 
@@ -358,7 +354,7 @@ struct SceneReadyTask : ProgressiveTask
 {
     Attachment::Tree& m_tree;
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
-    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& showFrame) override
         {
         // is the scene available yet?
         if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
@@ -373,15 +369,16 @@ struct SceneReadyTask : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderContextR context)
+void Attachment::Tree::Draw(TerrainContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
 
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
+        m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
 
     if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.
@@ -424,8 +421,14 @@ bool Attachment::Tree::Pick(PickContext& context)
     sheetToTile.InverseOf(GetLocation());
     Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
 
-    if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
-        return false;
+    if (m_clip.IsValid())
+        {
+        for (auto& primitive : *m_clip)
+            {
+            if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(box.m_pts, NPC_CORNER_COUNT, false))
+                return false;
+            }
+        }
 
     return context._ProcessSheetAttachment(*m_viewport);
     }
@@ -468,13 +471,6 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
 
-    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
-    DPoint2d clipPts[5];
-    memset(clipPts, 0, sizeof(clipPts)); 
-    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
-    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
-    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
-
     auto& def=view->GetViewDefinition();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
@@ -499,16 +495,27 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
     SetLocation(trans);
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-    range = attach->GetPlacement().CalculateRange();
-    trans = Transform::From(range.low);
-    trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, range.ZLength());
-#endif
-    
-    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   
+    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   // m_toParent is attach NPC -> sheet world. Set z values to sheet NPC.
     trans.form3d[2][3] = m_viewport->GetWorldToNpcMap()->M1.coff[2][3];
     m_viewport->m_toParent = trans;
 
+    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
+    DPoint2d clipPts[5];
+    memset(clipPts, 0, sizeof(clipPts)); 
+    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
+    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
+    
+    auto attachClip = attach->GetClip();
+    if (attachClip.IsValid())
+        {
+        Transform sheetToNpc;
+        sheetToNpc.InverseOf(m_viewport->m_toParent);
+        attachClip->TransformInPlace(sheetToNpc);
+        m_clip->Append(*attachClip);
+        }
+
+    m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());

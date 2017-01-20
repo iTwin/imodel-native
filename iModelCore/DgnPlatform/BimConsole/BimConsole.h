@@ -163,44 +163,34 @@ struct BimConsole : Dgn::DgnPlatformLib::Host
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
         void Setup();
-        void AddCommand(Utf8CP commandName, std::shared_ptr<Command> const&);
-        void AddCommand(std::shared_ptr<Command> const& command);
-        Command const* GetCommand(Utf8CP commandName) const;
+        void AddCommand(Utf8StringCR commandName, std::shared_ptr<Command> const& command) { m_commands[commandName] = command; }
+        void AddCommand(std::shared_ptr<Command> const& command) { AddCommand(command->GetName(), command); }
+        Command const* GetCommand(Utf8StringCR commandName) const;
 
-        void WritePrompt();
         int WaitForUserInput(int argc, WCharP argv[]);
-        void RunCommand(Utf8CP cmd);
-        bool TokenizeCommandline(std::vector<Utf8String>& tokens, Utf8StringCR cmd);
+        void RunCommand(Utf8StringCR cmd);
         bool ReadLine(Utf8StringR stmt);
 
-        bool StringEndsWith(Utf8StringCR stmt, Utf8Char ch, bool skipSpaces);
-        void AddToHistory(Utf8CP command) { return m_commandHistory.push_back(command); }
+        void AddToHistory(Utf8StringCR command) { return m_commandHistory.push_back(command); }
         std::vector<Utf8String> const& GetCommandHistory() const { return m_commandHistory; }
+
+        static void WritePrompt() { Write("BIM> "); }
+        static void Write(FILE* stream, Utf8CP format, va_list args);
+        static FILE* GetIn();
+        static FILE* GetOut();
+        static FILE* GetErr();
+
 
     public:
         BimConsole() {}
         int Run(int argc, WCharP argv[]);
-    };
 
-
-//=======================================================================================
-// @bsiclass                                    BentleySystems 
-//=======================================================================================
-struct Console
-    {
-    private:
-        static void Write(FILE* stream, Utf8CP format, va_list args);
-
-        static FILE* GetOut();
-        static FILE* GetErr();
-
-    public:
-        static FILE* GetIn();
         static void Write(Utf8CP format, ...);
         static void WriteLine(Utf8CP format, ...);
         static void WriteError(Utf8CP format, ...);
         static void WriteErrorLine(Utf8CP format, ...);
         static void WriteLine();
     };
+
 
 

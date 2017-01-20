@@ -188,7 +188,7 @@ public:
     //! Set this attachment to be unclipped.
     //! @see SetClip
     DGNPLATFORM_EXPORT void ClearClip();
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/16
@@ -200,11 +200,12 @@ namespace Attachment
     //=======================================================================================
     struct Viewport : OffscreenViewport
     {
-        Transform m_toParent = Transform::FromIdentity(); // tile NPC to sheet world
+        Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
         Render::GraphicListPtr m_terrain;
+        ClipVectorCPtr m_attachClips;
 
-        virtual void _QueueScene();
+        virtual void _QueueScene(UpdatePlan const& updatePlan);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(Dgn::ViewControllerR viewController, bool expandView) override {}
 
@@ -218,6 +219,7 @@ namespace Attachment
         DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
 
         DGNVIEW_EXPORT Viewport();
+        ClipVectorCP GetClips() const {return m_attachClips.get();}
     };
 
     //=======================================================================================
@@ -235,7 +237,7 @@ namespace Attachment
         bool m_sceneReady = false;
 
         bool Pick(PickContext&);
-        void Draw(RenderContextR);
+        void Draw(TerrainContextR);
         void Load(Render::SystemP);
         Utf8CP _GetName() const override {return "SheetTile";}
         Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
