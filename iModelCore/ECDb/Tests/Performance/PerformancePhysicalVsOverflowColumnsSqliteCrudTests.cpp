@@ -574,7 +574,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::LogTiming(StopWa
     descr.Sprintf("%s, %s, %d columns, initial row count %d", operation, scenario == Scenario::Overflow ? "Overflow" : "Physical",
                   colCount, initialRowCount);
 
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), descr.c_str(), opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, descr.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -631,7 +631,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::SetupTestDb(Db& 
 
                     createTableSql.append(colName).append(" BLOB");
                     insertSql.append(colName);
-                    insertValuesSql.append("random()");
+                    insertValuesSql.append("random() / 1000");
                     }
 
                 createTableSql.append(")");

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceSchemaImportTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -213,11 +213,11 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         ASSERT_TRUE(ecschema != nullptr);
 
         Utf8String testDescription;
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property", i, i);
-        LOGTODB(TEST_DETAILS, importTime, testDescription.c_str(), i);
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
-        testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
-        LOGTODB(TEST_DETAILS, schemaExportTime, testDescription.c_str(), i);
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property", i, i);
+        LOGTODB(TEST_DETAILS, importTime, i, testDescription.c_str());
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
+        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
+        LOGTODB(TEST_DETAILS, schemaExportTime, i, testDescription.c_str());
         ecdb.CloseDb();
         }
     }
@@ -241,7 +241,7 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     timer.Stop();
     ASSERT_EQ(SUCCESS, stat);
 
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), -1, "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
     }
 
 //---------------------------------------------------------------------------------------
@@ -258,7 +258,7 @@ TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
         ecdb.CloseDb();
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Creating empty ECDb files", opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, "Creating empty ECDb files");
     }
 
 

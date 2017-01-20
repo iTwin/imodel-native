@@ -138,6 +138,23 @@ public:
     ECDB_EXPORT ECDb();
     ECDB_EXPORT virtual ~ECDb();
 
+    //! Checks the file's ECDb profile compatibility to be opened with the current version of the ECDb API.
+    //!
+    //! @see BeSQLite::Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
+    //! @param[out] fileIsAutoUpgradable Returns true if the file's ECDb profile version indicates that it is old, but auto-upgradeable.
+    //!             false otherwise.
+    //!             This method does @b not perform auto-upgrades. The out parameter just indicates to calling code
+    //!             whether it has to perform the auto-upgrade or not.
+    //! @param[in]  openModeIsReadonly true if the file is going to be opened in read-only mode. false if
+    //!             the file is going to be opened in read-write mode.
+    //! @return     BE_SQLITE_OK if ECDb profile can be opened in the requested mode, i.e. the compatibility contract is matched.
+    //!             BE_SQLITE_Error_ProfileTooOld if file's ECDb profile is too old to be opened by this API.
+    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
+    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
+    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
+    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
+    ECDB_EXPORT DbResult CheckECDbProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
+
     //! Gets the schema manager for this @ref ECDbFile "ECDb file". With the schema manager clients can import @ref ECN::ECSchema "ECSchemas"
     //! into or retrieve @ref ECN::ECSchema "ECSchemas" or individual @ref ECN::ECClass "ECClasses" from the %ECDb file.
     //! @return Schema manager

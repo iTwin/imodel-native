@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,7 @@ public:
     //!     In case of error, the outermost transaction is rolled back.
     //! @param[in] ecdb ECDb file handle to create the profile in.
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult CreateECProfile(ECDbR ecdb);
+    static DbResult CreateProfile(ECDbR ecdb);
 
     //! Upgrades the ECDb profile in the specified ECDb file to the latest version (if the file's profile
     //! is not up-to-date).
@@ -57,7 +57,25 @@ public:
     //! @param[in] ecdb ECDb file handle to upgrade
     //! @param[in] openParams Open params passed by the client
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& openParams);
+    static DbResult UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams);
+
+    //! Checks the compatibility of the ECDb profile of the specified file to be opened with the current version of the ECDb API.
+    //!
+    //! @see BeSQLite::Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
+    //! @param[out] fileIsAutoUpgradable Returns true if the file's ECDb profile version indicates that it is old, but auto-upgradeable.
+    //!             false otherwise.
+    //!             This method does @b not perform auto-upgrades. The out parameter just indicates to calling code
+    //!             whether it has to perform the auto-upgrade or not.
+    //! @param[out] actualProfileVersion the retrieved actual profile version
+    //! @param[in]  openModeIsReadonly true if the file is going to be opened in read-only mode. false if
+    //!             the file is going to be opened in read-write mode.
+    //! @return     BE_SQLITE_OK if ECDb profile can be opened in the requested mode, i.e. the compatibility contract is matched.
+    //!             BE_SQLITE_Error_ProfileTooOld if file's ECDb profile is too old to be opened by this API.
+    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
+    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
+    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
+    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
+    static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

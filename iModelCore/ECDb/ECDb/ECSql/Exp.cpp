@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,16 +34,17 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
     auto expList = Find(Type::PropertyName, true);
     for (auto exp : expList)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);		
         if (!propertyNameExp->IsPropertyRef())
             {
-            GetTablesPropertyMapVisitor tableVisitor;
-            propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableVisitor);
-            for (auto table : tableVisitor.GetTables())
-                {
-                if (table->GetPersistenceType() == PersistenceType::Physical)
-                    tmp.insert(table);
-                }
+			PropertyMap const* propertyMap = propertyNameExp->GetTypeInfo().GetPropertyMap();
+			if (propertyMap->IsSystem())
+				tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
+			else
+				{
+				DataPropertyMap const * dataPropertyMap = static_cast<DataPropertyMap const*>(propertyMap);
+				tmp.insert(&dataPropertyMap->GetTable());
+				}
             }
         }
 

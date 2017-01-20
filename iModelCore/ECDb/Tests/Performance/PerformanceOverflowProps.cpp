@@ -1390,8 +1390,8 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
 void PerformanceOverflowPropsTests::LogTiming(StopWatch& timer, Utf8CP scenario, ECN::PrimitiveType primType, int propCount, int rowCount)
     {
     Utf8String logMessage;
-    logMessage.Sprintf("%s Property [count %d] - %s.", PrimitiveTypeToString(primType), propCount, scenario);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), rowCount);
+    logMessage.Sprintf("%s Property, property count %d, %s.", PrimitiveTypeToString(primType), propCount, scenario);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), rowCount, logMessage.c_str());
     }
 
 
