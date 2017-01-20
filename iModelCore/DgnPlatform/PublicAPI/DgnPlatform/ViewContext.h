@@ -343,7 +343,7 @@ struct RenderListContext : RenderContext
 
 protected:
     bool m_wantStroke = true;
-    std::chrono::milliseconds m_checkStopInterval;
+    BeDuration m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
     BeTimePoint m_nextCheckStop;
@@ -358,7 +358,7 @@ protected:
     bool DoCheckStop();
 
 public:    
-    void EnableCheckStop(std::chrono::milliseconds stopInterval, int const* motionTolerance);
+    void EnableCheckStop(BeDuration stopInterval, int const* motionTolerance);
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
     Render::GraphicListPtr GetList() const {return m_list;}
