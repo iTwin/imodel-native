@@ -172,6 +172,7 @@ enum class ECObjectsStatus
     PropertyNotSupported,
     RelationshipAlreadyHasBaseClass,
     InvalidPrimitiveOverrride,
+    UnableToSetMixinCustomAttribute,
     };
 
 //! Result status for deserializing an ECSchema from Xml
