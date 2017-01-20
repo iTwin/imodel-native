@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
@@ -461,13 +461,13 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
     { 
         PERFORMANCELOG.infov("ECInstanceInserter Performance: Insertion: %.1f",
             eciiInsertTiming);
-        LOGTODB(testcaseName, testName, eciiInsertTiming, "ECInstanceInserter Performance: Insertion: for", numberOfInstancesPerClass);
+        LOGTODB(testcaseName, testName, eciiInsertTiming, numberOfInstancesPerClass, "ECInstanceInserter Performance: Insertion");
     }
     if (ecsqlHasRun)
     {
         PERFORMANCELOG.infov("ECSQL INSERT Performance: Insertion: %.1f",
             ecsqlinsertInsertTiming);
-        LOGTODB(testcaseName, testName, ecsqlinsertInsertTiming, "ForECSQLInsert Performance: Insertion: for", numberOfInstancesPerClass);
+        LOGTODB(testcaseName, testName, ecsqlinsertInsertTiming, numberOfInstancesPerClass, "ForECSQLInsert Performance: Insertion");
     }
 }
 

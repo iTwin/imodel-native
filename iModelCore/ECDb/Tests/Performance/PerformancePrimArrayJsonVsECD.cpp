@@ -951,7 +951,7 @@ void PerformancePrimArrayJsonVsECDTests::LogTiming(StopWatch& timer, Utf8CP scen
     {
     Utf8String logMessage;
     logMessage.Sprintf("%s array [size %" PRIu32 "] - %s.", PrimitiveTypeToString(primType), arraySize, scenario);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), rowCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), rowCount, logMessage.c_str());
     }
 
 

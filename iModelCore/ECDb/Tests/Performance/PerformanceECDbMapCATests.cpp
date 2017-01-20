@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECDbMapCATests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
@@ -77,13 +77,13 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     ecdb.CloseDb();
 
-    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierachy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
+    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
 
-    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, "Select time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, "Update time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
     }
 
 //---------------------------------------------------------------------------------------
@@ -150,12 +150,12 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     ecdb.CloseDb();
 
-    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierachy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
+    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
-    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, "Select time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, "Update time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
     }
 
 //---------------------------------------------------------------------------------------
@@ -210,12 +210,12 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     ecdb.CloseDb();
 
-    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierachy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
+    LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
-    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, "Select time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, "Update time", (int) m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

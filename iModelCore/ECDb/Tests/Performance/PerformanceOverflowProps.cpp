@@ -1391,7 +1391,7 @@ void PerformanceOverflowPropsTests::LogTiming(StopWatch& timer, Utf8CP scenario,
     {
     Utf8String logMessage;
     logMessage.Sprintf("%s Property [count %d] - %s.", PrimitiveTypeToString(primType), propCount, scenario);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), rowCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), rowCount, logMessage.c_str());
     }
 
 

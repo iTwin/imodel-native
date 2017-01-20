@@ -31,12 +31,11 @@ ECDb::~ECDb()
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
+// @bsimethod                                Krischan.Eberle                01/2017
 //---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+DbResult ECDb::CheckECDbProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const
     {
-    return Impl::Initialize(ecdbTempDir, hostAssetsDir, logSqliteErrors);
+    return m_pimpl->CheckProfileVersion(fileIsAutoUpgradable, openModeIsReadonly);
     }
 
 //--------------------------------------------------------------------------------------
@@ -189,6 +188,16 @@ void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::Impl& ECDb::GetECDbImplR() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                09/2012
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+    {
+    return Impl::Initialize(ecdbTempDir, hostAssetsDir, logSqliteErrors);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015
