@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnChangeSummary_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -74,7 +74,7 @@ void DgnChangeSummaryTestFixture::_SetupDgnDb()
 DgnCode DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
     {
     Utf8PrintfString codeStr("Floor %d,Quadrant %d", iFloor, iQuadrant);
-    return m_defaultAuthority->CreateCode(codeStr);
+    return m_defaultCodeSpec->CreateCode(codeStr);
     }
 
 //---------------------------------------------------------------------------------------

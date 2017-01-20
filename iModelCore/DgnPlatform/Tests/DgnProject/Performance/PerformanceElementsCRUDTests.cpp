@@ -296,7 +296,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
         if (addExtKey)
             {
-            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
+            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(CodeSpecId((uint64_t) 1), "TestExtKey");
             ASSERT_TRUE(extkeyAspect.IsValid());
             element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
             }
@@ -532,7 +532,7 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
 
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str());
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif

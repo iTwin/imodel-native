@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Dimension/Dimension.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,7 +41,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DefinitionElement
 private:
     DgnElementId m_textStyleId;
 
-    static DgnCode CreateCode(DgnDbR db, Utf8CP name) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_AnnotationTextStyle, db, name);}
+    static DgnCode CreateCode(DgnDbR db, Utf8CP name) {return CodeSpec::CreateCode(db, BIS_CODESPEC_AnnotationTextStyle, name);}
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -49,7 +49,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DgnDbStatus _OnDelete() const override {return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
-    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 public:
