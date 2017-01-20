@@ -24,7 +24,7 @@ struct  PublishTileNode : ModelTileNode
 {
     struct PublishPointCloudContext&      m_publishContext;
 
-    PublishTileNode(struct PublishPointCloudContext& publishContext, DgnModelCR const& model, DRange3dCR range, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+    PublishTileNode(struct PublishPointCloudContext& publishContext, DgnModelCR model, DRange3dCR range, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent)
         : ModelTileNode(model, range, transformDbToTile, depth, siblingIndex, parent, 0.0), m_publishContext(publishContext) { }
 
     virtual WString _GetFileExtension() const override { return L"pnts"; }
