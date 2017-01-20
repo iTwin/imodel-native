@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/DesignByContract.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -75,11 +75,13 @@ public:
 #if defined(NDEBUG) && !defined (LOG_ASSERT_IN_PRODUCTION_CODE)
     #define LOG_ASSERT_FAILURE(_LogMessage, ...) (void)0
 #else
-    #define LOG_ASSERT_FAILURE(_LogMessage, ...) LogFailureMessage(_LogMessage, ## __VA_ARGS__)
+    #define LOG_ASSERT_FAILURE(_LogMessage, ...) ECN::LogFailureMessage(_LogMessage, ## __VA_ARGS__)
 #endif
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
 #define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)           \
