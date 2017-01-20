@@ -4,7 +4,7 @@
               xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
               >
 
-    <Part Name="Base" BentleyBuildMakeFile="prewire.mke" >
+    <Part Name="Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" >
         <Bindings>
             <PublicAPI Domain="BeGTest" />
         </Bindings>
@@ -71,7 +71,7 @@
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
     <!-- When using gtest, the DetectAndCompileUnitTests.mki will assume that the gtest and gmock include directories have been bound into the buildcontext -->
-    <Part Name="BeGtest-Includes" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+    <Part Name="BeGtest-Includes" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubPart PartName="google_gtest"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock"    PartFile="gmock"        Repository="util-gmock" />
     </Part>
@@ -79,7 +79,7 @@
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
     <!-- *********************************************************************************************** -->
-    <Part Name="Gtest-Tools" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="iOS*">
+    <Part Name="Gtest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="iOS*">
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
         <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />
@@ -105,7 +105,7 @@
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build a JUnit test project -->
     <!-- *********************************************************************************************** -->
-    <Part Name="AndroidJUnitTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnitTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Base" LibType="Static"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="DgnClientSdkTools-AndroidShared" PartFile="DgnClientFx" Repository="DgnClientFx"/>
@@ -128,7 +128,7 @@
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run an XCTest project -->
     <!-- *********************************************************************************************** -->
-    <Part Name="iOSXCTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="iOS*">
         <SubPart PartName="Base" LibType="Static"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
     </Part>
@@ -151,7 +151,7 @@
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run a UWP project -->
     <!-- *********************************************************************************************** -->
-    <Part Name="UwpTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
+    <Part Name="UwpTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
         <SubPart PartName="Base"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
     </Part>
