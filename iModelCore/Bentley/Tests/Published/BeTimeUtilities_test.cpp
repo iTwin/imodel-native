@@ -46,7 +46,6 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     double two = twoSeconds;
     ASSERT_TRUE(two == 2.0);
     
-
     BeDuration twoandhalf(2.5);
     ASSERT_TRUE(twoandhalf == 2.5);
     ASSERT_TRUE(twoandhalf == BeDuration(std::chrono::milliseconds(2500)));

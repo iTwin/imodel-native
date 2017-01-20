@@ -10,8 +10,7 @@
 
 #include "BeAtomic.h"
 #include "RefCounted.h"
-#include "WString.h"
-#include <chrono>
+#include "BeTimeUtilities.h"
 
 #if defined (_WIN32) && defined(_MANAGED)
     //=======================================================================================
@@ -216,9 +215,11 @@ struct  BeThreadUtilities
     BENTLEYDLL_EXPORT static BentleyStatus StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg);
 
     //! Suspend the current thread for a specified amount of time
-    //! @param[in] millis   Duration of sleep in milliseconds
-    BENTLEYDLL_EXPORT static void BeSleep(std::chrono::milliseconds millis);
+    //! @param[in] sleepTime Duration of sleep 
+    BENTLEYDLL_EXPORT static void BeSleep(BeDuration sleepTime);
 
+    //! Suspend the current thread for a specified amount of time
+    //! @param[in] millis   Duration of sleep 
     static void BeSleep(uint32_t millis){BeSleep(std::chrono::milliseconds(millis));}
 
     //! Get the identifier of the current thread

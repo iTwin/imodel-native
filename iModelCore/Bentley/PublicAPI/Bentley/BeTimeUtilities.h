@@ -163,9 +163,19 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
 {
     DEFINE_T_SUPER(std::chrono::steady_clock::time_point)
     using T_Super::time_point;
+
+    //! get the current time point from the steady_clock
     static BeTimePoint Now() {return std::chrono::steady_clock::now();}
+
+    //! Get a BeTimePoint in the future from now
+    //! @param[in] val the duration from now
     static BeTimePoint FromNow(BeDuration val) {return Now()+val;}
+
+    //! Get a BeTimePoint in the past before now
+    //! @param[in] val the duration before now
     static BeTimePoint BeforeNow(BeDuration val) {return Now()-val;}
+
+    //! Determine whether this BeTimePoint is valid (non-zero)
     bool IsValid() const {return 0 != time_since_epoch().count();}
 };
 
