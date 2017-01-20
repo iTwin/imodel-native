@@ -2616,6 +2616,42 @@ void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_physicalTypeId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(PHYSICAL_PhysicalType), &m_physicalTypeRelClassId);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(PHYSICAL_PhysicalType), m_physicalTypeId, m_physicalTypeRelClassId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto src = dynamic_cast<PhysicalElement const*>(&el);
+    if (nullptr != src)
+        {
+        m_physicalTypeId = src->m_physicalTypeId;
+        m_physicalTypeRelClassId = src->m_physicalTypeRelClassId;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PhysicalElement::SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId)

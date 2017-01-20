@@ -2307,6 +2307,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+
 public:
     //! Set the PhysicalType for this PhysicalElement
     //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
