@@ -636,9 +636,8 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
 
     publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0, 0);
 
-    static const uint32_t s_sleepMillis = 1000.0;
     while (publishContext.ProcessingRemains())
-        BeThreadUtilities::BeSleep(s_sleepMillis);
+        BeThreadUtilities::BeSleep(std::chrono::seconds(1));
 
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
