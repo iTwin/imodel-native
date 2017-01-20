@@ -1139,6 +1139,30 @@ void DgnViewport::ClearProgressiveTasks()
         scene->m_progressive = nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+ProgressiveTask::Completion DgnViewport::ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, RenderListContext& context)
+    {
+    ProgressiveTask::Completion status = ProgressiveTask::Completion::Finished;
+    for (auto entry=m_progressiveTasks.begin(); entry != m_progressiveTasks.end(); )
+        {
+        ProgressiveTask::WantShow thisShowFrame = ProgressiveTask::WantShow::No;
+        status = (*entry)->_DoProgressive(context, thisShowFrame);
+
+        if (thisShowFrame == ProgressiveTask::WantShow::Yes) // any of them can cause showframe
+            showFrame = ProgressiveTask::WantShow::Yes;
+
+        if (ProgressiveTask::Completion::Aborted == status)
+            break;
+
+        entry = m_progressiveTasks.erase(entry);
+        showFrame = ProgressiveTask::WantShow::Yes;
+        }
+
+    return status;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
