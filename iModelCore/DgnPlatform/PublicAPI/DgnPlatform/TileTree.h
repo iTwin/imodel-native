@@ -435,7 +435,7 @@ struct Root : TileTree::Root
     virtual Utf8CP _GetName() const = 0;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
-    void DrawInView(RenderContextR context);
+    void DrawInView(RenderListContext& context);
 };
     
 //=======================================================================================

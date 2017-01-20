@@ -825,7 +825,7 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Root::DrawInView(RenderContextR context)
+void QuadTree::Root::DrawInView(RenderListContext& context)
     {
     if (!GetRootTile().IsValid())
         {
@@ -841,13 +841,29 @@ void QuadTree::Root::DrawInView(RenderContextR context)
     args.DrawGraphics(context);
 
     // Do we still have missing tiles?
-    if (!args.m_missing.empty())
+    if (args.m_missing.empty())
+        return;
+
+    // yes, request them and schedule a progressive task to draw them as they arrive.
+    TileLoadStatePtr loads = std::make_shared<TileLoadState>();
+    args.RequestMissingTiles(*this, loads);
+
+    auto viewport = context.GetViewport();
+    viewport->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+
+    auto quitTime = context.GetUpdatePlan().GetQuitTime();
+    if (!quitTime.IsValid())
+        return;
+
+    // this is really just for thumbnails where we want to wait until the tiles are ready
+    while (BeTimePoint::Now() < quitTime)
         {
-        // yes, request them and schedule a progressive task to draw them as they arrive.
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
-        }
+        ProgressiveTask::WantShow showFrame;
+        if (ProgressiveTask::Completion::Finished == viewport->ProcessProgressiveTaskList(showFrame, context))
+            return; // we're done
+
+        BeThreadUtilities::BeSleep(std::chrono::milliseconds(20));
+        } 
     }
 
 /*---------------------------------------------------------------------------------**//**

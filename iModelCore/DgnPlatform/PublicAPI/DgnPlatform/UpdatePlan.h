@@ -159,7 +159,7 @@ struct UpdatePlan
 {
     struct Query
     {
-        std::chrono::milliseconds m_maxTime = std::chrono::seconds(2);    // maximum time query should run (milliseconds)
+        BeDuration m_maxTime = std::chrono::seconds(2);    // maximum time query should run (milliseconds)
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
@@ -168,7 +168,7 @@ struct UpdatePlan
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
-        std::chrono::milliseconds GetTimeout() const {return m_maxTime;}
+        BeDuration GetTimeout() const {return m_maxTime;}
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
         void SetMinElements(uint32_t val) {m_minElements = val;}
@@ -211,7 +211,7 @@ struct UpdatePlan
 
     uint32_t    m_priority = 0;
     uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
-    BeTimePoint m_expirationTime;
+    BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
     bool        m_timeoutIsPct = false;
     bool        m_hasSubRect = false;
     DRange3d    m_subRect;
@@ -229,7 +229,8 @@ public:
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void SetCreateSceneTimeoutMillis(std::chrono::milliseconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
-    void SetExpirationTime(BeTimePoint end) {m_expirationTime = end;}
+    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    BeTimePoint GetQuitTime() const {return m_quitTime;}
     uint32_t GetCreateSceneTimeout() const {return m_timeout;}
     bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
