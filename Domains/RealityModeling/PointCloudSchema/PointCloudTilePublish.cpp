@@ -16,71 +16,22 @@ BEGIN_UNNAMED_NAMESPACE
 
 static size_t                           s_maxTilePointCount = 200000;
 
+
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     01/2017
 //=======================================================================================
 struct  PublishTileNode : ModelTileNode
 {
-    PointCloudModel const&      m_pointCloudModel;
+    struct PublishPointCloudContext&      m_publishContext;
 
-    PublishTileNode(PointCloudModel const& model, DRange3dCR range, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent)
-        : ModelTileNode(model, range, transformDbToTile, depth, siblingIndex, parent, 0.0), m_pointCloudModel(model) { }
+    PublishTileNode(struct PublishPointCloudContext& publishContext, DgnModelCR const& model, DRange3dCR range, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+        : ModelTileNode(model, range, transformDbToTile, depth, siblingIndex, parent, 0.0), m_publishContext(publishContext) { }
 
-    PointCloudModel const& GetPointCloudModel() { return m_pointCloudModel; }
     virtual WString _GetFileExtension() const override { return L"pnts"; }
+    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override;
 
-   
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudQueryHandlePtr CreateQuery (int densityType, float densityValue) const
-    {
-    Transform                   worldToScene;
-    DRange3d                    sceneRange;
-                                
-    worldToScene.InverseOf (m_pointCloudModel.GetSceneToWorld());
-    worldToScene.Multiply (sceneRange, m_dgnRange);
-    
-    return  m_pointCloudModel.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
-    }
+    size_t  QueryPointCount(size_t maxPoints) const;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t  QueryPointCount(size_t maxPoints) const
-    {
-    // It doesn't seem from the API documentation that there is a way to count total points in a range without getting the points back. 
-    PointCloudQueryHandlePtr                queryHandle = CreateQuery(QUERY_DENSITY_FULL, 1.0);
-    RefCountedPtr<PointCloudQueryBuffers>   queryBuffers = PointCloudQueryBuffers::Create(maxPoints, (uint32_t) PointCloudChannelId::Xyz);
-
-    return (size_t)  queryBuffers->GetPoints(queryHandle->GetHandle());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
-    {
-    PublishableTileGeometry                 publishableGeometry;
-    PointCloudQueryHandlePtr                queryHandle = CreateQuery(QUERY_DENSITY_LIMIT, (float) s_maxTilePointCount);
-    RefCountedPtr<PointCloudQueryBuffers>   queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz);
-    uint32_t                                nPoints;
-    DPoint3dCP                              pPoints;
-
-    if (0 == (nPoints = queryBuffers->GetPoints(queryHandle->GetHandle())) ||
-        nullptr == (pPoints = queryBuffers->GetXyzChannel()->GetChannelBuffer()))
-        {
-        BeAssert(false && "No point cloud points");
-        } 
-    else
-        {
-        TileDisplayParamsPtr    displayParams = TileDisplayParams::Create();
-
-        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(displayParams, pPoints, nPoints, Transform::FromProduct(GetTransformFromDgn(), m_pointCloudModel.GetSceneToWorld()))); 
-        }
-
-    return publishableGeometry;
-    }
 
 };  //  PublishTileNode
 
@@ -98,32 +49,64 @@ struct PublishPointCloudContext
     uint32_t                        m_totalTiles;
     BeAtomic<uint32_t>              m_completedTiles;
     StopWatch                       m_progressTimer;
+    BeMutex                         m_queryMutex;
     
     PublishPointCloudContext (PointCloudModel const& model, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) :
                          m_model(model), m_transformDbToTile(transformDbToTile), m_collector(collector), m_progressMeter(progressMeter), m_totalTiles(1), m_progressTimer(true) { }
 
+    void    IndicateProgress()      {   }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessTile(PublishTileNode& tile, size_t depth, size_t siblingIndex)
+size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange, int densityType, float densityValue) 
     {
-    if (tile.QueryPointCount(s_maxTilePointCount) >= s_maxTilePointCount)
+    BeMutexHolder lock(m_queryMutex);
+
+    Transform                   worldToScene;
+    DRange3d                    sceneRange;
+                                
+    worldToScene.InverseOf (m_model.GetSceneToWorld());
+    worldToScene.Multiply (sceneRange, dgnRange);
+    
+    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
+
+    return queryBuffers->GetPoints (queryHandle->GetHandle());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
+    {
+    static const double s_minToleranceRatio = 100.0;
+    double              tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
+    bool                isLeaf = tileTolerance < leafTolerance;
+    static size_t       s_depthLimit = 4;
+
+    tile.SetTolerance (tileTolerance);
+    if (depth < s_depthLimit &&!isLeaf && tile.QueryPointCount(s_maxTilePointCount) >= s_maxTilePointCount)
         {
         bvector<DRange3d>   childRanges;
         size_t      childIndex = 0;
 
         TileNode::ComputeChildTileRanges (childRanges, tile.GetDgnRange());
-        depth++;
 
         for (auto& childRange : childRanges)    
             {
-            PublishTileNode     childTile(tile.GetPointCloudModel(), childRange, m_transformDbToTile, depth + 1, childIndex++, &tile);
+            T_PublishTilePtr    childTile = new PublishTileNode(*this, m_model, childRange, m_transformDbToTile, depth + 1, childIndex++, &tile);
+            size_t              childPointCount = childTile->QueryPointCount(s_maxTilePointCount);
 
-            if (childTile.QueryPointCount(1) > 0)   
+            if (childPointCount > 0)   
                 {
                 m_totalTiles++;
-                tile.GetChildren().push_back(&childTile);
-                ProcessTile(childTile, depth+1, childIndex++);
+                tile.GetChildren().push_back(childTile);
+                ProcessTile(*childTile, leafTolerance, depth+1);
+                }
+            else
+                {
+                printf ("Skipped, Depth: %zd, Sibling: %zd\n", depth, childIndex);
                 }
             }
         }
@@ -138,13 +121,6 @@ void ProcessTile(PublishTileNode& tile, size_t depth, size_t siblingIndex)
     IndicateProgress();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    IndicateProgress()
-    {
-    // No.
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -161,6 +137,45 @@ bool    ProcessingRemains()
 
 };  // PublishPointCloudContext
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t  PublishTileNode::QueryPointCount(size_t maxPoints) const
+    {
+    // It doesn't seem from the API documentation that there is a way to count total points in a range without getting the points back. 
+    PointCloudQueryBuffersPtr       queryBuffers = PointCloudQueryBuffers::Create(maxPoints, (uint32_t) PointCloudChannelId::Xyz);
+
+    return m_publishContext.MakeQuery (queryBuffers, m_dgnRange, QUERY_DENSITY_FULL, 1.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter) const 
+    {
+    PublishableTileGeometry                 publishableGeometry;
+    PointCloudQueryBuffersPtr               queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz);
+    size_t                                  nPoints = m_publishContext.MakeQuery (queryBuffers, m_dgnRange, QUERY_DENSITY_LIMIT, (float) s_maxTilePointCount);
+    DPoint3dCP                              pPoints;
+
+    if (0 == nPoints || nullptr == (pPoints = queryBuffers->GetXyzChannel()->GetChannelBuffer()))
+        {
+        BeAssert(false && "No point cloud points");
+        } 
+    else
+        {
+        TileDisplayParamsPtr    displayParams = TileDisplayParams::Create();
+        static double           s_clusterFraction = 1.0;
+        double                  clusterTolerance = GetTolerance() * s_clusterFraction;
+        Transform               sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_publishContext.m_model.GetSceneToWorld());
+
+        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(displayParams, pPoints, nPoints, sceneToTile, clusterTolerance)); 
+        }
+
+    return publishableGeometry;
+    }
+
 END_UNNAMED_NAMESPACE
 
 
@@ -173,11 +188,11 @@ TileGeneratorStatus PointCloudModel::_GenerateMeshTiles(TileNodePtr& rootTile, T
     PublishPointCloudContext    publishContext (*this, transformDbToTile, collector, progressMeter);
 
     GetRange(dgnRange, PointCloudModel::Unit::World);
-    T_PublishTilePtr    rootPublishTile =  new PublishTileNode(*this, dgnRange, transformDbToTile, 0, 0, nullptr);
+    T_PublishTilePtr    rootPublishTile =  new PublishTileNode(publishContext, *this, dgnRange, transformDbToTile, 0, 0, nullptr);
 
     rootTile = rootPublishTile;
 
-    publishContext.ProcessTile(*rootPublishTile, 0, 0);
+    publishContext.ProcessTile(*rootPublishTile, leafTolerance, 0);
 
     static const uint32_t s_sleepMillis = 1000.0;
     while (publishContext.ProcessingRemains())

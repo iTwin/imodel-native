@@ -537,7 +537,7 @@ struct Publish3MxContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t siblingIndex)
+void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth)
     { 
     double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
     DRange3d        dgnRange;
@@ -568,18 +568,17 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
         size_t      childIndex = 0;
-        depth++;
         for (auto& child : *node._GetChildren(true))
             {
             NodeR   childNode = (NodeR) *child;
 
             if (childNode._HasChildren())
                 {
-                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex, &tile, m_tileClip);
+                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex++, &tile, m_tileClip);
 
                 m_totalTiles++;
                 tile.GetChildren().push_back(childTile);
-                ProcessTile(*childTile, (NodeR) *child,  depth+1, childIndex++);
+                ProcessTile(*childTile, (NodeR) *child,  depth+1);
                 }
             }
         }
@@ -639,7 +638,7 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
 
     rootTile = rootPublishTile;
 
-    publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0, 0);
+    publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0);
 
     static const uint32_t s_sleepMillis = 1000.0;
     while (publishContext.ProcessingRemains())
