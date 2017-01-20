@@ -813,10 +813,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                 clipPrimitive->SetIsMask(false);
                 ClipVectorPtr clip = ClipVector::CreateFromPrimitive(clipPrimitive);
                 clipFromCoverageSet.push_back(clip);
-                }
-            nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
+                }            
             }
 
+        nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
         nextDrawingInfoPtr->m_hasCoverage = true;
         }
 
