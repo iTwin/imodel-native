@@ -150,11 +150,11 @@ struct Session
 struct BimConsole : Dgn::DgnPlatformLib::Host
     {
     private:
-        const static Utf8Char ECSQLSTATEMENT_DELIMITER = ';';
-        const static Utf8Char COMMAND_PREFIX = '.';
+        static const Utf8Char ECSQLSTATEMENT_DELIMITER = ';';
+        static const Utf8Char COMMAND_PREFIX = '.';
 
         Session m_session;
-        char m_readBuffer[5000];
+        Utf8Char m_readBuffer[5000];
         std::vector<Utf8String> m_commandHistory;
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
 
@@ -167,7 +167,7 @@ struct BimConsole : Dgn::DgnPlatformLib::Host
         void AddCommand(std::shared_ptr<Command> const& command) { AddCommand(command->GetName(), command); }
         Command const* GetCommand(Utf8StringCR commandName) const;
 
-        int WaitForUserInput(int argc, WCharP argv[]);
+        int WaitForUserInput();
         void RunCommand(Utf8StringCR cmd);
         bool ReadLine(Utf8StringR stmt);
 

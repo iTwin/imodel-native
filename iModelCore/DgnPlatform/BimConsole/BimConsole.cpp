@@ -153,13 +153,13 @@ int BimConsole::Run(int argc, WCharP argv[])
         openCommand->Run(m_session, args);
         }
 
-    return WaitForUserInput(argc, argv);
+    return WaitForUserInput();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-int BimConsole::WaitForUserInput(int argc, WCharP argv[])
+int BimConsole::WaitForUserInput()
     {
     Utf8String cmd;
 
