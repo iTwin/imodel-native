@@ -23,17 +23,17 @@ struct tm;
 
 BEGIN_BENTLEY_NAMESPACE
 
-/** 
-* @addtogroup GROUP_Time Dates and Time Module 
+/**
+* @addtogroup GROUP_Time Dates and Time Module
 * Cross-platform utilities for working with dates and times.
 */
 
-//=======================================================================================    
+//=======================================================================================
 //! Functions to get the current time and to convert time values between different bases and formats.
 //! @section UnixTimeMillis
 //! A "Unix time in milliseconds" is expressed as milliseconds since 1/1/1970 UTC
 //! @ingroup GROUP_Time
-//=======================================================================================    
+//=======================================================================================
 struct BeTimeUtilities
 {
     //! @name Elapsed time
@@ -128,24 +128,29 @@ struct BeTimeUtilities
 
 //=======================================================================================
 //! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with special
-//! constructors for integer and doubles with units of *seconds*.
+//! constructors from int and double, with units of *seconds*.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeDuration : std::chrono::steady_clock::duration
 {
     DEFINE_T_SUPER(std::chrono::steady_clock::duration)
-    using T_Super::duration;
+
+    constexpr BeDuration(std::chrono::milliseconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(std::chrono::nanoseconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(std::chrono::seconds val) : T_Super(val) {} // allow implicit conversion
 
     //! construct a BeDuration with 0 seconds
-    explicit constexpr BeDuration() : T_Super() {}
+    constexpr BeDuration() : T_Super() {}
 
     //! construct a BeDuration with an integer number of *seconds* (not nanoseconds!)
     explicit constexpr BeDuration(int val) : T_Super(std::chrono::seconds(val)) {}
+
     //! construct a BeDuration with an double number of *seconds* (not nanoseconds!)
     explicit constexpr BeDuration(double val) : T_Super(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val))) {}
 
-    //! cast this duration to a double number of *seconds* (not nanoseconds!)
-    constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();} 
+    //! cast this BeDuration to a double number of *seconds* (not nanoseconds!)
+    constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();}
+
     //! get this duration in double *seconds* (not nanoseconds!)
     constexpr double ToSeconds() const {return (double) *this;}
 
@@ -154,7 +159,8 @@ struct BeDuration : std::chrono::steady_clock::duration
 };
 
 //=======================================================================================
-//! a time point in steady_clock units (usually nanoseconds). This is a std::chrono::steady_clock::time_point
+//! A time point in steady_clock units (usually nanoseconds). This is a std::chrono::steady_clock::time_point with a few
+//! convenience methods added.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeTimePoint : std::chrono::steady_clock::time_point
@@ -165,11 +171,11 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
     //! get the current time point from the steady_clock
     static BeTimePoint Now() {return std::chrono::steady_clock::now();}
 
-    //! Get a BeTimePoint in the future from now
+    //! Get a BeTimePoint at a specified duration in the future from now
     //! @param[in] val the duration from now
     static BeTimePoint FromNow(BeDuration val) {return Now()+val;}
 
-    //! Get a BeTimePoint in the past before now
+    //! Get a BeTimePoint at a specified duration in the past before now
     //! @param[in] val the duration before now
     static BeTimePoint BeforeNow(BeDuration val) {return Now()-val;}
 
@@ -191,7 +197,8 @@ private:
 public:
     static BeTimePoint Now () {return BeTimePoint::Now();}
 
-    //! Initialize the stopwatch. If true is passed as start then it will start it as well.
+    //! Initialize the stopwatch.
+    //! @param[in] start If true, start StopWatch now.
     void Init(bool start) {if (start) Start();}
 
     //! Create a named stopwatch and possibly start it.
