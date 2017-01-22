@@ -34,29 +34,29 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     ASSERT_TRUE(!invalid.IsValid());
 
     BeDuration zero;
-    ASSERT_TRUE(zero == std::chrono::seconds(0));
+    ASSERT_TRUE(zero == BeDuration::Seconds(0));
 
-    BeDuration threeSeconds(3); // integer constructor
-    BeDuration twoSeconds(2.0); // double constructor
-    BeDuration negative1(-1);
-    ASSERT_TRUE(threeSeconds == std::chrono::seconds(3));
-    ASSERT_TRUE(twoSeconds == std::chrono::seconds(2));
-    ASSERT_TRUE(negative1 == std::chrono::seconds(-1));
+    BeDuration threeSeconds(BeDuration::FromSeconds(3)); // integer seconds
+    BeDuration twoSeconds(BeDuration::FromSeconds(2.0)); // double seconds
+    BeDuration negative1(BeDuration::FromSeconds(-1));
+    ASSERT_TRUE(threeSeconds == BeDuration::Seconds(3));
+    ASSERT_TRUE(twoSeconds == BeDuration::Seconds(2));
+    ASSERT_TRUE(negative1 == BeDuration::Seconds(-1));
 
     double two = twoSeconds;
     ASSERT_TRUE(two == 2.0);
     
-    BeDuration twoandhalf(2.5);
+    BeDuration twoandhalf(BeDuration::FromSeconds(2.5));
     ASSERT_TRUE(twoandhalf == 2.5);
-    ASSERT_TRUE(twoandhalf == BeDuration(std::chrono::milliseconds(2500)));
+    ASSERT_TRUE(twoandhalf == BeDuration(BeDuration::MilliSeconds(2500)));
     ASSERT_TRUE(twoandhalf.ToSeconds() == 2.5);
-
-    std::chrono::milliseconds twoInMillis = twoSeconds;
-    ASSERT_TRUE(twoInMillis == std::chrono::milliseconds(2000));
+ 
+    BeDuration::MilliSeconds twoInMillis = twoSeconds;
+    ASSERT_TRUE(twoInMillis == BeDuration::MilliSeconds(2000));
 
     BeTimePoint t1 = BeTimePoint::Now();
     BeTimePoint t2 = BeTimePoint::Now();
-    BeTimePoint t3 = BeTimePoint::FromNow(BeDuration(3));
+    BeTimePoint t3 = BeTimePoint::FromNow(BeDuration::Seconds(3));
 
     ASSERT_TRUE(t1.IsValid());
     ASSERT_GE(t2, t1);

@@ -127,35 +127,37 @@ struct BeTimeUtilities
 };
 
 //=======================================================================================
-//! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with special
-//! constructors from int and double, with units of *seconds*.
+//! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with a
+//! static function for constructing from double seconds.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeDuration : std::chrono::steady_clock::duration
 {
     DEFINE_T_SUPER(std::chrono::steady_clock::duration)
+    typedef std::chrono::nanoseconds NanoSeconds;
+    typedef std::chrono::milliseconds MilliSeconds;
+    typedef std::chrono::seconds Seconds;
 
-    constexpr BeDuration(std::chrono::milliseconds val) : T_Super(val) {} // allow implicit conversion
-    constexpr BeDuration(std::chrono::nanoseconds val) : T_Super(val) {} // allow implicit conversion
-    constexpr BeDuration(std::chrono::seconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(Seconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(MilliSeconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(NanoSeconds val) : T_Super(val) {} // allow implicit conversion
+    BeDuration(int) = delete; // Note: you must specifiy units!
+    BeDuration(double) = delete; // Note: you must specifiy units!
+
+    //! construct a BeDuration from double seconds
+    static BeDuration FromSeconds(double val) {BeDuration duration(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val))); return duration;}
 
     //! construct a BeDuration with 0 seconds
     constexpr BeDuration() : T_Super() {}
-
-    //! construct a BeDuration with an integer number of *seconds* (not nanoseconds!)
-    explicit constexpr BeDuration(int val) : T_Super(std::chrono::seconds(val)) {}
-
-    //! construct a BeDuration with an double number of *seconds* (not nanoseconds!)
-    explicit constexpr BeDuration(double val) : T_Super(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val))) {}
-
+    
     //! cast this BeDuration to a double number of *seconds* (not nanoseconds!)
     constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();}
 
-    //! get this duration in double *seconds* (not nanoseconds!)
+    //! get this duration in seconds
     constexpr double ToSeconds() const {return (double) *this;}
 
-    constexpr operator std::chrono::milliseconds() const {return std::chrono::duration_cast<std::chrono::milliseconds>(*this);}
-    constexpr operator std::chrono::seconds() const {return std::chrono::duration_cast<std::chrono::seconds>(*this);}
+    constexpr operator MilliSeconds() const {return std::chrono::duration_cast<MilliSeconds>(*this);}
+    constexpr operator Seconds() const {return std::chrono::duration_cast<Seconds>(*this);}
 };
 
 //=======================================================================================
