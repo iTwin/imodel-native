@@ -51,7 +51,7 @@ BentleyStatus Scene::LoadScene()
     m_rootTile = root;
 
     auto result = _RequestTile(*root, nullptr);
-    result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+    result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
 
@@ -177,7 +177,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(RenderListContext
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 
@@ -637,7 +637,7 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0);
 
     while (publishContext.ProcessingRemains())
-        BeThreadUtilities::BeSleep(std::chrono::seconds(1));
+        BeDuration::FromSeconds(1).Sleep();
 
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
