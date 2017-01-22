@@ -216,11 +216,13 @@ struct  BeThreadUtilities
 
     //! Suspend the current thread for a specified amount of time
     //! @param[in] sleepTime Duration of sleep 
-    BENTLEYDLL_EXPORT static void BeSleep(BeDuration sleepTime);
+    //! @note this method is deprecated. Use BeDuration::Sleep
+    static void BeSleep(BeDuration sleepTime) {sleepTime.Sleep();}
 
-    //! Suspend the current thread for a specified amount of time
-    //! @param[in] millis   Duration of sleep 
-    static void BeSleep(uint32_t millis){BeSleep(std::chrono::milliseconds(millis));}
+    //! Suspend the current thread for a specified number of milliseconds
+    //! @param[in] millis number of milliseconds to sleep 
+    //! @note this method is deprecated. Use BeDuration::Sleep
+    static void BeSleep(uint32_t millis){BeDuration::FromMilliSeconds(millis).Sleep();}
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();

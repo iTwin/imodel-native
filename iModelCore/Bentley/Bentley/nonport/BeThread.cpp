@@ -263,10 +263,13 @@ uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2011
+* @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::BeSleep(BeDuration sleepTime)
+void BeDuration::Sleep()
     {
+    if (!IsInFuture())
+        return;
+
 #if defined (BENTLEY_WINRT)
      // Thanks to http://blogs.msdn.com/b/shawnhar/archive/2012/03/12/createthread-for-windows-8-metro.aspx for the work-around idea
     static HANDLE s_sleepEvent = nullptr;
@@ -282,10 +285,10 @@ void BeThreadUtilities::BeSleep(BeDuration sleepTime)
         }
 
     // Emulate sleep by waiting with timeout on an event that is never signalled.
-    std::chrono::milliseconds millis(sleepTime);
+    MilliSeconds millis(*this);
     WaitForSingleObjectEx(s_sleepEvent, (uint32_t)millis.count(), false);
 #else
-    std::this_thread::sleep_for(sleepTime);
+    std::this_thread::sleep_for(*this);
 #endif
     }
 

@@ -35,33 +35,42 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
 
     BeDuration zero;
     ASSERT_TRUE(zero == BeDuration::Seconds(0));
+    ASSERT_TRUE(zero.IsZero());
+    ASSERT_TRUE(!zero.IsInFuture());
+    ASSERT_TRUE(!zero.IsInPast());
 
     BeDuration threeSeconds(BeDuration::FromSeconds(3)); // integer seconds
     BeDuration twoSeconds(BeDuration::FromSeconds(2.0)); // double seconds
     BeDuration negative1(BeDuration::FromSeconds(-1));
     ASSERT_TRUE(threeSeconds == BeDuration::Seconds(3));
     ASSERT_TRUE(twoSeconds == BeDuration::Seconds(2));
+    ASSERT_TRUE(twoSeconds.IsInFuture());
     ASSERT_TRUE(negative1 == BeDuration::Seconds(-1));
+    ASSERT_TRUE(negative1.IsInPast());
 
     double two = twoSeconds;
     ASSERT_TRUE(two == 2.0);
     
     BeDuration twoandhalf(BeDuration::FromSeconds(2.5));
     ASSERT_TRUE(twoandhalf == 2.5);
-    ASSERT_TRUE(twoandhalf == BeDuration(BeDuration::MilliSeconds(2500)));
+    ASSERT_TRUE(twoandhalf == BeDuration::FromMilliSeconds(2500));
     ASSERT_TRUE(twoandhalf.ToSeconds() == 2.5);
  
     BeDuration::MilliSeconds twoInMillis = twoSeconds;
-    ASSERT_TRUE(twoInMillis == BeDuration::MilliSeconds(2000));
+    ASSERT_TRUE(twoInMillis == BeDuration::FromMilliSeconds(2000));
 
     BeTimePoint t1 = BeTimePoint::Now();
     BeTimePoint t2 = BeTimePoint::Now();
     BeTimePoint t3 = BeTimePoint::FromNow(BeDuration::Seconds(3));
+    ASSERT_TRUE(t3.IsInFuture());
 
     ASSERT_TRUE(t1.IsValid());
-    ASSERT_GE(t2, t1);
+    ASSERT_TRUE(t2 >= t1);
     double diff = BeDuration(t3-t2);
     ASSERT_TRUE(diff>=3.0 && diff<4.0);
+
+    BeDuration::FromMilliSeconds(100).Sleep();
+    ASSERT_TRUE(!t1.IsInFuture());
     }
 
 //---------------------------------------------------------------------------------------

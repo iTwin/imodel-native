@@ -128,7 +128,7 @@ struct BeTimeUtilities
 
 //=======================================================================================
 //! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with a
-//! static function for constructing from double seconds.
+//! static function for constructing from double seconds and a few other convenience methods.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeDuration : std::chrono::steady_clock::duration
@@ -145,7 +145,10 @@ struct BeDuration : std::chrono::steady_clock::duration
     BeDuration(double) = delete; // Note: you must specifiy units!
 
     //! construct a BeDuration from double seconds
-    static BeDuration FromSeconds(double val) {BeDuration duration(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val))); return duration;}
+    constexpr static BeDuration FromSeconds(double val) {return BeDuration(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val)));}
+
+    //! construct a BeDuration from int milliseconds
+    constexpr static BeDuration FromMilliSeconds(int64_t val) {return BeDuration(MilliSeconds(val));}
 
     //! construct a BeDuration with 0 seconds
     constexpr BeDuration() : T_Super() {}
@@ -158,6 +161,18 @@ struct BeDuration : std::chrono::steady_clock::duration
 
     constexpr operator MilliSeconds() const {return std::chrono::duration_cast<MilliSeconds>(*this);}
     constexpr operator Seconds() const {return std::chrono::duration_cast<Seconds>(*this);}
+
+    //! Determine whether this BeDuration is zero
+    bool IsZero() const {return 0 == count();}
+
+    //! Determine whether this BeDuration is in the future (greater than zero)
+    bool IsInFuture() const {return 0 < count();}
+
+    //! Determine whether this BeDuration is in the past (less than zero)
+    bool IsInPast() const {return 0 > count();}
+
+    //! Suspend the current thread for this duration
+    BENTLEYDLL_EXPORT void Sleep();
 };
 
 //=======================================================================================
@@ -183,6 +198,9 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
 
     //! Determine whether this BeTimePoint is valid (non-zero)
     bool IsValid() const {return 0 != time_since_epoch().count();}
+
+    //! Determine whether this BeTimePoint is in the future from the time this method is called (it calls Now()!)
+    bool IsInFuture() const {return IsValid() && (Now() < *this);}
 };
 
 /*=================================================================================**//**
