@@ -862,7 +862,7 @@ void QuadTree::Root::DrawInView(RenderListContext& context)
         if (ProgressiveTask::Completion::Finished == viewport->ProcessProgressiveTaskList(showFrame, context))
             return; // we're done
 
-        BeThreadUtilities::BeSleep(std::chrono::milliseconds(20));
+        BeThreadUtilities::BeSleep(BeDuration::MilliSeconds(20));
         } 
     }
 

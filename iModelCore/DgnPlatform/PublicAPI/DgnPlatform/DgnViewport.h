@@ -207,7 +207,7 @@ public:
     StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
-    DGNVIEW_EXPORT void ForceHealImmediate(std::chrono::milliseconds timeout=std::chrono::milliseconds(500)); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::MilliSeconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
@@ -216,10 +216,10 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewDefinitionCR val, std::chrono::milliseconds animationTime);
+    void ApplyViewState(ViewDefinitionCR val, BeDuration::MilliSeconds animationTime);
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
-    DGNVIEW_EXPORT void ApplyNext(std::chrono::milliseconds animationTime); 
-    DGNVIEW_EXPORT void ApplyPrevious(std::chrono::milliseconds animationTime);
+    DGNVIEW_EXPORT void ApplyNext(BeDuration::MilliSeconds animationTime); 
+    DGNVIEW_EXPORT void ApplyPrevious(BeDuration::MilliSeconds animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     // Find world distance to nearest element in view rect.
