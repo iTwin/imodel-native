@@ -166,10 +166,10 @@ struct BeDuration : std::chrono::steady_clock::duration
     bool IsZero() const {return 0 == count();}
 
     //! Determine whether this BeDuration is in the future (greater than zero)
-    bool IsInFuture() const {return 0 < count();}
+    bool IsFuture() const {return 0 < count();}
 
     //! Determine whether this BeDuration is in the past (less than zero)
-    bool IsInPast() const {return 0 > count();}
+    bool IsPast() const {return 0 > count();}
 
     //! Suspend the current thread for this duration
     BENTLEYDLL_EXPORT void Sleep();
