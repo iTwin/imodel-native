@@ -207,7 +207,7 @@ protected:
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
-    BeDuration m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
+    BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     BeConditionVariable m_cv;

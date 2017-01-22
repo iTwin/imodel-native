@@ -852,17 +852,15 @@ void QuadTree::Root::DrawInView(RenderListContext& context)
     viewport->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
 
     auto quitTime = context.GetUpdatePlan().GetQuitTime();
-    if (!quitTime.IsValid())
-        return;
 
     // this is really just for thumbnails where we want to wait until the tiles are ready
-    while (BeTimePoint::Now() < quitTime)
+    while (quitTime.IsInFuture())
         {
         ProgressiveTask::WantShow showFrame;
         if (ProgressiveTask::Completion::Finished == viewport->ProcessProgressiveTaskList(showFrame, context))
             return; // we're done
 
-        BeThreadUtilities::BeSleep(BeDuration::MilliSeconds(20));
+        BeDuration::FromMilliSeconds(20).Sleep();
         } 
     }
 
@@ -901,7 +899,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderList
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 

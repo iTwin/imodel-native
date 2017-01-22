@@ -45,7 +45,7 @@ protected:
     bool m_saveActive = false;
     bool m_workerRunning = false;
     int m_accessors = 0;
-    BeDuration m_saveDelay = std::chrono::seconds(5);
+    BeDuration m_saveDelay = BeDuration::Seconds(5);
     WorkerPtr m_worker;
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
