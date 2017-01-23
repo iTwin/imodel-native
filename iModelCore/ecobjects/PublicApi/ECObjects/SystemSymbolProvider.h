@@ -2,7 +2,7 @@
 |
 |   $Source: PublicApi/ECObjects/SystemSymbolProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,7 @@ private:
     mutable ECN::SymbolPtr  m_systemNamespaceSymbol;
 
     virtual Utf8CP          _GetName() const override { return "SystemSymbolProvider"; }
-    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
+    void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 public:
     SystemSymbolProvider();
 

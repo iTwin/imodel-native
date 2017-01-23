@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -197,26 +197,26 @@ private:
 
     ECWrappedEnabler (ECEnablerR enabler) : ECEnabler (enabler.GetClass(), NULL), m_enabler (&enabler) { }
 
-    virtual Utf8CP                  _GetName() const { return m_enabler->GetName(); }
-    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
-    virtual ECObjectsStatus         _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
-    virtual uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
-    virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
-    virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
+    virtual Utf8CP                  _GetName() const override { return m_enabler->GetName(); }
+    ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override{ return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
+    ECObjectsStatus         _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override{ return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
+    uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const override{ return m_enabler->GetFirstPropertyIndex (parentIndex); }
+    uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override{ return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
+    ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override{ return m_enabler->GetPropertyIndices (indices, parentIndex); }
 
-    virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
-    virtual ECPropertyCP   _LookupECProperty (Utf8CP accessString) const { return m_enabler->LookupECProperty (accessString); }
-    virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
+    ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const override{ return m_enabler->LookupECProperty (propertyIndex); }
+    ECPropertyCP   _LookupECProperty (Utf8CP accessString) const override{ return m_enabler->LookupECProperty (accessString); }
+    bool           _IsPropertyReadOnly (uint32_t propertyIndex) const override{ return m_enabler->IsPropertyReadOnly (propertyIndex); }
 
     // IStandaloneEnablerLocater
-    virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
+    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) override { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
-    ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const
+    ECOBJECTS_EXPORT PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const override
         { return m_enabler->ProcessPrimitiveProperties (failedClasses, instance, primType, processor, opts); }
 #endif
-    virtual bool                    _HasChildProperties (uint32_t parentIndex) const { return m_enabler->HasChildProperties (parentIndex); }
-    virtual uint32_t                _GetParentPropertyIndex (uint32_t childIndex) const override { return m_enabler->GetParentPropertyIndex (childIndex); }
+    bool                    _HasChildProperties (uint32_t parentIndex) const override { return m_enabler->HasChildProperties (parentIndex); }
+    uint32_t                _GetParentPropertyIndex (uint32_t childIndex) const override { return m_enabler->GetParentPropertyIndex (childIndex); }
 public:
     static ECEnablerPtr Create (ECEnablerR enabler) { return new ECWrappedEnabler (enabler); }
     };
@@ -252,7 +252,7 @@ protected:
  struct          PropertyIndexedEnabler  : BaseEnablerClass
     {
     private:
-        virtual ECObjectsStatus _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override
+        ECObjectsStatus _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override
             {
             for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 {
@@ -265,7 +265,7 @@ protected:
             return ECObjectsStatus::InvalidPropertyAccessString;
             }
 
-        virtual ECObjectsStatus _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override
+        ECObjectsStatus _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
                 return ECObjectsStatus::IndexOutOfRange;
@@ -274,7 +274,7 @@ protected:
             return ECObjectsStatus::Success;
             }
 
-        virtual uint32_t        _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override
+        uint32_t        _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override
             {
             if (inputIndex> 0 && inputIndex <= DerivedClass::MAX_PROPERTY_COUNT)
                 return ++inputIndex;
@@ -282,17 +282,17 @@ protected:
             }
 
         
-        virtual ECObjectsStatus _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override
+        ECObjectsStatus _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override
             {
             for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 indices.push_back(index + 1);
             return ECObjectsStatus::Success;
 
             }
-        virtual uint32_t        _GetFirstPropertyIndex (uint32_t parentIndex) const override {return 1;}
+        uint32_t        _GetFirstPropertyIndex (uint32_t parentIndex) const override {return 1;}
 
-        virtual bool            _HasChildProperties (uint32_t parentIndex) const override {return false;}
-        virtual uint32_t        _GetParentPropertyIndex (uint32_t childIndex) const override { return 0; }
+        bool            _HasChildProperties (uint32_t parentIndex) const override {return false;}
+        uint32_t        _GetParentPropertyIndex (uint32_t childIndex) const override { return 0; }
 
     protected:
         PropertyIndexedEnabler (ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)

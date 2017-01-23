@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,7 +86,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
         // IInstanceCollectionIteratorAdapter implementation
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual void    MoveToNext  () override
+        void    MoveToNext  () override
             {
             do
                 {
@@ -110,7 +110,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual bool    IsDifferent (IInstanceCollectionIteratorAdapter<value_type> const & rhs) const override
+        bool    IsDifferent (IInstanceCollectionIteratorAdapter<value_type> const & rhs) const override
             {
             InstanceCollectionAdapterIteratorImpl const* rhsImpl = static_cast<InstanceCollectionAdapterIteratorImpl const*> (&rhs);
             if (NULL == rhsImpl)//TODO evaluate performance of this cast. Since only public facing collection do this it should be okay
