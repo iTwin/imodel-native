@@ -6,10 +6,14 @@
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <Bentley/Base64Utilities.h>
+
 USING_NAMESPACE_BENTLEY_EC
 using namespace std;
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 #define NULL_TEXT "<null>"
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================>
 //Binary
@@ -1844,6 +1848,23 @@ Utf8String DateTimeChange::_ToString(ValueId id) const
     else
         str.assign(v.Value().ToString());
 
+    return str;
+    }
+
+//======================================================================================>
+//BinaryChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String BinaryChange::_ToString(ValueId id) const
+    {
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        return NULL_TEXT;
+
+    Utf8String str;
+    Base64Utilities::Encode(str, (Byte const*) v.Value().GetPointer(), v.Value().Size());
     return str;
     }
 

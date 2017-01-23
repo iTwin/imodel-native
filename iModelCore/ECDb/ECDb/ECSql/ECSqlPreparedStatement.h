@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,7 +92,7 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
         std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
         std::vector<ECSqlField*> m_fieldsRequiringReset;
 
-        virtual ECSqlStatus _Reset() override;
+        ECSqlStatus _Reset() override;
 
         ECSqlStatus ResetFields() const;
         ECSqlStatus OnAfterStep() const;
@@ -121,7 +121,7 @@ struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
     {
     protected:
         ECSqlNonSelectPreparedStatement(ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement(statementType, ecdb) {}
-        virtual ECSqlStatus _Reset() override { return DoReset(); }
+        ECSqlStatus _Reset() override { return DoReset(); }
 
     public:
         virtual ~ECSqlNonSelectPreparedStatement() {}

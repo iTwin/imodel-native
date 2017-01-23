@@ -25,16 +25,14 @@ struct StructECSqlField : public ECSqlField, public IECSqlStructValue
         //Otherwise the flags m_needsInit and m_needsReset might become wrong
         void AppendField(std::unique_ptr<ECSqlField> field);
 
-        virtual bool _IsNull() const override;
-        virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
-        virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
-        virtual IECSqlArrayValue const& _GetArray() const override;
+        bool _IsNull() const override;
+        IECSqlPrimitiveValue const& _GetPrimitive() const override;
+        IECSqlStructValue const& _GetStruct() const override { return *this; }
+        IECSqlArrayValue const& _GetArray() const override;
 
-        virtual int _GetMemberCount() const override { return static_cast<int>(m_structFields.size()); }
-        virtual IECSqlValue const& _GetValue(int columnIndex) const override;
-
-    public:
-        virtual Collection const& GetChildren() const override { return m_structFields; }
+        int _GetMemberCount() const override { return static_cast<int>(m_structFields.size()); }
+        IECSqlValue const& _GetValue(int columnIndex) const override;
+        Collection const& _GetChildren() const override { return m_structFields; }
     };
 
 

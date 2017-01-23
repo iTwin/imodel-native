@@ -160,8 +160,8 @@ private:
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
-    virtual BentleyStatus _InitializeFromSchema() override;
-    virtual ClassMappingStatus _EvaluateMapStrategy();
+    BentleyStatus _InitializeFromSchema() override;
+    ClassMappingStatus _EvaluateMapStrategy() override;
 
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);

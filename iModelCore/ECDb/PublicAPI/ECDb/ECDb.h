@@ -93,14 +93,14 @@ private:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
-    ECDB_EXPORT virtual DbResult _OnDbOpening() override;
-    ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const&) override;
-    ECDB_EXPORT virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
-    ECDB_EXPORT virtual void _OnDbClose() override;
-    ECDB_EXPORT virtual void _OnDbChangedByOtherConnection() override;
-    ECDB_EXPORT virtual DbResult _VerifySchemaVersion(Db::OpenParams const&) override;
-    ECDB_EXPORT virtual int _OnAddFunction(DbFunction&) const override;
-    ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction&) const override;
+    ECDB_EXPORT DbResult _OnDbOpening() override;
+    ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
+    ECDB_EXPORT DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
+    ECDB_EXPORT void _OnDbClose() override;
+    ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
+    ECDB_EXPORT DbResult _VerifySchemaVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
+    ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
     //! If called, consumers can only execute EC CRUD operations like ECSQL INSERT, UPDATE or DELETE statements
     //! with the write token returned from this method. 

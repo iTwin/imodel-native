@@ -15,13 +15,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
+PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(Type::PropertyName), m_propertyPath(std::move(propPath)), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
+PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(Type::PropertyName), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     m_propertyPath.Push(propertyName);
     }
@@ -30,7 +30,7 @@ PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_clas
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
-    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
+    : ValueExp(Type::PropertyName), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     Utf8String propName = derivedPropExp.GetName();
     //WIP: Affan, why do we have to remove the square brackets?
@@ -44,7 +44,7 @@ PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPro
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
-    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
+    : ValueExp(Type::PropertyName), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     m_propertyPath.Push(propertyName);
     if (m_propertyPath.Resolve(classMap) != SUCCESS)

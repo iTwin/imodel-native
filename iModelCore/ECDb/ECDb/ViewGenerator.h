@@ -125,8 +125,8 @@ struct ViewGenerator
                 mutable std::vector<Result> m_resultSet;
                 bool m_forECClassView;
 
-                virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
-                virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+                BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
+                BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
                 BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
                 BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/InsertStatementExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,18 +16,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp>& classNameExp, unique_ptr<PropertyNameListExp>& propertyNameListExp, unique_ptr<ValueExpListExp>& valuesExp)
-    : Exp (), m_isOriginalPropertyNameListUnset (propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
+InsertStatementExp::InsertStatementExp(unique_ptr<ClassNameExp>& classNameExp, unique_ptr<PropertyNameListExp>& propertyNameListExp, unique_ptr<ValueExpListExp>& valuesExp)
+    : Exp(Type::Insert), m_isOriginalPropertyNameListUnset(propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
     {
-    m_classNameExpIndex = AddChild (move(classNameExp));
-    
+    m_classNameExpIndex = AddChild(move(classNameExp));
+
     if (propertyNameListExp == nullptr)
         {
-        propertyNameListExp = unique_ptr<PropertyNameListExp> (new PropertyNameListExp());
+        propertyNameListExp = unique_ptr<PropertyNameListExp>(new PropertyNameListExp());
         }
 
-    m_propertyNameListExpIndex = AddChild (move(propertyNameListExp));
-    m_valuesExpIndex = AddChild (move(valuesExp));
+    m_propertyNameListExpIndex = AddChild(move(propertyNameListExp));
+    m_valuesExpIndex = AddChild(move(valuesExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -38,40 +38,40 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
     switch (mode)
         {
             case FinalizeParseMode::BeforeFinalizingChildren:
+            {
+            ClassNameExp const* classNameExp = GetClassNameExp();
+
+            RangeClasssInfo::List classList;
+            classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
+            m_finalizeParsingArgCache = move(classList);
+            ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
+
+            auto propNameListExp = GetPropertyNameListExpP();
+            if (IsOriginalPropertyNameListUnset())
                 {
-                ClassNameExp const* classNameExp = GetClassNameExp();
-
-                RangeClasssInfo::List classList;
-                classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
-                m_finalizeParsingArgCache = move(classList);
-                ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
-
-                auto propNameListExp = GetPropertyNameListExpP();
-                if (IsOriginalPropertyNameListUnset())
+                auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
                     {
-                    auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
-                        {
-                        //ECInstanceId is treated separately
-                        const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
-                        if (propMapKind != PropertyMap::Type::ECInstanceId && propMapKind != PropertyMap::Type::ECClassId)
-                            propNameListExp->AddPropertyNameExp(propNameExp);
-                        };
+                    //ECInstanceId is treated separately
+                    const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
+                    if (propMapKind != PropertyMap::Type::ECInstanceId && propMapKind != PropertyMap::Type::ECClassId)
+                        propNameListExp->AddPropertyNameExp(propNameExp);
+                    };
 
-                    if (SUCCESS != classNameExp->CreatePropertyNameExpList(addDelegate))
-                        return FinalizeParseStatus::Error;
+                if (SUCCESS != classNameExp->CreatePropertyNameExpList(addDelegate))
+                    return FinalizeParseStatus::Error;
 
-                    }
-
-                return FinalizeParseStatus::NotCompleted;
                 }
+
+            return FinalizeParseStatus::NotCompleted;
+            }
 
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
-                {
-                ctx.PopFinalizeParseArg();
-                m_finalizeParsingArgCache.clear();
+            {
+            ctx.PopFinalizeParseArg();
+            m_finalizeParsingArgCache.clear();
 
-                return Validate(ctx);
-                }
+            return Validate(ctx);
+            }
 
             default:
                 BeAssert(false);
@@ -106,9 +106,9 @@ bool InsertStatementExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, P
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) const
+Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) const
     {
-    PropertyNameListExp const* propertyNameListExp = GetPropertyNameListExp ();
+    PropertyNameListExp const* propertyNameListExp = GetPropertyNameListExp();
     const size_t expectedValueCount = propertyNameListExp->GetChildrenCount();
 
     ValueExpListExp const* valuesExp = GetValuesExp();
@@ -150,9 +150,9 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* InsertStatementExp::GetClassNameExp () const
+ClassNameExp const* InsertStatementExp::GetClassNameExp() const
     {
-    return GetChild<ClassNameExp> (m_classNameExpIndex);
+    return GetChild<ClassNameExp>(m_classNameExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ ClassNameExp const* InsertStatementExp::GetClassNameExp () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyNameListExp const* InsertStatementExp::GetPropertyNameListExp() const
     {
-    return GetChild<PropertyNameListExp> (m_propertyNameListExpIndex);
+    return GetChild<PropertyNameListExp>(m_propertyNameListExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ PropertyNameListExp const* InsertStatementExp::GetPropertyNameListExp() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyNameListExp* InsertStatementExp::GetPropertyNameListExpP() const
     {
-    return GetChildP<PropertyNameListExp> (m_propertyNameListExpIndex);
+    return GetChildP<PropertyNameListExp>(m_propertyNameListExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -182,19 +182,19 @@ ValueExpListExp const* InsertStatementExp::GetValuesExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String InsertStatementExp::_ToECSql() const 
+Utf8String InsertStatementExp::_ToECSql() const
     {
-    Utf8String ecsql ("INSERT INTO ");
+    Utf8String ecsql("INSERT INTO ");
 
-    ecsql.append (GetClassNameExp ()->ToECSql());
+    ecsql.append(GetClassNameExp()->ToECSql());
 
     if (!IsOriginalPropertyNameListUnset())
         {
         auto propertyNameListExp = GetPropertyNameListExp();
-        ecsql.append (" ").append (propertyNameListExp->ToECSql());
+        ecsql.append(" ").append(propertyNameListExp->ToECSql());
         }
 
-    ecsql.append (" VALUES (").append (GetValuesExp()->ToECSql()).append (")");
+    ecsql.append(" VALUES (").append(GetValuesExp()->ToECSql()).append(")");
 
     return ecsql;
     }

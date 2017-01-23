@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/UpdateStatementExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,9 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct UpdateStatementExp : Exp
+struct UpdateStatementExp final : Exp
     {
-DEFINE_EXPR_TYPE (Update)
 private:
     size_t m_classNameExpIndex;
     size_t m_assignmentListExpIndex;
@@ -28,9 +27,9 @@ private:
 
     RangeClasssInfo::List m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString () const override { return "Update"; }
+    FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+    Utf8String _ToECSql() const override;
+    Utf8String _ToString () const override { return "Update"; }
 
 public:
     UpdateStatementExp(std::unique_ptr<ClassRefExp>, std::unique_ptr<AssignmentListExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
@@ -45,18 +44,17 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct AssignmentExp : Exp
+struct AssignmentExp final : Exp
     {
-DEFINE_EXPR_TYPE (Assignment)
 private:
     size_t m_propNameExpIndex;
     size_t m_valueExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+    FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+    bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString() const override { return "Assignment"; }
+    Utf8String _ToECSql() const override;
+    Utf8String _ToString() const override { return "Assignment"; }
 
 public:
     AssignmentExp (std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp);

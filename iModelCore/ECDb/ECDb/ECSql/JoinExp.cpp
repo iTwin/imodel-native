@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JoinExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,12 +14,24 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//*************************** JoinExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan       08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+FromExp const* JoinExp::FindFromExpression() const
+    {
+    auto parent = GetParent();
+    while (parent != nullptr && parent->GetType() != Exp::Type::FromClause)
+        parent = parent->GetParent();
+
+    return static_cast<FromExp const*>(parent);
+    }
+
 //************************* JoinConditionExp *******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition)
-    : JoinSpecExp ()
+JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition) : JoinSpecExp(Type::JoinCondition)
     {
     AddChild (move (searchCondition));
     }
@@ -31,19 +43,6 @@ JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition)
 Utf8String JoinConditionExp::_ToECSql() const
     {
     return "ON " + GetSearchCondition ()->ToECSql();
-    }
-
-//*************************** JoinExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-FromExp const* JoinExp::FindFromExpression() const
-    {        
-    auto parent = GetParent();
-    while (parent != nullptr && parent->GetType() != Exp::Type::FromClause)
-        parent = parent->GetParent();
-
-    return static_cast<FromExp const*>(parent);
     }
 
 
@@ -61,7 +60,7 @@ Utf8String NaturalJoinExp::_ToECSql() const
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 QualifiedJoinExp::QualifiedJoinExp (std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp ) 
-    : JoinExp(joinType, move (from), move (to))
+    : JoinExp(Type::QualifiedJoin, joinType, move (from), move (to))
     {
     m_nJoinSpecIndex = AddChild (std::move (joinSpecExp));
     }

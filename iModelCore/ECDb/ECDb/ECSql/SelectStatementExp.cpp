@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryExp()
+SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryExp(Type::Subquery)
     {
     AddChild(std::move(selectExp));
     }
@@ -36,12 +36,17 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const
     return GetQuery()->GetSelection();
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SubqueryExp::_ToECSql() const { return "(" + GetQuery()->ToECSql() + ")"; }
+
 //*************************** AllOrAnyExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 AllOrAnyExp::AllOrAnyExp(std::unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, std::unique_ptr<SubqueryExp> subquery)
-    : BooleanExp(), m_type(type), m_operator(op)
+    : BooleanExp(Type::AllOrAny), m_type(type), m_operator(op)
     {
     m_operandExpIndex = AddChild(std::move(operand));
     m_subqueryExpIndex = AddChild(std::move(subquery));
@@ -72,7 +77,7 @@ Utf8String AllOrAnyExp::_ToString() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp::DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias)
-    : Exp(), m_columnAlias(columnAlias)
+    : Exp(Type::DerivedProperty), m_columnAlias(columnAlias)
     {
     AddChild(std::move(valueExp));
     }
@@ -298,7 +303,7 @@ Utf8String FromExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-GroupByExp::GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp()
+GroupByExp::GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp(Type::GroupBy)
     {
     m_groupingValueListExpIndex = AddChild(std::move(groupingValueListExp));
     }
@@ -353,7 +358,7 @@ Utf8String GroupByExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-HavingExp::HavingExp(std::unique_ptr<BooleanExp> searchConditionExp) : Exp()
+HavingExp::HavingExp(std::unique_ptr<BooleanExp> searchConditionExp) : Exp(Type::Having)
     {
     m_searchConditionExpIndex = AddChild(std::move(searchConditionExp));
     }
@@ -382,7 +387,7 @@ Utf8String HavingExp::_ToECSql() const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_ptr<ValueExp> offsetExp)
-    : Exp(), m_offsetExpIndex(UNSET_CHILDINDEX)
+    : Exp(Type::LimitOffset), m_offsetExpIndex(UNSET_CHILDINDEX)
     {
     BeAssert(limitExp != nullptr);
     m_limitExpIndex = AddChild(std::move(limitExp));
@@ -496,7 +501,7 @@ ValueExp const* LimitOffsetExp::GetOffsetExp() const
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 OrderBySpecExp::OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction)
-    : m_direction(direction)
+    : Exp(Type::OrderBySpec), m_direction(direction)
     {
     AddChild(move(expr));
     }
@@ -686,7 +691,7 @@ Utf8String SelectClauseExp::_ToECSql() const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
-    : QueryExp(), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
+    : QueryExp(Type::SingleSelect), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
     //WARNING: Do not change the order of following
     m_fromClauseIndex = AddChild(std::move(from));
@@ -801,15 +806,6 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
     return tmp;
     }
 
-//****************************** SubqueryExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SubqueryExp::_ToECSql() const
-    {
-    return "(" + GetQuery()->ToECSql() + ")";
-    }
-
 
 //****************************** SubqueryRefExp *****************************************
 
@@ -817,7 +813,7 @@ Utf8String SubqueryExp::_ToECSql() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8StringCR alias, bool isPolymorphic)
-    : RangeClassRefExp(isPolymorphic)
+    : RangeClassRefExp(Type::SubqueryRef, isPolymorphic)
     {
     SetAlias(alias);
     AddChild(std::move(subquery));
@@ -863,7 +859,7 @@ Utf8String SubqueryRefExp::_ToString() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 SubqueryTestExp::SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery)
-    : BooleanExp(), m_op(op)
+    : BooleanExp(Type::SubqueryTest), m_op(op)
     {
     AddChild(move(subquery));
     }
@@ -893,7 +889,7 @@ Utf8String SubqueryTestExp::_ToString() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
-    : ValueExp()
+    : ValueExp(Type::SubqueryValue)
     {
     SetHasParentheses(); //subquery value exp always wrapped in parentheses
     AddChild(move(subquery));
@@ -937,7 +933,7 @@ Utf8String SelectStatementExp::_ToECSql() const
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs)
-    :m_isAll(false), m_operator(CompoundOperator::None), m_rhsSelectStatementExpIndex(UNSET_CHILDINDEX)
+    : QueryExp(Type::Select), m_isAll(false), m_operator(CompoundOperator::None), m_rhsSelectStatementExpIndex(UNSET_CHILDINDEX)
     {
     BeAssert(lhs != nullptr);
     m_firstSingleSelectStatementExpIndex = AddChild(std::move(lhs));
@@ -947,7 +943,7 @@ SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
-    :m_isAll(isAll), m_operator(op)
+    :QueryExp(Type::Select), m_isAll(isAll), m_operator(op)
     {
     BeAssert(lhs != nullptr);
     BeAssert(rhs != nullptr);

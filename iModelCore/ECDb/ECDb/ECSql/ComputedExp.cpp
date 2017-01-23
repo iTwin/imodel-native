@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -39,11 +39,11 @@ Utf8String ComputedExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BinaryBooleanExp::BinaryBooleanExp (std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right) 
-    : BooleanExp (), m_op(op)
+BinaryBooleanExp::BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right)
+    : BooleanExp(Type::BinaryBoolean), m_op(op)
     {
-    m_leftOperandExpIndex = AddChild (std::move (left));
-    m_rightOperandExpIndex = AddChild (std::move (right));
+    m_leftOperandExpIndex = AddChild(std::move(left));
+    m_rightOperandExpIndex = AddChild(std::move(right));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -127,9 +127,9 @@ bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Par
     ComputedExp const* lhs = GetLeftOperand();
     ComputedExp const* rhs = GetRightOperand();
     ComputedExp const* targetExp = nullptr;
-    if (IsInHierarchy(*lhs,parameterExp))
+    if (IsInHierarchy(*lhs, parameterExp))
         targetExp = rhs;
-    else if (IsInHierarchy(*rhs,parameterExp))
+    else if (IsInHierarchy(*rhs, parameterExp))
         targetExp = lhs;
     else
         {
@@ -284,10 +284,10 @@ void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BinaryBooleanExp::_ToString() const 
+Utf8String BinaryBooleanExp::_ToString() const
     {
-    Utf8String str ("BinaryBoolean [Operator: ");
-    str.append (ExpHelper::ToSql (m_op)).append ("]");
+    Utf8String str("BinaryBoolean [Operator: ");
+    str.append(ExpHelper::ToSql(m_op)).append("]");
     return str;
     }
 
@@ -295,10 +295,10 @@ Utf8String BinaryBooleanExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BooleanFactorExp::BooleanFactorExp (unique_ptr<BooleanExp> operand, bool notOperator) 
-    : BooleanExp(), m_notOperator(notOperator)
+BooleanFactorExp::BooleanFactorExp(unique_ptr<BooleanExp> operand, bool notOperator)
+    : BooleanExp(Type::BooleanFactor), m_notOperator(notOperator)
     {
-    m_operandExpIndex = AddChild (std::move(operand));
+    m_operandExpIndex = AddChild(std::move(operand));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -315,15 +315,15 @@ void BooleanFactorExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanFactorExp::_ToString() const 
+Utf8String BooleanFactorExp::_ToString() const
     {
-    Utf8String str ("BooleanFactor [Operator: ");
+    Utf8String str("BooleanFactor [Operator: ");
     if (m_notOperator)
         str.append("NOT");
     else
         str.append("-");
 
-    str.append ("]");
+    str.append("]");
     return str;
     }
 
@@ -331,8 +331,7 @@ Utf8String BooleanFactorExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-UnaryPredicateExp::UnaryPredicateExp(unique_ptr<ValueExp> booleanValueExp)
-    : BooleanExp()
+UnaryPredicateExp::UnaryPredicateExp(unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate)
     {
     m_booleanValueExpIndex = AddChild(std::move(booleanValueExp));
     }
@@ -347,7 +346,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 
     ValueExp const* valueExp = GetValueExp();
     ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
-    if (valueExp->IsParameterExp () || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
+    if (valueExp->IsParameterExp() || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
         {
         ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
@@ -362,7 +361,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 //+---------------+---------------+---------------+---------------+---------------+--------
 void UnaryPredicateExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append (GetValueExp()->ToECSql());
+    ecsql.append(GetValueExp()->ToECSql());
     }
 
 

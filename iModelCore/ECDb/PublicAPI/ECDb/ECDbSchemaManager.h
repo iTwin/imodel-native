@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDbSchemaManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,10 +86,10 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
 
         //! Implementation of IECSchemaLocater
-        virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
+        ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
         //! Implementation of IECClassLocater
-        virtual ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override;
+        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override;
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)

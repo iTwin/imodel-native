@@ -22,25 +22,25 @@ struct PointECSqlBinder : public ECSqlBinder
         int m_ySqliteIndex;
         int m_zSqliteIndex;
 
-        virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
+        void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
 
-        virtual ECSqlStatus _BindNull() override;
-        virtual ECSqlStatus _BindBoolean(bool value) override;
-        virtual ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
-        virtual ECSqlStatus _BindZeroBlob(int blobSize) override;
-        virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
-        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
-        virtual ECSqlStatus _BindDouble(double value) override;
-        virtual ECSqlStatus _BindInt(int value) override;
-        virtual ECSqlStatus _BindInt64(int64_t value) override;
-        virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
-        virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
-        virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+        ECSqlStatus _BindNull() override;
+        ECSqlStatus _BindBoolean(bool value) override;
+        ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
+        ECSqlStatus _BindZeroBlob(int blobSize) override;
+        ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
+        ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
+        ECSqlStatus _BindDouble(double value) override;
+        ECSqlStatus _BindInt(int value) override;
+        ECSqlStatus _BindInt64(int64_t value) override;
+        ECSqlStatus _BindPoint2d(DPoint2dCR) override;
+        ECSqlStatus _BindPoint3d(DPoint3dCR) override;
+        ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
-        virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
-        virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+        IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+        IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
-        virtual IECSqlBinder& _AddArrayElement() override;
+        IECSqlBinder& _AddArrayElement() override;
 
         bool IsPoint3d() const { return m_isPoint3d; }
     public:

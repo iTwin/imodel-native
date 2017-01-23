@@ -26,7 +26,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct IsChangedInstanceSqlFunction final : ScalarFunction
 {
 private:
-    virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
+    void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
+
 public:
     IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}

@@ -583,7 +583,7 @@ BentleyStatus LiteralValueExp::Create(unique_ptr<ValueExp>& exp, ECSqlParseConte
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo typeInfo)
-    : ValueExp(true), m_value(value)
+    : ValueExp(Type::LiteralValue, true), m_value(value)
     {
     SetTypeInfo(typeInfo);
     }

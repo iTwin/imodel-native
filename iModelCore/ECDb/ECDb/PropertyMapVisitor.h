@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMapVisitor.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,9 +24,9 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         mutable size_t m_virtualColumnCount = 0;
         mutable size_t m_overflowColumnCount = 0;
 
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
+        BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
+        BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
         GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Type filter = PropertyMap::Type::All)
@@ -53,9 +53,9 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
         PropertyMap::Type m_filter;
         mutable std::set<DbTable const*> m_tables;
 
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
+        BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
+        BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
         explicit GetTablesPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All) : IPropertyMapVisitor(), m_filter(filter) {}
@@ -76,9 +76,9 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
         bool m_recurseIntoCompoundPropertyMaps;
         mutable std::vector<PropertyMap const*> m_foundPropertyMaps;
 
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
+        BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
+        BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
         explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
@@ -128,8 +128,8 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
         mutable std::vector<Result> m_resultSet;
 
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
+        BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
         BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
@@ -159,8 +159,8 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
     private:
         DbClassMapSaveContext& m_context;
 
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
+        BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
         explicit SavePropertyMapVisitor(DbClassMapSaveContext& ctx) : IPropertyMapVisitor(), m_context(ctx) {}

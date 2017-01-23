@@ -26,24 +26,24 @@ private:
 
         private:
             //IECSqlValue
-            virtual bool _IsNull() const override { return m_value.IsNull(); }
-            virtual ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
-            virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
-            virtual IECSqlStructValue const& _GetStruct() const override;
-            virtual IECSqlArrayValue const& _GetArray() const override;
+            bool _IsNull() const override { return m_value.IsNull(); }
+            ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
+            IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
+            IECSqlStructValue const& _GetStruct() const override;
+            IECSqlArrayValue const& _GetArray() const override;
 
             //IECSqlPrimitiveValue
-            virtual void const* _GetBlob(int* blobSize) const override;
-            virtual bool _GetBoolean() const override;
-            virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
-            virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
-            virtual double _GetDouble() const override;
-            virtual int _GetInt() const override;
-            virtual int64_t _GetInt64() const override;
-            virtual Utf8CP _GetText() const override;
-            virtual DPoint2d _GetPoint2d() const override;
-            virtual DPoint3d _GetPoint3d() const override;
-            virtual IGeometryPtr _GetGeometry() const override;
+            void const* _GetBlob(int* blobSize) const override;
+            bool _GetBoolean() const override;
+            uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
+            double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+            double _GetDouble() const override;
+            int _GetInt() const override;
+            int64_t _GetInt64() const override;
+            Utf8CP _GetText() const override;
+            DPoint2d _GetPoint2d() const override;
+            DPoint3d _GetPoint3d() const override;
+            IGeometryPtr _GetGeometry() const override;
 
             bool CanRead(ECN::PrimitiveType requestedType) const;
 
@@ -69,20 +69,20 @@ private:
     mutable ArrayElementValue m_arrayElement;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
-    virtual IECSqlStructValue const& _GetStruct() const override;
-    virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
+    bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
+    IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    IECSqlStructValue const& _GetStruct() const override;
+    IECSqlArrayValue const& _GetArray() const override { return *this; }
 
     //IECSqlArrayValue
-    virtual void _MoveNext(bool onInitializingIterator) const override;
-    virtual bool _IsAtEnd() const override { return m_currentArrayIndex >= _GetArrayLength(); }
-    virtual IECSqlValue const* _GetCurrent() const override { BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength()); return &m_arrayElement; }
-    virtual int _GetArrayLength() const override { return m_arrayInfo.GetCount(); }
+    void _MoveNext(bool onInitializingIterator) const override;
+    bool _IsAtEnd() const override { return m_currentArrayIndex >= _GetArrayLength(); }
+    IECSqlValue const* _GetCurrent() const override { BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength()); return &m_arrayElement; }
+    int _GetArrayLength() const override { return m_arrayInfo.GetCount(); }
 
     //ECSqlField
-    virtual ECSqlStatus _OnAfterReset() override;
-    virtual ECSqlStatus _OnAfterStep() override;
+    ECSqlStatus _OnAfterReset() override;
+    ECSqlStatus _OnAfterStep() override;
 
     void DoReset() const;
     ECN::IECInstanceCP GetArrayValueECInstance() const { return m_arrayValueECInstance.get(); }

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,13 +27,13 @@ struct NavigationPropertyECSqlField : public ECSqlField, public IECSqlStructValu
 
         //!For a Navigation Property the main information is the Id. So we consider a nav prop value NULL if
         //!the id is NULL (regardless of what the value of the RelECClassId is)
-        virtual bool _IsNull() const override { return m_idField->IsNull(); }
-        virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
-        virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
-        virtual IECSqlArrayValue const& _GetArray() const override;
+        bool _IsNull() const override { return m_idField->IsNull(); }
+        IECSqlPrimitiveValue const& _GetPrimitive() const override;
+        IECSqlStructValue const& _GetStruct() const override { return *this; }
+        IECSqlArrayValue const& _GetArray() const override;
 
-        virtual int _GetMemberCount() const override { return 2; }
-        virtual IECSqlValue const& _GetValue(int columnIndex) const override;
+        int _GetMemberCount() const override { return 2; }
+        IECSqlValue const& _GetValue(int columnIndex) const override;
 
         void SetMembers(std::unique_ptr<ECSqlField> idField, std::unique_ptr<ECSqlField> relClassIdField);
 
