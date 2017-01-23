@@ -1657,6 +1657,7 @@ struct GraphicBranch
 
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
+    void Clear() {m_entries.clear();}
 };
 
 //=======================================================================================
