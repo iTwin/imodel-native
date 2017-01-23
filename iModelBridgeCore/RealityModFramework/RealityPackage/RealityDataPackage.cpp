@@ -437,7 +437,7 @@ ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, GeoPoint2dCP p
 //----------------------------------------------------------------------------------------
 bool ImageryData::HasValidCorners(GeoPoint2dCP pCorners)
     {
-    if(NULL == pCorners || pCorners[0].longitude != pCorners[4].longitude || pCorners[0].latitude != pCorners[4].latitude)
+    if(NULL == pCorners)
         return false;
 
     for(size_t i=0; i < 4; ++i)
