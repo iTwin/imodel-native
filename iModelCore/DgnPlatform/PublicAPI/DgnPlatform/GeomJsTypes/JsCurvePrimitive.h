@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsCurvePrimitive.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -51,7 +51,7 @@ public:
 
     virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
     virtual JsCurvePrimitiveP AsCurvePrimitive () override {return this;}
-    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_curvePrimitive);}
+    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curvePrimitive);}
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
