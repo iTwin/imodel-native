@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpBody.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -108,15 +108,15 @@ public:
     void Open() override {}
     void Close() override {}
 
-    BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position);
-    BentleyStatus GetPosition(uint64_t& position) {position = m_position; return SUCCESS;}
+    BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+    BentleyStatus GetPosition(uint64_t& position) override {position = m_position; return SUCCESS;}
 
-    BentleyStatus Reset() {m_string->clear(); m_position = 0; return SUCCESS;}
-    BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize);
-    BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize);
-    uint64_t GetLength() {return m_string->length();}
+    BentleyStatus Reset() override {m_string->clear(); m_position = 0; return SUCCESS;}
+    BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+    BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+    uint64_t GetLength() override {return m_string->length();}
 
-    Utf8String AsString() const {return *m_string;}
+    Utf8String AsString() const override {return *m_string;}
 };
 
 /*--------------------------------------------------------------------------------------+
@@ -225,14 +225,14 @@ public:
     BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
     BentleyStatus GetPosition(uint64_t& position) override {position = m_position; return SUCCESS;}
     BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
-    BEHTTP_EXPORT uint64_t GetLength();
+    BEHTTP_EXPORT uint64_t GetLength() override;
 
     // Read only - will only reset position
     BentleyStatus Reset() override{return SetPosition(0);}
 
     // Read only - disabled
-    size_t Write(const char* buffer, size_t bufferSize) {BeAssert(false && "Write is not supported"); return 0;}
-    BEHTTP_EXPORT Utf8String AsString() const;
+    size_t Write(const char* buffer, size_t bufferSize) override {BeAssert(false && "Write is not supported"); return 0;}
+    BEHTTP_EXPORT Utf8String AsString() const override;
 };
 
 typedef RefCountedPtr<struct HttpRangeBody> HttpRangeBodyPtr;
