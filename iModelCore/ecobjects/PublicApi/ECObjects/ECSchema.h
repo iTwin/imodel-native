@@ -2204,9 +2204,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
 
     //! Removes all constraint classes.
-    void RemoveConstraintClasses() {m_constraintClasses.clear();}
-
-    //! Removes all constraint classes.
     ECOBJECTS_EXPORT void RemoveConstraintClasses();
 
     //! Returns the classes applied to the constraint.

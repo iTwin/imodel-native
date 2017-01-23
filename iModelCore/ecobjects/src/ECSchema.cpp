@@ -1966,8 +1966,8 @@ ECSchemaReadContextCR schemaContext
             continue;
             }
 
-        SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionMajor(), key.GetVersionWrite(), key.GetVersionMinor());
-        SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionMajor(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
+        SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionRead(), key.GetVersionWrite(), key.GetVersionMinor());
+        SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
         //If key matches, OR the legacy compatible match evaluates true
         if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
             (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestWriteCompatible &&
