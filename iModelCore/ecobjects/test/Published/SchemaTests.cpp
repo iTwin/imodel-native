@@ -2005,6 +2005,7 @@ TEST_F(SchemaTest, SetGetMinMaxInt)
     PrimitiveECPropertyP primp;
     ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
     ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_Integer), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
     ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
     ASSERT_EQ(primp->IsMaximumValueDefined(), false);
     ASSERT_EQ(primp->IsMinimumValueDefined(), false);
@@ -2029,7 +2030,7 @@ TEST_F(SchemaTest, SetGetMinMaxInt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Robert.Schili                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, SetGetMaxLength)
+TEST_F(SchemaTest, GetSetPropertyMinMaxLength)
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -2048,6 +2049,7 @@ TEST_F(SchemaTest, SetGetMaxLength)
     PrimitiveECPropertyP primp;
     ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
     ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_String), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
     ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
 
     ASSERT_EQ(primp->SetMaximumLength(42), ECObjectsStatus::Success);
@@ -2057,12 +2059,20 @@ TEST_F(SchemaTest, SetGetMaxLength)
     primp->ResetMaximumLength();
     ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
     ASSERT_EQ(primp->GetMaximumLength(), 0);
+
+    ASSERT_EQ(primp->SetMinimumLength(10), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), true);
+    ASSERT_EQ(primp->GetMinimumLength(), 10);
+
+    primp->ResetMinimumLength();
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
+    ASSERT_EQ(primp->GetMinimumLength(), 0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Robert.Schili                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
+TEST_F(SchemaTest, PropertyMinMaxValueDeserialization)
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -2092,6 +2102,36 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, PropertyMinMaxLengthDeserialization)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='StringProp' typeName='string' MinimumLength='3' MaximumLength='42'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("StringProp");
+    ASSERT_NE(pp, nullptr);
+
+    EXPECT_TRUE(pp->IsMinimumLengthDefined());
+    EXPECT_TRUE(pp->IsMaximumLengthDefined());
+
+    EXPECT_EQ(3, pp->GetMinimumLength());
+    EXPECT_EQ(42, pp->GetMaximumLength());
     }
 
 // This test was to illustrate a problem with the ECDiff tool.  However, we decided to not to make the fix on this branch.  The tool has been rewritten on bim0200.

@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,6 +265,27 @@ ECObjectsStatus ECProperty::GetMaximumValue(ECValueR value) const
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECProperty::SetMinimumLength(uint32_t min)
+    {
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_String &&
+        pt != PrimitiveType::PRIMITIVETYPE_Binary)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    m_minimumLength = min;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -475,6 +496,12 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
         }
 
+    uint32_t minLength;
+    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        SetMinimumLength(minLength);
+        }
+
     uint32_t maxLength;
     if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
@@ -553,6 +580,11 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (IsMaximumLengthDefined())
         {
         xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
+        }
+
+    if (IsMinimumLengthDefined())
+        {
+        xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
         }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())

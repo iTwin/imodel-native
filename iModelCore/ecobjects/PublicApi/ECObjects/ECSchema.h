@@ -643,6 +643,7 @@ private:
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
+    uint32_t                m_minimumLength;
     uint32_t                m_maximumLength;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
@@ -800,14 +801,27 @@ public:
     //! Gets the maximum value for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumValue(ECValueR value) const;
 
-    //! Sets the maximum length (bytes, characters) for this property
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumLength(uint32_t max);
+    //! Sets the maximum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    ECOBJECTS_EXPORT ECObjectsStatus SetMaximumLength(uint32_t max);
     //! Gets whether the maximum length has been defined explicitly
-    bool               IsMaximumLengthDefined() const { return m_maximumLength > 0; }
-    //! Removed any maximum length that might have been applied to this property
-    void               ResetMaximumLength() { m_maximumLength = 0; }
-    //! Gets the maximum length(string, byte) for this ECProperty
-    uint32_t           GetMaximumLength() const { return m_maximumLength; }
+    bool IsMaximumLengthDefined() const {return m_maximumLength > 0;}
+    //! Removed any maximum length that might have been applied to this ECProperty
+    void ResetMaximumLength() {m_maximumLength = 0;}
+    //! Gets the maximum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    uint32_t GetMaximumLength() const {return m_maximumLength;}
+
+    //! Sets the minimum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    ECOBJECTS_EXPORT ECObjectsStatus SetMinimumLength(uint32_t min);
+    //! Gets whether the minimum length has been defined explicitly
+    bool               IsMinimumLengthDefined() const {return m_minimumLength > 0;}
+    //! Removed any minimum length that might have been applied to this ECProperty
+    void               ResetMinimumLength() {m_minimumLength = 0;}
+    //! Gets the minimum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    uint32_t           GetMinimumLength() const {return m_minimumLength;}
 
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
