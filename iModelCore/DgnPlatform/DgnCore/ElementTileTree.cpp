@@ -295,6 +295,34 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
     }
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/17
+//=======================================================================================
+struct TileInstances : IGraphicBuilder::Instances
+{
+    bvector<Transform>  m_meshTransforms;
+
+    TileInstances() : IGraphicBuilder::Instances(0, nullptr) { }
+
+    void Clear()
+        {
+        m_meshTransforms.clear();
+        m_count = 0;
+        m_transforms = nullptr;
+        }
+
+    void Init(MeshInstanceList const& meshInstances)
+        {
+        Clear();
+        m_meshTransforms.resize(meshInstances.size());
+        for (auto const& meshInstance : meshInstances)
+            m_meshTransforms.push_back(meshInstance.GetTransform());
+
+        m_count = static_cast<uint32_t>(m_meshTransforms.size());
+        m_transforms = &m_meshTransforms[0];
+        }
+};
+
+//=======================================================================================
 // ###TODO? We don't want to have to copy all the indices into a new buffer...store
 // them that way in Mesh struct?
 // OTOH we do want to support single- or double-sided triangles...not clear if QVis API currently
@@ -501,13 +529,15 @@ enum class InstancingOptions
     AsSubGraphics,
     // Transform instanced geometry in place, then add as a subgraphic with identity transform
     // Downside: Separate QvElem for each subgraphic; slower tile generation due to applying the transform. Probably best bet for now
-    AsPreTransformedSubGraphics
+    AsPreTransformedSubGraphics,
+    // Use the AddInstanced* functions
+    AsInstances,
 };
 
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
-static bool s_cacheInstances = false;
-static InstancingOptions s_instancingOptions = InstancingOptions::AsSubGraphics;
+static bool s_cacheInstances = true;
+static InstancingOptions s_instancingOptions = InstancingOptions::AsInstances;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -2006,9 +2036,46 @@ BentleyStatus Loader::_LoadTile()
 
     TilePolylineArgs polylineArgs;
     TileMeshArgs meshArgs;
+    TileInstances tileInstances;
     Render::GraphicBuilderPtr graphic;
 
-    if (InstancingOptions::AsSubGraphics == s_instancingOptions)
+    if (InstancingOptions::AsInstances == s_instancingOptions)
+        {
+        for (auto const& part : geometry.Parts())
+            {
+            if (part->Instances().empty() || part->Meshes().empty())
+                continue;
+
+            for (auto const& mesh : part->Meshes())
+                {
+                bool haveMesh = !mesh->Triangles().empty();
+                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+                if (!haveMesh && !havePolyline)
+                    continue;
+
+                if (graphic.IsNull())
+                    graphic = system._CreateGraphic(Graphic::CreateParams());
+
+                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
+
+                tileInstances.Init(part->Instances());
+                if (haveMesh)
+                    {
+                    if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
+                        subGraphic->AddInstancedTriMesh(meshArgs, tileInstances);
+                    }
+                else if (polylineArgs.Init(*mesh))
+                    {
+                    subGraphic->AddInstancedPolylines(polylineArgs, tileInstances);
+                    }
+
+                subGraphic->Close();
+                graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                }
+            }
+        }
+    else if (InstancingOptions::AsSubGraphics == s_instancingOptions)
         {
         for (auto const& part : geometry.Parts())
             {

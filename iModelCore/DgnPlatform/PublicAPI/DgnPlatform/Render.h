@@ -1242,6 +1242,18 @@ struct IGraphicBuilder
         bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
     };
 
+    //=======================================================================================
+    //! Information needed to draw multiple instances of a graphic primitive.
+    // @bsistruct                                                   Paul.Connelly   01/17
+    //=======================================================================================
+    struct Instances
+    {
+        uint32_t            m_count;
+        TransformCP         m_transforms;
+
+        Instances(uint32_t numInstances, TransformCP transforms) : m_count(numInstances), m_transforms(transforms) { }
+    };
+
     struct TileCorners
     {
         DPoint3d m_pts[4];
@@ -1273,7 +1285,9 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
+    virtual void _AddInstancedTriMesh(TriMeshArgs const&, Instances const&) { BeAssert(false); }
     virtual void _AddIndexedPolylines(IndexedPolylineArgs const& args) = 0;
+    virtual void _AddInstancedPolylines(IndexedPolylineArgs const&, Instances const&) { BeAssert(false); }
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
@@ -1293,6 +1307,7 @@ struct GraphicBuilder
     typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
     typedef IGraphicBuilder::IndexedPolylineArgs IndexedPolylineArgs;
     typedef IGraphicBuilder::TileCorners TileCorners;
+    typedef IGraphicBuilder::Instances Instances;
 private:
     friend struct GraphicBuilderPtr;
 
@@ -1410,7 +1425,11 @@ public:
 
     void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
 
+    void AddInstancedTriMesh(TriMeshArgs const& args, Instances const& instances) {m_builder->_AddInstancedTriMesh(args, instances);}
+
     void AddIndexedPolylines(IndexedPolylineArgs const& args) {m_builder->_AddIndexedPolylines(args);}
+
+    void AddInstancedPolylines(IndexedPolylineArgs const& args, Instances const& instances) {m_builder->_AddInstancedPolylines(args, instances);}
 
     //! Draw a 3D point cloud.
     void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
