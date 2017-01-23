@@ -176,6 +176,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
     
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
+
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
 
     RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);

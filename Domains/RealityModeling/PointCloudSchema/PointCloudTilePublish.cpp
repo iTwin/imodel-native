@@ -83,7 +83,7 @@ void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
     static const double s_minToleranceRatio = 100.0;
     double              tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
     bool                isLeaf = tileTolerance < leafTolerance;
-    static size_t       s_depthLimit = 4;
+    static size_t       s_depthLimit = 10;
 
     tile.SetTolerance (tileTolerance);
     if (depth < s_depthLimit &&!isLeaf && tile.QueryPointCount(s_maxTilePointCount) >= s_maxTilePointCount)
@@ -103,10 +103,6 @@ void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
                 m_totalTiles++;
                 tile.GetChildren().push_back(childTile);
                 ProcessTile(*childTile, leafTolerance, depth+1);
-                }
-            else
-                {
-                printf ("Skipped, Depth: %zd, Sibling: %zd\n", depth, childIndex);
                 }
             }
         }
@@ -155,7 +151,8 @@ size_t  PublishTileNode::QueryPointCount(size_t maxPoints) const
 PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter) const 
     {
     PublishableTileGeometry                 publishableGeometry;
-    PointCloudQueryBuffersPtr               queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz);
+    bool                                    useRGB = m_publishContext.m_model.GetPointCloudSceneP()->_HasRGBChannel();
+    PointCloudQueryBuffersPtr               queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
     size_t                                  nPoints = m_publishContext.MakeQuery (queryBuffers, m_dgnRange, QUERY_DENSITY_LIMIT, (float) s_maxTilePointCount);
     DPoint3dCP                              pPoints;
 
@@ -165,12 +162,14 @@ PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgn
         } 
     else
         {
-        TileDisplayParamsPtr    displayParams = TileDisplayParams::Create();
-        static double           s_clusterFraction = 1.0;
-        double                  clusterTolerance = GetTolerance() * s_clusterFraction;
-        Transform               sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_publishContext.m_model.GetSceneToWorld());
+        TileDisplayParamsPtr                displayParams = TileDisplayParams::Create();
+        static double                       s_clusterFraction = 1.0;
+        double                              clusterTolerance = GetTolerance() * s_clusterFraction;
+        Transform                           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_publishContext.m_model.GetSceneToWorld());
+        bvector<uint16_t>                   packedColors(nPoints);
+        TileMeshPointCloud::Rgb const*      colorCP = nullptr == queryBuffers->GetRgbChannel() ? nullptr : reinterpret_cast<TileMeshPointCloud::Rgb const*> (queryBuffers->GetRgbChannel()->GetChannelBuffer());
 
-        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(displayParams, pPoints, nPoints, sceneToTile, clusterTolerance)); 
+        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(displayParams, pPoints, colorCP, nullptr, nPoints, sceneToTile, clusterTolerance)); 
         }
 
     return publishableGeometry;
