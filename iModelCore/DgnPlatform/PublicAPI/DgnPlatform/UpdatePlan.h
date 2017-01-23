@@ -159,7 +159,7 @@ struct UpdatePlan
 {
     struct Query
     {
-        BeDuration m_maxTime = std::chrono::seconds(2);    // maximum time query should run (milliseconds)
+        BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
@@ -175,7 +175,7 @@ struct UpdatePlan
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetTimeout(std::chrono::milliseconds maxTime) {m_maxTime=maxTime;}
+        void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
         void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
@@ -227,7 +227,7 @@ public:
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetCreateSceneTimeoutMillis(std::chrono::milliseconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
+    void SetCreateSceneTimeoutMillis(BeDuration::MilliSeconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
     void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
     BeTimePoint GetQuitTime() const {return m_quitTime;}

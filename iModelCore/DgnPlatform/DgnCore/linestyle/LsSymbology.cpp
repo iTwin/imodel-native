@@ -554,10 +554,9 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     SetScale(scaleWithUnits);
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    uint32_t weight = context.GetViewFlags().m_weights ? params.GetWeight() : 0;
-    m_texture = nameRec->GetTexture(context, *this, false, weight);
+    m_texture = nameRec->GetTexture(context, *this, false, params);
 
-    if (!m_texture.IsValid() || LsOkayForTextureGeneration::NoChangeRequired != topComponent->_IsOkayForTextureGeneration())
+    if (!m_texture.IsValid())
         SetUseStroker(true);
 
     // Get the width of this linestyle to use for "discernable" checks...
@@ -704,9 +703,6 @@ LineStyleInfo::LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params)
         m_styleParams = *params;
     else
         m_styleParams.Init();
-
-    m_startTangent.Init(0.0, 0.0, 0.0);
-    m_endTangent.Init(0.0, 0.0, 0.0);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -725,8 +721,6 @@ void LineStyleInfo::CopyFrom(LineStyleInfoCR other)
     m_styleId = other.m_styleId;
     m_styleParams = other.m_styleParams;
     m_lStyleSymb = other.m_lStyleSymb;
-    m_startTangent = other.m_startTangent;
-    m_endTangent = other.m_endTangent;
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -746,12 +740,6 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
     if (!(rhs.m_lStyleSymb == m_lStyleSymb))
         return false;
 
-    if (!rhs.m_startTangent.IsEqual(m_startTangent))
-        return false;
-
-    if (!rhs.m_endTangent.IsEqual(m_endTangent))
-        return false;
-
     return true;
     }
 
@@ -760,8 +748,5 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LineStyleInfo::Cook(ViewContextR context, GeometryParamsR params)
     {
-    bool useStart = (0.0 != m_startTangent.Magnitude());
-    bool useEnd = (0.0 != m_endTangent.Magnitude());
-
-    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context, params);
+    m_lStyleSymb.Init(m_styleId, m_styleParams, nullptr, nullptr, context, params);
     }

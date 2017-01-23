@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -176,7 +176,7 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
 #else
-    m_symbol->Draw(lineStyleContext, transform);
+    m_symbol->Draw(lineStyleContext, transform, GetUseElementColor(), GetUseElementWeight());
 #endif
 
     return  SUCCESS;
@@ -185,23 +185,56 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform)
+void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, bool ignoreColor, bool ignoreWeight)
     {
     DgnGeometryPartCPtr geomPart = GetGeometryPart();
+
     if (!geomPart.IsValid())
         return;
 
-    BeAssert(nullptr != context.GetViewContext());
-    GeometryCollection  collection(geomPart->GetGeometryStream(), *GetDgnDbP());
+    Render::GraphicBuilderR graphic = context.GetGraphicR();
+    Render::GeometryParamsCR baseParams = context.GetGeometryParams();
+    bool cookParams = baseParams.GetCategoryId().IsValid(); // NOTE: LineStyleRangeCollector doesn't care about base symbology...
+    bool creatingTexture = context.GetCreatingTexture();
+
+    GeometryCollection collection(geomPart->GetGeometryStream(), *GetDgnDbP(), &baseParams, &transform);
+
     for (auto iter : collection)
         {
-        GeometricPrimitivePtr source = iter.GetGeometryPtr();
-        if (!source.IsValid())
+        GeometricPrimitivePtr geometry = iter.GetGeometryPtr();
+
+        if (!geometry.IsValid())
             continue;
 
-        GeometricPrimitivePtr gp = source->Clone();
-        gp->TransformInPlace(transform);
-        gp->AddToGraphic(context.GetGraphicR());
+        if (cookParams) // NEEDSWORK: Is there a reason to keep IsColorByLevel/GetLineColor/GetFillColor?
+            {
+            // NOTE: Symbol geometry can have line codes and other symbology changes.
+            Render::GeometryParams symbParams(iter.GetGeometryParams());
+
+            if (ignoreColor)
+                {
+                symbParams.SetLineColor(baseParams.GetLineColor()); // Should transparency also come from baseParams???
+                symbParams.SetFillColor(baseParams.GetFillColor()); // Does color also mean fill color?
+                }
+            else if (creatingTexture)
+                {
+                context.SetHasTextureColors();
+                }
+            
+            if (ignoreWeight || creatingTexture) // TextureParams cache doesn't support weight changes on symbol components...
+                symbParams.SetWeight(baseParams.GetWeight());
+
+            context.GetViewContext().CookGeometryParams(symbParams, graphic);
+            }
+
+        geometry->TransformInPlace(iter.GetSourceToWorld());
+        geometry->AddToGraphic(graphic);
+        }
+
+    if (cookParams)
+        {
+        Render::GeometryParams params(baseParams);
+        context.GetViewContext().CookGeometryParams(params, graphic); // Restore base symbology...
         }
     }
 

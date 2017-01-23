@@ -835,35 +835,31 @@ void QuadTree::Root::DrawInView(RenderListContext& context)
 
     auto now = BeTimePoint::Now();
     DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime(), m_clip.get());
-    Draw(args);
-    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+    for (;;)
+        {
+        Draw(args);
+        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+
+        // Do we still have missing tiles?
+        if (args.m_missing.empty())
+            break; // no, just draw what we've got
+
+        // yes, request them 
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
+        args.RequestMissingTiles(*this, loads);
+
+        if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait them? This is really just for thumbnails
+            {
+            // no, schedule a progressive pass for when they arrive
+            context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+            break;
+            }
+
+        BeDuration::FromMilliSeconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+        args.Clear(); // clear graphics/missing from previous attempt
+        }
 
     args.DrawGraphics(context);
-
-    // Do we still have missing tiles?
-    if (args.m_missing.empty())
-        return;
-
-    // yes, request them and schedule a progressive task to draw them as they arrive.
-    TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-    args.RequestMissingTiles(*this, loads);
-
-    auto viewport = context.GetViewport();
-    viewport->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
-
-    auto quitTime = context.GetUpdatePlan().GetQuitTime();
-    if (!quitTime.IsValid())
-        return;
-
-    // this is really just for thumbnails where we want to wait until the tiles are ready
-    while (BeTimePoint::Now() < quitTime)
-        {
-        ProgressiveTask::WantShow showFrame;
-        if (ProgressiveTask::Completion::Finished == viewport->ProcessProgressiveTaskList(showFrame, context))
-            return; // we're done
-
-        BeThreadUtilities::BeSleep(std::chrono::milliseconds(20));
-        } 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -901,7 +897,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderList
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 

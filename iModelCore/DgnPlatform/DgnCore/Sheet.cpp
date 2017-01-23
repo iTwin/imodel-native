@@ -516,7 +516,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         }
 
     m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
-    SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+    SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
     m_viewport->m_biasDistance = m_biasDistance; // for flashing hits

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LineStyleApi.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -130,13 +130,14 @@ DPoint3dCR      pt
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeLineString (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP pts, int nPts, bool isClosed) const
     {
-    ViewContextP viewContext = lsContext.GetViewContext();
-    double      totalLength;
-    int         disconnect=0;
-    LineStyleSymb lsSymb = lsSymbIn;
+//    ViewContextR    viewContext = lsContext.GetViewConte``xt();
+    double          totalLength;
+    int             disconnect=0;
+    LineStyleSymb   lsSymb = lsSymbIn;
 
     // totalLength of 0.0 can be a disconnect.
-    if (!IsWidthDiscernible (viewContext, &lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
+//    if (!IsWidthDiscernible (viewContext, &lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
+    if (0.0 == (totalLength = getLinearLength (pts, nPts, disconnect))) // NEEDWORK: Can remove disconnect checks...
         {
         if (disconnect > 1) // if we have a disconnect, recursively draw the part before and after
             {
@@ -155,7 +156,8 @@ StatusInt       LsComponent::_StrokeLineString (LineStyleContextR lsContext, Lin
     lsSymb.SetTotalLength (totalLength);
 
     double iterationLength = _GetLength() * lsSymb.GetScale();
-    if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
+//    if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
+    if (iterationLength == 0 || totalLength/iterationLength < 1000)
         return _DoStroke (lsContext, pts, nPts, &lsSymb);
 
     //  We should never encounter this if drawing line styles with textures.  
@@ -235,11 +237,11 @@ static inline bool biggerThanPixel (double val, double pixelSize)
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
-                                        double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
+                                        double r0, double r1, double const* inStart, double const* inSweep) const
     {
     bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
 
-    bool isWidthDiscernible = IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
+    bool isWidthDiscernible = true;//IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
 
     // if the linestyle is too small to recognize in this view, just draw the arc with no style.
     if (isWidthDiscernible)
@@ -267,12 +269,12 @@ BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context,
             return  ERROR;
 
         //  NEEDS_WORK_CONTINUOUS_RENDER is not appropriate for generating a texture.
-        double pixelWidth = (NULL == context.GetViewContext()->GetViewport()) ? 1.0 : context.GetViewContext()->GetPixelSizeAtPoint (origin);
+//        double pixelWidth = (NULL == context.GetViewContext()->GetViewport()) ? 1.0 : context.GetViewContext()->GetPixelSizeAtPoint (origin);
         double startWidth = lsSymb->GetOriginWidth();
         double endWidth   = lsSymb->GetEndWidth();
 
-        if (biggerThanPixel (r0-r1, pixelWidth) || biggerThanPixel(startWidth-endWidth, pixelWidth) || biggerThanPixel (startWidth-(r0*2),pixelWidth))
-            return  ERROR;
+//        if (biggerThanPixel (r0-r1, pixelWidth) || biggerThanPixel(startWidth-endWidth, pixelWidth) || biggerThanPixel (startWidth-(r0*2),pixelWidth))
+//            return  ERROR;
 
         filled = true;
         r0 = r1 = startWidth;
@@ -357,13 +359,13 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP origin, RotMatrixCP rMatrix,
-                                        double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
+                                        double r0, double r1, double const* inStart, double const* inSweep) const
     {
-    if (SUCCESS == StrokeContinuousArc (lsContext, &lsSymbIn, origin, rMatrix, r0, r1, inStart, inSweep, range))
+    if (SUCCESS == StrokeContinuousArc (lsContext, &lsSymbIn, origin, rMatrix, r0, r1, inStart, inSweep))
         return SUCCESS;
 
     LineStyleSymb lsSymb = lsSymbIn;
-    ViewContextP viewContext = lsContext.GetViewContext();
+    ViewContextR viewContext = lsContext.GetViewContext();
     double      start = inStart ? *inStart : 0.0;
     double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
     DPoint3d    vec[2];
@@ -378,12 +380,13 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
     // When we don't have a viewport...just use 100.
     double   numVerts = 100;
 
-    if (NULL != viewContext->GetViewport ())
+    // NEEDSWORK: Should pass in FacetOptions...
+    if (NULL != viewContext.GetViewport ())
         {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         viewContext->LocalToView (vec, vec, 2);
 #else
-        viewContext->WorldToView (vec, vec, 2);
+        viewContext.WorldToView (vec, vec, 2);
 #endif
 
         double  dist = vec[0].Distance (vec[1]);
@@ -451,12 +454,14 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCP curve, double const* optTolerance) const
+StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCP curve) const
     {
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
-    ViewContextP viewContext = lsContext.GetViewContext();
+    ViewContextR viewContext = lsContext.GetViewContext();
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
     if (!IsWidthDiscernible (viewContext, &lsSymbIn, firstPt))
         {
@@ -465,12 +470,15 @@ StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, L
 
         return SUCCESS;
         }
+#endif
 
     LineStyleSymb lsSymb = lsSymbIn;
     bvector<DPoint3d> points;
     //  NEEDS_WORK_CONTINUOUS_RENDER should be using GetPixelSizeAtPoint when generating a texture
-    double      tolerance = (optTolerance ? *optTolerance : viewContext->GetPixelSizeAtPoint (&firstPt));
+//    double      tolerance = (optTolerance ? *optTolerance : viewContext.GetPixelSizeAtPoint (&firstPt)); // <- NEEDSWORK: Should at least get pixel size from graphic...
+    double      tolerance = viewContext.GetPixelSizeAtPoint(&firstPt); // <- NEEDSWORK: Should at least get pixel size from graphic...
 
+    // NEEDSWORK: Should pass in FacetOptions instead of optTolerance...
     curve->AddStrokes (points, tolerance);
     int nPoints = (int)points.size ();
     if (nPoints == 0)

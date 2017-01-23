@@ -87,16 +87,30 @@ struct LineStyleContext
 {
 private:
     Render::GraphicBuilderPtr   m_graphic;
-    Render::GraphicParamsR  m_graphParams;
-    ViewContextP        m_viewContext;
+    Render::GeometryParamsCR    m_params;
+    ViewContextR                m_context;
+    IFacetOptionsPtr            m_facetOptions;
+    bool                        m_isTextureCreate = false;
+    bool                        m_hasTextureColors = false;
 public:
-    LineStyleContext(Render::GraphicBuilderR graphic, Render::GraphicParamsR graphicParams, ViewContextP context) : m_graphic(&graphic), m_graphParams(graphicParams), m_viewContext(context) { }
-    Render::GraphicBuilderR GetGraphicR() { return *m_graphic; }
-    Render::GraphicParamsR GetGraphicParamsR() { return m_graphParams; }
-    //  GraphicParamsR GetGraphicParamsR(){return m_elemMatSymb};
-    ViewContextP GetViewContext() { return m_viewContext; }
+    LineStyleContext(Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, ViewContextR context, IFacetOptionsP facetOptions = nullptr) : m_graphic(&graphic), m_params(params), m_context(context)
+        {
+        m_facetOptions = facetOptions;
+
+        if (!m_facetOptions.IsValid())
+            m_facetOptions = IFacetOptions::Create();
+        }
+
+    void SetCreatingTexture() {m_isTextureCreate = true;}
+    bool GetCreatingTexture() const {return m_isTextureCreate;}
+    void SetHasTextureColors() {m_hasTextureColors = true;}
+    bool GetHasTextureColors() const {return m_hasTextureColors;}
+    Render::GraphicBuilderR GetGraphicR() {return *m_graphic;}
+    Render::GeometryParamsCR GetGeometryParams() {return m_params;}
+    ViewContextR GetViewContext() {return m_context;}
 };
 
+#if defined (NOT_NOW)
 //=======================================================================================
 //! Used to decide if the entire line style should be drawn with symbology from the host
 //! or symbology from one of the symbols.
@@ -120,6 +134,7 @@ public:
     bool IsColorByLevel() { return m_isColorByLevel; }
     bool IsWeightBySymbol(uint32_t& lineWeight) { lineWeight = m_weight; return m_weightBySymbol; }
 };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    12/2015
@@ -315,7 +330,7 @@ private:
     Utf8String              m_descr;
 
     BentleyStatus       StrokeContinuousArc (LineStyleContextR, Render::LineStyleSymbCP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
-                                             double const* start, double const* sweep, DPoint3dCP range) const;
+                                             double const* start, double const* sweep) const;
 protected:
     bool                m_isDirty;
 
@@ -361,9 +376,8 @@ public:
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const override;
     virtual StatusInt   _StrokeLineString2d     (LineStyleContextR, Render::LineStyleSymbCR, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
-                                                    double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrix const*, double r0, double r1, double const* start, double const* sweep) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurve const*) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
@@ -371,7 +385,7 @@ public:
     virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
     virtual BentleyStatus _GetTextureWidth (double& width) const                                      { return BSIERROR; }
-    virtual void _QuerySymbology (SymbologyQueryResults& results) const { return; }
+//    virtual void _QuerySymbology (SymbologyQueryResults& results) const { return; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -504,7 +518,7 @@ public:
 
     void                _PostProcessLoad    () override;
     void                _ClearPostProcess   () override;
-    void                Draw                (LineStyleContextR, TransformCR);
+    void                Draw                (LineStyleContextR, TransformCR, bool ignoreColor, bool ignoreWeight);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     StatusInt           _GetRange           (DRange3dR range) const override;
 #endif
@@ -728,7 +742,7 @@ public:
     virtual void _StartTextureGeneration() const override;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
-    virtual void _QuerySymbology (SymbologyQueryResults& results) const override;
+//    virtual void _QuerySymbology (SymbologyQueryResults& results) const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1133,7 +1147,7 @@ public:
     virtual double                  _GetMaxWidth             ()  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
-    virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
+//    virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
@@ -1292,9 +1306,9 @@ private:
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
-    int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
-    StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
+    int GetUnits() const {return m_attributes & LSATTR_UNITMASK;}
+    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
+    StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
     LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
 public:
@@ -1327,7 +1341,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, uint32_t weight);
+    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, Render::GeometryParamsCR params);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
