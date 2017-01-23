@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/GeoCoordServices.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -123,7 +123,7 @@ virtual DgnGCS* GetGCSFromProject (DgnDbR project) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS)
+virtual bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) override
     {
     if ( (NULL == sourceGCS) || (NULL == targetGCS) )
         return false;
@@ -150,7 +150,7 @@ virtual  BentleyStatus UorsFromLatLong
 DPoint3dR               outUors,
 GeoPointCR              inLatLong,
 DgnGCS&                 gcs
-)
+) override
     {
     return gcs.UorsFromLatLong (outUors, inLatLong) == ReprojectStatus::REPROJECT_Success? BSISUCCESS: BSIERROR;
     }

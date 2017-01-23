@@ -612,7 +612,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="TilePublisher" SaveProduct="true">
+    <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>

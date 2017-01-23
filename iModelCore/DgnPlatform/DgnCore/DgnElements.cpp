@@ -117,7 +117,7 @@ private:
 
     void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
 
-    virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
+    virtual ElemIdLeafNode const* _GetFirstNode() const override {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
     virtual void _Add(DgnElementCR entry, uint64_t counter) override;
     virtual ElemPurge _Purge(uint64_t) override;

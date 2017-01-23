@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/AnnotationTable.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -933,7 +933,7 @@ public:
     virtual double                  _GetFullyExpandedWidth () const override;
     virtual double                  _GetFullyCompressedHeight () const override;
     virtual double                  _GetFullyExpandedHeight () const override;
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const;
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const override;
 
     virtual void                    _SetAlignment (TableCellAlignment) override;
     virtual void                    _SetOrientation (TableCellOrientation) override;
@@ -994,7 +994,7 @@ protected:
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
-    virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>&);
+    virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>&) override;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -1258,8 +1258,8 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Column; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&);
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&);
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
@@ -1444,10 +1444,10 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Header; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&);
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int propIndex, BeSQLite::EC::IECSqlValue const&) override;
     virtual bool                        _IsUniqueAspect () const override { return true; }
-    virtual void                        _FlushChangesToProperties();
+    virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _IsRequiredOnElement () const override { return true; }
     virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>& keys) override;
 
