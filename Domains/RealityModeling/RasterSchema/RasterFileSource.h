@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@ protected:
 
     RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system);
     ~RasterFileSource();
+    Utf8CP _GetName() const override {return "RasterFile";}
 
 public:
     static RasterFileSourcePtr Create(Utf8StringCR resolvedName, RasterFileModel& model, Dgn::Render::SystemP system);

@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,6 +44,7 @@ private:
     
     static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
     static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
+    Utf8CP _GetName() const override {return "WmsSource";}
     Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) const override;
 
     StatusInt ComputeLinearApproximation(TransformR cartesianToWorld);

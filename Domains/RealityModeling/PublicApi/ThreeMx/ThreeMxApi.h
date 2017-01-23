@@ -155,7 +155,9 @@ private:
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
-
+    THREEMX_EXPORT Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
+    Utf8CP _GetName() const override {return "3MX";}
+    
 public:
     using Root::Root;
     ~Scene() {ClearAllTiles();}
@@ -201,7 +203,7 @@ private:
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
 public:
-    ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
+       ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;

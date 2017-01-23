@@ -185,6 +185,14 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(RenderListContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTaskPtr Scene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads) 
+    {
+    return new ThreeMxProgressive(*this, args.m_missing, loads, args.m_clip);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::Load(SystemP renderSys) const
@@ -253,22 +261,8 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     {
     Load(&context.GetTargetR().GetSystem());
 
-    if (!m_scene.IsValid())
-        return;
-
-    auto now = BeTimePoint::Now();
-    DrawArgs args(context, m_scene->GetLocation(), *m_scene, now, now-m_scene->GetExpirationTime(), m_clip.get());
-    m_scene->Draw(args);
-    DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->m_rootTile->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    if (!args.m_missing.empty())
-        {
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*m_scene, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
-        }
+    if (m_scene.IsValid())
+        m_scene->DrawInView(context, m_scene->GetLocation(), m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
