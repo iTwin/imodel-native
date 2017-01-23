@@ -1376,7 +1376,8 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
-    m_parentId   = importer.FindElementId(m_parentId);
+    m_parentId = importer.FindElementId(m_parentId);
+    m_parentRelClassId = importer.RemapClassId(m_parentRelClassId);
     RemapAutoHandledNavigationproperties(importer);
     }
 
@@ -3024,7 +3025,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
         }
 
     if (newParentId.IsValid())
-        outputEditElement->SetParentId(newParentId, targetModel.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements)); // WIP: right way to set ParentRelECClassId???
+        outputEditElement->SetParentId(newParentId, sourceElement.GetParentRelClassId());
 
     DgnElementCPtr outputElement = outputEditElement->Insert(&status);
     if (!outputElement.IsValid())

@@ -820,7 +820,7 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
@@ -919,7 +919,7 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
@@ -1783,7 +1783,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -1796,7 +1796,7 @@
             <Class class="ViewDefinition2d"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1805,7 +1805,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1814,7 +1814,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1823,7 +1823,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1832,7 +1832,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="Sealed">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="CategorySelector"/>
@@ -1842,7 +1842,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
@@ -2017,7 +2017,7 @@
     <ECEntityClass typeName="GeometryPart">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <!-- IsNullable = False -->
             <ECCustomAttributes>
                 <CustomHandledProperty/>
