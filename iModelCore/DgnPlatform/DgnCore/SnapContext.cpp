@@ -324,7 +324,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
 virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
 virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
 virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Box;}
 
