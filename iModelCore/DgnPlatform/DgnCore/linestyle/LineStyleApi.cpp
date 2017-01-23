@@ -228,10 +228,10 @@ StatusInt       LsComponent::_StrokeLineString2d (LineStyleContextR lsContext, L
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline bool biggerThanPixel (double val, double pixelSize)
-    {
-    return  fabs (val) > pixelSize;
-    }
+// static inline bool biggerThanPixel (double val, double pixelSize)
+//     {
+//     return  fabs (val) > pixelSize;
+//     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
@@ -277,7 +277,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context,
         //  NEEDS_WORK_CONTINUOUS_RENDER is not appropriate for generating a texture.
 //        double pixelWidth = (NULL == context.GetViewContext()->GetViewport()) ? 1.0 : context.GetViewContext()->GetPixelSizeAtPoint (origin);
         double startWidth = lsSymb->GetOriginWidth();
-        double endWidth   = lsSymb->GetEndWidth();
+        // double endWidth   = lsSymb->GetEndWidth();
 
 //        if (biggerThanPixel (r0-r1, pixelWidth) || biggerThanPixel(startWidth-endWidth, pixelWidth) || biggerThanPixel (startWidth-(r0*2),pixelWidth))
 //            return  ERROR;
