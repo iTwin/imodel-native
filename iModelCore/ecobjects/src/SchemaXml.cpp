@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -485,6 +485,12 @@ ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringC
         WriteLogMessage(ecClass, "relationship class", "Sealed");
         modifier = ECClassModifier::Sealed;
         }
+    else if (ecClass->IsDefined("ForceInstantiable"))
+        {
+        WriteLogMessage(ecClass, "relationship class", "None");
+        modifier = ECClassModifier::None;
+        }
+
 
     return modifier;
     }
