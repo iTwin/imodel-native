@@ -45,8 +45,7 @@ BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value c
     if (!json.isString())
         return ERROR;
 
-    Utf8String base64Str = json.asString();
-    Base64Utilities::Decode(binary, base64Str);
+    Base64Utilities::Decode(binary, json.asString());
     return SUCCESS;
     }
 
