@@ -1589,13 +1589,7 @@ void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveV
 
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                     {
-                    bool        isEllipse = false;
-                    double      r0, r1, start, sweep;
-                    RotMatrix   rMatrix;
-                    DPoint3d    center;
-
-                    curve.front()->GetArcCP()->GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-                    currLStyle->_GetComponent()->_StrokeArc(lsContext, lsSymb, &center, &rMatrix, r0, r1, isEllipse ? nullptr : &start, isEllipse ? nullptr : &sweep);
+                    currLStyle->_GetComponent()->_StrokeArc(lsContext, lsSymb, *curve.front()->GetArcCP(), curve.IsAnyRegionType());
                     break;
                     }
 

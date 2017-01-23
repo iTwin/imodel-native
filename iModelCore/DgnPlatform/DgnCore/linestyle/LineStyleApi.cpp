@@ -236,13 +236,19 @@ static inline bool biggerThanPixel (double val, double pixelSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
-                                        double r0, double r1, double const* inStart, double const* inSweep) const
+BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
     {
+    double      r0, r1, start, sweep;
+    RotMatrix   rMatrix;
+    DPoint3d    center;
+
+    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
+
     bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
 
     bool isWidthDiscernible = true;//IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
 
+#if defined (NOT_NOW)
     // if the linestyle is too small to recognize in this view, just draw the arc with no style.
     if (isWidthDiscernible)
         {
@@ -279,35 +285,39 @@ BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context,
         filled = true;
         r0 = r1 = startWidth;
         }
+#else
+    if (!_IsContinuous())
+        return ERROR;
+#endif
 
-    DVec3d      xCol, yCol, zCol;
+//    DVec3d      xCol, yCol, zCol;
 
-    rMatrix->GetColumns (xCol, yCol, zCol);
+//    rMatrix->GetColumns (xCol, yCol, zCol);
 
-    DEllipse3d  ellipse;
+//    DEllipse3d  ellipse;
     auto& graphic = context.GetGraphicR();
 
-    ellipse.InitFromDGNFields3d (*origin, xCol, yCol, r0, r1, inStart ? *inStart : 0.0, inSweep ? *inSweep : msGeomConst_pi);
+//    ellipse.InitFromDGNFields3d (*origin, xCol, yCol, r0, r1, inStart ? *inStart : 0.0, inSweep ? *inSweep : msGeomConst_pi);
 
     if (isWidthDiscernible)
         {
         // NOTE: QVis filled arc can handle 180 case...need complex shape for anything else...
-        if (filled && !ellipse.IsFullEllipse () && inSweep && (fabs (double (*inSweep-msGeomConst_pi)) > .001))
+        if (filled && !arc.IsFullEllipse () && isClosed && (fabs (double (sweep-msGeomConst_pi)) > .001))
             {
             CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
             DPoint3d        pts[3];
     
-            ellipse.EvaluateEndPoints (pts[2], pts[0]);
-            pts[1] = ellipse.center;
+            arc.EvaluateEndPoints (pts[2], pts[0]);
+            pts[1] = arc.center;
 
-            curve->push_back (ICurvePrimitive::CreateArc (ellipse));
+            curve->push_back (ICurvePrimitive::CreateArc (arc));
             curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
 
             graphic.AddCurveVector (*curve, filled);
             }
         else
             {
-            graphic.AddArc (ellipse, NULL == inSweep, filled);
+            graphic.AddArc (arc, isClosed, filled);
             }
         }
     else
@@ -332,7 +342,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context,
             context->GetCurrentGraphic().ActivateGraphicParams (&saveMatSymb);
             }
 #else
-        graphic.AddArc (ellipse, NULL == inSweep, filled);
+        graphic.AddArc (arc, isClosed, filled);
 #endif
         }
 
@@ -358,22 +368,27 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP origin, RotMatrixCP rMatrix,
-                                        double r0, double r1, double const* inStart, double const* inSweep) const
+StatusInt LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DEllipse3dCR arc, bool isClosed) const
     {
-    if (SUCCESS == StrokeContinuousArc (lsContext, &lsSymbIn, origin, rMatrix, r0, r1, inStart, inSweep))
+    if (SUCCESS == StrokeContinuousArc (lsContext, lsSymbIn, arc, isClosed))
         return SUCCESS;
+
+    double      r0, r1, start, sweep;
+    RotMatrix   rMatrix;
+    DPoint3d    center;
+
+    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
 
     LineStyleSymb lsSymb = lsSymbIn;
     ViewContextR viewContext = lsContext.GetViewContext();
-    double      start = inStart ? *inStart : 0.0;
-    double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
+//    double      start = inStart ? *inStart : 0.0;
+//    double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
     DPoint3d    vec[2];
 
-    vec[0]   = *origin;
-    vec[1].x = origin->x + r0;
-    vec[1].y = origin->y + r1;
-    vec[1].z = origin->z;
+    vec[0]   = center;
+    vec[1].x = center.x + r0;
+    vec[1].y = center.y + r1;
+    vec[1].z = center.z;
 
     // there's no real science to this calculation. It is just an emperical formula to try to get about the right
     // number of vectors in an arc taking into consideration the size (in screen coords), a tolerance, and the sweep.
@@ -411,7 +426,7 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
     genArc3d (pts, xpos, ypos, sinAngle, cosAngle, nPts);
 
     Transform   trans;
-    LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&trans, NULL, rMatrix, origin, r0, r1, 0.0);
+    LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&trans, NULL, &rMatrix, &center, r0, r1, 0.0);
     trans.Multiply (pts, pts, nPts);
 
     bool hasStartTan = lsSymb.HasStartTangent();
@@ -424,8 +439,8 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
         startTang.Init (r0 * sin (start), -r1 * cos (start), 0.0);
         endTang.Init (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);
 
-        rMatrix->Multiply(startTang);
-        rMatrix->Multiply(endTang);
+        rMatrix.Multiply(startTang);
+        rMatrix.Multiply(endTang);
 
         lsSymb.SetTangents (hasStartTan ? lsSymb.GetStartTangent() : &startTang, hasEndTan ? lsSymb.GetEndTangent() : &endTang);
         }
@@ -436,7 +451,7 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
 
     lsSymb.SetTreatAsSingleSegment (true);
     lsSymb.SetIsCurve (true);
-    lsSymb.SetElementClosed (NULL == inSweep);
+    lsSymb.SetElementClosed (isClosed);
     
     int     disconnect;
     double  totalLength = getLinearLength (pts, nPts, disconnect);
@@ -454,10 +469,10 @@ StatusInt       LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCP curve) const
+StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCR curve) const
     {
     DPoint3d    firstPt;
-    curve->FractionToPoint (firstPt, 0.0);
+    curve.FractionToPoint (firstPt, 0.0);
 
     ViewContextR viewContext = lsContext.GetViewContext();
 
@@ -479,7 +494,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, L
     double      tolerance = viewContext.GetPixelSizeAtPoint(&firstPt); // <- NEEDSWORK: Should at least get pixel size from graphic...
 
     // NEEDSWORK: Should pass in FacetOptions instead of optTolerance...
-    curve->AddStrokes (points, tolerance);
+    curve.AddStrokes (points, tolerance);
     int nPoints = (int)points.size ();
     if (nPoints == 0)
         return ERROR;
@@ -511,7 +526,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, L
 
         lsSymb.SetTreatAsSingleSegment (true);
         lsSymb.SetIsCurve (true);
-        lsSymb.SetElementClosed (curve->IsClosed ());
+        lsSymb.SetElementClosed (curve.IsClosed ());
     
         int     disconnect;
         double  totalLength = getLinearLength (&points[0], nPoints, disconnect);

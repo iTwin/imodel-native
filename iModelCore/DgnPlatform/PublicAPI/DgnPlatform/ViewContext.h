@@ -32,8 +32,8 @@ struct     ILineStyleComponent
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurveCP) const = 0;
+    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool isClosed) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR) const = 0;
 };
 
 //=======================================================================================
