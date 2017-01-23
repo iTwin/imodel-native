@@ -1695,6 +1695,12 @@ struct System
     void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
     void NotPainting() {m_nowPainting = nullptr;}
 
+    //! Initialize the rendering system. Return a non-zero value in case of error.
+    virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
+
+    //! Create a render target.
+    virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
+
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
 
