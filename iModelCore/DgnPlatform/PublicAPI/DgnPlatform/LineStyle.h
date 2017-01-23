@@ -108,6 +108,7 @@ public:
     Render::GraphicBuilderR GetGraphicR() {return *m_graphic;}
     Render::GeometryParamsCR GetGeometryParams() {return m_params;}
     ViewContextR GetViewContext() {return m_context;}
+    IFacetOptionsCR GetFacetOptions() {return *m_facetOptions;}
 };
 
 #if defined (NOT_NOW)

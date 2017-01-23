@@ -228,140 +228,92 @@ StatusInt       LsComponent::_StrokeLineString2d (LineStyleContextR lsContext, L
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-// static inline bool biggerThanPixel (double val, double pixelSize)
-//     {
-//     return  fabs (val) > pixelSize;
-//     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
+BentleyStatus LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
     {
-//    double      r0, r1, start, sweep;
-//    RotMatrix   rMatrix;
-//    DPoint3d    center;
-//
-//    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
+    /* Sometimes we see arcs with a truewidth that is exactly equal to the radius*2. They are intended to represent a filled half-circle (or
+       quarter circle). This comes from DWG, because apparently AutoCAD is too feeble to have a filled circle (so we see two of them in a row).
+       Unfortunately this causes problems for QV since the math to stroke the arc and create the offsets degenerates to a bunch of points
+       all nearly on top of each other. QV sometimes decides that the shape crosses on itself and then doesn't fill it. All of the below
+       is to test for:
 
-    bool filled = false; // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
-    bool isWidthDiscernible = true;//IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
+       1) continuous linestyle
+       2) not during picking
+       3) r0==r1 (circular)
+       4) no taper stroke pattern
+       5) width = 2*radius
 
-#if defined (NOT_NOW)
-    // if the linestyle is too small to recognize in this view, just draw the arc with no style.
-    if (isWidthDiscernible)
-        {
-        /*
-           Sometimes we see arcs with a truewidth that is exactly equal to the radius*2. They are intended to represent a filled half-circle (or
-           quarter circle). This comes from DWG, because apparently AutoCAD is too feeble to have a filled circle (so we see two of them in a row).
-           Unfortunately this causes problems for QV since the math to stroke the arc and create the offsets degenerates to a bunch of points
-           all nearly on top of each other. QV sometimes decides that the shape crosses on itself and then doesn't fill it. All of the below
-           is to test for:
-
-            1) continuous linestyle
-            2) not during picking
-            3) r0==r1 (circular)
-            4) no tapertrokepattern
-            5) width = 2*radius
-
-           if all of that is true, then use the QV filled arc (or complex shape) rather than sending the arc through the normal linestyle code.
-        */
-        if (!_IsContinuous() 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        || (NULL != context->GetIPickGeom())
-#endif
-        )
-            return  ERROR;
-
-        //  NEEDS_WORK_CONTINUOUS_RENDER is not appropriate for generating a texture.
-//        double pixelWidth = (NULL == context.GetViewContext()->GetViewport()) ? 1.0 : context.GetViewContext()->GetPixelSizeAtPoint (origin);
-        double startWidth = lsSymb->GetOriginWidth();
-        // double endWidth   = lsSymb->GetEndWidth();
-
-//        if (biggerThanPixel (r0-r1, pixelWidth) || biggerThanPixel(startWidth-endWidth, pixelWidth) || biggerThanPixel (startWidth-(r0*2),pixelWidth))
-//            return  ERROR;
-
-        filled = true;
-        r0 = r1 = startWidth;
-        }
-#else
-    if (!_IsContinuous())
+       if all of that is true, then use a complex shape rather than sending the arc through the normal linestyle code.
+    */
+    if (!_IsContinuous() || (nullptr != context.GetViewContext().GetIPickGeom()))
         return ERROR;
-#endif
 
-//    DVec3d      xCol, yCol, zCol;
+    double radius;
 
-//    rMatrix->GetColumns (xCol, yCol, zCol);
+    if (!arc.IsCircular(radius))
+        return ERROR;
 
-//    DEllipse3d  ellipse;
-    auto& graphic = context.GetGraphicR();
+    double startWidth = lsSymb.GetOriginWidth();
+    double endWidth = lsSymb.GetEndWidth();
 
-//    ellipse.InitFromDGNFields3d (*origin, xCol, yCol, r0, r1, inStart ? *inStart : 0.0, inSweep ? *inSweep : msGeomConst_pi);
+    if (!DoubleOps::WithinTolerance(startWidth, endWidth, 1.0e-5))
+        return ERROR;
 
-    if (isWidthDiscernible)
+    if (!DoubleOps::WithinTolerance(startWidth, radius*2.0, 1.0e-5))
+        return ERROR;
+
+    Render::GraphicBuilderR graphic = context.GetGraphicR();
+    DEllipse3d tmpArc = arc;
+
+    tmpArc.vector0.ScaleToLength(startWidth);
+    tmpArc.vector90.ScaleToLength(startWidth);
+
+    if (tmpArc.IsFullEllipse())
         {
-        // NOTE: QVis filled arc can handle 180 case...but we'll always create a real closed shape to play nice with other render targets...
-        if (filled && !arc.IsFullEllipse())
-            {
-            CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
-            DPoint3d        pts[3];
-    
-            arc.EvaluateEndPoints(pts[2], pts[0]);
-            pts[1] = arc.center;
-
-            curve->push_back(ICurvePrimitive::CreateArc(arc));
-            curve->push_back(ICurvePrimitive::CreateLineString(pts, 3));
-
-            graphic.AddCurveVector(*curve, filled);
-            }
-        else
-            {
-            graphic.AddArc(arc, isClosed, filled);
-            }
+        context.GetGraphicR().AddArc(tmpArc, isClosed, true);
         }
     else
         {
-#if defined (NEEDS_WORK_DGNITEM)
-        GeometryParamsP elParams = context->GetCurrentGeometryParams();
-        if (0 == elParams->GetWeight())
-            {
-            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
-            }
-        else
-            {
-            // True width is not discernable; need to ignore non-zero integer weight. Otherwise, discepancies
-            // may arise due to level of detail differences between view display and printing. [TFS 8535]
-            GraphicParams saveMatSymb;
-            saveMatSymb = *context->GetGraphicParams();
-            GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
-            elParams->SetWeight (0);
-            context->CookGeometryParams();
-            context->GetCurrentGraphic().ActivateGraphicParams (context->GetGraphicParams());
-            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
-            context->GetCurrentGraphic().ActivateGraphicParams (&saveMatSymb);
-            }
-#else
-        graphic.AddArc (arc, isClosed, filled);
-#endif
+        // NOTE: QVis filled arc can handle 180 case...but we'll always create a real closed shape to play nice with other render targets...
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+        DPoint3d       pts[3];
+    
+        tmpArc.EvaluateEndPoints(pts[2], pts[0]);
+        pts[1] = tmpArc.center;
+
+        curve->push_back(ICurvePrimitive::CreateArc(tmpArc));
+        curve->push_back(ICurvePrimitive::CreateLineString(pts, 3));
+
+        context.GetGraphicR().AddCurveVector(*curve, true);
         }
 
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/08
+* @bsimethod                                    Brien.Bastings                  01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sine, double cosine, int nVerts)
+void arcAddStrokes(DEllipse3dCR ellipse, bvector<DPoint3d>& points, IFacetOptionsCR options) // NEEDSWORK: Add method to DEllipse3d?
     {
-    for (int i=0; i<nVerts; i++)
-        {
-        outPts[i].x = xPos;
-        outPts[i].y = yPos;
-        outPts[i].z = 0.0;
+    size_t count = options.EllipseStrokeCount(ellipse);
+    DPoint3d startPoint, endPoint;
+    ellipse.EvaluateEndPoints(startPoint, endPoint);
+        
+    PolylineOps::AddContinuationStartPoint(points, startPoint, true);
 
-        xPos = (xPos*cosine) - (yPos*sine);
-        yPos = (yPos*cosine) + (outPts[i].x*sine);
+    if (count > 1)
+        {
+        double df = 1.0 / (double) (count - 1);
+
+        for (size_t i = 1; i < count - 1; i++)
+            {
+            DPoint3d xyz;
+
+            ellipse.FractionParameterToPoint(xyz, i*df);;
+            points.push_back(xyz);
+            }
         }
+
+    points.push_back(endPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,97 +324,37 @@ StatusInt LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR 
     if (SUCCESS == StrokeContinuousArc (lsContext, lsSymbIn, arc, isClosed))
         return SUCCESS;
 
-    double      r0, r1, start, sweep;
-    RotMatrix   rMatrix;
-    DPoint3d    center;
-
-    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-
     LineStyleSymb lsSymb = lsSymbIn;
-    ViewContextR viewContext = lsContext.GetViewContext();
-//    double      start = inStart ? *inStart : 0.0;
-//    double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
-    DPoint3d    vec[2];
-
-    vec[0]   = center;
-    vec[1].x = center.x + r0;
-    vec[1].y = center.y + r1;
-    vec[1].z = center.z;
-
-    // there's no real science to this calculation. It is just an emperical formula to try to get about the right
-    // number of vectors in an arc taking into consideration the size (in screen coords), a tolerance, and the sweep.
-    // When we don't have a viewport...just use 100.
-    double   numVerts = 100;
-
-    // NEEDSWORK: Should pass in FacetOptions...
-    if (NULL != viewContext.GetViewport ())
-        {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        viewContext->LocalToView (vec, vec, 2);
-#else
-        viewContext.WorldToView (vec, vec, 2);
-#endif
-
-        double  dist = vec[0].Distance (vec[1]);
-        double  arcTolerance = .01;
-
-        numVerts = fabs (dist * sweep * (.02 / arcTolerance));
-        }
-
-    int   nPts = (numVerts > 200) ? 200 : (int) numVerts;
-
-    if (nPts < 5)
-        nPts = 5;
-
-    double xpos      = cos (start);
-    double ypos      = sin (start);
-    double stepAngle = sweep / (double) (nPts - 1);
-    double sinAngle  = sin (stepAngle);
-    double cosAngle  = cos (stepAngle);
-
-    ScopedArray<DPoint3d, 50> scopedPts(nPts);
-    DPoint3dP pts = scopedPts.GetData();
-    genArc3d (pts, xpos, ypos, sinAngle, cosAngle, nPts);
-
-    Transform   trans;
-    LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&trans, NULL, &rMatrix, &center, r0, r1, 0.0);
-    trans.Multiply (pts, pts, nPts);
-
     bool hasStartTan = lsSymb.HasStartTangent();
-    bool hasEndTan   = lsSymb.HasEndTangent();
+    bool hasEndTan = lsSymb.HasEndTangent();
 
     if (!hasStartTan || !hasEndTan)
         {
-        DVec3d    startTang, endTang;
+        DPoint3d point;
+        DVec3d startTan = DVec3d::UnitX(), endTan = DVec3d::UnitX();
 
-        startTang.Init (r0 * sin (start), -r1 * cos (start), 0.0);
-        endTang.Init (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);
+        if (!hasStartTan)
+            bsiDEllipse3d_fractionParameterToDerivatives(&arc, &point, &startTan, NULL, 0.0);
 
-        rMatrix.Multiply(startTang);
-        rMatrix.Multiply(endTang);
+        if (!hasEndTan)
+            bsiDEllipse3d_fractionParameterToDerivatives(&arc, &point, &endTan, NULL, 1.0);
 
-        lsSymb.SetTangents (hasStartTan ? lsSymb.GetStartTangent() : &startTang, hasEndTan ? lsSymb.GetEndTangent() : &endTang);
+        lsSymb.SetTangents(hasStartTan ? lsSymb.GetStartTangent() : &startTan, hasEndTan ? lsSymb.GetEndTangent() : &endTan);
         }
 
-    // NOTE: Save/Restore flags that aren't setup every time...
-    bool    saveTreatAsSingle = lsSymb.IsTreatAsSingleSegment ();
-    bool    saveIsCurve = lsSymb.IsCurve ();
+    bvector<DPoint3d> points;
 
-    lsSymb.SetTreatAsSingleSegment (true);
-    lsSymb.SetIsCurve (true);
-    lsSymb.SetElementClosed (isClosed);
-    
+    arcAddStrokes(arc, points, lsContext.GetFacetOptions());
+
     int     disconnect;
-    double  totalLength = getLinearLength (pts, nPts, disconnect);
+    double  totalLength = getLinearLength(&points.front(), (int) points.size(), disconnect);
 
-    lsSymb.SetTotalLength (totalLength);
+    lsSymb.SetTreatAsSingleSegment(true);
+    lsSymb.SetIsCurve(true);
+    lsSymb.SetElementClosed(isClosed);
+    lsSymb.SetTotalLength(totalLength);
 
-    StatusInt status = _DoStroke (lsContext, pts, nPts, &lsSymb);
-
-    lsSymb.SetTreatAsSingleSegment (saveTreatAsSingle);
-    lsSymb.SetIsCurve (saveIsCurve);
-
-    return status;
+    return _DoStroke (lsContext, &points.front(), (int) points.size(), &lsSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**

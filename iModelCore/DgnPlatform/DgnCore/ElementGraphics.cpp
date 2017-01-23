@@ -1548,7 +1548,12 @@ IFacetOptionsPtr ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR build
         builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
         }
 
-    return IFacetOptions::CreateForCurves(); // Width discernable...
+    IFacetOptionsPtr facetOptions = IFacetOptions::CreateForCurves(); // Width discernable...
+
+    // NOTE: Need a fairly small angle for QVis since we're not always re-stroking to a view tolerance...
+    facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+
+    return facetOptions;
     }
 
 /*---------------------------------------------------------------------------------**//**
