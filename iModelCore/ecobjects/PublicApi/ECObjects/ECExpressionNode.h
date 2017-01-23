@@ -164,7 +164,7 @@ protected:
     ResolvedTypeNodeP _GetAsResolvedTypeNodeP () override { return this; }
     //!  For classes that are not subclasses of ResolvedTypeNode try to create an instance of a subclass of ResolvedTypeNode.
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
-    virtual Utf8String     _ToString() const { return "RESOLVED"; }
+    virtual Utf8String     _ToString() const override{ return "RESOLVED"; }
 
     void CheckBoolean() {BeAssert(PRIMITIVETYPE_Boolean == m_primitiveType); }
     void CheckDateTime() {BeAssert(PRIMITIVETYPE_DateTime == m_primitiveType); }
@@ -283,7 +283,7 @@ private:
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
         return ExpressionStatus::Success == status ? (::int64_t) v.GetDouble() : 0;
         }
-    virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context)
+    virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context) override
         {
         if (m_value.GetPrimitiveType() == PRIMITIVETYPE_String)
             {
@@ -341,7 +341,7 @@ struct          PrimaryListNode : Node
 private:
     bvector<NodePtr>        m_operators;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         for (size_t i = 0; i < m_operators.size(); i++)
             {
@@ -419,7 +419,7 @@ public:
 struct          DotNode : IdentNode
 {
 private:
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         return visitor.ProcessNode(*this); 
         }
@@ -454,7 +454,7 @@ private:
 
 protected:
     virtual Utf8String     _ToString() const override { return "["; }
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         bool retval = visitor.StartArrayIndex(*this);
         if (retval)
@@ -489,7 +489,7 @@ private:
 protected:
     virtual Utf8String     _ToString() const override { return Lexer::GetString(m_operator); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         bool    retval = visitor.ProcessNode(*this);
         if (retval)
@@ -575,7 +575,7 @@ protected:
 
     virtual Utf8String     _ToString() const override { return Lexer::GetString(m_operatorCode); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         bool    retval = m_left->Traverse(visitor);
         if (retval)
@@ -702,14 +702,15 @@ public:
 struct          PlusMinusNode : ArithmeticNode 
 {
 protected:
+
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
-                                        ExpressionContextR context);
+                                        ExpressionContextR context) const;
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _PerformOperation(EvaluationResultR result,
                                         EvaluationResultCR leftResult, EvaluationResultCR rightResult, 
-                                        ExpressionContextR context);
+                                        ExpressionContextR context) const;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolvePlusMinusNode(*this); }
 public:
                 PlusMinusNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
@@ -834,7 +835,7 @@ private:
 protected:
     virtual Utf8String     _ToString() const override { return ""; }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         bool    announceComma = false;
         visitor.StartArguments(*this);
@@ -854,7 +855,7 @@ protected:
         return visitor.EndArguments(*this);
         }
 
-    virtual ExpressionToken _GetOperation () const { return TOKEN_Comma; }
+    virtual ExpressionToken _GetOperation () const override { return TOKEN_Comma; }
 
 public:
                 ArgumentTreeNode() {}
@@ -878,7 +879,7 @@ private:
     Utf8String             m_methodName;
     bool                m_dotted;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         bool    retval = visitor.ProcessNode(*this);;
         if (!retval)
@@ -928,7 +929,7 @@ private:
 
     LambdaNode (Utf8CP name, NodeR lambdaExpr) : m_symbolName (name), m_lambdaExpression (&lambdaExpr) { }
 protected:
-    virtual bool    _Traverse (NodeVisitorR visitor) const
+    virtual bool    _Traverse (NodeVisitorR visitor) const override
         {
         bool retval = visitor.ProcessNode (*this);
         if (retval)
@@ -994,7 +995,7 @@ private:
 
 protected:
     virtual Utf8String  _ToString() const override { return Lexer::GetString(TOKEN_IIf); }
-    virtual bool        _Traverse(NodeVisitorR visitor) const
+    virtual bool        _Traverse(NodeVisitorR visitor) const override
         {
         if (!visitor.ProcessNode(*this))
             return false;
@@ -1020,7 +1021,7 @@ protected:
         return visitor.CloseParens();
         }
 
-    virtual ExpressionToken _GetOperation () const { return TOKEN_IIf; }
+    virtual ExpressionToken _GetOperation () const override { return TOKEN_IIf; }
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveIIfNode(*this); }
 
