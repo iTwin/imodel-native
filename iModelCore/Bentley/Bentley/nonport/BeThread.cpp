@@ -267,7 +267,7 @@ uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeDuration::Sleep()
     {
-    if (!IsFuture())
+    if (!IsTowardsFuture())
         return;
 
 #if defined (BENTLEY_WINRT)

@@ -36,17 +36,17 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     BeDuration zero;
     ASSERT_TRUE(zero == BeDuration::Seconds(0));
     ASSERT_TRUE(zero.IsZero());
-    ASSERT_TRUE(!zero.IsFuture());
-    ASSERT_TRUE(!zero.IsPast());
+    ASSERT_TRUE(!zero.IsTowardsFuture());
+    ASSERT_TRUE(!zero.IsTowardsPast());
 
     BeDuration threeSeconds(BeDuration::FromSeconds(3)); // integer seconds
     BeDuration twoSeconds(BeDuration::FromSeconds(2.0)); // double seconds
     BeDuration negative1(BeDuration::FromSeconds(-1));
     ASSERT_TRUE(threeSeconds == BeDuration::Seconds(3));
     ASSERT_TRUE(twoSeconds == BeDuration::Seconds(2));
-    ASSERT_TRUE(twoSeconds.IsFuture());
+    ASSERT_TRUE(twoSeconds.IsTowardsFuture());
     ASSERT_TRUE(negative1 == BeDuration::Seconds(-1));
-    ASSERT_TRUE(negative1.IsPast());
+    ASSERT_TRUE(negative1.IsTowardsPast());
 
     double two = twoSeconds;
     ASSERT_TRUE(two == 2.0);

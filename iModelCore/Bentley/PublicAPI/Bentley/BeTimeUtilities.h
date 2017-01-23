@@ -162,14 +162,14 @@ struct BeDuration : std::chrono::steady_clock::duration
     constexpr operator MilliSeconds() const {return std::chrono::duration_cast<MilliSeconds>(*this);}
     constexpr operator Seconds() const {return std::chrono::duration_cast<Seconds>(*this);}
 
-    //! Determine whether this BeDuration is zero
+    //! Determine whether this BeDuration is zero seconds
     bool IsZero() const {return 0 == count();}
 
-    //! Determine whether this BeDuration is in the future (greater than zero)
-    bool IsFuture() const {return 0 < count();}
+    //! Determine whether this BeDuration is a positive (i.e. future) duration
+    bool IsTowardsFuture() const {return 0 < count();}
 
-    //! Determine whether this BeDuration is in the past (less than zero)
-    bool IsPast() const {return 0 > count();}
+    //! Determine whether this BeDuration is a negative (i.e. past) duration
+    bool IsTowardsPast() const {return 0 > count();}
 
     //! Suspend the current thread for this duration
     BENTLEYDLL_EXPORT void Sleep();
