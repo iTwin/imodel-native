@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/Example/RealityPlatformGlobalExample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -128,7 +128,7 @@ class RealityPlatformClient
         // Only required to change the target server to development, otherwise default values connect to the official service
         GeoCoordinationService.SetServerComponents("https://dev-contextservices.bentley.com/", "2.4", "IndexECPlugin-Server", "RealityModeling");
 
-        // Obtaint he project extent
+        // Define the project extent
         bvector<GeoPoint2D> myProjectAreaInLatLong;
         myProjectAreaInLatLong.push_back(GeoPoint2D(71.240, 48.240));
         myProjectAreaInLatLong.push_back(GeoPoint2D(71.241, 48.240));
