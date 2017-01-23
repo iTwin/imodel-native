@@ -2206,6 +2206,9 @@ public:
     //! Removes all constraint classes.
     void RemoveConstraintClasses() {m_constraintClasses.clear();}
 
+    //! Removes all constraint classes.
+    ECOBJECTS_EXPORT void RemoveConstraintClasses();
+
     //! Returns the classes applied to the constraint.
     //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
     ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;

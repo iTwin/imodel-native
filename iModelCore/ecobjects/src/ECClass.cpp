@@ -3151,6 +3151,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
     return ECObjectsStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECRelationshipConstraint::RemoveConstraintClasses() { m_constraintClasses.clear(); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
