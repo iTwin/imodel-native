@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformErrors.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,7 +54,7 @@ enum class DgnDbStatus : int
     IdExists,
     InDynamicTransaction,
     InvalidCategory,
-    InvalidCodeAuthority,
+    InvalidCodeSpec,
     InvalidId,
     InvalidName,
     InvalidParent,

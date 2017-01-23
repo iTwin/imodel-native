@@ -84,8 +84,8 @@
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="Authority">
-        <!-- Authority for element codes and classifications -->
+    <ECEntityClass typeName="CodeSpec" modifier="Sealed">
+        <!-- determines element codes -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -93,7 +93,7 @@
             </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" description="Name of authority">
+        <ECProperty propertyName="Name" typeName="string" description="Name of CodeSpec">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <Collation>NoCase</Collation>
@@ -104,45 +104,17 @@
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
-    <ECEntityClass typeName="NullAuthority" modifier="Sealed">
-        <!-- Authority that issues null codes -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DatabaseScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique name+namespace combinations within the scope of the database -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ModelScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a model -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ElementScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a "parent" element -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
 
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="issues codes for" polymorphic="true">
-            <Class class="Authority"/>
+        <Source multiplicity="(1..1)" roleLabel="determines codes for" polymorphic="true">
+            <Class class="CodeSpec"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="code is issued by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="code is determined by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
@@ -376,8 +348,8 @@
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthority.Id</string>
-                            <string>CodeNamespace</string>
+                            <string>CodeSpec.Id</string>
+                            <string>CodeScope</string>
                             <string>CodeValue</string>
                         </Properties>
                     </DbIndex>
@@ -408,7 +380,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="CodeAuthority" relationshipName="AuthorityIssuesElementCode" direction="Backward">
+        <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecDeterminesElementCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -416,7 +388,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="CodeNamespace" typeName="string">
+        <ECProperty propertyName="CodeScope" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
@@ -502,7 +474,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -824,7 +796,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -898,6 +870,10 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="PhysicalType" relationshipName="PhysicalElementIsOfType" direction="Forward">
+          <ECCustomAttributes>
+            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
@@ -920,7 +896,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -1424,29 +1400,29 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name>
+                        <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            Only one ExternalKey per Authority per Element
+                            Only one ExternalKey per CodeSpec per Element
                             <string>Element.Id</string>
-                            <string>AuthorityId</string>
+                            <string>CodeSpecId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name>
+                        <Name>ix_bis_ElementExternalKey_CodeSpecId_ExternalKey</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>AuthorityId</string>
+                            <string>CodeSpecId</string>
                             <string>ExternalKey</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECProperty propertyName="AuthorityId" typeName="long">
-            <!-- WIP: Foreign key relationship to Authority that controls the ExternalKey -->
+        <ECProperty propertyName="CodeSpecId" typeName="long">
+            <!-- WIP: Foreign key relationship to CodeSpec that controls the ExternalKey -->
             <!-- IsNullable = False -->
         </ECProperty>
         <ECProperty propertyName="ExternalKey" typeName="string">
@@ -1491,7 +1467,6 @@
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <!-- WIP: MinimumSharedColumnCount? -->
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>8</SharedColumnCount>

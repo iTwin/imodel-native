@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/main.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Windows.h>
@@ -23,10 +23,9 @@ void BimConsoleBeAssertHandler(wchar_t const* message, wchar_t const* file, unsi
     {
     WString errorMessage;
     errorMessage.Sprintf(L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
-    Utf8String errorMessageUtf8(errorMessage.c_str());
 
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->errorv(errorMessage.c_str());
-    Console::WriteErrorLine(errorMessageUtf8.c_str());
+    BimConsole::WriteErrorLine(Utf8String(errorMessage).c_str());
     }
 
 bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir);
@@ -68,7 +67,7 @@ int wmain(int argc, WCharP argv[])
     {
 #if defined (UNICODE_OUTPUT_FOR_TESTING)
     // turning this on makes it so we can show unicode characters, but screws up piped output for programs like python.
-    // Since console output is not a production concept anyway, is merely for testing.
+    // Since BimConsole output is not a production concept anyway, is merely for testing.
     _setmode(_fileno(stdout), _O_U16TEXT);  // so we can output any and all unicode to the console
     _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
 #endif
@@ -106,7 +105,7 @@ int wmain(int argc, WCharP argv[])
     // (http://cboard.cprogramming.com/cplusplus-programming/145590-non-english-characters-cout-2.html)
     setlocale(LC_CTYPE, "");
 
-    //set customized assert handler as default handler causes exception which makes console crash.
+    //set customized assert handler as default handler causes exception which makes BimConsole crash.
     BeAssertFunctions::SetBeAssertHandler(BimConsoleBeAssertHandler);
 
     BimConsole app;

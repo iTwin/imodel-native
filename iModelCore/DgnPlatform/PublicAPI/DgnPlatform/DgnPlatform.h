@@ -69,12 +69,14 @@ DGNPLATFORM_TYPEDEFS(CategorySelector)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
+DGNPLATFORM_TYPEDEFS(CodeSpec)
+DGNPLATFORM_TYPEDEFS(CodeFragmentSpec)
+DGNPLATFORM_TYPEDEFS(CodeScopeSpec)
 DGNPLATFORM_TYPEDEFS(ColorDef)
 DGNPLATFORM_TYPEDEFS(DecorateContext)
 DGNPLATFORM_TYPEDEFS(DefinitionElement)
 DGNPLATFORM_TYPEDEFS(DefinitionPartition)
 DGNPLATFORM_TYPEDEFS(Dgn3DInputEvent)
-DGNPLATFORM_TYPEDEFS(DgnAuthority)
 DGNPLATFORM_TYPEDEFS(DgnButtonEvent)
 DGNPLATFORM_TYPEDEFS(DgnCode)
 DGNPLATFORM_TYPEDEFS(DgnColorMap)
@@ -213,7 +215,6 @@ DGNPLATFORM_TYPEDEFS(Subject)
 DGNPLATFORM_TYPEDEFS(TerrainContext)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
-DGNPLATFORM_TYPEDEFS(TileViewport)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
 DGNPLATFORM_TYPEDEFS(TxnManager)
 DGNPLATFORM_TYPEDEFS(UrlLink)
@@ -231,10 +232,9 @@ DGNPLATFORM_REF_COUNTED_PTR(CameraViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(CategorySelector)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
-DGNPLATFORM_REF_COUNTED_PTR(DatabaseScopeAuthority)
+DGNPLATFORM_REF_COUNTED_PTR(CodeSpec)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionPartition)
-DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR(DgnDbExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
@@ -257,7 +257,6 @@ DGNPLATFORM_REF_COUNTED_PTR(DrawingModel)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingView)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR(ElementScopeAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(EmbeddedFileLink)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(GraphicalType2d)
@@ -271,7 +270,6 @@ DGNPLATFORM_REF_COUNTED_PTR(ISubEntity)
 DGNPLATFORM_REF_COUNTED_PTR(LinkElement)
 DGNPLATFORM_REF_COUNTED_PTR(LinkModel)
 DGNPLATFORM_REF_COUNTED_PTR(LinkPartition)
-DGNPLATFORM_REF_COUNTED_PTR(ModelScopeAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(ModelSelector)
 DGNPLATFORM_REF_COUNTED_PTR(OrthographicViewController)
 DGNPLATFORM_REF_COUNTED_PTR(OrthographicViewDefinition)
@@ -291,6 +289,7 @@ DGNPLATFORM_REF_COUNTED_PTR(SectionDrawing)
 DGNPLATFORM_REF_COUNTED_PTR(Session)
 DGNPLATFORM_REF_COUNTED_PTR(SessionModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(SnapDetail)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationPartition)
@@ -301,13 +300,18 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(Subject)
 DGNPLATFORM_REF_COUNTED_PTR(TextString)
 DGNPLATFORM_REF_COUNTED_PTR(TextStringStyle)
-DGNPLATFORM_REF_COUNTED_PTR(TileViewport)
 DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR(UrlLink)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
 BEGIN_SHEET_NAMESPACE
+    namespace Attachment
+    {
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Viewport);
+    DEFINE_REF_COUNTED_PTR(Viewport);
+    };
+
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewAttachment);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewController);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Model);
@@ -370,18 +374,18 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id 
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
-BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
+BESERVER_ISSUED_ID_CLASS(CodeSpecId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
-namespace dgn_AuthorityHandler {struct Authority;};
+namespace dgn_CodeSpecHandler {struct CodeSpec;};
 typedef struct dgn_ElementHandler::Element* ElementHandlerP;
 typedef struct dgn_ElementHandler::Element& ElementHandlerR;
 typedef struct dgn_ModelHandler::Model* ModelHandlerP;
 typedef struct dgn_ModelHandler::Model& ModelHandlerR;
-typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
-typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
+typedef struct dgn_CodeSpecHandler::CodeSpec* CodeSpecHandlerP;
+typedef struct dgn_CodeSpecHandler::CodeSpec& CodeSpecHandlerR;
 typedef Byte const* ByteCP;
 
 typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
@@ -563,13 +567,16 @@ struct Frustum
     DPoint3dP GetPtsP() {return m_pts;}
     DPoint3dCR GetCorner(int i) const {return *(m_pts+i);}
     DPoint3dR GetCornerR(int i) {return *(m_pts+i);}
-    DPoint3d GetCenter() const {DPoint3d center; center.Interpolate(m_pts[NPC_111], 0.5, m_pts[NPC_000]); return center;}
+    DPoint3d GetCenter() const {DPoint3d center; center.Interpolate(GetCorner(NPC_RightTopFront), 0.5, GetCorner(NPC_LeftBottomRear)); return center;}
+    double Distance(int corner1, int corner2) const {return GetCorner(corner1).Distance(GetCorner(corner2));}
+    double GetFraction() const {return Distance(NPC_LeftTopFront,NPC_RightBottomFront) / Distance(NPC_LeftTopRear,NPC_RightBottomRear);}
     void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
     void ToRangeR(DRange3dR range) const {range.InitFrom(m_pts, 8);}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
     DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
+    DGNPLATFORM_EXPORT DMap4d ToDMap4d() const;
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}

@@ -375,21 +375,13 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, DgnViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
+HitDetail::HitDetail(DgnViewportR viewport, Sheet::Attachment::ViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
     {
     m_elementId         = (nullptr != geomSource && nullptr != geomSource->ToElement() ? geomSource->ToElement()->GetElementId() : DgnElementId());
     m_locateSource      = source;
     m_testPoint         = testPoint;
     m_geomDetail        = geomDetail;
     m_subSelectionMode  = SubSelectionMode::None;
-
-    if (nullptr != sheetVp)
-        {
-        TileViewportR tileVp = (TileViewportR) viewport;
-        m_testPoint = tileVp.ToSheetPoint(*sheetVp, testPoint);   
-        m_geomDetail.SetClosestPoint(tileVp.ToSheetPoint(*sheetVp, geomDetail.GetClosestPoint())); 
-        }
-
     }
 
 /*---------------------------------------------------------------------------------**//**

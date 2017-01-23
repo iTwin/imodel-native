@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Performance/PerformanceTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,6 @@
 #include <Logging/bentleylogging.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-#define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
 
 USING_NAMESPACE_BENTLEY_SQLITE
