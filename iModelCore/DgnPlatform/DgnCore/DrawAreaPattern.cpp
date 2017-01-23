@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -882,13 +882,14 @@ bool ViewContext::_WantAreaPatterns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params)
+void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook)
     {
     // NEEDSWORK_PATTERN_GEOMETRY_MAP - This is all just temporary to see if the PatternParams is being converted from V8 ok...
     // We'll want display patterns as geometry maps all the time (at least in 3d), but I'm waiting
     // to see what mesh-tiles/multi-threading QvElem creation does to drawing, ex. removal of ViewContext, etc.
     // For now the "dropped" pattern geometry is just being added directly to the graphic.
-    if (_CheckStop() || !_WantAreaPatterns() || !boundary.IsAnyRegionType())
+    // NOTE: It is left up to the caller if they want to call WantAreaPatterns, some decorator might want to display a pattern regardless of the ViewFlags.
+    if (_CheckStop() || !boundary.IsAnyRegionType())
         return;
 
     PatternParamsCP pattern;
@@ -912,6 +913,9 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorC
         wasSnappable = detail->IsSnappable();
         detail->SetNonSnappable(!pattern->GetSnappable());
         }
+
+    if (doCook)
+        CookGeometryParams(params, graphic);
 
     Render::GeometryParams cookedParams(params);
 
