@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/BimConsole.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,14 +21,15 @@ struct SessionFile
         enum class Type
             {
             Bim,
-            ECDb
+            ECDb,
+            BeSQLite
             };
 
     private:
         Type m_type;
 
-        virtual bool _IsOpen() const = 0;
-        virtual BeSQLite::EC::ECDb& _GetHandle() const = 0;
+        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const = 0;
+        virtual BeSQLite::Db& _GetBeSqliteHandle() const { BeAssert(_GetECDbHandle() != nullptr); return *_GetECDbHandle(); }
 
     protected:
         explicit SessionFile(Type type) : m_type(type) {}
@@ -36,13 +37,23 @@ struct SessionFile
     public:
         virtual ~SessionFile() {}
 
-        bool IsOpen() const { return _IsOpen(); }
-        BeSQLite::EC::ECDb const& GetHandle() const { return _GetHandle(); }
-        BeSQLite::EC::ECDb& GetHandleR() const { return _GetHandle(); }
-        Utf8CP GetPath() const { return IsOpen() ? GetHandle().GetDbFileName() : nullptr; }
+        template<typename TSessionFile>
+        TSessionFile const& GetAs() const
+            {
+            BeAssert(dynamic_cast<TSessionFile const*> (this) != nullptr);
+            return static_cast<TSessionFile const&> (*this);
+            }
+
+        bool IsOpen() const { return GetHandle().IsDbOpen(); }
+        Utf8CP GetPath() const { BeAssert(IsOpen()); return GetHandle().GetDbFileName(); }
+
+        BeSQLite::EC::ECDb const* GetECDbHandle() const { return _GetECDbHandle(); }
+        BeSQLite::EC::ECDb* GetECDbHandleP() const { return _GetECDbHandle(); }
+        BeSQLite::Db const& GetHandle() const { return _GetBeSqliteHandle(); }
+        BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
         Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
-        static Utf8CP TypeToString(Type type) { return type == Type::Bim ? "BIM" : "ECDb"; }
+        static Utf8CP TypeToString(Type type);
     };
 
 //---------------------------------------------------------------------------------------
@@ -51,15 +62,14 @@ struct SessionFile
 struct BimFile : SessionFile
     {
     private:
-        Dgn::DgnDbPtr m_file;
+        mutable Dgn::DgnDbPtr m_file;
 
-        virtual bool _IsOpen() const override { return m_file != nullptr && m_file->IsDbOpen(); }
-        virtual BeSQLite::EC::ECDb& _GetHandle() const override { BeAssert(IsOpen()); return *m_file; }
+        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
 
     public:
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
-        Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
         ~BimFile() {}
+        Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
     };
 
 //---------------------------------------------------------------------------------------
@@ -70,12 +80,27 @@ struct ECDbFile : SessionFile
     private:
         mutable BeSQLite::EC::ECDb m_file;
 
-        virtual bool _IsOpen() const override { return m_file.IsDbOpen(); }
-        virtual BeSQLite::EC::ECDb& _GetHandle() const override { return m_file; }
+        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return &m_file; }
 
     public:
         ECDbFile() : SessionFile(Type::ECDb) {}
         ~ECDbFile() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle     01/2017
+//---------------------------------------------------------------------------------------
+struct BeSQLiteFile : SessionFile
+    {
+    private:
+        mutable BeSQLite::Db m_file;
+
+        virtual BeSQLite::Db& _GetBeSqliteHandle() const override { return m_file; }
+        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return nullptr; }
+
+    public:
+        BeSQLiteFile() : SessionFile(Type::BeSQLite) {}
+        ~BeSQLiteFile() {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -112,6 +137,7 @@ struct Session
         Session() : m_file(nullptr) {}
 
         bool IsFileLoaded(bool printMessageIfFalse = false) const;
+        bool IsECDbFileLoaded(bool printMessageIfFalse = false) const;
         SessionFile const& GetFile() const { BeAssert(IsFileLoaded()); return *m_file; }
         BentleyStatus SetFile(std::unique_ptr<SessionFile>);
         ECDbIssueListener const& GetIssues() const { return m_issueListener; }
@@ -137,44 +163,34 @@ struct BimConsole : Dgn::DgnPlatformLib::Host
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
         void Setup();
-        void AddCommand(Utf8CP commandName, std::shared_ptr<Command> const&);
-        void AddCommand(std::shared_ptr<Command> const& command);
-        Command const* GetCommand(Utf8CP commandName) const;
+        void AddCommand(Utf8StringCR commandName, std::shared_ptr<Command> const& command) { m_commands[commandName] = command; }
+        void AddCommand(std::shared_ptr<Command> const& command) { AddCommand(command->GetName(), command); }
+        Command const* GetCommand(Utf8StringCR commandName) const;
 
-        void WritePrompt();
         int WaitForUserInput(int argc, WCharP argv[]);
-        void RunCommand(Utf8CP cmd);
-        bool TokenizeCommandline(std::vector<Utf8String>& tokens, Utf8StringCR cmd);
+        void RunCommand(Utf8StringCR cmd);
         bool ReadLine(Utf8StringR stmt);
 
-        bool StringEndsWith(Utf8StringCR stmt, Utf8Char ch, bool skipSpaces);
-        void AddToHistory(Utf8CP command) { return m_commandHistory.push_back(command); }
+        void AddToHistory(Utf8StringCR command) { return m_commandHistory.push_back(command); }
         std::vector<Utf8String> const& GetCommandHistory() const { return m_commandHistory; }
+
+        static void WritePrompt() { Write("BIM> "); }
+        static void Write(FILE* stream, Utf8CP format, va_list args);
+        static FILE* GetIn();
+        static FILE* GetOut();
+        static FILE* GetErr();
+
 
     public:
         BimConsole() {}
         int Run(int argc, WCharP argv[]);
-    };
 
-
-//=======================================================================================
-// @bsiclass                                    BentleySystems 
-//=======================================================================================
-struct Console
-    {
-    private:
-        static void Write(FILE* stream, Utf8CP format, va_list args);
-
-        static FILE* GetOut();
-        static FILE* GetErr();
-
-    public:
-        static FILE* GetIn();
         static void Write(Utf8CP format, ...);
         static void WriteLine(Utf8CP format, ...);
         static void WriteError(Utf8CP format, ...);
         static void WriteErrorLine(Utf8CP format, ...);
         static void WriteLine();
     };
+
 
 

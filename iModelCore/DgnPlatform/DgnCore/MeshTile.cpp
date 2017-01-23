@@ -223,7 +223,6 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
-static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
 static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 static const double s_minToleranceRatio = 100.0;
@@ -634,6 +633,44 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
 
     for (auto& triangle : mesh.m_triangles)
         AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsPtr& params, DPoint3dCP points, size_t nPoints, TransformCR transform, double clusterTolerance) :  m_displayParams(params)
+    {
+    struct PointComparator
+        {
+        double  m_tolerance;
+
+        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
+
+
+        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
+            {
+            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
+                                                                    
+            return false;
+            }
+        };
+    PointComparator                     comparator(clusterTolerance);
+    bset <DPoint3d, PointComparator>    clusteredPointSet(comparator);
+
+    for (DPoint3dCP point = points, end = points + nPoints; point < end; point++)
+        {
+        DPoint3d        testPoint;
+
+        transform.Multiply (testPoint, *point);
+
+        if (clusteredPointSet.find(testPoint) == clusteredPointSet.end())
+            {
+            m_points.push_back(testPoint);
+            clusteredPointSet.insert(testPoint);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1708,7 +1745,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
                 if (root.IsValid())
                     m_totalTiles += root->GetNodeCount();
 
-                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, *pCollector, GetProgressMeter());
+                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, leafTolerance, *pCollector, GetProgressMeter());
                 }
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
@@ -1843,7 +1880,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         size_t              siblingIndex = 0;
         bvector<DRange3d>   subRanges;
 
-        tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange(), s_splitCount);
+        tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange());
         for (auto& subRange : subRanges)
             {
             ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), tile.GetModelDelta(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
@@ -1911,7 +1948,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(TileGene
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementTileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR range, size_t splitCount)
+void TileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR range, size_t splitCount)
     {
     bvector<DRange3d> bisectRanges;
     DVec3d diagonal = range.DiagonalVector();

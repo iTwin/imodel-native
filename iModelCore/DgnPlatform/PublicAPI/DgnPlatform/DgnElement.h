@@ -63,7 +63,7 @@ protected:
     bmap<DgnGeometryPartId, DgnGeometryPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
-    bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<CodeSpecId, CodeSpecId> m_codeSpecId;
     bmap<DgnFontId, DgnFontId> m_fontId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
@@ -71,8 +71,8 @@ protected:
 
 public:
     DgnRemapTables& Get(DgnDbR);
-    DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
-    DgnAuthorityId Add(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_authorityId[sourceId] = targetId;}
+    CodeSpecId Find(CodeSpecId sourceId) const {return Find<CodeSpecId>(m_codeSpecId, sourceId);}
+    CodeSpecId Add(CodeSpecId sourceId, CodeSpecId targetId) {return m_codeSpecId[sourceId] = targetId;}
     DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
@@ -147,7 +147,7 @@ private:
     void ComputeGcsAndGOadjustment();
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnAuthorityId _RemapAuthorityId(DgnAuthorityId sourceId);
+    DGNPLATFORM_EXPORT virtual CodeSpecId _RemapCodeSpecId(CodeSpecId sourceId);
     DGNPLATFORM_EXPORT virtual DgnGeometryPartId _RemapGeometryPartId(DgnGeometryPartId sourceId);
     DGNPLATFORM_EXPORT virtual DgnCategoryId _RemapCategory(DgnCategoryId sourceId);
     DGNPLATFORM_EXPORT virtual DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
@@ -174,10 +174,10 @@ public:
 
     //! @name Id remapping
     //! @{
-    //! Make sure that a DgnAuthority has been imported
-    DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId) {return _RemapAuthorityId(sourceId);}
-    //! Register a copy of a DgnAuthority
-    DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a CodeSpec has been imported
+    CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return _RemapCodeSpecId(sourceId);}
+    //! Register a copy of a CodeSpec
+    CodeSpecId AddCodeSpecId(CodeSpecId sourceId, CodeSpecId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
     DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
@@ -1022,16 +1022,16 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
-    //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
+    //! Allows a business key (unique identifier string) from an external system (identified by CodeSpecId) to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
     {
     private:
-        DgnAuthorityId m_authorityId;
+        CodeSpecId m_codeSpecId;
         Utf8String m_externalKey;
 
-        ExternalKeyAspect(DgnAuthorityId authorityId, Utf8CP externalKey)
+        ExternalKeyAspect(CodeSpecId codeSpecId, Utf8CP externalKey)
             {
-            m_authorityId = authorityId;
+            m_codeSpecId = codeSpecId;
             m_externalKey = externalKey;
             }
 
@@ -1040,10 +1040,10 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, DgnAuthorityId);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
-        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(CodeSpecId codeSpecId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, CodeSpecId);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, CodeSpecId);
+        CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
         Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
     };
 
@@ -1377,7 +1377,7 @@ protected:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const {return true;}
+    virtual bool _SupportsCodeSpec(CodeSpecCR) const {return true;}
     DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const;
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
@@ -1618,10 +1618,11 @@ public:
     //! Generate a default code for this DgnElement
     DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
 
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateCode(bool replaceExistingCode=false);
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
-    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
-    bool SupportsCodeAuthority(DgnAuthorityCR authority) const {return _SupportsCodeAuthority(authority);}
+    DGNPLATFORM_EXPORT CodeSpecCPtr GetCodeSpec() const;
+    bool SupportsCodeSpec(CodeSpecCR codeSpec) const {return _SupportsCodeSpec(codeSpec);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryLastModifyTime() const;
@@ -2301,18 +2302,29 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
     friend struct dgn_ElementHandler::Physical;
 
+    DgnElementId m_physicalTypeId;
+    ECN::ECClassId m_physicalTypeRelClassId;
+
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
 public:
     //! Set the PhysicalType for this PhysicalElement
     //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
-    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("PhysicalType", physicalTypeId, relClassId);}
+    DGNPLATFORM_EXPORT DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId);
 
     //! Get the DgnElementId of the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    DgnElementId GetPhysicalTypeId() const {return GetPropertyValueId<DgnElementId>("PhysicalType");}
+    DgnElementId GetPhysicalTypeId() const {return m_physicalTypeId;}
+
+    //! Get the ID of the class of the PhysicalType for this PhysicalElement
+    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
+    ECN::ECClassId GetPhysicalTypeRelClassId() const {return m_physicalTypeRelClassId;}
 
     //! Get the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
@@ -2733,6 +2745,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationPartitionElement : InformationContentE
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler);
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
@@ -2922,6 +2935,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
@@ -3105,10 +3119,10 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCodeCR code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(CodeSpecId codeSpecId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Get the total counts for the current state of the pool.
     DGNPLATFORM_EXPORT Totals const& GetTotals() const;
@@ -3240,7 +3254,7 @@ public:
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied
-    //! @param[in] code         The code to assign to the new element. If invalid, then a code will be generated by the sourceElement's CodeAuthority
+    //! @param[in] code         The code to assign to the new element. If invalid, then a code will be generated by the sourceElement's CodeSpec
     //! @param[in] newParentId  Optional. The element that should be the parent of the new element. If not specified, then the parent of the new element
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful

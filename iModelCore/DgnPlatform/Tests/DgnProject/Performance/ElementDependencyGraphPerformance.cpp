@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ElementDependencyGraphPerformance.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -519,7 +519,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         m_db->SaveChanges();
 
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserts", (int)s_nElements);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) s_nElements, "Inserts");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()).c_str());
     }
 
@@ -531,7 +531,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod 1st", (int)s_nElements);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) s_nElements, "Mod 1st");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod 1st: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), s_nElements - 1);
@@ -547,7 +547,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod last", (int)s_nElements);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) s_nElements, "Mod last");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 1);
@@ -562,7 +562,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod next to last", (int)s_nElements);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) s_nElements, "Mod next to last");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod next to last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 2);
@@ -607,7 +607,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         m_db->SaveChanges();
 
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserts", (int)depCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) depCount, "Inserts");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()).c_str());
     }
 
@@ -619,7 +619,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod Root", (int)depCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) depCount, "Mod Root");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod Root: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), depCount);
@@ -636,7 +636,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod Dependents", (int)depCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) depCount, "Mod Dependents");
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod dependents: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 2);
@@ -668,7 +668,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             m_db->SaveChanges();
         }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Nops", (int)ntimes);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) ntimes, "Nops");
         printf("Nops: %lf\n", ntimes / timer.GetElapsedSeconds());
     }
 
@@ -682,7 +682,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             m_db->SaveChanges();
         }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Change", (int)ntimes);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) ntimes, "Change");
         printf("change: %lf\n", ntimes / timer.GetElapsedSeconds());
     }
 
@@ -702,7 +702,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             m_db->SaveChanges();
         }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Change e1 and Propagate to e2", (int)ntimes);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) ntimes, "Change e1 and Propagate to e2");
         printf("change e1, propagate to e2: %lf\n", ntimes / timer.GetElapsedSeconds());
         ASSERT_EQ(ntimes, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
     }
@@ -718,7 +718,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             m_db->SaveChanges();
         }
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Change e2", (int)ntimes);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) ntimes, "Change e2");
         printf("change e2: %lf\n", ntimes / timer.GetElapsedSeconds());
         ASSERT_EQ(ntimes, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
     }

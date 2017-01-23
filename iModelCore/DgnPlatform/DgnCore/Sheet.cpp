@@ -16,18 +16,23 @@ HANDLER_DEFINE_MEMBERS(Element);
 HANDLER_DEFINE_MEMBERS(AttachmentElement)
 HANDLER_DEFINE_MEMBERS(Model)
 }
+namespace SheetStrings
+{
+static Utf8CP str_Clip() {return "Clip";}
+};
 END_SHEET_NAMESPACE
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
+using namespace SheetStrings;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Sheet, model, name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_Sheet, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,7 +168,7 @@ double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Sheet::ViewAttachment::CheckValid() const
+DgnDbStatus ViewAttachment::CheckValid() const
     {
     if (!GetAttachedViewId().IsValid())
         return DgnDbStatus::ViewNotFound;
@@ -177,9 +182,9 @@ DgnDbStatus Sheet::ViewAttachment::CheckValid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr Sheet::ViewAttachment::GetClip() const
+ClipVectorPtr ViewAttachment::GetClip() const
     {
-    auto clipJsonStr = GetPropertyValueString("Clip");
+    auto clipJsonStr = GetPropertyValueString(str_Clip());
     if (clipJsonStr.empty())
         return nullptr;
 
@@ -187,28 +192,24 @@ ClipVectorPtr Sheet::ViewAttachment::GetClip() const
     if (!Json::Reader::Parse(clipJsonStr, clipJson))
         return nullptr;
 
-    ClipVectorPtr clip = ClipVector::Create();
-    JsonUtils::ClipVectorFromJson(*clip, clipJson);
-    return clip;
+    return ClipVector::FromJson(clipJson);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Sheet::ViewAttachment::SetClip(ClipVectorCR clipVector)
+DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
-    Json::Value clipJson(Json::arrayValue);
-    JsonUtils::ClipVectorToJson(clipJson, clipVector);
-
-    return SetPropertyValue("Clip", Json::FastWriter::ToString(clipJson).c_str());
+    Json::Value clipJson = clipVector.ToJson();
+    return SetPropertyValue(str_Clip(), Json::FastWriter::ToString(clipJson).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewAttachment::ClearClip()
+void ViewAttachment::ClearClip()
     {
-    SetPropertyValue("Clip", ECValue());
+    SetPropertyValue(str_Clip(), ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -353,7 +354,7 @@ struct SceneReadyTask : ProgressiveTask
 {
     Attachment::Tree& m_tree;
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
-    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& showFrame) override
         {
         // is the scene available yet?
         if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
@@ -368,15 +369,16 @@ struct SceneReadyTask : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderContextR context)
+void Attachment::Tree::Draw(TerrainContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
 
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
+        m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
 
     if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.
@@ -419,8 +421,14 @@ bool Attachment::Tree::Pick(PickContext& context)
     sheetToTile.InverseOf(GetLocation());
     Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
 
-    if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
-        return false;
+    if (m_clip.IsValid())
+        {
+        for (auto& primitive : *m_clip)
+            {
+            if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(box.m_pts, NPC_CORNER_COUNT, false))
+                return false;
+            }
+        }
 
     return context._ProcessSheetAttachment(*m_viewport);
     }
@@ -438,7 +446,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         return;
         }
 
-    m_viewport = T_HOST._CreateTileViewport();
+    m_viewport = T_HOST._CreateSheetAttachViewport();
     if (!m_viewport.IsValid())
         return;
 
@@ -463,13 +471,6 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
 
-    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
-    DPoint2d clipPts[5];
-    memset(clipPts, 0, sizeof(clipPts)); 
-    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
-    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
-    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
-
     auto& def=view->GetViewDefinition();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
@@ -487,13 +488,35 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
     auto& box = attach->GetPlacement().GetElementBox();
-    auto range = attach->GetPlacement().CalculateRange();
-    range.low.z = 0.0; // make sure we're exactly on the sheet.
-    m_viewport->m_toParent = Transform::From(range.low);
-    m_viewport->m_toParent.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
-    SetLocation(m_viewport->m_toParent);
+    AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
-    SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+    range.low.z = 0;
+    Transform trans = Transform::From(range.low);
+    trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    SetLocation(trans);
+
+    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   // m_toParent is attach NPC -> sheet world. Set z values to sheet NPC.
+    trans.form3d[2][3] = m_viewport->GetWorldToNpcMap()->M1.coff[2][3];
+    m_viewport->m_toParent = trans;
+
+    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
+    DPoint2d clipPts[5];
+    memset(clipPts, 0, sizeof(clipPts)); 
+    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
+    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
+    
+    auto attachClip = attach->GetClip();
+    if (attachClip.IsValid())
+        {
+        Transform sheetToNpc;
+        sheetToNpc.InverseOf(m_viewport->m_toParent);
+        attachClip->TransformInPlace(sheetToNpc);
+        m_clip->Append(*attachClip);
+        }
+
+    m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
+    SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
     m_viewport->m_biasDistance = m_biasDistance; // for flashing hits
@@ -581,4 +604,31 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         if (attach->Pick((PickContext&)context))
             return;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
+    {
+    Frustum frust = GetFrustum(DgnCoordSystem::Npc).TransformBy(m_toParent);
+    sheetVp.WorldToView(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    Transform tileToSheet = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
+    tileToSheet.ScaleMatrixColumns(1.0/m_rect.corner.x, 1.0/m_rect.corner.y, 1.0);
+
+    tileToSheet.form3d[2][2] = 1.0; // always make 1 : 1  in z
+    tileToSheet.form3d[2][3] = 0.0;
+    return tileToSheet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d Viewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR attachWorld)
+    {
+    DPoint3d point = WorldToView(attachWorld);
+    GetTransformToSheet(sheetVp).Multiply(point);   
+    point = sheetVp.ViewToWorld(point);
+    point.z = 0.0; // sheets are always 2d
+    return point;
     }

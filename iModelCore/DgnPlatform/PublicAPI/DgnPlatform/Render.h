@@ -1657,6 +1657,7 @@ struct GraphicBranch
 
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
+    void Clear() {m_entries.clear();}
 };
 
 //=======================================================================================
@@ -1667,7 +1668,8 @@ struct ViewletPosition
     DPoint3d m_center;
     double m_width;
     double m_height;
-    ViewletPosition(DPoint3dCR center, double width, double height) : m_center(center), m_width(width), m_height(height) {}
+    ClipVectorCPtr m_clip;
+    ViewletPosition(DPoint3dCR center, double width, double height, ClipVectorCP clip) : m_center(center), m_width(width), m_height(height), m_clip(clip) {}
 };
 
 //=======================================================================================
@@ -1798,7 +1800,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
-    virtual void _SetTileRect(BSIRect rect) {}
+    virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
     DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnTrueColor.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,21 +57,21 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
     explicit DgnTrueColor(CreateParams const& params) : T_Super(params), m_colorDef(params.m_colorDef) { }
 
     DgnTrueColorId GetColorId() const { return DgnTrueColorId(GetElementId().GetValueUnchecked()); } //!< The ID of this color
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of this color
-    Utf8String GetBook() const { return GetCode().GetNamespace(); } //!< The name of this color's color book
+    Utf8String GetBook() const { return GetCode().GetScope(); } //!< The name of this color's color book
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
     //! @private
     void SetColorDef(uint32_t color) { m_colorDef = ColorDef(color); }
 
     //! Creates a code for a color with the given name and book name
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR book) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_TrueColor, db, name, book); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR book) { return CodeSpec::CreateCode(db, BIS_CODESPEC_TrueColor, name, book); }
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb

@@ -25,7 +25,7 @@ CsvFileTests.GetSections
 #TFS 629338
 # bim0200dev, x64 & x86, DEBUG, after merge
 ImportTest.ImportElementsWithDependencies
-ImportTest.ImportElementsWithAuthorities
+ImportTest.ImportElementsWithCodeSpecs
 
 #TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
@@ -42,4 +42,3 @@ EcutilsTests.ConvertECValueToJson
     #       Which is: 32768
     # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
 
-ElementAspectTests.GenericUniqueAspect_CRUD #TFS 642436
