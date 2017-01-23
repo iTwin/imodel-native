@@ -705,12 +705,12 @@ protected:
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
-                                        ExpressionContextR context) const;
+                                        ExpressionContextR context) override;
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _PerformOperation(EvaluationResultR result,
                                         EvaluationResultCR leftResult, EvaluationResultCR rightResult, 
-                                        ExpressionContextR context) const;
+                                        ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolvePlusMinusNode(*this); }
 public:
                 PlusMinusNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
