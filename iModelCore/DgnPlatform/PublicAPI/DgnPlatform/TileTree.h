@@ -207,7 +207,7 @@ protected:
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
-    BeDuration m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
+    BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     BeConditionVariable m_cv;
@@ -393,6 +393,7 @@ struct DrawArgs
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {}
+    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
     TransformCR GetLocation() const {return m_location;}

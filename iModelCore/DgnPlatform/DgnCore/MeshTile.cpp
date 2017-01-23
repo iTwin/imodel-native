@@ -638,7 +638,7 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsPtr& params, DPoint3dCP points, size_t nPoints, TransformCR transform, double clusterTolerance) :  m_displayParams(params)
+TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsPtr& params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance) :  m_displayParams(params)
     {
     struct PointComparator
         {
@@ -659,15 +659,21 @@ TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsPtr& params, DPoint3dCP 
     PointComparator                     comparator(clusterTolerance);
     bset <DPoint3d, PointComparator>    clusteredPointSet(comparator);
 
-    for (DPoint3dCP point = points, end = points + nPoints; point < end; point++)
+    for (size_t i=0; i<nPoints; i++)
         {
         DPoint3d        testPoint;
 
-        transform.Multiply (testPoint, *point);
+        transform.Multiply (testPoint, points[i]);
 
         if (clusteredPointSet.find(testPoint) == clusteredPointSet.end())
             {
             m_points.push_back(testPoint);
+            if (nullptr != colors)
+                m_colors.push_back(colors[i]);
+
+            if (nullptr != normals)
+                m_normals.push_back(normals[i]);
+    
             clusteredPointSet.insert(testPoint);
             }
         }

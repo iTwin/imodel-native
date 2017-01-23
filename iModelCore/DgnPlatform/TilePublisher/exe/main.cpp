@@ -8,6 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include <PointCloud/PointCloudApi.h>
 #include <DgnPlatform/TilePublisher/TilePublisher.h>
 #include "Constants.h"
 
@@ -825,7 +826,8 @@ int wmain(int ac, wchar_t const** av)
     DgnPlatformLib::Initialize(host, false);
 
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain());
-
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain());
+                                                                                  
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;

@@ -2,7 +2,7 @@
 #
 #  $Source: TilePublisher/exe/TilePublisherExe.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -56,6 +56,7 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BeJsonCpp.lib         \
                       $(SubpartLibs)BaseGeoCoord.lib      \
                       $(SubpartLibs)ThreeMx.lib           \
+                      $(SubpartLibs)PointCloud.lib        \
                       $(SubpartLibs)BeFolly.lib           \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \

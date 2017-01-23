@@ -2974,30 +2974,16 @@ struct DrawHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams, Render::GraphicBuilderR graphic, bool& geomParamsChanged)
+static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicBuilderR graphic, bool& geomParamsChanged)
     {
-    bool doCook = geomParamsChanged;
-
-    // NOTE: Even if we aren't activating, make sure to resolve so that we can test for linestyles, display priority, etc.
-    if (!geomParams.IsResolved())
-        {
-        geomParams.Resolve(context);
-        doCook = true;
-        }
-
-    if (nullptr != geomParams.GetLineStyle() && !context.GetViewFlags().ShowStyles())
-        {
-        geomParams.SetLineStyle(nullptr);
-        doCook = true;
-        }
-
-    if (doCook)
-        graphicParams.Cook(geomParams, context);
-
     if (!geomParamsChanged)
+        {
+        // NOTE: Even if we aren't activating, make sure to resolve so that we can test for linestyles, display priority, etc.
+        geomParams.Resolve(context);
         return;
+        }
 
-    graphic.ActivateGraphicParams(graphicParams, &geomParams);
+    context.CookGeometryParams(geomParams, graphic);
     geomParamsChanged = false;
     }
 
@@ -3104,12 +3090,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
     {
     bool isQVis = mainGraphic.IsForDisplay();
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
     Render::GraphicBuilderP currGraphic = &mainGraphic;
     GeometryStreamEntryIdCP currEntryId = currGraphic->GetGeometryStreamEntryId();
     GeometryStreamEntryId entryId;
-    Render::GraphicParams graphicParams, subGraphicParams;
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
     if (nullptr != currEntryId)
@@ -3154,9 +3140,18 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
                 // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
-                geomParamsChanged = !isQVis;
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
-                subGraphicParams = graphicParams; // Save current params for AddSubGraphic in case there are symbology changes...
+//                geomParamsChanged = !isQVis;
+//                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+//                subGraphicParams = graphicParams; // Save current params for AddSubGraphic in case there are symbology changes...
+
+                geomParams.Resolve(context);
+                subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
+
+                if (!isQVis)
+                    {
+                    currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
+                    geomParamsChanged = false;
+                    }
 
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
@@ -3207,7 +3202,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
     
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (FB::BoundaryType_Closed == boundary)
                     {
@@ -3222,11 +3217,27 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                             for (int iPt = 0; iPt < nPts; ++iPt)
                                 localPoints3dBuf[iPt].Init(pts[iPt]);
 
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
                             }
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
+                        }
+                    }
+
+                if (FB::BoundaryType_None != boundary)
+                    {
+                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                    if (strokeLineStyle)
+                        {
+                        std::valarray<DPoint3d> localPoints3dBuf(nPts);
+
+                        for (int iPt = 0; iPt < nPts; ++iPt)
+                            localPoints3dBuf[iPt].Init(pts[iPt]);
+
+                        context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
+                        break;
                         }
                     }
 
@@ -3262,7 +3273,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (FB::BoundaryType_Closed == boundary)
                     {
@@ -3271,51 +3282,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
                         }
                     }
 
-#if defined (NOT_NOW_LSTYLE_TESTING)
-                if (activateParams) // NOTE: Don't bake symbology and explode linestyle for a GeometryPart...
+                if (FB::BoundaryType_None != boundary)
                     {
-                    LineStyleInfoCP lsInfo = geomParams.GetLineStyle();
+                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
-                    if (nullptr != lsInfo)
+                    if (strokeLineStyle)
                         {
-                        LineStyleSymbCR currLsSymb = lsInfo->GetLineStyleSymb();
-                        ILineStyleCP currLStyle = currLsSymb.GetILineStyle();
-
-                        if (nullptr != currLStyle && currLsSymb.GetUseStroker())
-                            {
-                            // NEEDSWORK: Add Render::Graphic discernable check/pixel range...FacetOptions for arc/bcurve...
-                            double maxWidth = currLsSymb.GetStyleWidth();
-                            double pixelThreshold = 5.0;
-
-                            if ((maxWidth / currGraphic->GetPixelSize()) < pixelThreshold)
-                                {
-                                currGraphic->UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
-                                }
-                            else
-                                {
-                                if (nullptr != graphicParams.GetLineTexture())
-                                    {
-                                    Render::GraphicParams graphicParamsLS(graphicParams);
-                                    graphicParamsLS.SetLineTexture(nullptr);
-                                    currGraphic->ActivateGraphicParams(graphicParamsLS, &geomParams);
-                                    }
-
-                                LineStyleContext lsContext(*currGraphic, graphicParams, &context);
-                                currLStyle->_GetComponent()->_StrokeLineString(lsContext, currLsSymb, pts, nPts, false);
-                                currGraphic->UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
-                                break;
-                                }
-                            }
+                        context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
+                        break;
                         }
                     }
-#endif
 
                 switch (boundary)
                     {
@@ -3348,7 +3331,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (FB::BoundaryType_Closed == boundary)
                     {
@@ -3357,11 +3340,19 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
                         }
+                    }
+
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(arc)), geomParams, false);
+                    break;
                     }
 
                 if (!context.Is3dView())
@@ -3393,10 +3384,40 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
-                // A single curve primitive is always open (or none for a point string)...
-                CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType())
+                    {
+                    if (!context.Is3dView())
+                        {
+                        bvector<DPoint3d> const* points = curvePrimitivePtr->GetPointStringCP();
+                        int nPts = (int) points->size();
+                        std::valarray<DPoint2d> localPoints2dBuf(nPts);
+
+                        for (int iPt = 0; iPt < nPts; ++iPt)
+                            {
+                            DPoint3dCP tmpPt = &points->front()+iPt;
+
+                            localPoints2dBuf[iPt].x = tmpPt->x;
+                            localPoints2dBuf[iPt].y = tmpPt->y;
+                            }
+
+                        currGraphic->AddPointString2d(nPts, &localPoints2dBuf[0], geomParams.GetNetDisplayPriority());
+                        break;
+                        }
+
+                    currGraphic->AddPointString((int) curvePrimitivePtr->GetPointStringCP()->size(), &curvePrimitivePtr->GetPointStringCP()->front());
+                    break;
+                    }
+
+                CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // A single curve primitive (that isn't a point string) is always open...
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *curvePtr, geomParams, false);
+                    break;
+                    }
 
                 if (!context.Is3dView())
                     {
@@ -3421,7 +3442,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (curvePtr->IsAnyRegionType())
                     {
@@ -3430,11 +3451,19 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams);
+                            context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
                         }
+                    }
+
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *curvePtr, geomParams, false);
+                    break;
                     }
 
                 if (!context.Is3dView())
@@ -3460,7 +3489,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, meshData))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 };
@@ -3478,7 +3507,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddSolidPrimitive(*solidPtr);
                 break;
                 }
@@ -3496,7 +3525,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, surfacePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
                 break;
                 }
@@ -3531,7 +3560,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
                     }
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBody(*entityPtr);
                 break;
                 }
@@ -3554,7 +3583,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddPolyface(meshData, false);
                 break;
                 };
@@ -3569,7 +3598,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!curvePtr.IsValid())
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddCurveVector(*curvePtr, false);
                 break;
                 };
@@ -3591,7 +3620,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (text.GetGlyphSymbology(geomParams))
                     geomParamsChanged = true;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
@@ -4123,12 +4152,16 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId, TransformCR sourceToWorld) : m_state(dgnDb)
+GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, Render::GeometryParamsCP baseParams, TransformCP sourceToWorld) : m_state(dgnDb)
     {
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
-    m_state.m_geomParams.SetCategoryId(categoryId);
-    m_state.m_sourceToWorld = sourceToWorld;
+
+    if (nullptr != baseParams)
+        m_state.m_geomParams = *baseParams;
+
+    if (nullptr != sourceToWorld)
+        m_state.m_sourceToWorld = *sourceToWorld;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5049,7 +5082,10 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStre
     if (!builder.IsValid())
         return nullptr;
     
-    GeometryCollection collection(stream, source.GetSourceDgnDb(), source.GetCategoryId(), source.GetPlacementTransform());
+    Render::GeometryParams sourceParams(categoryId);
+    Transform sourceTransform = source.GetPlacementTransform();
+
+    GeometryCollection collection(stream, source.GetSourceDgnDb(), &sourceParams, &sourceTransform);
 
     for (auto iter : collection)
         {

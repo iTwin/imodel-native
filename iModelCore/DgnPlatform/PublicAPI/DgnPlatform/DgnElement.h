@@ -2304,18 +2304,29 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
     friend struct dgn_ElementHandler::Physical;
 
+    DgnElementId m_physicalTypeId;
+    ECN::ECClassId m_physicalTypeRelClassId;
+
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
 public:
     //! Set the PhysicalType for this PhysicalElement
     //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
-    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("PhysicalType", physicalTypeId, relClassId);}
+    DGNPLATFORM_EXPORT DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId);
 
     //! Get the DgnElementId of the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    DgnElementId GetPhysicalTypeId() const {return GetPropertyValueId<DgnElementId>("PhysicalType");}
+    DgnElementId GetPhysicalTypeId() const {return m_physicalTypeId;}
+
+    //! Get the ID of the class of the PhysicalType for this PhysicalElement
+    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
+    ECN::ECClassId GetPhysicalTypeRelClassId() const {return m_physicalTypeRelClassId;}
 
     //! Get the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
