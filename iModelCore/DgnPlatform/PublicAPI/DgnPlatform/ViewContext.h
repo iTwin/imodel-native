@@ -279,7 +279,6 @@ public:
     //! @param[in]      graphic     Graphic to add to.
     //! @param[in]      curve       curve geometry
     //! @param[in]      params      GraphicParams for cooked style information.
-    //! @param[in]      is3d        false to draw as 2d curve vector using display priority from GeometryParams.
     //! @param[in]      doCook      true if CookGeometryParams needs to be called for supplied GeometryParams.
     void DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook = true) {_DrawStyledCurveVector(graphic, curve, params, doCook);}
 /** @} */
