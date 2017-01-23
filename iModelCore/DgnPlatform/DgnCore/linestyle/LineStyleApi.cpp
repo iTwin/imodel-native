@@ -238,14 +238,13 @@ StatusInt       LsComponent::_StrokeLineString2d (LineStyleContextR lsContext, L
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
     {
-    double      r0, r1, start, sweep;
-    RotMatrix   rMatrix;
-    DPoint3d    center;
+//    double      r0, r1, start, sweep;
+//    RotMatrix   rMatrix;
+//    DPoint3d    center;
+//
+//    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
 
-    arc.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-
-    bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
-
+    bool filled = false; // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
     bool isWidthDiscernible = true;//IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
 
 #if defined (NOT_NOW)
@@ -301,23 +300,23 @@ BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context,
 
     if (isWidthDiscernible)
         {
-        // NOTE: QVis filled arc can handle 180 case...need complex shape for anything else...
-        if (filled && !arc.IsFullEllipse () && isClosed && (fabs (double (sweep-msGeomConst_pi)) > .001))
+        // NOTE: QVis filled arc can handle 180 case...but we'll always create a real closed shape to play nice with other render targets...
+        if (filled && !arc.IsFullEllipse())
             {
-            CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+            CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
             DPoint3d        pts[3];
     
-            arc.EvaluateEndPoints (pts[2], pts[0]);
+            arc.EvaluateEndPoints(pts[2], pts[0]);
             pts[1] = arc.center;
 
-            curve->push_back (ICurvePrimitive::CreateArc (arc));
-            curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
+            curve->push_back(ICurvePrimitive::CreateArc(arc));
+            curve->push_back(ICurvePrimitive::CreateLineString(pts, 3));
 
-            graphic.AddCurveVector (*curve, filled);
+            graphic.AddCurveVector(*curve, filled);
             }
         else
             {
-            graphic.AddArc (arc, isClosed, filled);
+            graphic.AddArc(arc, isClosed, filled);
             }
         }
     else
