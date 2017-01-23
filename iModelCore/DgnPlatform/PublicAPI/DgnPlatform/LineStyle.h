@@ -451,7 +451,7 @@ protected:
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
@@ -498,7 +498,7 @@ private:
     LsSymbolComponent(LsSymbolComponentCR src);
 
 protected:
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
     
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
@@ -716,7 +716,7 @@ private:
                     LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
@@ -730,7 +730,7 @@ public:
     virtual void    _ClearPostProcess           () override;
     size_t          GetNumComponents            () const {return m_components.size ();}
     double          GetOffset                   (size_t index)   const   {return m_components[index].m_offset;}
-    virtual double  _GetLength                  () const {return m_size.x;}
+    virtual double  _GetLength                  () const override {return m_size.x;}
     virtual double  _GetMaxWidth                 () const override   {return m_size.y;}
     virtual bool    _HasWidth                   () const override;
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
@@ -739,7 +739,7 @@ public:
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
-    bool            _HasUniformFullWidth         (double *pWidth)   const;
+    bool            _HasUniformFullWidth         (double *pWidth)   const override;
     virtual void _StartTextureGeneration() const override;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
@@ -938,7 +938,7 @@ protected:
     void            StrokeLocal             (LineStyleContextR, ISymbolProcess const*, DPoint3dCP, int, double, Render::LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
 
@@ -957,7 +957,7 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
-    double          _CalcRepetitions         (Render::LineStyleSymbCP) const;
+    double          _CalcRepetitions         (Render::LineStyleSymbCP) const override;
     LsStrokeP       AppendStroke            (LsStrokeCR stroke);
     void            AppendStroke            (double length, bool isDash);
     void            DeleteStroke            (size_t index);
@@ -1135,7 +1135,7 @@ private:
 
 protected:
     ~LsPointComponent   ();
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     virtual void                    _PostProcessLoad        () override;
@@ -1218,7 +1218,7 @@ public:
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const { return const_cast<LsInternalComponent*>(this); }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override { return const_cast<LsInternalComponent*>(this); }
 
 //__PUBLISH_SECTION_START__
 public:
