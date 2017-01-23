@@ -2591,6 +2591,80 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PHYSICAL_PhysicalType, 
+        [](ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (PhysicalElement&)elIn;
+            value.SetNavigationInfo(el.GetPhysicalTypeId(), el.GetPhysicalTypeRelClassId());
+            return DgnDbStatus::Success;
+            },
+
+        [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            auto& el = (PhysicalElement&)elIn;
+            return el.SetPhysicalType(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_physicalTypeId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(PHYSICAL_PhysicalType), &m_physicalTypeRelClassId);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(PHYSICAL_PhysicalType), m_physicalTypeId, m_physicalTypeRelClassId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto src = dynamic_cast<PhysicalElement const*>(&el);
+    if (nullptr != src)
+        {
+        m_physicalTypeId = src->m_physicalTypeId;
+        m_physicalTypeRelClassId = src->m_physicalTypeRelClassId;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalElement::SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId)
+    {
+    // *** NEEDS_WORK: Validation?
+    m_physicalTypeId = physicalTypeId;
+    m_physicalTypeRelClassId = relClassId;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);

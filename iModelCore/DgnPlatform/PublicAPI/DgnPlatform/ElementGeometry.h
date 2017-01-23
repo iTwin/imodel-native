@@ -441,7 +441,7 @@ public:
     
     //! Iterate a GeometryStream.
     //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeometryPartPtr, etc. until done iterating.
-    DGNPLATFORM_EXPORT GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId = DgnCategoryId(), TransformCR sourceToWorld = Transform::FromIdentity());
+    DGNPLATFORM_EXPORT GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, Render::GeometryParamsCP baseParams = nullptr, TransformCP sourceToWorld = nullptr);
 
     //! Iterate a GeometrySource.
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.

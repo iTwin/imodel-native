@@ -366,6 +366,7 @@ bool DgnElement::_Equals(DgnElementCR other, DgnElement::ComparePropertyFilter c
                 other.LoadUserProperties();
             if (!m_userProperties->ToString().Equals(other.m_userProperties->ToString()))
                 return false;
+            continue;
             }
 
         if (!_EqualProperty(otherProp, other))
@@ -723,7 +724,7 @@ BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, E
     if (propertiesToBind.empty())
         return m_updaters[eclassId] = nullptr;
 
-    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind);
+    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind, "NoECClassIdFilter");
     }
 
 /*---------------------------------------------------------------------------------**//**
