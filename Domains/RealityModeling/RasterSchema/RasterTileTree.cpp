@@ -182,7 +182,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(RenderListContext&
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 
