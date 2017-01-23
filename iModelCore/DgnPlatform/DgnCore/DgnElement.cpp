@@ -259,9 +259,9 @@ DgnDbStatus DgnElement::_OnInsert()
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
-    if ((m_parentId.IsValid() && m_parentRelClassId.IsValid()) || (!m_parentId.IsValid() && !m_parentRelClassId.IsValid()))
+    if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
         {
-        BeAssert(false);
+        BeAssert(false); // when m_parentId.IsValid, m_parentRelClassId must be a subclass of BisCore:ElementOwnsChildElements
         return DgnDbStatus::InvalidParent;
         }
 
