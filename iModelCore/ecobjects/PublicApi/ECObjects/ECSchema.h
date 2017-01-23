@@ -1921,7 +1921,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
     
     //! Returns true if this class has the CoreCustomAttributes:IsMixin custom attribute applied.
-    bool IsMixin() { return IsDefinedLocal("CoreCustomAttributes", "IsMixin"); }
+    bool IsMixin() const {return IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
+
+    //! Returns true if the provided mixin class can be applied to this class. 
+    //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
+    //! @param[in] mixinClass The ECEntityClass to check if it can be add as a mixin to this class.
+    ECOBJECTS_EXPORT bool CanApply(ECEntityClassCR mixinClass) const;
 };
 
 //---------------------------------------------------------------------------------------
@@ -3261,6 +3266,14 @@ public:
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateEntityClass (ECEntityClassP& ecClass, Utf8StringCR name);
+
+    //! If the class name is valid, will create a mixin class with the provided appliesTo ECEntityClass and add the new class to the schema.
+    //! @remarks A mixin class is an ECEntityClass with the ::ECClassModifier set to ::Abstract and the IsMixin custom attribute set.
+    //! @param[out] ecClass If successful, will contain a new ECEntityClass object
+    //! @param[in]  name        Name of the class to create
+    //! @param[in]  appliesTo   The class used to set the AppliesToEntityClass property in the IsMixin Custom Attribute
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateMixinClass(ECEntityClassP& ecClass, Utf8StringCR name, ECEntityClassCR appliesTo);
 
     //! If the class name is valid, will create an ECStructClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECStructClass object

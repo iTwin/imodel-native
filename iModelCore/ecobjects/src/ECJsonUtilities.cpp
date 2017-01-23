@@ -45,8 +45,7 @@ BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value c
     if (!json.isString())
         return ERROR;
 
-    Utf8String base64Str = json.asString();
-    Base64Utilities::Decode(binary, base64Str);
+    Base64Utilities::Decode(binary, json.asString());
     return SUCCESS;
     }
 
@@ -947,7 +946,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 
         case PRIMITIVETYPE_DateTime:
             {
-            valueToPopulate[propertyName] = ecValue.GetDateTimeTicks();
+            valueToPopulate[propertyName] = ecValue.ToString();
             break;
             }
 
@@ -971,23 +970,12 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 
         case PRIMITIVETYPE_Point2d:
             {
-            DPoint2d    point2d = ecValue.GetPoint2d();
-
-            auto& structObj = valueToPopulate[propertyName] = Json::objectValue;
-            structObj["x"] = point2d.x;
-            structObj["y"] = point2d.y;
-            break;
+            return ECJsonUtilities::Point2dToJson(valueToPopulate[propertyName], ecValue.GetPoint2d());
             }
 
         case PRIMITIVETYPE_Point3d:
             {
-            DPoint3d    point3d = ecValue.GetPoint3d();
-
-            auto& structObj = valueToPopulate[propertyName] = Json::objectValue;
-            structObj["x"] = point3d.x;
-            structObj["y"] = point3d.y;
-            structObj["z"] = point3d.z;
-            break;
+            return ECJsonUtilities::Point3dToJson(valueToPopulate[propertyName], ecValue.GetPoint3d());
             }
 
         case PRIMITIVETYPE_String:
@@ -1077,7 +1065,7 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
                 BeAssert(false);
                 return ixwStatus;
                 }
-            arrayObj.append(entryObj);
+            arrayObj.append(entryObj[typeString]);
             }
         }
     else if (ARRAYKIND_Struct == arrayKind)
@@ -1200,7 +1188,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopu
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr);

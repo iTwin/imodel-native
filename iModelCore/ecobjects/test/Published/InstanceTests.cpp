@@ -2,13 +2,11 @@
 |
 |     $Source: test/Published/InstanceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-
-#include "BeXml/BeXml.h"
 
 using namespace ECN;
 
@@ -78,194 +76,6 @@ struct InstanceTests : ECTestFixture
     };
 
 struct PropertyTests : InstanceTests {};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyTestInstance (IECInstanceCP testInstance)
-    {
-    ECValue ecValue;
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "BaseClassMember"));
-    EXPECT_EQ (987, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "IntegerMember"));
-    EXPECT_EQ (12, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "CustomFormatInt"));
-    EXPECT_EQ (13, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "BooleanMember"));
-    EXPECT_FALSE (ecValue.GetBoolean ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "DoubleMember"));
-    EXPECT_EQ (456.789, ecValue.GetDouble ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StringMember"));
-    EXPECT_STREQ (ecValue.GetUtf8CP (), "Test string");
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FileNameMember"));
-    EXPECT_STREQ (ecValue.GetUtf8CP (), "c:\\usr\\barry\\test.txt");
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "NegativeMember"));
-    EXPECT_EQ (-42, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "DateTimeMember"));
-    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StartPoint"));
-    EXPECT_EQ (1.1, ecValue.GetPoint3d ().x);
-    EXPECT_EQ (2.2, ecValue.GetPoint3d ().y);
-    EXPECT_EQ (3.3, ecValue.GetPoint3d ().z);
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "EndPoint"));
-    EXPECT_EQ (4.4, ecValue.GetPoint3d ().x);
-    EXPECT_EQ (7.7, ecValue.GetPoint3d ().y);
-    EXPECT_EQ (6.6, ecValue.GetPoint3d ().z);
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_FALSE (ecValue.GetBoolean ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1IntMember"));
-    EXPECT_EQ (4, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStruct.Struct3DoubleMember"));
-    EXPECT_EQ (17.443, ecValue.GetDouble ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStruct.Struct3IntMember"));
-    EXPECT_EQ (531992, ecValue.GetInteger ());
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStruct.Struct3BoolMember"));
-    EXPECT_TRUE (ecValue.GetBoolean ());
-
-    int         expectedInts[] = { 0, 101, 202, 303, 404, 505, 606, 707, 808, 909 };
-    for (uint32_t index = 0; index < _countof (expectedInts); index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedArray", index));
-        EXPECT_EQ (expectedInts[index], ecValue.GetInteger ());
-        }
-
-    int         moreInts[] = { 41556, 32757, 56789, 32757, 21482 };
-    for (uint32_t index = 0; index < _countof (moreInts); index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "IntArray", index));
-        EXPECT_EQ (moreInts[index], ecValue.GetInteger ());
-        }
-
-    EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "OneMemberIntArray", 0));
-    EXPECT_EQ (3, ecValue.GetInteger ());
-
-    DPoint3d    expectedPoints[] = { { 4.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 }, { 2.0, 2.0, 2.0 }, { 3.0, 3.0, 3.0 }, { 4.0, 4.0, 4.0 }, { 5.0, 5.0, 5.0 } };
-    for (uint32_t index = 0; index < _countof (expectedPoints); index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "PointArray", index));
-        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3d ().x);
-        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3d ().y);
-        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3d ().z);
-        }
-
-    for (uint32_t index = 0; index < 300; index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "DateArray", index));
-        }
-
-    for (uint32_t index = 0; index < 300; index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StringArray", index));
-        Utf8Char     expectedString[128];
-        sprintf (expectedString, "String %d", index % 30);
-        EXPECT_STREQ (expectedString, ecValue.GetUtf8CP ());
-        }
-
-    for (uint32_t index = 0; index < 100; index++)
-        {
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "SmallIntArray", index));
-        EXPECT_EQ (index, ecValue.GetInteger ());
-        }
-
-    // test the structArray of Struct2's that contains a nested array of Struct1's. Here's the data we expect:
-    Struct1  firstArray[] =
-        { { true, 0 }, { false, 10 }, { true, 20 }, { false, 30 } };
-
-    Struct1  secondArray[] =
-        { { false, 0 }, { true, 101 }, { false, 202 }, { true, 303 }, { false, 404 } };
-
-    Struct2 struct2ExpectedValues[] =
-        {
-            {
-            false,
-            "testInstance.StructArray[0].Struct2StringMember",
-            false,
-            123456.789,
-            firstArray,
-            _countof (firstArray),
-                },
-                {
-                false,
-                "testInstance.StructArray[1].Struct2StringMember",
-                false,
-                23456.789,
-                secondArray,
-                _countof (secondArray),
-                    },
-                    {
-                    false,
-                    "Added.Struct2StringMember",
-                    true,
-                    0.0,
-                    NULL,
-                    0
-                        },
-        };
-
-    for (uint32_t index = 0; index < _countof (struct2ExpectedValues); index++)
-        {
-        ECValue         structArrayMember;
-        EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (structArrayMember, "StructArray", index));
-        IECInstancePtr  structArrayInstance = structArrayMember.GetStruct ();
-        EXPECT_TRUE (structArrayInstance.IsValid ());
-
-        if (struct2ExpectedValues[index].struct2StringMemberNull)
-            {
-            // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetString (stringValue, "Struct2StringMember"));
-            }
-        else
-            {
-            EXPECT_EQ (ECObjectsStatus::Success, structArrayInstance->GetValue (ecValue, "Struct2StringMember"));
-            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetUtf8CP ());
-            }
-
-        if (struct2ExpectedValues[index].struct2DoubleMemberNull)
-            {
-            // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetDouble (doubleValue, "Struct2DoubleMember"));
-            }
-        else
-            {
-            EXPECT_EQ (ECObjectsStatus::Success, structArrayInstance->GetValue (ecValue, "Struct2DoubleMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble ());
-            }
-
-        // now try to get the array of structs, if expected.
-        if (NULL == struct2ExpectedValues[index].nestedArray)
-            continue;
-
-        for (uint32_t nestedIndex = 0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
-            {
-            ECValue     nestedArrayMember;
-            EXPECT_EQ (ECObjectsStatus::Success, structArrayInstance->GetValue (nestedArrayMember, "NestedArray", nestedIndex));
-            IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct ();
-            EXPECT_TRUE (nestedInstance.IsValid ());
-
-            EXPECT_EQ (ECObjectsStatus::Success, nestedInstance->GetValue (ecValue, "Struct1BoolMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean ());
-
-            EXPECT_EQ (ECObjectsStatus::Success, nestedInstance->GetValue (ecValue, "Struct1IntMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger ());
-            }
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -421,34 +231,6 @@ TEST_F (InstanceTests, TestSetDisplayLabel)
     EXPECT_STREQ (displayLabel.c_str (), "Some fancy instance label");
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (InstanceTests, InstanceWriteReadFile)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str (), *schemaContext);
-
-    EXPECT_EQ (SchemaReadStatus::Success, schemaStatus);
-
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
-
-    IECInstancePtr  testInstance;
-    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath (L"SimpleTest_Instance.xml").c_str (), *instanceContext);
-    EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
-
-    VerifyTestInstance (testInstance.get ());
-
-    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), true, false));
-    IECInstancePtr  readbackInstance;
-    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), *instanceContext);
-
-    EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
-    VerifyTestInstance (readbackInstance.get ());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -478,34 +260,6 @@ TEST_F(InstanceTests, GetInstanceAttributesUsingInstanceInterface)
     //Get IECInstance
     IECInstanceCP instance = instanceInterface.ObtainECInstance();
     ASSERT_TRUE(instance != nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceTests, WriteECInstance)
-    {
-    CreateSchema();
-    CreateProperty("StringProperty", PRIMITIVETYPE_String);
-    CreateInstance();
-
-    ASSERT_EQ(ECObjectsStatus::Success, m_instance->SetValue("StringProperty", ECValue("Some value")));
-
-    // WriteToBeXmlNode
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
-    ASSERT_EQ(InstanceWriteStatus::Success, m_instance->WriteToBeXmlNode(*xmlWriter));
-
-    Utf8String nodeInstanceString;
-    xmlWriter->ToString(nodeInstanceString);
-
-    // WriteToBeXmlDom
-    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
-    Utf8String domInstanceString = "";
-    ASSERT_EQ(InstanceWriteStatus::Success, m_instance->WriteToBeXmlDom(*xmlDOMWriter, true));
-    xmlDOMWriter->ToString(domInstanceString);
-
-    // compare strings
-    ASSERT_STREQ(nodeInstanceString.c_str(), domInstanceString.c_str());
     }
 
 //---------------------------------------------------------------------------------------

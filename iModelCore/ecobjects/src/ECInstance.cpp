@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -2601,7 +2601,7 @@ struct  InstanceXmlReader
             ecInstance = m_context.CreateStandaloneInstance(*foundClass).get();
 
             Utf8String instanceId;
-            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, ECINSTANCE_INSTANCEID_ATTRIBUTE))
+            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, ECINSTANCE_INSTANCEID_XML_ATTRIBUTE))
                 {
                 ecInstance->SetInstanceId(instanceId.c_str());
                 }
@@ -3556,7 +3556,7 @@ struct  InstanceXmlWriter
                 }
 
             if (writeInstanceId)
-                m_xmlWriter->WriteAttribute(ECINSTANCE_INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_INSTANCEID_XML_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
             InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember(ecClass, ecInstance, NULL);
             if (status != InstanceWriteStatus::Success)
