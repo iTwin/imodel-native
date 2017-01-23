@@ -1574,6 +1574,7 @@ protected:
     std::atomic<size_t> m_nMeshedNodes;
     std::atomic<size_t> m_nStitchedNodes;
     std::atomic<size_t> m_nFilteredNodes;
+    std::atomic<size_t> m_nTexturedNodes;
 
     };
 

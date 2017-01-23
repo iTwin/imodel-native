@@ -3540,6 +3540,14 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
+    size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t)0);
+    m_SMIndex->m_nTexturedNodes++;
+    float progressForStep = (float)(m_SMIndex->m_nTexturedNodes) / nOfNodes;
+
+    if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
+
+    if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
+
     if (!IsLoaded()) Load();
     DRange2d rasterBox = sourceRasterP->GetTextureExtent(); 
     //get overlap between node and raster extent
@@ -3626,6 +3634,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     {
 
     TextureFromRaster(sourceRasterP, unitTransform);
+    if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
 
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
@@ -3637,6 +3646,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             {
             if (m_apSubNodes[indexNodes] != nullptr)
                 {
+                if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
                 auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes]);
                 assert(mesh != nullptr);
                 mesh->TextureFromRasterRecursive(sourceRasterP, unitTransform);

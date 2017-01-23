@@ -7700,6 +7700,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_indexHeader.m_resolution = 0.0f;
+    m_indexHeader.m_textured = IndexTexture::None;
     m_isGenerating = true;
     // If a store is provided ...
     if (m_dataStore != NULL)
@@ -8121,6 +8122,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
     m_nMeshedNodes = 0;
     m_nFilteredNodes = 0;
     m_nStitchedNodes = 0;
+    m_nTexturedNodes = 0;
     }
 
 

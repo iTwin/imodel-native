@@ -403,8 +403,15 @@ IScalableMeshCreator::Impl::~Impl()
 StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+    GetProgress()->Progress() = 0.0;
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Embedded);
     m_scmPtr->TextureFromRaster(mosaicPtr);
+    GetProgress()->Progress() = 1.0;
     return SUCCESS;
     }
 
