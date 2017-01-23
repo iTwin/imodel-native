@@ -216,11 +216,13 @@ protected:
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
+    virtual ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) = 0;
 
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
+    virtual Utf8CP _GetName() const = 0;
     void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
     void DoneTileLoad() {{BeMutexHolder holder(m_cv.GetMutex()); --m_activeLoads; BeAssert(m_activeLoads>=0);} m_cv.notify_all();}
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads>0) m_cv.InfiniteWait(holder);}
@@ -264,7 +266,7 @@ public:
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
     //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
-    void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
+    DGNPLATFORM_EXPORT void DrawInView(RenderListContext& context, TransformCR, ClipVectorCP);
 };
 
 //=======================================================================================
@@ -433,10 +435,9 @@ struct Root : TileTree::Root
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
     ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
 
-    virtual Utf8CP _GetName() const = 0;
+    ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) override;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
-    void DrawInView(RenderListContext& context);
 };
     
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -262,7 +262,7 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     Load(&context.GetTargetR().GetSystem());
 
     if (m_root.IsValid())
-        m_root->DrawInView(context);
+        m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
