@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -174,17 +174,17 @@ protected:
                                 MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context);
                                 MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context);
 
-    virtual bool                _CanReuseResult ()               { return true; }
-    virtual bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
-    virtual bool                _SupportsInstanceMethodCall () const override { return NULL != m_instanceMethod; }
+    bool                _CanReuseResult () override  { return true; }
+    bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
+    bool                _SupportsInstanceMethodCall () const override { return NULL != m_instanceMethod; }
     virtual bool                _SupportsValueListMethodCall() const override { return NULL != m_valueListMethod; }
 
     //  The vector of arguments does not include the object used to invoke the method. It is
     //  up to the specific implementation of MethodReference to hold onto the instance and to use
     //  that to invoke the method.
-    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
-    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) override;
-    virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) override;
+    ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
+    ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) override;
+    ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) override;
 public:
 
     static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context = nullptr);
@@ -279,8 +279,8 @@ private:
     ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance);
     ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList);
 
-    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
     ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR instance);
 protected:
@@ -374,8 +374,9 @@ protected:
     ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
-    ECOBJECTS_EXPORT virtual bool                _IsNamespace() const { return true; }
-                                SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
+    ECOBJECTS_EXPORT virtual bool                _IsNamespace() const override { return true; }
+    
+    SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
 
 public:
 
@@ -471,7 +472,7 @@ protected:
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
                                                 { return ExpressionStatus::NeedsLValue; }
-    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const
+    ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const override
         {
         result = m_methodReference.get();
         return ExpressionStatus::Success;
