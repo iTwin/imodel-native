@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsCurveVector.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -34,12 +34,12 @@ protected :
 public:
     JsCurveVector () {}
 
-    virtual JsCurveVectorP AsCurveVector () {return this;}
-    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_curveVector);}
+    virtual JsCurveVectorP AsCurveVector () override {return this;}
+    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curveVector);}
 
 
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
-    JsCurveVectorP Clone () {return new JsCurveVector (m_curveVector->Clone ());} 
+    JsCurveVectorP Clone () override {return new JsCurveVector (m_curveVector->Clone ());} 
 
     // wrap a native curve vector as the strongest Js type possible . . .
     static JsCurveVectorP StronglyTypedJsCurveVector (CurveVectorPtr &data);

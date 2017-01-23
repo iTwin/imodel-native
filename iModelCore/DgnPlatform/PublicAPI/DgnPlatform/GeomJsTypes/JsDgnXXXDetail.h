@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -26,14 +26,14 @@ ISolidPrimitivePtr m_solidPrimitive;
 public:
 JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
 // hmm ...this class is not instantiable but typescript wrapperw want it to be so ...
-virtual JsSolidPrimitiveP Clone ();
+virtual JsSolidPrimitiveP Clone () override;
 static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primitive);
 
     JsSolidPrimitive (){}
 
 
     virtual JsSolidPrimitiveP AsSolidPrimitive () override {return this;}
-    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_solidPrimitive);}
+    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_solidPrimitive);}
 
     virtual JsDgnConeP AsDgnCone () {return nullptr;}
     virtual JsDgnSphereP AsDgnSphere () {return nullptr;}
@@ -41,7 +41,7 @@ static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primi
     virtual JsDgnTorusPipeP AsDgnTorusPipe () {return nullptr;}
     virtual JsDgnExtrusionP AsDgnExtrusion () {return nullptr;}
     virtual JsDgnRotationalSweepP AsDgnRotationalSweep () {return nullptr;}
-    virtual JsDgnRuledSweepP AsRuledSweepDgn () {return nullptr;}
+    virtual JsDgnRuledSweepP AsDgnRuledSweepDgn () {return nullptr;}
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
     virtual ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
@@ -128,7 +128,7 @@ struct JsDgnSphere: JsSolidPrimitive
 public:
 JsDgnSphere (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
 virtual JsSolidPrimitiveP Clone () override {return new JsDgnSphere (GetISolidPrimitivePtr ()->Clone ());}
-virtual JsDgnSphereP AsDgnSphere () {return this;}
+virtual JsDgnSphereP AsDgnSphere () override {return this;}
 
 static JsDgnSphereP CreateSphere (JsDPoint3dP center, double radius)
     {
@@ -146,7 +146,7 @@ struct JsDgnTorusPipe: JsSolidPrimitive
 public:
 JsDgnTorusPipe (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
 virtual JsSolidPrimitiveP Clone () override {return new JsDgnTorusPipe (GetISolidPrimitivePtr ()->Clone ());}
-virtual JsDgnTorusPipeP AsDgnTorusPipe () {return this;}
+virtual JsDgnTorusPipeP AsDgnTorusPipe () override {return this;}
 
 static JsDgnTorusPipeP CreateTorusPipe (
         JsDPoint3dP center,
@@ -194,7 +194,7 @@ public:
 
     JsDgnBox (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnBox (GetISolidPrimitivePtr ()->Clone ());}
-    virtual JsDgnBoxP AsDgnBox () {return this;}
+    virtual JsDgnBoxP AsDgnBox () override {return this;}
 
 
 
@@ -237,7 +237,7 @@ public:
 
     JsDgnExtrusion (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnExtrusion (GetISolidPrimitivePtr ()->Clone ());}
-    virtual JsDgnExtrusionP AsDgnExtrusion () {return this;}
+    virtual JsDgnExtrusionP AsDgnExtrusion () override {return this;}
 
     static JsDgnExtrusionP Create (
             JsCurveVectorP profile,
@@ -266,7 +266,7 @@ public:
 
     JsDgnRotationalSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnRotationalSweep (GetISolidPrimitivePtr ()->Clone ());}
-    virtual JsDgnRotationalSweepP AsDgnRotationalSweep () {return this;}
+    virtual JsDgnRotationalSweepP AsDgnRotationalSweep () override {return this;}
 
 
     static JsDgnRotationalSweepP Create (
@@ -298,7 +298,7 @@ public:
 
     JsDgnRuledSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnRuledSweep (GetISolidPrimitivePtr ()->Clone ());}
-    virtual JsDgnRuledSweepP AsRuledSweepDgn () {return this;}
+    virtual JsDgnRuledSweepP AsDgnRuledSweepDgn () override {return this;}
 
     static JsDgnRuledSweepP Create (
             JsUnstructuredCurveVectorP profiles,
