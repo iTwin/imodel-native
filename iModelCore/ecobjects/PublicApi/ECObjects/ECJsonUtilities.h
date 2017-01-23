@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECJsonUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 
 #include "ECSchema.h"
 #include "ECInstance.h"
+#include <Bentley/ByteStream.h>
 #include <Geom/GeomApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/BeRapidJson.h>
@@ -57,6 +58,12 @@ public:
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>& binaryArray, Json::Value const& json);
+    //! Converts the specified Json value to a ByteStream
+    //! The Json value must hold a BLOB as Base64 encoded string.
+    //! @param[out] byteStream the resulting ByteStream
+    //! @param[in] json the Json value
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(ByteStream& byteStream, Json::Value const& json);
     //! Converts the specified DPoint2d to a Json value
     //! The point is converted to a Json object with keys "x" and "y".
     //! @param[out] json the resulting Json value
@@ -128,6 +135,13 @@ public:
     //! @param[in] json The RapidJsonValue
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>& binaryArray, RapidJsonValueCR json);
+
+    //! Converts the specified RapidJsonValue to a ByteStream
+    //! The RapidJsonValue must hold the BLOB as Base64 encoded string.
+    //! @param[out] byteStream the resulting ByteStream
+    //! @param[in] json The RapidJsonValue
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(ByteStream& byteStream, RapidJsonValueCR json);
 
     //! Converts the specified DPoint2d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".

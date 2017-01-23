@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -2034,7 +2034,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         destination = arrayAddress + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask));
         source = (Byte*)firstArrayEntryOffset;
 
-        bytesToMove = propertyBytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
+        bytesToMove = propertyBytesAllocated - (arrayOffset + sizeof(ArrayCount) + (preNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
 
         memmove (destination, source, bytesToMove);
         totalBytesAdjusted += (uint32_t)(source - destination);
