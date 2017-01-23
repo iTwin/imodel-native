@@ -704,7 +704,7 @@ DgnElementId SpatialViewController::ProgressiveTask::GetNextId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
     m_thisBatch = 0; // restart every pass
     m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
@@ -726,7 +726,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
-                context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
+                context.EnableStopAfterTimout(BeDuration::FromMilliSeconds(SHOW_PROGRESS_INTERVAL));
                 m_setTimeout = true;
                 }
 

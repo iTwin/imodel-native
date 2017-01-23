@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -619,7 +619,7 @@ public:
         SpatialViewControllerR m_view;
         DgnElementId GetNextId();
         DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
-        virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+        virtual Completion _DoProgressive(RenderListContext& context, WantShow&) override;
     };
 
 private:

@@ -66,7 +66,7 @@ struct ProgressiveTask : RefCounted<NonCopyableClass>
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
     enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _DoProgressive(struct ProgressiveContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
+    virtual Completion _DoProgressive(struct RenderListContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 /*=================================================================================**//**
@@ -159,7 +159,7 @@ struct UpdatePlan
 {
     struct Query
     {
-        std::chrono::milliseconds m_maxTime = std::chrono::seconds(2);    // maximum time query should run (milliseconds)
+        BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
@@ -168,18 +168,18 @@ struct UpdatePlan
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
-        std::chrono::milliseconds GetTimeout() const {return m_maxTime;}
+        BeDuration GetTimeout() const {return m_maxTime;}
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
         void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetTimeout(std::chrono::milliseconds maxTime) {m_maxTime=maxTime;}
+        void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
         void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
-        void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
+        void SetDelayAfter(uint32_t val) const {m_delayAfter=val;}
     };
 
     struct AbortFlags
@@ -211,6 +211,7 @@ struct UpdatePlan
 
     uint32_t    m_priority = 0;
     uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
+    BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
     bool        m_timeoutIsPct = false;
     bool        m_hasSubRect = false;
     DRange3d    m_subRect;
@@ -226,9 +227,11 @@ public:
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetCreateSceneTimeoutMillis(std::chrono::milliseconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
+    void SetCreateSceneTimeoutMillis(BeDuration::MilliSeconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
-    uint32_t GetCreateSceneTimeout() const { return m_timeout; }
+    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    BeTimePoint GetQuitTime() const {return m_quitTime;}
+    uint32_t GetCreateSceneTimeout() const {return m_timeout;}
     bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
 };
