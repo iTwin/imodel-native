@@ -2,7 +2,7 @@
 |
 |   $Source: Core/cppwrappers/DTMIterators.cpp $
 |
-| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -1054,13 +1054,10 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         if (P4 == P3)
             return false;
 
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
+            return true;
         if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P4))
             return false;
-        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
-            {
-
-            return true;
-            }
         P2 = P4;
         }
 
