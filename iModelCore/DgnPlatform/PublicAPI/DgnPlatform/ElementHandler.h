@@ -119,6 +119,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for SpatialLocationElement

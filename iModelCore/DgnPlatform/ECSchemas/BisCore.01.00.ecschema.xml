@@ -870,6 +870,10 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="PhysicalType" relationshipName="PhysicalElementIsOfType" direction="Forward">
+          <ECCustomAttributes>
+            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
