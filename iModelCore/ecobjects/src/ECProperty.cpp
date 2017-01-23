@@ -1864,4 +1864,54 @@ void ECProperty::InvalidateClassLayout()
     m_class.InvalidateDefaultStandaloneEnabler();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECProperty::SetOriginalName(Utf8CP originalName)
+    {
+    LOG.debugv("Attempting to add PropertyRenamed custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+
+    IECInstancePtr renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("PropertyRenamed");
+    if (!renameInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    ECValue origNameValue(originalName);
+    if (ECObjectsStatus::Success != renameInstance->SetValue("OriginalName", origNameValue))
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for the property '%s.%s' with 'OriginalName' set to '%s'.", GetClass().GetFullName(), GetName().c_str(), originalName);
+        return;
+        }
+
+    // Add ECv3ConversionAttributes as a schema reference, if it is not already.
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaKey key("ECv3ConversionAttributes", 1, 0);
+    ECSchemaPtr convSchema = ECSchema::LocateSchema(key, *context);
+    if (!convSchema.IsValid())
+        {
+        LOG.warningv("Failed to locate schema, %s.", key.GetName().c_str());
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+        }
+
+    if (!ECSchema::IsSchemaReferenced(GetClass().GetSchema(), *convSchema))
+        {
+        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetClass().GetSchema().GetName().c_str());
+            LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+            return;
+            }
+        }
+
+    if (ECObjectsStatus::Success != SetCustomAttribute(*renameInstance))
+        {
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute, with 'OriginalName' set to '%s', to property '%s.%s'.", originalName, GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    LOG.debugv("Successfully added PropertyRenamed custom attribute to property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

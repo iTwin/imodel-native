@@ -367,6 +367,8 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties, Utf8String newName)
     {
+    Utf8String originalName = prop->GetName();
+
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
@@ -393,6 +395,9 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         delete newProperty;
         return status;
         }
+
+    // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
+    newProperty->SetOriginalName(originalName.c_str());
 
     if (renameDerivedProperties)
         {
@@ -585,9 +590,14 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             {
             if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                 {
+                Utf8String originalName = pProperty->GetName();
+
                 Utf8String newName;
                 FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
                 pProperty->SetName(newName);
+
+                // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
+                pProperty->SetOriginalName(originalName.c_str());
                 }
             else
                 return status;
@@ -595,7 +605,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         else if (!baseProperty->GetName().Equals(pProperty->GetName()))
             {
             if (resolveConflicts)
-                pProperty->SetName(baseProperty->GetName());
+                pProperty->SetName(baseProperty->GetName()); // Does not need the Renamed CustomAttribute since the GetPropertyP is a case-insensitive search.
             else
                 {
                 LOG.errorv("Case-collision between %s:%s and %s:%s", baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str(), GetFullName(), pProperty->GetName().c_str());

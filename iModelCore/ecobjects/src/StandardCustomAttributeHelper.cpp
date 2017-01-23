@@ -321,6 +321,105 @@ IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP a
     return CoreCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
     }
 
+//*********************** ConversionCustomAttributesSchemaHolder *************************************
+
+//=======================================================================================    
+//! Helper class to hold the ECv3ConversionAttributes schema
+//! The primary use-case is to facilitate adding the PropertyRenamed CA to an ECProperty 
+//! for Instance transformation.
+//! @bsiclass
+//=======================================================================================    
+
+struct ConversionCustomAttributesSchemaHolder;
+typedef RefCountedPtr<ConversionCustomAttributesSchemaHolder> ConversionCustomAttributesSchemaHolderPtr;
+
+static Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
+static Utf8CP s_renamedAccessor = "PropertyRenamed";
+static const uint32_t s_convVersionRead = 1;
+static const uint32_t s_convVersionMinor = 0;
+
+struct ConversionCustomAttributesSchemaHolder : RefCountedBase
+    {
+    private:
+        ECSchemaPtr            m_schema;
+        bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
+
+        static ConversionCustomAttributesSchemaHolderPtr s_schemaHolder;
+
+        ConversionCustomAttributesSchemaHolder();
+        ECSchemaPtr _GetSchema() {return m_schema;}
+        IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
+
+    public:
+        /*__PUBLISH_SECTION_START__*/
+        static ConversionCustomAttributesSchemaHolderPtr GetHolder();
+        static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
+        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
+    };
+
+ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::s_schemaHolder;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaKey key(s_convSchemaName, s_convVersionRead, s_convVersionMinor);
+
+    m_schema = ECSchema::LocateSchema(key, *schemaContext);
+
+    ECClassP metaDataClass = m_schema->GetClassP(s_renamedAccessor);
+    StandaloneECEnablerPtr enabler;
+    if (nullptr != metaDataClass)
+        enabler = metaDataClass->GetDefaultStandaloneEnabler();
+
+    m_enablers.Insert(s_renamedAccessor, enabler);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::GetHolder()
+    {
+    if (s_schemaHolder.IsNull())
+        s_schemaHolder = new ConversionCustomAttributesSchemaHolder();
+
+    return s_schemaHolder;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
+    {
+    if (!m_schema.IsValid())
+        _GetSchema();
+
+    auto enablerIterator = m_enablers.find(attribute);
+    if (enablerIterator == m_enablers.end())
+        {
+        BeDataAssert(false && "Unknown custom attribute class name. Currently only PropertyRenamed is supported.");
+        return nullptr;
+        }
+
+    StandaloneECEnablerPtr enabler = enablerIterator->second;
+    if (!enabler.IsValid())
+        return nullptr;
+
+    return enabler->CreateInstance().get();
+    }
+
+//*********************** ConversionCustomAttributeHelper *************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
+    {
+    return ConversionCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
+    }
+
 //*****************************************************************
 //ECDbMapHelper
 //*****************************************************************

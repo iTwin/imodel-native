@@ -651,6 +651,10 @@ private:
     ECPropertyCP            m_baseProperty;
     mutable IECTypeAdapter* m_cachedTypeAdapter;
 
+    // Adds the ECv3ConversionAttributes:PropertyRenamed Custom Attribute with the original name provided.
+    // Used for instance transformation
+    void SetOriginalName(Utf8CP originalName);
+
     static void     SetErrorHandling (bool doAssert);
 protected:
     Utf8String              m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
