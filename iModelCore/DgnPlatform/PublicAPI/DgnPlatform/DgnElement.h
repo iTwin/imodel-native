@@ -2128,7 +2128,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
