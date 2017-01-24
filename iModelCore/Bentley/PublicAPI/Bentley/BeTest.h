@@ -78,8 +78,8 @@
     #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)                   \
         struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                \
         {                                                                                   \
-            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }         \
-            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }             \
+            BentleyApi::CharCP  GetTestCaseNameA () const override { return #testCaseName; }         \
+            BentleyApi::CharCP  GetTestNameA ()     const override { return #testName; }             \
             virtual void TestBody () override;                                              \
             static BeTest::TestCaseInfo* s_superClassTestCaseInfo;                          \
         };                                                                                  \
