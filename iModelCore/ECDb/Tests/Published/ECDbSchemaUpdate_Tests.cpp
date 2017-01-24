@@ -488,7 +488,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
@@ -543,7 +542,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (6, 't6')");
@@ -584,7 +582,6 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
@@ -644,7 +641,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -708,7 +704,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
@@ -763,7 +758,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -832,7 +826,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -887,7 +880,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -931,7 +923,6 @@ TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -993,7 +984,6 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -1930,7 +1920,6 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
     ECInstanceKey row2;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(row2));
     stmt.Finalize();
-    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT BaseProp1, Prop1, Prop2 FROM ts.Sub WHERE ECInstanceId=?"));
@@ -7140,7 +7129,6 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
         ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
 
-        GetECDb().Schemas().CreateECClassViewsInDb();
         //Insert Test Data
         //Model
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(101, 'Model1')");
