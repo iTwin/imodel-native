@@ -501,7 +501,7 @@ struct Publish3mxScene : Scene
 {
     using Scene::Scene;
 
-    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return new Publish3mxTexture(source, targetFormat, bottomUp);}
+    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const override {return new Publish3mxTexture(source, targetFormat, bottomUp);}
     GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
 };
 typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
