@@ -146,6 +146,14 @@ RasterProgressive::~RasterProgressive()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ProgressiveTaskPtr RasterRoot::_CreateProgressiveTask(Dgn::TileTree::DrawArgsR args, Dgn::TileTree::TileLoadStatePtr loads) 
+    {
+    return new RasterProgressive(*this, args.m_missing, loads, args.GetLocation());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.Marchand                9/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion RasterProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)

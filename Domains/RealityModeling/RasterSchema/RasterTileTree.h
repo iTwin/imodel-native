@@ -83,6 +83,7 @@ protected:
     RasterModel& m_model;
 
     bvector<Resolution> m_resolution;
+    Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
 
 public:
     RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system);

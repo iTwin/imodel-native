@@ -386,21 +386,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     Transform depthTransfo;
     ComputeDepthTransformation(depthTransfo, context);
 
-    auto now = BeTimePoint::Now();
-    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), *m_root, now, now - m_root->GetExpirationTime(), GetClip().GetClipVector());
-
-    m_root->Draw(args);
-
-    DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    if (!args.m_missing.empty())
-        {
-        TileTree::TileLoadStatePtr loads = std::make_shared<TileTree::TileLoadState>();
-        args.RequestMissingTiles(*m_root, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads, depthTransfo));
-        }
+    m_root->DrawInView(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), GetClip().GetClipVector());
     }
 
 //----------------------------------------------------------------------------------------
