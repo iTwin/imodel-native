@@ -775,8 +775,10 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         if (nullptr != lsSymb.GetILineStyle())
             {
             if (lsSymb.UseLinePixels())
-                SetLinePixels((LinePixels)lsSymb.GetLinePixels());
-            else if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
+                {
+                SetLinePixels((LinePixels) lsSymb.GetLinePixels());
+                }
+            else if (lsSymb.IsContinuous() && !lsSymb.GetUseStroker()) // NOTE: QVis can handle this case for 2d and 3d...
                 {
                 m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
                 m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
@@ -784,6 +786,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
             else
                 {
                 m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+
                 if (m_lineTexture.IsValid())
                     {
                     m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());

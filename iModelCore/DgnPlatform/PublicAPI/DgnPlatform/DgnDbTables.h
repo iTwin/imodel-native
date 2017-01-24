@@ -102,6 +102,7 @@
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define BIS_REL_BaseModelForView2d                  "BaseModelForView2d"
+#define BIS_REL_CategoryOwnsSubCategories           "CategoryOwnsSubCategories"
 #define BIS_REL_ElementDrivesElement                "ElementDrivesElement"
 #define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_ElementGroupsMembers                "ElementGroupsMembers"
@@ -111,11 +112,13 @@
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
+#define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
 #define BIS_REL_ModelContainsElements               "ModelContainsElements"
 #define BIS_REL_ModelModelsElement                  "ModelModelsElement"
 #define BIS_REL_ModelSelectorRefersToModels         "ModelSelectorRefersToModels"
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
+#define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -619,25 +622,38 @@ private:
     void LoadProjectExtents() const;
 
 public:
-    DGNPLATFORM_EXPORT void Save();
-    DGNPLATFORM_EXPORT DgnDbStatus Load();
+    //! @private
+    //! Return a reasonable value that can be used if the project extents have never been established for this BIM. 
+    //! This is an arbitrary volume intended to represent a cube of a resonable size, if we have no idea what is being modeled by
+    //! this BIM. The default is (in meters) : [{-50,-50,-10},{50,50,30}]
+    AxisAlignedBox3d GetDefaultProjectExtents() const {return AxisAlignedBox3d(DRange3d::From(-50,-50,-10, 50,50,30));}
 
-    DgnDbR GetDgnDb() const {return m_dgndb;}
+    //! @private
+    //! Initialize the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
+    DGNPLATFORM_EXPORT void InitializeProjectExtents();
 
     //! @private
     //! Update the global origin. @note Changing global origin invalidates all existing xyz coordinates stored in the BIM.
     DGNPLATFORM_EXPORT void SetGlobalOrigin(DPoint3dCR origin);
+
+    DGNPLATFORM_EXPORT void Save();
+    DGNPLATFORM_EXPORT DgnDbStatus Load();
+
+    DgnDbR GetDgnDb() const {return m_dgndb;}
     
-    //! Get the BIM's global origin. All XYZ coordinates in the BIM are stored relative to its global origin.
+    //! Get the BIM's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
-    //! Update the project extents, call SaveChanges to commit.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SetProjectExtents(AxisAlignedBox3dCR newExtents);
+    //! Update the project extents for this BIM
+    DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
-    //! (Re-)compute the project extents by looking at the range tree.
-    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents() const;
-
-    //! Get the union of the range (axis-aligned bounding box) of all physical elements in this DgnDb
+    //! Get the "spatial area of interest" for this project. This volume is used for many purposes where the software needs to 
+    //! include space "in the project", and exclude space outside it. For example, viewing volumes are automatically adjusted to set
+    //! the depth (front and back planes) to this volume. Also, there are times when tools adjust the volume of searches or view operations
+    //! to include only space inside the project extents. 
+    //! There are tools to visualize and adjust the project extents. Note that if the project extent is too small (does not
+    //! include space occupied by elements or other artifacts of interest), they may disappear under some operations since they're not considered
+    //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space". 
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
 
     //! Convert a GeoPoint to an XYZ point

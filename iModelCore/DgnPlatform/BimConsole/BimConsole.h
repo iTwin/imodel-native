@@ -65,7 +65,7 @@ struct BimFile final : SessionFile
     private:
         mutable Dgn::DgnDbPtr m_file;
 
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
 
     public:
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
@@ -81,7 +81,7 @@ struct ECDbFile final : SessionFile
     private:
         mutable BeSQLite::EC::ECDb m_file;
 
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return &m_file; }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { return &m_file; }
 
     public:
         ECDbFile() : SessionFile(Type::ECDb) {}
@@ -96,8 +96,8 @@ struct BeSQLiteFile final : SessionFile
     private:
         mutable BeSQLite::Db m_file;
 
-        virtual BeSQLite::Db& _GetBeSqliteHandle() const override { return m_file; }
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return nullptr; }
+        BeSQLite::Db& _GetBeSqliteHandle() const override { return m_file; }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { return nullptr; }
 
     public:
         BeSQLiteFile() : SessionFile(Type::BeSQLite) {}
@@ -115,7 +115,7 @@ struct Session final
             mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
             mutable Utf8String m_issue;
 
-            virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+            void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
                 {
                 m_severity = severity;
                 m_issue = message;
@@ -159,9 +159,9 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
         std::vector<Utf8String> m_commandHistory;
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
 
-        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
-        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
+        void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
+        IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
+        BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
         void Setup();
         void AddCommand(Utf8StringCR commandName, std::shared_ptr<Command> const& command) { m_commands[commandName] = command; }

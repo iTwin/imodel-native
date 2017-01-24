@@ -65,8 +65,8 @@ protected:
     virtual StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
     virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
 
-    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const {return &m_currGeomEntryId;}
-    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
+    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
+    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
 
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
@@ -176,7 +176,7 @@ virtual bool _DoClipping() const {return false;}
 virtual bool _DoPatternStroke() const {return false;}
 
 //! Whether to drop linestyles and process as geometric primitives.
-virtual IFacetOptionsPtr _DoLineStyleStroke(Render::GraphicBuilderR, Render::LineStyleSymbCR) const {return nullptr;}
+virtual bool _DoLineStyleStroke(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr&) const {return false;}
 
 //! Allow processor to override the default facet options.
 //! @return A pointer to facet option structure to use or nullptr to use default options.

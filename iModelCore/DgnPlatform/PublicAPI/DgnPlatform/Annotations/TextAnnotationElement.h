@@ -90,12 +90,12 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
@@ -136,12 +136,12 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 

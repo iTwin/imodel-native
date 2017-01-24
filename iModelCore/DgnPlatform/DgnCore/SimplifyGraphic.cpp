@@ -2377,12 +2377,12 @@ void _DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorCR curve, Rend
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsPtr _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb) const override
+bool _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const override
     {
     if (!lsSymb.GetUseStroker())
-        return nullptr;
+        return false;
 
-    return m_processor._DoLineStyleStroke(builder, lsSymb);
+    return m_processor._DoLineStyleStroke(builder, lsSymb, facetOptions);
     }
 
 public:

@@ -259,6 +259,12 @@ DgnDbStatus DgnElement::_OnInsert()
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
+    if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
+        {
+        BeAssert(false); // when m_parentId.IsValid, m_parentRelClassId must be a subclass of BisCore:ElementOwnsChildElements
+        return DgnDbStatus::InvalidParent;
+        }
+
     if (!m_code.IsValid())
         {
         m_code = _GenerateDefaultCode();
@@ -438,12 +444,13 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(handler);
     DgnElementId parentId = parentSubject.GetElementId();
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements);
     DgnCode code = CreateCode(parentSubject, name);
 
-    if (!parentId.IsValid() || !classId.IsValid() || !name || !*name)
+    if (!parentId.IsValid() || !parentRelClassId.IsValid() || !classId.IsValid() || !name || !*name)
         modelId.Invalidate(); // mark CreateParams as invalid
 
-    return CreateParams(db, modelId, classId, code, nullptr, parentId);
+    return CreateParams(db, modelId, classId, code, nullptr, parentId, parentRelClassId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1311,9 +1318,10 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         return;
 
     // Copying between DgnDbs is not allowed. Caller must do Id remapping.
-    m_code      = other.m_code;
+    m_code = other.m_code;
     m_userLabel = other.m_userLabel;
-    m_parentId  = other.m_parentId;
+    m_parentId = other.m_parentId;
+    m_parentRelClassId = other.m_parentRelClassId;
     // don't copy FederationGuid
 
     // Copy the auto-handled EC properties
@@ -1368,7 +1376,8 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
-    m_parentId   = importer.FindElementId(m_parentId);
+    m_parentId = importer.FindElementId(m_parentId);
+    m_parentRelClassId = importer.RemapClassId(m_parentRelClassId);
     RemapAutoHandledNavigationproperties(importer);
     }
 
@@ -1728,7 +1737,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, GetFederationGuid());
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, m_parentRelClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
@@ -3014,7 +3023,9 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
         if (remappedParentId.IsValid())
             newParentId = remappedParentId;
         }
-    outputEditElement->SetParentId(newParentId, targetModel.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements)); // WIP: right way to set ParentRelECClassId?
+
+    if (newParentId.IsValid())
+        outputEditElement->SetParentId(newParentId, sourceElement.GetParentRelClassId());
 
     DgnElementCPtr outputElement = outputEditElement->Insert(&status);
     if (!outputElement.IsValid())

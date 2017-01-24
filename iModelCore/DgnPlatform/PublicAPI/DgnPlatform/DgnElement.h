@@ -600,8 +600,8 @@ public:
         DgnElementId        m_parentId;
         DgnClassId          m_parentRelClassId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
-            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent), m_federationGuid(federationGuid) {SetUserLabel(label);}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid) {SetUserLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
@@ -2095,9 +2095,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         //! @param[in] code The element's code
         //! @param[in] label (Optional) element label
         //! @param[in] parent (Optional) Id of this element's parent element
+        //! @param[in] parentRelClassId (Optional) The ECClassId of the parent relationship.  Must be a subclass of BisCore:ElementOwnsChildElements
         //! @param[in] federationGuid (Optional) FederationGuid for this element
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid(false))
-            : T_Super(db, modelId, classId, code, label, parent, federationGuid), m_category(category) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid(false))
+            : T_Super(db, modelId, classId, code, label, parent, parentRelClassId, federationGuid), m_category(category) {}
 
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
@@ -2128,7 +2129,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -2167,10 +2168,11 @@ public:
         //! @param[in] placement The element's placement in 3d space
         //! @param[in] code      The element's code
         //! @param[in] label     (Optional) element label
-        //! @param[in] parent    (Optional) Id of this element's parent element
+        //! @param[in] parentId  (Optional) Id of this element's parent element
+        //! @param[in] parentRelClassId (Optional) The ECClassId of the parent relationship.  Must be a subclass of BisCore:ElementOwnsChildElements
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(),
-                DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) {}
+                DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId())
+            : T_Super(db, modelId, classId, category, code, label, parentId, parentRelClassId), m_placement(placement) {}
 
         //! Construct from base parameters. Chiefly for internal use
         //! @param[in] params    The base element parameters
