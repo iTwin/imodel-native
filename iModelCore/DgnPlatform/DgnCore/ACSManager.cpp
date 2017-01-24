@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ACSManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -243,7 +243,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialViewControllerCP info)
+virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialViewControllerCP info) override
     {
     m_attachedToView = true;
 
