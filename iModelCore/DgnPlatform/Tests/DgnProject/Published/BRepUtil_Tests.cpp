@@ -113,8 +113,10 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnTorus)
 TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnExtrusion)
     {
     CurveVectorPtr ellipse = CurveVector::CreateDisk(DEllipse3d::From(0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.0, Angle::TwoPi()));
+    ASSERT_TRUE(ellipse.IsValid());
     DgnExtrusionDetail DgnExtrusion(ellipse, DVec3d::From(0, 0, 3), true);
     ISolidPrimitivePtr myDgnExtrusion = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusion);
+    ASSERT_TRUE(myDgnExtrusion.IsValid());
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(brep, *myDgnExtrusion));
     ASSERT_TRUE(!brep.IsNull());
@@ -129,12 +131,13 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnExtrusion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRotationalsweep)
     {
-    
     CurveVectorPtr rect = CurveVector::CreateRectangle(1,2,3,4,0.5);
+    ASSERT_TRUE(rect.IsValid());
     DPoint3d center = DPoint3d::From(0, 0, 0);
     DVec3d   axis = DVec3d::From(0, 1, 0);
     DgnRotationalSweepDetail rotationalSweepData(rect, center, axis, Angle::Pi(), false);
     ISolidPrimitivePtr mySweepData = ISolidPrimitive::CreateDgnRotationalSweep(rotationalSweepData);
+    ASSERT_TRUE(mySweepData.IsValid());
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(brep, *mySweepData));
     ASSERT_TRUE(!brep.IsNull());
@@ -156,9 +159,12 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRuledSweep)
     double dz = 4.0;
     double z1 = z0 + dz;
     CurveVectorPtr sec1 = CurveVector::CreateRectangle(ax, ay, bx, by, z0, CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_TRUE(sec1.IsValid());
     CurveVectorPtr sec2 = CurveVector::CreateRectangle(ax, ay, bx, by, z1, CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_TRUE(sec2.IsValid());
     DgnRuledSweepDetail DgnRuledSweepDetail (sec1, sec2, true);
     ISolidPrimitivePtr RuledSweep = ISolidPrimitive::CreateDgnRuledSweep(DgnRuledSweepDetail);
+    ASSERT_TRUE(RuledSweep.IsValid());
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(brep, *RuledSweep));
     ASSERT_TRUE(!brep.IsNull());
@@ -173,7 +179,9 @@ TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRuledSweep)
 TEST_F(BRepUtilTests, CreateBodyFrom_BSurface)
     {
     ICurvePrimitivePtr curvep=ICurvePrimitive::CreateLine(DSegment3d::From(0,1,0,5,5,0));
+    ASSERT_TRUE(curvep.IsValid());
     MSBsplineSurfacePtr sp=MSBsplineSurface::CreateLinearSweep(*curvep, DVec3d::From(0,1,0));
+    ASSERT_TRUE(sp.IsValid());
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromBSurface(brep, *sp));
     ASSERT_TRUE(!brep.IsNull());
@@ -187,6 +195,7 @@ TEST_F(BRepUtilTests, CreateBodyFrom_BSurface)
 TEST_F(BRepUtilTests, CreateBodyFromAndToCurveVector)
     {
     CurveVectorPtr rect = CurveVector::CreateRectangle(1, 2, 3, 4, 0.5);
+    ASSERT_TRUE(rect.IsValid());
     IBRepEntityPtr brep;
     ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromCurveVector(brep, *rect));
     ASSERT_TRUE(!brep.IsNull());
@@ -197,6 +206,45 @@ TEST_F(BRepUtilTests, CreateBodyFromAndToCurveVector)
     ASSERT_TRUE(!result.IsNull());
     ASSERT_EQ(CurveVector::BOUNDARY_TYPE_Outer,result->GetBoundaryType());
     ASSERT_EQ(rect->Length(), result->Length());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFromExtrusionToBody)
+    {
+    CurveVectorPtr rect = CurveVector::CreateRectangle(1, 2, 3, 4, 0.5);
+    ASSERT_TRUE(rect.IsValid());
+    IBRepEntityPtr profile;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromCurveVector(profile, *rect));
+    ASSERT_TRUE(!profile.IsNull());
+    CurveVectorPtr sec1 = CurveVector::CreateRectangle( 1, 2, 3, 4, 0.5);
+    CurveVectorPtr sec2 = CurveVector::CreateRectangle( 1, 2, 3, 4, 4.5);
+    DgnRuledSweepDetail DgnRuledSweepDetail(sec1, sec2, true);
+    ISolidPrimitivePtr RuledSweep = ISolidPrimitive::CreateDgnRuledSweep(DgnRuledSweepDetail);
+    IBRepEntityPtr brep, extrudeto;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(extrudeto, *RuledSweep));
+    ASSERT_TRUE(!extrudeto.IsNull());
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromExtrusionToBody(brep, *extrudeto,*profile,false));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(6, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(12, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(8, BRepUtil::GetBodyVertices(NULL, *brep));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFromPolyface)
+    {
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    IPolyfaceConstructionPtr faceBuilder = IPolyfaceConstruction::Create(*options);
+    faceBuilder->AddSweptNGon(4, 1.0, 0.0, 2.0, true, true);
+    PolyfaceHeaderPtr mesh = faceBuilder->GetClientMeshPtr();
+    ASSERT_TRUE(mesh.IsValid());
+    IBRepEntityPtr brep;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromPolyface(brep, *mesh));
+    ASSERT_EQ(6, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(12, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(8, BRepUtil::GetBodyVertices(NULL, *brep));
     }
 #endif
 
