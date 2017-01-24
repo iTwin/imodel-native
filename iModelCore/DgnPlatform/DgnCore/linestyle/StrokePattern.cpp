@@ -236,10 +236,10 @@ StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
     if (nPoints < 2)
-        return  ERROR;
+        return ERROR;
 
     DPoint3dCP  tan1 = NULL;
     DPoint3dCP  tan2 = NULL;
@@ -257,7 +257,7 @@ StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, IS
             }
         else
             {
-            if (0.0 == startTangent.NormalizedDifference (*inPoints, inPoints[1]))
+            if (0.0 == startTangent.NormalizedDifference(*inPoints, inPoints[1]))
                 tan1 = NULL;
             }
 
@@ -268,25 +268,25 @@ StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, IS
         else
             {
             DPoint3dCP pLast = inPoints + (nPoints-1);
-            if (0 == endTangent.NormalizedDifference (*pLast, *(pLast-1)))
+            if (0 == endTangent.NormalizedDifference(*pLast, *(pLast-1)))
                 tan2 = NULL;
             }
 
         // for closed elements, attempt to set the start and end tangents so first/last points join
-        if (modifiers->IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.DotProduct (endTangent)))
+        if (modifiers->IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.DotProduct(endTangent)))
             {
-            if (0.0 != endTangent.NormalizedDifference (startTangent, endTangent))
-                startTangent.Scale (endTangent, -1.0);
+            if (0.0 != endTangent.NormalizedDifference(startTangent, endTangent))
+                startTangent.Scale(endTangent, -1.0);
             }
         }
 
-    if (CheckSegmentMode (modifiers))
+    if (CheckSegmentMode(modifiers))
         {
         DPoint3dCP  currPoint = inPoints;
         DPoint3dCP  lastPoint = inPoints + (nPoints-1);
         DPoint3d    prevDir, thisDir, nextDir;
 
-        thisDir.NormalizedDifference (currPoint[1], *currPoint);
+        thisDir.NormalizedDifference(currPoint[1], *currPoint);
         prevDir = thisDir;
 
         int segFlag = FLAG_FirstSeg | FLAG_NoEndPhase;
@@ -299,7 +299,7 @@ StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, IS
                 }
             else
                 {
-                nextDir.NormalizedDifference (currPoint[2], currPoint[1]);
+                nextDir.NormalizedDifference(currPoint[2], currPoint[1]);
                 }
 
             if (hasWidth)
@@ -308,7 +308,7 @@ StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, IS
                 tan2 = currPoint+1==lastPoint ? &endTangent : &thisDir;
                 }
 
-            StrokeLocal (context, symbolProcessor, currPoint, 2, currPoint->Distance (currPoint[1]), modifiers, tan1, tan2, segFlag);
+            StrokeLocal(context, symbolProcessor, currPoint, 2, currPoint->Distance (currPoint[1]), modifiers, tan1, tan2, segFlag);
             segFlag  = FLAG_NoEndPhase;
 
             prevDir = thisDir;
@@ -320,14 +320,10 @@ StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, IS
         int32_t segFlag = FLAG_FirstSeg | FLAG_LastSeg;
         if (IsSingleSegment())  // This should be the case where it is an arc (IsTreatAsSingleSegment), but the style itself says to be single segment
             segFlag |= FLAG_NoEndPhase;
-        StrokeLocal (context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
+        StrokeLocal(context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return context.GetViewContext()->CheckStop() ? ERROR : SUCCESS;
-#else
-    return SUCCESS;
-#endif
+    return context.GetViewContext().CheckStop() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -924,13 +920,8 @@ double          LsStrokePatternComponent::GenerateStrokes (LineStyleContextR con
         endFlag = 0;
         cutLength = 0.0;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        if (!stroker.HasMoreData() || context.GetViewContext()->CheckStop())
+        if (!stroker.HasMoreData() || context.GetViewContext().CheckStop())
             break;
-#else
-        if (!stroker.HasMoreData())
-            break;
-#endif
 
         if (firstStrokeCenterPhaseGap || ++pStroke > pLastStroke)
             {
