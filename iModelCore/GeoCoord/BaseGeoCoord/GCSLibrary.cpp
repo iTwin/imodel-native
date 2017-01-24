@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/GCSLibrary.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -126,7 +126,7 @@ virtual CSParameters*   GetCS (WCharCP name) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSParameters*   GetCS (CSDefinition& csDef)
+virtual CSParameters*   GetCS (CSDefinition& csDef) override
     {
     // We found the CSDefinition in this UserLibrary - we need to see whether the Datum or Ellipsoid is in this UserLibrary also.
     // If it's an old-format library, we can't possibly have Datums or Ellipsoids, so we can just use CScsloc1 (which will look in the system libraries for datums and ellipsoids).
