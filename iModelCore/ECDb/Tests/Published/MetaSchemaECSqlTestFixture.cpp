@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/MetaSchemaECSqlTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -950,7 +950,6 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
         ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
         ASSERT_EQ(ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
         ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
-        db.Schemas().CreateECClassViewsInDb();
         };
 
     // create schema

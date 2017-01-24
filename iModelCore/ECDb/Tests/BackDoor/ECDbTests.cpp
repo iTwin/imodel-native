@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BackDoor/ECDbTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTests.h"
@@ -94,9 +94,30 @@ DbResult ECDbTestUtility::CreateECDb(ECDbR ecdb, BeFileNameP ecdbFullPath, WChar
 
     if (ecdbFullPath != nullptr)
         *ecdbFullPath = fullPath;
-
-    return ecdb.CreateNewDb(fullPath.GetNameUtf8().c_str());
+    //Use seed Db.
+    ECDb seedDb;
+    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath("seed.ecdb");
+    if (!seedFilePath.DoesPathExist())
+    {  //Create it once
+        seedDb.CreateNewDb(seedFilePath);
     }
+
+    return ECDbTestUtility::CloneECDb(ecdb, ecdbFileName, seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestUtility::CloneECDb(ECDbR clone, WCharCP cloneFileName, BeFileNameCR seedFilePath, Db::OpenParams openParams)
+{
+
+    BeFileName clonePath;
+    BeTest::GetHost().GetOutputRoot(clonePath);
+    clonePath.AppendToPath(BeFileName(cloneFileName));
+    BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
+    BeFileName::BeCopyFile(seedFilePath, clonePath);
+    return clone.OpenBeSQLiteDb(clonePath, openParams);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13

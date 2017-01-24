@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/ECDbTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
@@ -178,7 +178,16 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(ecdbFilePath.GetName()));
         }
 
-    return ecdb.CreateNewDb(ecdbFilePath);
+    //Use seed Db.
+    ECDb seedDb;
+    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath("seed.ecdb");
+    if (!seedFilePath.DoesPathExist())
+    {  //Create it once
+        seedDb.CreateNewDb(seedFilePath);
+    }
+
+    return CloneECDb(ecdb, ecdbFileName, seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+
     }
 
 //---------------------------------------------------------------------------------------

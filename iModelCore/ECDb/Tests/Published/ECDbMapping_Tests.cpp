@@ -2301,7 +2301,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertWithNoParameters)
         "</ECSchema>"));
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom) "
@@ -2387,7 +2386,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertExplicitNullsUsingECSql)
         "</ECSchema>"));
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
 
     ECSqlStatement stmt;
@@ -2498,7 +2496,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_SharedColumns)
         "    </ECEntityClass>"
         "</ECSchema>"));
 
-    ecdb.Schemas().CreateECClassViewsInDb();
     ecdb.SaveChanges();
     }
 //---------------------------------------------------------------------------------------
@@ -2549,7 +2546,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertImplicitNullsUsingECSql)
         "</ECSchema>"));
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code) VALUES ('C3')"));
@@ -2636,7 +2632,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
 
     //Point2D(3,4) (23,43,32)
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
 
     ECSqlStatement stmt;
@@ -2811,7 +2806,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
 
     //Point2D(3,4) (23,43,32)
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
 
     ECSqlStatement stmt;
@@ -2967,7 +2961,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
 
         //Point2D(3,4) (23,43,32)
         ASSERT_TRUE(ecdb.IsDbOpen());
-        ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
         ecdb.SaveChanges();
 
         ECSqlStatement stmt;
@@ -9332,8 +9325,6 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
         AssertSchemaImport(ecdb, asserted, testSchema, "RelationshipWithAbstractBaseClass.ecdb");
         ASSERT_FALSE(asserted);
 
-        ecdb.Schemas().CreateECClassViewsInDb();
-
         ECInstanceKey elem1Key, elem2Key, geomElem1Key, geomElem2Key, geom1Key, geom2Key;
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ExtendedElement (Code,Name) VALUES('0001','NonGeom1')"));
@@ -11325,7 +11316,6 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
         "</ECSchema>"));
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
 
     Utf8CP codeA = "CodeA";
@@ -11519,7 +11509,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
                          "  </ECEntityClass>"
                          "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
 
 #define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
@@ -11613,7 +11602,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
                          "  </ECEntityClass>"
                          "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
 
 #define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}

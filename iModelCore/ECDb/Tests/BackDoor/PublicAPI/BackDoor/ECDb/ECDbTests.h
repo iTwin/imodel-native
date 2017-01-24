@@ -89,6 +89,7 @@ struct ECDbTestUtility
         static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
 
         static DbResult CreateECDb(ECDbR ecdb, BeFileNameP ecdbFullPath, WCharCP ecdbFileName);
+        static DbResult CloneECDb(ECDbR clone, WCharCP cloneFileName, BeFileNameCR seedFilePath, Db::OpenParams openParams);
         static ECN::ECSchemaPtr ReadECSchemaFromDisk(WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
         static void     ReadECSchemaFromDisk(ECN::ECSchemaPtr& ecSchema, ECN::ECSchemaReadContextPtr& ecSchemaContext, WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
         static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr& schemaContext, Utf8CP ecschemaXmlString);
