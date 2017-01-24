@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -167,7 +167,7 @@ WSObjectsResult StubWSObjectsResultInvalidInstances()
                 return true;
                 }
 
-            rapidjson::SizeType GetInstanceCount() const
+            rapidjson::SizeType GetInstanceCount() const override
                 {
                 return 0;
                 }
