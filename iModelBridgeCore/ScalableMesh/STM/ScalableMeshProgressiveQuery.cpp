@@ -1285,7 +1285,7 @@ class NewQueryStartingNodeProcessor
                     }
                 }
             }
-
+            
         void Execute(RequestedQuery&                                            newQuery, 
                      bvector<IScalableMeshCachedDisplayNodePtr>&                lowerResOverviewNodes,
                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
@@ -1651,6 +1651,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENT
 BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
                                                                     int                                                   queryId) const
     {
+    //if (m_requestedQueries.empty()) return SUCCESS;
     RequestedQuery* requestedQueryP = 0;
 
     for (auto& query : m_requestedQueries)

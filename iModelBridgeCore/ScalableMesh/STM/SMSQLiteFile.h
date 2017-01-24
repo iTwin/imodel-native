@@ -165,6 +165,7 @@ public:
     size_t GetNumberOfUVs(int64_t nodeID);
     size_t GetNumberOfUVIndices(int64_t nodeID);
     size_t GetTextureByteCount(int64_t nodeID);
+    size_t GetTextureCompressedByteCount(int64_t nodeID);
 
 #ifdef WIP_MESH_IMPORT
     size_t CountTextures();

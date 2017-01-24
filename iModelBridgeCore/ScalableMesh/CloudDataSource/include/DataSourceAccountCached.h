@@ -29,4 +29,6 @@ public:
         DataSourceAccount    *      getCacheAccount               (void);
 
         DataSourceStatus            getFormattedCacheURL          (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+        
+        unsigned int                getDefaultNumTransferTasks(void);
 };

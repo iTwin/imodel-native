@@ -13,4 +13,6 @@ public:
     DataSource             *    createDataSource            (void);
     DataSourceStatus            destroyDataSource           (DataSource *dataSource);
 
+    unsigned int                getDefaultNumTransferTasks(void);
+
 };

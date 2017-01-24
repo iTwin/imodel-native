@@ -15,9 +15,9 @@
 #include <ScalableMesh/IScalableMesh.h>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-
-extern std::thread s_threads[8];
-extern std::atomic<bool> s_areThreadsBusy[8];
+#define LIGHT_THREAD_POOL_NUMBER_THREADS 8
+extern std::thread s_threads[LIGHT_THREAD_POOL_NUMBER_THREADS];
+extern std::atomic<bool> s_areThreadsBusy[LIGHT_THREAD_POOL_NUMBER_THREADS];
 extern std::recursive_mutex s_nodeMapLock;
 extern std::map<void*, std::atomic<unsigned int>> s_nodeMap;
 bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);

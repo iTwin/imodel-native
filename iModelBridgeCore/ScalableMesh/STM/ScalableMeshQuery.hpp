@@ -1467,6 +1467,30 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
     return texturePtr;
     }
 
+template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetTextureCompressed() const
+    {
+    LOAD_NODE
+
+        IScalableMeshTexturePtr texturePtr;
+
+    if (m_node->GetNbPoints() > 0)
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+        
+        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTextureCompressedPtr());
+        
+        if (texPtr.IsValid())
+            {
+            ScalableMeshTexturePtr textureP(ScalableMeshTexture::Create(texPtr));
+        
+            if (textureP->GetSize() != 0)
+                texturePtr = IScalableMeshTexturePtr(textureP.get());
+            }
+        }
+
+    return texturePtr;
+    }
+
 template <class POINT> bool ScalableMeshNode<POINT>::_IsTextured() const
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
@@ -1510,6 +1534,18 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>
         {
         return __super::_GetTexture();
         }   
+    }
+
+template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>::_GetTextureCompressed() const
+    {
+    if (m_loadedTextureCompressed != 0)
+        {
+        return m_loadedTextureCompressed;
+        }
+    else
+        {
+        return __super::_GetTextureCompressed();
+        }
     }
 
 
@@ -2244,9 +2280,11 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     toLoadNbFaceIndexes = nbFaceIndices;
 
                     //NEEDS_WORK_SM : Could generate them starting at 0.
+                    // Indices from Cesium datasets start at 0.
+                    int offset = false/*meshNode->IsFromCesium()*/ ? 0 : 1;
                     for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                         {
-                        toLoadFaceIndexes[ind] = indicesP[ind] - 1;
+                        toLoadFaceIndexes[ind] = indicesP[ind] - offset;
                         }
 
                     if (nbUvs > 0)
@@ -2281,10 +2319,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 if (texLoaded&& toLoadUvCount > 0 && textureIDs[part / 2].first)
                     {
+                    int offset = false/*meshNode->IsFromCesium()*/ ? 0 : 1;
+
                     for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
                         {
                         int32_t pointInd = toLoadFaceIndexes[faceInd];
-                        int32_t uvInd = toLoadUvIndex[faceInd] - 1; // For UVs, we haven't yet made the indices zero-based
+                        int32_t uvInd = toLoadUvIndex[faceInd] - offset; // For UVs, we haven't yet made the indices zero-based, except for Cesium datasets
                         // When we encounter the point/UV pair for the first time, we create a new element in the new point and UV arrays
                         // Otherwise, we retrieve the index of the point/UV pair from the map
                         PointUVIndexPair p(pointInd, uvInd);

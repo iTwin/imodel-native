@@ -62,6 +62,8 @@ $(o)DataSourceAccountAzure$(oext) : $(SrcDir)DataSourceAccountAzure.cpp ${MultiC
 
 $(o)DataSourceAccountWSG$(oext) : $(SrcDir)DataSourceAccountWSG.cpp ${MultiCompileDepends}
 
+$(o)DataSourceAccountCURL$(oext) : $(SrcDir)DataSourceAccountCURL.cpp ${MultiCompileDepends}
+
 $(o)DataSourceAccountCached$(oext) : $(SrcDir)DataSourceAccountCached.cpp ${MultiCompileDepends}
 
 $(o)DataSourceAccountFile$(oext) : $(SrcDir)DataSourceAccountFile.cpp ${MultiCompileDepends}
@@ -69,6 +71,8 @@ $(o)DataSourceAccountFile$(oext) : $(SrcDir)DataSourceAccountFile.cpp ${MultiCom
 $(o)DataSourceAzure$(oext) : $(SrcDir)DataSourceAzure.cpp ${MultiCompileDepends}
 
 $(o)DataSourceWSG$(oext) : $(SrcDir)DataSourceWSG.cpp ${MultiCompileDepends}
+
+$(o)DataSourceCURL$(oext) : $(SrcDir)DataSourceCURL.cpp ${MultiCompileDepends}
 
 $(o)DataSourceBuffer$(oext) : $(SrcDir)DataSourceBuffer.cpp ${MultiCompileDepends}
 
@@ -91,6 +95,8 @@ $(o)DataSourceService$(oext) : $(SrcDir)DataSourceService.cpp ${MultiCompileDepe
 $(o)DataSourceServiceAzure$(oext) : $(SrcDir)DataSourceServiceAzure.cpp ${MultiCompileDepends}
 
 $(o)DataSourceServiceWSG$(oext) : $(SrcDir)DataSourceServiceWSG.cpp ${MultiCompileDepends}
+
+$(o)DataSourceServiceCURL$(oext) : $(SrcDir)DataSourceServiceCURL.cpp ${MultiCompileDepends}
 
 $(o)DataSourceServiceFile$(oext) : $(SrcDir)DataSourceServiceFile.cpp ${MultiCompileDepends}
 
@@ -118,6 +124,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)BeOpenSSL.lib \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)cpprest120_2_6.lib

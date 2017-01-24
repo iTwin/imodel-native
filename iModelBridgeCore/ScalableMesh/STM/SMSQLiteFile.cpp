@@ -1132,6 +1132,21 @@ size_t SMSQLiteFile::GetTextureByteCount(int64_t nodeID)
     return stmt->GetValueInt64(0);
     }
 
+size_t SMSQLiteFile::GetTextureCompressedByteCount(int64_t nodeID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT length(TexData) FROM SMTexture WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE || stmt->GetValueInt64(0) == 0)
+        {
+        return 0;
+        }
+    return stmt->GetValueInt64(0);
+    }
+
 size_t SMSQLiteFile::GetNumberOfUVs(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);

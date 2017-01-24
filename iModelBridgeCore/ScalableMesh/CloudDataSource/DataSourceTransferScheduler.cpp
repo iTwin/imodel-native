@@ -5,6 +5,14 @@
 #include "DataSourceAccount.h"
 #include "DataSourceBuffer.h"
 #include "include\DataSourceTransferScheduler.h"
+#include <mutex>
+extern std::mutex s_consoleMutex;
+
+#ifndef SM_STREAMING_PERF
+#include <iostream>
+#include <chrono>
+#endif
+
 #ifndef NDEBUG
 #include <windows.h>
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
@@ -83,8 +91,11 @@ void DataSourceTransferScheduler::shutDown(void)
     }
 
 
+//static std::atomic<int> s_nIdealQueueSize = 0;
+
 DataSourceStatus DataSourceTransferScheduler::addBuffer(DataSourceBuffer & buffer)
     {
+    //++s_nIdealQueueSize;
                                                             // Lock the DataSourceBuffer queue
     std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
 
@@ -120,6 +131,7 @@ DataSourceStatus DataSourceTransferScheduler::removeBuffer(DataSourceBuffer &buf
         if (*it == &buffer)
         {
             dataSourceBuffers.erase(it);
+            //--s_nIdealQueueSize;
                                                             // Return OK
             return DataSourceStatus();
         }
@@ -191,14 +203,22 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             DataSourceAccount                *  account;
             DataSourceStatus                    status;
 
+#ifdef SM_STREAMING_PERF
+            static std::atomic<int> s_nWorkThreads = 0;
+            static std::atomic<int> s_nTotalTransfers = 0;
+            static std::atomic<uint64_t> s_nTotalSize = 0;
+            static std::atomic<long long> s_nDownloadTime = 0;
+#endif
+
                                                             // Scope the mutex while the next job is obtained
             {
                 std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
                                                             // Wait while queue of DataSourceBuffers is empty or no longer need processing
             while (((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr) && getShutDownFlag() == false)
                 {
-                //static std::atomic<int> s_nWorkThreads = 0;
-                //if (s_nWorkThreads > 0) s_nWorkThreads -= 1;
+#ifdef SM_STREAMING_PERF
+                if (s_nWorkThreads > 0) s_nWorkThreads -= 1;
+#endif
                 //    {
                 //    std::lock_guard<std::mutex> clk(s_consoleMutex);
                 //    //std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
@@ -206,13 +226,21 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 //    }
                                                             // Wait for buffer data. Note: wait() releases the mutex and blocks
                 dataSourceBufferReady.wait(dataSourceBuffersLock);
-                //s_nWorkThreads += 1;
+#ifdef SM_STREAMING_PERF
+                s_nWorkThreads += 1;
+#endif
                 //    //{
                 //    //std::lock_guard<std::mutex> clk(s_consoleMutex);
                 //    //std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
                 //    //}
                 }
             }
+#ifdef SM_STREAMING_PERF
+            static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+#endif
+
                                                             // If shutting down
             if (getShutDownFlag())
                 {
@@ -245,19 +273,66 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                                             // Download or Upload blob based on mode
             if (locator.getMode() == DataSourceMode_Read)
                 {
+#ifdef SM_STREAMING_PERF
+                std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+#endif
+
                                                             // Attempt to download a single segment
                 if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
                     {
                     assert(false);
                     return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
                     }
+
+#ifdef SM_STREAMING_PERF
+                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+                s_nDownloadTime += std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+                s_nTotalSize += readSize;
+                if (true/*std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500*/)
+                    {
+                    std::lock_guard<std::mutex> clk(s_consoleMutex);
+                    //std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
+#ifndef NDEBUG
+                    FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_debug.txt", "a+");
+#else
+                    FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_release.txt", "a+");
+#endif
+                    char TempBuffer[500];
+                    int  NbChars;
+
+                    NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize)/(double)s_nDownloadTime)/8000);
+
+                    size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
+                    assert(NbWrittenChars == NbChars);
+                    fclose(pOutputFileStream);
+
+                    // restart timer
+                    start_time = std::chrono::steady_clock::now();
+                    }
+#endif
+
                 buffer->updateReadSize(readSize);
                 }
             else
-                if (locator.getMode() == DataSourceMode_Write_Segmented)
+                if (locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
                     {
                                                             // Attempt to upload a single segment
-                    std::wstring filename = locator.getSubPath() + L"-" + std::to_wstring(segmentIndex);
+                    std::wstring filename = locator.getSubPath();
+                    std::size_t found = filename.find_last_of(L"/\\");
+                    if (found != std::wstring::npos)
+                        {
+                        filename = filename.substr(found);
+                        }
+                    found = filename.find(L"~2F");
+                    if (found != std::wstring::npos)
+                        {
+                        filename = filename.substr(found+3);
+                        }
+
+                    if (buffer->isSegmented())
+                        {
+                        filename += L"-" + std::to_wstring(segmentIndex);
+                        }
                     if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
                         {
                         if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
@@ -273,10 +348,13 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             {
                                                             // Remove bufer from buffer queue
                 removeBuffer(*buffer);
+#ifdef SM_STREAMING_PERF
+                s_nTotalTransfers += 1;
+#endif
 
                 // TODO: if the transfer scheduler has full ownership of the buffer, then it should be deleted. 
                 //       For now, this is not the case and the buffer is deleted by the thread that asked the transfer.
-                if(locator.getMode() == DataSourceMode_Write_Segmented)
+                if(locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
                 {
                                                             // Upload of this buffer is complete, delete it
                     delete buffer;

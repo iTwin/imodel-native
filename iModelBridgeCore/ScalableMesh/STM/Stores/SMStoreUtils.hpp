@@ -54,6 +54,7 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::~SMIndexNodeHeader()
 
 template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::operator=(const SQLiteNodeHeader& nodeHeader)
     {
+    m_id = nodeHeader.m_nodeID;
     m_arePoints3d = nodeHeader.m_arePoints3d;
     m_isTextured = nodeHeader.m_isTextured;
     m_contentExtentDefined = nodeHeader.m_contentExtentDefined;

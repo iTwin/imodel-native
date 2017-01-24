@@ -67,3 +67,7 @@ DataSourceAccount * DataSourceAccountCached::getCacheAccount(void)
     return cacheAccount;
 }
 
+unsigned int DataSourceAccountCached::getDefaultNumTransferTasks(void)
+    {
+    return DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS;
+    }

@@ -189,6 +189,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;
+        bool                            m_needsNeighbors;
         double                          m_minScreenPixelsPerPoint;            
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
@@ -210,7 +211,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
                                                                         const WString&             filePath,
                                                                         const Utf8String&     baseEditsFilePath,
-                                                                        StatusInt&                      status);
+                                                                      bool                    needsNeighbors,
+                                                                      StatusInt&                      status);
 
 
         int                             Open                           ();                
@@ -310,6 +312,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         
 #ifdef SCALABLE_MESH_ATP
+        virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override;
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override;
@@ -346,6 +349,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<MeshIndexType> GetMainIndexP() { return m_scmIndexPtr; }
 
         void SetMainIndexP(HFCPtr<MeshIndexType> newIndex) { m_scmIndexPtr = newIndex; }
+
+        void SetNeedsNeighbors(bool needsNeighbors) { m_needsNeighbors = needsNeighbors; }
                                     
     };
 
@@ -475,6 +480,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 #endif
 
 #ifdef SCALABLE_MESH_ATP
+        virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override { return ERROR; }
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override { return ERROR; }

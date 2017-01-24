@@ -265,9 +265,10 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureD
     return true;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(SMStoreDataType::UvCoords, nodeHeader, m_smSQLiteFile);
+    assert(dataType == SMStoreDataType::UvCoords);
+    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
     return true;    
     }
 
@@ -279,7 +280,17 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTri
     return true;    
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMSQLiteNodeDataStore<bvector<Byte>, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
+    return true;
+    }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMSQLiteNodeDataStore<Cesium3DTilesBase, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
+    return true;
+    }
 
 template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
     {       
@@ -323,6 +334,12 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
     m_smSQLiteFile->StoreTexture(id, texData, pi_uncompressedPacket.GetDataSize()); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
     return HPMBlockID(id);
     }
+
+template<class DATATYPE, class EXTENT>
+inline bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::IsCompressedType()
+    {
+    return m_dataType == SMStoreDataType::TextureCompressed;
+    }
     
 int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size_t countData)
     {
@@ -358,7 +375,7 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);        
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
 
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
@@ -461,7 +478,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
     
     return GetBlockDataCount(blockID, m_dataType);    
     }
@@ -492,7 +509,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_smSQLiteFile->GetTextureByteCount(blockID.m_integerID);
             if(blockDataCount > 0) blockDataCount += 3 * sizeof(int);
             break;
-        case SMStoreDataType::UvCoords : 
+        case SMStoreDataType::TextureCompressed:
+            blockDataCount = m_smSQLiteFile->GetTextureCompressedByteCount(blockID.m_integerID);
+            break;
+        case SMStoreDataType::UvCoords :
             blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::DiffSet : 
@@ -534,7 +554,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
 template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
 
     ModifyBlockDataCount(blockID, countDelta, m_dataType);
     }
@@ -645,6 +665,12 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     bvector<uint8_t> nodeData;
     size_t uncompressedSize = 0;
     this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+
+    if (this->IsCompressedType())
+        {
+        memcpy(DataTypeArray, nodeData.data(), nodeData.size());
+        return nodeData.size();
+        }
 
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
@@ -759,6 +785,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);
             break;
         case SMStoreDataType::Texture:
+        case SMStoreDataType::TextureCompressed:
             m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);
             break;
         default:
@@ -767,15 +794,12 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
         }
     }
 
-template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
-    bvector<uint8_t> nodeData;
     size_t uncompressedSize = 0;
-    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+    this->GetCompressedBlock(DataTypeArray, uncompressedSize, blockID);
     assert(uncompressedSize <= maxCountData*sizeof(DATATYPE));
-    assert(nodeData.size() <= maxCountData*sizeof(DATATYPE));
-    memcpy(DataTypeArray.data(), nodeData.data(), nodeData.size()*sizeof(DATATYPE));
-    return nodeData.size();
+    return DataTypeArray.size();
     }
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
