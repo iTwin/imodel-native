@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <TerrainModel\Core\DTMIterators.h>
 
 #include "MrDTMDataRef.h"
 
@@ -2246,39 +2245,6 @@ ElementHiliteState DTMElementDisplayHandler::GetHighlight(ElementRefP el, UInt32
 IAnnotationHandlerP DTMElementDisplayHandler::_GetIAnnotationHandler ( ElementHandleCR el )
     {
     return &DTMAnnotationHandler::s_singleton;
-    }
-
-
-//=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 01/17
-//=======================================================================================
-BentleyStatus DTMElementDisplayHandler::_GetMeshData(ElementHandleCR source, PolyfaceHeaderPtr& meshData)
-    {
-    RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, source);
-
-    if (DTMDataRef.IsValid())
-        {
-        Transform trsf;
-        DTMElementHandlerManager::GetStorageToUORMatrix(trsf, GetModelRef(source), source);
-
-        IDTM* idtm = DTMDataRef->GetDTMStorage(None);
-        if (idtm)
-            {
-            BcDTMP dtm = idtm->GetBcDTM();
-
-            if (nullptr != dtm)
-                {
-                DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*dtm);
-                for (PolyfaceQueryP info : *en)
-                    {
-                    meshData = info->Clone();
-                    }
-                return BentleyStatus::SUCCESS;
-                }
-            }
-        }
-    return BentleyStatus::ERROR;
     }
 
 //=======================================================================================
