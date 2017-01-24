@@ -98,7 +98,7 @@ public:
         m_facetOptions = facetOptions;
 
         if (!m_facetOptions.IsValid())
-            m_facetOptions = IFacetOptions::Create();
+            m_facetOptions = IFacetOptions::CreateForCurves();
         }
 
     void SetCreatingTexture() {m_isTextureCreate = true;}
@@ -355,10 +355,7 @@ public:
     DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
     DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
-    bool                IsWidthDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
-    bool                IsSingleRepDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
-    LsLocationCP        GetLocation() const   {return &m_location;}
-
+    LsLocationCP        GetLocation() const {return &m_location;}
     virtual             ~LsComponent() {};
     virtual bool        _IsBySegment() const {return false;}
     virtual bool        _HasLineCodes() const {return false;}
@@ -376,9 +373,9 @@ public:
     virtual void        _PostProcessLoad        () { return; }
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (LineStyleContextR, Render::LineStyleSymbCR, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool isClosed) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR) const override;
+    virtual StatusInt   _StrokeLineString2d     (LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
