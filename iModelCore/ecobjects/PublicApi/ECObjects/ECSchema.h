@@ -932,7 +932,7 @@ public:
     ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
 
     //! Sets the KindOfQuantity of this property, provide nullptr to unset.
-    void SetKindOfQuantity(KindOfQuantityCP value) {m_kindOfQuantity = value;}
+    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
 };
 
 //=======================================================================================
@@ -1100,7 +1100,7 @@ public:
     ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
 
     //! Sets the KindOfQuantity of this property, provide nullptr to unset.
-    void SetKindOfQuantity(KindOfQuantityCP value) {m_kindOfQuantity = value;}
+    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
 };
 
 

@@ -660,6 +660,87 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
 
+// Used by PrimitiveECProperty and PrimitiveArrayECProperty for _CanOverride methods
+bool phenomenonsEqual(ECPropertyCR ecProp, ECPropertyCR compareProp)
+    {
+    if (!(ecProp.GetIsPrimitive() || ecProp.GetIsPrimitiveArray()) || !(compareProp.GetIsPrimitive() || compareProp.GetIsPrimitiveArray()))
+        return false;
+
+    KindOfQuantityCP koq;
+    KindOfQuantityCP compareKOQ;
+    if (ecProp.GetIsPrimitive())
+        koq = ecProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        koq = ecProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (compareProp.GetIsPrimitive())
+        compareKOQ = compareProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        compareKOQ = compareProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (nullptr == koq || nullptr == compareKOQ)
+        return true;
+
+    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
+
+    Units::UnitCP unit = unitRegistry.LookupUnit(koq->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+
+    if (nullptr == unit || nullptr == compareUnit)
+        return true;
+
+    if (!unit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+        {
+        LOG.errorv("The ECProperty %s:%s has KindOfQuantity %s that is of Phenomenon %s which differs from the Phenomenon %s of KindOfQuantity %s on ECProperty %s:%s",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), koq->GetFullName().c_str(), unit->GetPhenomenon()->GetName(), compareUnit->GetPhenomenon()->GetName(),
+                   compareKOQ->GetFullName().c_str(), compareProp.GetClass().GetFullName(), compareProp.GetName().c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+// Used by PrimitiveECProperty and PrimitiveArrayECProperty for SetKindOfQuantity methods
+bool isKindOfQuantityCompatible(ECPropertyCR ecProp, KindOfQuantityCP compareKOQ)
+    {
+    if (!ecProp.GetIsPrimitive() && !ecProp.GetIsPrimitiveArray())
+        return false;
+
+    if (nullptr == compareKOQ)
+        return true;
+
+    ECPropertyCP baseProp = ecProp.GetBaseProperty();
+    if (nullptr == baseProp)
+        return true;
+
+    KindOfQuantityCP baseKOQ;
+    if (baseProp->GetIsPrimitive())
+        baseKOQ = baseProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        baseKOQ = baseProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (nullptr == baseKOQ)
+        return true;
+
+    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
+
+    Units::UnitCP baseUnit = unitRegistry.LookupUnit(baseKOQ->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+
+    if (nullptr == baseUnit || nullptr == compareUnit)
+        return true;
+
+    if (!baseUnit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+        {
+        LOG.errorv("The ECProperty %s:%s has a base property %s:%s with KindOfQuantity %s of Phenomenon %s which differs from the Phenomenon %s of the provided KindOfQuantity %s.",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetPhenomenon()->GetName(), 
+                   compareUnit->GetPhenomenon()->GetName(), compareKOQ->GetFullName().c_str());
+        return false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -689,7 +770,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return phenomenonsEqual(*this, baseProperty);;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -853,6 +934,18 @@ KindOfQuantityCP PrimitiveECProperty::GetKindOfQuantity() const
         }
 
     return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
+    {
+    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    m_kindOfQuantity = kindOfQuantity;
+    return ECObjectsStatus::Success;
     }
 
 ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
@@ -1291,7 +1384,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return phenomenonsEqual(*this, baseProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1442,6 +1535,18 @@ KindOfQuantityCP PrimitiveArrayECProperty::GetKindOfQuantity() const
         }
 
     return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveArrayECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
+    {
+    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    m_kindOfQuantity = kindOfQuantity;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
