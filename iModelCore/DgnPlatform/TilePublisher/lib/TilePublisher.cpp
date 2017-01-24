@@ -2123,11 +2123,6 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 continue;
                 }
 
-            Json::Value modelJson(Json::objectValue);
-
-            modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
-
             DRange3d modelRange;
             auto modelRangeIter = m_modelRanges.find(modelId);
             if (m_modelRanges.end() != modelRangeIter)
@@ -2135,9 +2130,21 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             else
                 modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
 
+            if (modelRange.IsNull())
+                {
+                BeAssert(false && "Null model range");
+                continue;
+                }
+
+            Json::Value modelJson(Json::objectValue);
+
+            modelJson["name"] = model->GetName();
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+
+
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
-            modelJson["extents"] = RangeToJson(modelRange);
+ 			modelJson["extents"] = RangeToJson(modelRange);
 
             if (nullptr == spatialModel && !modelTransform.IsIdentity())
                 modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
