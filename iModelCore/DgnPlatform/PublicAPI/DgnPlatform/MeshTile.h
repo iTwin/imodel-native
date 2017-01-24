@@ -20,6 +20,7 @@ BENTLEY_RENDER_TYPEDEFS(TileTriangle);
 BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
 BENTLEY_RENDER_TYPEDEFS(TileMeshPart);
+BENTLEY_RENDER_TYPEDEFS(TileMeshPointCloud);
 BENTLEY_RENDER_TYPEDEFS(TileMeshInstance);
 BENTLEY_RENDER_TYPEDEFS(TileMeshBuilder);
 BENTLEY_RENDER_TYPEDEFS(TileNode);
@@ -38,6 +39,7 @@ BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPointCloud);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
 BENTLEY_RENDER_REF_COUNTED_PTR(ElementTileNode);
 BENTLEY_RENDER_REF_COUNTED_PTR(ModelTileNode);
@@ -51,12 +53,13 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileGeomPart);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-typedef bvector<TileMeshPtr>        TileMeshList;
-typedef bvector<TileMeshInstance>   TileMeshInstanceList;
-typedef bvector<TileMeshPartPtr>    TileMeshPartList;
-typedef bvector<TileNodePtr>        TileNodeList;
-typedef bvector<TileNodeP>          TileNodePList;
-typedef bvector<TileGeometryPtr>    TileGeometryList;
+typedef bvector<TileMeshPtr>            TileMeshList;
+typedef bvector<TileMeshInstance>       TileMeshInstanceList;
+typedef bvector<TileMeshPartPtr>        TileMeshPartList;
+typedef bvector<TileMeshPointCloudPtr>  TileMeshPointCloudList;
+typedef bvector<TileNodePtr>            TileNodeList;
+typedef bvector<TileNodeP>              TileNodePList;
+typedef bvector<TileGeometryPtr>        TileGeometryList;
 
 //=======================================================================================
 //! Enumerates possible results of tile generation.
@@ -115,7 +118,7 @@ private:
     mutable TileTextureImagePtr     m_textureImage;
     bool                            m_ignoreLighting;
 
-    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
+    DGNPLATFORM_EXPORT TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0) { }
     TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0) {}
     TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0) {}
@@ -236,7 +239,6 @@ private:
     bool                    m_validIdsPresent;
 
     explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params), m_validIdsPresent(false) { }
-
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 public:
     static TileMeshPtr Create(TileDisplayParamsPtr& params) { return new TileMesh(params); }
@@ -274,6 +276,7 @@ public:
 
     void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
+    
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
@@ -381,6 +384,36 @@ public:
     double GetTolerance() const { return m_tolerance; }
 };
 
+//=======================================================================================
+//! Represents a point cloud within a tile node.
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct TileMeshPointCloud : RefCountedBase
+{
+
+struct Rgb
+    {
+    uint8_t m_red;
+    uint8_t m_green;
+    uint8_t m_blue;
+    };
+
+
+private:
+    TileDisplayParamsPtr    m_displayParams;
+    bvector<DPoint3d>       m_points;
+    bvector<Rgb>            m_colors;       // Color565
+    bvector<FPoint3d>       m_normals;
+    
+    TileMeshPointCloud (TileDisplayParamsPtr& params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance);
+
+public:
+    bvector<DPoint3d> const& Points()       { return m_points; }
+    bvector<Rgb> const& Colors()            { return m_colors; }
+    bvector<FPoint3d> const& Normals()      { return m_normals; }
+    DGNPLATFORM_EXPORT static TileMeshPointCloudPtr Create(TileDisplayParamsPtr& params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance) { return new TileMeshPointCloud (params, points,  colors, normals, nPoints, transform, clusterTolerance); }
+
+};  // TilePointCloud
 
 //=======================================================================================
 //! Representation of geometry processed by a TileGenerator.
@@ -624,11 +657,14 @@ struct PublishableTileGeometry
 private:
     TileMeshList            m_meshes;
     TileMeshPartList        m_parts;
+    TileMeshPointCloudList  m_pointClouds;
+
 
 public:
-    TileMeshList& Meshes()              { return m_meshes; }
-    TileMeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const                { return m_meshes.empty() && m_parts.empty(); }
+    TileMeshList& Meshes()                  { return m_meshes; }
+    TileMeshPartList& Parts()               { return m_parts; }
+    TileMeshPointCloudList& PointClouds()   { return m_pointClouds; }
+    bool IsEmpty() const                    { return m_meshes.empty() && m_parts.empty() && m_pointClouds.empty(); }
 
 };  // PublishedTileGeometry
 
@@ -662,7 +698,7 @@ protected:
     virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
     virtual void _ClearGeometry() { }
     virtual TileModelDeltaCP _GetModelDelta() const { return nullptr; }
-    virtual bool _ContainsParts() const { return false; }
+    virtual WString _GetFileExtension() const = 0;
 
 public:
     DgnModelCR GetModel() const { return *m_model; }
@@ -672,6 +708,7 @@ public:
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }
+    void SetTolerance(double tolerance) { m_tolerance = tolerance; }
 
     TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
@@ -683,7 +720,6 @@ public:
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
     void SetPublishedRange(DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
-
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
@@ -699,9 +735,10 @@ public:
     void  ClearGeometry() { _ClearGeometry(); }
     TileSource GetSource() const { return _GetSource(); }
     TileModelDeltaCP GetModelDelta() const { return _GetModelDelta(); }
-    bool ContainsParts() const { return _ContainsParts(); }
+    WString GetFileExtension() const { return _GetFileExtension(); }
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const
         { return _GeneratePublishableGeometry(dgndb, normalMode, twoSidedTileTriangles, doSurfacesOnly, filter); }
+    DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount = 3);
 };
 
 //=======================================================================================
@@ -731,20 +768,18 @@ protected:
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
     virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     virtual void _ClearGeometry() override { m_geometries.clear(); }
-    virtual TileModelDeltaCP _GetModelDelta() const { return m_modelDelta; }
-    virtual bool _ContainsParts() const { return m_containsParts; }
+    virtual TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
+    virtual WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:
     static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) { return new ElementTileNode(model, modelDelta, transformFromDgn); }
     static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
         { return new ElementTileNode(model, modelDelta, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
-    void SetTolerance(double tolerance) { m_tolerance = tolerance; }
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
-    DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
 };
 
 //=======================================================================================
@@ -754,6 +789,8 @@ public:
 //=======================================================================================
 struct ModelTileNode : TileNode
 {
+    bool        m_pointCloud;
+
 protected:
     ModelTileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, transformFromDgn) { }
     ModelTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)

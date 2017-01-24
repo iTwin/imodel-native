@@ -354,14 +354,14 @@ struct SceneReadyTask : ProgressiveTask
 {
     Attachment::Tree& m_tree;
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
-    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& showFrame) override
         {
         // is the scene available yet?
         if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
             return ProgressiveTask::Completion::Aborted; // no, keep waiting
 
         m_tree.m_sceneReady = true; // yes, mark it as ready and draw its tiles
-        m_tree.DrawInView(context);
+        m_tree.DrawInView(context, m_tree.GetLocation(), m_tree.m_clip.get());
         return ProgressiveTask::Completion::Finished; // we're done.
         }
 };
@@ -369,15 +369,16 @@ struct SceneReadyTask : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderContextR context)
+void Attachment::Tree::Draw(TerrainContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
 
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
+        m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
 
     if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.
@@ -387,7 +388,7 @@ void Attachment::Tree::Draw(RenderContextR context)
         }
     
     // the scene is available, draw its tiles
-    DrawInView(context);
+    DrawInView(context, GetLocation(), m_clip.get());
 
 #ifdef DEBUG_ATTACHMENT_RANGE
     ElementAlignedBox3d range(0,0,0, 1.0/m_scale.x,1.0/m_scale.y,1.0);
@@ -515,7 +516,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         }
 
     m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
-    SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+    SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
     m_viewport->m_biasDistance = m_biasDistance; // for flashing hits

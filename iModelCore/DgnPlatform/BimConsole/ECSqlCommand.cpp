@@ -24,21 +24,21 @@ Utf8String ECSqlCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
 
     //for ECSQL command the arg vector contains a single arg which contains the original command line.
-    Utf8StringCR ecsql = args[0];
+    Utf8StringCR ecsql = args;
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
     if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
+            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            Console::WriteErrorLine("Failed to prepare ECSQL statement.");
+            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement.");
 
         return;
         }
@@ -75,9 +75,9 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
             header.append("|");
         }
 
-    Console::WriteLine(header.c_str());
+    BimConsole::WriteLine(header.c_str());
     Utf8String line(header.size(), '-');
-    Console::WriteLine(line.c_str());
+    BimConsole::WriteLine(line.c_str());
 
     while (BE_SQLITE_ROW == statement.Step())
         {
@@ -116,7 +116,7 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
                 rowString.append("|");
             }
 
-        Console::WriteLine(rowString.c_str());
+        BimConsole::WriteLine(rowString.c_str());
         }
     }
 
@@ -129,14 +129,14 @@ void ECSqlCommand::ExecuteInsert(Session& session, ECSqlStatement& statement) co
     if (BE_SQLITE_DONE != statement.Step(generatedECInstanceKey))
         {
         if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+            BimConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            Console::WriteErrorLine("Failed to execute ECSQL statement.");
+            BimConsole::WriteErrorLine("Failed to execute ECSQL statement.");
 
         return;
         }
 
-    Console::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetECInstanceId().ToString().c_str());
+    BimConsole::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetECInstanceId().ToString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,9 +147,9 @@ void ECSqlCommand::ExecuteUpdateOrDelete(Session& session, ECSqlStatement& state
     if (BE_SQLITE_DONE != statement.Step())
         {
         if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+            BimConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            Console::WriteErrorLine("Failed to execute ECSQL statement.");
+            BimConsole::WriteErrorLine("Failed to execute ECSQL statement.");
 
         return;
         }

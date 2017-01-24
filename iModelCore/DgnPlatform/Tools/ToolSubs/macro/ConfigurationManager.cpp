@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/ConfigurationManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -532,7 +532,7 @@ MonitoredInteger (WCharCP configVariable, int& monitored, int defaultValue, int 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    _VariableChanged (WCharCP variableName)
+void    _VariableChanged (WCharCP variableName) override
     {
     m_monitored = GetMonitoredValue (variableName);
     }

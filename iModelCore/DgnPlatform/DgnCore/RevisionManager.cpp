@@ -149,7 +149,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
         {
         iter.Dump(m_dgndb, false, 1);
         BeAssert(false);
@@ -329,7 +329,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
         {
         BeAssert(false);
         return ChangeSet::ConflictResolution::Abort;

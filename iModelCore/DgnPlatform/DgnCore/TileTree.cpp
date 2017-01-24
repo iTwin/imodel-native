@@ -61,10 +61,10 @@ folly::Future<BentleyStatus> TileLoader::Perform()
         {
         if (SUCCESS == status)
             return folly::makeFuture(SUCCESS);
-            
+
         if (me->IsCanceledOrAbandoned())
             return folly::makeFuture(ERROR);
-       
+
         return me->_GetFromSource();
         }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
             {
@@ -80,10 +80,10 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                     tile.SetNotFound();
                 return ERROR;
                 }
-            
+
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-            
-            // On a successful load, potentially store the tile in the cache.   
+
+            // On a successful load, potentially store the tile in the cache.
             me->_SaveToDb();    // don't wait on the save.
             return SUCCESS;
             });
@@ -112,10 +112,10 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
             return SUCCESS;
             });
-        }                                           
+        }
 
     auto query = std::make_shared<FileDataQuery>(m_fileName, m_loads);
- 
+
     TileLoaderPtr me(this);
     return query->Perform().then([me, query](ByteStream const& data)
         {
@@ -123,11 +123,11 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             return ERROR;
 
         me->m_tileBytes = std::move(data);
-        me->m_contentType = "";     // unknown 
-        me->m_expirationDate = 0;   // unknown 
+        me->m_contentType = "";     // unknown
+        me->m_expirationDate = 0;   // unknown
 
         return SUCCESS;
-        });         
+        });
     }
 
 //----------------------------------------------------------------------------------------
@@ -175,9 +175,9 @@ BentleyStatus TileLoader::DoReadFromDb()
 
         m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
         m_tileBytes.SetPos(0);
-        m_contentType = stmt->GetValueText(2);    
+        m_contentType = stmt->GetValueText(2);
         m_expirationDate = stmt->GetValueInt64(3);
-        
+
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         uint64_t rowId = stmt->GetValueInt64(2);
@@ -233,7 +233,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
-        return ERROR; 
+        return ERROR;
 
     BeAssert(!m_cacheKey.empty());
     BeAssert(m_tileBytes.HasData());
@@ -303,7 +303,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 
     if (!response.IsSuccess())
         return false;
-         
+
     Utf8String cacheControl = response.GetHeaders().GetCacheControl();
     size_t offset = 0;
     Utf8String directive;
@@ -330,14 +330,14 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 
     // if cache-control did not provide a max-age we must use 'Expires' directive if present.
     if (0 == expirationDate)
-        {        
+        {
         Utf8CP expiresStr = response.GetHeaders().GetValue("Expires");
         if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
             {
             // if we cannot find an expiration date we are still allowed to cache.
             }
         }
-       
+
     return true;
     }
 
@@ -360,7 +360,7 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 
         if (loads != nullptr)
             loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-            
+
         return data;
         });
     }
@@ -369,15 +369,15 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 * Create the table to hold entries in this TileCache
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileCache::_Prepare() const 
+BentleyStatus TileCache::_Prepare() const
     {
     if (m_db.TableExists(TABLE_NAME_TileTree))
         return SUCCESS;
-        
+
     Utf8CP ddl = "Filename CHAR PRIMARY KEY,"
                  "Data BLOB,"
                  "DataSize BIGINT,"
-                 "ContentType TEXT," 
+                 "ContentType TEXT,"
                  "Created BIGINT,"
                  "Expires BIGINT";
 
@@ -390,7 +390,7 @@ BentleyStatus TileCache::_Prepare() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileCache::_Cleanup() const 
+BentleyStatus TileCache::_Cleanup() const
     {
     AccessLock lock(const_cast<TileCache&>(*this));
 
@@ -464,9 +464,9 @@ BentleyStatus Root::DeleteCacheFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
     {
-    if (!IsHttp()) 
+    if (!IsHttp())
         return;
-        
+
     m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
     m_localCacheName.AppendExtension(L"TileCache");
@@ -489,8 +489,8 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
-        return ERROR;   
-    
+        return ERROR;
+
     return loader->Perform();
     }
 
@@ -531,7 +531,7 @@ void Tile::SetAbandoned() const
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
+void Tile::_UnloadChildren(BeTimePoint olderThan) const
     {
     if (m_children.empty())
         return;
@@ -608,7 +608,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
 
         return;
         }
-    
+
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
     _DrawGraphics(args, depth);
 
@@ -625,7 +625,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
     // NOTE: add all missing tiles, even if they're already queued.
     if (!IsNotFound())
-        args.m_missing.Insert(depth, this); 
+        args.m_missing.Insert(depth, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -751,6 +751,46 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVectorCP clips)
+    {
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto now = BeTimePoint::Now();
+    DrawArgs args(context, location, *this, now, now-GetExpirationTime(), clips);
+    for (;;)
+        {
+        m_rootTile->Draw(args, 0);
+        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+
+        // Do we still have missing tiles?
+        if (args.m_missing.empty())
+            break; // no, just draw what we've got
+
+        // yes, request them
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
+        args.RequestMissingTiles(*this, loads);
+
+        if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait them? This is really just for thumbnails
+            {
+            // no, schedule a progressive pass for when they arrive
+            context.GetViewport()->ScheduleProgressiveTask(*_CreateProgressiveTask(args, loads));
+            break;
+            }
+
+        BeDuration::FromMilliSeconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+        args.Clear(); // clear graphics/missing from previous attempt
+        }
+
+    args.DrawGraphics(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -814,7 +854,7 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency)
     : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
@@ -823,40 +863,12 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Root::DrawInView(RenderContextR context)
-    {
-    if (!GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime(), m_clip.get());
-    Draw(args);
-    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    // Do we still have missing tiles?
-    if (!args.m_missing.empty())
-        {
-        // yes, request them and schedule a progressive task to draw them as they arrive.
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
@@ -885,9 +897,17 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 
     return Completion::Aborted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTaskPtr QuadTree::Root::_CreateProgressiveTask(DrawArgs& args, TileLoadStatePtr loads)
+    {
+    return new QuadTree::ProgressiveTask(*this, args.m_missing, loads);
     }

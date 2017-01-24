@@ -259,6 +259,12 @@ DgnDbStatus DgnElement::_OnInsert()
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
+    if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
+        {
+        BeAssert(false); // when m_parentId.IsValid, m_parentRelClassId must be a subclass of BisCore:ElementOwnsChildElements
+        return DgnDbStatus::InvalidParent;
+        }
+
     if (!m_code.IsValid())
         {
         m_code = _GenerateDefaultCode();
@@ -438,12 +444,13 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(handler);
     DgnElementId parentId = parentSubject.GetElementId();
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements);
     DgnCode code = CreateCode(parentSubject, name);
 
-    if (!parentId.IsValid() || !classId.IsValid() || !name || !*name)
+    if (!parentId.IsValid() || !parentRelClassId.IsValid() || !classId.IsValid() || !name || !*name)
         modelId.Invalidate(); // mark CreateParams as invalid
 
-    return CreateParams(db, modelId, classId, code, nullptr, parentId);
+    return CreateParams(db, modelId, classId, code, nullptr, parentId, parentRelClassId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1311,9 +1318,10 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         return;
 
     // Copying between DgnDbs is not allowed. Caller must do Id remapping.
-    m_code      = other.m_code;
+    m_code = other.m_code;
     m_userLabel = other.m_userLabel;
-    m_parentId  = other.m_parentId;
+    m_parentId = other.m_parentId;
+    m_parentRelClassId = other.m_parentRelClassId;
     // don't copy FederationGuid
 
     // Copy the auto-handled EC properties
@@ -1368,7 +1376,8 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
-    m_parentId   = importer.FindElementId(m_parentId);
+    m_parentId = importer.FindElementId(m_parentId);
+    m_parentRelClassId = importer.RemapClassId(m_parentRelClassId);
     RemapAutoHandledNavigationproperties(importer);
     }
 
@@ -1728,7 +1737,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, GetFederationGuid());
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, m_parentRelClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
@@ -2591,6 +2600,80 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PHYSICAL_PhysicalType, 
+        [](ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (PhysicalElement&)elIn;
+            value.SetNavigationInfo(el.GetPhysicalTypeId(), el.GetPhysicalTypeRelClassId());
+            return DgnDbStatus::Success;
+            },
+
+        [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            auto& el = (PhysicalElement&)elIn;
+            return el.SetPhysicalType(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_physicalTypeId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(PHYSICAL_PhysicalType), &m_physicalTypeRelClassId);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(PHYSICAL_PhysicalType), m_physicalTypeId, m_physicalTypeRelClassId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhysicalElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto src = dynamic_cast<PhysicalElement const*>(&el);
+    if (nullptr != src)
+        {
+        m_physicalTypeId = src->m_physicalTypeId;
+        m_physicalTypeRelClassId = src->m_physicalTypeRelClassId;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalElement::SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId)
+    {
+    // *** NEEDS_WORK: Validation?
+    m_physicalTypeId = physicalTypeId;
+    m_physicalTypeRelClassId = relClassId;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
@@ -2940,7 +3023,9 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
         if (remappedParentId.IsValid())
             newParentId = remappedParentId;
         }
-    outputEditElement->SetParentId(newParentId, targetModel.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements)); // WIP: right way to set ParentRelECClassId?
+
+    if (newParentId.IsValid())
+        outputEditElement->SetParentId(newParentId, sourceElement.GetParentRelClassId());
 
     DgnElementCPtr outputElement = outputEditElement->Insert(&status);
     if (!outputElement.IsValid())

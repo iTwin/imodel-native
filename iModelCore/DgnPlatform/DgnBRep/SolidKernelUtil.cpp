@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/SolidKernelUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2305,6 +2305,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     options.convexity = PK_emboss_convexity_both_c; // Let pad or pocket be determined by whether cap is "above" or "below" target body according to emboss direction...
     options.overflow_data.laminar_walled = true;
     drawDir.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
+    options.overflow_data.sweep_direction = options.sidewall_data.draw_direction;
 
     PK_MARK_t   markTag = PK_ENTITY_null;
 

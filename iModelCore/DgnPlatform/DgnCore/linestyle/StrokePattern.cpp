@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokePattern.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -219,6 +219,7 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent con
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // test to see whether a single repetition of the pattern will be discernible in this view.
     // If not, use a continuous line style so we'll get width.
     if (!IsSingleRepDiscernible (context.GetViewContext(), modifiers, *inPoints))
@@ -227,6 +228,7 @@ StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, 
         solid.SetContinuous();
         return solid.ProcessStroke (context, NULL, inPoints, nPoints, modifiers);
         }
+#endif
 
     return ProcessStroke (context, NULL, inPoints, nPoints, modifiers);
     }
@@ -234,8 +236,7 @@ StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints,
-                                              int nPoints, LineStyleSymbCP modifiers) const
+StatusInt LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
     if (nPoints < 2)
         return  ERROR;
@@ -243,9 +244,6 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
     DPoint3dCP  tan1 = NULL;
     DPoint3dCP  tan2 = NULL;
     DPoint3d    startTangent, endTangent;
-
-    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnDb or maybe ViewController...
-
     bool        hasWidth = (0 != _GetMaxWidth() || 0 != modifiers->GetMaxWidth());
 
     if (hasWidth)
@@ -254,7 +252,9 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
         tan2 = &endTangent;
 
         if (modifiers->HasStartTangent())
+            {
             startTangent = *modifiers->GetStartTangent();
+            }
         else
             {
             if (0.0 == startTangent.NormalizedDifference (*inPoints, inPoints[1]))
@@ -262,7 +262,9 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
             }
 
         if (modifiers->HasEndTangent())
+            {
             endTangent = *modifiers->GetEndTangent();
+            }
         else
             {
             DPoint3dCP pLast = inPoints + (nPoints-1);
@@ -280,9 +282,8 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
 
     if (CheckSegmentMode (modifiers))
         {
-        DPoint3dCP currPoint = inPoints;
-        DPoint3dCP lastPoint = inPoints + (nPoints-1);
-
+        DPoint3dCP  currPoint = inPoints;
+        DPoint3dCP  lastPoint = inPoints + (nPoints-1);
         DPoint3d    prevDir, thisDir, nextDir;
 
         thisDir.NormalizedDifference (currPoint[1], *currPoint);
@@ -322,7 +323,11 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
         StrokeLocal (context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
         }
 
-    return  context.GetViewContext()->CheckStop() ? ERROR : SUCCESS;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    return context.GetViewContext()->CheckStop() ? ERROR : SUCCESS;
+#else
+    return SUCCESS;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -721,7 +726,9 @@ void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context,
     if (modifiers != NULL)
         usesTaper = oClone.ApplyModifiers (&orgWidth, &endWidth, modifiers);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     oClone.FixDashWidths (orgWidth, endWidth, usesTaper, context.GetViewContext(), inPoints);  // No dashes less than 1 pixel wide.
+#endif
 
     if (usesTaper && length > 0)
         {
@@ -917,8 +924,13 @@ double          LsStrokePatternComponent::GenerateStrokes (LineStyleContextR con
         endFlag = 0;
         cutLength = 0.0;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (!stroker.HasMoreData() || context.GetViewContext()->CheckStop())
             break;
+#else
+        if (!stroker.HasMoreData())
+            break;
+#endif
 
         if (firstStrokeCenterPhaseGap || ++pStroke > pLastStroke)
             {
@@ -1859,7 +1871,11 @@ void            Centerline::Output (LineStyleContextR context, LsStrokeP pStroke
             }
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool    polyLengthNotDiscernible = (nPts > 2 ? false : segmentNotDiscernible (context.GetViewContext(), nPts, m_pts+start));
+#else
+    bool    polyLengthNotDiscernible = false;
+#endif
     outputPolygon (output, nPts-start, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, endTangent, polyLengthNotDiscernible);
     }
 

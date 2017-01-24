@@ -27,3 +27,5 @@
 #define GEOM3_Yaw "Yaw"
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
+
+#define PHYSICAL_PhysicalType   "PhysicalType"

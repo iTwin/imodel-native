@@ -218,7 +218,8 @@ private:
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
-    void WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR geometry);
+    void WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud);
+    void WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR geometry);
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData tileData);

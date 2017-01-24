@@ -22,7 +22,7 @@ bool Session::IsFileLoaded(bool printMessageIfFalse) const
     const bool isOpen = m_file != nullptr && m_file->IsOpen();
 
     if (!isOpen && printMessageIfFalse)
-        Console::WriteErrorLine("No file loaded.");
+        BimConsole::WriteErrorLine("No file loaded.");
 
     return isOpen;
     }
@@ -37,7 +37,7 @@ bool Session::IsECDbFileLoaded(bool printMessageIfFalse) const
 
     const bool isECDbFile = m_file->GetECDbHandle() != nullptr;
     if (!isECDbFile && printMessageIfFalse)
-        Console::WriteErrorLine("Command requires BIM or ECDb, but currently opened file is only a BeSQLite file.");
+        BimConsole::WriteErrorLine("Command requires BIM or ECDb, but currently opened file is only a BeSQLite file.");
 
     return isECDbFile;
     }
@@ -86,13 +86,13 @@ Utf8CP SessionFile::TypeToString(Type type)
 //---------------------------------------------------------------------------------------
 void BimConsole::Setup()
     {
-    Console::WriteLine(" --------------------------------------------------------------------------- ");
-    Console::WriteLine(" BimConsole.exe v1.0");
-    Console::WriteLine(" Copyright (c) Bentley Systems 2017. All rights reserved. www.Bentley.com.");
-    Console::WriteLine(" ----------------------------------------------------------------------------");
-    Console::WriteLine();
-    Console::WriteLine("    .help for help, .exit to exit program");
-    Console::WriteLine();
+    WriteLine(" --------------------------------------------------------------------------- ");
+    WriteLine(" BimConsole.exe v1.0");
+    WriteLine(" Copyright (c) Bentley Systems 2017. All rights reserved. www.Bentley.com.");
+    WriteLine(" ----------------------------------------------------------------------------");
+    WriteLine();
+    WriteLine("    .help for help, .exit to exit program");
+    WriteLine();
 
     auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
@@ -143,31 +143,26 @@ int BimConsole::Run(int argc, WCharP argv[])
         {
         Command const* openCommand = GetCommand(".open");
         BeAssert(openCommand != nullptr);
-        std::vector<Utf8String> args;
-        args.push_back(openCommand->GetName());
-        args.push_back(Utf8String(argv[1]));
+        Utf8String argsUnparsed;
+        //ignore first arg as it is the path to the bimconsole exe
+        for (size_t i = 1; i < (size_t) argc; i++)
+            {
+            if (i > 1)
+                argsUnparsed.append(" ");
 
-        if (argc == 3)
-            args.push_back(Utf8String(argv[2]));
+            argsUnparsed.append(Utf8String(argv[i]));
+            }
 
-        openCommand->Run(m_session, args);
+        openCommand->Run(m_session, argsUnparsed);
         }
 
-    return WaitForUserInput(argc, argv);
+    return WaitForUserInput();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::WritePrompt()
-    {
-    Console::Write("BIM> ");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan     10/2013
-//---------------------------------------------------------------------------------------
-int BimConsole::WaitForUserInput(int argc, WCharP argv[])
+int BimConsole::WaitForUserInput()
     {
     Utf8String cmd;
 
@@ -175,7 +170,7 @@ int BimConsole::WaitForUserInput(int argc, WCharP argv[])
     while (ReadLine(cmd))
         {
         cmd.Trim();
-        RunCommand(cmd.c_str());
+        RunCommand(cmd);
         }
 
     return 0;
@@ -185,27 +180,31 @@ int BimConsole::WaitForUserInput(int argc, WCharP argv[])
 // @bsimethod                                                  Krischan.eberle     09/2013
 //---------------------------------------------------------------------------------------
 //static
-void BimConsole::RunCommand(Utf8CP cmd)
+void BimConsole::RunCommand(Utf8StringCR cmd)
     {
     bool isECSqlCommand = cmd[0] != COMMAND_PREFIX;
 
     Command const* command = nullptr;
 
-    std::vector<Utf8String> args;
+    Utf8String args;
     if (isECSqlCommand)
         {
-        args.push_back(cmd);
+        args.assign(cmd);
         command = GetCommand(".ecsql");
         }
     else
         {
-        if (!TokenizeCommandline(args, cmd) || args.empty())
+        Utf8String commandName;
+        const size_t nextStartIndex = FindNextToken(commandName, WString(cmd.c_str(), BentleyCharEncoding::Utf8), 0, L' ', L'"');
+        if (commandName.empty())
             {
-            Console::WriteErrorLine("Syntax error in command");
+            WriteErrorLine("Syntax error in command");
             return;
             }
 
-        command = GetCommand(args[0].c_str());
+        command = GetCommand(commandName);
+        if (nextStartIndex < cmd.size())
+            args.assign(cmd.substr(nextStartIndex));
         }
 
     //Unsupported command, use help command to display available commands
@@ -217,7 +216,7 @@ void BimConsole::RunCommand(Utf8CP cmd)
     StopWatch executionTimer(true);
     command->Run(m_session, args);
     executionTimer.Stop();
-    Console::WriteLine("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds());
+    WriteLine("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds());
 
     //Add command to history
     AddToHistory(cmd);
@@ -232,17 +231,17 @@ bool BimConsole::ReadLine(Utf8StringR cmd)
     cmd.clear();
     while (true)
         {
-        fgets(m_readBuffer, sizeof(m_readBuffer), Console::GetIn());
-        if (feof(Console::GetIn()))
+        fgets(m_readBuffer, sizeof(m_readBuffer), GetIn());
+        if (feof(GetIn()))
             return false;
         cmd.append(m_readBuffer);
         if (cmd.size() > 0)
             {
-            if (cmd[0] == COMMAND_PREFIX || StringEndsWith(cmd, ECSQLSTATEMENT_DELIMITER, true))
+            if (cmd[0] == COMMAND_PREFIX || cmd[cmd.size() -1] == ECSQLSTATEMENT_DELIMITER)
                 return true;
             else
                 {
-                Console::Write(" > ");
+                Write(" > ");
                 cmd.append("\t");
                 }
             }
@@ -251,105 +250,9 @@ bool BimConsole::ReadLine(Utf8StringR cmd)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan     10/2013
-//---------------------------------------------------------------------------------------
-bool BimConsole::TokenizeCommandline(std::vector<Utf8String>& tokens, Utf8StringCR cmd)
-    {
-    Utf8String cur;
-    int state = 0;
-    int n = -1;
-    while (n < (int) cmd.size())
-        {
-        n++;
-        switch (state)
-            {
-                case 0:
-                {
-                if (cmd[n] == '"')
-                    {
-                    state = 1;
-                    cur.append(&cmd[n], 1);
-                    }
-                else if (cmd[n] == '\'')
-                    {
-                    state = 2;
-                    cur.append(&cmd[n], 1);
-                    }
-                else if (isspace(cmd[n]))
-                    {
-                    if (cur.empty())
-                        continue;
-
-                    tokens.push_back(cur);
-                    cur.clear();
-                    }
-                else
-                    cur.append(&cmd[n], 1);
-                break;
-                }
-                case 1:
-                {
-                if (cmd[n] == '"')
-                    {
-                    state = 0;
-                    cur.append(&cmd[n], 1);
-                    cur.Trim();
-                    tokens.push_back(cur);
-                    cur.clear();
-                    }
-                else
-                    cur.append(&cmd[n], 1);
-                break;
-                }
-                case 2:
-                {
-                if (cmd[n] == '\'')
-                    {
-                    state = 0;
-                    cur.append(&cmd[n], 1);
-                    cur.Trim();
-                    tokens.push_back(cur);
-                    cur.clear();
-                    }
-                else
-                    cur.append(&cmd[n], 1);
-                break;
-                }
-            }
-        }
-
-    if (state != 0)
-        return false; //syntax error
-
-    cur.Trim();
-    if (!cur.empty())
-        tokens.push_back(cur);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan     10/2013
-//---------------------------------------------------------------------------------------
-bool BimConsole::StringEndsWith(Utf8StringCR stmt, Utf8Char ch, bool skipSpaces)
-    {
-    if (stmt.empty())
-        return false;
-    for (size_t i = stmt.size() - 1; i >= 0; i--)
-        {
-        if (skipSpaces)
-            if (isspace(stmt[i]))
-                continue;
-        if (stmt[i] == ch)
-            return true;
-        return false;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2013
 //---------------------------------------------------------------------------------------
-Command const* BimConsole::GetCommand(Utf8CP commandName) const
+Command const* BimConsole::GetCommand(Utf8StringCR commandName) const
     {
     auto it = m_commands.find(commandName);
     if (it == m_commands.end())
@@ -358,22 +261,7 @@ Command const* BimConsole::GetCommand(Utf8CP commandName) const
     return it->second.get();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2013
-//---------------------------------------------------------------------------------------
-void BimConsole::AddCommand(std::shared_ptr<Command> const& command)
-    {
-    AddCommand(command->GetName().c_str(), command);
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2013
-//---------------------------------------------------------------------------------------
-//static
-void BimConsole::AddCommand(Utf8CP commandName, std::shared_ptr<Command> const& command)
-    {
-    m_commands[commandName] = command;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    07/2016
@@ -385,28 +273,120 @@ BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
     return BeSQLite::L10N::SqlangFiles(defaultSqlang);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     01/2017
+//---------------------------------------------------------------------------------------
+//static
+size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
+    {
+    auto postProcessToken = [&token] (WStringR tokenW, size_t currentIndex)
+        {
+        tokenW.Trim();
+        token.Assign(tokenW.c_str());
+        return currentIndex + 1;
+        };
 
-//*************** Console ****
+    enum class State
+        {
+        IsDelimiter,
+        NotInEscapeSequence,
+        InEscapeSequence,
+        EscapeCharInEscapeSequence
+        };
+
+    const size_t inputStrLength = inputString.size();
+    const bool doEscapeDelimiter = delimiterEscapeChar != L'\0';
+    State state = State::NotInEscapeSequence;
+    WString currentToken;
+    for (size_t i = startIndex; i < inputStrLength; i++)
+        {
+        WChar c = inputString[i];
+        switch (state)
+            {
+                case State::IsDelimiter:
+                {
+                if (c == delimiter)
+                    break;
+
+                currentToken.Trim();
+                token = Utf8String(currentToken);
+                return i;
+                }
+                case State::NotInEscapeSequence:
+                {
+                if (c == delimiter)
+                    {
+                    state = State::IsDelimiter;
+                    break;
+                    }
+
+                if (doEscapeDelimiter && c == delimiterEscapeChar)
+                    state = State::InEscapeSequence;
+                else
+                    currentToken.append(1, c);
+
+                break;
+                }
+
+                case State::InEscapeSequence:
+                {
+                if (c == delimiterEscapeChar)
+                    state = State::EscapeCharInEscapeSequence;
+                else
+                    currentToken.append(1, c);
+
+                break;
+                }
+
+                case State::EscapeCharInEscapeSequence:
+                {
+                if (c == delimiterEscapeChar)
+                    {
+                    //two subsequent double-quotes in an escape sequence mean to escape the escape char
+                    currentToken.append(1, c);
+                    state = State::InEscapeSequence;
+                    }
+                else if (c == delimiter)
+                    state = State::IsDelimiter;
+                else
+                    {
+                    currentToken.append(1, c);
+                    state = State::NotInEscapeSequence;
+                    }
+                
+                break;
+                }
+
+                default:
+                    BeAssert(false);
+                    return Utf8String::npos;
+            }
+        }
+
+    currentToken.Trim();
+    token = Utf8String(currentToken);
+    return inputStrLength;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* Console::GetIn() { return stdin; }
+FILE* BimConsole::GetIn() { return stdin; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* Console::GetOut() { return stdout; }
+FILE* BimConsole::GetOut() { return stdout; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* Console::GetErr() { return stderr; }
+FILE* BimConsole::GetErr() { return stderr; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::Write(Utf8CP format, ...)
+void BimConsole::Write(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -417,7 +397,7 @@ void Console::Write(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::WriteLine(Utf8CP format, ...)
+void BimConsole::WriteLine(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -429,7 +409,7 @@ void Console::WriteLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::WriteLine()
+void BimConsole::WriteLine()
     {
     Write("%s", "\r\n");
     }
@@ -437,7 +417,7 @@ void Console::WriteLine()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::WriteError(Utf8CP format, ...)
+void BimConsole::WriteError(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -448,7 +428,7 @@ void Console::WriteError(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::WriteErrorLine(Utf8CP format, ...)
+void BimConsole::WriteErrorLine(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -460,7 +440,7 @@ void Console::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void Console::Write(FILE* stream, Utf8CP format, va_list args)
+void BimConsole::Write(FILE* stream, Utf8CP format, va_list args)
     {
     vfprintf(stream, format, args);
     }

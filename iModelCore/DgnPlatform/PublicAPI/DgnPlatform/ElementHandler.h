@@ -88,7 +88,7 @@ namespace dgn_ElementHandler
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat);
-        virtual ElementHandlerP _ToElementHandler() {return this;}
+        virtual ElementHandlerP _ToElementHandler() override {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
@@ -119,6 +119,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for SpatialLocationElement

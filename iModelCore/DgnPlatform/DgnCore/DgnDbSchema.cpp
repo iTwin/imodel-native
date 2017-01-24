@@ -161,6 +161,7 @@ static void importBisCoreSchema(DgnDbCR db)
 #define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z)"
 #define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
 #define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
+#define OF_SPATIAL_DATA "OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -343,13 +344,13 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
-               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE 
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 

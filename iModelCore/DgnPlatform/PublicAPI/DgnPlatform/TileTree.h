@@ -81,7 +81,6 @@ DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 
-typedef std::chrono::steady_clock::time_point TimePoint;
 typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 
 //=======================================================================================
@@ -133,7 +132,7 @@ protected:
     TileCP m_parent;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
-    mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
+    mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
 
@@ -162,7 +161,7 @@ public:
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
 
     virtual void _OnChildrenUnloaded() const {}
-    DGNPLATFORM_EXPORT virtual void _UnloadChildren(TimePoint olderThan) const;
+    DGNPLATFORM_EXPORT virtual void _UnloadChildren(BeTimePoint olderThan) const;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
     virtual bool _HasChildren() const = 0;
@@ -208,7 +207,7 @@ protected:
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
-    BeDuration m_expirationTime = BeDuration(20); // save unused tiles for 20 seconds
+    BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     BeConditionVariable m_cv;
@@ -217,11 +216,13 @@ protected:
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
+    virtual ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) = 0;
 
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
+    virtual Utf8CP _GetName() const = 0;
     void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
     void DoneTileLoad() {{BeMutexHolder holder(m_cv.GetMutex()); --m_activeLoads; BeAssert(m_activeLoads>=0);} m_cv.notify_all();}
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads>0) m_cv.InfiniteWait(holder);}
@@ -249,8 +250,8 @@ public:
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
     void SetExpirationTime(BeDuration val) {m_expirationTime = val;}
 
-    //! Get expiration time for unused Tiles, in seconds.
-    std::chrono::milliseconds GetExpirationTime() const {return m_expirationTime.ToMilliSeconds();}
+    //! Get expiration time for unused Tiles.
+    BeDuration GetExpirationTime() const {return m_expirationTime;}
 
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
@@ -265,7 +266,7 @@ public:
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
     //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
-    void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
+    DGNPLATFORM_EXPORT void DrawInView(RenderListContext& context, TransformCR, ClipVectorCP);
 };
 
 //=======================================================================================
@@ -384,16 +385,17 @@ struct DrawArgs
     Render::GraphicBranch m_hiResSubstitutes;
     Render::GraphicBranch m_loResSubstitutes;
     MissingNodes m_missing;
-    TimePoint m_now;
-    TimePoint m_purgeOlderThan;
+    BeTimePoint m_now;
+    BeTimePoint m_purgeOlderThan;
     ClipVectorCP m_clip;
 
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    DrawArgs(RenderContextR context, TransformCR location, RootR root, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
+    DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {}
+    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
     TransformCR GetLocation() const {return m_location;}
@@ -433,10 +435,9 @@ struct Root : TileTree::Root
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
     ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
 
-    virtual Utf8CP _GetName() const = 0;
+    ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) override;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
-    void DrawInView(RenderContextR context);
 };
     
 //=======================================================================================
@@ -476,11 +477,11 @@ struct ProgressiveTask : Dgn::ProgressiveTask
 {
     Root& m_root;
     DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
+    BeTimePoint m_nextShow;
     TileLoadStatePtr m_loads;
     Utf8String m_name;
 
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+    Completion _DoProgressive(RenderListContext& context, WantShow&) override;
     ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
     ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };

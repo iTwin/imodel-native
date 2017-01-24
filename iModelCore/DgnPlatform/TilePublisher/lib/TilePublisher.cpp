@@ -287,7 +287,7 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
     WString rootName;
     BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), GetBinaryDataFileExtension(m_tile.ContainsParts())).c_str(), nullptr);
+    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_tile.GetFileExtension().c_str()).c_str(), nullptr);
     }
 
 
@@ -356,9 +356,14 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
+        
     if (publishableGeometry.Parts().empty())
         {
-        WriteGeometryTiles(outputFile, publishableGeometry);
+        BeAssert (publishableGeometry.PointClouds().empty() || publishableGeometry.Meshes().empty());   // We don't expect point clouds with meshes (although these could be handled as a composite if necessary).
+        if (!publishableGeometry.PointClouds().empty())
+            WritePointCloud(outputFile, *publishableGeometry.PointClouds().front());
+        else
+            WriteTileMeshes(outputFile, publishableGeometry);
         }
     else
         {
@@ -371,7 +376,7 @@ PublisherContext::Status TilePublisher::Publish()
         std::fwrite(&zero, 1, 4, outputFile);                   // Filled in below...
         std::fwrite(&tileCount, 1, 4, outputFile);
 
-        WriteGeometryTiles(outputFile, publishableGeometry);
+        WriteTileMeshes(outputFile, publishableGeometry);
 
         uint32_t    compositeSize = std::ftell(outputFile);
         std::fseek (outputFile, compositeSizeLocation, SEEK_SET);
@@ -433,7 +438,16 @@ static void    padTo4ByteBoundary(std::FILE* outputFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
+static void    padTo4ByteBoundary(Utf8String& string)
+    {
+    while (0 != string.size() % 4)
+        string = string + " ";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
     {
     DRange3d    publishedRange = DRange3d::NullRange();
 
@@ -447,6 +461,81 @@ void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGe
         WritePartInstances(outputFile, publishedRange, part);
 
     m_tile.SetPublishedRange (publishedRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud) 
+    {
+    long            startPosition = ftell (outputFile);
+    Json::Value     featureTable;
+    ByteStream      binaryData;
+
+    featureTable["POINTS_LENGTH"] = pointCloud.Points().size();
+    featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
+
+
+    DRange3d        positionRange = DRange3d::NullRange();
+
+    positionRange.Extend(pointCloud.Points());
+
+    DVec3d positionScale = DVec3d::FromStartEnd(positionRange.low, positionRange.high);
+
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.z);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.x);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.y);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.z);
+
+    for (auto& point : pointCloud.Points())
+        {
+        int16_t             quantizedPosition[3];
+        static double       range = (double) (0xffff);
+
+        quantizedPosition[0] = (uint16_t) (.5 + range * (point.x - positionRange.low.x) / positionScale.x);
+        quantizedPosition[1] = (uint16_t) (.5 + range * (point.y - positionRange.low.y) / positionScale.y);
+        quantizedPosition[2] = (uint16_t) (.5 + range * (point.z - positionRange.low.z) / positionScale.z);
+
+        binaryData.Append ((uint8_t const*) quantizedPosition, sizeof(quantizedPosition));
+        }     
+    if (pointCloud.Colors().size() == pointCloud.Points().size())
+        {
+        featureTable["RGB"]["byteOffset"] = binaryData.size();
+        binaryData.Append ((uint8_t const*)pointCloud.Colors().data(), pointCloud.Colors().size() * sizeof(TileMeshPointCloud::Rgb));
+        }
+
+
+    Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
+
+    padTo4ByteBoundary(featureTableStr);
+
+    uint32_t        zero = 0, 
+                    featureTableStrLen = featureTableStr.size(),
+                    featureTableBinaryLength = binaryData.size();
+
+
+    std::fwrite(s_pointCloudMagic, 1, 4, outputFile);
+    std::fwrite(&s_pointCloudVersion, 1, 4, outputFile);                                                                                                                                  
+    long    lengthDataPosition = ftell(outputFile);
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // Total length filled in below.
+    std::fwrite(&featureTableStrLen, 1, sizeof(uint32_t), outputFile);          
+    std::fwrite(&featureTableBinaryLength, 1, sizeof(uint32_t), outputFile);    
+
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
+
+    std::fwrite(featureTableStr.data(), 1, featureTableStrLen, outputFile);
+    std::fwrite(binaryData.data(), 1, binaryData.size(), outputFile);
+
+    uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
+
+
+    m_tile.SetPublishedRange (positionRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,8 +624,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
     // Pad the feature table string to insure that the binary is 4 byte aligned.
-    while (0 != featureTableStr.size() % 4)
-        featureTableStr = featureTableStr + " ";
+    padTo4ByteBoundary(featureTableStr);
 
     uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
@@ -1863,7 +1951,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
     if (!contentRange.IsNull())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, TilePublisher::GetBinaryDataFileExtension(tile.ContainsParts())));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, tile.GetFileExtension().c_str()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }

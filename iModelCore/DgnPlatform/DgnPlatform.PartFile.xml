@@ -116,7 +116,7 @@
     </Part>
 
     <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
-    <Part Name="DgnPlatformUnitTestHelpers" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+    <Part Name="DgnPlatformUnitTestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
@@ -131,7 +131,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RawDgnClientSdkUnitTestData" BentleyBuildMakeFile="Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke" BentleyBuildMakeOptions="-dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnClientSdkUnitTestData/">
+    <Part Name="RawDgnClientSdkUnitTestData" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke" BentleyBuildMakeOptions="-dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnClientSdkUnitTestData/">
         <RequiredRepository>DgnClientSdkUnitTestData</RequiredRepository>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
@@ -153,14 +153,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDbTestUtils" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
+    <Part Name="DgnDbTestUtils" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/DgnDbTestUtils" SourceName="Delivery/UnitTests/Objects/DgnDbTestUtils"/>
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
         <SubPart PartName="DgnDbTestUtils" />
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
@@ -168,7 +168,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="TestFixtureForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+    <Part Name="TestFixtureForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
         <Bindings>
@@ -595,6 +595,7 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
 
         <Bindings>
@@ -611,7 +612,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="TilePublisher" SaveProduct="true">
+    <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
