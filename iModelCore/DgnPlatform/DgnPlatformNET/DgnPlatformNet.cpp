@@ -1584,17 +1584,6 @@ public:
             }
         }
 
-    //! Get the namespace for this DgnCode
-    property System::String^ Namespace
-        {
-        System::String^ get ()
-            {
-            Utf8StringCR nameSpace = m_native->GetNamespace();
-            WString wNameSpace (nameSpace.c_str(), true);
-            return gcnew System::String (wNameSpace.c_str());
-            }
-        }
-
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
     property CodeSpecId^ Authority
         {
