@@ -932,3 +932,31 @@ RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId());
     return new RedlineModel(params);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::MarkupExternalLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId, 
+        [](ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (MarkupExternalLink&)elIn;
+            value.SetNavigationInfo(el.GetLinkedElementId());
+            return DgnDbStatus::Success;
+            },
+
+        [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            auto& el = (MarkupExternalLink&)elIn;
+            el.SetLinkedElementId(value.GetNavigationInfo().GetId<DgnCategoryId>());
+            return DgnDbStatus::Success;
+            });
+    }

@@ -99,6 +99,7 @@ namespace dgn_ElementHandler
     struct GeometryPart : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 };
 

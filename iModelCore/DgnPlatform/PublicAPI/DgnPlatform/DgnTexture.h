@@ -118,6 +118,7 @@ namespace dgn_ElementHandler
     struct Texture : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

@@ -526,7 +526,9 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : InformationContent
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
+
 
 //! The handler for MarkupExternalLinkGroup elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationContent

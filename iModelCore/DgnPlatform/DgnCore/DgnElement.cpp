@@ -2142,7 +2142,7 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECClassCR cls, ECInstanceId id)
+DgnElement::MultiAspect const* DgnElement::MultiAspect::GetAspect(DgnElementCR el, ECClassCR cls, ECInstanceId id)
     {
     //  First, see if we already have this particular MultiAspect cached
     MultiAspectMux* mux = MultiAspectMux::Find(el,cls);
@@ -2154,7 +2154,6 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECC
                 continue;
             if (aspect->m_changeType == ChangeType::Delete)
                 return nullptr;
-            aspect->m_changeType = ChangeType::Write; // caller intends to modify the aspect
             return aspect.get();
             }
         }
@@ -2179,9 +2178,21 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECC
 
     MultiAspectMux::Get(el,cls).m_instances.push_back(aspect);
 
-    aspect->m_changeType = ChangeType::Write; // caller intends to modify the aspect
-
     return aspect.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECClassCR cls, ECInstanceId id)
+    {
+    BeAssert(!el.IsPersistent());
+
+    auto* aspect = const_cast<MultiAspect*>(GetAspect(el,cls,id));
+    if (nullptr == aspect)
+        return aspect;
+    aspect->m_changeType = ChangeType::Write;
+    return aspect;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2255,6 +2266,8 @@ DgnElement::UniqueAspect const* DgnElement::UniqueAspect::GetAspect(DgnElementCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::UniqueAspect* DgnElement::UniqueAspect::GetAspectP(DgnElementR el, ECClassCR cls)
     {
+    BeAssert(!el.IsPersistent());
+
     UniqueAspect* aspect = const_cast<UniqueAspect*>(GetAspect(el,cls));
     if (nullptr == aspect)
         return aspect;
@@ -3848,6 +3861,8 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECInstanceR instance)
     {
+    BeAssert(!el.IsPersistent());
+
     if (hasHandler(instance.GetClass()))
         return DgnDbStatus::MissingHandler;
     auto newAspect = new GenericUniqueAspect(instance);
@@ -3906,6 +3921,8 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstanceP DgnElement::GenericUniqueAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls)
     {
+    BeAssert(!el.IsPersistent());
+
     GenericUniqueAspect* aspect = dynamic_cast<GenericUniqueAspect*>(T_Super::GetAspectP(el,cls));
     if (nullptr == aspect)
         return nullptr;
@@ -3988,10 +4005,23 @@ DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstanceP DgnElement::GenericMultiAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id)
     {
+    BeAssert(!el.IsPersistent());
+
     GenericMultiAspect* aspect = dynamic_cast<GenericMultiAspect*>(T_Super::GetAspectP(el,cls,id));
     if (nullptr == aspect)
         return nullptr;
     if (hasHandler(cls))   // Don't allow caller to modify an aspect that has a handler (which is missing) by using a generic aspect
+        return nullptr;
+    return aspect->m_instance.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstanceCP DgnElement::GenericMultiAspect::GetAspect(DgnElementCR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id)
+    {
+    GenericMultiAspect const* aspect = dynamic_cast<GenericMultiAspect const*>(T_Super::GetAspect(el,cls,id));
+    if (nullptr == aspect)
         return nullptr;
     return aspect->m_instance.get();
     }
