@@ -534,7 +534,6 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // NOTE: Removed nameRec->IsUnitsDevice() check. Problematic if not drawing in immediate mode...and a bad idea (draws outside element range, i.e. not pickable, etc.)
     //       Removed nameRec->IsUnitsMeters() check. No additional scaling is needed.
     double scaleWithUnits = scaleWithoutUnits * unitDef;
-
     double startWidth = styleParams.startWidth;
     double endWidth = styleParams.endWidth;
 
@@ -554,10 +553,15 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     SetScale(scaleWithUnits);
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    m_texture = nameRec->GetTexture(context, *this, false, params);
+    bool forceTexture = false;
 
-    if (!m_texture.IsValid())
-        SetUseStroker(true);
+    if (!forceTexture || !IsContinuous()) // Don't create a texture for continuous...
+        {
+        m_texture = nameRec->GetTexture(context, *this, forceTexture, params);
+
+        if (!m_texture.IsValid())
+            SetUseStroker(true);
+        }
 
     // Get the width of this linestyle to use for "discernable" checks...
     m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()));
