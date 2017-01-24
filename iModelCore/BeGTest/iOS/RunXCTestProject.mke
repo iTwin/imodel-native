@@ -70,7 +70,7 @@ always:
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
         |Retrying...
         echo $(XCODEPROJ)>$(logfile)
-        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
+        -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     %endif
 
 BreakOnFailure = 0
