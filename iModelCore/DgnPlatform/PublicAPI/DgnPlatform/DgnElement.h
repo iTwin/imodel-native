@@ -853,10 +853,20 @@ public:
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
         //! @param ecinstanceid The Id of the ElementAspect to load
-        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        //! @note Call this method only if you intend to modify the aspect.
         DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
 
         template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
+
+        //! Get read-only access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @param ecinstanceid The Id of the ElementAspect to load
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @see GetP, GetAspectP for read-write access
+        DGNPLATFORM_EXPORT static MultiAspect const* GetAspect(DgnElementCR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
+
+        template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId ecinstanceid) {return dynamic_cast<T const*>(GetAspect(el,cls,ecinstanceid));}
 
         //! Prepare to insert an aspect for the specified element
         //! @param el The host element
@@ -908,12 +918,21 @@ public:
         //! Get the specified type of generic multi aspect, if any, from an element, with the intention of modifying the aspect's properties.
         //! @note Call Update on the host element after modifying the properties of the instance. 
         //! @note Do not free the returned instance!
-        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        //! @note Call this method only if you intend to modify the aspect.
         //! @param el   The host element
         //! @param ecclass The type of aspect to look for
         //! @param id  The ID of the particular multiaspect that should be loaded
         //! @return the properties of the aspect or nullptr if no such aspect is found.
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId id);
+
+        //! Get the specified type of generic multi aspect, if any, from an element, with the intention of looking at the aspect's properties <em>but not modifying them</em>.
+        //! @note Do not free the returned instance!
+        //! @note Call this method only if you <em>do not</em> intend to modify the aspect.
+        //! @param el   The host element
+        //! @param ecclass The type of aspect to look for
+        //! @param id  The ID of the particular multiaspect that should be loaded
+        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        DGNPLATFORM_EXPORT static ECN::IECInstanceCP GetAspect(DgnElementCR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId id);
         };
 
     //! Represents an ElementAspect subclass in the case where the host Element can have 0 or 1 instance of the subclass. The aspect's Id is the same as the element's Id,

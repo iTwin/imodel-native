@@ -215,6 +215,10 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
         // Modify an aspect
         TestElementPtr tempEl = el->MakeCopy<TestElement>();
         TestMultiAspectP aspect = DgnElement::MultiAspect::GetP<TestMultiAspect>(*tempEl, aclass, a2id);
+        TestMultiAspectCP aspectPersist = DgnElement::MultiAspect::Get<TestMultiAspect>(*el, aclass, a2id); // make sure that getting a read-only copy of the aspect from the original does not interfere with the update
+        ASSERT_TRUE(aspectPersist != nullptr);
+        ASSERT_EQ( aspectPersist , DgnElement::MultiAspect::Get<TestMultiAspect>(*el, aclass, a2id) ) << "Get should return the same instance each time we call it";
+        ASSERT_EQ( aspectPersist , DgnElement::MultiAspect::Get<TestMultiAspect>(*el, aclass, a2id) ) << "Get should return the same instance each time we call it";
         ASSERT_EQ( aspect , DgnElement::MultiAspect::GetP<TestMultiAspect>(*tempEl, aclass, a2id) ) << "GetP should return the same instance each time we call it";
         ASSERT_EQ( aspect , DgnElement::MultiAspect::GetP<TestMultiAspect>(*tempEl, aclass, a2id) ) << "GetP should return the same instance each time we call it";
         aspect->SetTestMultiAspectProperty("2 is Changed");
@@ -228,11 +232,17 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
         stmt->BindId(1, a1id);
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "1" , stmt->GetValueText(0) );
+        TestMultiAspectCP a1 = DgnElement::MultiAspect::Get<TestMultiAspect>(*el, aclass, a2id);
+        ASSERT_TRUE(a1 != nullptr);
+        a1->GetTestMultiAspectProperty().Equals("1");
         stmt->Reset();
         stmt->ClearBindings();
         stmt->BindId(1, a2id);
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "2 is Changed" , stmt->GetValueText(0) );
+        TestMultiAspectCP a2 = DgnElement::MultiAspect::Get<TestMultiAspect>(*el, aclass, a2id);
+        ASSERT_TRUE(a2 != nullptr);
+        a2->GetTestMultiAspectProperty().Equals("2 is Changed");
         }
 
     if (true)
