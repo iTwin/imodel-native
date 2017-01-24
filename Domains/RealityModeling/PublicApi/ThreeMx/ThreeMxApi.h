@@ -203,7 +203,7 @@ private:
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
 public:
-       ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
+    ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
