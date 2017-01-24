@@ -12,6 +12,7 @@
 #include "Command.h"
 
 USING_NAMESPACE_BENTLEY
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
@@ -59,12 +60,12 @@ struct SessionFile
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
-struct BimFile : SessionFile
+struct BimFile final : SessionFile
     {
     private:
         mutable Dgn::DgnDbPtr m_file;
 
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
 
     public:
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
@@ -75,12 +76,12 @@ struct BimFile : SessionFile
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
-struct ECDbFile : SessionFile
+struct ECDbFile final : SessionFile
     {
     private:
         mutable BeSQLite::EC::ECDb m_file;
 
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return &m_file; }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { return &m_file; }
 
     public:
         ECDbFile() : SessionFile(Type::ECDb) {}
@@ -90,13 +91,13 @@ struct ECDbFile : SessionFile
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-struct BeSQLiteFile : SessionFile
+struct BeSQLiteFile final : SessionFile
     {
     private:
         mutable BeSQLite::Db m_file;
 
-        virtual BeSQLite::Db& _GetBeSqliteHandle() const override { return m_file; }
-        virtual BeSQLite::EC::ECDb* _GetECDbHandle() const override { return nullptr; }
+        BeSQLite::Db& _GetBeSqliteHandle() const override { return m_file; }
+        BeSQLite::EC::ECDb* _GetECDbHandle() const override { return nullptr; }
 
     public:
         BeSQLiteFile() : SessionFile(Type::BeSQLite) {}
@@ -106,7 +107,7 @@ struct BeSQLiteFile : SessionFile
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-struct Session
+struct Session final
     {
     struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
         {
@@ -114,7 +115,7 @@ struct Session
             mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
             mutable Utf8String m_issue;
 
-            virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+            void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
                 {
                 m_severity = severity;
                 m_issue = message;
@@ -147,29 +148,30 @@ struct Session
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct BimConsole : Dgn::DgnPlatformLib::Host
+struct BimConsole final : Dgn::DgnPlatformLib::Host
     {
     private:
-        const static Utf8Char ECSQLSTATEMENT_DELIMITER = ';';
-        const static Utf8Char COMMAND_PREFIX = '.';
+        static const Utf8Char ECSQLSTATEMENT_DELIMITER = ';';
+        static const Utf8Char COMMAND_PREFIX = '.';
 
         Session m_session;
-        char m_readBuffer[5000];
+        Utf8Char m_readBuffer[5000];
         std::vector<Utf8String> m_commandHistory;
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
 
-        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
-        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
+        void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
+        IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
+        BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
         void Setup();
         void AddCommand(Utf8StringCR commandName, std::shared_ptr<Command> const& command) { m_commands[commandName] = command; }
         void AddCommand(std::shared_ptr<Command> const& command) { AddCommand(command->GetName(), command); }
         Command const* GetCommand(Utf8StringCR commandName) const;
 
-        int WaitForUserInput(int argc, WCharP argv[]);
+        int WaitForUserInput();
         void RunCommand(Utf8StringCR cmd);
         bool ReadLine(Utf8StringR stmt);
+
 
         void AddToHistory(Utf8StringCR command) { return m_commandHistory.push_back(command); }
         std::vector<Utf8String> const& GetCommandHistory() const { return m_commandHistory; }
@@ -184,6 +186,8 @@ struct BimConsole : Dgn::DgnPlatformLib::Host
     public:
         BimConsole() {}
         int Run(int argc, WCharP argv[]);
+
+        static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');
 
         static void Write(Utf8CP format, ...);
         static void WriteLine(Utf8CP format, ...);

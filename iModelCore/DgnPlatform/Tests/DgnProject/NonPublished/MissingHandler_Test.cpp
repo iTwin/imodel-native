@@ -16,9 +16,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId())
+static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId())
     {
-    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
+    PhysicalElement::CreateParams createParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
+    if (parentId.IsValid())
+        createParams.m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
+
+    return createParams;
     }
 
 /*---------------------------------------------------------------------------------**//**

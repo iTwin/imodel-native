@@ -24,13 +24,13 @@ Utf8String ECSqlCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
 
     //for ECSQL command the arg vector contains a single arg which contains the original command line.
-    Utf8StringCR ecsql = args[0];
+    Utf8StringCR ecsql = args;
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
     if (!status.IsSuccess())

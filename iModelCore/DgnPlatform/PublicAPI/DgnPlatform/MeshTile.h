@@ -391,15 +391,27 @@ public:
 struct TileMeshPointCloud : RefCountedBase
 {
 
+struct Rgb
+    {
+    uint8_t m_red;
+    uint8_t m_green;
+    uint8_t m_blue;
+    };
+
+
 private:
     TileDisplayParamsPtr    m_displayParams;
     bvector<DPoint3d>       m_points;
+    bvector<Rgb>            m_colors;       // Color565
+    bvector<FPoint3d>       m_normals;
     
-    TileMeshPointCloud (TileDisplayParamsPtr& params, DPoint3dCP points, size_t nPoints, TransformCR transform, double clusterTolerance);
+    TileMeshPointCloud (TileDisplayParamsPtr& params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance);
 
 public:
-    bvector<DPoint3d> const& Points() { return m_points; }
-    DGNPLATFORM_EXPORT static TileMeshPointCloudPtr Create(TileDisplayParamsPtr& params, DPoint3dCP points, size_t nPoints, TransformCR transform, double clusterTolerance) { return new TileMeshPointCloud (params, points,  nPoints, transform, clusterTolerance); }
+    bvector<DPoint3d> const& Points()       { return m_points; }
+    bvector<Rgb> const& Colors()            { return m_colors; }
+    bvector<FPoint3d> const& Normals()      { return m_normals; }
+    DGNPLATFORM_EXPORT static TileMeshPointCloudPtr Create(TileDisplayParamsPtr& params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance) { return new TileMeshPointCloud (params, points,  colors, normals, nPoints, transform, clusterTolerance); }
 
 };  // TilePointCloud
 
@@ -756,7 +768,7 @@ protected:
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
     virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     virtual void _ClearGeometry() override { m_geometries.clear(); }
-    virtual TileModelDeltaCP _GetModelDelta() const { return m_modelDelta; }
+    virtual TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
     virtual WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:

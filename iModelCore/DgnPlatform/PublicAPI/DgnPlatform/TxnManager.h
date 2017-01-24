@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TxnManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -550,7 +550,7 @@ namespace dgn_TxnTable
         bool m_changes;
         bool m_haveIndexOnECClassId;
         static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_Element);}
-        Utf8CP _GetTableName() const {return MyTableName();}
+        Utf8CP _GetTableName() const override {return MyTableName();}
 
         Element(TxnManager& mgr) : TxnTable(mgr), m_changes(false), m_haveIndexOnECClassId(false) {}
 
@@ -607,7 +607,7 @@ namespace dgn_TxnTable
 
         Model(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
         static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_Model);}
-        Utf8CP _GetTableName() const {return MyTableName();}
+        Utf8CP _GetTableName() const override {return MyTableName();}
 
         void _Initialize() override;
         void _OnValidate() override;
@@ -664,7 +664,7 @@ namespace dgn_TxnTable
         bvector<DepRelData> m_deletedRels;
         bool m_changes;
         static Utf8CP MyTableName() {return BIS_TABLE(BIS_REL_ElementDrivesElement);}
-        Utf8CP _GetTableName() const {return MyTableName();}
+        Utf8CP _GetTableName() const override {return MyTableName();}
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
         void _Initialize() override;
@@ -690,7 +690,7 @@ namespace dgn_TxnTable
         bool m_changes;
         BeSQLite::Statement m_stmt;
       
-        Utf8CP _GetTableName() const {BeAssert(false); return "";} // many tables are merged into this. So, this handler must be installed specially.
+        Utf8CP _GetTableName() const override {BeAssert(false); return "";} // many tables are merged into this. So, this handler must be installed specially.
         RelationshipLinkTable(TxnManager& mgr): TxnTable(mgr), m_changes(false) {}
         virtual void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) = 0;
       
@@ -731,7 +731,7 @@ namespace dgn_TxnTable
     struct BeProperties : TxnTable
     {
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
-        Utf8CP _GetTableName() const {return MyTableName();}
+        Utf8CP _GetTableName() const override {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
         void _Initialize() override {}
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;

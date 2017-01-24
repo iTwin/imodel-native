@@ -52,7 +52,7 @@
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
@@ -595,6 +595,7 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
 
         <Bindings>
@@ -611,7 +612,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="TilePublisher" SaveProduct="true">
+    <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>

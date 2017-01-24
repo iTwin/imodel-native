@@ -32,8 +32,8 @@ struct     ILineStyleComponent
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const = 0;
 };
 
 //=======================================================================================
@@ -105,10 +105,10 @@ protected:
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
-    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
+    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
+    DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    DGNPLATFORM_EXPORT virtual bool _UseLineStyleStroker(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr& facetOptions) const;
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
@@ -269,36 +269,18 @@ public:
 /** @} */
 
     bool WantAreaPatterns() {return _WantAreaPatterns();}
-    void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) {_DrawAreaPattern(graphic, boundary, params);}
+    void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook = true) {_DrawAreaPattern(graphic, boundary, params, doCook);}
 
-/** @name Draw Geometry Using Current Linestyle */
+/** @name Draw Geometry Using current Linestyle */
 /** @{ */
-    //! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-    //! @param[in]      nPts        Number of vertices in \c pts.
-    //! @param[in]      pts         Array of points in linestring.
-    //! @param[in]      zDepth      Display priority for all vertices.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    //! @param[in]      closed      Do point represent a shape or linestring.
-    void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed=false){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
+    bool WantLineStyles() {return _WantLineStyles();}
 
-    //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-    //! @param[in]      ellipse     The arc data.
-    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-    //! @param[in]      zDepth      Z depth value.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
-
-    //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-    //! @param        curve       bspline curve parameters
-    //! @param[in]    zDepth      Z depth value.
-    void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-
-    //! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-    //! @param        curve       curve geometry
-    //! @param[in]    zDepth      Z depth value.
-    DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
+    //! Draw a 2D or 3D curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
+    //! @param[in]      graphic     Graphic to add to.
+    //! @param[in]      curve       curve geometry
+    //! @param[in]      params      GraphicParams for cooked style information.
+    //! @param[in]      doCook      true if CookGeometryParams needs to be called for supplied GeometryParams.
+    void DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook = true) {_DrawStyledCurveVector(graphic, curve, params, doCook);}
 /** @} */
 
     StatusInt VisitElement(DgnElementId elementId, bool allowLoad) {return _VisitElement(elementId, allowLoad);}

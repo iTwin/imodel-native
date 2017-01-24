@@ -168,9 +168,8 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::UpdateDgnDbExtents()
     {
-    AxisAlignedBox3d physicalExtents;
-    physicalExtents = m_db->Units().ComputeProjectExtents();
-    m_db->Units().SetProjectExtents(physicalExtents);
+    m_db->Units().InitializeProjectExtents();
+    AxisAlignedBox3d physicalExtents = m_db->Units().GetProjectExtents();
 
     auto view = ViewDefinition::Get(*m_db, "Default");
     ASSERT_TRUE(view.IsValid());

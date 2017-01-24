@@ -111,10 +111,8 @@ private:
     bool _CheckStop() override;
     StatusInt _InitContextForView() override;
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
-    void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) override;
-    void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
-    void _DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) override;
-    void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
+    void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
+    void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP, ClipVectorCP) override {return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);}
     DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic) const;
