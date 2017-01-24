@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 BEGIN_UNNAMED_NAMESPACE
 
-static size_t                           s_maxTilePointCount = 200000;
+static size_t                           s_maxTilePointCount = 2000000;
 
 
 //=======================================================================================
@@ -80,10 +80,10 @@ size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
     {
-    static const double s_minToleranceRatio = 100.0;
+    static const double s_minToleranceRatio = 1000.0;
     double              tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
     bool                isLeaf = tileTolerance < leafTolerance;
-    static size_t       s_depthLimit = 10;
+    static size_t       s_depthLimit = 20;
 
     tile.SetTolerance (tileTolerance);
     if (depth < s_depthLimit &&!isLeaf && tile.QueryPointCount(s_maxTilePointCount) >= s_maxTilePointCount)
