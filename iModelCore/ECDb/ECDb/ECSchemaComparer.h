@@ -891,7 +891,7 @@ struct ECPropertyValueChange final : ECChange
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         bool _IsEmpty() const override;
-        void _Optimize();
+        void _Optimize() override;
         BentleyStatus InitValue(ECN::PrimitiveType type);
 
         template< typename T >
