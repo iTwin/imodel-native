@@ -32,8 +32,8 @@ struct     ILineStyleComponent
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool isClosed) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR) const = 0;
+    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const = 0;
 };
 
 //=======================================================================================
@@ -108,7 +108,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
     DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
     DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
-    DGNPLATFORM_EXPORT virtual IFacetOptionsPtr _UseLineStyleStroker(Render::GraphicBuilderR, Render::LineStyleSymbCR) const;
+    DGNPLATFORM_EXPORT virtual bool _UseLineStyleStroker(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr& facetOptions) const;
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);

@@ -176,7 +176,7 @@ virtual bool _DoClipping() const {return false;}
 virtual bool _DoPatternStroke() const {return false;}
 
 //! Whether to drop linestyles and process as geometric primitives.
-virtual IFacetOptionsPtr _DoLineStyleStroke(Render::GraphicBuilderR, Render::LineStyleSymbCR) const {return nullptr;}
+virtual bool _DoLineStyleStroke(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr&) const {return false;}
 
 //! Allow processor to override the default facet options.
 //! @return A pointer to facet option structure to use or nullptr to use default options.
