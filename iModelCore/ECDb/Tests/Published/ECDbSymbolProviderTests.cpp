@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSymbolProviderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -19,10 +19,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECDbSymbolProviderTests : ECDbTestFixture
     {
-    virtual void SetUp() override
-        {
-        SetupECDb("ECDbExpressionSymbolProviderTests.ecdb");
-        }
+    void SetUp() override { SetupECDb("ECDbExpressionSymbolProviderTests.ecdb"); }
     };
 
 //---------------------------------------------------------------------------------------
@@ -169,7 +166,7 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual void SetUp() override
+    void SetUp() override
         {
         ECDbSymbolProviderTests::SetUp();
 

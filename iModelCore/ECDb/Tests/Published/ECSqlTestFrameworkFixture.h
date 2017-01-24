@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlTestFrameworkFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,14 +16,14 @@ BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //=======================================================================================    
 struct ECSqlTestFrameworkFixture : public ECDbTestFixture
     {
-protected:
-    void RunTest(ECSqlTestDataset const&, ECSqlAsserterList const&) const;
+    protected:
+        void RunTest(ECSqlTestDataset const&, ECSqlAsserterList const&) const;
 
-    virtual void RunTest(ECSqlTestDataset const&) const = 0;
+        virtual void RunTest(ECSqlTestDataset const&) const = 0;
 
-public:
-    ECSqlTestFrameworkFixture() : ECDbTestFixture() {}
-    virtual ~ECSqlTestFrameworkFixture() {}
+    public:
+        ECSqlTestFrameworkFixture() : ECDbTestFixture() {}
+        virtual ~ECSqlTestFrameworkFixture() {}
     };
 
 //=======================================================================================    
@@ -31,18 +31,18 @@ public:
 //=======================================================================================    
 struct ECSqlSelectTestFramework : public ECSqlTestFrameworkFixture
     {
-protected:
-    static const int PerClassRowCount = 10;
+    protected:
+        static const int PerClassRowCount = 10;
 
-    ECSqlSelectTestFramework() : ECSqlTestFrameworkFixture() {}
+        ECSqlSelectTestFramework() : ECSqlTestFrameworkFixture() {}
 
-    virtual void RunTest (ECSqlTestDataset const&) const override;
-    using ECSqlTestFrameworkFixture::RunTest;
+        void RunTest(ECSqlTestDataset const&) const override;
+        using ECSqlTestFrameworkFixture::RunTest;
 
-public:
-    virtual ~ECSqlSelectTestFramework () {}
+    public:
+        virtual ~ECSqlSelectTestFramework() {}
 
-    virtual void SetUp () override;
+        void SetUp() override;
     };
 
 
@@ -51,18 +51,18 @@ public:
 //=======================================================================================    
 struct ECSqlNonSelectTestFrameworkFixture : public ECSqlTestFrameworkFixture
     {
-protected:
-    static const int PerClassRowCount = 10;
+    protected:
+        static const int PerClassRowCount = 10;
 
-    virtual void RunTest(ECSqlTestDataset const&) const override;
-    using ECSqlTestFrameworkFixture::RunTest;
+        void RunTest(ECSqlTestDataset const&) const override;
+        using ECSqlTestFrameworkFixture::RunTest;
 
-    ECSqlNonSelectTestFrameworkFixture() : ECSqlTestFrameworkFixture() {}
+        ECSqlNonSelectTestFrameworkFixture() : ECSqlTestFrameworkFixture() {}
 
-public:
-    virtual ~ECSqlNonSelectTestFrameworkFixture() {}
+    public:
+        virtual ~ECSqlNonSelectTestFrameworkFixture() {}
 
-    virtual void SetUp () override;
+        void SetUp() override;
     };
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

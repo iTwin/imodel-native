@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbTests.h"
@@ -62,8 +62,8 @@ protected:
 public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture () {};
-    virtual void SetUp() override;
-    virtual void TearDown () override {}
+    void SetUp() override;
+    void TearDown () override {}
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use

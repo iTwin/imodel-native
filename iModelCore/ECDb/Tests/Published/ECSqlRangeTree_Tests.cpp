@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlRangeTree_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -133,7 +133,7 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
 struct BBox2DMatchFunction : RTreeMatchFunction
     {
 private:
-    virtual int _TestRange(QueryInfo const& info) override
+    int _TestRange(QueryInfo const& info) override
         {
         if (info.m_nParam != 4)
             return BE_SQLITE_ERROR;

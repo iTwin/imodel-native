@@ -93,7 +93,7 @@ struct PowSqlFunction : ScalarFunction
     {
     private:
 
-        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             if (args[0].IsNull() || args[1].IsNull())
                 {

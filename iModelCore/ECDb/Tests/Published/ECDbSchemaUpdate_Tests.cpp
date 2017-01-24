@@ -85,8 +85,8 @@ struct ECSchemaDuplicator :IECSchemaLocater
     {
     private:
         ECSchemaCacheCR m_fromCache;
-    private:
-        virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
+    
+        ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
             {
             if (auto schema = schemaContext.GetCache().GetSchema(key, matchType))
                 return schema;

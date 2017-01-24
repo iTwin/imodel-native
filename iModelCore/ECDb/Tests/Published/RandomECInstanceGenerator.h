@@ -45,17 +45,17 @@ private:
     size_t      m_binaryLength;
     ECN::ECPropertyCP m_property;
 protected:
-    virtual BentleyStatus _NextInteger(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextDouble(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextLong(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextString(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextPoint2d(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextPoint3d(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextBoolean(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextDateTime(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextBinary(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextIGeometry(ECN::ECValueR value) override;
-    virtual void _Reset() override;
+    BentleyStatus _NextInteger(ECN::ECValueR value) override;
+    BentleyStatus _NextDouble(ECN::ECValueR value) override;
+    BentleyStatus _NextLong(ECN::ECValueR value) override;
+    BentleyStatus _NextString(ECN::ECValueR value) override;
+    BentleyStatus _NextPoint2d(ECN::ECValueR value) override;
+    BentleyStatus _NextPoint3d(ECN::ECValueR value) override;
+    BentleyStatus _NextBoolean(ECN::ECValueR value) override;
+    BentleyStatus _NextDateTime(ECN::ECValueR value) override;
+    BentleyStatus _NextBinary(ECN::ECValueR value) override;
+    BentleyStatus _NextIGeometry(ECN::ECValueR value) override;
+    void _Reset() override;
 
     void Init();
 public:
@@ -79,17 +79,17 @@ private:
     size_t      m_binaryLength;
 
 protected:
-    virtual BentleyStatus _NextInteger(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextDouble(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextLong(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextString(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextPoint2d(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextPoint3d(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextBoolean(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextDateTime(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextBinary(ECN::ECValueR value) override;
-    virtual BentleyStatus _NextIGeometry(ECN::ECValueR value) override;
-    virtual void _Reset() override;
+    BentleyStatus _NextInteger(ECN::ECValueR value) override;
+    BentleyStatus _NextDouble(ECN::ECValueR value) override;
+    BentleyStatus _NextLong(ECN::ECValueR value) override;
+    BentleyStatus _NextString(ECN::ECValueR value) override;
+    BentleyStatus _NextPoint2d(ECN::ECValueR value) override;
+    BentleyStatus _NextPoint3d(ECN::ECValueR value) override;
+    BentleyStatus _NextBoolean(ECN::ECValueR value) override;
+    BentleyStatus _NextDateTime(ECN::ECValueR value) override;
+    BentleyStatus _NextBinary(ECN::ECValueR value) override;
+    BentleyStatus _NextIGeometry(ECN::ECValueR value) override;
+    void _Reset() override;
 
 public:
     RandomPropertyValueGenerator();
@@ -101,7 +101,6 @@ private:
     virtual std::unique_ptr<IPropertyValueGenerator> _CreateInstance(ECN::ECPropertyCP templateProperty)
     {
         return std::unique_ptr<IPropertyValueGenerator>(new DefaultPropertyValueGenerator(templateProperty));
-        //        return std::unique_ptr<IPropertyValueGenerator>(new RandomPropertyValueGenerator());
     }
 
 public:
