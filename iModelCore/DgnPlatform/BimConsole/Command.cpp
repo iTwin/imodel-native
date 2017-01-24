@@ -978,10 +978,10 @@ void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
 //---------------------------------------------------------------------------------------
 void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP tableName) const
     {
-    auto& tableObj = out.append(Json::ValueType::objectValue);
+    Json::Value& tableObj = out.append(Json::ValueType::objectValue);
     tableObj["Name"] = tableName;
     tableObj["Rows"] = Json::Value(Json::ValueType::arrayValue);
-    auto& rows = tableObj["Rows"];
+    Json::Value& rows = tableObj["Rows"];
     rows.clear();
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), SqlPrintfString("SELECT * FROM %s", tableName));

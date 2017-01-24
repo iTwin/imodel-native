@@ -117,7 +117,7 @@ private:
 
     void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
 
-    virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
+    virtual ElemIdLeafNode const* _GetFirstNode() const override {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
     virtual void _Add(DgnElementCR entry, uint64_t counter) override;
     virtual ElemPurge _Purge(uint64_t) override;
@@ -1001,7 +1001,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
-    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_parentRelClassId(params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
     m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
@@ -1129,8 +1129,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,FederationGuid=7};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,ParentRelClassId=7,FederationGuid=8};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1145,6 +1145,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     code,
                     stmt->GetValueText(Column::UserLabel), 
                     stmt->GetValueId<DgnElementId>(Column::ParentId),
+                    stmt->GetValueId<DgnClassId>(Column::ParentRelClassId),
                     stmt->GetValueGuid(Column::FederationGuid));
 
     createParams.SetElementId(elementId);

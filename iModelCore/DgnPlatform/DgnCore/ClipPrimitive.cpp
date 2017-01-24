@@ -946,7 +946,7 @@ virtual ClipPlaneSetP           _GetMaskPlanes() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineCurveCP    _GetBCurve() const
+MSBsplineCurveCP    _GetBCurve() const override
     {
     if (!m_bCurve.IsValid())
         {

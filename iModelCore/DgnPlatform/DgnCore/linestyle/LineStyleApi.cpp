@@ -92,7 +92,7 @@ BentleyStatus LsComponent::StrokeContinuousArc(LineStyleContextR context, LineSt
     if (!DoubleOps::WithinTolerance(startWidth, radius*2.0, 1.0e-5))
         return ERROR;
 
-    Render::GraphicBuilderR graphic = context.GetGraphicR();
+    //Render::GraphicBuilderR graphic = context.GetGraphicR();
     DEllipse3d tmpArc = arc;
 
     tmpArc.vector0.ScaleToLength(startWidth);

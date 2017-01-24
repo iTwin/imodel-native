@@ -647,7 +647,7 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return new ProgressiveTask(*this, vp);}
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
@@ -916,7 +916,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;} // needs work
     DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;

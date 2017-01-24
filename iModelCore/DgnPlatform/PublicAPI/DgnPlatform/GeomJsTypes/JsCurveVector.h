@@ -34,8 +34,8 @@ protected :
 public:
     JsCurveVector () {}
 
-    virtual JsCurveVectorP AsCurveVector () override {return this;}
-    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curveVector);}
+    JsCurveVectorP AsCurveVector () override {return this;}
+    IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curveVector);}
 
 
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
@@ -45,34 +45,34 @@ public:
     static JsCurveVectorP StronglyTypedJsCurveVector (CurveVectorPtr &data);
 
 
-    virtual CurveVectorPtr GetCurveVectorPtr () override {return m_curveVector;}
+    CurveVectorPtr GetCurveVectorPtr () override {return m_curveVector;}
     double BoundaryType (){return (double)(int)m_curveVector->GetBoundaryType ();}
 
     JsCurveVectorP MemberAsCurveVector (double doubleIndex) const;
     JsCurvePrimitiveP MemberAsCurvePrimitive (double index) const;
 
 
-    virtual JsDRange3dP RangeAfterTransform (JsTransformP jsTransform) override
+    JsDRange3dP RangeAfterTransform (JsTransformP jsTransform) override
         {
         DRange3d range;
         Transform transform = jsTransform->Get ();
         m_curveVector->GetRange (range, transform);
         return new JsDRange3d (range);
         }
-    virtual JsDRange3dP Range () override
+    JsDRange3dP Range () override
         {
         DRange3d range;
         m_curveVector->GetRange (range);
         return new JsDRange3d (range);
         }
-     virtual bool TryTransformInPlace (JsTransformP jsTransform) override
+     bool TryTransformInPlace (JsTransformP jsTransform) override
         {
         Transform transform = jsTransform->Get ();
         return m_curveVector->TransformInPlace (transform);
         }
 
 
-    virtual bool IsSameStructureAndGeometry (JsGeometryP other) override
+    bool IsSameStructureAndGeometry (JsGeometryP other) override
         {
         CurveVectorPtr otherVector;
         if (other != nullptr
@@ -84,7 +84,7 @@ public:
         return false;
         }
 
-    virtual bool IsSameStructure (JsGeometryP other) override
+    bool IsSameStructure (JsGeometryP other) override
         {
         CurveVectorPtr otherVector;
         if (other != nullptr

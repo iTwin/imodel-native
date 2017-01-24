@@ -22,8 +22,8 @@ struct JsPolyfaceMesh: JsGeometry
 PolyfaceHeaderPtr m_data;
 
 public:
-    virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () override {return m_data;}
-    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_data);}
+    PolyfaceHeaderPtr GetPolyfaceHeaderPtr () override {return m_data;}
+    IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_data);}
 
     JsPolyfaceMesh (PolyfaceHeaderPtr const &header) { m_data = header;}
     JsPolyfaceMeshP Clone () override
@@ -33,7 +33,7 @@ public:
         return new JsPolyfaceMesh (clone);
         }
 
-    virtual JsPolyfaceMeshP AsPolyfaceMesh () override {return this;}
+    JsPolyfaceMeshP AsPolyfaceMesh () override {return this;}
 
     JsPolyfaceMesh ()
         {

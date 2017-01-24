@@ -768,7 +768,7 @@ protected:
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
     virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     virtual void _ClearGeometry() override { m_geometries.clear(); }
-    virtual TileModelDeltaCP _GetModelDelta() const { return m_modelDelta; }
+    virtual TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
     virtual WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:

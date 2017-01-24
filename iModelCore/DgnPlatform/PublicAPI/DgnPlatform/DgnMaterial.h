@@ -87,7 +87,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer);
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/TransactionManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -552,6 +552,9 @@ TEST_F(TransactionManagerTests, UndoRedo)
     auto& txns = m_db->Txns();
     m_db->SaveChanges();
 
+    SpatialModelPtr defaultModel = m_db->Models().Get<SpatialModel>(m_defaultModelId);
+    ASSERT_TRUE(defaultModel.IsValid());
+
     TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "", 101.0);
 
     ASSERT_TRUE(!txns.IsRedoPossible());
@@ -585,22 +588,22 @@ TEST_F(TransactionManagerTests, UndoRedo)
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
     DgnElementCPtr el2 = templateEl->Insert();
     m_db->SaveChanges("create new");
-    AxisAlignedBox3d extents1 = m_db->Units().ComputeProjectExtents();
+    AxisAlignedBox3d extents1 = defaultModel->QueryModelRange();
 
     templateEl->ChangeElement(201.);
     templateEl->Update();
-    AxisAlignedBox3d extents2 = m_db->Units().ComputeProjectExtents();
+    AxisAlignedBox3d extents2 = defaultModel->QueryModelRange();
     ASSERT_TRUE (!extents1.IsEqual(extents2));
     m_db->SaveChanges("update one");
 
     stat = txns.ReverseSingleTxn();
-    AxisAlignedBox3d extents3 = m_db->Units().ComputeProjectExtents();
+    AxisAlignedBox3d extents3 = defaultModel->QueryModelRange();
     ASSERT_TRUE (extents1.IsEqual(extents3));    // after undo, range should be back to where it was before we did the update
     ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     stat = txns.ReinstateTxn();  // redo the update
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    AxisAlignedBox3d extents4 = m_db->Units().ComputeProjectExtents();
+    AxisAlignedBox3d extents4 = defaultModel->QueryModelRange();
     ASSERT_TRUE (extents4.IsEqual(extents2));    // now it should be back to the same as after we did the original update
 
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");

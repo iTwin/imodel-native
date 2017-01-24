@@ -47,11 +47,11 @@ public:
     JsCurvePrimitive () {}
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
     // This should never get called -- derived classes will get the virtual dispatch . . 
-    virtual JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
+    JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
 
-    virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
-    virtual JsCurvePrimitiveP AsCurvePrimitive () override {return this;}
-    virtual IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curvePrimitive);}
+    ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
+    JsCurvePrimitiveP AsCurvePrimitive () override {return this;}
+    IGeometryPtr GetIGeometryPtr () override {return IGeometry::Create (m_curvePrimitive);}
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
@@ -107,13 +107,13 @@ public:
             return a;
         return 0.0;
         }
-    virtual JsDRange3dP Range () override
+    JsDRange3dP Range () override
         {
         DRange3d range;
         m_curvePrimitive->GetRange (range);
         return new JsDRange3d (range);
         }
-    virtual JsDRange3dP RangeAfterTransform (JsTransformP transformP) override
+    JsDRange3dP RangeAfterTransform (JsTransformP transformP) override
         {
         Transform transform = transformP->Get();
         DRange3d range;
@@ -121,13 +121,13 @@ public:
         return new JsDRange3d (range);
         }
 
-     virtual bool TryTransformInPlace (JsTransformP jsTransform) override
+     bool TryTransformInPlace (JsTransformP jsTransform) override
         {
         Transform transform = jsTransform->Get ();
         return m_curvePrimitive->TransformInPlace (transform);
         }
 
-     virtual bool IsSameStructureAndGeometry (JsGeometryP other) override
+     bool IsSameStructureAndGeometry (JsGeometryP other) override
         {
         ICurvePrimitivePtr otherPrimitive;
         if (other != nullptr
@@ -139,7 +139,7 @@ public:
         return false;
         }
 
-     virtual bool IsSameStructure (JsGeometryP other) override
+     bool IsSameStructure (JsGeometryP other) override
         {
         ICurvePrimitivePtr otherPrimitive;
         if (other != nullptr
@@ -170,7 +170,7 @@ public:
         return new JsLineSegment (
             ICurvePrimitive::CreateLine (DSegment3d::From (ax, ay, az, bx, by, bz)));
         }
-    virtual JsLineSegment * Clone () override {return new JsLineSegment (m_curvePrimitive->Clone ());}
+    JsLineSegment * Clone () override {return new JsLineSegment (m_curvePrimitive->Clone ());}
 
 };
 
@@ -186,7 +186,7 @@ public:
         }
     JsDPoint3dArrayP GetPoints () const {return JsDPoint3dArray::Create (m_curvePrimitive->GetLineStringP ());}
 
-    virtual JsLineString * Clone () override {return new JsLineString (m_curvePrimitive->Clone ());}
+    JsLineString * Clone () override {return new JsLineString (m_curvePrimitive->Clone ());}
 
 };
 
@@ -214,7 +214,7 @@ public:
         m_curvePrimitive->TryGetArc (arc);
         return arc;
         }
-    virtual JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
+    JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
 
     static JsEllipticArc *CreateCircleXY (JsDPoint3dP center, double radius)
         {
@@ -327,7 +327,7 @@ private:
 public:
     JsBsplineCurve () {}
     JsBsplineCurve (ICurvePrimitivePtr const &data) {Set (data);}
-    virtual JsBsplineCurve * Clone () override {return new JsBsplineCurve (m_curvePrimitive->Clone ());}
+    JsBsplineCurve * Clone () override {return new JsBsplineCurve (m_curvePrimitive->Clone ());}
 
     static JsBsplineCurve * Create (JsDPoint3dArrayP xyz, 
         JsDoubleArrayP weights, JsDoubleArrayP knots,
@@ -371,7 +371,7 @@ private:
 public:
     JsCatenaryCurve () {}
     JsCatenaryCurve (ICurvePrimitivePtr const &data) {Set (data);}
-    virtual JsCatenaryCurve * Clone () override {return new JsCatenaryCurve (m_curvePrimitive->Clone ());}
+    JsCatenaryCurve * Clone () override {return new JsCatenaryCurve (m_curvePrimitive->Clone ());}
 
     // Create a catenary curve:   xyz = origin + x * xVector + yVector * a * cosh(x/a)
     static JsCatenaryCurve * CreateFromCoefficientAndXLimits (JsDPoint3dP origin, JsDVector3dP xVector, JsDVector3dP yVector, double a, double xStart, double xEnd)
@@ -398,7 +398,7 @@ private:
 public:
     JsSpiralCurve () {}
     JsSpiralCurve (ICurvePrimitivePtr const &data) {Set (data);}
-    virtual JsSpiralCurve * Clone () override {return new JsSpiralCurve (m_curvePrimitive->Clone ());}
+    JsSpiralCurve * Clone () override {return new JsSpiralCurve (m_curvePrimitive->Clone ());}
 
     //! Create a spiral with radius and curvature at start, length along the spiral, and radius at end.
     //! @param spiralType [in] transition selector -- see SpiralCurve summary
