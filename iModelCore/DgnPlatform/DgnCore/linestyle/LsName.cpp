@@ -463,18 +463,6 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, componentScaleFactor * comp->_GetLengthForTexture());
 
-#if defined (NOT_NOW)
-    SymbologyQueryResults  symbologyResults;
-    comp->_QuerySymbology(symbologyResults);
-    ColorDef lineColor, fillColor;
-    bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
-
-    uint32_t lineWeight;
-    m_usesSymbolWeight = symbologyResults.IsWeightBySymbol(lineWeight);
-    if (!m_usesSymbolWeight)
-        lineWeight = weight;
-#endif
-
     ComponentToTextureStroker stroker(viewContext.GetDgnDb(), lineStyleSymb, geomParams, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
