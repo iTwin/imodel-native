@@ -124,3 +124,6 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     #          Expected: to be called once
     #            Actual: called twice - over-saturated and active
     # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
+
+	#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
+	*ConnectWebServicesClientCTests*
