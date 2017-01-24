@@ -652,7 +652,7 @@ public:
     //! the depth (front and back planes) to this volume. Also, there are times when tools adjust the volume of searches or view operations
     //! to include only space inside the project extents. 
     //! There are tools to visualize and adjust the project extents. Note that if the project extent is too small (does not
-    //! include space occupied by elements or other artifacts of interest, they may "disappear" under some operations since they're not considered
+    //! include space occupied by elements or other artifacts of interest), they may disappear under some operations since they're not considered
     //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space". 
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
 
