@@ -85,7 +85,7 @@
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="BeXmlDll"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPackage$(libext)</Libs>
@@ -102,7 +102,7 @@
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-        <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
