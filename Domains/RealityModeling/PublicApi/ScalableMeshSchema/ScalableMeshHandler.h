@@ -172,15 +172,16 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
 
+        SCALABLEMESH_SCHEMA_EXPORT void ClearOverviews(IScalableMeshPtr& targetSM);
+
+        SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
+
         SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
 
         SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
         SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
-        
-        SCALABLEMESH_SCHEMA_EXPORT void ClearOverviews(IScalableMeshPtr& targetSM);
 
-        SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
         
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
 
