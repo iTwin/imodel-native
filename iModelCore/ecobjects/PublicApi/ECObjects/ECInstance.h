@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -834,7 +834,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECInstanceInterface : IECInstanceInterface
 private:
     IECInstanceCR           m_instance;
 protected:
-    ECOBJECTS_EXPORT virtual ECObjectsStatus            _GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus            _GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const override;
     ECOBJECTS_EXPORT virtual ECClassCP                  _GetInstanceClass() const override;
     ECOBJECTS_EXPORT virtual IECInstanceCP              _ObtainECInstance() const override;
     ECOBJECTS_EXPORT virtual Utf8String                 _GetInstanceId() const override;

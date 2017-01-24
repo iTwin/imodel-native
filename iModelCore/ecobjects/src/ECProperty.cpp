@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,6 +265,27 @@ ECObjectsStatus ECProperty::GetMaximumValue(ECValueR value) const
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECProperty::SetMinimumLength(uint32_t min)
+    {
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_String &&
+        pt != PrimitiveType::PRIMITIVETYPE_Binary)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    m_minimumLength = min;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -475,6 +496,12 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
         }
 
+    uint32_t minLength;
+    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        SetMinimumLength(minLength);
+        }
+
     uint32_t maxLength;
     if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
@@ -553,6 +580,11 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (IsMaximumLengthDefined())
         {
         xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
+        }
+
+    if (IsMinimumLengthDefined())
+        {
+        xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
         }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
@@ -1862,6 +1894,56 @@ void ECProperty::InvalidateClassLayout()
     // TFS#290587: When a property is modified in a way that affects the ClassLayout, must
     // invalidate the containing class's default standalone enabler
     m_class.InvalidateDefaultStandaloneEnabler();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECProperty::SetOriginalName(Utf8CP originalName)
+    {
+    LOG.debugv("Attempting to add PropertyRenamed custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+
+    IECInstancePtr renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("PropertyRenamed");
+    if (!renameInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    ECValue origNameValue(originalName);
+    if (ECObjectsStatus::Success != renameInstance->SetValue("OriginalName", origNameValue))
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for the property '%s.%s' with 'OriginalName' set to '%s'.", GetClass().GetFullName(), GetName().c_str(), originalName);
+        return;
+        }
+
+    // Add ECv3ConversionAttributes as a schema reference, if it is not already.
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaKey key("ECv3ConversionAttributes", 1, 0);
+    ECSchemaPtr convSchema = ECSchema::LocateSchema(key, *context);
+    if (!convSchema.IsValid())
+        {
+        LOG.warningv("Failed to locate schema, %s.", key.GetName().c_str());
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+        }
+
+    if (!ECSchema::IsSchemaReferenced(GetClass().GetSchema(), *convSchema))
+        {
+        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetClass().GetSchema().GetName().c_str());
+            LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+            return;
+            }
+        }
+
+    if (ECObjectsStatus::Success != SetCustomAttribute(*renameInstance))
+        {
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute, with 'OriginalName' set to '%s', to property '%s.%s'.", originalName, GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    LOG.debugv("Successfully added PropertyRenamed custom attribute to property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

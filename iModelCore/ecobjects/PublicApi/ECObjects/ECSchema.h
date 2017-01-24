@@ -643,6 +643,7 @@ private:
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
+    uint32_t                m_minimumLength;
     uint32_t                m_maximumLength;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
@@ -650,6 +651,10 @@ private:
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
     mutable IECTypeAdapter* m_cachedTypeAdapter;
+
+    // Adds the ECv3ConversionAttributes:PropertyRenamed Custom Attribute with the original name provided.
+    // Used for instance transformation
+    void SetOriginalName(Utf8CP originalName);
 
     static void     SetErrorHandling (bool doAssert);
 protected:
@@ -796,14 +801,27 @@ public:
     //! Gets the maximum value for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumValue(ECValueR value) const;
 
-    //! Sets the maximum length (bytes, characters) for this property
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumLength(uint32_t max);
+    //! Sets the maximum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    ECOBJECTS_EXPORT ECObjectsStatus SetMaximumLength(uint32_t max);
     //! Gets whether the maximum length has been defined explicitly
-    bool               IsMaximumLengthDefined() const { return m_maximumLength > 0; }
-    //! Removed any maximum length that might have been applied to this property
-    void               ResetMaximumLength() { m_maximumLength = 0; }
-    //! Gets the maximum length(string, byte) for this ECProperty
-    uint32_t           GetMaximumLength() const { return m_maximumLength; }
+    bool IsMaximumLengthDefined() const {return m_maximumLength > 0;}
+    //! Removed any maximum length that might have been applied to this ECProperty
+    void ResetMaximumLength() {m_maximumLength = 0;}
+    //! Gets the maximum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    uint32_t GetMaximumLength() const {return m_maximumLength;}
+
+    //! Sets the minimum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    ECOBJECTS_EXPORT ECObjectsStatus SetMinimumLength(uint32_t min);
+    //! Gets whether the minimum length has been defined explicitly
+    bool               IsMinimumLengthDefined() const {return m_minimumLength > 0;}
+    //! Removed any minimum length that might have been applied to this ECProperty
+    void               ResetMinimumLength() {m_minimumLength = 0;}
+    //! Gets the minimum length for this ECProperty
+    //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
+    uint32_t           GetMinimumLength() const {return m_minimumLength;}
 
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
@@ -867,19 +885,19 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    virtual bool                        _IsPrimitive () const override { return true;}
+    bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
-    virtual Utf8String                  _GetTypeName () const override;
+    Utf8String                  _GetTypeName () const override;
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
-    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
+    ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
-    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
+    bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
     virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveProperty; }
 
 public:
@@ -933,13 +951,13 @@ private:
     StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    virtual bool                        _IsStruct () const override { return true;}
+    SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    bool                        _IsStruct () const override { return true;}
     virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
     virtual StructECPropertyP           _GetAsStructPropertyP()        override { return this; }
-    virtual Utf8String                  _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
+    Utf8String                  _GetTypeName () const override;
+    ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructProperty; }
 
@@ -975,9 +993,9 @@ protected:
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    virtual bool                        _IsArray () const override { return true;}
+    bool                        _IsArray () const override { return true;}
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
 
@@ -2264,12 +2282,12 @@ private:
     bool                                Verify(bool resolveIssues = false) const;
 
 protected:
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
 
-    virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
-    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
-    virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
+    SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
+    SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
+    ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
+    ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
     virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
@@ -2938,7 +2956,7 @@ protected:
     // ECSchemaCache() {}
     // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
-    ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+    ECOBJECTS_EXPORT ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
     ECObjectsStatus DropAllReferencesOfSchema(ECSchemaR schema);
 //__PUBLISH_SECTION_START__

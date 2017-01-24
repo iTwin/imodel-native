@@ -70,6 +70,7 @@
 #define     ALIAS_ATTRIBUTE                     "alias"
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
+#define     MINIMUM_LENGTH_ATTRIBUTE            "MinimumLength"
 #define     MAXIMUM_LENGTH_ATTRIBUTE            "MaximumLength"
 #define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
 #define     PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"

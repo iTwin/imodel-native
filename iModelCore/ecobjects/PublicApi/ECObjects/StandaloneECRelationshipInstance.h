@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,33 +45,33 @@ private:
 
 protected:
     // IECRelationshipInstance
-    ECOBJECTS_EXPORT virtual void            _SetSource (IECInstanceP instance);
-    ECOBJECTS_EXPORT virtual IECInstancePtr  _GetSource () const;
-    ECOBJECTS_EXPORT virtual void            _SetTarget (IECInstanceP instance);
-    ECOBJECTS_EXPORT virtual IECInstancePtr  _GetTarget () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (int64_t& sourceOrderId) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (int64_t& targetOrderId) const override;
+    ECOBJECTS_EXPORT void            _SetSource (IECInstanceP instance) override;
+    ECOBJECTS_EXPORT IECInstancePtr  _GetSource () const override;
+    ECOBJECTS_EXPORT void            _SetTarget (IECInstanceP instance) override;
+    ECOBJECTS_EXPORT IECInstancePtr  _GetTarget () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus _GetSourceOrderId (int64_t& sourceOrderId) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus _GetTargetOrderId (int64_t& targetOrderId) const override;
     // IECInstance
-    ECOBJECTS_EXPORT virtual Utf8String          _GetInstanceId () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId (Utf8CP id) override;
-    ECOBJECTS_EXPORT virtual bool                _IsReadOnly () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECOBJECTS_EXPORT Utf8String          _GetInstanceId () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetInstanceId (Utf8CP id) override;
+    ECOBJECTS_EXPORT bool                _IsReadOnly () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (uint32_t propIdx) override;
-    ECOBJECTS_EXPORT virtual Utf8String          _ToString (Utf8CP indent) const override;
-    ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
-    ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler () const override;
-    ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _ClearArray (uint32_t propIdx) override;
+    ECOBJECTS_EXPORT Utf8String          _ToString (Utf8CP indent) const override;
+    ECOBJECTS_EXPORT ClassLayoutCR       _GetClassLayout () const override;
+    ECOBJECTS_EXPORT ECEnablerCR         _GetEnabler () const override;
+    ECOBJECTS_EXPORT MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
-    ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
+    ECOBJECTS_EXPORT size_t              _GetOffsetToIECInstance () const override;
     // MemoryECInstanceBase
-    ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
+    ECOBJECTS_EXPORT IECInstanceP            _GetAsIECInstance () const override;
 
 public:
     //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents

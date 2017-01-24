@@ -90,6 +90,26 @@ public:
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
     };
 
+//=======================================================================================    
+//! ConversionCustomAttributeHelper provides APIs to access items of the Bentley standard schema, 
+//! ECv3ConversionAttributes
+//! @bsiclass
+//=======================================================================================    
+struct ConversionCustomAttributeHelper final
+    {
+    private:
+        //static class
+        ConversionCustomAttributeHelper();
+        ~ConversionCustomAttributeHelper();
+
+    public:
+        //! Creates a custom attribute instance for the given custom attribute from the ECv3ConversionAttributes schema
+        //! @remarks The only supported custom attribute at this time is PropertyRenamed. 
+        //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
+        //! @return An IECInstance of the given custom attribute name, if it is a supported custom attribute. Otherwise, nullptr will be returned.
+        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+    };
+
 struct ECDbSchemaMap;
 struct ECDbClassMap;
 struct ShareColumns;
