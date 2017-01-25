@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeThread.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -262,20 +262,16 @@ uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
 #endif
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2011
+* @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::BeSleep(uint32_t millis)
+void BeDuration::Sleep()
     {
-#if defined (BENTLEY_WIN32)
+    if (!IsTowardsFuture())
+        return;
 
-    ::Sleep(millis);
-
-#elif defined (BENTLEY_WINRT)
-
-    // Thanks to http://blogs.msdn.com/b/shawnhar/archive/2012/03/12/createthread-for-windows-8-metro.aspx for the work-around idea
-
+#if defined (BENTLEY_WINRT)
+     // Thanks to http://blogs.msdn.com/b/shawnhar/archive/2012/03/12/createthread-for-windows-8-metro.aspx for the work-around idea
     static HANDLE s_sleepEvent = nullptr;
     if (s_sleepEvent == nullptr)
         {
@@ -289,17 +285,10 @@ void BeThreadUtilities::BeSleep(uint32_t millis)
         }
 
     // Emulate sleep by waiting with timeout on an event that is never signalled.
-    WaitForSingleObjectEx(s_sleepEvent, millis, false);
-
-#elif defined (__unix__)
-
-    struct timespec sleepSpec;
-    sleepSpec.tv_sec = millis/1000;
-    sleepSpec.tv_nsec = (millis % 1000) * 1000000;
-    nanosleep(&sleepSpec, nullptr);
-
+    MilliSeconds millis(*this);
+    WaitForSingleObjectEx(s_sleepEvent, (uint32_t)millis.count(), false);
 #else
-#error unknown runtime
+    std::this_thread::sleep_for(*this);
 #endif
     }
 

@@ -30,6 +30,7 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/BeNumerical.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/DateTime.h>
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY
@@ -1187,9 +1188,9 @@ void            BeTest::Log (Utf8CP category, LogPriority priority, Utf8CP messa
 * Writes time to a csv file
 *@bsimethod                                            Majd.Uddin          10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription, int opCount)
+void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount, Utf8CP testDescription, bool quoteTestDescription)
 {
-    FILE* logFile = NULL;
+    FILE* logFile = nullptr;
 
     BeFileName dir;
     BeTest::GetHost().GetOutputRoot(dir);
@@ -1205,13 +1206,10 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
-        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
-    tm t;
-    BeTimeUtilities::ConvertUnixMillisToLocalTime(t, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    int year = t.tm_year + 1900; //it is always from year 1900
-    int month = t.tm_mon + 1; // it is from Jan
-    fprintf(logFile, "%d-%d-%dT%d:%d:%d, %s, %s, %.6lf, \"%s\", %d\n", year, month, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
+        fprintf(logFile, "DateTime,TestCaseName,TestName,ExecutionTime(s),opCount,TestDescription\n");
 
+    Utf8CP quotes = quoteTestDescription ? "\"" : "";
+    fprintf(logFile, "%s,%s,%s,%.6lf,%d,%s%s%s\n", DateTime::GetCurrentTimeUtc().ToString().c_str(), testcaseName, testName, timeInSeconds, opCount, quotes, testDescription, quotes);
     fclose(logFile);
 }
 

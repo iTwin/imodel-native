@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeStringUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -442,14 +442,14 @@ public:
 
     //! Equivalent to wcsncpy_s in MSVC, for arrays
     template <size_t destArraySize>
-    static wchar_t* Wcsncpy (wchar_t (&destArray)[destArraySize], const wchar_t *strSource, size_t count = AsManyAsPossible) {return Wcsncpy (destArray, destArraySize, strSource, count);}
+    static wchar_t* Wcsncpy (_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], const wchar_t *strSource, size_t count = AsManyAsPossible) {return Wcsncpy (destArray, destArraySize, strSource, count);}
 
     //! Equivalent to strncpy_s in MSVC
     BENTLEYDLL_EXPORT static char* Strncpy (char *strDest, size_t destLen, const char *strSource, size_t count = AsManyAsPossible);
 
     //! Equivalent to strncpy_s in MSVC, for arrays
     template <size_t destArraySize>
-    static char* Strncpy (char (&destArray)[destArraySize], const char *strSource, size_t count = AsManyAsPossible) {return Strncpy (destArray, destArraySize, strSource, count);}
+    static char* Strncpy (_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], const char *strSource, size_t count = AsManyAsPossible) {return Strncpy (destArray, destArraySize, strSource, count);}
 
     //! Parses a string containing an integer number in decimal format
     //! @param[out] value The resulting integer number

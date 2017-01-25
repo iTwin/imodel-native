@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeThread.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 
 #include "BeAtomic.h"
 #include "RefCounted.h"
-#include "WString.h"
+#include "BeTimeUtilities.h"
 
 #if defined (_WIN32) && defined(_MANAGED)
     //=======================================================================================
@@ -215,8 +215,14 @@ struct  BeThreadUtilities
     BENTLEYDLL_EXPORT static BentleyStatus StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg);
 
     //! Suspend the current thread for a specified amount of time
-    //! @param[in] millis   Duration of sleep in milliseconds
-    BENTLEYDLL_EXPORT static void BeSleep(uint32_t millis);
+    //! @param[in] sleepTime Duration of sleep 
+    //! @note this method is deprecated. Use BeDuration::Sleep
+    static void BeSleep(BeDuration sleepTime) {sleepTime.Sleep();}
+
+    //! Suspend the current thread for a specified number of milliseconds
+    //! @param[in] millis number of milliseconds to sleep 
+    //! @note this method is deprecated. Use BeDuration::Sleep
+    static void BeSleep(uint32_t millis){BeDuration::FromMilliSeconds(millis).Sleep();}
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();

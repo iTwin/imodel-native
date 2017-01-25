@@ -78,8 +78,8 @@
     #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)                   \
         struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                \
         {                                                                                   \
-            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }         \
-            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }             \
+            BentleyApi::CharCP  GetTestCaseNameA () const override { return #testCaseName; }         \
+            BentleyApi::CharCP  GetTestNameA ()     const override { return #testName; }             \
             virtual void TestBody () override;                                              \
             static BeTest::TestCaseInfo* s_superClassTestCaseInfo;                          \
         };                                                                                  \
@@ -451,13 +451,12 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
 
 //Performance Result Recording to a CSV file
 
-// Add following line to your Performance test
-// LOGTODB(TEST_DETAILS, m_InsertTime, "Sql Insert time", 1000);
-// It automatically adds Test case name and Test name.You will need to provide time in seconds and then some additional details and number of operations.Last two arguments are optional.
-// All entries go into PerformanceResult.csv which is located in your Performance test runners' run\Output\\PerformanceTestResults folder.
-
-#define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
-#define LOGTODB PerformanceResultRecorder::writeResults
+//! Add following line to your Performance test
+//! LOGTODB(TEST_DETAILS, insertTime, 100, "SQL Insert time", false /*quoteTestDescription*/);
+//! It automatically adds Test case name and Test name. You will need to provide time in seconds, number of operations, some additional details and whether the additional details string should be wrapped in quotes or not.Last three arguments are optional.
+//! All entries go into PerformanceResult.csv which is located in your Performance test runners' run\Output\\PerformanceTestResults folder.
+#define LOGTODB PerformanceResultRecorder::WriteResults
+#define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger(L"Performance"))
 #define TEST_FIXTURE_NAME BeTest::GetNameOfCurrentTestCase()
 #define TEST_NAME BeTest::GetNameOfCurrentTest()
 #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
@@ -468,11 +467,12 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
 //=======================================================================================
 struct PerformanceResultRecorder
 {
+private:
+    PerformanceResultRecorder();
+    ~PerformanceResultRecorder();
 
 public:
-    PerformanceResultRecorder();
-    BENTLEYDLL_EXPORT static void writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
-
+    BENTLEYDLL_EXPORT static void WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount = -1, Utf8CP testDescription = "", bool quoteTestDecription = false);
 };
 
 #define EXPECT_CONTAINS(container, value)                                       \

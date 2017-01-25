@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/WString_performanceTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -21,7 +21,7 @@ TEST(PerformanceBentley, WStringCopying)
         ASSERT_TRUE (!str.empty ());
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
 TEST(PerformanceBentley, WStringCtors)
@@ -34,7 +34,7 @@ TEST(PerformanceBentley, WStringCtors)
         ASSERT_TRUE (str.empty ());
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Empty string Construction", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Empty string Construction");
 
     // simple construction
     timer.Start();
@@ -44,7 +44,7 @@ TEST(PerformanceBentley, WStringCtors)
         ASSERT_TRUE (!str.empty ());
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Simple Construction", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "Simple Construction");
 
     }
 
@@ -63,7 +63,7 @@ TEST(PerformanceBentley, WStringAppendStayShort)
             }
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
 TEST(PerformanceBentley, WStringAppendGrowLong)
@@ -81,7 +81,7 @@ TEST(PerformanceBentley, WStringAppendGrowLong)
             }
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
 TEST(PerformanceBentley, WStringCompare)
@@ -96,7 +96,7 @@ TEST(PerformanceBentley, WStringCompare)
         ASSERT_TRUE (str1 == str1);
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
 TEST(PerformanceBentley, StringConversions)
@@ -110,7 +110,7 @@ TEST(PerformanceBentley, StringConversions)
         ASSERT_EQ (str[1], asc[1]);
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
 TEST(PerformanceBentley, Formatting)
@@ -142,7 +142,7 @@ TEST(PerformanceBentley, Formatting)
         ASSERT_TRUE (lower == L"lower");
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "For all Formatting", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "For all Formatting");
     }
 
 TEST(PerformanceBentley, LargeNumberOfWStrings)
@@ -154,7 +154,7 @@ TEST(PerformanceBentley, LargeNumberOfWStrings)
         strings.push_back (WString (L"a pretty long WString"));
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
 
     strings.clear();     // destruct them all
     }

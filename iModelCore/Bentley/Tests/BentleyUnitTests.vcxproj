@@ -18,6 +18,7 @@
     <ClCompile Include="NonPublished\fileatp.cpp" />
     <ClCompile Include="NonPublished\FileNameTests.cpp" />
     <ClCompile Include="NonPublished\GlobalHandleContainerTests.cpp" />
+    <ClCompile Include="Performance\base64utilities_performance.cpp" />
     <ClCompile Include="Performance\bmap_performanceTest.cpp" />
     <ClCompile Include="Performance\bvector_performanceTest.cpp" />
     <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
@@ -100,7 +101,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
-    <ProjectName>  </ProjectName>
+    <ProjectName>
+    </ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
