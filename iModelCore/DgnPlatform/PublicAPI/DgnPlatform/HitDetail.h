@@ -303,9 +303,9 @@ protected:
     Byte* m_customKeypointData;
     bool m_allowAssociations;
 
-    DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint() const override;
-    DGNPLATFORM_EXPORT virtual void _SetHitPoint(DPoint3dCR snapPt) override;
-    virtual HitDetailType _GetHitType() const override {return HitDetailType::Snap;}
+    DGNPLATFORM_EXPORT DPoint3dCR _GetHitPoint() const override;
+    DGNPLATFORM_EXPORT void _SetHitPoint(DPoint3dCR snapPt) override;
+    HitDetailType _GetHitType() const override {return HitDetailType::Snap;}
     virtual SnapDetail* _Clone() const;
 
 public:
@@ -346,11 +346,11 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _Draw(ViewContextR) const override;
-    virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
-    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
-    DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
-    virtual SnapDetailP _Clone() const override;
+    void _Draw(ViewContextR) const override;
+    HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
+    DGNPLATFORM_EXPORT void _SetHilited(DgnElement::Hilited) const override;
+    DGNPLATFORM_EXPORT bool _IsSameHit(HitDetailCP otherHit) const override;
+    SnapDetailP _Clone() const override;
 
 public:
     DGNPLATFORM_EXPORT IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR intersctionPt);

@@ -531,8 +531,8 @@ private:
     DynamicChangeTracker(TxnManager& txnMgr);
     ~DynamicChangeTracker();
 
-    virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
-    virtual TrackChangesForTable _FilterTable(Utf8CP tableName) override;
+    OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
+    TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 public:
     static DynamicChangeTrackerPtr Create(TxnManager& txnMgr);
 };

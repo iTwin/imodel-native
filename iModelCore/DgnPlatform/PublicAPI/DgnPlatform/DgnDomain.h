@@ -27,7 +27,7 @@
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
-    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, domainName, className, *this);}\
+    protected: Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, domainName, className, *this);}\
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
@@ -121,10 +121,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         uint64_t    m_restrictions;
         Utf8String  m_domainName;
 
-        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override { return T::_CreateMissingHandler(restrictions, domainName, className); }
-        virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
-        virtual bool _IsMissingHandler() const override { return true; }
-        virtual Utf8CP _GetDomainName() const override { return m_domainName.c_str(); }
+        DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override { return T::_CreateMissingHandler(restrictions, domainName, className); }
+        bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
+        bool _IsMissingHandler() const override { return true; }
+        Utf8CP _GetDomainName() const override { return m_domainName.c_str(); }
     public:
         explicit MissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className, T& base) : m_restrictions(restrictions), m_domainName(domainName)
             {

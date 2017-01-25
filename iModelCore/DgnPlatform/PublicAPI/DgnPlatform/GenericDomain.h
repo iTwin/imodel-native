@@ -121,7 +121,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : GroupInformationModel
     friend struct generic_ModelHandler::GenericGroupModelHandler;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GenericGroupModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -141,7 +141,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericGroup : GroupInformationElement, IElementG
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
+    Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
     explicit GenericGroup(CreateParams const& params) : T_Super(params) {}
 
 public:

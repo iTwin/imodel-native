@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidKernelEntity.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -27,11 +27,11 @@ public:
 
 FaceMaterialAttachments() {}
 
-virtual T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const override {return m_faceAttachmentsVec;}
-virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {return m_faceToSubElemIdMap;}
+T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const override {return m_faceAttachmentsVec;}
+T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {return m_faceToSubElemIdMap;}
 
-virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
-virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
+T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
+T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
 
 }; // FaceMaterialAttachments
 
@@ -50,8 +50,8 @@ IFaceMaterialAttachmentsPtr m_faceAttachments;
 
 protected:
 
-virtual Transform _GetEntityTransform() const override {return m_transform;}
-virtual bool _SetEntityTransform(TransformCR transform) override {m_transform = transform; return true;}
+Transform _GetEntityTransform() const override {return m_transform;}
+bool _SetEntityTransform(TransformCR transform) override {m_transform = transform; return true;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
@@ -98,7 +98,7 @@ DRange3d _GetEntityRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual(IBRepEntityCR entity) const override
+bool _IsEqual(IBRepEntityCR entity) const override
     {
     PSolidKernelEntity const* psEntity;
 
@@ -117,7 +117,7 @@ virtual bool _IsEqual(IBRepEntityCR entity) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override
+IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override
     {
     return m_faceAttachments.get();
     }
@@ -125,7 +125,7 @@ virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) override
+bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) override
     {
     if (nullptr == baseParams)
         {
@@ -147,7 +147,7 @@ virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IBRepEntityPtr _Clone() const override
+IBRepEntityPtr _Clone() const override
     {
     PK_ENTITY_t entityTag = PK_ENTITY_null;
 
@@ -640,12 +640,12 @@ PSolidTopoSubEntity(GeometricPrimitiveCR parentGeom, PK_ENTITY_t entityTag) : m_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GeometricPrimitiveCPtr _GetParentGeometry() const override {return m_parentGeom;}
+GeometricPrimitiveCPtr _GetParentGeometry() const override {return m_parentGeom;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual SubEntityType _GetSubEntityType() const override
+SubEntityType _GetSubEntityType() const override
     {
     PK_CLASS_t  entityClass;
 
@@ -668,7 +668,7 @@ virtual SubEntityType _GetSubEntityType() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual(ISubEntityCR subEntity) const override
+bool _IsEqual(ISubEntityCR subEntity) const override
     {
     if (this == &subEntity)
         return true;
@@ -709,7 +709,7 @@ virtual bool _IsParentEqual(GeometricPrimitiveCR parent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GeometricPrimitiveCPtr _GetGeometry() const override
+GeometricPrimitiveCPtr _GetGeometry() const override
     {
     if (!m_entityGeom.IsValid())
         {
@@ -761,7 +761,7 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
+Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
     {
     if (!m_graphic.IsValid())
         {
@@ -804,7 +804,7 @@ virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const overri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DRange3d _GetSubEntityRange() const override
+DRange3d _GetSubEntityRange() const override
     {
     if (m_range.IsNull())
         {
@@ -827,7 +827,7 @@ virtual DRange3d _GetSubEntityRange() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _GetFaceLocation(DPoint3dR point, DPoint2dR param) const override
+bool _GetFaceLocation(DPoint3dR point, DPoint2dR param) const override
     {
     if (!m_haveLocation)
         return false;
@@ -848,7 +848,7 @@ virtual bool _GetFaceLocation(DPoint3dR point, DPoint2dR param) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _GetEdgeLocation(DPoint3dR point, double& param) const override
+bool _GetEdgeLocation(DPoint3dR point, double& param) const override
     {
     if (!m_haveLocation)
         return false;
@@ -869,7 +869,7 @@ virtual bool _GetEdgeLocation(DPoint3dR point, double& param) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _GetVertexLocation(DPoint3dR point) const override
+bool _GetVertexLocation(DPoint3dR point) const override
     {
     PK_CLASS_t entityClass;
 

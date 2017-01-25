@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/PrimitivesWithNamedPlanes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -103,15 +103,15 @@ public:
 struct          ComputeXYConstraint : DGConstraint
     {
 protected:
-    DGNPLATFORM_EXPORT virtual WString _GetDescription (DependencyGraph const& g, bool wantDetails) const override;
-    DGNPLATFORM_EXPORT virtual void    _WriteConstraintFailure (DependencyGraph& g, DGConstraintFailure const&) override;
-    DGNPLATFORM_EXPORT virtual void    _DeleteConstraintFailure (DependencyGraph& g) override;
+    DGNPLATFORM_EXPORT WString _GetDescription (DependencyGraph const& g, bool wantDetails) const override;
+    DGNPLATFORM_EXPORT void    _WriteConstraintFailure (DependencyGraph& g, DGConstraintFailure const&) override;
+    DGNPLATFORM_EXPORT void    _DeleteConstraintFailure (DependencyGraph& g) override;
 
     virtual void    _ProjectCenterToPlane (DgnElementP, DPlane3dCR) = 0;
     virtual void    _ProjectCenterToLine  (DgnElementP, DRay3dCR) = 0;
 
     DGNPLATFORM_EXPORT ComputeXYConstraint (DependencyGraph&, DgnElementP arc);
-    DGNPLATFORM_EXPORT virtual void     _Satisfy (DependencyGraph& graph) override;
+    DGNPLATFORM_EXPORT void     _Satisfy (DependencyGraph& graph) override;
 
     }; // ComputeXYConstraint
 #endif

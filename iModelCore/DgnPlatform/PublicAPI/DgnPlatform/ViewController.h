@@ -581,7 +581,7 @@ public:
         UpdatePlan::Query const& m_plan;
         QueryResults* m_results;
 
-        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+        int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void AddAlwaysDrawn(SpatialViewControllerCR);
         void SetDepthFirst() {m_depthFirst=true;}
         void SetTestLOD(bool onOff) {m_testLOD=onOff;}
@@ -619,7 +619,7 @@ public:
         SpatialViewControllerR m_view;
         DgnElementId GetNextId();
         DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
-        virtual Completion _DoProgressive(RenderListContext& context, WantShow&) override;
+        Completion _DoProgressive(RenderListContext& context, WantShow&) override;
     };
 
 private:

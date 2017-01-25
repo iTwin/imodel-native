@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnECPersistence.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,7 +85,7 @@ private:
     virtual ~DgnECPropertyFormatter() {}
 
 private:
-    virtual bool _FormattedStringFromECValue 
+    bool _FormattedStringFromECValue 
         (
         Utf8StringR strVal, 
         ECN::ECValueCR ecValue, 
@@ -93,7 +93,7 @@ private:
         bool isArrayMember
         ) const override;
 
-     virtual ECN::IECInstancePtr _GetPropertyCategory (ECN::ECPropertyCR ecProperty) override;
+     ECN::IECInstancePtr _GetPropertyCategory (ECN::ECPropertyCR ecProperty) override;
 
 public:
     DGNPLATFORM_EXPORT static DgnECPropertyFormatterPtr Create (DgnModelP dgnModel);

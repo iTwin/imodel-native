@@ -419,16 +419,16 @@ public:
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
-    protected: virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
-               virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
+    protected: Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+               Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 #define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
     private:    typedef __superclass__ T_Super;\
     public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
                 static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
-                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    protected:  Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 
 /**
@@ -1055,7 +1055,7 @@ public:
             }
 
     protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR) override;
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
@@ -2061,8 +2061,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 
@@ -2077,8 +2077,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement2dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
 
@@ -2148,7 +2148,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
+    DGNPLATFORM_EXPORT bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -2276,7 +2276,7 @@ protected:
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -2406,7 +2406,7 @@ public:
     //! Create a AnnotationElement2d from CreateParams.
     static AnnotationElement2dPtr Create(CreateParams const& params) {return new AnnotationElement2d(params);}
 protected:
-    virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
+    AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
     explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) {}
 }; // AnnotationElement2d
@@ -2424,7 +2424,7 @@ public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
 protected:
-    virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
+    DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
     explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
 
@@ -2561,7 +2561,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationContentElement : DgnElement
     friend struct dgn_ElementHandler::InformationContent;
 
 protected:
-    virtual InformationContentElementCP _ToInformationContentElement() const override final {return this;}
+    InformationContentElementCP _ToInformationContentElement() const override final {return this;}
     explicit InformationContentElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2579,7 +2579,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
     friend struct dgn_ElementHandler::Document;
 
 protected:
-    virtual DocumentCP _ToDocumentElement() const override final {return this;}
+    DocumentCP _ToDocumentElement() const override final {return this;}
     explicit Document(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2652,8 +2652,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     friend struct dgn_ElementHandler::Definition;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2674,8 +2674,8 @@ protected:
     explicit Session(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnInsert() override {SaveVariables(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveVariables(); return T_Super::_OnUpdate(original);}
 
@@ -3000,8 +3000,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
     friend struct dgn_ElementHandler::Role;
 
 protected:
-    virtual RoleElementCP _ToRoleElement() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    RoleElementCP _ToRoleElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -3094,8 +3094,8 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-    virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    virtual uint64_t _Purge(uint64_t memTarget) override;
+    uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
+    uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!

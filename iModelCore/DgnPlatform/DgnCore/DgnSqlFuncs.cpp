@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnSqlFuncs.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -88,7 +88,7 @@ struct DGN_point : BlobFunction
 {
     DGN_point() : BlobFunction("DGN_point", 3) { }
 
-    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         DPoint3d pt = DPoint3d::FromXYZ(args[0].GetValueDouble(), args[1].GetValueDouble(), args[2].GetValueDouble());
         ctx.SetResultBlob(&pt, sizeof(pt));
@@ -102,7 +102,7 @@ struct DGN_placement : BlobFunction
 {
     DGN_placement() : BlobFunction("DGN_placement", 3) { }
 
-    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         Placement3d placement(ToPoint(args[0]), ToAngles(args[1]), ToBBox(args[2]));
         ctx.SetResultBlob(&placement, sizeof(placement));

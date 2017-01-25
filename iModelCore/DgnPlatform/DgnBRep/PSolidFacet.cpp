@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidFacet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -528,15 +528,15 @@ PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOptionsR options)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec() override {return (m_faceAttachmentsVec.empty() ? NULL : &m_faceAttachmentsVec);};
-virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap() override {return (m_faceToSubElemIdMap.empty() ? NULL : &m_faceToSubElemIdMap);};
+T_FaceAttachmentsVec const* _GetFaceAttachmentsVec() override {return (m_faceAttachmentsVec.empty() ? NULL : &m_faceAttachmentsVec);};
+T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap() override {return (m_faceToSubElemIdMap.empty() ? NULL : &m_faceToSubElemIdMap);};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _IsTableValid () override {return m_table.number_of_facets > 0;}
-virtual int     _GetFacetCount () override {return m_table.number_of_facets;}
-virtual int     _GetFinCount () override {return m_table.number_of_fins;}
+bool    _IsTableValid () override {return m_table.number_of_facets > 0;}
+int     _GetFacetCount () override {return m_table.number_of_facets;}
+int     _GetFinCount () override {return m_table.number_of_fins;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
@@ -553,7 +553,7 @@ int             FindTableIndex (PK_TOPOL_fctab_t tableId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint3dCP  _GetPoint () override
+DPoint3dCP  _GetPoint () override
     {
     int         iTable;
     
@@ -566,7 +566,7 @@ virtual DPoint3dCP  _GetPoint () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetPointCount () override
+int     _GetPointCount () override
     {
     int         iTable;
     
@@ -579,7 +579,7 @@ virtual int     _GetPointCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetPointIndex () override
+int const*  _GetPointIndex () override
     {
     int         iTable;
     
@@ -592,7 +592,7 @@ virtual int const*  _GetPointIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetPointIndexCount () override
+int     _GetPointIndexCount () override
     {
     int         iTable;
     
@@ -605,7 +605,7 @@ virtual int     _GetPointIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DVec3dCP    _GetNormal () override
+DVec3dCP    _GetNormal () override
     {
     int         iTable;
     
@@ -618,7 +618,7 @@ virtual DVec3dCP    _GetNormal () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetNormalCount () override
+int     _GetNormalCount () override
     {
     int         iTable;
     
@@ -631,7 +631,7 @@ virtual int     _GetNormalCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetNormalIndex () override
+int const*  _GetNormalIndex () override
     {
     int         iTable;
     
@@ -644,7 +644,7 @@ virtual int const*  _GetNormalIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetNormalIndexCount () override
+int     _GetNormalIndexCount () override
     {
     int         iTable;
     
@@ -657,7 +657,7 @@ virtual int     _GetNormalIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint2dCP  _GetParamUV () override
+DPoint2dCP  _GetParamUV () override
     {
     int         iTable;
     
@@ -670,7 +670,7 @@ virtual DPoint2dCP  _GetParamUV () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetParamUVCount () override
+int     _GetParamUVCount () override
     {
     int         iTable;
     
@@ -683,7 +683,7 @@ virtual int     _GetParamUVCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetParamUVIndex () override
+int const*  _GetParamUVIndex () override
     {
     int         iTable;
     
@@ -696,7 +696,7 @@ virtual int const*  _GetParamUVIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetParamUVIndexCount () override
+int     _GetParamUVIndexCount () override
     {
     int         iTable;
     
@@ -709,7 +709,7 @@ virtual int     _GetParamUVIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetFinData () override // fin vertex...
+int const*  _GetFinData () override // fin vertex...
     {
     int         iTable;
     
@@ -722,7 +722,7 @@ virtual int const*  _GetFinData () override // fin vertex...
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetFinDataCount () override
+int     _GetFinDataCount () override
     {
     int         iTable;
     
@@ -735,7 +735,7 @@ virtual int     _GetFinDataCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetFinFin () override
+int const*  _GetFinFin () override
     {
     int         iTable;
     
@@ -748,7 +748,7 @@ virtual int const*  _GetFinFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetFinFinCount () override
+int     _GetFinFinCount () override
     {
     int         iTable;
     
@@ -761,7 +761,7 @@ virtual int     _GetFinFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   _GetFacetFin () override
+Point2dCP   _GetFacetFin () override
     {
     int         iTable;
     
@@ -774,7 +774,7 @@ virtual Point2dCP   _GetFacetFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetFacetFinCount () override
+int     _GetFacetFinCount () override
     {
     int         iTable;
     
@@ -787,7 +787,7 @@ virtual int     _GetFacetFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   _GetStripFin () override
+Point2dCP   _GetStripFin () override
     {
     int         iTable;
     
@@ -800,7 +800,7 @@ virtual Point2dCP   _GetStripFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetStripFinCount () override
+int     _GetStripFinCount () override
     {
     int         iTable;
     
@@ -813,7 +813,7 @@ virtual int     _GetStripFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetStripFaceId () override
+int const*  _GetStripFaceId () override
     {
     int         iTable;
     
@@ -826,7 +826,7 @@ virtual int const*  _GetStripFaceId () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetStripFaceIdCount () override
+int     _GetStripFaceIdCount () override
     {
     int         iTable;
     
@@ -839,7 +839,7 @@ virtual int     _GetStripFaceIdCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   _GetFinEdge () override
+Point2dCP   _GetFinEdge () override
     {
     int         iTable;
     
@@ -852,7 +852,7 @@ virtual Point2dCP   _GetFinEdge () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetFinEdgeCount () override
+int     _GetFinEdgeCount () override
     {
     int         iTable;
     
@@ -865,7 +865,7 @@ virtual int     _GetFinEdgeCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  _GetFacetFace () override
+int const*  _GetFacetFace () override
     {
     int         iTable;
     
@@ -878,7 +878,7 @@ virtual int const*  _GetFacetFace () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     _GetFacetFaceCount () override
+int     _GetFacetFaceCount () override
     {
     int         iTable;
     
@@ -897,7 +897,7 @@ virtual int     _GetFacetFaceCount () override
 *            topology table.
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge, bool useHighestId) override
+bool    _GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge, bool useHighestId) override
     {
     return SUCCESS == PSolidTopoId::CurveTopologyIdFromEdge (curveTopologyId, (PK_EDGE_t) edge, useHighestId);
     }
@@ -905,8 +905,8 @@ virtual bool    _GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _IsHiddenEdge (int32_t entity) override  {return m_hiddenEdges.find(entity) != m_hiddenEdges.end();}
-virtual bool    _IsHiddenFace (int32_t entity) override  {return m_hiddenFaces.find(entity) != m_hiddenFaces.end();}
+bool    _IsHiddenEdge (int32_t entity) override  {return m_hiddenEdges.find(entity) != m_hiddenEdges.end();}
+bool    _IsHiddenFace (int32_t entity) override  {return m_hiddenFaces.find(entity) != m_hiddenFaces.end();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09

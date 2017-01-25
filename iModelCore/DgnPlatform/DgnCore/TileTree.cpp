@@ -22,8 +22,8 @@ BEGIN_UNNAMED_NAMESPACE
 struct TileCache : RealityData::Cache
 {
     uint64_t m_allowedSize;
-    virtual BentleyStatus _Prepare() const override;
-    virtual BentleyStatus _Cleanup() const override;
+    BentleyStatus _Prepare() const override;
+    BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 };
 

@@ -61,12 +61,12 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override;
 
-    virtual bool _IsOpen() const override { return m_isOpen; }
-    virtual StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
-    virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
+    bool _IsOpen() const override { return m_isOpen; }
+    StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
+    StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
 
-    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
-    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
+    GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
+    void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
 
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);

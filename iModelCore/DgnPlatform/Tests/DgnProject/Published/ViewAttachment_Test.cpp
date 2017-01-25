@@ -33,7 +33,7 @@ public:
 
     ViewAttachmentTest()  { }
 
-    virtual void SetUp() override;
+    void SetUp() override;
 
     static Placement2d MakePlacement()
         {

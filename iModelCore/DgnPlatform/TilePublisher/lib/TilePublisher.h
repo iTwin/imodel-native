@@ -133,9 +133,9 @@ protected:
 
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
-    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
-    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
-    TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
+    TILEPUBLISHER_EXPORT bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
     void WriteModelTileset(TileNodeCR rootTile);
 public:
