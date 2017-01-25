@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTWFPageFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTWFPageFile
@@ -50,12 +50,12 @@ public:
     IMAGEPP_EXPORT virtual                                    ~HRFTWFPageFile();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities() const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() const override;
 
-    virtual const HGF2DWorldIdentificator   GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator   GetWorldIdentificator () const override;
 
-    IMAGEPP_EXPORT virtual void                     WriteToDisk();
+    IMAGEPP_EXPORT void                     WriteToDisk() override;
 
 private:
     // Members.

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLEmbedFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -41,14 +41,14 @@ public:
 
     // Content access methods
 
-    IMAGEPP_EXPORT virtual Utf8String  GetURL() const;
+    IMAGEPP_EXPORT Utf8String  GetURL() const override;
     IMAGEPP_EXPORT const Utf8String&   GetPath() const;
 
     // Overriden methods, used in relative path management
 
-    virtual bool            HasPathTo(HFCURL* pi_pURL);
-    virtual Utf8String          FindPathTo(HFCURL* pi_pDest);
-    virtual HFCURL*          MakeURLTo(const Utf8String& pi_Path);
+    bool            HasPathTo(HFCURL* pi_pURL) override;
+    Utf8String          FindPathTo(HFCURL* pi_pDest) override;
+    HFCURL*          MakeURLTo(const Utf8String& pi_Path) override;
 
 
     IMAGEPP_EXPORT  void             RegisterFileReaderHandler(HFCPtr<IFileReaderHandler> pi_pHandler);

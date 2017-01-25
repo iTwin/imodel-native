@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolygonOfSegments.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DPolygonOfSegments
@@ -144,78 +144,78 @@ public:
 
 
     // From HGF2DSimpleShape
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>   
-                                     GetLinear() const;
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>   
-                                     GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DLinear>   
+                                     GetLinear() const override;
+    IMAGEPP_EXPORT HFCPtr<HGF2DLinear>   
+                                     GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const override;
 
     // From HGF2DShape
 
-    IMAGEPP_EXPORT virtual void      Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPP_EXPORT void      Rasterize(HGFScanLines& pio_rScanlines) const override;
 
-    IMAGEPP_EXPORT virtual bool      IsEmpty     () const;
-    IMAGEPP_EXPORT virtual HGF2DShapeTypeId
-                                     GetShapeType() const;
-    IMAGEPP_EXPORT virtual double    CalculateArea() const;
-    IMAGEPP_EXPORT virtual double    CalculatePerimeter() const;
-    IMAGEPP_EXPORT virtual bool      IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    IMAGEPP_EXPORT virtual void      MakeEmpty();
+    IMAGEPP_EXPORT bool      IsEmpty     () const override;
+    IMAGEPP_EXPORT HGF2DShapeTypeId
+                                     GetShapeType() const override;
+    IMAGEPP_EXPORT double    CalculateArea() const override;
+    IMAGEPP_EXPORT double    CalculatePerimeter() const override;
+    IMAGEPP_EXPORT bool      IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
+    IMAGEPP_EXPORT void      MakeEmpty() override;
 
-    IMAGEPP_EXPORT virtual HGF2DShape* 
-                                     DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HGF2DShape*  
-                                     DifferentiateShape(const HGF2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HGF2DShape*  
-                                     IntersectShape(const HGF2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HGF2DShape*  
-                                     UnifyShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT HGF2DShape* 
+                                     DifferentiateFromShape(const HGF2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HGF2DShape*  
+                                     DifferentiateShape(const HGF2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HGF2DShape*  
+                                     IntersectShape(const HGF2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HGF2DShape*  
+                                     UnifyShape(const HGF2DShape& pi_rShape) const override;
 
-    IMAGEPP_EXPORT virtual void      Drop(HGF2DPositionCollection* po_pPoint,
-                                          double                   pi_rTolerance) const;
+    IMAGEPP_EXPORT void      Drop(HGF2DPositionCollection* po_pPoint,
+                                          double                   pi_rTolerance) const override;
 
     // Special
 
     // From HGF2DVector
-    IMAGEPP_EXPORT virtual HGF2DPosition    
-                                     CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    IMAGEPP_EXPORT virtual size_t    Intersect(const HGF2DVector& pi_rVector,
-                                              HGF2DPositionCollection* po_pCrossPoints) const;
-    IMAGEPP_EXPORT virtual size_t    ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
-                                                               HGF2DPositionCollection* po_pContiguousnessPoints) const;
-    IMAGEPP_EXPORT virtual void      ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
+    IMAGEPP_EXPORT HGF2DPosition    
+                                     CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const override;
+    IMAGEPP_EXPORT size_t    Intersect(const HGF2DVector& pi_rVector,
+                                              HGF2DPositionCollection* po_pCrossPoints) const override;
+    IMAGEPP_EXPORT size_t    ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
+                                                               HGF2DPositionCollection* po_pContiguousnessPoints) const override;
+    IMAGEPP_EXPORT void      ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
                                                                  const HGF2DPosition& pi_rPoint,
                                                                  HGF2DPosition* pi_pFirstContiguousnessPoint,
-                                                                 HGF2DPosition* pi_pSecondContiguousnessPoint) const;
-    virtual HGF2DVector*             Clone() const;
-    IMAGEPP_EXPORT virtual bool      Crosses(const HGF2DVector& pi_rVector) const;
-    IMAGEPP_EXPORT virtual bool      AreContiguous(const HGF2DVector& pi_rVector) const;
-    IMAGEPP_EXPORT virtual bool      AreAdjacent(const HGF2DVector& pi_rVector) const;
-    IMAGEPP_EXPORT virtual bool      IsPointOn(const HGF2DPosition& pi_rTestPoint,
+                                                                 HGF2DPosition* pi_pSecondContiguousnessPoint) const override;
+    HGF2DVector*             Clone() const override;
+    IMAGEPP_EXPORT bool      Crosses(const HGF2DVector& pi_rVector) const override;
+    IMAGEPP_EXPORT bool      AreContiguous(const HGF2DVector& pi_rVector) const override;
+    IMAGEPP_EXPORT bool      AreAdjacent(const HGF2DVector& pi_rVector) const override;
+    IMAGEPP_EXPORT bool      IsPointOn(const HGF2DPosition& pi_rTestPoint,
                                               HGF2DVector::ExtremityProcessing
                                               pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
-                                              double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    IMAGEPP_EXPORT virtual bool      AreContiguousAt(const HGF2DVector& pi_rVector,
-                                                    const HGF2DPosition& pi_rPoint) const;
-    IMAGEPP_EXPORT virtual HGFBearing   
+                                              double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
+    IMAGEPP_EXPORT bool      AreContiguousAt(const HGF2DVector& pi_rVector,
+                                                    const HGF2DPosition& pi_rPoint) const override;
+    IMAGEPP_EXPORT HGFBearing   
                                      CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
                                                      HGF2DVector::ArbitraryDirection
-                                                     pi_Direction = HGF2DVector::BETA) const;
-    IMAGEPP_EXPORT virtual double    CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
+                                                     pi_Direction = HGF2DVector::BETA) const override;
+    IMAGEPP_EXPORT double    CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
                                                                   HGF2DVector::ArbitraryDirection
-                                                                  pi_Direction = HGF2DVector::BETA) const;
-    IMAGEPP_EXPORT virtual void      SetTolerance(double pi_Tolerance);
-    IMAGEPP_EXPORT virtual void      SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance);
-    IMAGEPP_EXPORT virtual void      SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
+                                                                  pi_Direction = HGF2DVector::BETA) const override;
+    IMAGEPP_EXPORT void      SetTolerance(double pi_Tolerance) override;
+    IMAGEPP_EXPORT void      SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance) override;
+    IMAGEPP_EXPORT void      SetAutoToleranceActive(bool pi_ActiveAutoTolerance) override;
 
     // From HGFGraphicObject
-    IMAGEPP_EXPORT virtual HGF2DLiteExtent               
-                                     GetExtent() const;
-    IMAGEPP_EXPORT virtual void      Move(const HGF2DDisplacement& pi_rDisplacement);
-    IMAGEPP_EXPORT virtual void      Scale(double pi_ScaleFactor,
-                                           const HGF2DPosition& pi_rScaleOrigin);
+    IMAGEPP_EXPORT HGF2DLiteExtent               
+                                     GetExtent() const override;
+    IMAGEPP_EXPORT void      Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    IMAGEPP_EXPORT void      Scale(double pi_ScaleFactor,
+                                           const HGF2DPosition& pi_rScaleOrigin) override;
 
     // Debug method
-    IMAGEPP_EXPORT virtual void      PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT void      PrintState(ostream& po_rOutput) const override;
 
     // THIS METHOD IS PUBLIC FOR DEBUG PURPOSES ONLY ... DO NOT CALL!!!!
     IMAGEPPTEST_EXPORT HGF2DShape*                      AllocateComplexShapeFromAutoContiguousPolySegment(const HGF2DPolySegment& pi_rPolySegment) const;

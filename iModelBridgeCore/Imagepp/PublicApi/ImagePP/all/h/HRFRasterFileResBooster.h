@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileResBooster.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileResBooster
@@ -43,30 +43,30 @@ public:
     IMAGEPP_EXPORT virtual                               ~HRFRasterFileResBooster();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities       () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
     // File manipulation
-    virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  uint16_t           pi_Resolution,
-                                                                 HFCAccessMode             pi_AccessMode);
+                                                                 HFCAccessMode             pi_AccessMode) override;
     // Get the raster file
     virtual  HFCPtr<HRFRasterFile>        GetBoosterFile ();
-    bool                                 IsCacheExtender() const;
+    bool                                 IsCacheExtender() const override;
 
-    bool                                 IsOriginalRasterDataStorage() const;
+    bool                                 IsOriginalRasterDataStorage() const override;
 
 
     // Auto Erase File
     IMAGEPP_EXPORT void                                   SetAutoErase(bool pi_autoErase);
     IMAGEPP_EXPORT bool                                  GetAutoErase()const;
 
-    virtual void                                  Save();
+    void                                  Save() override;
 
 protected:
     // Raster File

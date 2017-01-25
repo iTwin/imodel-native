@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCapability.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -101,8 +101,8 @@ public:
                               uint32_t         pi_MaxSizeInBytes,
                               HRFBlockAccess   pi_BlockAccess = HRFBlockAccess::RANDOM);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -162,8 +162,8 @@ public:
                                               const HFCPtr<HRFRasterFileCapabilities>& pi_rBlockTypeList);
 
     // Utilities
-    virtual bool       SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
-    virtual bool       IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool       SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
+    bool       IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
     virtual HCLASS_ID   GetCodecClassID() const;
 
 
@@ -225,8 +225,8 @@ public:
                                                   const HFCPtr<HRFRasterFileCapabilities>& pi_rpListOfCodec);
 
     // Utilities
-    virtual bool        SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
-    virtual bool        IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool        SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
+    bool        IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
     virtual HCLASS_ID    GetPixelTypeClassID() const;
 
 
@@ -296,7 +296,7 @@ class HRFInterlaceCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFInterlaceCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -329,11 +329,11 @@ public:
     IMAGEPP_EXPORT HRFScanlineOrientationCapability(HFCAccessMode           pi_AccessMode,
                                             HRFScanlineOrientation  pi_ScanlineOrientation);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
     virtual HRFScanlineOrientation
     GetScanlineOrientation() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -381,11 +381,11 @@ public:
     IMAGEPP_EXPORT HRFInterleaveCapability(HFCAccessMode       pi_AccessMode,
                                    HRFInterleaveType   pi_InterleaveType);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
     virtual HRFInterleaveType
     GetInterleaveType() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -443,7 +443,7 @@ public:
         uint64_t           pi_BiggestResHeight     = UINT32_MAX,
         bool               pi_UnlimitedResolution  = false);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
 
     virtual bool   IsUnlimitedResolution() const;
     virtual uint32_t GetSmallestResWidth() const;
@@ -456,7 +456,7 @@ public:
     virtual bool   IsArbitaryYRatio() const;
     virtual bool   IsXYRatioLocked() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -509,7 +509,7 @@ class HRFSingleResolutionCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFSingleResolutionCapability(HFCAccessMode  pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -554,7 +554,7 @@ public:
                               uint32_t         pi_MaxSizeInBytes,
                               HRFBlockAccess   pi_BlockAccess = HRFBlockAccess::RANDOM);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -619,7 +619,7 @@ public:
     // otherwise return the near value
     virtual uint32_t ValidateHeight(uint32_t pi_Height);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -701,7 +701,7 @@ public:
     virtual uint32_t ValidateWidth(uint32_t pi_Width);
     virtual uint32_t ValidateHeight(uint32_t pi_Height);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -785,7 +785,7 @@ public:
     virtual uint32_t ValidateWidth(uint32_t pi_Width);
     virtual uint32_t ValidateHeight(uint32_t pi_Height);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -828,11 +828,11 @@ public:
     IMAGEPP_EXPORT HRFFilterCapability(HFCAccessMode   pi_AccessMode,
                                HCLASS_ID     pi_Filter);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
 
     virtual HCLASS_ID GetFilter() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -895,11 +895,11 @@ public:
     IMAGEPP_EXPORT HRFClipShapeCapability(HFCAccessMode     pi_AccessMode,
                                   HRFCoordinateType pi_CoordinateType);
 
-    virtual bool             SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool             SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
 
     virtual HRFCoordinateType GetCoordinateType() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -952,11 +952,11 @@ public:
     IMAGEPP_EXPORT HRFTransfoModelCapability(HFCAccessMode    pi_AccessMode,
                                      HCLASS_ID      pi_TransfoModel);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
 
     virtual HCLASS_ID GetTransfoModelClassKey () const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1006,7 +1006,7 @@ class HRFHistogramCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFHistogramCapability(HFCAccessMode    pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1085,7 +1085,7 @@ public:
 
     bool       IsComposed() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1148,7 +1148,7 @@ class HRFRepresentativePaletteCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFRepresentativePaletteCapability(HFCAccessMode    pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1180,7 +1180,7 @@ class HRFMultiPageCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFMultiPageCapability(HFCAccessMode    pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1213,11 +1213,11 @@ public:
     IMAGEPP_EXPORT HRFTagCapability(   HFCAccessMode                       pi_AccessMode,
                                const HFCPtr<HPMGenericAttribute>&  pi_rpTag);
 
-    virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const override;
 
     virtual const HFCPtr<HPMGenericAttribute>& GetTag() const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1254,7 +1254,7 @@ class HRFUniversalTagCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFUniversalTagCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1288,7 +1288,7 @@ class HRFBlocksDataFlagCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFBlocksDataFlagCapability(HFCAccessMode    pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1320,7 +1320,7 @@ class HRFSubSamplingCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFSubSamplingCapability(HFCAccessMode    pi_AccessMode);
     
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1352,7 +1352,7 @@ class HRFEmbedingCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFEmbedingCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1386,7 +1386,7 @@ class HRFStillImageCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFStillImageCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1420,7 +1420,7 @@ class HRFAnimationCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFAnimationCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 private:
@@ -1451,7 +1451,7 @@ public:
 
     void    SetMaxFileSize(uint64_t pi_MaxFileSize);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1485,7 +1485,7 @@ public:
     IMAGEPP_EXPORT uint16_t GetNbGeotiffKeys	() const;
     IMAGEPP_EXPORT TIFFGeoKey   GetGeotiffKey		(uint16_t pi_KeyIndex) const;
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 
@@ -1514,7 +1514,7 @@ class HRFResizableCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFResizableCapability(HFCAccessMode pi_AccessMode);
 
-    virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
+    bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const override{
         return T_Super::IsCompatibleWith(pi_rpCapability);
         }
 

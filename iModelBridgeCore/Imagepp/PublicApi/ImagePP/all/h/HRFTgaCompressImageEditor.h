@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTgaCompressImageEditor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -42,9 +42,9 @@ public:
                               uint64_t pi_PosBlockY,
                               Byte*   po_pData) override;
 
-    virtual HSTATUS ReadBlock(uint64_t pi_PosBlockX,
+    HSTATUS ReadBlock(uint64_t pi_PosBlockX,
                               uint64_t pi_PosBlockY,
-                              HFCPtr<HCDPacket>&      po_rpPacket)
+                              HFCPtr<HCDPacket>&      po_rpPacket) override
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
         }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFVirtualEarthFile
@@ -79,25 +79,25 @@ public:
     virtual     ~HRFVirtualEarthFile();
 
     //File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities() const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() const override;
 
     //File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator() const;
+    const HGF2DWorldIdentificator GetWorldIdentificator() const override;
 
     //File manipulation
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
                                                                  uint16_t pi_Resolution,
-                                                                 HFCAccessMode pi_AccessMode);
+                                                                 HFCAccessMode pi_AccessMode) override;
 
-    virtual void                          Save();
+    void                          Save() override;
 
     //Private utility method
-    virtual uint64_t                     GetFileCurrentSize() const;
+    uint64_t                     GetFileCurrentSize() const override;
     virtual uint64_t                     GetFileCurrentSize(HFCBinStream* pi_pBinStream) const;
 
     //Look ahead method.
-    virtual bool                         CanPerformLookAhead(uint32_t pi_Page) const;
+    bool                         CanPerformLookAhead(uint32_t pi_Page) const override;
 
     //This static method indicates if a plain URL can be represented
     //by this specific URL
@@ -130,17 +130,17 @@ protected:
     //--------------------------------------
     //This method is used to determine if the file format supports look ahead
     //by block.
-    virtual bool HasLookAheadByBlock(uint32_t pi_Page) const;
+    bool HasLookAheadByBlock(uint32_t pi_Page) const override;
 
     //This method is used in SetLookAhead to give the list of needed tiles
     //to a derived class, since it knows how to obtain the tiles.
-    virtual void RequestLookAhead(uint32_t             pi_Page,
+    void RequestLookAhead(uint32_t             pi_Page,
                                   const HGFTileIDList& pi_rBlocks,
-                                  bool                pi_Async);
+                                  bool                pi_Async) override;
 
     //This method is used in SetLookAhead to indicate to a derived class that
     //the current LookAhead has been cancelled.
-    virtual void CancelLookAhead(uint32_t              pi_Page);
+    void CancelLookAhead(uint32_t              pi_Page) override;
 
 private:
     friend struct HRFVirtualEarthCreator;
@@ -174,25 +174,25 @@ private:
 struct HRFVirtualEarthCreator : public HRFRasterFileCreator
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
-                                                   uint64_t             pi_Offset = 0) const;
-    virtual bool                     SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
+                                                   uint64_t             pi_Offset = 0) const override;
+    bool                     SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel() const;
-    virtual Utf8String                   GetSchemes() const;
-    virtual Utf8String                   GetExtensions() const;
+    Utf8String                   GetLabel() const override;
+    Utf8String                   GetSchemes() const override;
+    Utf8String                   GetExtensions() const override;
 
     virtual Utf8String GetShortName() const override { return "BingMap"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 
 private:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPixelTypeReplacer.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPixelTypeReplacer
@@ -38,14 +38,14 @@ public:
 
     // Overriden methods
 
-    virtual HPMPersistentObject* Clone () const;
+    HPMPersistentObject* Clone () const override;
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
-    virtual uint16_t GetRepresentativePalette(
-        HRARepPalParms* pio_pRepPalParms);
+    uint16_t GetRepresentativePalette(
+        HRARepPalParms* pio_pRepPalParms) override;
 
-    virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
-                                     bool                pi_ForceRecompute = false);
+    void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
+                                     bool                pi_ForceRecompute = false) override;
 
     // messaging
 
@@ -54,12 +54,12 @@ public:
 
     // Added methods
 
-    virtual HFCPtr<HRPPixelType>
-    GetPixelType() const;
+    HFCPtr<HRPPixelType>
+    GetPixelType() const override;
 
-    virtual bool   ContainsPixelsWithChannel(
+    bool   ContainsPixelsWithChannel(
         HRPChannelType::ChannelRole pi_Role,
-        Byte                      pi_Id) const;
+        Byte                      pi_Id) const override;
 
     virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
     virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_pSrcRaster) override;

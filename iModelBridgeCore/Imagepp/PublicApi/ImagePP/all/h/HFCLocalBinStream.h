@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCLocalBinStream.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCLocalBinStream
@@ -51,30 +51,30 @@ public:
 
     // Information methods
 
-    IMAGEPP_EXPORT virtual HFCPtr<HFCURL>  GetURL() const;
-    IMAGEPP_EXPORT virtual uint64_t        GetSize() const;
-    virtual HFCAccessMode          GetAccessMode() const;
+    IMAGEPP_EXPORT HFCPtr<HFCURL>  GetURL() const override;
+    IMAGEPP_EXPORT uint64_t        GetSize() const override;
+    HFCAccessMode          GetAccessMode() const override;
     uint64_t                       GetOriginOffset() const;
     IMAGEPP_EXPORT uint64_t                GetCurrentFileSize() const;
 
 
     // File pointer management
 
-    virtual void            Seek(int64_t pi_Delta);
-    virtual void            SeekToPos(uint64_t pi_NewPos);
-    virtual void            SeekToBegin();
-    virtual void            SeekToEnd();
-    virtual uint64_t        GetCurrentPos();
-    virtual bool            EndOfFile();
-    virtual bool            SetEOF();
+    void            Seek(int64_t pi_Delta) override;
+    void            SeekToPos(uint64_t pi_NewPos) override;
+    void            SeekToBegin() override;
+    void            SeekToEnd() override;
+    uint64_t        GetCurrentPos() override;
+    bool            EndOfFile() override;
+    bool            SetEOF() override;
 
     // Content access
 
-    IMAGEPP_EXPORT virtual size_t    Read(void* po_pData, size_t pi_DataSize);
-    IMAGEPP_EXPORT virtual size_t    Write(const void* pi_pData, size_t pi_DataSize);
+    IMAGEPP_EXPORT size_t    Read(void* po_pData, size_t pi_DataSize) override;
+    IMAGEPP_EXPORT size_t    Write(const void* pi_pData, size_t pi_DataSize) override;
 
 
-    virtual bool     Flush();
+    bool     Flush() override;
 
     enum MaxOffsetBitsSupported
         {

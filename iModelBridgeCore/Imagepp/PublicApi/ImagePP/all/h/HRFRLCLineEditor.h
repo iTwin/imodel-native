@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRLCLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -36,9 +36,9 @@ public:
                               Byte*        po_pData) override;
 
 
-    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+    HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              HFCPtr<HCDPacket>&       po_rpPacket)
+                              HFCPtr<HCDPacket>&       po_rpPacket) override
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
         }
@@ -48,9 +48,9 @@ public:
                                uint64_t     pi_PosBlocY,
                                const Byte*  pi_pData) override;
 
-    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+    HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket)
+                               const HFCPtr<HCDPacket>& pi_rpPacket) override
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket);
         }

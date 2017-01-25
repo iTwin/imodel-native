@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSpotDimapFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -60,18 +60,18 @@ public:
     IMAGEPP_EXPORT virtual                 ~HRFSpotDimapFile               ();
 
     //:> File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities        () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities        () const override;
 
     //:> File information
-    virtual const HGF2DWorldIdentificator
-    GetWorldIdentificator  () const;
+    const HGF2DWorldIdentificator
+    GetWorldIdentificator  () const override;
 
     //:> File manipulation
-    virtual HRFResolutionEditor*
+    HRFResolutionEditor*
     CreateResolutionEditor (uint32_t      pi_Page,
                             uint16_t pi_Resolution,
-                            HFCAccessMode pi_AccessMode);
+                            HFCAccessMode pi_AccessMode) override;
 protected:
     //:> Open main file (xml)
     HRFSpotDimapFile       (const HFCPtr<HFCURL>&  pi_rpURL,
@@ -80,13 +80,13 @@ protected:
                             bool                  pi_DontOpenFile);
 
     //:> Open  files
-    virtual bool                         Open                  (bool pi_CreateBigTifFormat=false);
-    virtual bool                         Open                  (const HFCPtr<HFCURL>&  pi_rpURL)   {
+    bool                         Open                  (bool pi_CreateBigTifFormat=false) override;
+    bool                         Open                  (const HFCPtr<HFCURL>&  pi_rpURL) override{
         return T_Super::Open(pi_rpURL);
         }
 
     //:> Initialization
-    virtual void            CreateDescriptors       ();
+    void            CreateDescriptors       () override;
 
 
 

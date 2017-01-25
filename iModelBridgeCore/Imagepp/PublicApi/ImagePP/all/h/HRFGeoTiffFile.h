@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoTiffFile
@@ -42,28 +42,28 @@ public:
     virtual                               ~HRFGeoTiffFile       ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities       () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
     // File manipulation
-    virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  uint16_t           pi_Resolution,
-                                                                 HFCAccessMode             pi_AccessMode);
+                                                                 HFCAccessMode             pi_AccessMode) override;
 
-    virtual void                          Save();
+    void                          Save() override;
 
-    virtual uint64_t                     GetFileCurrentSize() const;
+    uint64_t                     GetFileCurrentSize() const override;
 
     // Specific GeoTiff Method
-    virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
+    void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_InterpretUnitINTGR = false);
+                                                                 bool   pi_InterpretUnitINTGR = false) override;
 
     IMAGEPP_EXPORT void                           GetDefaultInterpretationGeoRef(double* po_RatioToMeter=0,
                                                                          bool*   po_InterpretUnit=0,
@@ -80,10 +80,10 @@ protected:
                            uint64_t              pi_Offset,
                            bool                  pi_DontOpenFile);
 
-    virtual bool                         Open                  (bool pi_CreateBigTifFormat=false);
-    virtual bool                         Open                  (const HFCPtr<HFCURL>&  pi_rpURL);
-    virtual void                          CreateDescriptors     ();
-    virtual bool                         WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) {
+    bool                         Open                  (bool pi_CreateBigTifFormat=false) override;
+    bool                         Open                  (const HFCPtr<HFCURL>&  pi_rpURL) override;
+    void                          CreateDescriptors     () override;
+    bool                         WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) override{
         return T_Super::WriteTransfoModel(pi_rpTransfoModel);
         }
 
@@ -125,22 +125,22 @@ private:
 struct HRFGeoTiffCreator : public HRFTiffCreator
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
-                                                   uint64_t                pi_Offset = 0) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
+                                                   uint64_t                pi_Offset = 0) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel() const;
+    Utf8String                   GetLabel() const override;
 
     virtual Utf8String GetShortName() const override { return "GeoTIF"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 
 protected :
     // Disabled methods

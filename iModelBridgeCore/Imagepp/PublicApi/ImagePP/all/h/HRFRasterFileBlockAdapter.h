@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileBlockAdapter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileBlockAdapter
@@ -89,27 +89,27 @@ public:
     virtual                 ~HRFRasterFileBlockAdapter();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities         () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities         () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator   GetWorldIdentificator   () const;
+    const HGF2DWorldIdentificator   GetWorldIdentificator   () const override;
 
     // File manipulation
-    virtual bool                           AddPage                 (HFCPtr<HRFPageDescriptor>  pi_pPage);
+    bool                           AddPage                 (HFCPtr<HRFPageDescriptor>  pi_pPage) override;
 
-    virtual HRFResolutionEditor*            CreateResolutionEditor  (uint32_t                   pi_Page,
+    HRFResolutionEditor*            CreateResolutionEditor  (uint32_t                   pi_Page,
                                                                      uint16_t            pi_Resolution,
-                                                                     HFCAccessMode              pi_AccessMode);
+                                                                     HFCAccessMode              pi_AccessMode) override;
 
-    virtual bool                           ResizePage              (uint32_t                   pi_Page,
+    bool                           ResizePage              (uint32_t                   pi_Page,
                                                                      uint64_t                  pi_NewWidth,
-                                                                     uint64_t                  pi_NewHeight);
+                                                                     uint64_t                  pi_NewHeight) override;
 
-    virtual void                            Save();
+    void                            Save() override;
 
 
-    virtual bool                           IsOriginalRasterDataStorage() const;
+    bool                           IsOriginalRasterDataStorage() const override;
 
 protected:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DBasicLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DBasicLinear
@@ -56,11 +56,11 @@ public:
     GetBasicLinearType() const = 0;
 
     // From HVE2DLinear
-    virtual bool      IsABasicLinear() const;
-    virtual bool      IsComplex() const;
+    bool      IsABasicLinear() const override;
+    bool      IsComplex() const override;
 
     // Debug method
-    void              PrintState(ostream& po_rOutput) const;
+    void              PrintState(ostream& po_rOutput) const override;
 
 protected:
 

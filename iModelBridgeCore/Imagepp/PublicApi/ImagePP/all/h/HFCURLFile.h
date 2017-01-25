@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLFile
@@ -62,7 +62,7 @@ public:
 
     //:> Content access methods
 
-    IMAGEPP_EXPORT virtual Utf8String          GetURL() const;
+    IMAGEPP_EXPORT Utf8String          GetURL() const override;
     IMAGEPP_EXPORT const Utf8String&           GetHost() const;
     IMAGEPP_EXPORT const Utf8String&           GetPath() const;
     IMAGEPP_EXPORT Utf8String                  GetFilename() const;
@@ -71,9 +71,9 @@ public:
 
     //:> Overriden methods, used in relative path management
 
-    virtual bool            HasPathTo(HFCURL* pi_pURL);
-    virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
-    virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
+    bool            HasPathTo(HFCURL* pi_pURL) override;
+    Utf8String         FindPathTo(HFCURL* pi_pDest) override;
+    HFCURL*         MakeURLTo(const Utf8String& pi_Path) override;
 
     //:> Utility methods
 

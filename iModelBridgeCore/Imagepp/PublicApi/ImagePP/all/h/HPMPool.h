@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPool.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMPool
@@ -353,7 +353,7 @@ public:
     IMAGEPP_EXPORT virtual              ~HPMExportPool();
     IMAGEPP_EXPORT bool                 AllocMemory(size_t pi_MemorySize, const HPMPoolItem& poolItem);
  
-    IMAGEPP_EXPORT virtual bool NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize);
+    IMAGEPP_EXPORT bool NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize) override;
  
  
     };

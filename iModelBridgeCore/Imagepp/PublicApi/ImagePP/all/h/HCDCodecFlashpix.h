@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecFlashpix.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecFlashpix
@@ -45,18 +45,18 @@ public:
 
     // overriden methods
     virtual HCDCodec* Clone() const override;
-    virtual size_t  CompressSubset(const void* pi_pInData,
+    size_t  CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
                                    void* po_pOutBuffer,
-                                   size_t pi_OutBufferSize);
-    virtual size_t  DecompressSubset(const void* pi_pInData,
+                                   size_t pi_OutBufferSize) override;
+    size_t  DecompressSubset(const void* pi_pInData,
                                      size_t pi_InDataSize,
                                      void* po_pOutBuffer,
-                                     size_t pi_OutBufferSize);
+                                     size_t pi_OutBufferSize) override;
 
-    virtual bool   IsBitsPerPixelSupported(size_t pi_Bits) const;
-    virtual    void    SetDimensions(size_t pi_Width, size_t pi_Height);
-    virtual void    SetLinePaddingBits(size_t pi_Bits);
+    bool   IsBitsPerPixelSupported(size_t pi_Bits) const override;
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
+    void    SetLinePaddingBits(size_t pi_Bits) override;
 
     // added methods
     IMAGEPP_EXPORT void            SetQuality(Byte pi_Quality);

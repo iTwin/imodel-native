@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIJG8Bits.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -49,19 +49,19 @@ public:
     // overriden methods
     virtual HCDCodec* Clone() const override;
 
-    virtual size_t  CompressSubset( const void* pi_pInData,
+    size_t  CompressSubset( const void* pi_pInData,
                                     size_t pi_InDataSize,
                                     void* po_pOutBuffer,
-                                    size_t pi_OutBufferSize);
-    virtual size_t  DecompressSubset(const void* pi_pInData,
+                                    size_t pi_OutBufferSize) override;
+    size_t  DecompressSubset(const void* pi_pInData,
                                      size_t pi_InDataSize,
                                      void* po_pOutBuffer,
-                                     size_t pi_OutBufferSize);
-    virtual bool   HasLineAccess() const;
-    virtual size_t  GetMinimumSubsetSize() const;
-    virtual void    Reset();
-    virtual void    SetBitsPerPixel(size_t pi_BitsPerPixel);
-    virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
+                                     size_t pi_OutBufferSize) override;
+    bool   HasLineAccess() const override;
+    size_t  GetMinimumSubsetSize() const override;
+    void    Reset() override;
+    void    SetBitsPerPixel(size_t pi_BitsPerPixel) override;
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
 
     // added method
     void            SetQuality(Byte pi_Percentage);
@@ -92,7 +92,7 @@ public:
     GetSubsamplingMode() const;
     void            SetSubsamplingMode(HCDCodecIJG::SubsamplingModes pi_Mode);
 
-    virtual size_t  GetSubsetMaxCompressedSize() const;
+    size_t  GetSubsetMaxCompressedSize() const override;
 
     static void HCDJpegErrorExit(void* cinfo);
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI8Gray8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,16 +25,16 @@ public:
 
     IMAGEPP_EXPORT virtual  ~HRPPixelTypeI8Gray8    ();
 
-    virtual HPMPersistentObject*
-    Clone() const;
+    HPMPersistentObject*
+    Clone() const override;
 
 protected:
 
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    const HRPPixelConverter*
+    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const override;
 
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    const HRPPixelConverter*
+    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const override;
 
 private:
 

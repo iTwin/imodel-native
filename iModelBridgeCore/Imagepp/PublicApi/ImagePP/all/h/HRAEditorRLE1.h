@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditorRLE1.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -28,54 +28,54 @@ public:
     virtual        ~HRAEditorRLE1();
 
     // sequential pixel access
-    virtual void*   GetRun          (HUINTX             pi_StartPosX,
+    void*   GetRun          (HUINTX             pi_StartPosX,
                                      HUINTX             pi_StartPosY,
                                      size_t             pi_PixelCount,
-                                     void*              pi_pTransaction = 0) const;
+                                     void*              pi_pTransaction = 0) const override;
 
-    virtual void    SetRun          (HUINTX             pi_StartPosX,
+    void    SetRun          (HUINTX             pi_StartPosX,
                                      HUINTX             pi_StartPosY,
                                      size_t             pi_PixelCount,
                                      const void*        pi_pRun,
-                                     void*              pi_pTransaction = 0);
+                                     void*              pi_pTransaction = 0) override;
 
     // random pixel access
-    virtual void*   GetPixel        (HUINTX             pi_PosX,
-                                     HUINTX             pi_PosY) const;
+    void*   GetPixel        (HUINTX             pi_PosX,
+                                     HUINTX             pi_PosY) const override;
 
-    virtual void    SetPixel        (HUINTX             pi_PosX,
+    void    SetPixel        (HUINTX             pi_PosX,
                                      HUINTX             pi_PosY,
-                                     const void*        pi_pValue);
+                                     const void*        pi_pValue) override;
 
-    virtual void    GetPixels       (const HUINTX*      pi_pPositionsX,
+    void    GetPixels       (const HUINTX*      pi_pPositionsX,
                                      const HUINTX*      pi_pPositionsY,
                                      size_t             pi_PixelCount,
-                                     void*              po_pBuffer) const;
+                                     void*              po_pBuffer) const override;
 
-    virtual void    GetPixels       (HUINTX             pi_PosX,
+    void    GetPixels       (HUINTX             pi_PosX,
                                      HUINTX             pi_PosY,
                                      HSINTX             pi_DeltaX,
                                      HSINTX             pi_DeltaY,
                                      size_t             pi_PixelCount,
-                                     void*              po_pBuffer) const;
+                                     void*              po_pBuffer) const override;
 
-    virtual void*   GetNextPixel    () const;
+    void*   GetNextPixel    () const override;
 
     // clear
-    virtual void    Clear           (const void*        pi_pValue,
-                                     void*              pi_pTransaction = 0);
-    virtual void    ClearRun        (HUINTX             pi_PosX,
+    void    Clear           (const void*        pi_pValue,
+                                     void*              pi_pTransaction = 0) override;
+    void    ClearRun        (HUINTX             pi_PosX,
                                      HUINTX             pi_PosY,
                                      size_t             pi_PixelCount,
                                      const void*        pi_pValue,
-                                     void*              pi_pTransaction = 0);
+                                     void*              pi_pTransaction = 0) override;
 
-    virtual void    MergeRuns       (HUINTX             pi_StartPosX,
+    void    MergeRuns       (HUINTX             pi_StartPosX,
                                      HUINTX             pi_StartPosY,
                                      size_t             pi_Width,
                                      size_t             pi_Height,
                                      const void*        pi_pRun,
-                                     void*              pi_pTransaction = 0);
+                                     void*              pi_pTransaction = 0) override;
 
     virtual bool    HasData() const override;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DBasicLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DBasicLinear
@@ -50,11 +50,11 @@ public:
     virtual HGF2DBasicLinearTypeId  GetBasicLinearType() const = 0;
 
     // From HGF2DLinear
-    virtual bool                    IsABasicLinear() const;
-    virtual bool                    IsComplex() const;
+    bool                    IsABasicLinear() const override;
+    bool                    IsComplex() const override;
 
     // Debug method
-    void                            PrintState(ostream& po_rOutput) const;
+    void                            PrintState(ostream& po_rOutput) const override;
 
 protected:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPComplexFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPComplexFilter
@@ -41,14 +41,14 @@ public:
 
 
     // Composing
-    HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter);
+    HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter) override;
 
     HRPFilter*      Reduce() const;
 
     // Conversion
 
     void            Convert(   HRPPixelBuffer* pi_pInputBuffer,
-                               HRPPixelBuffer* pio_pOutputBuffer);
+                               HRPPixelBuffer* pio_pOutputBuffer) override;
 
     // Decapsulation
 
@@ -66,10 +66,10 @@ public:
     // Pixel types
 
     void            SetInputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pInputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pInputPixelType) override;
 
     void            SetOutputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pOutputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pOutputPixelType) override;
 
 private:
 

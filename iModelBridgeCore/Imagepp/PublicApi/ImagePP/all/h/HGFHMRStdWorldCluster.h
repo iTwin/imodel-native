@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFHMRStdWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFHMRStdWorldCluster
@@ -94,8 +94,8 @@ public:
     IMAGEPP_EXPORT virtual             ~HGFHMRStdWorldCluster();
 
     // From HGF2DWorldCluster
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DWorld>
-    GetWorldReference(HGF2DWorldIdentificator pi_Identifier) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DWorld>
+    GetWorldReference(HGF2DWorldIdentificator pi_Identifier) const override;
 
 private:
 

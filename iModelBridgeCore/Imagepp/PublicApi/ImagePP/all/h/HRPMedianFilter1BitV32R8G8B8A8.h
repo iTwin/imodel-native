@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMedianFilter1BitV32R8G8B8A8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ private:
                                void*            pi_pDestRawData,
                                uint32_t         pi_Width,
                                const double*   pi_pPositionsX,
-                               const double*   pi_pPositionsY) const;
+                               const double*   pi_pPositionsY) const override;
 
 
     };

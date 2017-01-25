@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileCache.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCache
@@ -46,50 +46,50 @@ public:
     //--------------------------------------
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities      () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities      () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator   GetWorldIdentificator() const;
+    const HGF2DWorldIdentificator   GetWorldIdentificator() const override;
 
     // File manipulation
-    virtual HFCPtr<HRFPageDescriptor>       GetPageDescriptor     (uint32_t pi_Page) const;
-    virtual bool                           AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
+    HFCPtr<HRFPageDescriptor>       GetPageDescriptor     (uint32_t pi_Page) const override;
+    bool                           AddPage(HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
     // Obtain a smart pointer on the source and its cache
     HFCPtr<HRFRasterFile>&                  GetCacheFile() const;
-    bool                                   IsCacheExtender() const;
+    bool                                   IsCacheExtender() const override;
 
     // Editor creation
-    virtual HRFResolutionEditor*            CreateResolutionEditor(uint32_t      pi_Page,
+    HRFResolutionEditor*            CreateResolutionEditor(uint32_t      pi_Page,
                                                                    uint16_t pi_Resolution,
-                                                                   HFCAccessMode pi_AccessMode);
+                                                                   HFCAccessMode pi_AccessMode) override;
 
-    virtual void                            Save();
+    void                            Save() override;
     //--------------------------------------
     // LookAhead Methods
     //--------------------------------------
 
     // Indicates if the file supports LookAhead optimization
-    virtual bool                           HasLookAheadByBlock (uint32_t pi_Page) const;
-    virtual bool                           HasLookAheadByExtent(uint32_t pi_Page) const;
+    bool                           HasLookAheadByBlock (uint32_t pi_Page) const override;
+    bool                           HasLookAheadByExtent(uint32_t pi_Page) const override;
 
     // This method is used in SetLookAhead to verify if the derived class is
     // ready to receive LookAhead request.  It returns true by default.
-    virtual bool                           CanPerformLookAhead (uint32_t pi_Page) const;
+    bool                           CanPerformLookAhead (uint32_t pi_Page) const override;
 
     // This method is used in SetLookAhead to give the list of needed tiles
     // to a derived class, since it knows how to obtain the tiles.
-    virtual void                            SetLookAhead        (uint32_t               pi_Page,
+    void                            SetLookAhead        (uint32_t               pi_Page,
                                                                  const HGFTileIDList&   pi_rBlocks,
                                                                  uint32_t               pi_ConsumerID,
-                                                                 bool                  pi_Async);
+                                                                 bool                  pi_Async) override;
 
-    virtual void                            SetLookAhead        (uint32_t               pi_Page,
+    void                            SetLookAhead        (uint32_t               pi_Page,
                                                                  uint16_t        pi_Resolution,
                                                                  const HVEShape&        pi_rShape,
                                                                  uint32_t               pi_ConsumerID,
-                                                                 bool                  pi_Async);
+                                                                 bool                  pi_Async) override;
 
 
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecIJG.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -55,34 +55,34 @@ public:
     // overriden methods
     virtual HCDCodec* Clone() const override;
 
-    virtual size_t  CompressSubset( const void* pi_pInData,
+    size_t  CompressSubset( const void* pi_pInData,
                                     size_t pi_InDataSize,
                                     void* po_pOutBuffer,
-                                    size_t pi_OutBufferSize);
-    virtual size_t  DecompressSubset(const void* pi_pInData,
+                                    size_t pi_OutBufferSize) override;
+    size_t  DecompressSubset(const void* pi_pInData,
                                      size_t pi_InDataSize,
                                      void* po_pOutBuffer,
-                                     size_t pi_OutBufferSize);
-    virtual bool   HasLineAccess() const;
-    virtual size_t  GetMinimumSubsetSize() const;
-    virtual void    Reset();
-    virtual void    SetBitsPerPixel(size_t pi_BitsPerPixel);
-    virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
-    virtual size_t  GetLinePaddingBits() const;
-    virtual size_t  GetWidth() const;
-    virtual size_t  GetHeight() const;
-    virtual void    SetLinePaddingBits(size_t pi_Bits);
-    virtual size_t  GetDataSize() const;
-    virtual void    SetSubsetSize(size_t pi_Size);
-    virtual size_t  GetSubsetWidth() const;
-    virtual size_t  GetSubsetHeight() const;
-    virtual size_t  GetSubsetPosY() const;
-    virtual void    SetSubset(  size_t pi_Width,
+                                     size_t pi_OutBufferSize) override;
+    bool   HasLineAccess() const override;
+    size_t  GetMinimumSubsetSize() const override;
+    void    Reset() override;
+    void    SetBitsPerPixel(size_t pi_BitsPerPixel) override;
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
+    size_t  GetLinePaddingBits() const override;
+    size_t  GetWidth() const override;
+    size_t  GetHeight() const override;
+    void    SetLinePaddingBits(size_t pi_Bits) override;
+    size_t  GetDataSize() const override;
+    void    SetSubsetSize(size_t pi_Size) override;
+    size_t  GetSubsetWidth() const override;
+    size_t  GetSubsetHeight() const override;
+    size_t  GetSubsetPosY() const override;
+    void    SetSubset(  size_t pi_Width,
                                 size_t pi_Height,
                                 size_t pi_PosX = 0,
-                                size_t pi_PosY = 0);
-    virtual void   SetSubsetPosY(size_t pi_PosY);
-    virtual size_t GetCompressedImageIndex() const;
+                                size_t pi_PosY = 0) override;
+    void   SetSubsetPosY(size_t pi_PosY) override;
+    size_t GetCompressedImageIndex() const override;
 
 
     // added method
@@ -121,7 +121,7 @@ public:
     GetSubsamplingMode() const;
     IMAGEPP_EXPORT void            SetSubsamplingMode(SubsamplingModes pi_Mode);
 
-    virtual size_t         GetSubsetMaxCompressedSize() const;
+    size_t         GetSubsetMaxCompressedSize() const override;
 
 protected:
 private:

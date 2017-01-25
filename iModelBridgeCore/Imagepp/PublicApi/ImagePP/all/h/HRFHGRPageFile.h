@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFHGRPageFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFHGRPageFile
@@ -55,14 +55,14 @@ public:
     IMAGEPP_EXPORT virtual             ~HRFHGRPageFile();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities       () const override;
 
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
-    IMAGEPP_EXPORT virtual void                   WriteToDisk();
+    IMAGEPP_EXPORT void                   WriteToDisk() override;
 
-    IMAGEPP_EXPORT virtual void                   SetDefaultRatioToMeter(double pi_RatioToMeter);
+    IMAGEPP_EXPORT void                   SetDefaultRatioToMeter(double pi_RatioToMeter) override;
 
 protected:
     // capabilities

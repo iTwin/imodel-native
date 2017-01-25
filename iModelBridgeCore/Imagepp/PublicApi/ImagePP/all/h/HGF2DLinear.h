@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLinear.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLinear
@@ -459,17 +459,17 @@ public:
 //        virtual int32_t        AutoIntersect(HGF2DPositionCollection* po_pPoints) const = 0;
 
     // From HGF2DVector
-    virtual HGF2DVectorTypeId
-    GetMainVectorType() const;
-    virtual bool      IsAtAnExtremity(const HGF2DPosition& pi_rLocation,
-                                       double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
+    HGF2DVectorTypeId
+    GetMainVectorType() const override;
+    bool      IsAtAnExtremity(const HGF2DPosition& pi_rLocation,
+                                       double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
 
-    virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void       Scale(double pi_ScaleFactor,
-                             const HGF2DPosition& pi_rScaleOrigin);
+    void       Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    void       Scale(double pi_ScaleFactor,
+                             const HGF2DPosition& pi_rScaleOrigin) override;
 
 
-    virtual void       PrintState(ostream& po_rOutput) const;
+    void       PrintState(ostream& po_rOutput) const override;
 
 protected:
     void SetLinearStartPoint(const HGF2DPosition& newStartPoint)

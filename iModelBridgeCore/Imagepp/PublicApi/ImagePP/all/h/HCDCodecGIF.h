@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecGIF.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,13 +25,13 @@ public:
 
     ~HCDCodecGIF();
 
-    bool           IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool           IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
     HCDCodecGIF(const HCDCodecGIF& pi_rObj);
 
-    size_t          GetSubsetMaxCompressedSize() const;
+    size_t          GetSubsetMaxCompressedSize() const override;
 
-    virtual double GetEstimatedCompressionRatio() const;
+    double GetEstimatedCompressionRatio() const override;
 
 protected:
 

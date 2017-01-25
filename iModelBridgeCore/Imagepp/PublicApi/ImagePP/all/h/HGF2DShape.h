@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DShape.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DShape
@@ -396,8 +396,8 @@ public:
     */
     virtual bool                            IsPointIn(const HGF2DPosition& pi_rPoint, double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
 
-    virtual bool                            IsPointOn(const HGF2DPosition& pi_rPoint, HGF2DVector::ExtremityProcessing pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
-                                                      double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
+// already declared in super --     virtual bool                            IsPointOn(const HGF2DPosition& pi_rPoint, HGF2DVector::ExtremityProcessing pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
+//                                                       double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
 
 
 
@@ -408,16 +408,16 @@ public:
                                                  double                   pi_rTolerance) const = 0;
 
 
-    virtual HGF2DVector::Location           Locate(const HGF2DPosition& pi_rPoint) const;
+    HGF2DVector::Location           Locate(const HGF2DPosition& pi_rPoint) const override;
 
     // From HGF2DVector
-    virtual HGF2DVectorTypeId               GetMainVectorType() const;
-    virtual bool                            IsAtAnExtremity(const HGF2DPosition& pi_rPosition,
-                                                            double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    virtual bool                            IsNull() const;
+    HGF2DVectorTypeId               GetMainVectorType() const override;
+    bool                            IsAtAnExtremity(const HGF2DPosition& pi_rPosition,
+                                                            double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
+    bool                            IsNull() const override;
 
     // Debugging
-    virtual void                            PrintState(ostream& po_rOutput) const;
+    void                            PrintState(ostream& po_rOutput) const override;
 
 
     // Should be somehow hidden

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSLOStripAdapter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFSLOStripAdapter
@@ -42,21 +42,21 @@ public:
     virtual         ~HRFSLOStripAdapter();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities       () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
     // File manipulation
-    virtual bool   AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool   AddPage(HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*
+    HRFResolutionEditor*
     CreateResolutionEditor(uint32_t pi_Page,
                            uint16_t pi_Resolution,
-                           HFCAccessMode pi_AccessMode);
+                           HFCAccessMode pi_AccessMode) override;
 
-    virtual void    Save();
+    void    Save() override;
 
     // This methods allow to know if the file need the adapter
     IMAGEPP_EXPORT static bool NeedSLOAdapterFor(HFCPtr<HRFRasterFile> const& pi_rpForRasterFile);

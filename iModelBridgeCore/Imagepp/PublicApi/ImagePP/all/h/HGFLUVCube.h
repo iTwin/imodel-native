@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLUVCube.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -39,7 +39,7 @@ public:
 
     HGFLUVCube& operator=(const HGFLUVCube& pi_rSrc);
 
-    virtual bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const;
+    bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const override;
 
 protected:
 

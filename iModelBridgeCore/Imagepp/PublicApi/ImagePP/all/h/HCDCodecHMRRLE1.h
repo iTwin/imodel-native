@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRRLE1.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecHMRRLE1
@@ -30,24 +30,24 @@ public:
 
     IMAGEPP_EXPORT                 ~HCDCodecHMRRLE1();
 
-    IMAGEPP_EXPORT virtual size_t   CompressSubset(const void*      pi_pInData,
+    IMAGEPP_EXPORT size_t   CompressSubset(const void*      pi_pInData,
                                            size_t           pi_InDataSize,
                                            void*            po_pOutBuffer,
-                                           size_t           pi_OutBufferSize);
+                                           size_t           pi_OutBufferSize) override;
 
-    IMAGEPP_EXPORT virtual size_t   DecompressSubset(const void*    pi_pInData,
+    IMAGEPP_EXPORT size_t   DecompressSubset(const void*    pi_pInData,
                                              size_t                 pi_InDataSize,
                                              void*                  po_pOutBuffer,
-                                             size_t                 pi_OutBufferSize);
+                                             size_t                 pi_OutBufferSize) override;
 
     // Binary optimization: Speed up read when codec support direct decompression to RLE format.
-    virtual HCDCodecRLEInterface*   GetRLEInterface();
+    HCDCodecRLEInterface*   GetRLEInterface() override;
     IMAGEPP_EXPORT virtual void             DecompressSubsetToRLE(const void* pi_pInData, size_t pi_InDataSize, HFCPtr<HCDPacketRLE>& pio_rpRLEPacket) override;
     IMAGEPP_EXPORT virtual size_t           CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpPacketRLE, void* po_pOutBuffer, size_t po_OutBufferSize) override;
 
-    virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
 
-    virtual bool           HasLineAccess() const;
+    bool           HasLineAccess() const override;
 
     virtual HCDCodec* Clone() const override;
 

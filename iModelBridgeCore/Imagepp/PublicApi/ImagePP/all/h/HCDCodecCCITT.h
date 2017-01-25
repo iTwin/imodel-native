@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITT.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,13 +25,13 @@ public:
 
     ~HCDCodecCCITT();
 
-    bool           IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool           IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
     HCDCodecCCITT(const HCDCodecCCITT& pi_rObj);
 
-    size_t          GetSubsetMaxCompressedSize() const;
+    size_t          GetSubsetMaxCompressedSize() const override;
 
-    virtual double GetEstimatedCompressionRatio() const;
+    double GetEstimatedCompressionRatio() const override;
 
     IMAGEPP_EXPORT void     SetPhotometric(uint16_t pi_Photo);
     uint16_t GetPhotometric() const;

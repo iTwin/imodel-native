@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DSimpleShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DSimpleShape
@@ -130,27 +130,27 @@ public:
 
 
     // From HVE2DShape
-    virtual bool                   IsSimple() const;
-    virtual bool                   IsComplex() const;
+    bool                   IsSimple() const override;
+    bool                   IsComplex() const override;
 
-    virtual const HVE2DShape::ShapeList&
-                                   GetShapeList() const;
+    const HVE2DShape::ShapeList&
+                                   GetShapeList() const override;
 
     // Iteration on component holes
-    virtual bool                  HasHoles() const;
-    virtual const HVE2DShape::HoleList&
-                                  GetHoleList() const;
+    bool                  HasHoles() const override;
+    const HVE2DShape::HoleList&
+                                  GetHoleList() const override;
 
-    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HVE2DShape*    IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPP_EXPORT virtual HVE2DShape*    UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT HVE2DShape*    DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HVE2DShape*    DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HVE2DShape*    IntersectShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPP_EXPORT HVE2DShape*    UnifyShapeSCS(const HVE2DShape& pi_rShape) const override;
 
-    virtual void                  Drop(HGF2DLocationCollection* po_pPoint,
-                                       double                   pi_Tolerance) const;
+    void                  Drop(HGF2DLocationCollection* po_pPoint,
+                                       double                   pi_Tolerance) const override;
 
     // Debugging
-    IMAGEPP_EXPORT virtual void           PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT void           PrintState(ostream& po_rOutput) const override;
 
 protected:
 

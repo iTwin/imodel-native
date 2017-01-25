@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLECWPS.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLECWPS
@@ -69,14 +69,14 @@ public:
     IMAGEPP_EXPORT virtual                 ~HFCURLECWPS();
 
     //:> Content access methods
-    IMAGEPP_EXPORT virtual Utf8String         GetURL() const;
+    IMAGEPP_EXPORT Utf8String         GetURL() const override;
     const Utf8String&          GetPath() const;
     const Utf8String&          GetSearchPart() const;
 
     //:> Overriden methods, used in relative path management
-    IMAGEPP_EXPORT virtual bool           HasPathTo(HFCURL* pi_pURL);
-    IMAGEPP_EXPORT virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
-    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
+    IMAGEPP_EXPORT bool           HasPathTo(HFCURL* pi_pURL) override;
+    IMAGEPP_EXPORT Utf8String         FindPathTo(HFCURL* pi_pDest) override;
+    IMAGEPP_EXPORT HFCURL*         MakeURLTo(const Utf8String& pi_Path) override;
 
 #ifdef __HMR_DEBUG_MEMBER
     virtual void            PrintState() const;

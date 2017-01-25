@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -34,18 +34,18 @@ public:
 
     IMAGEPP_EXPORT virtual             ~HRPPixelTypeI8R8G8B8Mask();
 
-    virtual HPMPersistentObject*
-    Clone() const;
+    HPMPersistentObject*
+    Clone() const override;
 
 protected:
     /*----------------------------------------------------------------------------+
     |    Protected member Functions
     +----------------------------------------------------------------------------*/
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    const HRPPixelConverter*
+    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const override;
 
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    const HRPPixelConverter*
+    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const override;
     };
 END_IMAGEPP_NAMESPACE
 

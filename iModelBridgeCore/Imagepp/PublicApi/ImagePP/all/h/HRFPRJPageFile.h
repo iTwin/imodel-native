@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPRJPageFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFHGRPageFile
@@ -47,11 +47,11 @@ public:
     IMAGEPP_EXPORT virtual             ~HRFPRJPageFile();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&    GetCapabilities       () const override;
 
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
-    virtual void                          WriteToDisk();
+    void                          WriteToDisk() override;
 protected:
     // capabilities
     HFCPtr<HRFRasterFileCapabilities>     m_pPageCapabilities;

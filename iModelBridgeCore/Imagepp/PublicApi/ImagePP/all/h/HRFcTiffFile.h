@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFcTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFcTiffFile
@@ -45,18 +45,18 @@ public:
     virtual                                 ~HRFcTiffFile         ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&      GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&      GetCapabilities       () const override;
 
-    bool                                    AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                                    AddPage(HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
     void                                    SetOriginalFileAccessMode (HFCAccessMode pi_AccessMode);
 
     // The format of the string must be idem at ctime() function
     void                                    SetSourceFile_CreationDateTime(const char* pi_DateTime);
 
-    virtual void                            Save();
+    void                            Save() override;
 
-    virtual uint64_t                        GetFileCurrentSize() const;
+    uint64_t                        GetFileCurrentSize() const override;
 
 protected:
 
@@ -69,9 +69,9 @@ protected:
                  uint64_t              pi_Offset,
                  bool                  pi_DontOpenFile);
 
-    virtual void            InitPrivateTagDefault(HRFiTiffFile::HMRHeader* po_pHMRHeader);
-    virtual void            WritePrivateDirectory(uint32_t pi_Page);
-    virtual void            CreateDescriptors ();
+    void            InitPrivateTagDefault(HRFiTiffFile::HMRHeader* po_pHMRHeader) override;
+    void            WritePrivateDirectory(uint32_t pi_Page) override;
+    void            CreateDescriptors () override;
 //        virtual void          ReloadDescriptors();
 //        virtual void          SaveDescriptors();
 
@@ -102,24 +102,24 @@ private:
 struct HRFcTiffCreator : public HRFRasterFileCreator
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
-                                                   uint64_t                pi_Offset = 0) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
+                                                   uint64_t                pi_Offset = 0) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel() const;
-    virtual Utf8String                   GetSchemes() const;
-    virtual Utf8String                   GetExtensions() const;
+    Utf8String                   GetLabel() const override;
+    Utf8String                   GetSchemes() const override;
+    Utf8String                   GetExtensions() const override;
 
     virtual Utf8String GetShortName() const override { return "cTIFF"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 
 protected:
     HRFcTiffCreator();

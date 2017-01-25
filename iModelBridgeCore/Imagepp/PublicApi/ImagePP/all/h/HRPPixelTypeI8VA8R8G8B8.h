@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeI8VA8R8G8B8
@@ -25,29 +25,29 @@ public:
 
     IMAGEPP_EXPORT virtual         ~HRPPixelTypeI8VA8R8G8B8();
 
-    virtual HPMPersistentObject*
-    Clone() const;
+    HPMPersistentObject*
+    Clone() const override;
 
     virtual size_t  CountPixelRawDataBits() const {
         return 16;
         };
 
-    virtual uint16_t CountValueBits() const;
+    uint16_t CountValueBits() const override;
 
-    virtual void    SetDefaultCompositeValue(const void* pi_pValue);
+    void    SetDefaultCompositeValue(const void* pi_pValue) override;
 
-    virtual HRPQuantizedPalette*
-    CreateQuantizedPalette(uint32_t pi_MaxEntries) const;
-    virtual uint32_t FindNearestEntryInPalette(const void* pi_pValue) const;
+    HRPQuantizedPalette*
+    CreateQuantizedPalette(uint32_t pi_MaxEntries) const override;
+    uint32_t FindNearestEntryInPalette(const void* pi_pValue) const override;
 
 
 protected:
 
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    const HRPPixelConverter*
+    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const override;
 
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    const HRPPixelConverter*
+    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const override;
 
 private:
 

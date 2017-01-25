@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITTFax4.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,19 +32,19 @@ public:
     virtual         ~HCDCodecCCITTFax4();
 
     size_t          CompressSubset(const void* pi_pInData,size_t pi_InDataSize,
-                                   void* po_pOutBuffer,   size_t pi_OutBufferSize);
+                                   void* po_pOutBuffer,   size_t pi_OutBufferSize) override;
 
     size_t          DecompressSubset(const void* pi_pInData, size_t pi_InDataSize,
-                                     void* po_pOutBuffer,    size_t pi_OutBufferSize);
+                                     void* po_pOutBuffer,    size_t pi_OutBufferSize) override;
 
     // Binary optimization: Speed up read when codec support direct decompression to RLE format.
-    virtual HCDCodecRLEInterface*   GetRLEInterface();
+    HCDCodecRLEInterface*   GetRLEInterface() override;
     IMAGEPP_EXPORT virtual void             DecompressSubsetToRLE(const void* pi_pInData, size_t pi_InDataSize, HFCPtr<HCDPacketRLE>& pio_rpRLEPacket) override;
     IMAGEPP_EXPORT virtual size_t           CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpPacketRLE, void* po_pOutBuffer, size_t po_OutBufferSize) override;
 
-    bool           HasLineAccess() const;
+    bool           HasLineAccess() const override;
 
-    void            Reset();
+    void            Reset() override;
 
     virtual HCDCodec* Clone() const override;
     

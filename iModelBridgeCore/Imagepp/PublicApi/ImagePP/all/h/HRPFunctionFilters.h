@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPFunctionFilters.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,9 +44,9 @@ protected:
 
     // methods
 
-    virtual void Function  (const void* pi_pSrcRawData,
+    void Function  (const void* pi_pSrcRawData,
                             void* po_pDestRawData,
-                            uint32_t PixelsCount) const;
+                            uint32_t PixelsCount) const override;
 
 private:
     HRPColortwistFilter(const HRPColortwistFilter& pi_rFilter);
@@ -85,9 +85,9 @@ public:
 protected:
 
     // methods
-    virtual void    Function(   const void* pi_pSrcRawData,
+    void    Function(   const void* pi_pSrcRawData,
                                 void* po_pDestRawData,
-                                uint32_t PixelsCount) const;
+                                uint32_t PixelsCount) const override;
 
 private:
     HRPAlphaReplacer(const HRPAlphaReplacer& pi_rObj);
@@ -129,9 +129,9 @@ public:
 protected:
 
     // methods
-    virtual void    Function(   const void* pi_pSrcRawData,
+    void    Function(   const void* pi_pSrcRawData,
                                 void* po_pDestRawData,
-                                uint32_t PixelsCount) const;
+                                uint32_t PixelsCount) const override;
 
 private:
     HRPAlphaComposer(const HRPAlphaComposer& pi_rObj);
@@ -182,7 +182,7 @@ public:
 
 protected:
     // methods
-    virtual void  Function( const void*  pi_pSrcRawData, void*  po_pDestRawData, uint32_t PixelsCount ) const;
+    void  Function( const void*  pi_pSrcRawData, void*  po_pDestRawData, uint32_t PixelsCount ) const override;
     
 
 private:

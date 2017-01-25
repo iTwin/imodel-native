@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecVector.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -30,10 +30,10 @@ public:
 
     // subset
 
-    virtual size_t  GetSubsetMaxCompressedSize() const;
+    size_t  GetSubsetMaxCompressedSize() const override;
 
-    virtual size_t  GetMinimumSubsetSize() const;
-    virtual void    SetSubsetSize(size_t pi_Size);
+    size_t  GetMinimumSubsetSize() const override;
+    void    SetSubsetSize(size_t pi_Size) override;
 
     size_t          GetSubsetPos() const;
 
@@ -45,16 +45,16 @@ public:
 
     // settings
 
-    virtual size_t  GetDataSize() const;
+    size_t  GetDataSize() const override;
 
     virtual    void    SetDataSize(size_t pi_DataSize);
 
 
     // others
 
-    bool            IsCodecVector() const;
+    bool            IsCodecVector() const override;
 
-    virtual void    Reset();
+    void    Reset() override;
 
 
 protected:

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDensitySlicingFilter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -68,9 +68,9 @@ public:                       // Primary methods
 
 protected:
     // methods
-    virtual void      Function ( const void*  pi_pSrcRawData,
+    void      Function ( const void*  pi_pSrcRawData,
                                  void*  po_pDestRawData,
-                                 uint32_t pi_PixelsCount) const;
+                                 uint32_t pi_PixelsCount) const override;
     struct SliceInfo
         {
         int32_t m_StartIndex;

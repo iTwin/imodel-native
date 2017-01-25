@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFOGCService.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Support all type of OGC files. (WMS and WCS)
@@ -66,24 +66,24 @@ public:
     virtual                                 ~HRFOGCService();
 
     // File information
-    virtual const HGF2DWorldIdentificator   GetWorldIdentificator   () const;
+    const HGF2DWorldIdentificator   GetWorldIdentificator   () const override;
 
     // File manipulation
-    virtual bool                           AddPage                 (HFCPtr<HRFPageDescriptor>  pi_pPage);
+    bool                           AddPage                 (HFCPtr<HRFPageDescriptor>  pi_pPage) override;
 
-    virtual HRFResolutionEditor*            CreateUnlimitedResolutionEditor  (uint32_t                   pi_Page,
+    HRFResolutionEditor*            CreateUnlimitedResolutionEditor  (uint32_t                   pi_Page,
                                                                               double                    pi_Resolution,
-                                                                              HFCAccessMode              pi_AccessMode);
+                                                                              HFCAccessMode              pi_AccessMode) override;
 
-    virtual HRFResolutionEditor*            CreateResolutionEditor  (uint32_t                   pi_Page,
+    HRFResolutionEditor*            CreateResolutionEditor  (uint32_t                   pi_Page,
                                                                      uint16_t            pi_Resolution,
-                                                                     HFCAccessMode              pi_AccessMode);
+                                                                     HFCAccessMode              pi_AccessMode) override;
 
-    virtual void                            Save();
+    void                            Save() override;
 
-    bool                                   HasLookAheadByBlock     (uint32_t                   pi_Page) const;
+    bool                                   HasLookAheadByBlock     (uint32_t                   pi_Page) const override;
 
-    virtual bool                           CanPerformLookAhead     (uint32_t                   pi_Page) const;
+    bool                           CanPerformLookAhead     (uint32_t                   pi_Page) const override;
 
 
 
@@ -103,9 +103,9 @@ protected:
 
     void                                    RequestLookAhead        (uint32_t                   pi_Page,
                                                                      const HGFTileIDList&       pi_rBlocks,
-                                                                     bool                      pi_Async);
+                                                                     bool                      pi_Async) override;
 
-    void                                    CancelLookAhead         (uint32_t                   pi_Page);
+    void                                    CancelLookAhead         (uint32_t                   pi_Page) override;
 
     virtual Utf8String _GetValidateConnectionRequest() const = 0;
 

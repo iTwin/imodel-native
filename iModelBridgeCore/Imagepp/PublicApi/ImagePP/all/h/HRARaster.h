@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARaster.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -190,7 +190,7 @@ public:
     IMAGEPP_EXPORT const HRAHistogramOptions* GetHistogram() const;
 
     // Debug function
-    virtual void    PrintState(ostream& po_rOutput) const;
+    void    PrintState(ostream& po_rOutput) const override;
 
     // Notifications
     bool   NotifyContentChanged (const HMGMessage& pi_rMessage);
@@ -198,8 +198,8 @@ public:
     // Drawing function.
     virtual void        Rotate(double               pi_Angle,
                                const HGF2DLocation& pi_rOrigin) = 0;
-    virtual void        Scale(double pi_ScaleFactor,
-                              const HGF2DLocation& pi_rOrigin)
+    void        Scale(double pi_ScaleFactor,
+                              const HGF2DLocation& pi_rOrigin) override
         {
         Scale(pi_ScaleFactor, pi_ScaleFactor, pi_rOrigin);
         }
@@ -216,7 +216,7 @@ public:
                                  uint32_t        pi_ConsumerID,
                                  bool           pi_Async = false);
 
-    virtual bool   IsOpaque() const;
+    bool   IsOpaque() const override;
     
     void Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const;
 
@@ -252,7 +252,7 @@ protected:
 
 
     // Inherited from HGFGraphicObject
-    virtual void    SetCoordSysImplementation   (const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
+    void    SetCoordSysImplementation   (const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys) override;
 
 
     virtual void    SetShapeImpl                (const HVEShape& pi_rShape);

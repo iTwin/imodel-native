@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABilinearSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -44,10 +44,10 @@ public:
                               size_t            pi_PixelCount,
                               void*             po_pBuffer) const override;
 
-    virtual HFCPtr<HRPPixelType>
-    GetOutputPixelType() const;
+    HFCPtr<HRPPixelType>
+    GetOutputPixelType() const override;
 
-    virtual bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType);
+    bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType) override;
 
 private:
 

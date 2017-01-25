@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilter16.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -33,8 +33,8 @@ public:
     HRPFilter* Clone() const override = 0;
 
     // Composing
-    virtual HRPFilter*
-    ComposeWith(const HRPFilter* pi_pFilter);
+    HRPFilter*
+    ComposeWith(const HRPFilter* pi_pFilter) override;
 
     // Map methods
     void            SetMap(Byte pi_ChannelIndex, const uint16_t* pi_pMap);
@@ -43,7 +43,7 @@ public:
 protected:
     HRPMapFilter16(const HRPMapFilter16& pi_rFilter);
 
-    virtual void    Function(const void* pi_pSrcRawData, void* po_pDestRawData, uint32_t PixelsCount) const;
+    void    Function(const void* pi_pSrcRawData, void* po_pDestRawData, uint32_t PixelsCount) const override;
     int32_t             GetMapSize() const;
 
     Byte          m_Channels;

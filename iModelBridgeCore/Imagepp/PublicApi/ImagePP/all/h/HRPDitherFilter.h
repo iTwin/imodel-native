@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDitherFilter.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ public:
 
     // Conversion
     void                    Convert(HRPPixelBuffer* pi_pInputBuffer,
-                                    HRPPixelBuffer* pio_pOutputBuffer);
+                                    HRPPixelBuffer* pio_pOutputBuffer) override;
 
     virtual HRPFilter* Clone() const override;
 

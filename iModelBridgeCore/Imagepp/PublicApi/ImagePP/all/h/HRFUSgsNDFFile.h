@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsNDFFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -207,23 +207,23 @@ struct HRFUSgsNDFCreator : public HRFRasterFileCreator
 public :
 
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile  (const HFCPtr<HFCURL>& pi_rpURL,
-                                                     uint64_t             pi_Offset) const;
+    bool                     IsKindOfFile  (const HFCPtr<HFCURL>& pi_rpURL,
+                                                     uint64_t             pi_Offset) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel      ()  const;
-    virtual Utf8String                   GetSchemes    ()  const;
-    virtual Utf8String                   GetExtensions ()  const;
+    Utf8String                   GetLabel      ()  const override;
+    Utf8String                   GetSchemes    ()  const override;
+    Utf8String                   GetExtensions ()  const override;
 
     virtual Utf8String GetShortName() const override { return "USGSNDF"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create        (const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create        (const HFCPtr<HFCURL>& pi_rpURL,
                                                      HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                                     uint64_t             pi_Offset = 0) const;
+                                                     uint64_t             pi_Offset = 0) const override;
     void                              SetImageBand  (int32_t pi_RedBand,
                                                      int32_t pi_GreenBand,
                                                      int32_t pi_BlueBand);
@@ -261,21 +261,21 @@ public:
     virtual                               ~HRFUSgsNDFFile           ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const;
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
                                                                  uint16_t pi_Resolution,
-                                                                 HFCAccessMode pi_AccessMode);
+                                                                 HFCAccessMode pi_AccessMode) override;
 
-    virtual void                          Save();
+    void                          Save() override;
 
-    virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
+    void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_InterpretUnitINTGR = false);
+                                                                 bool   pi_InterpretUnitINTGR = false) override;
 
 protected:
     HRFUSgsNDFFile    (const HFCPtr<HFCURL>&  pi_rpURL,

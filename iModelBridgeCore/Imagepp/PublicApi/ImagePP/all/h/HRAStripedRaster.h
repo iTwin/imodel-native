@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStripedRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -42,9 +42,9 @@ public:
 
     // Overriden from HRATiledRaster
 
-    virtual void    InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels);
+    void    InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels) override;
 
-    virtual HPMPersistentObject* Clone () const;
+    HPMPersistentObject* Clone () const override;
 
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 

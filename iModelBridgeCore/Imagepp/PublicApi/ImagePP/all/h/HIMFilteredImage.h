@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMFilteredImage.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMFilteredImage
@@ -37,22 +37,22 @@ public:
 
 
     // Overriden methods
-    virtual HPMPersistentObject* Clone () const;
+    HPMPersistentObject* Clone () const override;
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
-    virtual HFCPtr<HRPPixelType>
-    GetPixelType() const;
+    HFCPtr<HRPPixelType>
+    GetPixelType() const override;
     virtual void    SetPixelType(const HFCPtr<HRPPixelType> pi_pPixelType);
 
     bool           NotifyContentChanged(HMGMessage& pi_rMessage);
 
-    virtual bool   ContainsPixelsWithChannel(
+    bool   ContainsPixelsWithChannel(
         HRPChannelType::ChannelRole pi_Role,
-        Byte                      pi_Id) const;
+        Byte                      pi_Id) const override;
 
-    virtual HGF2DExtent
-    GetAveragePixelSize () const;
-    virtual void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const;
+    HGF2DExtent
+    GetAveragePixelSize () const override;
+    void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const override;
 
     // Added methods
 

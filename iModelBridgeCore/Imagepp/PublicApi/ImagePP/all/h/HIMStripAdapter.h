@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStripAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMStripAdapter
@@ -52,12 +52,12 @@ class HIMStripAdapter : public HRAImageView
 
 
         //:> Overriden methods
-        virtual HPMPersistentObject* Clone() const;
+        HPMPersistentObject* Clone() const override;
         virtual HFCPtr<HRARaster>    Clone(HPMObjectStore* pi_pStore, HPMPool* pi_pLog = 0) const override;
 
-        virtual HRARasterIterator*   CreateIterator(const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
-        virtual bool                 IsStoredRaster() const;
-        virtual HFCPtr<HRPPixelType> GetPixelType() const;
+        HRARasterIterator*   CreateIterator(const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
+        bool                 IsStoredRaster() const override;
+        HFCPtr<HRPPixelType> GetPixelType() const override;
 
         //:> Added methods
         HFCPtr<HRABitmap>            GetInputBitmapExample() const;

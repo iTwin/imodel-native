@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeI1R8G8B8A8RLE
@@ -28,21 +28,21 @@ public:
 
     IMAGEPP_EXPORT virtual         ~HRPPixelTypeI1R8G8B8A8RLE();
 
-    virtual HPMPersistentObject*
-    Clone() const;
+    HPMPersistentObject*
+    Clone() const override;
 
-    virtual uint16_t CountValueBits() const;
+    uint16_t CountValueBits() const override;
 
     // Not a const method because it returns a non const pointer to this.
-    virtual HRPPixelType1BitInterface*
-    Get1BitInterface();
+    HRPPixelType1BitInterface*
+    Get1BitInterface() override;
 
 protected:
 
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    const HRPPixelConverter*
+    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const override;
 
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    const HRPPixelConverter*
+    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const override;
     };
 END_IMAGEPP_NAMESPACE

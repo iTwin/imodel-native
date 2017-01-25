@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRawFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -38,23 +38,23 @@ struct HRFRawCreator : public HRFRasterFileCreator
 public :
 
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
-                                                   uint64_t             pi_Offset) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
+                                                   uint64_t             pi_Offset) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel      ()  const;
-    virtual Utf8String                   GetSchemes    ()  const;
-    virtual Utf8String                   GetExtensions ()  const;
+    Utf8String                   GetLabel      ()  const override;
+    Utf8String                   GetSchemes    ()  const override;
+    Utf8String                   GetExtensions ()  const override;
 
     virtual Utf8String GetShortName() const override { return "RAW"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 
     IMAGEPP_EXPORT void                              SetImageData          (uint32_t              pi_Width,
                                                                     uint32_t              pi_Height,
@@ -120,19 +120,19 @@ public:
     virtual                               ~HRFRawFile();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const;
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
     // File manipulation
-    virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  uint16_t           pi_Resolution,
-                                                                 HFCAccessMode             pi_AccessMode);
+                                                                 HFCAccessMode             pi_AccessMode) override;
 
-    virtual void                          Save();
+    void                          Save() override;
 
 protected:
     // Methods

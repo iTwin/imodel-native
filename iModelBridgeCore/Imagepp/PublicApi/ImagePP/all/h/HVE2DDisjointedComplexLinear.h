@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DDisjointedComplexLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DDisjointedComplexLinear
@@ -45,26 +45,26 @@ public:
                               operator=(const HVE2DDisjointedComplexLinear& pi_rObj);
 
     // Complex linear building
-    virtual void              InsertLinear(const HVE2DLinear& pi_rLinear);
-    virtual void              AppendLinear(const HVE2DLinear& pi_rLinear);
+    void              InsertLinear(const HVE2DLinear& pi_rLinear) override;
+    void              AppendLinear(const HVE2DLinear& pi_rLinear) override;
     virtual void              InsertComplexLinear(const HVE2DDisjointedComplexLinear& pi_rDisComplexLinear);
-    virtual void              InsertComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear) {
+    void              InsertComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear) override{
         T_Super::InsertComplexLinear(pi_rComplexLinear);
         }
 
-    virtual void              AppendComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear) {
+    void              AppendComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear) override{
         T_Super::AppendComplexLinear(pi_rComplexLinear);
         }
     virtual void              AppendComplexLinear(const HVE2DDisjointedComplexLinear& pi_rDisComplexLinear);
-    virtual void              InsertLinearPtrSCS(HVE2DLinear* pi_pLinear);
-    virtual void              AppendLinearPtrSCS(HVE2DLinear* pi_pLinear);
+    void              InsertLinearPtrSCS(HVE2DLinear* pi_pLinear) override;
+    void              AppendLinearPtrSCS(HVE2DLinear* pi_pLinear) override;
 
-    virtual void              Drop(HGF2DLocationCollection* po_pPoint,
+    void              Drop(HGF2DLocationCollection* po_pPoint,
                                    double                   pi_rTolerance,
-                                   EndPointProcessing       pi_EndPointProcessing = INCLUDE_END_POINT) const;
+                                   EndPointProcessing       pi_EndPointProcessing = INCLUDE_END_POINT) const override;
 
     // From HPMPersistentObject
-    virtual HPMPersistentObject* Clone() const;
+    HPMPersistentObject* Clone() const override;
     };
 END_IMAGEPP_NAMESPACE
 

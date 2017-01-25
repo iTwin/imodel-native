@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFGraphicObject.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFGraphicObject
@@ -139,7 +139,7 @@ public:
 
     // &&Backlog review what a graphic is. HVE shape and HRA are child class. We cannot draw shapes but still
     // want the coordSys stuff. Maybe we should call it HGFSpatialObject and move the draw to HRARaster?
-    IMAGEPP_EXPORT virtual void LinkTo(HMGMessageSender* pi_pSender, bool pi_ReceiveMessagesInCurrentThread = false) const;
+    IMAGEPP_EXPORT void LinkTo(HMGMessageSender* pi_pSender, bool pi_ReceiveMessagesInCurrentThread = false) const override;
 
 protected:
 

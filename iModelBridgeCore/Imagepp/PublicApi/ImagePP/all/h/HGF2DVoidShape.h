@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DVoidShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -79,71 +79,71 @@ public:
 
 
     // From HGF2DSimpleShape
-    virtual HFCPtr<HGF2DLinear>     GetLinear() const;
-    virtual HFCPtr<HGF2DLinear>     GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    HFCPtr<HGF2DLinear>     GetLinear() const override;
+    HFCPtr<HGF2DLinear>     GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const override;
 
     // Scanlines generation
-    IMAGEPP_EXPORT virtual void      Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPP_EXPORT void      Rasterize(HGFScanLines& pio_rScanlines) const override;
 
 
-    virtual bool                    IsEmpty     () const;
-    virtual HGF2DShapeTypeId        GetShapeType() const;
-    virtual HGF2DShape*             DifferentiateShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*             DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*             IntersectShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*             UnifyShape(const HGF2DShape& pi_rShape) const;
+    bool                    IsEmpty     () const override;
+    HGF2DShapeTypeId        GetShapeType() const override;
+    HGF2DShape*             DifferentiateShape(const HGF2DShape& pi_rShape) const override;
+    HGF2DShape*             DifferentiateFromShape(const HGF2DShape& pi_rShape) const override;
+    HGF2DShape*             IntersectShape(const HGF2DShape& pi_rShape) const override;
+    HGF2DShape*             UnifyShape(const HGF2DShape& pi_rShape) const override;
 
-    virtual double                  CalculateArea() const;
-    virtual double                  CalculatePerimeter() const;
-    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition     
-                                    CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
-    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition     
-                                    CalculateSpatialPositionOf(const HGF2DPosition& pi_rLocation) const;
-    virtual bool                    IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    virtual void                    MakeEmpty();
+    double                  CalculateArea() const override;
+    double                  CalculatePerimeter() const override;
+    IMAGEPP_EXPORT HGF2DShape::SpatialPosition     
+                                    CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const override;
+    IMAGEPP_EXPORT HGF2DShape::SpatialPosition     
+                                    CalculateSpatialPositionOf(const HGF2DPosition& pi_rLocation) const override;
+    bool                    IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
+    void                    MakeEmpty() override;
 
     // From HGF2DVector
-    virtual HGF2DPosition           CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    virtual size_t                  Intersect(const HGF2DVector& pi_rVector,
-                                              HGF2DPositionCollection* po_pCrossPoints) const;
-    virtual size_t                  ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
-                                                               HGF2DPositionCollection* po_pContiguousnessPoints) const;
-    virtual void                    ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
+    HGF2DPosition           CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const override;
+    size_t                  Intersect(const HGF2DVector& pi_rVector,
+                                              HGF2DPositionCollection* po_pCrossPoints) const override;
+    size_t                  ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
+                                                               HGF2DPositionCollection* po_pContiguousnessPoints) const override;
+    void                    ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
                                                                  const HGF2DPosition& pi_rPoint,
                                                                  HGF2DPosition* pi_pFirstContiguousnessPoint,
-                                                                 HGF2DPosition* pi_pSecondContiguousnessPoint) const;
-    virtual bool                    Crosses(const HGF2DVector& pi_rVector) const;
-    virtual bool                    AreContiguous(const HGF2DVector& pi_rVector) const;
-    virtual bool                    AreAdjacent(const HGF2DVector& pi_rVector) const;
-    virtual bool                    IsPointOn(const HGF2DPosition& pi_rTestPoint,
+                                                                 HGF2DPosition* pi_pSecondContiguousnessPoint) const override;
+    bool                    Crosses(const HGF2DVector& pi_rVector) const override;
+    bool                    AreContiguous(const HGF2DVector& pi_rVector) const override;
+    bool                    AreAdjacent(const HGF2DVector& pi_rVector) const override;
+    bool                    IsPointOn(const HGF2DPosition& pi_rTestPoint,
                                               HGF2DVector::ExtremityProcessing
                                               pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
-                                              double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    virtual bool                    AreContiguousAt(const HGF2DVector& pi_rVector,
-                                                    const HGF2DPosition& pi_rPoint) const;
-    virtual HGFBearing              CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
+                                              double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const override;
+    bool                    AreContiguousAt(const HGF2DVector& pi_rVector,
+                                                    const HGF2DPosition& pi_rPoint) const override;
+    HGFBearing              CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
                                                      HGF2DVector::ArbitraryDirection
-                                                     pi_Direction = HGF2DVector::BETA) const;
-    virtual double                  CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
+                                                     pi_Direction = HGF2DVector::BETA) const override;
+    double                  CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
                                                                  HGF2DVector::ArbitraryDirection
-                                                                 pi_Direction = HGF2DVector::BETA) const;
+                                                                 pi_Direction = HGF2DVector::BETA) const override;
 
-    virtual void                    Drop(HGF2DPositionCollection* po_pPoint,
-                                         double                   pi_rTolerance) const;
+    void                    Drop(HGF2DPositionCollection* po_pPoint,
+                                         double                   pi_rTolerance) const override;
     // From HGF2DVector
-    virtual HGF2DLiteExtent         GetExtent() const;
-    virtual void                    Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void                    Scale(double pi_ScaleFactor,
-                                          const HGF2DPosition& pi_rScaleOrigin);
+    HGF2DLiteExtent         GetExtent() const override;
+    void                    Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    void                    Scale(double pi_ScaleFactor,
+                                          const HGF2DPosition& pi_rScaleOrigin) override;
     virtual void                    Scale(double pi_ScaleFactorX,
                                           double pi_ScaleFactorY,
                                           const HGF2DPosition& pi_rScaleOrigin);
 
 
-    virtual HGF2DVector*            Clone() const;
+    HGF2DVector*            Clone() const override;
 
     // Debugging
-    IMAGEPP_EXPORT virtual void      PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT void      PrintState(ostream& po_rOutput) const override;
 
 
     virtual HFCPtr<HGF2DShape>      AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;

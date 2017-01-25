@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageSurface.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -136,7 +136,7 @@ public:
 protected:
     HRASampleN1Surface(HRAImageSampleR sample);
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual void _Clear() override;
     virtual ImagePPStatus _Accept(SurfaceVisitor& visitor) override { return visitor._Visit(*this); }
 };
@@ -156,7 +156,7 @@ public:
 protected:
     HRASampleN8Surface(HRAImageSampleR sample);
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual void _Clear() override;
     virtual ImagePPStatus _Accept(SurfaceVisitor& visitor) override { return visitor._Visit(*this); }
 };
@@ -217,7 +217,7 @@ public:
 protected:
     HRASampleRleSurface(HRAImageSampleR sample);
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual void _Clear() override;
     virtual ImagePPStatus _Accept(SurfaceVisitor& visitor) override { return visitor._Visit(*this); }
 };
@@ -259,7 +259,7 @@ public:
 protected:
     HRAPacketN1Surface(uint32_t width, uint32_t height, HFCPtr<HRPPixelType> const& pPixelType, HFCPtr<HCDPacket>& packet, size_t pitch);
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual HRAImageSamplePtr _CreateBufferReference(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset) const override;
 
     virtual HRAPacketN1SurfaceP _AsPacketN1Surface() { return this; }
@@ -287,10 +287,10 @@ public:
 protected:
     HRAPacketN8Surface(uint32_t width, uint32_t height, HFCPtr<HRPPixelType> const& pPixelType, HFCPtr<HCDPacket>& packet, size_t pitch);
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual HRAImageSamplePtr _CreateBufferReference(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset) const override;
 
-    virtual HRAPacketN8SurfaceP _AsPacketN8Surface() { return this; }
+    HRAPacketN8SurfaceP _AsPacketN8Surface() override{ return this; }
 
     virtual ImagePPStatus _Accept(SurfaceVisitor& visitor) override { return visitor._Visit(*this); }
 
@@ -394,7 +394,7 @@ public:
 
 protected:
 
-    virtual HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const;
+    HRAImageSamplePtr _CopyToSample(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset, IImageAllocatorR allocator) const override;
     virtual HRAImageSamplePtr _CreateBufferReference(ImagePPStatus& status, uint32_t width, uint32_t height, PixelOffset64 const& offset) const override { status = IMAGEPP_STATUS_UnknownError; return NULL;}
 
     inline Byte const* GetLineDataCP(uint32_t line) const {return const_cast<HRAPacketRleSurface*>(this)->GetLineDataP(line);}

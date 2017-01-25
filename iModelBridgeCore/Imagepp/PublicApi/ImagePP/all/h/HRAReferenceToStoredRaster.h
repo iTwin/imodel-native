@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAReferenceToStoredRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAReferenceToRaster
@@ -35,10 +35,10 @@ public:
 
 
     // From HRAReferenceToRaster
-    virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
+    void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys) override;
 
     // Message handlers
-    virtual bool NotifyGeometryChanged       (const HMGMessage& pi_rMessage);
+    bool NotifyGeometryChanged       (const HMGMessage& pi_rMessage) override;
 
 
 protected:

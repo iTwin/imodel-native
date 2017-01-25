@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DShape
@@ -423,8 +423,8 @@ public:
     */
     virtual bool      IsPointIn(const HGF2DLocation& pi_rPoint, double Tolerance = HVE_USE_INTERNAL_EPSILON) const = 0;
 
-    virtual bool      IsPointOn(const HGF2DLocation& pi_rPoint, HVE2DVector::ExtremityProcessing pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
-                                 double Tolerance = HVE_USE_INTERNAL_EPSILON) const = 0;
+// already declared in super --     virtual bool      IsPointOn(const HGF2DLocation& pi_rPoint, HVE2DVector::ExtremityProcessing pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
+//                                  double Tolerance = HVE_USE_INTERNAL_EPSILON) const = 0;
 
     // Modification
     virtual void       MakeEmpty() = 0;
@@ -434,17 +434,17 @@ public:
 
 
     // From HGFGraphicObject
-    virtual HGFGraphicObject::Location    
-                                 Locate(const HGF2DLocation& pi_rPoint) const;
+    HGFGraphicObject::Location    
+                                 Locate(const HGF2DLocation& pi_rPoint) const override;
 
     // From HVE2DVector
-    virtual HVE2DVectorTypeId    GetMainVectorType() const;
-    virtual bool                 IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
-                                                 double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    virtual bool                 IsNull() const;
+    HVE2DVectorTypeId    GetMainVectorType() const override;
+    bool                 IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
+                                                 double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    bool                 IsNull() const override;
 
     // Debugging
-    virtual void                 PrintState(ostream& po_rOutput) const;
+    void                 PrintState(ostream& po_rOutput) const override;
 
 
     // Should be somehow hidden
@@ -453,7 +453,7 @@ public:
     IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingSimpleShape(
                                                                const HVE2DSimpleShape& pi_rSimpleShape) const;
 
-    IMAGEPP_EXPORT virtual void          SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT void          SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys) override;
 
 protected:
 

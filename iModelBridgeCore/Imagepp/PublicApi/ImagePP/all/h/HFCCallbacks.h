@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbacks.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -104,7 +104,7 @@ public:
                                                         const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCInternetAuthentication ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT void     SetByString                (const Utf8String&          pi_rAuthenticationString) override;
 
     IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
     IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
@@ -129,7 +129,7 @@ public:
     IMAGEPP_EXPORT explicit         HFCOracleAuthentication    (const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCOracleAuthentication   ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT void     SetByString                (const Utf8String&          pi_rAuthenticationString) override;
 
     IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
     IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
@@ -159,7 +159,7 @@ public:
                                                         const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCProxyAuthentication    ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT void     SetByString                (const Utf8String&          pi_rAuthenticationString) override;
 
     IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
     IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
@@ -197,7 +197,7 @@ public:
     IMAGEPP_EXPORT const string&    GetPassword                () const;
 
     IMAGEPP_EXPORT void             SetPassword                (const string&           pi_rPassword);
-    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT void     SetByString                (const Utf8String&          pi_rAuthenticationString) override;
 
 
 private:

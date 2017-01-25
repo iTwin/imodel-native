@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeRGB.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,11 +25,11 @@ public:
 
     virtual     ~HRPPixelTypeRGB();
 
-    virtual HRPQuantizedPalette*
-    CreateQuantizedPalette(uint32_t pi_MaxEntries) const;
+    HRPQuantizedPalette*
+    CreateQuantizedPalette(uint32_t pi_MaxEntries) const override;
 
-    virtual uint32_t
-    FindNearestEntryInPalette(const void* pi_pValue) const;
+    uint32_t
+    FindNearestEntryInPalette(const void* pi_pValue) const override;
 
 protected:
 

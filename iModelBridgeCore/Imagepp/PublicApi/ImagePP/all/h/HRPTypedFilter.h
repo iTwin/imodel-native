@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypedFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,9 +32,9 @@ public:
     const HFCPtr<HRPPixelType>&
     GetFilterPixelType() const;
     IMAGEPP_EXPORT void                    SetInputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pInputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pInputPixelType) override;
     IMAGEPP_EXPORT void                    SetOutputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pOutputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pOutputPixelType) override;
 
 protected:
 

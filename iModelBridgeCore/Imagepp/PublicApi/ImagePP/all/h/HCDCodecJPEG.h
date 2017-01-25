@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEG.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ public:
 
     ~HCDCodecJPEG();
 
-    virtual bool   IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool   IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
     virtual HCDCodec* Clone() const override = 0;
 

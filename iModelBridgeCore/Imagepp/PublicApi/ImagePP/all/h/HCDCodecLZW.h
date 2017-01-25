@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecLZW.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecLZW
@@ -32,13 +32,13 @@ public:
 
     ~HCDCodecLZW();
 
-    virtual bool IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
     virtual size_t CompressSubset(const void* pi_pInData, size_t pi_InDataSize, void* po_pOutBuffer, size_t pi_OutBufferSize) override;
         
     virtual size_t DecompressSubset(const void* pi_pInData, size_t pi_InDataSize, void* po_pOutBuffer, size_t pi_OutBufferSize) override;
 
-    virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
 
     virtual HCDCodec*Clone() const override;
 

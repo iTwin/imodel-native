@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVector.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DVector
@@ -628,7 +628,7 @@ public:
                                                      const HGF2DLocation& pi_rPoint,
                                                      ArbitraryDirection   pi_Direction) const;
 
-    IMAGEPP_EXPORT virtual void          PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT void          PrintState(ostream& po_rOutput) const override;
 
     /** -----------------------------------------------------------------------------
         The method determines if the two vectors are contiguous in the area
@@ -668,11 +668,11 @@ public:
                                                    HGF2DLocation* po_pSecondContiguousnessPoint) const;
 
     // From HGFGraphicObject
-    virtual Location         Locate(const HGF2DLocation& pi_rPoint) const;
+    Location         Locate(const HGF2DLocation& pi_rPoint) const override;
 
     // From HPMPersistenObject
-    virtual HPMPersistentObject*    
-                             Clone() const = 0;
+// already declared in super --     virtual HPMPersistentObject*    
+//                              Clone() const = 0;
 
 
 

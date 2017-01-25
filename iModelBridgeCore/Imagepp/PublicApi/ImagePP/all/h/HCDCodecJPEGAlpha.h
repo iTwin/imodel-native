@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEGAlpha.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJPEGAlpha
@@ -54,19 +54,19 @@ public:
     virtual HCDCodec* Clone() const override;
 
     // From HCDCodecIJG
-    virtual size_t  CompressSubset  (const void* pi_pInData,
+    size_t  CompressSubset  (const void* pi_pInData,
                                      size_t      pi_InDataSize,
                                      void*       po_pOutBuffer,
-                                     size_t      pi_OutBufferSize);
-    virtual size_t  DecompressSubset(const void* pi_pInData,
+                                     size_t      pi_OutBufferSize) override;
+    size_t  DecompressSubset(const void* pi_pInData,
                                      size_t      pi_InDataSize,
                                      void*       po_pOutBuffer,
-                                     size_t      pi_OutBufferSize);
-    virtual bool   HasLineAccess() const;
-    virtual size_t  GetMinimumSubsetSize() const;
-    virtual void    Reset();
-    virtual    void    SetBitsPerPixel(size_t pi_BitsPerPixel);
-    virtual size_t  GetSubsetMaxCompressedSize() const;
+                                     size_t      pi_OutBufferSize) override;
+    bool   HasLineAccess() const override;
+    size_t  GetMinimumSubsetSize() const override;
+    void    Reset() override;
+    void    SetBitsPerPixel(size_t pi_BitsPerPixel) override;
+    size_t  GetSubsetMaxCompressedSize() const override;
 
     // added method.
     void            SetColorMode(ColorModes pi_Mode);

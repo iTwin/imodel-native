@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DLinear.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DLinear
@@ -466,23 +466,23 @@ public:
     virtual bool       AutoCrosses() const = 0;
 
     // From HVE2DVector
-    virtual HVE2DVectorTypeId    
-                       GetMainVectorType() const;
-    virtual bool       IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
-                                       double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
+    HVE2DVectorTypeId    
+                       GetMainVectorType() const override;
+    bool       IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
+                                       double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
 
     // From HGFGraphicObject
-    virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void       Scale(double pi_ScaleFactor,
-                             const HGF2DLocation& pi_rScaleOrigin);
+    void       Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    void       Scale(double pi_ScaleFactor,
+                             const HGF2DLocation& pi_rScaleOrigin) override;
 
 
-    virtual void       PrintState(ostream& po_rOutput) const;
+    void       PrintState(ostream& po_rOutput) const override;
 
 protected:
 
 
-    IMAGEPP_EXPORT virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys);
+    IMAGEPP_EXPORT void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys) override;
 
     void SetLinearStartPoint(const HGF2DLocation& point)
         {

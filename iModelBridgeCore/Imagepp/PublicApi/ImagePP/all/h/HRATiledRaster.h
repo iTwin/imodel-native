@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRaster.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -181,25 +181,25 @@ public:
     HPMPool*                    GetPool();
     // Overriden from HRAStoredRaster
 
-    virtual HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode);
-    virtual HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
-                                             HFCAccessMode   pi_Mode);
-    virtual HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode);
+    HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode) override;
+    HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
+                                             HFCAccessMode   pi_Mode) override;
+    HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
-    virtual HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
+    HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 
     // Special cas
-    virtual void                InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels);
+    void                InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels) override;
 
     // Catch it, and call the parent
-    virtual void                SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CSl);
+    void                SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CSl) override;
 
     virtual HPMPersistentObject*    
                                 Clone () const override;
 
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
-    virtual void    InvalidateRaster();
+    void    InvalidateRaster() override;
 
     virtual uint64_t   GetTileSizeX        () const;
     virtual uint64_t   GetTileSizeY        () const;
@@ -209,11 +209,11 @@ public:
     // (Used by the HRSObjectStore)
     IMAGEPP_EXPORT /*IppImaging_Needs*/ const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
 
-    virtual uint16_t GetRepresentativePalette(
-        HRARepPalParms* pio_pRepPalParms);
+    uint16_t GetRepresentativePalette(
+        HRARepPalParms* pio_pRepPalParms) override;
 
-    virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
-                                     bool                pi_ForceRecompute = false);
+    void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
+                                     bool                pi_ForceRecompute = false) override;
 
     void            EngageTileHistogramComputing();
 
@@ -222,11 +222,11 @@ public:
 
 
     // LookAhead Methods
-    virtual bool   HasLookAhead() const;
+    bool   HasLookAhead() const override;
 
-    virtual void    SetLookAhead(const HVEShape& pi_rShape,
+    void    SetLookAhead(const HVEShape& pi_rShape,
                                  uint32_t        pi_ConsumerID,
-                                 bool           pi_Async = false);
+                                 bool           pi_Async = false) override;
 
     void            GetMissingTilesInRegion(const HFCPtr<HVEShape>& pi_rpRegion,
                                             HGFTileIDList&          pi_rList,
@@ -260,7 +260,7 @@ protected:
     virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     // From HGFGraphicObject
-    virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
+    void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys) override;
 
 
     void            ReplaceObject   (HFCPtr<HRATiledRaster>& pio_pRaster);

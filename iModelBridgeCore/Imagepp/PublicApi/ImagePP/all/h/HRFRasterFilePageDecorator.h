@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFilePageDecorator.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFilePageDecorator
@@ -35,24 +35,24 @@ public:
     IMAGEPP_EXPORT virtual                               ~HRFRasterFilePageDecorator();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities       () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
     virtual const HGF2DWorldIdentificator GetPageWorldIdentificator (uint32_t pi_Page = 0) const override;
 
     // File manipulation
-    virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  uint16_t           pi_Resolution,
-                                                                 HFCAccessMode             pi_AccessMode);
+                                                                 HFCAccessMode             pi_AccessMode) override;
 
-    virtual HRFResolutionEditor*          CreateUnlimitedResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateUnlimitedResolutionEditor(uint32_t                  pi_Page,
                                                                           double                   pi_Resolution,
-                                                                          HFCAccessMode             pi_AccessMode);
-    virtual void Save();
+                                                                          HFCAccessMode             pi_AccessMode) override;
+    void Save() override;
 
 protected:
     // Raster File
@@ -70,7 +70,7 @@ protected:
 
     // Get the raster file
     HFCPtr<HRFPageFile>                     GetPageFile();
-    virtual HFCPtr<HRFRasterFile>           GetPageFile               (uint32_t pi_Page) const  {
+    HFCPtr<HRFRasterFile>           GetPageFile               (uint32_t pi_Page) const override{
         return T_Super::GetPageFile(pi_Page);
         }
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphMonochromeFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFIntergraphMonochromeFile
@@ -42,8 +42,8 @@ protected:
                                  bool                  pi_DontOpenFile);
 
 
-    virtual void    GetTransfoModel();
-    virtual bool   SetGlobalTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel);
+    void    GetTransfoModel() override;
+    bool   SetGlobalTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) override;
 
 private:
     // Methods Disabled

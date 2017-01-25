@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeI8R8G8B8Mask.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ public:
             }
         };
 
-    virtual HRPPixelConverter* AllocateCopy() const
+    HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterI8R8G8B8_I8R8G8B8Mask(*this));
         };

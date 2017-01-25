@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -29,8 +29,8 @@ public:
 
     // Conversion
 
-    virtual void    Convert(HRPPixelBuffer* pi_pInputBuffer,
-                            HRPPixelBuffer* pio_pOutputBuffer);
+    void    Convert(HRPPixelBuffer* pi_pInputBuffer,
+                            HRPPixelBuffer* pio_pOutputBuffer) override;
 
     virtual void    Convert(const void*     pi_pInputData[],
                             void*           po_pOutputData,
@@ -44,7 +44,7 @@ public:
 
     // Composing
 
-    HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter);
+    HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter) override;
 
     // Cloning
     virtual HRPFilter* Clone() const override = 0;

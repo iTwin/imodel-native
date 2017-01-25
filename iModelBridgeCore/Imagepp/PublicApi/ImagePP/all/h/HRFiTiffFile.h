@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFiTiffFile
@@ -41,25 +41,25 @@ public:
     virtual                               ~HRFiTiffFile           ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&     GetCapabilities       () const;
+    const HFCPtr<HRFRasterFileCapabilities>&     GetCapabilities       () const override;
 
     // File information
-    virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
+    const HGF2DWorldIdentificator GetWorldIdentificator () const override;
 
     // File manipulation
-    virtual bool                          AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                          AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-    virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+    HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  uint16_t           pi_Resolution,
-                                                                 HFCAccessMode             pi_AccessMode);
+                                                                 HFCAccessMode             pi_AccessMode) override;
 
-    virtual void                         Save();
+    void                         Save() override;
 
     // AltaPhoto project
     bool                                 Read_AltaPhotoBlob    (vector<Byte>* po_pData) const;
     bool                                 Write_AltaPhotoBlob   (const vector<Byte>& pi_pData);
 
-    virtual    uint64_t                  GetFileCurrentSize() const;
+    uint64_t                  GetFileCurrentSize() const override;
 
     virtual void       SetDefaultRatioToMeter(double pi_RatioToMeter,
                                               uint32_t pi_Page = 0,
@@ -141,14 +141,14 @@ protected:
                  uint64_t              pi_Offset,
                  bool                  pi_DontOpenFile);
 
-    virtual bool    Open                (bool pi_CreateBigTifFormat=false);
-    virtual bool    Open                (const HFCPtr<HFCURL>&  pi_rpURL)   {
+    bool    Open                (bool pi_CreateBigTifFormat=false) override;
+    bool    Open                (const HFCPtr<HFCURL>&  pi_rpURL) override{
         return T_Super::Open(pi_rpURL);
         }
 
 
-    virtual void     CreateDescriptors();
-    virtual void     ReloadDescriptors();
+    void     CreateDescriptors() override;
+    void     ReloadDescriptors() override;
     virtual void     SaveDescriptors(uint32_t pi_Page = -1) override;
     virtual void     InitPrivateTagDefault(HMRHeader* po_rpHMRHeader);
     virtual bool     ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_rpHMRHeader);
@@ -200,11 +200,11 @@ public:
     IMAGEPP_EXPORT virtual ~HRFiTiff64File();
 
     // File capabilities
-    IMAGEPP_EXPORT virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
+    IMAGEPP_EXPORT const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const override;
 
 protected :
-    IMAGEPP_EXPORT virtual bool Open(bool pi_CreateBigTifFormat=true);
-    virtual bool               Open(const HFCPtr<HFCURL>&  pi_rpURL)   {
+    IMAGEPP_EXPORT bool Open(bool pi_CreateBigTifFormat=true) override;
+    bool               Open(const HFCPtr<HFCURL>&  pi_rpURL) override{
         return T_Super::Open(pi_rpURL);
         }
 
@@ -243,22 +243,22 @@ protected:
 struct HRFiTiffCreator : public HRFiTiffCreatorBase
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                    IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
-                                                   uint64_t                pi_Offset = 0) const;
+    bool                    IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
+                                                   uint64_t                pi_Offset = 0) const override;
     // Identification information
-    virtual Utf8String                 GetLabel() const;
-    virtual Utf8String                 GetExtensions() const;
+    Utf8String                 GetLabel() const override;
+    Utf8String                 GetExtensions() const override;
 
     virtual Utf8String GetShortName() const override { return "iTIFF"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 
 private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFiTiffCreator)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilterV24R8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -36,12 +36,12 @@ public:
     // Conversion method
 
     void            Convert(    HRPPixelBuffer* pi_pInputBuffer,
-                                HRPPixelBuffer* pio_pOutputBuffer);
+                                HRPPixelBuffer* pio_pOutputBuffer) override;
 
-    virtual void    Convert(const void*     pi_pInputData[],
+    void    Convert(const void*     pi_pInputData[],
                             void*           po_pOutputData,
                             const double*  pi_pPosX,
-                            const double*  pi_pPosY)
+                            const double*  pi_pPosY) override
         {
         T_Super::Convert(pi_pInputData,po_pOutputData,pi_pPosX,pi_pPosY);
         }
@@ -61,7 +61,7 @@ private:
                                void*            pi_pDestRawData,
                                uint32_t         pi_Width,
                                const double*   pi_pPositionsX,
-                               const double*   pi_pPositionsY) const;
+                               const double*   pi_pPositionsY) const override;
 
     // Attributes
 

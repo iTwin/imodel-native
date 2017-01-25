@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLCommonInternet.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ public:
 
     //:> Overriden methods, used in relative path management
 
-    IMAGEPP_EXPORT virtual bool       HasPathTo(HFCURL* pi_pURL);
+    IMAGEPP_EXPORT bool       HasPathTo(HFCURL* pi_pURL) override;
 
 protected:
     // Components of the scheme-specific part of the URL string.

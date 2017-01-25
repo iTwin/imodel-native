@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAReferenceToRaster.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAReferenceToRaster
@@ -51,52 +51,52 @@ public:
 
     // Overriden from HGFGraphicObject
 
-    virtual HGF2DExtent     GetExtent() const;
+    HGF2DExtent     GetExtent() const override;
 
-    virtual void            Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void            Rotate(double               pi_Angle,
-                                   const HGF2DLocation& pi_rOrigin);
-    virtual void            Scale(double pi_ScaleFactorX,
+    void            Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    void            Rotate(double               pi_Angle,
+                                   const HGF2DLocation& pi_rOrigin) override;
+    void            Scale(double pi_ScaleFactorX,
                                   double pi_ScaleFactorY,
-                                  const HGF2DLocation& pi_rOrigin);
+                                  const HGF2DLocation& pi_rOrigin) override;
 
     // Overriden from HRARaster
 
-    virtual void            CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
+    void            CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
 
-    virtual void            CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    void            CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster) override;
 
     virtual void            Clear() override;
     virtual void            Clear(const HRAClearOptions& pi_rClearOptions) override;
 
-    virtual HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode);
-    virtual HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
-                                             HFCAccessMode   pi_Mode);
-    virtual HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode);
+    HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode) override;
+    HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
+                                             HFCAccessMode   pi_Mode) override;
+    HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
-    virtual bool                    HasSinglePixelType() const;
-    virtual HFCPtr<HRPPixelType>    GetPixelType() const;
+    bool                    HasSinglePixelType() const override;
+    HFCPtr<HRPPixelType>    GetPixelType() const override;
 
-    virtual bool                ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
-                                                          Byte                      pi_Id = 0) const;
+    bool                ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
+                                                          Byte                      pi_Id = 0) const override;
 
-    virtual bool                IsStoredRaster  () const;
+    bool                IsStoredRaster  () const override;
 
-    virtual HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
+    HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 
-    virtual uint16_t      GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
+    uint16_t      GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
 
-    virtual void                ComputeHistogram(HRAHistogramOptions* pio_pOptions,
-                                     bool                pi_ForceRecompute = false);
+    void                ComputeHistogram(HRAHistogramOptions* pio_pOptions,
+                                     bool                pi_ForceRecompute = false) override;
 
-    virtual void                SetShape    (const HVEShape& pi_rShape);
+    void                SetShape    (const HVEShape& pi_rShape) override;
 
-    virtual HFCPtr<HVEShape>    GetEffectiveShape () const;
+    HFCPtr<HVEShape>    GetEffectiveShape () const override;
 
-    virtual HGF2DExtent         GetAveragePixelSize () const;
-    virtual void                GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const;
+    HGF2DExtent         GetAveragePixelSize () const override;
+    void                GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const override;
 
-    virtual HPMPersistentObject* Clone () const;
+    HPMPersistentObject* Clone () const override;
 
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
@@ -110,14 +110,14 @@ public:
                                             const HVEShape&              pi_rShape);
 
     // LookAhead Methods
-    virtual bool                HasLookAhead() const;
-    virtual void                SetLookAhead(const HVEShape& pi_rShape,
+    bool                HasLookAhead() const override;
+    void                SetLookAhead(const HVEShape& pi_rShape,
                                              uint32_t        pi_ConsumerID,
-                                             bool           pi_Async = false);
+                                             bool           pi_Async = false) override;
 
     // Debug function
 #ifdef __HMR_PRINTSTATE
-    virtual void    PrintState(ostream& po_rOutput) const;
+    void    PrintState(ostream& po_rOutput) const override;
 #endif
 
     // Message handlers
@@ -126,9 +126,9 @@ public:
     virtual bool NotifyProgressImageChanged  (const HMGMessage& pi_rMessage);
 
     //Context Methods
-    virtual void                      SetContext(const HFCPtr<HMDContext>& pi_rpContext);
-    virtual HFCPtr<HMDContext>        GetContext();
-    virtual void                      InvalidateRaster();
+    void                      SetContext(const HFCPtr<HMDContext>& pi_rpContext) override;
+    HFCPtr<HMDContext>        GetContext() override;
+    void                      InvalidateRaster() override;
 
 protected:
 
@@ -136,11 +136,11 @@ protected:
 
     virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& pi_rOptions) override;
 
-    ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options);
+    ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
-    virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
+    void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys) override;
 
-    virtual void    RecalculateEffectiveShape();
+    void    RecalculateEffectiveShape() override;
 
     // Cached effective shape
     HFCPtr<HVEShape>

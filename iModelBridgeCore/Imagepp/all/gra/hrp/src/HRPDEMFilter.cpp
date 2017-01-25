@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPDEMFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -501,7 +501,7 @@ public:
         editor.Clear(&m_DefaultRGBA);
         }
 
-    virtual void SetNoDataValue(double const& pi_rNoDataValue) {
+    void SetNoDataValue(double const& pi_rNoDataValue) override{
         /*do not care*/
         };
     };

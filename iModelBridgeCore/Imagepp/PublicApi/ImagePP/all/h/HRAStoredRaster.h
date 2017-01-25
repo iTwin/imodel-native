@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStoredRaster.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -52,34 +52,34 @@ public:
     virtual void                    Saved();
     // From HGFGraphicObject
 
-    virtual void                    Move    (const HGF2DDisplacement&   pi_rDisplacement);
-    virtual void                    Rotate  (double                     pi_Angle,
-                                             const HGF2DLocation&       pi_rOrigin);
-    virtual void                    Scale   (double                     pi_ScaleFactorX,
+    void                    Move    (const HGF2DDisplacement&   pi_rDisplacement) override;
+    void                    Rotate  (double                     pi_Angle,
+                                             const HGF2DLocation&       pi_rOrigin) override;
+    void                    Scale   (double                     pi_ScaleFactorX,
                                              double                     pi_ScaleFactorY,
-                                             const HGF2DLocation&       pi_rOrigin);
+                                             const HGF2DLocation&       pi_rOrigin) override;
 
 
     // Inherited from HRARaster
 
-    virtual void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster, const HRACopyFromLegacyOptions&  pi_rOptions);
+    void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster, const HRACopyFromLegacyOptions&  pi_rOptions) override;
 
-    virtual void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster);
+    void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster) override;
 
-    virtual HGF2DExtent             GetAveragePixelSize () const;
-    virtual void                    GetPixelSizeRange(HGF2DExtent& po_rMinimum,
-                                                      HGF2DExtent& po_rMaximum) const;
+    HGF2DExtent             GetAveragePixelSize () const override;
+    void                    GetPixelSizeRange(HGF2DExtent& po_rMinimum,
+                                                      HGF2DExtent& po_rMaximum) const override;
 
     // Catch it, and call the parent
-    virtual void                    SetShape    (const HVEShape& pi_rShape);
+    void                    SetShape    (const HVEShape& pi_rShape) override;
 
     virtual HFCPtr<HRPPixelType>    GetPixelType        () const override;
 
     virtual bool                    ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                                               Byte                      pi_Id = 0) const override;
 
-    virtual bool                    HasSinglePixelType  () const;
-    bool                            IsStoredRaster      () const;
+    bool                    HasSinglePixelType  () const override;
+    bool                            IsStoredRaster      () const override;
 
     // Other methods
 
@@ -98,7 +98,7 @@ public:
     virtual void                    InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels);
     virtual void                    GetSize(uint64_t* po_pWidthPixels, uint64_t* po_pHeightPixels) const;
     virtual HGF2DExtent             GetPhysicalExtent() const;
-    virtual HFCPtr<HVEShape>        GetEffectiveShape   () const;
+    HFCPtr<HVEShape>        GetEffectiveShape   () const override;
 
     // re sizable method
     bool                            IsResizable() const;
@@ -111,15 +111,15 @@ public:
 
 
 
-    virtual uint16_t          GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
+    uint16_t          GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
 
     // Debug function
-    virtual void                    PrintState(ostream& po_rOutput) const;
+    void                    PrintState(ostream& po_rOutput) const override;
 
     //Context Methods
-    virtual void                    SetContext(const HFCPtr<HMDContext>& pi_rpContext);
-    virtual HFCPtr<HMDContext>      GetContext();
-    virtual void                    InvalidateRaster();
+    void                    SetContext(const HFCPtr<HMDContext>& pi_rpContext) override;
+    HFCPtr<HMDContext>      GetContext() override;
+    void                    InvalidateRaster() override;
 
     // Undo/redo interface
     virtual void                    SetTransactionRecorder(HFCPtr<HRATransactionRecorder>& pi_rpTransactionRecorder);
@@ -147,10 +147,10 @@ protected:
     virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) = 0;
 
     // From HGFGraphicObject
-    virtual void        SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpOldCoordSys);
+    void        SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpOldCoordSys) override;
 
     // From HRARaster
-    virtual void        RecalculateEffectiveShape ();
+    void        RecalculateEffectiveShape () override;
 
     static double EvaluateScaleFactor(HFCPtr<HGF2DCoordSys> const& srcCS, HFCPtr<HGF2DCoordSys> const& dstCS, HVEShape const& shape);
     static uint32_t EvaluateScaleFactorPowerOf2(HFCPtr<HGF2DCoordSys> const& srcCS, HFCPtr<HGF2DCoordSys> const& dstCS, HVEShape const& shape);

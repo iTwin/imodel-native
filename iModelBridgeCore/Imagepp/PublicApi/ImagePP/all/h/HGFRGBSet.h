@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFRGBSet.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ public:
     IMAGEPP_EXPORT HGFRGBSet& operator=(const HGFRGBSet& pi_rSrc);
 
     IMAGEPP_EXPORT void            Add(Byte pi_R, Byte pi_G, Byte pi_B);
-    IMAGEPP_EXPORT virtual bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const;
+    IMAGEPP_EXPORT bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const override;
     IMAGEPP_EXPORT void            Remove(Byte pi_R, Byte pi_G, Byte pi_B);
 
 protected:

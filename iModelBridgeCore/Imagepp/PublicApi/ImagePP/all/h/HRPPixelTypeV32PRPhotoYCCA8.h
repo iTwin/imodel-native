@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV32PRPhotoYCCA8.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeV32PRPhotoYCCA8
@@ -23,18 +23,18 @@ public:
 
     IMAGEPP_EXPORT virtual         ~HRPPixelTypeV32PRPhotoYCCA8();
 
-    virtual HPMPersistentObject*
-    Clone() const;
+    HPMPersistentObject*
+    Clone() const override;
 
-    virtual uint16_t CountValueBits() const;
+    uint16_t CountValueBits() const override;
 
 protected:
 
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    const HRPPixelConverter*
+    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const override;
 
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    const HRPPixelConverter*
+    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const override;
 
 
 private:

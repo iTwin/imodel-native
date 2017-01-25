@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecPCX.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -40,17 +40,17 @@ public:
     size_t          CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
                                    void* po_pOutBuffer,
-                                   size_t pi_OutBufferSize);
+                                   size_t pi_OutBufferSize) override;
 
 
     size_t          DecompressSubset(const void* pi_pInData,
                                      size_t pi_InDataSize,
                                      void* po_pOutBuffer,
-                                     size_t pi_OutBufferSize);
+                                     size_t pi_OutBufferSize) override;
 
     virtual HCDCodec* Clone() const override;
 
-    virtual size_t  GetSubsetMaxCompressedSize() const;
+    size_t  GetSubsetMaxCompressedSize() const override;
 
 
 protected:

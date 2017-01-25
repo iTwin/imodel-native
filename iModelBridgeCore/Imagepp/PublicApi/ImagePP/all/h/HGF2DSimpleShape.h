@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSimpleShape.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DSimpleShape
@@ -124,16 +124,16 @@ public:
 
 
     // From HGF2DShape
-    virtual bool                    IsSimple() const;
-    virtual bool                    IsComplex() const;
+    bool                    IsSimple() const override;
+    bool                    IsComplex() const override;
 
-    virtual const HGF2DShape::ShapeList&
-                                    GetShapeList() const;
+    const HGF2DShape::ShapeList&
+                                    GetShapeList() const override;
 
     // Iteration on component holes
-    virtual bool                    HasHoles() const;
-    virtual const HGF2DShape::HoleList&
-                                    GetHoleList() const;
+    bool                    HasHoles() const override;
+    const HGF2DShape::HoleList&
+                                    GetHoleList() const override;
 #if 0 
     virtual HGF2DShape*             DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
     virtual HGF2DShape*             DifferentiateShape(const HGF2DShape& pi_rShape) const;
@@ -141,14 +141,14 @@ public:
     virtual HGF2DShape*             UnifyShape(const HGF2DShape& pi_rShape) const;
 #endif
 
-    virtual void                    Drop(HGF2DPositionCollection* po_pPoint,
-                                         double                   pi_rTolerance) const;
+    void                    Drop(HGF2DPositionCollection* po_pPoint,
+                                         double                   pi_rTolerance) const override;
 
     IMAGEPPTEST_EXPORT virtual void                     GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners, 
                                                            HGF2DPositionCollection* po_pConvexHull) const override;
 
     // Debugging
-    virtual void                    PrintState(ostream& po_rOutput) const;
+    void                    PrintState(ostream& po_rOutput) const override;
 
 protected:
 

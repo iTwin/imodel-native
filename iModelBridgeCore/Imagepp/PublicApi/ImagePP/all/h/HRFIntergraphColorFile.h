@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphColorFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -32,7 +32,7 @@ public:
     virtual         ~HRFIntergraphColorFile ();
 
     // File manipulation
-    virtual bool    AddPage (HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool    AddPage (HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
 protected:
 
@@ -42,8 +42,8 @@ protected:
                             uint64_t             pi_Offset,
                             bool                 pi_DontOpenFile);
 
-    virtual void    GetTransfoModel      ();
-    virtual bool   SetGlobalTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel);
+    void    GetTransfoModel      () override;
+    bool   SetGlobalTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) override;
 
 private:
     // Methods Disabled

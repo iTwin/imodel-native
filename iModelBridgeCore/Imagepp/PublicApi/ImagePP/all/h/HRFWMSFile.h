@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWMSFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -39,16 +39,16 @@ public:
     virtual     ~HRFWMSFile();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const;
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities () const override;
 
 
 protected:
 
-    virtual void    CreateDescriptors   (uint64_t                  pi_Width,
-                                         uint64_t                  pi_Height);
+    void    CreateDescriptors   (uint64_t                  pi_Width,
+                                         uint64_t                  pi_Height) override;
 
-    virtual void    SetContext          (uint32_t                 pi_Page,
-                                         const HFCPtr<HMDContext>& pi_rContext);
+    void    SetContext          (uint32_t                 pi_Page,
+                                         const HFCPtr<HMDContext>& pi_rContext) override;
 
     // This overload is not usually required but we have found servers (see TTR#314855) that actually complain about
     // the authentication required probe dummy request that the request is invalid before complaining about
@@ -80,24 +80,24 @@ private:
 struct HRFWMSCreator : public HRFRasterFileCreator
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
-                                                   uint64_t                pi_Offset = 0) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
+                                                   uint64_t                pi_Offset = 0) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel() const;
-    virtual Utf8String                   GetSchemes() const;
-    virtual Utf8String                   GetExtensions() const;
+    Utf8String                   GetLabel() const override;
+    Utf8String                   GetSchemes() const override;
+    Utf8String                   GetExtensions() const override;
 
     virtual Utf8String GetShortName() const override { return "WMS"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>&
+    GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t             pi_Offset = 0) const;
+                                             uint64_t             pi_Offset = 0) const override;
 private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFWMSCreator)
 

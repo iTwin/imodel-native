@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAMessages.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ public:
 
     const HVEShape& GetShape() const;
 
-    IMAGEPP_EXPORT virtual HMGMessage* Clone() const;
+    IMAGEPP_EXPORT HMGMessage* Clone() const override;
 
 private:
 

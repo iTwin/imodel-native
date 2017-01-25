@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRGIF.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -79,22 +79,22 @@ public:
     size_t          CompressSubset(const  void* pi_pInData,
                                    size_t pi_InDataSize,
                                    void*  po_pOutBuffer,
-                                   size_t pi_OutBufferSize);
+                                   size_t pi_OutBufferSize) override;
 
     size_t          DecompressSubset(const void* pi_pInData,
                                      size_t pi_InDataSize,
                                      void*  po_pOutBuffer,
-                                     size_t pi_OutBufferSize);
+                                     size_t pi_OutBufferSize) override;
 
     IMAGEPP_EXPORT void            SetDecompressMinCodeSize(int16_t pi_MinCodeSize);
 
-    virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
+    void    SetDimensions(size_t pi_Width, size_t pi_Height) override;
 
-    virtual bool   HasLineAccess() const;
+    bool   HasLineAccess() const override;
 
     virtual HCDCodec*  Clone() const override;
 
-    size_t          GetSubsetMaxCompressedSize() const;
+    size_t          GetSubsetMaxCompressedSize() const override;
 
     void            SetLineHeader(bool  pi_Enable);
     void            SetOneLineMode(bool pi_Enable);

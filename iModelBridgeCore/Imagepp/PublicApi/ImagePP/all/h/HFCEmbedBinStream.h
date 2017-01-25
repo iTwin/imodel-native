@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCEmbedBinStream.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMemoryBinStream
@@ -33,25 +33,25 @@ public:
 
     // Information methods
 
-    HFCPtr<HFCURL>          GetURL() const;
-    virtual uint64_t       GetSize() const;
-    virtual HFCAccessMode   GetAccessMode() const;
+    HFCPtr<HFCURL>          GetURL() const override;
+    uint64_t       GetSize() const override;
+    HFCAccessMode   GetAccessMode() const override;
     uint64_t               GetOriginOffset() const;
 
     // File pointer management
 
-    virtual void            Seek(int64_t pi_Delta);
-    virtual void            SeekToPos(uint64_t pi_NewPos);
-    virtual void            SeekToBegin();
-    virtual void            SeekToEnd();
-    virtual uint64_t        GetCurrentPos();
-    virtual bool            EndOfFile();
-    virtual bool            SetEOF();
+    void            Seek(int64_t pi_Delta) override;
+    void            SeekToPos(uint64_t pi_NewPos) override;
+    void            SeekToBegin() override;
+    void            SeekToEnd() override;
+    uint64_t        GetCurrentPos() override;
+    bool            EndOfFile() override;
+    bool            SetEOF() override;
 
     // Content access
-    virtual size_t          Read(void* po_pData, size_t pi_DataSize);
-    virtual size_t          Write(const void* pi_pData, size_t pi_DataSize);
-    virtual bool           Flush();
+    size_t          Read(void* po_pData, size_t pi_DataSize) override;
+    size_t          Write(const void* pi_pData, size_t pi_DataSize) override;
+    bool           Flush() override;
 
 #ifdef __HMR_DEBUG_MEMBER
     void DumpToFile() const;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecImage.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ public:
 
     // compression
 
-    virtual void            Reset();
+    void            Reset() override;
 
     // settings
 
@@ -53,16 +53,16 @@ public:
     virtual void            SetLinePaddingBits(size_t pi_Bits);
 
 
-    virtual size_t          GetDataSize() const;
+    size_t          GetDataSize() const override;
 
     virtual HCDCodec*       Clone() const override = 0;
 
     // subset
 
-    virtual size_t          GetSubsetMaxCompressedSize() const;
+    size_t          GetSubsetMaxCompressedSize() const override;
 
-    virtual size_t          GetMinimumSubsetSize() const;
-    virtual void            SetSubsetSize(size_t pi_Size);
+    size_t          GetMinimumSubsetSize() const override;
+    void            SetSubsetSize(size_t pi_Size) override;
 
     virtual size_t          GetSubsetWidth() const;
 
@@ -84,7 +84,7 @@ public:
 
     virtual size_t          GetCompressedImageIndex() const;
 
-    bool                    IsCodecImage() const;
+    bool                    IsCodecImage() const override;
 
     IMAGEPP_EXPORT static bool      SetCodecForImage(const HFCPtr<HCDCodec>& pi_pCodec,
                                              size_t pi_Width,

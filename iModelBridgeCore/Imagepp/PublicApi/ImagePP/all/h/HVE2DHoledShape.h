@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DHoledShape.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -57,86 +57,86 @@ public:
 
     // From HVE2DShape
 
-    IMAGEPPTEST_EXPORT virtual void               Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPPTEST_EXPORT void               Rasterize(HGFScanLines& pio_rScanlines) const override;
 
-    virtual bool               IsSimple() const;
-    virtual bool               IsComplex() const;
-    virtual bool               IsEmpty() const;
-    virtual HVE2DShapeTypeId   GetShapeType() const;
+    bool               IsSimple() const override;
+    bool               IsComplex() const override;
+    bool               IsEmpty() const override;
+    HVE2DShapeTypeId   GetShapeType() const override;
 
-    virtual const HVE2DShape::ShapeList&
-                               GetShapeList() const;
-    virtual bool               HasHoles() const;
-    virtual const HVE2DShape::HoleList&    
-                               GetHoleList() const;
-    IMAGEPPTEST_EXPORT virtual HVE2DShape*        DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPPTEST_EXPORT virtual HVE2DShape*        DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPPTEST_EXPORT virtual HVE2DShape*        IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
-    IMAGEPPTEST_EXPORT virtual HVE2DShape*        UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
+    const HVE2DShape::ShapeList&
+                               GetShapeList() const override;
+    bool               HasHoles() const override;
+    const HVE2DShape::HoleList&    
+                               GetHoleList() const override;
+    IMAGEPPTEST_EXPORT HVE2DShape*        DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPPTEST_EXPORT HVE2DShape*        DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPPTEST_EXPORT HVE2DShape*        IntersectShapeSCS(const HVE2DShape& pi_rShape) const override;
+    IMAGEPPTEST_EXPORT HVE2DShape*        UnifyShapeSCS(const HVE2DShape& pi_rShape) const override;
 
-    IMAGEPPTEST_EXPORT virtual double             CalculateArea() const;
-    IMAGEPPTEST_EXPORT virtual double             CalculatePerimeter() const;
-    IMAGEPPTEST_EXPORT virtual bool               IsPointIn(const HGF2DLocation& pi_rPoint, double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    IMAGEPPTEST_EXPORT void                       MakeEmpty();
-    IMAGEPPTEST_EXPORT virtual HVE2DShape::SpatialPosition
+    IMAGEPPTEST_EXPORT double             CalculateArea() const override;
+    IMAGEPPTEST_EXPORT double             CalculatePerimeter() const override;
+    IMAGEPPTEST_EXPORT bool               IsPointIn(const HGF2DLocation& pi_rPoint, double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    IMAGEPPTEST_EXPORT void                       MakeEmpty() override;
+    IMAGEPPTEST_EXPORT HVE2DShape::SpatialPosition
                                CalculateSpatialPositionOfSingleComponentVector(
-                                     const HVE2DVector& pi_rVector) const;
+                                     const HVE2DVector& pi_rVector) const override;
 
-    IMAGEPPTEST_EXPORT virtual void               Drop(HGF2DLocationCollection* po_pPoint,
-                                    double       pi_Tolerance) const;
+    IMAGEPPTEST_EXPORT void               Drop(HGF2DLocationCollection* po_pPoint,
+                                    double       pi_Tolerance) const override;
 
-    IMAGEPPTEST_EXPORT virtual HGF2DShape*        GetLightShape() const;
+    IMAGEPPTEST_EXPORT HGF2DShape*        GetLightShape() const override;
 
 
     // From HVE2DVector
-    IMAGEPPTEST_EXPORT virtual HGF2DLocation      CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    IMAGEPPTEST_EXPORT virtual size_t             Intersect(const HVE2DVector& pi_rVector,
-                                         HGF2DLocationCollection* po_pCrossPoints) const;
-    IMAGEPPTEST_EXPORT virtual size_t             ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
-                                                          HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    IMAGEPPTEST_EXPORT virtual void               ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
+    IMAGEPPTEST_EXPORT HGF2DLocation      CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const override;
+    IMAGEPPTEST_EXPORT size_t             Intersect(const HVE2DVector& pi_rVector,
+                                         HGF2DLocationCollection* po_pCrossPoints) const override;
+    IMAGEPPTEST_EXPORT size_t             ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+                                                          HGF2DLocationCollection* po_pContiguousnessPoints) const override;
+    IMAGEPPTEST_EXPORT void               ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                             const HGF2DLocation& pi_rPoint,
                                                             HGF2DLocation* pi_pFirstContiguousnessPoint,
-                                                            HGF2DLocation* pi_pSecondContiguousnessPoint) const;
-    IMAGEPPTEST_EXPORT virtual HPMPersistentObject*
-                               Clone() const;
-    IMAGEPPTEST_EXPORT virtual HVE2DVector*       AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
-    IMAGEPPTEST_EXPORT virtual bool               Crosses(const HVE2DVector& pi_rVector) const;
-    IMAGEPPTEST_EXPORT virtual bool               AreContiguous(const HVE2DVector& pi_rVector) const;
-    IMAGEPPTEST_EXPORT virtual bool               AreAdjacent(const HVE2DVector& pi_rVector) const;
-    IMAGEPPTEST_EXPORT virtual bool               IsPointOn(const HGF2DLocation& pi_rTestPoint,
+                                                            HGF2DLocation* pi_pSecondContiguousnessPoint) const override;
+    IMAGEPPTEST_EXPORT HPMPersistentObject*
+                               Clone() const override;
+    IMAGEPPTEST_EXPORT HVE2DVector*       AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const override;
+    IMAGEPPTEST_EXPORT bool               Crosses(const HVE2DVector& pi_rVector) const override;
+    IMAGEPPTEST_EXPORT bool               AreContiguous(const HVE2DVector& pi_rVector) const override;
+    IMAGEPPTEST_EXPORT bool               AreAdjacent(const HVE2DVector& pi_rVector) const override;
+    IMAGEPPTEST_EXPORT bool               IsPointOn(const HGF2DLocation& pi_rTestPoint,
                                          HVE2DVector::ExtremityProcessing
                                          pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
-                                         double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    IMAGEPPTEST_EXPORT virtual bool               IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
+                                         double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    IMAGEPPTEST_EXPORT bool               IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
                                             HVE2DVector::ExtremityProcessing
                                             pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
-                                            double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    IMAGEPPTEST_EXPORT virtual bool               AreContiguousAt(const HVE2DVector& pi_rVector,
-                                               const HGF2DLocation& pi_rPoint) const;
-    IMAGEPPTEST_EXPORT virtual HGFBearing         CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
+                                            double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    IMAGEPPTEST_EXPORT bool               AreContiguousAt(const HVE2DVector& pi_rVector,
+                                               const HGF2DLocation& pi_rPoint) const override;
+    IMAGEPPTEST_EXPORT HGFBearing         CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
                                                 HVE2DVector::ArbitraryDirection
-                                                pi_Direction = HVE2DVector::BETA) const;
-    IMAGEPPTEST_EXPORT virtual double             CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
+                                                pi_Direction = HVE2DVector::BETA) const override;
+    IMAGEPPTEST_EXPORT double             CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
                                                             HVE2DVector::ArbitraryDirection
-                                                            pi_Direction = HVE2DVector::BETA) const;
+                                                            pi_Direction = HVE2DVector::BETA) const override;
 
 
     // From HGFGraphicObject
-    IMAGEPPTEST_EXPORT virtual HGF2DExtent        GetExtent() const;
-    IMAGEPPTEST_EXPORT virtual void               Move(const HGF2DDisplacement& pi_rDisplacement);
-    IMAGEPPTEST_EXPORT virtual void               Scale(double pi_ScaleFactor,
-                                     const HGF2DLocation& pi_rScaleOrigin);
+    IMAGEPPTEST_EXPORT HGF2DExtent        GetExtent() const override;
+    IMAGEPPTEST_EXPORT void               Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    IMAGEPPTEST_EXPORT void               Scale(double pi_ScaleFactor,
+                                     const HGF2DLocation& pi_rScaleOrigin) override;
 
-    IMAGEPPTEST_EXPORT virtual void               SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
-    IMAGEPPTEST_EXPORT virtual void               SetTolerance(double pi_Tolerance);
-    IMAGEPPTEST_EXPORT virtual void               SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance);
+    IMAGEPPTEST_EXPORT void               SetAutoToleranceActive(bool pi_ActiveAutoTolerance) override;
+    IMAGEPPTEST_EXPORT void               SetTolerance(double pi_Tolerance) override;
+    IMAGEPPTEST_EXPORT void               SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance) override;
 
-    IMAGEPPTEST_EXPORT virtual void               PrintState(ostream& po_rOutput) const;
+    IMAGEPPTEST_EXPORT void               PrintState(ostream& po_rOutput) const override;
 
 protected:
 
-    IMAGEPPTEST_EXPORT virtual void               SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT void               SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) override;
 
 private:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecPackBits.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,10 +25,10 @@ public:
 
     ~HCDCodecPackBits();
 
-    virtual bool   IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool   IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
-    virtual size_t  GetSubsetMaxCompressedSize() const;
-    virtual double GetEstimatedCompressionRatio() const;
+    size_t  GetSubsetMaxCompressedSize() const override;
+    double GetEstimatedCompressionRatio() const override;
 
 protected:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDVolatileLayers.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -26,7 +26,7 @@ public :
 
     IMAGEPP_EXPORT HMDVolatileLayers(const HMDVolatileLayers& pi_rObj);
 
-    IMAGEPP_EXPORT virtual HFCPtr<HMDMetaDataContainer> Clone() const;
+    IMAGEPP_EXPORT HFCPtr<HMDMetaDataContainer> Clone() const override;
 
     IMAGEPP_EXPORT bool                                SameLayersOn        (const HMDVolatileLayers& pi_rObj) const;
 

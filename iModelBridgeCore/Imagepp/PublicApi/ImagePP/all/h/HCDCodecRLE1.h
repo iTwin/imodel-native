@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecRLE1.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,11 +25,11 @@ public:
 
     ~HCDCodecRLE1();
 
-    bool           IsBitsPerPixelSupported(size_t pi_Bits) const;
+    bool           IsBitsPerPixelSupported(size_t pi_Bits) const override;
 
-    size_t          GetSubsetMaxCompressedSize() const;
+    size_t          GetSubsetMaxCompressedSize() const override;
 
-    IMAGEPP_EXPORT virtual double GetEstimatedCompressionRatio() const;
+    IMAGEPP_EXPORT double GetEstimatedCompressionRatio() const override;
 
 
 protected:

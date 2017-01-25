@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMedianFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -27,7 +27,7 @@ public:
 
     virtual         ~HRPMedianFilter();
 
-    bool           IsAConvolutionFilter() const;
+    bool           IsAConvolutionFilter() const override;
 
 
     virtual void    SetNeighbourhood(   uint32_t pi_Width,

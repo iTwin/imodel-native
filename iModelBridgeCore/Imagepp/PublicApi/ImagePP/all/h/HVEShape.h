@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVEShape
@@ -65,11 +65,11 @@ public:
 
     // Graphic object methods
 
-    IMAGEPP_EXPORT virtual void      Move(const HGF2DDisplacement& pi_rDisplacement);
+    IMAGEPP_EXPORT void      Move(const HGF2DDisplacement& pi_rDisplacement) override;
     IMAGEPP_EXPORT virtual void      Rotate(double               pi_Angle,
                                            const HGF2DLocation& pi_rOrigin);
-    IMAGEPP_EXPORT virtual void      Scale(double pi_ScaleFactor,
-                                          const HGF2DLocation& pi_rOrigin);
+    IMAGEPP_EXPORT void      Scale(double pi_ScaleFactor,
+                                          const HGF2DLocation& pi_rOrigin) override;
     IMAGEPP_EXPORT virtual void      Scale(double pi_ScaleFactorX,
                                           double pi_ScaleFactorY,
                                           const HGF2DLocation& pi_rOrigin);
@@ -80,8 +80,8 @@ public:
     virtual void                    Transport(HFCPtr<HGF2DCoordSys> const& fromCoordinateSystem, HFCPtr<HGF2DCoordSys> const& toCoordinateSystem);
 
 
-    IMAGEPP_EXPORT virtual HGFGraphicObject::Location
-                                    Locate(const HGF2DLocation& pi_rPoint) const;
+    IMAGEPP_EXPORT HGFGraphicObject::Location
+                                    Locate(const HGF2DLocation& pi_rPoint) const override;
 
     IMAGEPP_EXPORT virtual HGF2DShape*    
                                     GetLightShape() const;
@@ -106,9 +106,9 @@ public:
 
     void                            MakeEmpty();
 
-    HGF2DExtent                     GetExtent() const;
+    HGF2DExtent                     GetExtent() const override;
 
-    IMAGEPP_EXPORT virtual void      PrintState (ostream& po_rOutput) const;
+    IMAGEPP_EXPORT void      PrintState (ostream& po_rOutput) const override;
 
 
     const HVE2DShape*               GetShapePtr() const;
@@ -139,7 +139,7 @@ public:
 
 protected:
 
-    IMAGEPP_EXPORT virtual void      SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT void      SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys) override;
 
 private:
 

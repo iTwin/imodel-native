@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFException.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation of the HRF exception classes.  The exception hierarchy look
@@ -103,7 +103,7 @@ public:
     HRFException_T(const Utf8String& pi_rFileName) : HRFException(pi_rFileName){}
     HRFException_T (const HRFException_T& pi_rObj) : HRFException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HRFException_T(*this);}
-    virtual void ThrowMyself() const {throw *this;}
+    void ThrowMyself() const override{throw *this;}
     virtual bool IsInvalidAccess() const override {return IsInvalidAccessMode;} 
     virtual Utf8String GetExceptionMessage()const override
         {

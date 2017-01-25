@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSRTMFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFSRTMFile
@@ -56,17 +56,17 @@ class HRFSRTMFile : public HRFRasterFile
         virtual                                    ~HRFSRTMFile();
 
         // File capabilities
-        virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
+        const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const override;
 
         // File information
-        virtual const HGF2DWorldIdentificator GetWorldIdentificator() const;
+        const HGF2DWorldIdentificator GetWorldIdentificator() const override;
 
         // File manipulation
-        virtual bool                         AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
+        bool                         AddPage(HFCPtr<HRFPageDescriptor> pi_pPage) override;
 
-        virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
+        HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                      uint16_t           pi_Resolution,
-                                                                     HFCAccessMode             pi_AccessMode);
+                                                                     HFCAccessMode             pi_AccessMode) override;
     protected:
 
         virtual bool                        Open();
@@ -77,7 +77,7 @@ class HRFSRTMFile : public HRFRasterFile
         uint32_t   m_Width;        // width and height of image in pixels
 
         //Disabled
-        virtual void                  Save();
+        void                  Save() override;
         void                          ExtractLatLong(double* latitude, double* longitude) const;
         bool                          IsSRTM1() const;
     };
@@ -85,23 +85,23 @@ class HRFSRTMFile : public HRFRasterFile
 struct HRFSRTMCreator : public HRFRasterFileCreator
     {
     // Opens the file and verifies if it is the right type
-    virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
-                                                  uint64_t                 pi_Offset = 0) const;
+    bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
+                                                  uint64_t                 pi_Offset = 0) const override;
 
     // Identification information
-    virtual Utf8String                   GetLabel() const;
-    virtual Utf8String                   GetSchemes() const;
-    virtual Utf8String                   GetExtensions() const;
+    Utf8String                   GetLabel() const override;
+    Utf8String                   GetSchemes() const override;
+    Utf8String                   GetExtensions() const override;
 
     virtual Utf8String GetShortName() const override { return "SRTM"; }
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities();
+    const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() override;
 
     // allow to Open an image file READ/WRITE and CREATE
-    virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
+    HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                                             uint64_t              pi_Offset = 0) const;
+                                             uint64_t              pi_Offset = 0) const override;
 
     private:
         HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSRTMCreator)

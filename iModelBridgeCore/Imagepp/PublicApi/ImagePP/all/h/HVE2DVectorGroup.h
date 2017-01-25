@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVectorGroup.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DVectorGroup
@@ -35,67 +35,67 @@ public:
     void                AddVector(HVE2DVector* pi_pVector);
 
     // Operations
-    virtual HGF2DLocation    CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    virtual HGFBearing  CalculateBearing(const HGF2DLocation& pi_rPoint,
-                                         HVE2DVector::ArbitraryDirection pi_Direction = HVE2DVector::BETA) const;
-    virtual double    CalculateAngularAcceleration(const HGF2DLocation& pi_rPoint,
-                                 HVE2DVector::ArbitraryDirection pi_Direction = HVE2DVector::BETA) const;
-    virtual size_t      Intersect(const HVE2DVector& pi_rVector, HGF2DLocationCollection* po_pCrossPoints) const;
-    virtual size_t      ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
-                                                   HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    virtual void        ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
+    HGF2DLocation    CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const override;
+    HGFBearing  CalculateBearing(const HGF2DLocation& pi_rPoint,
+                                         HVE2DVector::ArbitraryDirection pi_Direction = HVE2DVector::BETA) const override;
+    double    CalculateAngularAcceleration(const HGF2DLocation& pi_rPoint,
+                                 HVE2DVector::ArbitraryDirection pi_Direction = HVE2DVector::BETA) const override;
+    size_t      Intersect(const HVE2DVector& pi_rVector, HGF2DLocationCollection* po_pCrossPoints) const override;
+    size_t      ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+                                                   HGF2DLocationCollection* po_pContiguousnessPoints) const override;
+    void        ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                      const HGF2DLocation& pi_rPoint,
                                                      HGF2DLocation* pi_pFirstContiguousnessPoint,
-                                                     HGF2DLocation* pi_pSecondContiguousnessPoint) const;
-    virtual HPMPersistentObject*
-    Clone() const;
-    virtual HVE2DVector*
-    AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
+                                                     HGF2DLocation* pi_pSecondContiguousnessPoint) const override;
+    HPMPersistentObject*
+    Clone() const override;
+    HVE2DVector*
+    AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const override;
 
     // Vector property determination
-    virtual bool       Crosses(const HVE2DVector& pi_rVector) const;
-    virtual bool       AreContiguous(const HVE2DVector& pi_rVector) const;
-    virtual bool       AreAdjacent(const HVE2DVector& pi_rVector) const;
-    virtual bool       IsPointOn(const HGF2DLocation& pi_rTestPoint,
+    bool       Crosses(const HVE2DVector& pi_rVector) const override;
+    bool       AreContiguous(const HVE2DVector& pi_rVector) const override;
+    bool       AreAdjacent(const HVE2DVector& pi_rVector) const override;
+    bool       IsPointOn(const HGF2DLocation& pi_rTestPoint,
                                   HVE2DVector::ExtremityProcessing pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
-                                  double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    virtual bool       IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
+                                  double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    bool       IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
                                      HVE2DVector::ExtremityProcessing pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
-                                     double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    virtual bool       AreContiguousAt(const HVE2DVector& pi_rVector,
-                                        const HGF2DLocation& pi_rPoint) const;
+                                     double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    bool       AreContiguousAt(const HVE2DVector& pi_rVector,
+                                        const HGF2DLocation& pi_rPoint) const override;
 
-    virtual bool       IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
-                                        double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    virtual bool       IsNull() const;
+    bool       IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
+                                        double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const override;
+    bool       IsNull() const override;
 
     // Classification
-    virtual HVE2DVectorTypeId
-    GetMainVectorType() const;
+    HVE2DVectorTypeId
+    GetMainVectorType() const override;
 
     // Tolerance application
-    virtual void        SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
-    virtual void        SetTolerance(double pi_Tolerance);
-    virtual void        SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance);
+    void        SetAutoToleranceActive(bool pi_ActiveAutoTolerance) override;
+    void        SetTolerance(double pi_Tolerance) override;
+    void        SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance) override;
 
     // Temporary
     virtual void        Rotate(double               pi_Angle,
                                const HGF2DLocation& pi_rOrigin)
         {};
 
-    virtual void        PrintState(ostream& po_rOutput) const;
+    void        PrintState(ostream& po_rOutput) const override;
 
     // Inherited from graphic object
-    virtual HGF2DExtent
-    GetExtent() const;
+    HGF2DExtent
+    GetExtent() const override;
 
-    virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void       Scale(double pi_ScaleFactor,
-                             const HGF2DLocation& pi_rScaleOrigin);
+    void       Move(const HGF2DDisplacement& pi_rDisplacement) override;
+    void       Scale(double pi_ScaleFactor,
+                             const HGF2DLocation& pi_rScaleOrigin) override;
 
 protected:
 
-    virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) override;
 
 private:
 

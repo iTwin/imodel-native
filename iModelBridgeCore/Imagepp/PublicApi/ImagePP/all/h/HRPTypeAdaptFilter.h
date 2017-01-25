@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypeAdaptFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ public:
     // Conversion
 
     void            Convert(   HRPPixelBuffer* pi_pInputBuffer,
-                               HRPPixelBuffer* pio_pOutputBuffer);
+                               HRPPixelBuffer* pio_pOutputBuffer) override;
 
     // List of filters
 
@@ -66,10 +66,10 @@ public:
     // Pixel types
 
     void            SetInputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pInputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pInputPixelType) override;
 
     void            SetOutputPixelType(
-        const HFCPtr<HRPPixelType>& pi_pOutputPixelType);
+        const HFCPtr<HRPPixelType>& pi_pOutputPixelType) override;
 
 private:
 

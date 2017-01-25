@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageView.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -34,74 +34,74 @@ public:
 
     // Overriden methods
 
-    virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
-                                              Byte                      pi_Id = 0) const;
+    bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
+                                              Byte                      pi_Id = 0) const override;
 
-    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster) override;
 
-    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
+    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
 
-    virtual HRARasterEditor*
-    CreateEditor   (HFCAccessMode pi_Mode);
+    HRARasterEditor*
+    CreateEditor   (HFCAccessMode pi_Mode) override;
 
-    virtual HRARasterEditor*
+    HRARasterEditor*
     CreateEditor   (const HVEShape& pi_rShape,
-                    HFCAccessMode   pi_Mode);
+                    HFCAccessMode   pi_Mode) override;
 
-    virtual HRARasterEditor*
-    CreateEditorUnShaped (HFCAccessMode pi_Mode);
+    HRARasterEditor*
+    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
-    virtual HRARasterIterator*
-    CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
+    HRARasterIterator*
+    CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 
-    virtual HGF2DExtent
-    GetAveragePixelSize () const;
-    virtual void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const;
+    HGF2DExtent
+    GetAveragePixelSize () const override;
+    void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const override;
 
-    virtual HFCPtr<HVEShape>
-    GetEffectiveShape () const;
+    HFCPtr<HVEShape>
+    GetEffectiveShape () const override;
 
-    virtual HFCPtr<HRPPixelType>
-    GetPixelType() const;
+    HFCPtr<HRPPixelType>
+    GetPixelType() const override;
 
-    virtual bool   HasSinglePixelType() const;
+    bool   HasSinglePixelType() const override;
 
-    virtual void    Move(const HGF2DDisplacement& pi_rDisplacement);
+    void    Move(const HGF2DDisplacement& pi_rDisplacement) override;
 
-    virtual void    Rotate(double               pi_Angle,
-                           const HGF2DLocation& pi_rOrigin);
+    void    Rotate(double               pi_Angle,
+                           const HGF2DLocation& pi_rOrigin) override;
 
-    virtual void    Scale(double pi_ScaleFactorX,
+    void    Scale(double pi_ScaleFactorX,
                           double pi_ScaleFactorY,
-                          const HGF2DLocation& pi_rOrigin);
+                          const HGF2DLocation& pi_rOrigin) override;
 
-    virtual void    SetCoordSys (const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    void    SetCoordSys (const HFCPtr<HGF2DCoordSys>& pi_pCoordSys) override;
 
-    virtual HGF2DExtent
-    GetExtent() const;
+    HGF2DExtent
+    GetExtent() const override;
 
-    virtual const HVEShape&
-    GetShape    () const;
-    virtual void    SetShape    (const HVEShape& pi_rShape);
+    const HVEShape&
+    GetShape    () const override;
+    void    SetShape    (const HVEShape& pi_rShape) override;
 
     // Source
     IMAGEPP_EXPORT const HFCPtr<HRARaster>&
     GetSource() const;
 
     // LookAhead Methods
-    virtual bool   HasLookAhead() const;
-    virtual void    SetLookAhead(const HVEShape& pi_rShape,
+    bool   HasLookAhead() const override;
+    void    SetLookAhead(const HVEShape& pi_rShape,
                                  uint32_t        pi_ConsumerID,
-                                 bool           pi_Async = false);
+                                 bool           pi_Async = false) override;
 
     //Context Methods
-    virtual void               SetContext(const HFCPtr<HMDContext>& pi_rpContext);
-    virtual HFCPtr<HMDContext> GetContext();
+    void               SetContext(const HFCPtr<HMDContext>& pi_rpContext) override;
+    HFCPtr<HMDContext> GetContext() override;
 
-    virtual void               InvalidateRaster();
+    void               InvalidateRaster() override;
 
 protected:
 

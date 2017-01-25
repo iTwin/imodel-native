@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphC30File.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -37,9 +37,9 @@ public:
                           uint64_t       pi_Offset = 0);
 
     // File capabilities
-    virtual const   HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
+    const   HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const override;
 
-    virtual            uint64_t                             GetFileCurrentSize() const;
+    uint64_t                             GetFileCurrentSize() const override;
 
 protected:
 
