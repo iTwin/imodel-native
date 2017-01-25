@@ -42,14 +42,6 @@ static bool ClassNameComparer(ECClassP class1, ECClassP class2)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::IsValidName (Utf8CP name)
-    {
-    return RESULT_Valid == Validate (name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Currently this is only used by ECValidatedName and ECSchema.
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -80,22 +72,6 @@ void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     encoded.append(L"__x");
     encoded.append(buf);
     encoded.append(L"__");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::IsValidAlphaNumericCharacter (WChar c)
-    {
-    return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::IsValidAlphaNumericCharacter (Utf8Char c)
-    {
-    return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,48 +289,14 @@ ECSchema::~ECSchema ()
                                         // pointer set to 0xececdead will crash just as reliably.
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchema::IsSystemSchema () const
-    {
-    return IsDefined("Bentley_Standard_Custom_Attributes", "SystemSchema");
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan    02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsDynamicSchema () const
-    {
-    return IsDefined("CoreCustomAttributes", "DynamicSchema") ||
-            IsDefined("Bentley_Standard_Custom_Attributes", "DynamicSchema");
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
+void ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
     {
     s_noAssert = !doAssert;
     ECClass::SetErrorHandling(doAssert);
     SchemaXmlReader::SetErrorHandling(doAssert);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchema::_GetContainerSchema() const
-    {
-    return this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetName () const
-    {
-    return m_key.m_schemaName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,14 +314,6 @@ ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
         ECNameValidation::DecodeFromValidName (m_displayLabel, m_key.m_schemaName);
 
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetAlias () const
-    {
-    return m_alias;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -403,22 +337,6 @@ ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetDescription () const
-    {
-    return m_localizedStrings.GetSchemaDescription(this, m_description);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetInvariantDescription() const
-    {
-    return m_description;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDescription (Utf8StringCR description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
@@ -430,17 +348,9 @@ ECObjectsStatus ECSchema::SetDescription (Utf8StringCR description)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetDisplayLabel () const
-    {
-    return m_localizedStrings.GetSchemaDisplayLabel(this, m_displayLabel);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetInvariantDisplayLabel() const
-    {
-    return m_displayLabel;
+Utf8StringCR ECSchema::GetDescription() const
+    { 
+    return m_localizedStrings.GetSchemaDescription(this, m_description); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -458,9 +368,9 @@ ECObjectsStatus ECSchema::SetDisplayLabel (Utf8StringCR displayLabel)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::GetIsDisplayLabelDefined () const
+Utf8StringCR ECSchema::GetDisplayLabel() const 
     {
-    return m_hasExplicitDisplayLabel;
+    return m_localizedStrings.GetSchemaDisplayLabel(this, m_displayLabel); 
     }
 
 static Utf8CP s_standardSchemaNames[] =
@@ -520,10 +430,7 @@ static Utf8CP s_originalStandardSchemaFullNames[] =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSamePrimarySchema
-(
-ECSchemaR primarySchema
-) const
+bool ECSchema::IsSamePrimarySchema (ECSchemaR primarySchema) const
     {
     if (0 != BeStringUtilities::StricmpAscii(this->GetAlias().c_str(), primarySchema.GetAlias().c_str()))
         return false;
@@ -537,30 +444,10 @@ ECSchemaR primarySchema
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchema::IsSupplementalSchema
-(
-) const
+bool ECSchema::IsSupplementalSchema () const
     {
     SupplementalSchemaMetaDataPtr suppMetaData = nullptr;
     return SupplementalSchemaMetaData::TryGetFromSchema(suppMetaData, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSupplemented
-(
-) const
-    {
-    return m_isSupplemented;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                08/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::ShouldNotBeStored () const
-    {
-    return ShouldNotBeStored (GetSchemaKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,28 +470,12 @@ bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetVersionRead () const
-    {
-    return m_key.m_versionRead;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionRead (const uint32_t versionRead)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_key.m_versionRead = versionRead;
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetVersionWrite () const
-    {
-    return m_key.m_versionWrite;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,52 +492,12 @@ ECObjectsStatus ECSchema::SetVersionWrite (const uint32_t value)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetVersionMinor
-(
-) const
-    {
-    return m_key.m_versionMinor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_key.m_versionMinor = versionMinor;
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetOriginalECXmlVersionMajor
-(
-) const
-    {
-    return m_originalECXmlVersionMajor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetOriginalECXmlVersionMinor
-(
-) const
-    {
-    return m_originalECXmlVersionMinor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECVersion ECSchema::GetECVersion
-(
-) const
-    {
-    return m_ecVersion;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,14 +603,6 @@ bool ECSchema::Validate(bool resolveIssues)
         m_ecVersion = ECVersion::V3_1;
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECSchema::GetClassCP (Utf8CP name) const
-    {
-    return const_cast<ECSchemaP> (this)->GetClassP(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1296,14 +1119,10 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
 bool ECSchema::NamedElementExists(Utf8CP name)
     {
     if (m_classMap.find(name) != m_classMap.end())
-        {
         return true;
-        }
 
     if (m_enumerationMap.find(name) != m_enumerationMap.end())
-        {
         return true;
-        }
 
     return m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end();
     }
@@ -1393,7 +1212,7 @@ ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
+ECObjectsStatus ECSchema::SetVersionFromString(Utf8CP versionString)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1459,10 +1278,7 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema
-(
-ECSchemaPtr& schemaOut
-) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -1507,7 +1323,7 @@ ECSchemaPtr& schemaOut
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchema::GetSchemaByAliasP (Utf8StringCR alias) const
+ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const
     {
     if (alias.length() == 0)
         return this;
@@ -1526,7 +1342,7 @@ ECSchemaCP ECSchema::GetSchemaByAliasP (Utf8StringCR alias) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ResolveAlias (ECSchemaCR schema, Utf8StringR alias) const
+ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) const
     {
     alias = EMPTY_STRING;
     if (&schema == this)
@@ -1543,33 +1359,9 @@ ECObjectsStatus ECSchema::ResolveAlias (ECSchemaCR schema, Utf8StringR alias) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassContainerCR ECSchema::GetClasses () const
-    {
-    return m_classContainer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReferenceListCR ECSchema::GetReferencedSchemas () const
-    {
-    return m_refSchemaList;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema)
-    {
-    return AddReferencedSchema (refSchema, refSchema.GetAlias());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR alias)
+ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias)
     {
     ECSchemaReadContext context (NULL, false, false);
     return AddReferencedSchema(refSchema, alias, context);
@@ -1578,7 +1370,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
+ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
     {
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
@@ -1648,7 +1440,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
+ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
     {
     ECSchemaReferenceList::iterator schemaIterator = m_refSchemaList.find (refSchema.GetSchemaKey());
     if (schemaIterator == m_refSchemaList.end())
@@ -1815,17 +1607,6 @@ int ECSchema::RemoveUnusedSchemaReferences()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetIsSupplemented
-(
-bool isSupplemented
-)
-    {
-    m_isSupplemented = isSupplemented;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     {
     m_supplementalSchemaInfo = info;
@@ -1848,25 +1629,9 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaInfoPtr const ECSchema::GetSupplementalInfo() const
-    {
-    return m_supplementalSchemaInfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr IECSchemaLocater::LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
-    {
-    return _LocateSchema (key, matchType, schemaContext);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR schemaContext)
+ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaContext)
     {
     return schemaContext.LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
     }
@@ -1874,13 +1639,7 @@ ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas
-(
-Utf8StringCR schemaName, 
-WStringCR schemaFilePath, 
-ECSchemaReadContextR schemaContext,
-bvector<ECSchemaP>& supplementalSchemas
-)
+bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas)
     {
     BeFileName schemaPath (schemaFilePath.c_str());
     WString filter;
@@ -1937,15 +1696,7 @@ SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSche
     return new SearchPathSchemaFileLocater(searchPaths);
     }
 
-void SearchPathSchemaFileLocater::AddCandidateSchemas
-(
-bvector<CandidateSchema>& foundFiles,
-WStringCR schemaPath,
-WStringCR fileFilter,
-SchemaKeyR desiredSchemaKey,
-SchemaMatchType matchType,
-ECSchemaReadContextCR schemaContext
-)
+void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
     {
     BeFileName fileExpression(schemaPath.c_str());
     fileExpression.AppendToPath(fileFilter.c_str());
@@ -1982,13 +1733,7 @@ ECSchemaReadContextCR schemaContext
         }
     }
 
-void SearchPathSchemaFileLocater::FindEligibleSchemaFiles
-(
-bvector<CandidateSchema>& foundFiles,
-SchemaKeyR desiredSchemaKey,
-SchemaMatchType matchType,
-ECSchemaReadContextCR schemaContext
-)
+void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
     {
     Utf8CP schemaName = desiredSchemaKey.m_schemaName.c_str();
     WString twoVersionExpression;
@@ -2225,7 +1970,7 @@ struct          CheckSumHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Krischan.Eberle                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSize)
+uint32_t CheckSumHelper::ComputeCheckSumForString(Utf8CP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -2233,7 +1978,7 @@ uint32_t CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
+uint32_t CheckSumHelper::ComputeCheckSumForString(WCharCP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -2241,7 +1986,7 @@ uint32_t CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t buffer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
+uint32_t CheckSumHelper::ComputeCheckSumForFile(WCharCP schemaFile)
     {
     uint32_t checkSum = 0;
     BeFile file;
@@ -2269,7 +2014,7 @@ uint32_t        CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
+SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
@@ -2315,12 +2060,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus     ECSchema::ReadFromXmlString
-(
-ECSchemaPtr&         schemaOut,
-Utf8CP               ecSchemaXml,
-ECSchemaReadContextR schemaContext
-)
+SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext)
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
@@ -2371,12 +2111,7 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus     ECSchema::ReadFromXmlString
-(
-ECSchemaPtr&         schemaOut,
-WCharCP              ecSchemaXml,
-ECSchemaReadContextR schemaContext
-)
+SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext)
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
@@ -2425,11 +2160,7 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaReferenced
-(
-ECSchemaCR thisSchema,
-ECSchemaCR potentiallyReferencedSchema
-)
+bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema)
     {
     ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
     return referencedSchemas.end() != referencedSchemas.find (potentiallyReferencedSchema.GetSchemaKey());
@@ -2475,7 +2206,7 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
 
@@ -2494,7 +2225,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, ECVersion ec
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
 
@@ -2560,15 +2291,7 @@ bool     utf16
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSchemas, bool includeRootSchema)
-    {
-    FindAllSchemasInGraph ((bvector<ECN::ECSchemaCP>&)allSchemas, includeRootSchema);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void ECSchema::CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     if (includeRootSchema)
         allSchemas.push_back (this);
@@ -2598,7 +2321,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& al
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void ECSchema::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     CollectAllSchemasInGraph (allSchemas, includeRootSchema);
     std::reverse(allSchemas.begin(), allSchemas.end());
@@ -2616,7 +2339,7 @@ ECSchemaId ECSchema::GetId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchema::FindSchema (SchemaKeyCR schemaKey, SchemaMatchType matchType) const
+ECSchemaCP ECSchema::FindSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType) const
     {
     if (this->GetSchemaKey().Matches (schemaKey, matchType))
         return this;
@@ -2625,19 +2348,11 @@ ECSchemaCP ECSchema::FindSchema (SchemaKeyCR schemaKey, SchemaMatchType matchTyp
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         {
         ECSchemaCP schema = iter->second->FindSchema (schemaKey, matchType);
-        if (NULL != schema)
+        if (nullptr != schema)
             return schema;
         }
 
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchema::FindSchemaP (SchemaKeyCR schemaKey, SchemaMatchType matchType)
-    {
-    return const_cast<ECSchemaP> (FindSchema(schemaKey, matchType));
+    return nullptr;
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -2646,9 +2361,9 @@ ECSchemaP ECSchema::FindSchemaP (SchemaKeyCR schemaKey, SchemaMatchType matchTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  IStandaloneEnablerLocater::LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className)
+StandaloneECEnablerPtr IStandaloneEnablerLocater::LocateStandaloneEnabler(SchemaKeyCR schemaKey, Utf8CP className)
     {
-    return  _LocateStandaloneEnabler (schemaKey, className);
+    return _LocateStandaloneEnabler(schemaKey, className);
     }
 
 DEFINE_KEY_METHOD(IStandaloneEnablerLocater)
@@ -2659,7 +2374,7 @@ DEFINE_KEY_METHOD(IStandaloneEnablerLocater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCache::~ECSchemaCache ()
+ECSchemaCache::~ECSchemaCache()
     {
     m_schemas.clear();
     }
@@ -2667,7 +2382,7 @@ ECSchemaCache::~ECSchemaCache ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int                             ECSchemaCache::GetCount () const
+int ECSchemaCache::GetCount() const
     {
     return (int)m_schemas.size();
     }
@@ -2683,7 +2398,7 @@ IECSchemaLocater& ECSchemaCache::GetSchemaLocater()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
     {
     if (m_schemas.end() != m_schemas.find (ecSchema.GetSchemaKey()))
         return ECObjectsStatus::DuplicateSchema;
@@ -2704,7 +2419,7 @@ ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::DropSchema  (SchemaKeyCR ecSchemaKey)
+ECObjectsStatus ECSchemaCache::DropSchema(SchemaKeyCR ecSchemaKey)
     {
     SchemaMap::iterator iter = m_schemas.find (ecSchemaKey);
     if (iter == m_schemas.end())
@@ -2745,7 +2460,7 @@ ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                             ECSchemaCache::Clear ()
+void ECSchemaCache::Clear()
     {
     m_schemas.clear();
     }
@@ -2753,7 +2468,7 @@ void                             ECSchemaCache::Clear ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key) const
+ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key) const
     {
     return GetSchema(key, SchemaMatchType::Identical);
     }
@@ -2761,7 +2476,7 @@ ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const
+ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const
     {
     SchemaMap::const_iterator iter;
     switch (matchType)
@@ -2788,7 +2503,7 @@ ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaCache::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+ECSchemaPtr ECSchemaCache::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
     return GetSchema(key, matchType);
     }
@@ -2796,7 +2511,7 @@ ECSchemaPtr     ECSchemaCache::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCachePtr    ECSchemaCache::Create ()
+ECSchemaCachePtr ECSchemaCache::Create()
     {
     return new ECSchemaCache;
     }
@@ -2818,7 +2533,7 @@ bvector<ECSchemaCP> ECSchemaCache::GetSchemas() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
+size_t ECSchemaCache::GetSchemas(bvector<ECSchemaP>& schemas) const
     {
     schemas.clear();
 
@@ -3058,14 +2773,6 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaKeyCR ECSchema::GetSchemaKey ()const
-    {
-    return m_key;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer() { return *this; }
@@ -3090,7 +2797,7 @@ struct ECGetChildFunctor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECSchema::AddingSchemaCausedCycles () const
+bool ECSchema::AddingSchemaCausedCycles () const
     {
     ECGetChildFunctor fncTor;
 
@@ -3301,7 +3008,7 @@ struct ECClassFinder
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP        SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
+ECClassP SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
     {
     ECClassP classInstance = NULL;
     ECClassFinder classFinder(classNamePair, classInstance);
@@ -3310,10 +3017,10 @@ ECClassP        SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& 
     return iter == end() ? NULL : classInstance;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
+ /*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                    Abeesh.Basheer                  04/2012
+ +---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
     {
     return CheckSumHelper::ComputeCheckSumForString (str, len);
     }
@@ -3321,7 +3028,7 @@ uint32_t        ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::ReComputeCheckSum ()
+void ECSchema::ReComputeCheckSum ()
     {
     if (m_immutable)
         return;
@@ -3336,7 +3043,7 @@ void            ECSchema::ReComputeCheckSum ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::SetImmutable()
+void ECSchema::SetImmutable()
     {
     BeAssert(!m_immutable);
     ReComputeCheckSum();
@@ -3603,7 +3310,5 @@ bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaR
 
     return remapped;
     }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-
-
