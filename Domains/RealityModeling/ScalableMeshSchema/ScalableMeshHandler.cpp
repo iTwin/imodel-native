@@ -14,6 +14,7 @@
 
 #include <ScalableMesh\GeoCoords\GCS.h>
 
+#include <Bentley\BeDirectoryIterator.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -813,10 +814,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                 clipPrimitive->SetIsMask(false);
                 ClipVectorPtr clip = ClipVector::CreateFromPrimitive(clipPrimitive);
                 clipFromCoverageSet.push_back(clip);
-                }
-            nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
+                }            
             }
 
+        nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
         nextDrawingInfoPtr->m_hasCoverage = true;
         }
 
@@ -1182,6 +1183,12 @@ ScalableMeshModel::~ScalableMeshModel()
     ClearProgressiveQueriesInfo();
     }
 
+BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject)
+    {
+    BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
+    return clipFileBase;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1201,6 +1208,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
     clipFileBase.AppendUtf8(std::to_string(nOfOtherModels).c_str());
+
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
 
@@ -1566,5 +1574,27 @@ void ScalableMeshModel::ReloadMesh() // force to reload the entire mesh data
     m_forceRedraw = true;
     }
 
+
+DgnDbStatus ScalableMeshModel::_OnDelete()
+    {
+    DgnDbStatus stat = T_Super::_OnDelete();
+    if (m_smPtr.IsValid())
+        {
+        BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(m_dgndb)).GetDirectoryName();
+        WString pattern = L"*";
+        pattern+=m_path.GetFileNameWithoutExtension().c_str();
+        pattern += L"_*";
+
+        bvector<BeFileName> smGeneratedProjectFiles;
+        BeDirectoryIterator::WalkDirsAndMatch(smGeneratedProjectFiles, clipFileBase, pattern.c_str(), true);
+
+        for (BeFileName& currentFile : smGeneratedProjectFiles)
+            {
+            _wremove(currentFile.c_str());
+            }
+        }
+
+    return stat;
+    }
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
