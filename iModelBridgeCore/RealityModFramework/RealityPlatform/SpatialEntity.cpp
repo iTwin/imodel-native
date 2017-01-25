@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/SpatialEntity.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -110,13 +110,32 @@ SpatialEntityPtr SpatialEntity::Create()
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+SpatialEntityPtr SpatialEntity::Create(Utf8StringCR identifier, const DateTime& date, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name)
+    {
+    SpatialEntityPtr mySpatialEntity = new SpatialEntity();
+
+    mySpatialEntity->SetIdentifier(identifier.c_str());
+    mySpatialEntity->SetDate(date);
+    mySpatialEntity->SetResolution(resolution.c_str());
+    mySpatialEntity->SetFootprint(footprint);
+    mySpatialEntity->SetName(name.c_str());
+
+    return mySpatialEntity;
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntity::GetIdentifier() const { return m_identifier; }
+void SpatialEntity::SetIdentifier(Utf8CP identifier) { m_identifier = identifier; }
+
 Utf8StringCR SpatialEntity::GetName() const { return m_name; }
 void SpatialEntity::SetName(Utf8CP name) { m_name = name; }
 
 Utf8StringCR SpatialEntity::GetResolution() const { return m_resolution; }
-void SpatialEntity::SetResolution(Utf8CP res) { m_resolution = res; }
+void SpatialEntity::SetResolution(Utf8CP res) { m_resolution = res; m_resolutionValueUpToDate = false;}
 
 Utf8StringCR SpatialEntity::GetProvider() const { return m_provider; }
 void SpatialEntity::SetProvider(Utf8CP provider) { m_provider = provider; }
@@ -142,8 +161,8 @@ void SpatialEntity::SetDataType(Utf8CP type) { m_dataType = type; }
 DateTimeCR SpatialEntity::GetDate() const { return m_date; }
 void SpatialEntity::SetDate(DateTimeCR date) { m_date = date; }
 
-const bvector<DPoint2d>& SpatialEntity::GetFootprint() const { return m_footprint; }
-void SpatialEntity::SetFootprint(bvector<DPoint2d>& footprint) { m_footprint = footprint; }
+const bvector<GeoPoint2d>& SpatialEntity::GetFootprint() const { return m_footprint; }
+void SpatialEntity::SetFootprint(bvector<GeoPoint2d> const& footprint) { m_footprint = footprint; }
 
 DRange2dCR SpatialEntity::GetFootprintExtents() const { return m_footprintExtents; }
 void SpatialEntity::SetFootprintExtents(DRange2dCR footprintExtents) { m_footprintExtents = footprintExtents; }
@@ -166,6 +185,31 @@ uint64_t SpatialEntity::GetApproximateFileSize() const {return m_approximateFile
 void SpatialEntity::SetApproximateFileSize(uint64_t size) {m_approximateFileSize = size;}
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Alain.Robert           12/2016
+//-------------------------------------------------------------------------------------
+double SpatialEntity::GetResolutionValue() const
+    {
+    if (!m_resolutionValueUpToDate)
+        {
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(m_resolution.c_str(), "x", tokens);
+        BeAssert(2 == tokens.size());
+        if (2 == tokens.size()) 
+            {
+            // Convert to double.
+            double resX = strtod(tokens[0].c_str(), NULL);
+            double resY = strtod(tokens[1].c_str(), NULL);
+
+            m_resolutionValue = sqrt(resX * resY);
+            m_resolutionValueUpToDate = true;
+            }
+        else 
+            return 0.0;
+        }
+
+    return m_resolutionValue;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -173,8 +217,9 @@ void SpatialEntity::SetApproximateFileSize(uint64_t size) {m_approximateFileSize
 SpatialEntity::SpatialEntity()
     {
     m_date = DateTime();
-    m_footprint = bvector<DPoint2d>();
+    m_footprint = bvector<GeoPoint2d>();
     m_footprintExtents = DRange2d();
+    m_resolutionValueUpToDate = false;
 
     }
 

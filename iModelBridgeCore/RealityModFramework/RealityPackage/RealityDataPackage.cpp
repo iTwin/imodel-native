@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealityDataPackage.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RealityPackage/RealityDataPackage.h>
@@ -24,7 +24,7 @@ Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-DPoint2dCP BoundingPolygon::GetPointCP() const {return &m_points[0];}
+GeoPoint2dCP BoundingPolygon::GetPointCP() const {return &m_points[0];}
 bool BoundingPolygon::IsValid() const { return GetPointCount() > 3;}
 size_t BoundingPolygon::GetPointCount() const {return m_points.size();}
 
@@ -39,14 +39,14 @@ BoundingPolygonPtr BoundingPolygon::Create()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
+BoundingPolygonPtr BoundingPolygon::Create(GeoPoint2dCP pPoints, size_t count)
     {
     if(count < 3)
         return NULL;
 
     for(size_t i=0; i < count; ++i)
         {
-        if(!RealityDataSerializer::IsValidLongLat(pPoints[i].x, pPoints[i].y))
+        if(!RealityDataSerializer::IsValidLongLat(pPoints[i].longitude, pPoints[i].latitude))
             {
             BeDataAssert(!"Invalid polygon long/lat");
             return NULL;
@@ -62,7 +62,7 @@ BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-BoundingPolygon::BoundingPolygon(DPoint2dCP pPoints, size_t count)
+BoundingPolygon::BoundingPolygon(GeoPoint2dCP pPoints, size_t count)
     {
     if(count > 2)
         {
@@ -95,7 +95,7 @@ WString BoundingPolygon::ToString() const
     WString result;
     for(auto point : m_points)
         {
-        WPrintfString pointStr(LATLONG_PRINT_FORMAT L" ", point.x, point.y);
+        WPrintfString pointStr(LATLONG_PRINT_FORMAT L" ", point.longitude, point.latitude);
         result.append(pointStr);
         }
 
@@ -111,14 +111,14 @@ WString BoundingPolygon::ToString() const
 //----------------------------------------------------------------------------------------
 BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr) 
     {
-    bvector<DPoint2d> points;
+    bvector<GeoPoint2d> points;
 
     WStringTokenizer tokenizer(polygonStr, SPACE_DELIMITER_U);
     
     while(tokenizer.HasValue())
         {
-        DPoint2d point;
-        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y) || !RealityDataSerializer::IsValidLongLat(point.x, point.y))
+        GeoPoint2d point;
+        if(!tokenizer.Get(point.longitude) || !tokenizer.Get(point.latitude) || !RealityDataSerializer::IsValidLongLat(point.longitude, point.latitude))
             {
             BeDataAssert(!"Invalid polygon data");
             points.clear(); // incomplete x-y sequence.
@@ -152,14 +152,14 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
 //-------------------------------------------------------------------------------------
 BoundingPolygonPtr BoundingPolygon::FromString(Utf8StringCR polygonStr)
     {
-    bvector<DPoint2d> points;
+    bvector<GeoPoint2d> points;
 
     Utf8StringTokenizer tokenizer(polygonStr, SPACE_DELIMITER);
 
     while (tokenizer.HasValue())
         {
-        DPoint2d point;
-        if (!tokenizer.Get(point.x) || !tokenizer.Get(point.y) || !RealityDataSerializer::IsValidLongLat(point.x, point.y))
+        GeoPoint2d point;
+        if (!tokenizer.Get(point.longitude) || !tokenizer.Get(point.latitude) || !RealityDataSerializer::IsValidLongLat(point.longitude, point.latitude))
             {
             BeDataAssert(!"Invalid polygon data");
             points.clear(); // incomplete x-y sequence.
@@ -416,14 +416,14 @@ RealityData::~RealityData(){}
 //=======================================================================================
 //                              ImageryData
 //=======================================================================================
-ImageryData::ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners):RealityData(dataSource){SetCorners(pCorners);}
+ImageryData::ImageryData(RealityDataSourceR dataSource, GeoPoint2dCP pCorners):RealityData(dataSource){SetCorners(pCorners);}
 
 ImageryData::~ImageryData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, DPoint2dCP pCorners)
+ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, GeoPoint2dCP pCorners)
     {
     // If corners are given they must be valid.
     if(NULL != pCorners && !HasValidCorners(pCorners))
@@ -435,14 +435,14 @@ ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, DPoint2dCP pCo
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
+bool ImageryData::HasValidCorners(GeoPoint2dCP pCorners)
     {
-    if(NULL == pCorners || pCorners[0].IsEqual(pCorners[1]))
+    if(NULL == pCorners)
         return false;
 
     for(size_t i=0; i < 4; ++i)
         {
-        if(!RealityDataSerializer::IsValidLongLat(pCorners[i].x, pCorners[i].y))
+        if(!RealityDataSerializer::IsValidLongLat(pCorners[i].longitude, pCorners[i].latitude))
             {
             BeDataAssert(!"Invalid long/lat");
             return false;
@@ -456,7 +456,7 @@ bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-DPoint2dCP ImageryData::GetCornersCP() const
+GeoPoint2dCP ImageryData::GetCornersCP() const
     {
     if(!HasValidCorners(m_corners))
         return NULL;
@@ -467,7 +467,7 @@ DPoint2dCP ImageryData::GetCornersCP() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-void ImageryData::SetCorners(DPoint2dCP pCorners)
+void ImageryData::SetCorners(GeoPoint2dCP pCorners)
     {
     if(NULL == pCorners || !HasValidCorners(pCorners))
         {
@@ -513,10 +513,10 @@ PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double longitude
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-DPoint2dCR PinnedData::GetLocation() const{return m_location;}
-bool PinnedData::SetLocation(DPoint2dCR location)
+GeoPoint2dCR PinnedData::GetLocation() const{return m_location;}
+bool PinnedData::SetLocation(GeoPoint2dCR location)
     {
-    if(!RealityDataSerializer::IsValidLongLat(location.x, location.y))
+    if(!RealityDataSerializer::IsValidLongLat(location.longitude, location.latitude))
         return false;
 
     m_location = location;

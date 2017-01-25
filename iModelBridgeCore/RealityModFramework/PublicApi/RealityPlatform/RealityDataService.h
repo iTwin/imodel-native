@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityDataService.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,8 +50,8 @@ struct RealityDataByIdRequest : public WSGObjectRequest
     {
 public:
 	// Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) {m_identifier = identifier;}
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8CP identifier) {m_identifier = identifier;}
+    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    //REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8CP identifier): m_identifier(identifier) {}
    
 protected:
     virtual bool _PrepareHttpRequestStringAndPayload() const override;
@@ -71,8 +71,8 @@ private:
 struct RealityDataProjectRelationshipByIdRequest : public WSGObjectRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8StringCR identifier) {m_identifier = identifier;}
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8CP identifier) {m_identifier = identifier;}
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    //REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8CP identifier): m_identifier(identifier){}
 
 protected:
     virtual bool _PrepareHttpRequestStringAndPayload() const override;
@@ -90,8 +90,8 @@ private:
 struct RealityDataFolderByIdRequest : public WSGObjectRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) {m_identifier = identifier;}
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8CP identifier) {m_identifier = identifier;}
+    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    //REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
 
 protected:
     virtual bool _PrepareHttpRequestStringAndPayload() const override;
@@ -109,8 +109,8 @@ private:
 struct RealityDataDocumentByIdRequest : public WSGObjectRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) {m_identifier = identifier;}
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8CP identifier) {m_identifier = identifier;}
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    //REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
 	
 protected:
     virtual bool _PrepareHttpRequestStringAndPayload() const override;
@@ -152,8 +152,8 @@ private:
 struct RealityDataDocumentContentByIdRequest : public WSGObjectContentRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) {m_identifier = identifier;}
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) {m_identifier = identifier;}
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(RealityDataDocumentContentByIdRequest object) 
 	
     //! This call modify the indentifier of the object. Since we want a 
@@ -354,7 +354,7 @@ typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
 //! The present class offers services to upload a file including use of callback
 //!  to indicate progress.
 //! The service is used by specifying the source path ot the source file or files.
-//! One and only one of SetSourcePath(), SetSOurceFile() or SetSourceFiles()
+//! One and only one of SetSourcePath(), SetSourceFile() or SetSourceFiles()
 //!  will be called.
 //=====================================================================================
 struct RealityDataServiceUpload : public RefCounted

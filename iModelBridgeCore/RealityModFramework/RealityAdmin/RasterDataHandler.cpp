@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/RasterDataHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -191,7 +191,7 @@ const Utf8String RasterData::ComputeResolutionInMeters()
     try
         {
         // Get extent.
-        bvector<DPoint2d> footprint = bvector<DPoint2d>();
+        bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
         DRange2d footprintExtents = DRange2d();
         if (SUCCESS != ExtractFootprint(&footprint, &footprintExtents) || footprint.size() == 0)
             return NULL;
@@ -239,7 +239,7 @@ const Utf8String RasterData::ComputeResolutionInMeters()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
+StatusInt RasterData::_GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     return ExtractFootprint(pFootprint, pFootprintExtents);
     }
@@ -247,7 +247,7 @@ StatusInt RasterData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
+StatusInt RasterData::ExtractFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     // Get the rasterFile 
     HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
@@ -319,8 +319,8 @@ StatusInt RasterData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP 
 
         HGF2DExtent extent = pPixelShape->GetExtent();
         pFootprintExtents->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
-        pFootprint->push_back(DPoint2d::From(extent.GetXMin(), extent.GetYMin()));
-        pFootprint->push_back(DPoint2d::From(extent.GetXMax(), extent.GetYMax()));
+        pFootprint->push_back(GeoPoint2d::From(extent.GetXMin(), extent.GetYMin()));
+        pFootprint->push_back(GeoPoint2d::From(extent.GetXMax(), extent.GetYMax()));
 
         return SUCCESS;
         }
@@ -437,24 +437,24 @@ StatusInt RasterData::ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RasterData::_SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const
+StatusInt RasterData::_SaveFootprint(bvector<GeoPoint2d>& data, BeFileNameCR outFilename) const
     {
     bvector<Utf8String> buffer;
 
-    //DPoint2dP box;
+    //GeoPoint2dP box;
     //data.Get4Corners(box);
 
     // Convert double to string.
     char buf[32];
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].longitude, data[0].latitude);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].longitude, data[0].latitude);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].longitude, data[0].latitude);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].longitude, data[0].latitude);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f", data[0].x, data[0].y);
+    BeStringUtilities::Snprintf(buf, "%f %f", data[0].longitude, data[0].latitude);
     buffer.push_back(buf);
     
     BeFile file;

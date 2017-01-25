@@ -16,7 +16,8 @@
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <SubPart PartName="BentleyDesktopClient-Api"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
@@ -84,7 +85,7 @@
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="BeXmlDll"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPackage$(libext)</Libs>
@@ -101,7 +102,7 @@
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-        <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
@@ -127,6 +128,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/WSGServicesExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -149,6 +160,7 @@
     
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
+        <SubPart PartName="WSGServicesExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>

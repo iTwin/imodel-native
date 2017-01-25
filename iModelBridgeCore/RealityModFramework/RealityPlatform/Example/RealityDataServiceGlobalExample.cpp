@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/Example/RealityDataServiceGlobalExample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -251,7 +251,7 @@ class RealityDataServiceClientExample
 
             RealityDataServiceDocumentContentRequest myRootDocRequest(resultList[index]->GetId(), resultList[index]->GetRootDocument());
 
-            bvector<bytes> thumbnailContent = RealityDataService::Request(myRootDocRequest);
+            bvector<bytes> rootDocumentContent = RealityDataService::Request(myRootDocRequest);
             }
         }
 

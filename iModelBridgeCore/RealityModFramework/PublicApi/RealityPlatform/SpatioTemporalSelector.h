@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/SpatioTemporalSelector.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,7 +77,7 @@ public:
     //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
     //! to the region of interest so that we have a better chance of obtaining a better coverage.
     //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
-    REALITYDATAPLATFORM_EXPORT static const ResolutionMap GetIDsByRes(SpatioTemporalDatasetCR dataset,
+    REALITYDATAPLATFORM_EXPORT static const ResolutionMap GetIDsByRes(SpatialEntityDatasetCR dataset,
                                                                       const bvector<GeoPoint2d>& regionOfInterest,
                                                                       bool hasNoDataValue = false);
 
@@ -92,13 +92,13 @@ private:
     //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
     //! to the region of interest so that we have a better chance of obtaining a better coverage.
     //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
-    static const bvector<Utf8String> GetIDs(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<Utf8String> GetIDs(const bvector<SpatialEntityPtr>& dataset,
                                             const ImagePP::HGF2DShape& regionOfInterest,
                                             ResolutionCriteria qualityCriteria,
                                             DateCriteria captureDateCriteria,
                                             bool hasNoDataValue = false);
 
-    static const bvector<Utf8String> GetIDs(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<Utf8String> GetIDs(const bvector<SpatialEntityPtr>& dataset,
                                             const ImagePP::HGF2DShape& regionOfInterest,
                                             const double minResolution,
                                             const double maxResolution,
@@ -106,37 +106,37 @@ private:
                                             const DateTime& maxDate);
 
     //! Keep only the data included in a region of interest.
-    static const bvector<SpatioTemporalDataPtr> PositionFiltering(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<SpatialEntityPtr> PositionFiltering(const bvector<SpatialEntityPtr>& dataset,
                                                                   const ImagePP::HGF2DShape& regionOfInterest);
 
 
     //! Filter according to specified criteria. Resolution is a priority over capture date.
-    static const bvector<SpatioTemporalDataPtr> CriteriaFiltering(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<SpatialEntityPtr> CriteriaFiltering(const bvector<SpatialEntityPtr>& dataset,
                                                                   const ImagePP::HGF2DShape& regionOfInterest,
                                                                   ResolutionCriteria qualityCriteria,
                                                                   DateCriteria captureDateCriteria,
                                                                   bool hasNoDataValue);
 
-    static const bvector<SpatioTemporalDataPtr> CriteriaFiltering(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<SpatialEntityPtr> CriteriaFiltering(const bvector<SpatialEntityPtr>& dataset,
                                                                   const double minResolution,
                                                                   const double maxResolution,
                                                                   const DateTime& minDate,
                                                                   const DateTime& maxDate);
 
     //! Filter by resolution (low, medium, high).
-    static const StatusInt ResolutionFiltering(bvector<SpatioTemporalDataPtr>& lowResDataset,
-                                               bvector<SpatioTemporalDataPtr>& mediumResDataset,
-                                               bvector<SpatioTemporalDataPtr>& highResDataset,
-                                               const bvector<SpatioTemporalDataPtr>& dataset);
+    static const StatusInt ResolutionFiltering(bvector<SpatialEntityPtr>& lowResDataset,
+                                               bvector<SpatialEntityPtr>& mediumResDataset,
+                                               bvector<SpatialEntityPtr>& highResDataset,
+                                               const bvector<SpatialEntityPtr>& dataset);
 
     //! Filter by date (old, recent, up-to-date).
-    static const StatusInt DateFiltering(bvector<SpatioTemporalDataPtr>& oldDataset,
-                                         bvector<SpatioTemporalDataPtr>& recentDataset,
-                                         bvector<SpatioTemporalDataPtr>& upToDateDataset,
-                                         const bvector<SpatioTemporalDataPtr>& dataset);
+    static const StatusInt DateFiltering(bvector<SpatialEntityPtr>& oldDataset,
+                                         bvector<SpatialEntityPtr>& recentDataset,
+                                         bvector<SpatialEntityPtr>& upToDateDataset,
+                                         const bvector<SpatialEntityPtr>& dataset);
 
     //! Filter by distance (nearest to region of interest first).
-    static const StatusInt DistanceFiltering(bvector<SpatioTemporalDataPtr>& dataset,
+    static const StatusInt DistanceFiltering(bvector<SpatialEntityPtr>& dataset,
                                              const ImagePP::HGF2DShape& regionOfInterest);
 
     //! Fill the region of interest with best matching data (create a mosaic).
@@ -145,7 +145,7 @@ private:
     //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
     //! to the region of interest so that we have a better chance of obtaining a better coverage.
     //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
-    static const bvector<SpatioTemporalDataPtr> Select(const bvector<SpatioTemporalDataPtr>& dataset,
+    static const bvector<SpatialEntityPtr> Select(const bvector<SpatialEntityPtr>& dataset,
                                                        const ImagePP::HGF2DShape& regionOfInterest,
                                                        bool hasNoDataValue = false);
     };

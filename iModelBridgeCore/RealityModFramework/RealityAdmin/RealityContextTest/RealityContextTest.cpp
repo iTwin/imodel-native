@@ -103,9 +103,11 @@ void restartUser(UserManager* manager)
 void Dispatch(UserManager* manager)
     {
     bool hatching = true;
+    float userCount = (float)(manager->m_userCount);
     while (s_keepRunning)
         {
-        if (getInnactiveUserSize() == 0)
+        float innactiveUsers = (float)getInnactiveUserSize();
+        if (innactiveUsers == 0)
             {
             hatching = false;
             Sleep(2000);
@@ -117,7 +119,7 @@ void Dispatch(UserManager* manager)
         int sleep = rand();
         if(!hatching)
             {
-            sleep %= 2200;
+            sleep %= (int)(2200 * (1.0f - (innactiveUsers/userCount)));
             if(s_keepRunning)
                 s_stats.PrintStats();
             }
@@ -580,6 +582,8 @@ User::~User()
 //+---------------+---------------+---------------+---------------+---------------+------*/
 int main(int argc, char* argv[])
     {
+    SetConsoleTitle("Reality Context Test");
+
     if(argc < 3)
         {
         ShowUsage();
@@ -719,6 +723,7 @@ int main(int argc, char* argv[])
     
     UserManager wo = UserManager();
     wo.m_certPath = GetPemLocation();
+    wo.m_userCount = userCount;
 
     if(!trickle)
         {
@@ -739,7 +744,7 @@ int main(int argc, char* argv[])
     std::thread dispatch (Dispatch, &wo);
     std::thread terminate (Terminate);
 
-    wo.Perform(userCount);
+    wo.Perform();
     s_keepRunning = false;
     terminate.join();
     dispatch.join();
@@ -749,12 +754,12 @@ int main(int argc, char* argv[])
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void UserManager::Perform(int userCount)
+void UserManager::Perform()
     {
     // we can optionally limit the total amount of connections this multi handle uses 
-    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, userCount);
+    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, m_userCount);
 
-    for (int i = 0; i < min(userCount, (int)users.size()); ++i)
+    for (int i = 0; i < min(m_userCount, (int)users.size()); ++i)
         {
         users[i]->DoNext(this);
         }
@@ -827,7 +832,8 @@ void UserManager::Perform(int userCount)
                     char error[256];
                     sprintf(error, "curl error number: %d", (int)msg->data.result);
                     //in case of curl failure, add error number to error list
-                    s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, Utf8String(error));
+                    s_stats.InsertStats(user->m_currentOperation, false, std::time(nullptr) - user->m_downloadStart, still_running, Utf8String(error));
+                    s_stats.PrintStats();
                     if(s_keepRunning)
                         {
                         if(user->m_retryCounter < 10)
@@ -849,7 +855,7 @@ void UserManager::Perform(int userCount)
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct User *user = (struct User *)pClient;
-                s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, "unhandled curl failure");
+                s_stats.InsertStats(user->m_currentOperation, false, std::time(nullptr) - user->m_downloadStart, still_running, "unhandled curl failure");
                 }
             }
 

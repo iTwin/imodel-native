@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/PointCloudDataHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -163,7 +163,7 @@ void PointCloudData::CloseFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
+StatusInt PointCloudData::_GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     return ExtractFootprint(pFootprint, pFootprintExtents);
     }
@@ -171,7 +171,7 @@ StatusInt PointCloudData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
+StatusInt PointCloudData::ExtractFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
         return 0;
@@ -220,8 +220,8 @@ StatusInt PointCloudData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange
     baseGeoCoord_reproject(&upperX, &upperY, upper[0], upper[1], &*pSrcGcs, &*pDestGcs);
 
     pFootprintExtents->InitFrom(lowerX, lowerY, upperX, upperY);
-    pFootprint->push_back(DPoint2d::From(lowerX, lowerY));
-    pFootprint->push_back(DPoint2d::From(upperX, upperY));
+    pFootprint->push_back(GeoPoint2d::From(lowerX, lowerY));
+    pFootprint->push_back(GeoPoint2d::From(upperX, upperY));
 
     return SUCCESS;
     }
@@ -313,7 +313,7 @@ StatusInt PointCloudData::ExtractThumbnail(bvector<Byte>& buffer, uint32_t width
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt PointCloudData::_SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const
+StatusInt PointCloudData::_SaveFootprint(bvector<GeoPoint2d>& data, BeFileNameCR outFilename) const
     {
     return SUCCESS;
     }

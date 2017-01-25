@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealitySerialization.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -205,8 +205,8 @@ struct RealityDataSerializer : public RefCountedBase
         static bool IsValidLongLat(double longitude, double latitude);
         static RealityPackageStatus ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName);
         static RealityPackageStatus WriteLongLat(BeXmlNodeR parent, Utf8CP childName, double longitude, double latitude);
-        static RealityPackageStatus ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName);
-        static RealityPackageStatus WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point);
+        static RealityPackageStatus ReadGeoPoint2d(GeoPoint2dR point, BeXmlNodeR parent, Utf8CP childName);
+        static RealityPackageStatus WriteGeoPoint2d(BeXmlNodeR parent, Utf8CP childName, GeoPoint2dCR point);
 
     protected:
         virtual ~RealityDataSerializer() {};

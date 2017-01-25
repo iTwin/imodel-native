@@ -2,7 +2,7 @@
 #
 #     $Source: RealityPlatform/RealityPlatform.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -59,6 +59,10 @@ $(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(PublicApiDir)
 
 $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}
 
+$(o)WSGServices$(oext) : $(baseDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
+
+#$(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
@@ -82,6 +86,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)CCApi$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext)
 
 # windows specific for Unzipfile

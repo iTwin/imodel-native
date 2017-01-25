@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityConversionTools.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -117,10 +117,10 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
 
     // Footprint
-    bvector<DPoint2d> footprint = bvector<DPoint2d>();
+    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
     if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
         {
-        // Convert Utf8String to DPoint2d vector. 
+        // Convert Utf8String to GeoPoint2d vector. 
         // The string should look like this:
         // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
         footprintStr = properties["Footprint"].asString();
@@ -137,9 +137,9 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
             
         for (size_t i = 0; i < tokens.size(); i += 2)
             {
-            DPoint2d pt;
-            pt.x = strtod(tokens[i].c_str(), NULL);
-            pt.y = strtod(tokens[i + 1].c_str(), NULL);
+            GeoPoint2d pt;
+            pt.longitude = strtod(tokens[i].c_str(), NULL);
+            pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
 
             footprint.push_back(pt);
             }

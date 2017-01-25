@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/Example/DataHandlerTool.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -184,7 +184,7 @@ int main(array<String^>^ args)
             // Footprint
             String^ footprintFilename = outFilename->Substring(0, outFilename->LastIndexOf('.')) + ".txt";
             StreamWriter^ footprintFile = gcnew StreamWriter(footprintFilename);
-            DPoint2dP pPts = new DPoint2d();
+            GeoPoint2dP pPts = new GeoPoint2d();
             pShape.Get4Corners(pPts);
 
             // For now we are only dealing with bboxes.
@@ -195,10 +195,10 @@ int main(array<String^>^ args)
                 // {:G17}: In some cases, Double values formatted with the "R" standard numeric format string do not successfully 
                 //         round-trip if compiled using the /platform:x64 or /platform:anycpu switches and run on 64-bit systems. 
                 //         To work around this problem, you can format Double values by using the "G17" standard numeric format string.
-                footprintFile->WriteLine("{0:G17} {1:G17}", pPts[i].x, pPts[i].y);
+                footprintFile->WriteLine("{0:G17} {1:G17}", pPts[i].longitude, pPts[i].latitude);
                 }
             // Close shape (first point = last point)
-            footprintFile->WriteLine("{0:G17} {1:G17}", pPts[0].x, pPts[0].y);
+            footprintFile->WriteLine("{0:G17} {1:G17}", pPts[0].longitude, pPts[0].latitude);
 
             footprintFile->Close();
             }

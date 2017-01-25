@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/HttpTraversalEngine.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -306,7 +306,7 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
         }
   
     // Footprint.
-    bvector<DPoint2d> shape = bvector<DPoint2d>();
+    bvector<GeoPoint2d> shape = bvector<GeoPoint2d>();
     DRange2d extents = DRange2d();
     if (SUCCESS != pData->GetFootprint(&shape, &extents))
     {

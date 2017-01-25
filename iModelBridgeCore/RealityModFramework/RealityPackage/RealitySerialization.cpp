@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealitySerialization.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined(ANDROID)
@@ -60,16 +60,16 @@ bool RealityDataSerializer::IsValidLongLat(double longitude, double latitude)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializer::ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName)
     {
-    DPoint2d longLat;
-    RealityPackageStatus status = ReadDPoint2d(longLat, parent, childName);
+    GeoPoint2d longLat;
+    RealityPackageStatus status = ReadGeoPoint2d(longLat, parent, childName);
     if(RealityPackageStatus::Success != status)
         return status;
 
-    if(!IsValidLongLat(longLat.x, longLat.y))
+    if(!IsValidLongLat(longLat.longitude, longLat.latitude))
         return RealityPackageStatus::InvalidLongitudeLatitude;
 
-    longitude = longLat.x;
-    latitude = longLat.y;
+    longitude = longLat.longitude;
+    latitude = longLat.latitude;
 
     return RealityPackageStatus::Success;
     }
@@ -82,15 +82,15 @@ RealityPackageStatus RealityDataSerializer::WriteLongLat(BeXmlNodeR parent, Utf8
     if(!IsValidLongLat(longitude, latitude))
         return RealityPackageStatus::InvalidLongitudeLatitude;
 
-    DPoint2d longLat = {longitude, latitude};
+    GeoPoint2d longLat = {longitude, latitude};
 
-    return WriteDPoint2d(parent, childName, longLat);
+    return WriteGeoPoint2d(parent, childName, longLat);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName)
+RealityPackageStatus RealityDataSerializer::ReadGeoPoint2d(GeoPoint2dR point, BeXmlNodeR parent, Utf8CP childName)
     {
     // Use UTF8 since it is the native format.
     Utf8String pointStr;
@@ -99,7 +99,7 @@ RealityPackageStatus RealityDataSerializer::ReadDPoint2d(DPoint2dR point, BeXmlN
 
     Utf8StringTokenizer tokenizer(pointStr, SPACE_DELIMITER);
 
-    if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
+    if(!tokenizer.Get(point.longitude) || !tokenizer.Get(point.latitude))
         return RealityPackageStatus::UnknownError;  
 
     return RealityPackageStatus::Success;
@@ -108,10 +108,10 @@ RealityPackageStatus RealityDataSerializer::ReadDPoint2d(DPoint2dR point, BeXmlN
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point)
+RealityPackageStatus RealityDataSerializer::WriteGeoPoint2d(BeXmlNodeR parent, Utf8CP childName, GeoPoint2dCR point)
     {
     WString pointString;
-    pointString.Sprintf (LATLONG_PRINT_FORMAT, point.x, point.y);
+    pointString.Sprintf (LATLONG_PRINT_FORMAT, point.longitude, point.latitude);
     if(NULL == parent.AddElementStringValue(childName, pointString.c_str()))
         return RealityPackageStatus::UnknownError;
 
