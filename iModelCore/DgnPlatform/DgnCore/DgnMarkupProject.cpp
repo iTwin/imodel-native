@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1336,7 +1336,7 @@ Render::GraphicBuilderPtr RedlineModel::GetImageGraphic(ViewContextR context)
         
     m_tileGraphic = rsys._CreateGraphic(Graphic::CreateParams(nullptr));
     auto ifmt = m_imageDef.GetRenderImageFormat();
-    ColorDef color(0xff, 0, 0, 0);      // *** WIP_MARKUP - what 'color' should be used for an image??
+    ColorDef color(0xfe, 0xfe, 0xfe, 0);      // *** WIP_MARKUP - what 'color' should be used for an image??
     m_tileGraphic->SetSymbology(color, color, 0);
 
     Render::Image image(m_imageDef.m_sizeInPixels.x, m_imageDef.m_sizeInPixels.y, std::move(byteStream), ifmt);
