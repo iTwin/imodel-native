@@ -4424,7 +4424,6 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
 
         ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
-        db.Schemas().CreateECClassViewsInDb();
         };
 
     ECDbR ecdb = SetupECDb("ImportTwoInARow.ecdb");

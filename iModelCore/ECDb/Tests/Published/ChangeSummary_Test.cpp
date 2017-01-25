@@ -147,7 +147,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -226,7 +225,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -294,7 +292,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -366,7 +363,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -446,7 +442,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -531,7 +526,6 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
@@ -618,7 +612,6 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);

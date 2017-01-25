@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECRelationshipClassInheritanceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SchemaImportTestFixture.h"
@@ -144,7 +144,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipinheritance.ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdbFilePath.assign(ecdb.GetDbFileName());
     }
 
