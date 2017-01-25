@@ -704,8 +704,8 @@ protected:
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
-    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-    virtual ECSchemaCP                  _GetContainerSchema() const override;
+    void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+    ECSchemaCP _GetContainerSchema() const override;
     
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const { return NULL; }
     virtual bool                                _IsCalculated() const { return false; }
@@ -885,20 +885,20 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr) {};
 
 protected:
-    SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    bool                        _IsPrimitive () const override { return true;}
-    virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
-    virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
-    Utf8String                  _GetTypeName () const override;
-    virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
-    ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
-    virtual bool                        _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
-    virtual bool                                _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
-    bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
-    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveProperty; }
+    SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    bool _IsPrimitive() const override {return true;}
+    PrimitiveECPropertyCP _GetAsPrimitivePropertyCP() const override {return this;}
+    PrimitiveECPropertyP _GetAsPrimitivePropertyP() override {return this;}
+    Utf8String _GetTypeName() const override;
+    Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
+    ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
+    bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
+    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
+    bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
+    bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveProperty;}
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -951,23 +951,23 @@ private:
     StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
 protected:
-    SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    bool                        _IsStruct () const override { return true;}
-    virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
-    virtual StructECPropertyP           _GetAsStructPropertyP()        override { return this; }
-    Utf8String                  _GetTypeName () const override;
-    ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructProperty; }
+    SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    bool _IsStruct() const override { return true;}
+    StructECPropertyCP _GetAsStructPropertyCP() const override {return this;}
+    StructECPropertyP _GetAsStructPropertyP() override {return this;}
+    Utf8String _GetTypeName() const override;
+    ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
+    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
 
 //__PUBLISH_SECTION_START__
 public:
     //! The property type.
     //! This type must be an ECStructClass.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECStructClassCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(ECStructClassCR value);
     //! Gets the ECStructClass that defines the type for this property
-    ECOBJECTS_EXPORT ECStructClassCR    GetType() const; 
+    ECOBJECTS_EXPORT ECStructClassCR GetType() const; 
 };
 
 //=======================================================================================
@@ -994,10 +994,10 @@ protected:
 
 protected:
     SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    bool                        _IsArray () const override { return true;}
-    virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
-    virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
+    SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    bool                        _IsArray () const override {return true;}
+    ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
+    ArrayECPropertyP            _GetAsArrayPropertyP() override {return this;}
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -1053,20 +1053,21 @@ protected:
         m_arrayKind = ARRAYKIND_Primitive;
         };
 
-    virtual SchemaReadStatus            _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual Utf8String                  _GetTypeName() const override;
-    virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
-    virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
-    virtual bool                        _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
-    virtual bool                        _IsPrimitiveArray() const override {return true;}
-    virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const override {return this;}
-    virtual PrimitiveArrayECPropertyP   _GetAsPrimitiveArrayPropertyP()        override {return this;}
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveArrayProperty;}
+    SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    Utf8String _GetTypeName() const override;
+    Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
+    ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
+    bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
+    bool _IsPrimitiveArray() const override {return true;}
+    PrimitiveArrayECPropertyCP _GetAsPrimitiveArrayPropertyCP() const override {return this;}
+    PrimitiveArrayECPropertyP _GetAsPrimitiveArrayPropertyP() override {return this;}
 
-    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
-    virtual bool                                _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
-    virtual bool                                _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
+    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveArrayProperty;}
+
+    CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
+    bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
+    bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
 
 public:
     //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
@@ -1120,20 +1121,19 @@ private:
         };
 
 protected:
-    virtual Utf8String                  _GetTypeName() const override;
-    virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
-    virtual bool                        _IsStructArray() const override { return true; }
-    virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const override { return this; }
-    virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        override { return this; }
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructArrayProperty; }
+    Utf8String _GetTypeName() const override;
+    ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
+    bool _IsStructArray() const override {return true;}
+    StructArrayECPropertyCP _GetAsStructArrayPropertyCP() const override {return this;}
+    StructArrayECPropertyP _GetAsStructArrayPropertyP() override {return this;}
+    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructArrayProperty;}
 
 public:
     //! Sets the ECClass to be used for the array's struct elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetStructElementType(ECStructClassCR value);
     //! Gets the ECClass of the array's struct elements
-    ECOBJECTS_EXPORT ECStructClassCR    GetStructElementType() const;
-
+    ECOBJECTS_EXPORT ECStructClassCR GetStructElementType() const;
     };
 
 //=======================================================================================
@@ -1156,24 +1156,24 @@ protected:
     explicit NavigationECProperty(ECClassCR ecClass)
         : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_Long) {};
 
-    ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
-    ECObjectsStatus                 SetDirection(Utf8CP directionString);
-    Utf8String                      GetRelationshipClassName() const;
+    ECObjectsStatus SetRelationshipClassName(Utf8CP relationshipName);
+    ECObjectsStatus SetDirection(Utf8CP directionString);
+    Utf8String GetRelationshipClassName() const;
 
 protected:
-    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
-    virtual bool                    _IsNavigation() const override { return true; }
-    virtual NavigationECPropertyCP  _GetAsNavigationPropertyCP() const override { return this; }
-    virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
+    bool _IsNavigation() const override {return true;}
+    NavigationECPropertyCP _GetAsNavigationPropertyCP() const override {return this;}
+    NavigationECPropertyP _GetAsNavigationPropertyP() override {return this;}
 
-    virtual Utf8String              _GetTypeName() const override;
+    Utf8String _GetTypeName() const override;
     // Not valid because type cannot be set from xml, it must be set at runtime
-    virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
+    ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override {return ECObjectsStatus::OperationNotSupported;}
 
-    virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationProperty; }
+    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::NavigationProperty;}
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
@@ -1355,12 +1355,12 @@ protected:
     ECClass (ECSchemaCR schema);
     virtual ~ECClass();
 
-    ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
-    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
-    virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass);
+    ECObjectsStatus AddProperty(ECPropertyP pProperty, Utf8StringCR name);
+    virtual ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
+    virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
-    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-    virtual ECSchemaCP                  _GetContainerSchema() const override;
+    void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+    ECSchemaCP _GetContainerSchema() const override;
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -1386,32 +1386,32 @@ protected:
     virtual SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
-    virtual ECClassType _GetClassType() const { return ECClassType::Entity;} // default type
+    virtual ECClassType _GetClassType() const {return ECClassType::Entity;} // default type
 
-    virtual ECRelationshipClassCP _GetRelationshipClassCP () const { return NULL; } // used to avoid dynamic_cast
-    virtual ECRelationshipClassP _GetRelationshipClassP () { return NULL; } // used to avoid dynamic_cast
+    virtual ECRelationshipClassCP _GetRelationshipClassCP() const {return nullptr;} // used to avoid dynamic_cast
+    virtual ECRelationshipClassP _GetRelationshipClassP() {return nullptr;} // used to avoid dynamic_cast
 
-    virtual ECEntityClassCP _GetEntityClassCP () const { return nullptr; } // used to avoid dynamic_cast
-    virtual ECEntityClassP _GetEntityClassP () { return nullptr; } // used to avoid dynamic_cast
+    virtual ECEntityClassCP _GetEntityClassCP() const {return nullptr;} // used to avoid dynamic_cast
+    virtual ECEntityClassP _GetEntityClassP() {return nullptr;} // used to avoid dynamic_cast
 
-    virtual ECStructClassCP _GetStructClassCP() const { return nullptr; } // used to avoid dynamic_cast
-    virtual ECStructClassP _GetStructClassP() { return nullptr; } // used to avoid dynamic_cast
+    virtual ECStructClassCP _GetStructClassCP() const {return nullptr;} // used to avoid dynamic_cast
+    virtual ECStructClassP _GetStructClassP() {return nullptr;} // used to avoid dynamic_cast
 
-    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const { return nullptr; } // used to avoid dynamic_cast
-    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() { return nullptr; } // used to avoid dynamic_cast
+    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const {return nullptr;} // used to avoid dynamic_cast
+    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() {return nullptr;} // used to avoid dynamic_cast
 
     void InvalidateDefaultStandaloneEnabler() const;
 public:
-    ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (uint32_t index) const;
-    ECOBJECTS_EXPORT ECPropertyP            GetBaseClassPropertyP (Utf8CP name) const;
-    ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, Utf8CP newName);
-    ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
-    ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
-    ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyByIndex (uint32_t index) const;
+    ECOBJECTS_EXPORT ECPropertyP GetBaseClassPropertyP (Utf8CP name) const;
+    ECOBJECTS_EXPORT ECObjectsStatus RenameProperty (ECPropertyR ecProperty, Utf8CP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteProperty (ECPropertyR ecProperty);
+    ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}
 
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECClassId id) { BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id; };
-    bool HasId() const { return m_ecClassId.IsValid(); };
+    void SetId(ECClassId id) {BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id;}
+    bool HasId() const {return m_ecClassId.IsValid();}
 
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
@@ -1922,11 +1922,11 @@ protected:
     ECEntityClass (ECSchemaCR schema);
     virtual ~ECEntityClass() {}
 
-    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
-    virtual ECEntityClassP _GetEntityClassP() override { return this; }
-    virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::EntityClass; }
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    ECEntityClassCP _GetEntityClassCP() const override {return this;}
+    ECEntityClassP _GetEntityClassP() override {return this;}
+    ECClassType _GetClassType() const override {return ECClassType::Entity;}
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::EntityClass;}
 
 public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
@@ -1971,21 +1971,21 @@ private:
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
-    ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
-    ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::CustomAttributeClass; }
+    ECClassType _GetClassType() const override {return ECClassType::CustomAttribute;}
+    ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override {return this;}
+    ECCustomAttributeClassP _GetCustomAttributeClassP() override {return this;}
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::CustomAttributeClass;}
 
 public:
-    CustomAttributeContainerType GetContainerType() const { return m_containerType; }
+    CustomAttributeContainerType GetContainerType() const {return m_containerType;}
 
     //! Sets the container type which this custom attribute can be applied to. Use this carefully as it might render existing instances invalid!
     // @param[in]   containerType   The new container type to apply
-    void SetContainerType(CustomAttributeContainerType containerType) { m_containerType = containerType; }
+    void SetContainerType(CustomAttributeContainerType containerType) {m_containerType = containerType;}
 
     //! Returns true if the containerType is compatible with the CustomAttributeContainerType of this ECCustomAttributeClass
     //@param[in]    containerType   The type of the container you wish to apply an instance of this class to
-    bool CanBeAppliedTo(CustomAttributeContainerType containerType) const { return 0 != static_cast<int>(m_containerType & containerType); } // Compare to 0 instead of containerType so comparisons like Class & Any return true
+    bool CanBeAppliedTo(CustomAttributeContainerType containerType) const {return 0 != static_cast<int>(m_containerType & containerType);} // Compare to 0 instead of containerType so comparisons like Class & Any return true
 };
 
 //---------------------------------------------------------------------------------------
@@ -2007,14 +2007,12 @@ private:
     ECStructClass (ECSchemaCR schema);
     virtual ~ECStructClass () {}
 
-
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
-    virtual ECStructClassCP _GetStructClassCP() const override { return this;}
-    virtual ECStructClassP _GetStructClassP() override { return this; }
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructClass; }
-
+    ECClassType _GetClassType() const override {return ECClassType::Struct;}
+    ECStructClassCP _GetStructClassCP() const override {return this;}
+    ECStructClassP _GetStructClassP() override {return this;}
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructClass;}
 };
 
 
@@ -2135,8 +2133,8 @@ private:
 
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual ECSchemaCP          _GetContainerSchema() const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint; }
+    ECSchemaCP _GetContainerSchema() const override;
+    CustomAttributeContainerType _GetContainerType() const override {return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint;}
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -2260,13 +2258,12 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
-    StrengthType     m_strength;
-    ECRelatedInstanceDirection     m_strengthDirection;
-    ECRelationshipConstraintP      m_target;
-    ECRelationshipConstraintP      m_source;
-
-    bool                           m_verify;
-    bool                           m_verified;
+    bool m_verify;
+    bool m_verified;
+    StrengthType m_strength;
+    ECRelatedInstanceDirection m_strengthDirection;
+    ECRelationshipConstraintP m_target;
+    ECRelationshipConstraintP m_source;
 
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -2274,24 +2271,24 @@ private:
     ECRelationshipClass (ECSchemaCR schema, bool verify = true);
     virtual ~ECRelationshipClass ();
 
-    ECObjectsStatus                     SetStrength (Utf8CP strength);
-    ECObjectsStatus                     SetStrengthDirection (Utf8CP direction);
+    ECObjectsStatus SetStrength (Utf8CP strength);
+    ECObjectsStatus SetStrengthDirection (Utf8CP direction);
 
-    bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
-    bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
-    bool                                Verify(bool resolveIssues = false) const;
+    bool ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
+    bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+    bool Verify(bool resolveIssues = false) const;
 
 protected:
-    SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaReadStatus _ReadXmlAttributes (BeXmlNodeR classNode) override;
+    SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
 
-    SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
-    ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
-    ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
-    virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
-    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
-    virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
+    ECRelationshipClassCP _GetRelationshipClassCP () const override {return this;};
+    ECRelationshipClassP _GetRelationshipClassP ()  override {return this;};
+    ECClassType _GetClassType() const override {return ECClassType::Relationship;}
+    ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
+    ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass) override;
+    CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::RelationshipClass;}
 
 //__PUBLISH_SECTION_START__
 public:
@@ -3022,7 +3019,7 @@ private:
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
 protected:
-    virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 
 public:
     bvector<WString>const& GetSearchPath () const {return m_searchPaths;}

@@ -171,13 +171,13 @@ private:
     void* m_context;
 
 protected:
-                                MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context);
-                                MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context);
+    MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context);
+    MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context);
 
-    bool                _CanReuseResult () override  { return true; }
-    bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
-    bool                _SupportsInstanceMethodCall () const override { return NULL != m_instanceMethod; }
-    virtual bool                _SupportsValueListMethodCall() const override { return NULL != m_valueListMethod; }
+    bool _CanReuseResult() override {return true;}
+    bool _SupportsStaticMethodCall() const override {return nullptr != m_staticMethod;}
+    bool _SupportsInstanceMethodCall() const override {return nullptr != m_instanceMethod;}
+    bool _SupportsValueListMethodCall() const override {return nullptr != m_valueListMethod;}
 
     //  The vector of arguments does not include the object used to invoke the method. It is
     //  up to the specific implementation of MethodReference to hold onto the instance and to use
@@ -370,11 +370,11 @@ private:
 
 protected:
 
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
+    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
-    ECOBJECTS_EXPORT virtual bool                _IsNamespace() const override { return true; }
+    ECOBJECTS_EXPORT bool _IsNamespace() const override {return true;}
     
     SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
 
@@ -385,7 +385,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (Utf8CP ident);
 
     //! Creates a new SymbolExpressionContext using requested symbol sets and if an ECInstance is passed in it will publish it for "this" access
-    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<Utf8String> const& requestedSymbolSets, IECInstanceP instance = NULL);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<Utf8String> const& requestedSymbolSets, IECInstanceP instance = nullptr);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -413,22 +413,22 @@ private:
 protected:
     Symbol (Utf8CP name) : m_name (name) { }
 
-    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExpressionStatus::MethodRequired; };
-    virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
-    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus _CreateMethodResult (MethodReferencePtr& result) const {return ExpressionStatus::MethodRequired;}
+    virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 10000; }
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 10000;}
 
 public:
-    Utf8CP                          GetName() const { return m_name.c_str(); }
+    Utf8CP GetName() const {return m_name.c_str();}
 
-    ExpressionStatus                CreateMethodResult (MethodReferencePtr& result) const { return _CreateMethodResult (result); }
+    ExpressionStatus CreateMethodResult (MethodReferencePtr& result) const {return _CreateMethodResult(result);}
 
-    ExpressionStatus                GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
-                                                { return _GetValue(evalResult, primaryList, globalContext, startIndex); }
+    ExpressionStatus GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+                        {return _GetValue(evalResult, primaryList, globalContext, startIndex);}
 
-    ExpressionStatus                GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
-                                                { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
+    ExpressionStatus GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+                        {return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex);}
 /*__PUBLISH_SECTION_START__*/
 
 };  // End of class Symbol
@@ -445,8 +445,8 @@ protected:
                 ContextSymbol (Utf8CP name, ExpressionContextR context)
                                     : Symbol(name), m_context(&context) {}
 
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -469,14 +469,9 @@ private:
     MethodReferencePtr  m_methodReference;
 
 protected:
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
-                                                { return ExpressionStatus::NeedsLValue; }
-    ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const override
-        {
-        result = m_methodReference.get();
-        return ExpressionStatus::Success;
-        }
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override {return ExpressionStatus::NeedsLValue;}
+    ExpressionStatus _CreateMethodResult(MethodReferencePtr& result) const override {result = m_methodReference.get(); return ExpressionStatus::Success;}
 
     MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
     MethodSymbol(Utf8CP name, ExpressionValueListMethod_t valueListMethod);
@@ -528,8 +523,8 @@ private:
                 : m_instance(instance), m_method(method)
                 {}
         public:
-            virtual ECValue _EvaluateProperty() override {return ECValue((m_instance.*m_method)());}
-            static RefCountedPtr<PropertyEvaluator> Create(InstanceType const& instance, GetPropertyMethod method) { return new TemplatedPropertyEvaluator(instance, method); }
+            ECValue _EvaluateProperty() override {return ECValue((m_instance.*m_method)());}
+            static RefCountedPtr<PropertyEvaluator> Create(InstanceType const& instance, GetPropertyMethod method) {return new TemplatedPropertyEvaluator(instance, method);}
         };
 
     /*=============================================================================**//**
@@ -546,8 +541,8 @@ private:
                 : m_instance(instance), m_method(method)
                 {}
         public:
-            virtual ExpressionContextPtr _GetContext() override {return (m_instance.*m_method)();}
-            static RefCountedPtr<ContextEvaluator> Create(InstanceType const& instance, GetContextMethod method) { return new TemplatedContextEvaluator(instance, method); }
+            ExpressionContextPtr _GetContext() override {return (m_instance.*m_method)();}
+            static RefCountedPtr<ContextEvaluator> Create(InstanceType const& instance, GetContextMethod method) {return new TemplatedContextEvaluator(instance, method);}
         };
     
 /*__PUBLISH_SECTION_END__*/
@@ -558,11 +553,9 @@ private:
 protected:
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, PropertyEvaluator& evaluator);
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, ContextEvaluator& evaluator);
-    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
-        {
-        return ExpressionStatus::NeedsLValue;
-        }
+    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
+                                {return ExpressionStatus::NeedsLValue;}
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -816,9 +809,9 @@ protected:
     ValueSymbol (Utf8CP name, EvaluationResultCR exprValue);
 
     virtual                         ~ValueSymbol();
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
-                                                { return ExpressionStatus::NeedsLValue; }
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
+                                {return ExpressionStatus::NeedsLValue;}
 public:
     ECOBJECTS_EXPORT static ValueSymbolPtr  Create (Utf8CP name, EvaluationResultCR value);
 
@@ -992,8 +985,8 @@ private:
 protected:
                         Node () { m_inParens = false; }
 /*__PUBLISH_SECTION_END__*/
-    virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
-    virtual Utf8String  _ToString() const = 0;
+    virtual bool _Traverse(NodeVisitorR visitor) const {return visitor.ProcessNode(*this);}
+    virtual Utf8String _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context)
         { return ExpressionStatus::NotImpl; }

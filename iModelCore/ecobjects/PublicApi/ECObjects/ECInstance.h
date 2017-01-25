@@ -116,7 +116,7 @@ struct ICustomAttributeDeserializer
     {
     //! Given an Xml string, deserializes the CustomAttribute and sets the value on the instance
     //@remarks set the instance to null if it should not be instantiated as customattribute
-    virtual InstanceReadStatus            LoadCustomAttributeFromString (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context, ECSchemaReadContextR schemaContext, IECCustomAttributeContainerR customAttributeContainer) = 0;
+    virtual InstanceReadStatus LoadCustomAttributeFromString(IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context, ECSchemaReadContextR schemaContext, IECCustomAttributeContainerR customAttributeContainer) = 0;
     };
 
 //! Used to manage multiple custom attribute deserializers
@@ -834,10 +834,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECInstanceInterface : IECInstanceInterface
 private:
     IECInstanceCR           m_instance;
 protected:
-    ECOBJECTS_EXPORT ECObjectsStatus            _GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const override;
-    ECOBJECTS_EXPORT virtual ECClassCP                  _GetInstanceClass() const override;
-    ECOBJECTS_EXPORT virtual IECInstanceCP              _ObtainECInstance() const override;
-    ECOBJECTS_EXPORT virtual Utf8String                 _GetInstanceId() const override;
+    ECOBJECTS_EXPORT ECObjectsStatus _GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const override;
+    ECOBJECTS_EXPORT ECClassCP _GetInstanceClass() const override;
+    ECOBJECTS_EXPORT IECInstanceCP _ObtainECInstance() const override;
+    ECOBJECTS_EXPORT Utf8String _GetInstanceId() const override;
 public:
     ECInstanceInterface (IECInstanceCR instance) : m_instance (instance) { }
     };
