@@ -186,6 +186,7 @@ private:
 
 public:
     //! Instantiates a new ECInstanceUpdater.
+    //! @remarks Check ECInstanceUpdater::IsValid afterwards to make sure the updater was created successfully
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this updater can update
     //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
@@ -196,6 +197,7 @@ public:
     ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
+    //! @remarks Check ECInstanceUpdater::IsValid afterwards to make sure the updater was created successfully
     //! @param[in] ecdb ECDb file handle
     //! @param[in] instance The property values that are set on this IECInstance will be used to create column bindings.
     //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
@@ -207,6 +209,7 @@ public:
     ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
+    //! @remarks Check ECInstanceUpdater::IsValid afterwards to make sure the updater was created successfully
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
     //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
@@ -219,6 +222,7 @@ public:
     ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
+    //! @remarks Check ECInstanceUpdater::IsValid afterwards to make sure the updater was created successfully
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
     //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 

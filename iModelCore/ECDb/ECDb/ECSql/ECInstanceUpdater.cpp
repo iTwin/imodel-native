@@ -17,19 +17,77 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECInstanceUpdater::Impl
     {
 private:
+    struct ECSqlBuilder;
+    struct CompositeECSqlStatement
+        {
+    public:
+        struct Leaf
+            {
+            private:
+                ECDbCR m_ecdb;
+                ECSqlStatement m_statement;
+                int m_ecinstanceIdParameterIndex;
+                ECValueBindingInfoCollection m_ecValueBindingInfos;
+
+            public:
+                explicit Leaf(ECDbCR ecdb) : m_ecdb(ecdb), m_ecinstanceIdParameterIndex(-1) {}
+
+                BentleyStatus Prepare(ECSqlBuilder const&, ECCrudWriteToken const*);
+
+                ECSqlStatement& GetStatement() { return m_statement; }
+                ECValueBindingInfoCollection const& GetBindingInfos() const { return m_ecValueBindingInfos; }
+                ECValueBindingInfoCollection& GetBindingInfosR() { return m_ecValueBindingInfos; }
+
+                int GetECInstanceIdParameterIndex() const { return m_ecinstanceIdParameterIndex; }
+            };
+
+    private:
+        ECDbCR m_ecdb;
+        std::vector<std::unique_ptr<Leaf>> m_statements;
+
+    public:
+        explicit CompositeECSqlStatement(ECDbCR ecdb) : m_ecdb(ecdb) {}
+
+        Leaf& GetCurrent();
+        void AddNext() { m_statements.push_back(std::make_unique<Leaf>(m_ecdb)); }
+        std::vector<std::unique_ptr<Leaf>> const& GetStatements() const { return m_statements; }
+        };
+
+    struct ECSqlBuilder
+        {
+    private:
+        CompositeECSqlStatement& m_compositeStatement;
+        ECN::ECClassCR m_ecClass;
+        ECN::ECEnablerCR m_enabler;
+        Utf8CP m_ecsqlOptions;
+
+        Utf8String m_setClause;
+        uint32_t m_parameterIndex = 1;
+        uint32_t m_usedOverflowColumnCount = 0;
+
+    public:
+        explicit ECSqlBuilder(CompositeECSqlStatement& compositeStatement, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions) 
+            : m_compositeStatement(compositeStatement), m_ecClass(ecClass), m_enabler(*ecClass.GetDefaultStandaloneEnabler()), m_ecsqlOptions(ecsqlOptions) {}
+
+        BentleyStatus Append(ECN::ECPropertyCR prop, Utf8CP accessString, bool splitAccessString);
+
+        uint32_t GetParameterIndex() const { return m_parameterIndex; }
+        uint32_t GetUsedOverflowColumnCount() const { return m_usedOverflowColumnCount; }
+        void IncrementUsedOverflowColumnCount(uint32_t increment) { m_usedOverflowColumnCount += increment; }
+        Utf8String ToString() const;
+        void Reset();
+        };
+
+    static const uint32_t MAX_COLUMNS_IN_OVERFLOW_FOR_UPDATE = 63;
     ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
-    mutable ECSqlStatement m_statement;
-    ECValueBindingInfoCollection m_ecValueBindingInfos;
-    int m_ecinstanceIdParameterIndex;
+    CompositeECSqlStatement m_compositeStatement;
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
 
     void Initialize(ECCrudWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(writeToken, properties, nullptr, ecsqlOptions); }
     void Initialize(ECCrudWriteToken const*, bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
     void Initialize(ECCrudWriteToken const*, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
-
-    static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage); }
 
 public:
     Impl(ECDbCR, ECClassCR, ECCrudWriteToken const*, Utf8CP ecsqlOptions);
@@ -42,7 +100,7 @@ public:
     bool IsValid() const { return m_isValid; }
     };
 
-
+  
 //*************************************************************************************
 // ECInstanceUpdater
 //*************************************************************************************
@@ -101,11 +159,12 @@ DbResult ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const { return m
 //*************************************************************************************
 // ECInstanceUpdater::Impl
 //*************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
-    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_compositeStatement(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
     for (ECPropertyCP prop : m_ecClass.GetProperties(true))
@@ -120,7 +179,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken c
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
-    : m_ecdb(ecdb), m_ecClass(instance.GetClass()), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    : m_ecdb(ecdb), m_ecClass(instance.GetClass()), m_compositeStatement(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
 
@@ -138,7 +197,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECCrudWriteTo
 // @bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
-    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_compositeStatement(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(writeToken, propertyIndexesToBind, ecsqlOptions);
     }
@@ -147,7 +206,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken c
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
-    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_compositeStatement(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(writeToken, propertiesToBind, ecsqlOptions);
     }
@@ -166,7 +225,6 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         if (ecProperty == nullptr)
             {
             LOG.errorv("Could not find ECProperty in ECClass '%s' for property index %" PRIu32 ".", m_ecClass.GetFullName(), propertyIndex);
-            m_isValid = false;
             return;
             }
 
@@ -178,7 +236,6 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         if (ECObjectsStatus::Success != enabler->GetAccessString(accessString, propertyIndex))
             {
             LOG.errorv("Could not retrieve property access string in ECClass '%s' for property index %" PRIu32 ".", m_ecClass.GetFullName(), propertyIndex);
-            m_isValid = false;
             return;
             }
 
@@ -197,20 +254,28 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
     if (hasAccessStrings && properties.size() != propertyAccessStrings->size())
         {
         BeAssert(false);
-        m_isValid = false;
         return;
         }
 
-    Utf8String ecsql("UPDATE ONLY ");
-    ecsql.append(m_ecClass.GetECSqlName()).append(" SET ");
+    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(m_ecClass);
+    BeAssert(classMap != nullptr);
+    if (classMap->GetType() == ClassMap::Type::NotMapped || classMap->GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        Utf8CP errorDetails = nullptr;
+        if (classMap->GetType() == ClassMap::Type::NotMapped)
+            errorDetails = "the ECClass is not mapped to the database.";
+        else
+            errorDetails = "the ECClass is a foreign key type ECRelationshipClass. Instances of it cannot be updated.";
+        LOG.errorv("ECClass '%s' cannot be used with ECInstanceUpdater: %s", m_ecClass.GetFullName(), errorDetails);
+        return;
+        }
 
     ECPropertyCP currentTimeStampProp = nullptr;
     const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
     const bool readonlyPropsAreUpdatable = ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(m_ecdb, m_ecClass, ecsqlOptions);
 
+    ECSqlBuilder ecsqlBuilder(m_compositeStatement, m_ecClass, ecsqlOptions);
     const size_t propCount = properties.size();
-    ECEnablerP enabler = m_ecClass.GetDefaultStandaloneEnabler();
-    int parameterIndex = 1;
     for (size_t ix = 0; ix < propCount; ix++)
         {
         ECPropertyCP prop = properties[ix];
@@ -224,66 +289,58 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(*prop);
 
-        if (parameterIndex != 1)
-            ecsql.append(",");
+        Utf8CP accessString = !hasAccessStrings ? prop->GetName().c_str() : propertyAccessStrings->at(ix);
 
-        Utf8CP unescapedAccessString = nullptr;
-        Utf8String accessString;
-        if (!hasAccessStrings)
+        PropertyMap const* propMap = classMap->GetPropertyMaps().Find(accessString);
+        if (propMap == nullptr)
             {
-            unescapedAccessString = prop->GetName().c_str();
-            accessString.append("[").append(unescapedAccessString).append("]");
-            }
-        else
-            {
-            //escape each token of the access string
-            unescapedAccessString = propertyAccessStrings->at(ix);
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(unescapedAccessString, ".", tokens);
-            BeAssert(!tokens.empty());
-
-            bool isFirstToken = true;
-            for (Utf8StringCR token : tokens)
-                {
-                if (!isFirstToken)
-                    accessString.append(".");
-
-                accessString.append("[").append(token).append("]");
-                isFirstToken = false;
-                }
-            }
-
-        ecsql.append(accessString).append("=?");
-
-        if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo(*enabler, *prop, unescapedAccessString, parameterIndex))
-            {
-            m_isValid = false;
+            LOG.errorv("Failed to create ECInstanceUpdater. ECProperty '%s' is not defined in ECClass %s or is not mapped to the database.", accessString, m_ecClass.GetFullName());
             return;
             }
 
-        parameterIndex++;
+        GetColumnsPropertyMapVisitor getColumnsVisitor(PropertyMap::Type::All, true);
+        if (SUCCESS != propMap->AcceptVisitor(getColumnsVisitor))
+            return;
+        
+        if (getColumnsVisitor.GetOverflowColumnCount() > MAX_COLUMNS_IN_OVERFLOW_FOR_UPDATE)
+            {
+            //if single property is mapped to more than the max, we error out. 
+            LOG.errorv("Failed to create ECInstanceUpdater. ECProperty '%s' in ECClass '%s' is mapped to %" PRIu32 " virtual columns in the overflow column. "
+                       "In ECSQL UPDATE only %" PRIu32 " virtual columns in the overflow column per property are supported. "
+                       "Try breaking down the ECProperty into its member properties when constructing the ECInstanceUpdater.",
+                       accessString, m_ecClass.GetFullName(), getColumnsVisitor.GetOverflowColumnCount(), MAX_COLUMNS_IN_OVERFLOW_FOR_UPDATE);
+            return;
+            }
+
+        if ((ecsqlBuilder.GetUsedOverflowColumnCount() + getColumnsVisitor.GetOverflowColumnCount()) > MAX_COLUMNS_IN_OVERFLOW_FOR_UPDATE)
+            {
+            if (SUCCESS != m_compositeStatement.GetCurrent().Prepare(ecsqlBuilder, writeToken))
+                return;
+
+            m_compositeStatement.AddNext();
+            ecsqlBuilder.Reset();
+            }
+        
+        ecsqlBuilder.IncrementUsedOverflowColumnCount(getColumnsVisitor.GetOverflowColumnCount());
+
+        if (SUCCESS != ecsqlBuilder.Append(*prop, accessString, hasAccessStrings))
+            return;
         }
 
-    if (parameterIndex == 1)
+    if (m_compositeStatement.GetStatements().empty())
         {
         if (properties.empty())
             LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.", m_ecClass.GetFullName());
         else
             LOG.errorv("ECClass '%s' only has read-only properties. Instances of that class therefore cannot be updated.", m_ecClass.GetFullName());
 
-        m_isValid = false;
         return;
         }
 
-    ecsql.append(" WHERE ECInstanceId=?");
-    m_ecinstanceIdParameterIndex = parameterIndex;
-
-    if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
-        ecsql.append(" ECSQLOPTIONS ").append(ecsqlOptions);
-
-    const ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken);
-    m_isValid = stat.IsSuccess();
+    m_isValid = (SUCCESS == m_compositeStatement.GetCurrent().Prepare(ecsqlBuilder, writeToken));
+    ecsqlBuilder.Reset();
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
@@ -296,15 +353,12 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceUpdater. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
                              m_ecClass.GetFullName(), instance.GetClass().GetFullName());
 
-        LogFailure(instance, Utf8String(errorMessage).c_str());
+        ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage.c_str());
         return BE_SQLITE_ERROR;
         }
 
     if (!IsValid())
-        {
-        LOG.errorv("ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName());
         return BE_SQLITE_ERROR;
-        }
 
     // ECSql does not support modifying the endpoints of a relationship instance.  First need to verify that.
     IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&instance);
@@ -356,44 +410,140 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init(instance.GetECDBuffer());
 
-    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance);
-    //now add parameter values for regular properties
-    for (auto const& bindingInfo : m_ecValueBindingInfos)
-        {
-        BeAssert(bindingInfo->HasECSqlParameterIndex());
-        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
-            {
-            Utf8String errorMessage;
-            errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
-                                 m_statement.GetECSql());
-            LogFailure(instance, errorMessage.c_str());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    //now bind ECInstanceId
     ECInstanceId ecinstanceId;
     if (SUCCESS != ECInstanceId::FromString(ecinstanceId, instance.GetInstanceId().c_str()))
         {
         Utf8String errorMessage;
         errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", instance.GetInstanceId().c_str());
-        LogFailure(instance, errorMessage.c_str());
+        ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage.c_str());
         return BE_SQLITE_ERROR;
         }
 
     BeAssert(ecinstanceId.IsValid());
-    if (!m_statement.BindId(m_ecinstanceIdParameterIndex, ecinstanceId).IsSuccess())
-        return BE_SQLITE_ERROR;
+    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, ecinstanceId);
 
-    //now execute statement
-    const DbResult stepStatus = m_statement.Step();
+    for (std::unique_ptr<CompositeECSqlStatement::Leaf> const& leafStatement : m_compositeStatement.GetStatements())
+        {
+        ECSqlStatement& stmt = leafStatement->GetStatement();
 
-    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
-    m_statement.Reset();
-    m_statement.ClearBindings();
+        //now add parameter values for regular properties
+        for (auto const& bindingInfo : leafStatement->GetBindingInfos())
+            {
+            BeAssert(bindingInfo->HasECSqlParameterIndex());
+            if (SUCCESS != ECInstanceAdapterHelper::BindValue(stmt.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
+                {
+                Utf8String errorMessage;
+                errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
+                                     stmt.GetECSql());
+                ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage.c_str());
+                return BE_SQLITE_ERROR;
+                }
+            }
 
-    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
+        //now bind ECInstanceId
+        if (!stmt.BindId(leafStatement->GetECInstanceIdParameterIndex(), ecinstanceId).IsSuccess())
+            return BE_SQLITE_ERROR;
+
+        //now execute statement
+        const DbResult stepStatus = stmt.Step();
+
+        //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        if (BE_SQLITE_DONE != stepStatus)
+            return stepStatus;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::Impl::CompositeECSqlStatement::Leaf& ECInstanceUpdater::Impl::CompositeECSqlStatement::GetCurrent()
+    {
+    if (m_statements.empty())
+        AddNext();
+
+    return *m_statements.back();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECInstanceUpdater::Impl::CompositeECSqlStatement::Leaf::Prepare(ECSqlBuilder const& ecsqlBuilder, ECCrudWriteToken const* writeToken)
+    {
+    Utf8String ecsql = ecsqlBuilder.ToString();
+    if (ECSqlStatus::Success != m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken))
+        return ERROR;
+
+    m_ecinstanceIdParameterIndex = ecsqlBuilder.GetParameterIndex();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECInstanceUpdater::Impl::ECSqlBuilder::Append(ECN::ECPropertyCR prop, Utf8CP accessString, bool splitAccessString)
+    {
+    if (!m_setClause.empty())
+        m_setClause.append(",");
+
+    Utf8String escapedAccessString;
+    if (!splitAccessString)
+        escapedAccessString.append("[").append(accessString).append("]");
+    else
+        {
+        //escape each token of the access string
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(accessString, ".", tokens);
+        BeAssert(!tokens.empty());
+
+        bool isFirstToken = true;
+        for (Utf8StringCR token : tokens)
+            {
+            if (!isFirstToken)
+                escapedAccessString.append(".");
+
+            escapedAccessString.append("[").append(token).append("]");
+            isFirstToken = false;
+            }
+        }
+
+    m_setClause.append(escapedAccessString).append("=?");
+
+    if (SUCCESS != m_compositeStatement.GetCurrent().GetBindingInfosR().AddBindingInfo(m_enabler, prop, accessString, (int) m_parameterIndex))
+        return ERROR;
+
+    m_parameterIndex++;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECInstanceUpdater::Impl::ECSqlBuilder::ToString() const
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("UPDATE ONLY %s SET %s WHERE ECInstanceId=?", m_ecClass.GetECSqlName().c_str(),
+                  m_setClause.c_str());
+
+    if (!Utf8String::IsNullOrEmpty(m_ecsqlOptions))
+        ecsql.append(" ECSQLOPTIONS ").append(m_ecsqlOptions);
+
+    return ecsql;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECInstanceUpdater::Impl::ECSqlBuilder::Reset()
+    {
+    m_setClause.clear();
+    m_parameterIndex = 1;
+    m_usedOverflowColumnCount = 0;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

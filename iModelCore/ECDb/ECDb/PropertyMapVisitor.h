@@ -21,8 +21,8 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         PropertyMap::Type m_filter = PropertyMap::Type::All;
         bool m_doNotSkipSystemPropertyMaps = false;
         mutable std::vector<DbColumn const*> m_columns;
-        mutable size_t m_virtualColumnCount = 0;
-        mutable size_t m_overflowColumnCount = 0;
+        mutable uint32_t m_virtualColumnCount = 0;
+        mutable uint32_t m_overflowColumnCount = 0;
 
         BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
@@ -41,8 +41,9 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
         DbColumn const* GetSingleColumn() const;
 
-        size_t GetVirtualColumnCount() const { return m_virtualColumnCount ; }
-        size_t GetOverflowColumnCount() const { return m_overflowColumnCount; }
+        uint32_t GetColumnCount() const { return (uint32_t) m_columns.size(); }
+        uint32_t GetVirtualColumnCount() const { return m_virtualColumnCount ; }
+        uint32_t GetOverflowColumnCount() const { return m_overflowColumnCount; }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
