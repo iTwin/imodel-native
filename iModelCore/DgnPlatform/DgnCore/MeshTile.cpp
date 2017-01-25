@@ -1673,6 +1673,47 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
     {
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID) 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     08/2009
++===============+===============+===============+===============+===============+========*/
+struct PSolidPartitionMark
+{
+    PK_PARTITION_t                      m_originalPartition;
+    PK_PARTITION_t                      m_lightweightPartition;
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      08/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+PSolidPartitionMark ()
+    {
+    PK_SESSION_ask_curr_partition (&m_originalPartition);
+
+    if (SUCCESS == PK_PARTITION_create_empty(&m_lightweightPartition))
+        {
+        PK_PARTITION_set_type(m_lightweightPartition, PK_PARTITION_type_light_c);
+        PK_PARTITION_set_current(m_lightweightPartition);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      08/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+~PSolidPartitionMark ()
+    {
+    PK_PARTITION_delete_o_t options;
+
+    PK_PARTITION_delete_o_m (options);
+
+    options.delete_non_empty = true;
+    StatusInt   status = PK_PARTITION_delete (m_lightweightPartition, &options);
+
+    PK_PARTITION_set_current (m_originalPartition);
+    }
+};
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1688,6 +1729,7 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
     GetDgnDb().Fonts().Update();
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
+    PSolidPartitionMark     partitionMark;
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
     PSolidKernelManager::StartSession();
 #endif
@@ -2833,13 +2875,14 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     TileGeometryList            uninstancedGeometry;
     PublishableTileGeometry     publishedTileGeometry;
     TileMeshList&               meshes = publishedTileGeometry.Meshes();
+    size_t                      minInstanceCount = m_geometries.size() / 50;               // If the part will include 1/50th of geometry, do instancing (even if part does not deem it worthy).
 
     // Extract instances first...
     for (auto& geom : m_geometries)
         {
         auto const&   part = geom->GetPart();
 
-        if (part.IsValid() && part->IsWorthInstancing(GetTolerance()))
+        if (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance())))
             {
             auto const&         found = partMap.find(part.get());
             TileMeshPartPtr     meshPart;
