@@ -30,7 +30,7 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
             virtual IElemTopologyP _Clone() const override { return new ElemTopology(*this); }
             virtual bool _IsEqual(IElemTopologyCR rhs) const override { return _ToGeometrySource() == rhs._ToGeometrySource(); }
             virtual GeometrySourceCP _ToGeometrySource() const override { return m_source.get(); }
-            virtual IEditManipulatorPtr _GetTransientManipulator(HitDetailCR hit) const { return nullptr; /*TODO*/ }
+            IEditManipulatorPtr _GetTransientManipulator(HitDetailCR hit) const override{ return nullptr; /*TODO*/ }
 
             ElemTopology(RasterBorderGeometrySource& source) { m_source = &source; }
             ElemTopology(ElemTopology const& from) { m_source = from.m_source; }
