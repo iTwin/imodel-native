@@ -642,6 +642,7 @@ size_t FactorizedNumber::GetPrimeCount()
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385) // static analysis thinks we exceed the bounds of fact3... I don't see how.
  size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
      {
      size_t primN = GetPrimeCount();
@@ -673,6 +674,7 @@ size_t FactorizedNumber::GetPrimeCount()
 
      return fact;
      }
+POP_MSVC_IGNORE
 
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17

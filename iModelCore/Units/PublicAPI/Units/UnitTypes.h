@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitTypes.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -156,6 +156,7 @@ public:
     bvector<UnitCP> const GetUnits() const { return m_units; }
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
+    bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

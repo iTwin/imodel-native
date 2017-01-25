@@ -160,12 +160,12 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sci", 5).c_str());
     LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sciN", 5).c_str());
 
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05));
-    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05));
-    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05));
-    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05));
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05));
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
     LOG.info("Scientific");
     LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sci", 5).c_str());
     LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sciN", 5).c_str());
@@ -251,12 +251,12 @@ TEST(FormattingTest, Simple)
     ///////////////////////////////////////
 #if defined FORMAT_DEBUG_PRINT
     LOG.info("With Separator and trailing zeroes");
-    LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05));
-    LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05));
-    LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->FormatDouble(3.0*testV, 6, 0.05));
-    LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->FormatDouble(7.0*testV, 5, 0.05));
-    LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->FormatDouble(9.0*testV, 4, 0.05));
-    LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->FormatDouble(2.0*testV, 3, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05).c_str());
+    LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05).c_str());
+    LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->FormatDouble(3.0*testV, 6, 0.05).c_str());
+    LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->FormatDouble(7.0*testV, 5, 0.05).c_str());
+    LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->FormatDouble(9.0*testV, 4, 0.05).c_str());
+    LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->FormatDouble(2.0*testV, 3, 0.05).c_str());
 #endif
     ///////////////////////////////////////
 
@@ -273,12 +273,12 @@ TEST(FormattingTest, Simple)
     ///////////////////////////
 #if defined FORMAT_DEBUG_PRINT
     LOG.info("With Separator and trailing zeroes turnes off again");
-    LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05));
-    LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->FormatDouble(-5.0*testV, 7, 0.05));
-    LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->FormatDouble(-3.0*testV, 6, 0.05));
-    LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05));
-    LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05));
-    LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05).c_str());
+    LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->FormatDouble(-5.0*testV, 7, 0.05).c_str());
+    LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->FormatDouble(-3.0*testV, 6, 0.05).c_str());
+    LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05).c_str());
+    LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05).c_str());
+    LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
 
     ///////////////////////////
 
@@ -291,7 +291,7 @@ TEST(FormattingTest, Simple)
         repStr = fmtP->FormatDouble(rval, 4, 0.05);
         }
     LOG.info("Tested fmtP->FormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
+    LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     for (int i = 0; i < repet; i++)
@@ -299,7 +299,7 @@ TEST(FormattingTest, Simple)
         repStr = NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str();
         }
     LOG.info("Tested RefFormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet).c_str());
+    LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
