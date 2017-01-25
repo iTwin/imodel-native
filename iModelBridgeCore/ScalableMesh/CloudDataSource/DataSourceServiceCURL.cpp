@@ -24,7 +24,7 @@ DataSourceAccount * DataSourceServiceCURL::createAccount(const DataSourceAccount
                                                             // Inform Service base classes
     DataSourceService::createAccount(getDataSourceManager(), *accountCURL);
                                                             // Add new account to management
-    return Manager<DataSourceAccount>::create(account, accountCURL);
+    return Manager<DataSourceAccount,true>::create(account, accountCURL);
 }
 
 DataSourceStatus DataSourceServiceCURL::destroyAccount(const AccountName & account)

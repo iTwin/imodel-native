@@ -345,7 +345,7 @@ DataSourceAccountCURL::CURLHandle* DataSourceAccountCURL::CURLHandleManager::get
     CURLHandle *    curl_handle = nullptr;
 
     // Attempt to get the named CURL handle
-    curl_handle = Manager<DataSourceAccountCURL::CURLHandle>::get(name);
+    curl_handle = Manager<DataSourceAccountCURL::CURLHandle, true>::get(name);
     if (curl_handle)
         {
         // If requested, flag that the DataSource existed and was not created
@@ -389,7 +389,7 @@ DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::cr
     //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     //curl_easy_setopt(curl, CURLOPT_STDERR, std::cout);
     CURLHandle* curl_handle = new CURLHandle(curl);
-    if (Manager<DataSourceAccountCURL::CURLHandle>::create(name, curl_handle) == NULL)
+    if (Manager<DataSourceAccountCURL::CURLHandle, true>::create(name, curl_handle) == NULL)
         {
         delete curl_handle;
         return nullptr;

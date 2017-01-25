@@ -70,5 +70,5 @@ DataSourceAccount * DataSourceServiceAzureCURL::createAccount(const AccountName 
                                                             // Inform Service base classes
     DataSourceService::createAccount(getDataSourceManager(), *accountAzure);
                                                             // Add new account to management
-    return Manager<DataSourceAccount>::create(account, accountAzure);
+    return Manager<DataSourceAccount,true>::create(account, accountAzure);
     }

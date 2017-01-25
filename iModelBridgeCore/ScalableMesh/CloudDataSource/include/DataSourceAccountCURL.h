@@ -63,6 +63,11 @@ protected:
                 curl_slist_free_all(m_headers);
                 m_headers = nullptr;
                 }
+				
+			DataSourceStatus destroyAll(void)
+				{
+				return DataSourceStatus();
+				}
 
             struct CURLDataMemoryBuffer {
                 DataSourceBuffer::BufferData* data;
@@ -79,7 +84,7 @@ protected:
             static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
         };
 
-    class CURLHandleManager : public Manager<CURLHandle>
+    class CURLHandleManager : public Manager<CURLHandle, true>
         {
         public:
             typedef std::wstring                            HandleName;
