@@ -1422,7 +1422,7 @@
                         <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            Only one ExternalKey per CodeSpec per Element
+                            <!-- Only one ExternalKey per CodeSpec per Element -->
                             <string>Element.Id</string>
                             <string>CodeSpecId</string>
                         </Properties>
