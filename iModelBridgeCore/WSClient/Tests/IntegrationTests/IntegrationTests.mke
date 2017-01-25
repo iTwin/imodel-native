@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/IntegrationTests/IntegrationTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -52,19 +52,6 @@ $(o)WSClientBaseTest$(oext)         : $(wsClientUnitTestsDir)Utils/WSClientBaseT
 $(o)CachingTestsHelper$(oext)       : $(wsClientUnitTestsDir)WebServices/Cache/CachingTestsHelper.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
-
-#---------------------------------------------------------------------------------------+
-#   Deliver DgnClientSdk
-#---------------------------------------------------------------------------------------+
-
-DGNCLIENTSDK_ROOT = $(OutputRootDir)Product/DgnClientSdk-Winx64/
-DGNCLIENT_APP_ProjectRoot   = $(_MakeFilePath)
-DGNCLIENTAPP_DELIVER_OutputDir = $(o)
-
-_vsProject = 1
-
-%include $(DGNCLIENTSDK_ROOT)build/DgnClientSdk.mki
-%include $(DGNCLIENTSDK_DIR_BuildPlatform)deliver.mki
 
 #---------------------------------------------------------------------------------------+
 #   Link test executable
@@ -118,3 +105,37 @@ GUNITTEST_NOEXEC = 1
 ApiNumber = B02
 always:
     @CreateSymLinks.py -f"$(o)$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)"
+
+subparts:
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BaseGeoCoord$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BaseGeoCoord$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeIcu4c$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeIcu4c$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)freetype2$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)freetype2$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeOpenSSL$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeOpenSSL$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)qvision$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)qvision$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeCurl$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeCurl$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeLibxml2$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeLibxml2$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)Bentley$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)Bentley$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeXml$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeXml$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BentleyGeom$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BentleyGeom$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeFolly$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeFolly$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)Units$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)Units$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeHttp$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeHttp$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BentleyGeomSerialization$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BentleyGeomSerialization$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeSecurity$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeSecurity$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)ECObjects$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)ECObjects$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)DgnPlatform$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)DgnPlatform$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)DgnView$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)DgnView$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)DgnClientFx$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)DgnClientFx$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)"
+	@CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)"
+	
+
+
+
+
+
+
