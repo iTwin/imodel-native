@@ -90,23 +90,25 @@ public:
 
     //Rotation can be express in omega/phi/kappa or by a rotation matrix 
     //Use utility methods below to do your convertion 
-    DATACAPTURE_EXPORT static RotMatrix         GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
-    DATACAPTURE_EXPORT static bool              GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
+    DATACAPTURE_EXPORT static RotMatrix     GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
+    DATACAPTURE_EXPORT static bool          GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
+    DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target);
 
-    DATACAPTURE_EXPORT DPoint3dCR               GetCenter() const;
-    DATACAPTURE_EXPORT void                     SetCenter(DPoint3dCR val);
-    DATACAPTURE_EXPORT AngleCR                  GetOmega() const;
-    DATACAPTURE_EXPORT AngleCR                  GetPhi() const;
-    DATACAPTURE_EXPORT AngleCR                  GetKappa() const;
-    DATACAPTURE_EXPORT void                     SetOmega(AngleCR omega);
-    DATACAPTURE_EXPORT void                     SetPhi(AngleCR phi);
-    DATACAPTURE_EXPORT void                     SetKappa(AngleCR kappa);
 
-    DATACAPTURE_EXPORT YawPitchRollAngles       GetYawPitchRoll() const;
-    DATACAPTURE_EXPORT void                     SetYawPitchRoll(YawPitchRollAnglesCR angles);
+    DATACAPTURE_EXPORT DPoint3dCR           GetCenter() const;
+    DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT AngleCR              GetOmega() const;
+    DATACAPTURE_EXPORT AngleCR              GetPhi() const;
+    DATACAPTURE_EXPORT AngleCR              GetKappa() const;
+    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega);
+    DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi);
+    DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
 
-    DATACAPTURE_EXPORT GeoPoint                 GetCenterAsLatLongValue() const;
-    DATACAPTURE_EXPORT void                     SetCenterFromLatLongValue(GeoPointCR geoPoint);
+    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
+    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles);
+
+    DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
+    DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;
     };

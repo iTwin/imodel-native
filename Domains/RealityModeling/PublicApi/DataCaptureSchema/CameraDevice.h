@@ -258,7 +258,7 @@ private:
     int                     m_imageHeight;
     double                  m_aspectRatio;
     double                  m_skew;
-
+    double                  m_pixelToMeterRatio;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
@@ -362,6 +362,10 @@ public:
     DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
     DATACAPTURE_EXPORT double                   GetSkew() const;
     DATACAPTURE_EXPORT void                     SetSkew(double val);
+
+    //Since everything returned by ContextCapture will be in pixel we need a way to convert that into Meters
+    DATACAPTURE_EXPORT double                   GetPixelToMeterRatio() const;
+    DATACAPTURE_EXPORT void                     SetPixelToMeterRatio(double val);
 
     DATACAPTURE_EXPORT CameraDeviceModelElementId  GetCameraDeviceModelId() const;
     DATACAPTURE_EXPORT void                 SetCameraDeviceModelId(CameraDeviceModelElementId val);
