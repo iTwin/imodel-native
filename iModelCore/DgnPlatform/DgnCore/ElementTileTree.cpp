@@ -969,6 +969,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 private:
     IFacetOptionsR              m_facetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
+    IFacetOptionsPtr            m_lsStrokerOptions;
     RootR                       m_root;
     GeometryList&               m_geometries;
     DRange3d                    m_range;
@@ -979,6 +980,7 @@ private:
 #endif
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
+    double                      m_tolerance;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -1029,7 +1031,7 @@ public:
 #if defined(ELEMENT_TILE_REGENERATION)
         m_modelDelta(modelDelta),
 #endif
-        m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
+        m_tolerance(tolerance), m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
         {
         static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
@@ -1051,6 +1053,30 @@ public:
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
         return range.DiagonalDistance() < m_minRangeDiagonal;
+        }
+
+    IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb)
+        {
+        if (!lsSymb.GetUseStroker())
+            return nullptr;
+
+        // Only stroke if line width at least 5 pixels...
+        double pixelSize = m_tolerance;
+        double maxWidth = lsSymb.GetStyleWidth();
+        constexpr double pixelThreshold = 5.0;
+
+        if (0.0 != pixelSize && maxWidth / pixelSize < pixelThreshold)
+            return nullptr;
+
+        if (m_lsStrokerOptions.IsNull())
+            {
+            // NB: During geometry collection, tolerance is generally set for leaf node
+            // We don't apply facet options tolerances until we convert the geometry to meshes/strokes
+            m_lsStrokerOptions = IFacetOptions::CreateForCurves();
+            m_lsStrokerOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+            }
+
+        return m_lsStrokerOptions;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1095,6 +1121,12 @@ private:
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     virtual bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
+
+    bool _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const override
+        {
+        facetOptions = m_processor.GetLineStyleStrokerOptions(lsSymb);
+        return facetOptions.IsValid();
+        }
 public:
     GeometryProcessorContext(TileGeometryProcessor& processor, RootR root, LoadContextCR loadContext)
         : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(root.Is3d() ? GeometrySelector3d::GetSql() : GeometrySelector2d::GetSql())), m_loadContext(loadContext)
