@@ -9,6 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include <Formatting/FormattingDefinitions.h>
+#include <Units/Units.h>
+using namespace BentleyApi::Units;
+
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormat)
@@ -229,7 +232,39 @@ enum class StdFormatCode
     DefaultInt = 600
     };
 
-// A collection of improtant "global" constants that are used across the whole formatting domain
+enum class FormatProblemCode
+    {
+    NoProblems = 0,
+    QT_PhenomenonNotDefined = 101,
+    QT_PhenomenaNotSame = 102,
+    QT_InvalidTopMidUnits = 103,
+    QT_InvalidMidLowUnits = 104,
+    QT_InvalidUnitCombination = 105
+    };
+
+struct Utils
+    {
+    UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
+    static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
+    UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
+    UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
+    UNITS_EXPORT static Utf8CP GetParameterCategoryName(ParameterCategory parcat);
+    UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
+    UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
+    UNITS_EXPORT static Utf8String DecimalPrecisionName(DecimalPrecision prec);
+    UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);
+    UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
+    static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
+    UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
+    UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
+    //#if defined(FUNCTION_NOT_USED)
+    //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
+    //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
+
+    //#endif
+    };
+
+// A collection of important "global" constants that are used across the whole formatting domain
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  11/2016                                                
 //=======================================================================================
@@ -304,12 +339,15 @@ public:
     static const Utf8Char FPV_ThousandSeparator() { return ','; }
     static const Utf8CP DefaultName() { return "*"; }
     static const Utf8CP EmptyString() { return ""; }
+    static const Utf8CP BlankString() { return " "; }
+    static const Utf8CP FailedOperation() { return "Operation failed"; }
     static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
     static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
     static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
     static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
     static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
-    static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Sixteenth; }
+    static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
+    static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
     static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
     static const double FPV_MaxTokenLength() { return 256; }
     static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
@@ -333,26 +371,7 @@ public:
     static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
 };
 
-struct Utils
-    {
-    UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
-    static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
-    UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
-    UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
-    UNITS_EXPORT static Utf8CP GetParameterCategoryName(ParameterCategory parcat);
-    UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
-    UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
-    UNITS_EXPORT static Utf8String DecimalPrecisionName(DecimalPrecision prec);
-    UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);  
-    UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
-    static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
-    UNITS_EXPORT static const int FractionalPrecisionDenominator(FractionalPrecision prec);
-    //#if defined(FUNCTION_NOT_USED)
-    //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
-    //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
 
-    //#endif
-    };
 
 struct FactorPower
     {
@@ -407,7 +426,7 @@ private:
     size_t m_gcf;
     bvector<Utf8String> m_textParts;
 
-    void Calculate(double dval, int denominator);
+    void Calculate(double dval, size_t denominator);
     size_t GCF(size_t numer, size_t denom); 
 public:
     size_t GetDenominator() { return m_denominator; }
@@ -417,7 +436,10 @@ public:
     UNITS_EXPORT FractionalNumeric(double dval, int denominator);
     UNITS_EXPORT FractionalNumeric(double dval, int denominatorBase, double precision);
     UNITS_EXPORT Utf8String ToTextDefault(bool reduce);
-    UNITS_EXPORT Utf8CP GetIntegerText();
+    UNITS_EXPORT Utf8String GetIntegralString();
+    UNITS_EXPORT Utf8String GetDenominatorString();
+    UNITS_EXPORT Utf8String GetNumeratorString();
+    UNITS_EXPORT Utf8CP GetIntegralText();
     UNITS_EXPORT Utf8CP GetDenominatorText();
     UNITS_EXPORT Utf8CP GetNumeratorText();
     UNITS_EXPORT void FormTextParts(bool reduce);
@@ -447,7 +469,7 @@ private:
     UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round);
     UNITS_EXPORT int TrimTrailingZeroes(CharP buf, int index);
-    UNITS_EXPORT int InsertChar(CharP buf, int index, char c, int num);
+    UNITS_EXPORT size_t InsertChar(CharP buf, size_t index, char c, int num);
     NumericFormat() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
 
 public:
@@ -508,7 +530,7 @@ public:
     UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
     UNITS_EXPORT int static FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
-    UNITS_EXPORT int FormatDouble(double dval, CharP buf, int bufLen, int prec = -1, double round = -1.0);
+    UNITS_EXPORT size_t FormatDouble(double dval, CharP buf, size_t bufLen, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String RefFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
@@ -537,43 +559,62 @@ public:
 //=======================================================================================
 struct NumericTriad
     {
-private:
+protected:
     double m_dval;            // we keep the originally submitted value for its sign and possible reverse operations
     double m_topValue;        
     double m_midValue;
     double m_lowValue;
-    DecimalPrecision m_decPrecision;
-    int    m_topToMid;
-    int    m_midToLow;
+    //DecimalPrecision m_decPrecision;
+    size_t    m_topToMid;
+    size_t    m_midToLow;
     bool   m_init;
     bool   m_midAssigned;
     bool   m_lowAssigned;
     bool   m_negative;
-
     UNITS_EXPORT void Convert();
-    UNITS_EXPORT void SetValue(double dval, DecimalPrecision prec);
+    UNITS_EXPORT void SetValue(double dval);
     UNITS_EXPORT NumericTriad();
-    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
+    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); } 
+    size_t SetTopToMid(size_t value) { return  m_topToMid = value; }
+    size_t SetMidToLow(size_t value) { return  m_midToLow = value; }
+    void SetInit() { m_init = true; }
 public:
+    UNITS_EXPORT NumericTriad(double dval, size_t topMid, size_t midLow);
     
-    UNITS_EXPORT NumericTriad(double dval, int topMid, int midLow, DecimalPrecision prec)
-        {
-        SetValue(dval, prec);
-        m_topToMid = topMid;
-        m_midToLow = midLow;
-        m_init = true;
-        Convert();
-        }
-
     double GetWhole() { return m_negative ? -m_dval: m_dval; }
-    void ProcessValue(double dval, DecimalPrecision prec)  {  SetValue(dval, prec);  Convert(); }
+    void ProcessValue(double dval)  {  SetValue(dval);  Convert(); }
     void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
-    void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    //void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
     double GetTopValue() { return m_topValue; }
     double GetMidValue() { return m_midValue; }
     double GetlowValue() { return m_lowValue; }
     UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
     UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero);
+    };
+
+struct QuantityTriad : NumericTriad
+    {
+private:
+    QuantityCP m_quant;
+    UnitCP m_topUnit;
+    UnitCP m_midUnit;
+    UnitCP m_lowUnit;
+    FormatProblemCode m_problemCode;
+    void Init();
+    QuantityTriad();
+    bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
+public:
+
+    UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
+    UNITS_EXPORT QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit, UnitCP lowUnit);
+
+    bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    FormatProblemCode GetProblemCode() { return m_problemCode; }
+    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+    UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, bool includeZero);
+    Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
+    Utf8CP GetMidUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
+    Utf8CP GetLowUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
     };
 
 struct StdFormatSet

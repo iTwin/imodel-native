@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/Quantity.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,8 +35,8 @@ private:
 public:
     UNITS_EXPORT static QuantityPtr Create(double magnitude, Utf8CP unitName);
 
-    double GetMagnitude() { return m_magnitude; }
-    UnitCP GetUnit () { return m_unit; }
+    double GetMagnitude() const { return m_magnitude; }
+    UnitCP GetUnit () const { return m_unit; }
 
     UNITS_EXPORT QuantityPtr ConvertTo(Utf8CP unitName) const;
 

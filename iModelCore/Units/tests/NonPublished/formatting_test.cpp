@@ -11,16 +11,64 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
+
+//#include "UnitsPCH.h"
+//#include "StandardNames.h"
+#include <Units/UnitRegistry.h>
+#include <Units/UnitTypes.h>
+#include <Units/Quantity.h>
+#include <Units/Units.h>
 //#define FORMAT_DEBUG_PRINT
 
 #undef LOG
 //#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
+using namespace BentleyApi::Units;
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
+
+TEST(FormattingTest, FormattingUOM)
+    {
+    UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
+    UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
+    UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
+    QuantityPtr len = Quantity::Create(22.7, "M");
+    QuantityTriad qtr = QuantityTriad(*len, yrdUOM, ftUOM, inUOM);
+    EXPECT_STREQ ("24_YRD 2_FT 6_IN", qtr.FormatQuantTriad("_", false).c_str());
+    EXPECT_STREQ ("24 YRD 2 FT 6 IN", qtr.FormatQuantTriad(" ", false).c_str());
+#if defined FORMAT_DEBUG_PRINT
+    UnitCP mileUOM = UnitRegistry::Instance().LookupUnit("MILE");
+    if (nullptr != mileUOM && nullptr != yrdUOM)
+        {
+        double fact = mileUOM->Convert(1.0, yrdUOM);
+        LOG.infov("There are %.4f %s in %s", fact, yrdUOM->GetName(), mileUOM->GetName());
+        size_t rat = QuantityTriad::UnitRatio(mileUOM, yrdUOM);
+        LOG.infov("ratio of  %s/%s is %d", mileUOM->GetName(), yrdUOM->GetName(), rat);
+        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
+        LOG.infov("ratio of  %s/%s is %d", yrdUOM->GetName(), mileUOM->GetName(), rat);
+
+        rat = QuantityTriad::UnitRatio(yrdUOM, ftUOM);
+        LOG.infov("ratio of  %s/%s is %d", yrdUOM->GetName(), ftUOM->GetName(), rat);
+        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
+        LOG.infov("ratio of  %s/%s is %d", ftUOM->GetName(), yrdUOM->GetName(), rat);
+
+        rat = QuantityTriad::UnitRatio(ftUOM, inUOM);
+        LOG.infov("ratio of  %s/%s is %d", ftUOM->GetName(), inUOM->GetName(), rat);
+        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
+        LOG.infov("ratio of  %s/%s is %d", inUOM->GetName(), ftUOM->GetName(), rat);
+        }
+    else 
+        LOG.info("Units not found");
+    if (qtr.IsProblem())
+        LOG.info("22.7 M conversion failed");
+    else
+        LOG.infov("22.7 M = %s", qtr.FormatQuantTriad("_", false).c_str());
+#endif
+    }
 
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
+    double fval = sqrt(2.0);
     ////  demo print
 #if defined FORMAT_DEBUG_PRINT
     LOG.infov("There are %d prime factors", FactorizedNumber::GetPrimeCount());
@@ -49,7 +97,7 @@ TEST(FormattingTest, Simple)
     LOG.infov("%s", FactorizedNumber(gcf).DebugText().c_str());
 
 
-    double fval = sqrt(2.0);
+
     FractionalNumeric fn = FractionalNumeric(fval, 4);
     LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
     fval *= 3.5;
@@ -136,6 +184,33 @@ TEST(FormattingTest, Simple)
         Fractional Value(7) 15.875000  (denom 343) 15 300 / 343
         Fractional Value(7) 15.875000  (denom 49) 15 43 / 49*/
 
+    fval = sqrt(2.0);
+
+#if defined FORMAT_DEBUG_PRINT
+    fn = FractionalNumeric(fval, 128);
+    LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fract").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+#endif
+
+    EXPECT_STREQ ("1 27/64", NumericFormat::RefFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+1 27/64", NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormat::RefFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormat::RefFormatDouble(-fval, "fractSign").c_str());
+    fval  *= 3.5;
+
+#if defined FORMAT_DEBUG_PRINT
+    fn = FractionalNumeric(fval, 128);
+    LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fract").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+#endif
+
+    EXPECT_STREQ ("4 61/64", NumericFormat::RefFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+4 61/64", NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormat::RefFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormat::RefFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("15 7/8", FractionalNumeric(15.0 + 14.0 / 16.0, 256).ToTextDefault(true).c_str());
 
     EXPECT_STREQ ("1414.213562", NumericFormat::RefFormatDouble(testV, "real").c_str());
     EXPECT_STREQ ("1414.21356237", NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
@@ -390,7 +465,7 @@ TEST(FormattingTest, Simple)
 
     curs.Rewind();
 
-    NumericTriad tr = NumericTriad(1000.0, 3, 12, DecimalPrecision::Precision4);
+    NumericTriad tr = NumericTriad(1000.0, (size_t)3, (size_t)12);
 
     EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
     EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
@@ -484,7 +559,8 @@ TEST(FormattingTest, DictionaryValidation)
     std::time_t result = std::time(nullptr);
     LOG.infov("Formatting test End %s", std::ctime(&result));
 #endif
-}
+    }
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

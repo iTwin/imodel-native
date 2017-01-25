@@ -507,22 +507,29 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
 
     return i + 1;  // first position after last zero
     }
-
-int NumericFormat::InsertChar(CharP buf, int index, char c, int num)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+size_t NumericFormat::InsertChar(CharP buf, size_t index, char c, int num)
     {
     if (nullptr != buf && 0 < num)
         {
-        for(int i = 0; i < num; buf[index++] = c, i++){}
+        for(size_t i = 0; i < num; buf[index++] = c, i++){}
         }
     return index;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 double NumericFormat::GetDecimalPrecisionFactor(int prec = -1) 
     { 
     return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 int  NumericFormat::GetDecimalPrecisionIndex(int prec = -1) 
     { 
     if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
@@ -533,7 +540,7 @@ int  NumericFormat::GetDecimalPrecisionIndex(int prec = -1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, double round)
+size_t NumericFormat::FormatDouble(double dval, CharP buf, size_t bufLen, int prec, double round)
     {
     double ival;
     Utf8Char sign = '+';
@@ -544,8 +551,8 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
     char intBuf[64];
     char fractBuf[64];
     char locBuf[128];
-    int ind = 0;
-
+    size_t ind = 0;
+    memset(locBuf, 0, sizeof(locBuf));
     if (dval < 0.0)
         {
         dval = -dval;
@@ -553,6 +560,7 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
         }
     bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
+    bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
 
     if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
@@ -579,8 +587,6 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
 
     if (decimal)
         {
-        memset(locBuf, 0, sizeof(locBuf));
-
         fract = modf(IsPrecisionZero()? dval + FormatConstant::FPV_RoundFactor(): dval, &ival);
         int iLen = IntPartToText(ival, intBuf, sizeof(intBuf), true);
         if (m_signOption == ShowSignOption::SignAlways || 
@@ -616,7 +622,7 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
             ind += fLen;
             // handling trailing zeroes
             if (!IsKeepTrailingZeroes() && locBuf[ind - 1] == '0')
-                ind = TrimTrailingZeroes(locBuf, ind-1);
+                ind = TrimTrailingZeroes(locBuf, static_cast<int>(ind)-1);
             }
         if (sci && expInt != 0)
             {
@@ -628,15 +634,38 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
             memcpy(&locBuf[ind], expBuf, expLen);
             ind += expLen;
             }
-        } // decimal
-    // closing formatting
-    if ('(' == sign)
-        locBuf[ind++] = ')';
-    locBuf[ind++] = '\0';
+        // closing formatting
+        if ('(' == sign)
+            locBuf[ind++] = ')';
+        locBuf[ind++] = '\0';
 
-    if (ind > bufLen)
-        ind = bufLen;
-    memcpy(buf, locBuf, ind);
+        if (ind > bufLen)
+            ind = bufLen;
+        memcpy(buf, locBuf, ind);
+        } // decimal
+    else if (fractional)
+        {
+        FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
+        fn.FormTextParts(true);
+        size_t locBufL = sizeof(locBuf);
+        if (m_signOption == ShowSignOption::SignAlways ||
+            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+            locBuf[ind++] = sign;
+        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
+        if(ind < locBufL)
+            ind = Utils::AppendText(locBuf, locBufL, ind, " ");
+        if (ind < locBufL)
+            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
+        if (ind < locBufL)
+            ind = Utils::AppendText(locBuf, locBufL, ind, "/");
+        if (ind < locBufL)
+            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
+        ind++;
+        if (ind > bufLen)
+            ind = bufLen;
+        memcpy(buf, locBuf, ind);
+        }
+
     return ind;
     }
 
@@ -955,10 +984,8 @@ FormatParameterP FormatDictionary::GetParameterByIndex(int index)
 //---------------------------------------------------------------------------------------
 FormatParameterP FormatDictionary::FindParameterByName(Utf8StringCR paramName)
     {
-    FormatParameterP par;
-    for (auto curr = m_paramList.begin(), end = m_paramList.end(); curr != end; curr++)
+    for (FormatParameterP par = m_paramList.begin(), end = m_paramList.end(); par != end; ++par)
         {
-        par = curr;
         if (0 == par->CompareName(paramName))
             return par;
         }
@@ -970,10 +997,8 @@ FormatParameterP FormatDictionary::FindParameterByName(Utf8StringCR paramName)
 //---------------------------------------------------------------------------------------
 FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
     {
-    FormatParameterP par;
-        for (auto curr = m_paramList.begin(), end = m_paramList.end(); curr != end; curr++)
+    for (FormatParameterP par = m_paramList.begin(), end = m_paramList.end(); par != end; ++par)
         {
-        par = curr;
         if (paramCode == par->GetParameterCode())
             return par;
         }
@@ -1008,6 +1033,9 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
     return str;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
     {
     Utf8StringP str = new Utf8String();
@@ -1059,8 +1087,8 @@ void StdFormatSet::StdInit()
     AddFormat(new NumericFormat("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
     AddFormat(new NumericFormat("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
     AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
-    AddFormat(new NumericFormat("DefaultFractional", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fract");
-    AddFormat(new NumericFormat("SignedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
+    AddFormat(new NumericFormat("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");
+    AddFormat(new NumericFormat("SignedFractional", PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fractSign");
     AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
     AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
     AddFormat(new NumericFormat("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
@@ -1074,7 +1102,7 @@ NumericFormatP StdFormatSet::DefaultDecimal()
     {
     NumericFormatP fmtP;
 
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
+    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (PresentationType::Decimal == fmtP->GetPresentationType())
@@ -1083,6 +1111,9 @@ NumericFormatP StdFormatSet::DefaultDecimal()
     return nullptr;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 NumericFormatP StdFormatSet::FindFormat(Utf8CP name)
     {
     NumericFormatP fmtP = *Set().m_formatSet.begin();
@@ -1115,8 +1146,8 @@ void NumericTriad::Convert()
     double midlow = (double)m_midToLow;
     double toplow = topmid * midlow;
     double rem = 0.0;
-    if (m_decPrecision == DecimalPrecision::Precision0)
-        m_dval = floor(m_dval + 0.501);
+   /* if (m_decPrecision == DecimalPrecision::Precision0)
+        m_dval = floor(m_dval + FormatConstant::FPV_RoundFactor());*/
     m_topValue = 0.0;
     m_midValue = 0.0;
     m_lowValue = 0.0;
@@ -1156,7 +1187,7 @@ void NumericTriad::Convert()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericTriad::SetValue(double dval, DecimalPrecision prec)
+void NumericTriad::SetValue(double dval)
     {
     m_dval = dval;
     m_negative = false;
@@ -1165,7 +1196,7 @@ void NumericTriad::SetValue(double dval, DecimalPrecision prec)
         m_negative = true;
         m_dval = -m_dval;
         }
-    m_decPrecision = prec;
+    //m_decPrecision = prec;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1184,8 +1215,23 @@ NumericTriad::NumericTriad()
     m_midAssigned = false;
     m_lowAssigned = false;
     m_negative = false;
-    m_decPrecision = DecimalPrecision::Precision0;
+    //m_decPrecision = DecimalPrecision::Precision0;
     }
+
+
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+NumericTriad::NumericTriad(double dval, size_t topMid, size_t midLow)
+    {
+    SetValue(dval);
+    m_topToMid = topMid;
+    m_midToLow = midLow;
+    m_init = true;
+    Convert();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
@@ -1201,8 +1247,8 @@ Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero)
     {
-    NumericFormat fmt("FT");
-    Utf8CP blank = " ";
+    NumericFormat fmt("Triad");
+    Utf8CP blank = FormatConstant::BlankString();
     if (IsNameNullOrEmpty(topName))
         topName = blank;
     if (IsNameNullOrEmpty(midName))
@@ -1212,7 +1258,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
 
     if (!m_midAssigned)
         {
-        fmt.SetDecimalPrecision(m_decPrecision);
+        //fmt.SetDecimalPrecision(m_decPrecision);
         return fmt.FormatDouble(GetWhole());
         }
 
@@ -1229,13 +1275,13 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
             mid = fmt.FormatDouble(m_midValue);
         if (m_lowValue > 0.0 || includeZero)
             {
-            fmt.SetDecimalPrecision(m_decPrecision);
+            //fmt.SetDecimalPrecision(m_decPrecision);
             low = fmt.FormatDouble(m_lowValue);
             }
         }
     else if (m_midValue > 0.0 || includeZero)
         {
-        fmt.SetDecimalPrecision(m_decPrecision);
+        //fmt.SetDecimalPrecision(m_decPrecision);
         mid = fmt.FormatDouble(m_midValue);
         }
 
@@ -1258,10 +1304,204 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
 
 //===================================================
 //
+// NumericTriadMethods
+//
+//===================================================
+
+void QuantityTriad::Init()
+    {
+    m_quant = nullptr;
+    m_topUnit = nullptr;
+    m_midUnit = nullptr;
+    m_lowUnit = nullptr;
+    m_problemCode = FormatProblemCode::NoProblems;
+    }
+
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+QuantityTriad::QuantityTriad()
+    {
+    Init();
+    }
+//---------------------------------------------------------------------------------------
+// The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
+//   possible (within the current triad concept). This function will return -1 if Units do not qualify:
+//    1. Units do not belong to the same Phenomenon
+//    2. Ratio of major/minor < 1
+//    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+size_t QuantityTriad::UnitRatio(UnitCP major, UnitCP minor)
+    {
+    if (nullptr != major && nullptr != minor && (major->GetPhenomenon() == minor->GetPhenomenon()))
+        {
+        double rat = major->Convert(1.0, minor);
+        if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
+            return static_cast<int>(rat);
+        }
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// Using QuantityTriad is possible only when the quantity of the source value is defined and at least
+//   the top UOM is also defined. Regarding middle and low Units wqe may have three valid cases:
+//    1. Both of them not defined
+//    2. Middle is defined but low is not (null)
+//    3. Both of them are not defined
+//  if either of three "target" UOM are defined their associated phenomenon must be the same as
+//    the phenomenon of the source quantity
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+bool QuantityTriad::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
+    {
+    if (nullptr == srcPhen || nullptr == targPhen)
+        return UpdateProblemCode(FormatProblemCode::QT_PhenomenonNotDefined);
+    if(srcPhen != targPhen)
+        return UpdateProblemCode(FormatProblemCode::QT_PhenomenaNotSame);
+    return IsProblem();
+    }
+
+//---------------------------------------------------------------------------------------
+// The problem code will be updated only if it was not already set to some non-zero value
+//   this approach is not the best, but witout a standard method for collection multiple 
+//    problems it's better than override earlier encountered problems
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+bool QuantityTriad::UpdateProblemCode(FormatProblemCode code)
+    {
+    if (m_problemCode == FormatProblemCode::NoProblems)
+        m_problemCode = code;
+    return IsProblem();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+QuantityTriad::QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit = nullptr, UnitCP lowUnit = nullptr)
+    {
+    Init();
+    int caseBits = 0;
+    // before populating the structure - check validity of arguments combination  
+    UnitCP unitQ = qty.GetUnit();
+    PhenomenonCP phQ = nullptr;
+    PhenomenonCP phTop = nullptr;
+    PhenomenonCP phMid = nullptr;
+    PhenomenonCP phLow = lowUnit->GetPhenomenon();
+
+    if (nullptr != unitQ)
+        {
+        caseBits |= 0x1;  // source unit is present
+        phQ = unitQ->GetPhenomenon();      
+        }
+    if (nullptr != topUnit)
+        {
+        caseBits |= 0x2;  // top unit is present
+        phTop = topUnit->GetPhenomenon();
+        }
+    if (nullptr != midUnit)
+        {
+        caseBits |= 0x4; // mid unit is present
+        phMid = midUnit->GetPhenomenon();
+        }
+    if (nullptr != lowUnit)
+        {
+        caseBits |= 0x8; // low unit is present
+        phLow = lowUnit->GetPhenomenon();
+        }
+    // only three combinations of bits indicate that the set of argument is sufficient for further investigation
+    // 0011, 0111, 1111, all other combinations - indicate an erroneous argument list
+    size_t topToMid = 0;
+    size_t midToLow = 0;
+    //double temp;
+
+    switch (caseBits)
+        {
+        case 0x3:
+            ValidatePhenomenaPair(phQ, phTop);
+            if (!IsProblem())
+                {
+                m_topUnit = topUnit;
+                QuantityPtr temp = qty.ConvertTo(GetTopUOM());
+                SetValue(temp->GetMagnitude());
+                }
+            break;
+        case 0x7:
+            topToMid = UnitRatio(topUnit, midUnit);
+            ValidatePhenomenaPair(phQ, phTop);
+            ValidatePhenomenaPair(phTop, phMid);
+            if(!IsProblem())
+                {
+                if (topToMid > 1)
+                    {
+                    SetTopToMid(topToMid);
+                    m_topUnit = topUnit;
+                    m_midUnit = midUnit;
+                    QuantityPtr temp = qty.ConvertTo(GetMidUOM());
+                    SetValue(temp->GetMagnitude());
+                    }
+                else
+                    UpdateProblemCode(FormatProblemCode::QT_InvalidTopMidUnits);
+                }
+            break;
+        case 0xF:
+            topToMid = UnitRatio(topUnit, midUnit);
+            midToLow = UnitRatio(midUnit, lowUnit);
+            ValidatePhenomenaPair(phQ, phTop);
+            ValidatePhenomenaPair(phTop, phMid);
+            if (!IsProblem())
+                {
+                if (topToMid > 1)
+                    SetTopToMid(topToMid);
+                else
+                    UpdateProblemCode(FormatProblemCode::QT_InvalidTopMidUnits);
+                if( midToLow > 1)
+                    SetMidToLow(midToLow);
+                else
+                    UpdateProblemCode(FormatProblemCode::QT_InvalidMidLowUnits);
+                 }
+            if (!IsProblem())
+                {
+                m_topUnit = topUnit;
+                m_midUnit = midUnit;
+                m_lowUnit = lowUnit;
+                QuantityPtr temp = qty.ConvertTo(GetLowUOM());
+                SetValue(temp->GetMagnitude());
+                }
+            break;
+        default:
+            UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
+            break;
+        }
+    if (!IsProblem())
+        {
+        SetInit();
+        Convert();
+        }
+    }
+
+Utf8String QuantityTriad::FormatQuantTriad(Utf8CP space, bool includeZero)
+    {
+    if (IsProblem())
+        return FormatConstant::FailedOperation();
+
+    Utf8CP topUOM = GetTopUOM();
+    Utf8CP midUOM = GetMidUOM();
+    Utf8CP lowUOM = GetLowUOM();
+    return FormatTriad(topUOM, midUOM, lowUOM, space, includeZero);
+    }
+   
+
+//===================================================
+//
 // FormattingScannerCursorMethods
 //
 //===================================================
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
     {
     const bool end = FormatConstant::IsLittleEndian();
@@ -1294,6 +1534,9 @@ FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other
     {
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 void FormattingScannerCursor::Rewind()
 {
     m_cursorPosition = 0;
@@ -1323,7 +1566,6 @@ int FormattingScannerCursor::AddTrailingByte()
         }
     return 0;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1373,6 +1615,9 @@ size_t FormattingScannerCursor::GetNextSymbol()
     return m_uniCode;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::SkipBlanks()
     {
     size_t code = GetNextSymbol();
@@ -1383,8 +1628,9 @@ size_t FormattingScannerCursor::SkipBlanks()
     return m_lastScannedCount;
     }
 
-
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 FormattingToken::FormattingToken(FormattingScannerCursorP cursor)
     {
     m_cursor = cursor;

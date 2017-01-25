@@ -10,6 +10,9 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
     {
     switch (opt)
@@ -21,6 +24,9 @@ Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
     {
     switch (num)
@@ -41,6 +47,9 @@ DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
     {
     static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
@@ -49,6 +58,9 @@ double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
     return FactorSet[DecimalPrecisionToInt(decP)];
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8CP Utils::GetParameterCategoryName(ParameterCategory parcat)
     {
     static Utf8CP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
@@ -56,6 +68,9 @@ Utf8CP Utils::GetParameterCategoryName(ParameterCategory parcat)
     return CategoryNames[static_cast<int>(parcat)];
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String  Utils::PresentationTypeName(PresentationType type)
     {
     switch (type)
@@ -68,6 +83,9 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String Utils::SignOptionName(ShowSignOption opt)
     {
     switch (opt)
@@ -80,6 +98,9 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
     {
     switch (prec)
@@ -101,6 +122,9 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
  Utf8String Utils::FractionallPrecisionName(FractionalPrecision prec)
     {
     switch (prec)
@@ -138,7 +162,10 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
          }
      }
 
-  const int Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
+  const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
      {
      switch (prec)
          {
@@ -154,6 +181,23 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
          case FractionalPrecision::Whole: return 1;
          }
      }
+
+  //----------------------------------------------------------------------------------------
+  // @bsimethod                                                   David Fox-Rabinovitz 11/16
+  //----------------------------------------------------------------------------------------
+  size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
+    {
+      int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
+      size_t strL = (nullptr == str) ? 0 : strlen(str);
+      if (strL < 1 || cap < 1)
+          return index;
+      if (strL > cap)
+          strL = cap;
+      memcpy(static_cast<void*>(buf + index), str, strL);
+      index += strL;
+      buf[index] = '\0';     
+      return index;
+    }
 
  //===================================================
  //
@@ -227,7 +271,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
- void FractionalNumeric::Calculate(double dval, int denominator)
+ void FractionalNumeric::Calculate(double dval, size_t denominator)
      {
      m_denominator = denominator;
      double integral = 0.0;
@@ -236,7 +280,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      m_numerator = static_cast<int>(numer);
      m_integral = static_cast<size_t>(integral);
      m_gcf = 1;
-     if ((m_numerator / m_denominator) == 1)
+     if (0 != denominator && (m_numerator / m_denominator) == 1)
          {
          m_numerator = 0;
          m_integral += 1;
@@ -251,22 +295,6 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
      {
      Calculate(dval, Utils::FractionalPrecisionDenominator(fprec));
-     /*m_denominator = Utils::FractionalPrecisionDenominator(fprec);
-     double integral=0.0;
-     double fract = modf(fabs(dval), &integral);
-     double numer = floor(fract * m_denominator + FormatConstant::FPV_RoundFactor());
-     m_numerator = static_cast<int>(numer);
-     m_integral = static_cast<size_t>(integral);
-     m_gcf = 1;
-     if ((m_numerator / m_denominator) == 1)
-         {
-         m_numerator = 0;
-         m_integral += 1;
-         }
-     else
-         m_gcf = GCF(m_numerator, m_denominator);
-     if (0 > dval)
-         m_integral = -m_integral;*/
      }
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
@@ -274,22 +302,6 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  FractionalNumeric::FractionalNumeric(double dval, int denominator)
      {
      Calculate(dval, denominator);
-    /* m_denominator = denominator;
-     double integral = 0.0;
-     double fract = modf(fabs(dval), &integral);
-     double numer = floor(fract * m_denominator + FormatConstant::FPV_RoundFactor());
-     m_numerator = static_cast<int>(numer);
-     m_integral = static_cast<size_t>(integral);
-     m_gcf = 1;
-     if ((m_numerator / m_denominator) == 1)
-         {
-         m_numerator = 0;
-         m_integral += 1;
-         }
-     else
-         m_gcf = GCF(m_numerator, m_denominator);
-     if (0 > dval)
-         m_integral = -m_integral;*/
      }
 
  //----------------------------------------------------------------------------------------
@@ -319,9 +331,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 01/17
  //----------------------------------------------------------------------------------------
-
-
- void FractionalNumeric::FormTextParts(bool reduce)
+  void FractionalNumeric::FormTextParts(bool reduce)
      {
      NumericFormat fmt =  NumericFormat("fract", PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
      size_t numer = m_numerator;
@@ -336,39 +346,76 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      m_textParts.push_back(fmt.FormatInteger((int)denom));
      }
 
- Utf8CP FractionalNumeric::GetIntegerText()
+  //----------------------------------------------------------------------------------------
+  // @bsimethod                                                   David Fox-Rabinovitz 11/16
+  //----------------------------------------------------------------------------------------
+ Utf8String FractionalNumeric::GetIntegralString()
      {
-     if (3 > m_textParts.size())
-         return FormatConstant::EmptyString();
-     Utf8String strP = m_textParts.at(0);
-     return strP.c_str();
+     Utf8String strP;
+     if (3 <= m_textParts.size())
+         strP = m_textParts.at(0);
+     return strP ;
      }
 
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
+ Utf8String FractionalNumeric::GetNumeratorString()
+     {
+     Utf8String strP;
+     if (3 <= m_textParts.size())
+         strP = m_textParts.at(1);
+     return strP;
+     }
+
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
+ Utf8String FractionalNumeric::GetDenominatorString()
+     {
+     Utf8String strP;
+     if (3 <= m_textParts.size())
+         strP = m_textParts.at(2);
+     return strP;
+     }
+
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
+ Utf8CP FractionalNumeric::GetIntegralText()
+     {
+     Utf8CP p = GetIntegralString().c_str();
+     return p;
+     }
+
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
  Utf8CP FractionalNumeric::GetDenominatorText()
      {
-     if (3 > m_textParts.size())
-         return FormatConstant::EmptyString();
-     Utf8String strP = m_textParts.at(1);
-     return strP.c_str();
+     Utf8CP p = GetDenominatorString().c_str();
+     return p;
      }
 
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
  Utf8CP FractionalNumeric::GetNumeratorText()
      {
-     if (3 > m_textParts.size())
-         return FormatConstant::EmptyString();
-     Utf8String strP = m_textParts.at(2);
-     return strP.c_str();
+     Utf8CP p = GetNumeratorString().c_str();
+     return p;
      }
 
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
  Utf8String FractionalNumeric::ToTextDefault(bool reduce)
      {
      FormTextParts(reduce);
-     char buf[128];
      if (m_numerator > 0)
-         sprintf(buf, "%s %s/%s", GetIntegerText(),GetNumeratorText(), GetDenominatorText());
+        return GetIntegralString() + " " + GetNumeratorString() + "/" + GetDenominatorString();
      else
-         sprintf(buf, "%s (0/%s)", GetIntegerText(), GetDenominatorText());
-     return Utf8String(buf);
+        return GetIntegralString();
      }
 
  //===================================================
@@ -390,6 +437,9 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      return res;
      }
 
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
  void FactorPower::CopyValues(FactorPowerP other)
      {
      if (nullptr == other)
