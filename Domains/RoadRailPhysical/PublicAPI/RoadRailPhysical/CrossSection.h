@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/CrossSection.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -86,7 +86,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadCrossSection)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(RoadCrossSection)
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnAuthorityId QueryAuthorityId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
 
     ROADRAILPHYSICAL_EXPORT static RoadCrossSectionPtr Create(CrossSectionDefinitionModelCR model, Utf8StringCR code);

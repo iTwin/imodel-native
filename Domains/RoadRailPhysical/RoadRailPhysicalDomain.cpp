@@ -2,7 +2,7 @@
 |
 |     $Source: RoadRailPhysicalDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -181,43 +181,43 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     RoadRailCategory::InsertDomainCategories(dgndb);
 
-    auto authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadCrossSection, dgndb);
-    BeAssert(authorityPtr.IsValid());
-    if (authorityPtr.IsValid())
+    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadCrossSection);
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
         {
-        authorityPtr->Insert();
-        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb);
-    BeAssert(authorityPtr.IsValid());
-    if (authorityPtr.IsValid())
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinitionTable);
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
         {
-        authorityPtr->Insert();
-        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadClassDefinition, dgndb);
-    BeAssert(authorityPtr.IsValid());
-    if (authorityPtr.IsValid())
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinition);
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
         {
-        authorityPtr->Insert();
-        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, dgndb);
-    BeAssert(authorityPtr.IsValid());
-    if (authorityPtr.IsValid())
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinitionTable);
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
         {
-        authorityPtr->Insert();
-        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadDesignSpeedDefinition, dgndb);
-    BeAssert(authorityPtr.IsValid());
-    if (authorityPtr.IsValid())
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinition);
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
         {
-        authorityPtr->Insert();
-        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: RoadClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -66,7 +66,7 @@ RoadClassDefinitionTable::RoadClassDefinitionTable(CreateParams const& params):
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadClassDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb, value);
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadClassDefinitionTable, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,7 +113,7 @@ RoadClassDefinition::RoadClassDefinition(CreateParams const& params):
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadClassDefinition::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR roadClass)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinition, dgndb, roadClass);
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadClassDefinition, roadClass);
     }
 
 /*---------------------------------------------------------------------------------**//**

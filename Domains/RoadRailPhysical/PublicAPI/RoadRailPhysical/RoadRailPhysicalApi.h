@@ -130,13 +130,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
-// Authority names
+// CodeSpec names
 //-----------------------------------------------------------------------------------------
-#define BRRP_AUTHORITY_RoadCrossSection                             "RoadCrossSection"
-#define BRRP_AUTHORITY_RoadClassDefinition                          "RoadClassDefinition"
-#define BRRP_AUTHORITY_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
-#define BRRP_AUTHORITY_RoadDesignSpeedDefinition                    "RoadDesignSpeedDefinition"
-#define BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable               "RoadDesignSpeedDefinitionTable"
+#define BRRP_CODESPEC_RoadCrossSection                             "RoadCrossSection"
+#define BRRP_CODESPEC_RoadClassDefinition                          "RoadClassDefinition"
+#define BRRP_CODESPEC_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
+#define BRRP_CODESPEC_RoadDesignSpeedDefinition                    "RoadDesignSpeedDefinition"
+#define BRRP_CODESPEC_RoadDesignSpeedDefinitionTable               "RoadDesignSpeedDefinitionTable"
 
 
 //-----------------------------------------------------------------------------------------

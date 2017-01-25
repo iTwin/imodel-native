@@ -2,7 +2,7 @@
 |
 |     $Source: CrossSection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -31,11 +31,11 @@ RoadCrossSection::RoadCrossSection(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId RoadCrossSection::QueryAuthorityId(Dgn::DgnDbCR dgndb)
+CodeSpecId RoadCrossSection::QueryCodeSpecId(Dgn::DgnDbCR dgndb)
     {
-    DgnAuthorityId authorityId = dgndb.Authorities().QueryAuthorityId(BRRP_AUTHORITY_RoadCrossSection);
-    BeAssert(authorityId.IsValid());
-    return authorityId;
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_RoadCrossSection);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,7 +43,7 @@ DgnAuthorityId RoadCrossSection::QueryAuthorityId(Dgn::DgnDbCR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadCrossSection::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadCrossSection, dgndb, value);
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadCrossSection, value);
     }
 
 /*---------------------------------------------------------------------------------**//**

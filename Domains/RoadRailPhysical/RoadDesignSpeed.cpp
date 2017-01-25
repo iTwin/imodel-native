@@ -2,7 +2,7 @@
 |
 |     $Source: RoadDesignSpeed.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -76,7 +76,7 @@ RoadDesignSpeedDefinitionTable::RoadDesignSpeedDefinitionTable(CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadDesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, dgndb, value);
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinitionTable, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +145,7 @@ RoadDesignSpeedDefinition::RoadDesignSpeedDefinition(CreateParams const& params,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadDesignSpeedDefinition::CreateCode(Dgn::DgnDbR dgndb, double speed, UnitSystem unitSystem)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinition, dgndb,
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinition,
         Utf8PrintfString("%.0f %s", speed, (unitSystem == UnitSystem::Metric) ? "Km/h" : "mph"));
     }
 
