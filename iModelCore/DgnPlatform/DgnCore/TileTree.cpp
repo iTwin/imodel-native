@@ -540,12 +540,12 @@ void Tile::SetAbandoned() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
+void Tile::UnloadChildren(BeTimePoint olderThan) const
     {
     // This node may have initially had children and subsequently determined that it should be a leaf instead
     // - unload its now-useless children unconditionally
     if (!_HasChildren())
-        olderThan = std::chrono::steady_clock::now();
+        olderThan = BeTimePoint::Now();
 
     _UnloadChildren(olderThan);
     }
@@ -556,7 +556,7 @@ void Tile::UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
+void Tile::_UnloadChildren(BeTimePoint olderThan) const
     {
     if (m_children.empty())
         return;
@@ -765,7 +765,7 @@ void Root::DrawInView(RenderContextR context)
         return;
         }
 
-    auto now = std::chrono::steady_clock::now();
+    auto now = BeTimePoint::Now();
     DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
 
     bvector<TileCPtr> selectedTiles;

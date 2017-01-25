@@ -236,7 +236,7 @@ namespace Attachment
         bool m_sceneQueued = false;
 
         bool Pick(PickContext&);
-        void Draw(TerrainContextR);
+        void Draw(RenderListContext&);
         void Load(Render::SystemP);
         Utf8CP _GetName() const override {return "SheetTile";}
         Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);

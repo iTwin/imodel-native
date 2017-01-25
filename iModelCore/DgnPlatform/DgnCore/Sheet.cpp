@@ -346,17 +346,16 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(TerrainContextR context)
-void Attachment::Tree::Draw(RenderContextR context)
+void Attachment::Tree::Draw(RenderListContext& context)
     {
     Load(&context.GetTargetR().GetSystem());
 
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(); // this queues the scene request on the ClientThread and returns after scene is ready
+        // ###TODO_ELEMENT_TILE: Do we need/want the UpdatePlan?
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the ClientThread and returns after scene is ready
         m_sceneQueued = true; // remember that we've already queued it
-        m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
 
     // the scene is available, draw its tiles
@@ -541,9 +540,11 @@ void Sheet::ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(RenderContextR context)
     {
+    // ###TODO_ELEMENT_TILE: Draw() wants the context's UpdatePlan...
+    BeAssert(nullptr != dynamic_cast<RenderListContext*>(&context));
     auto status = T_Super::_CreateScene(context);
     for (auto& attach : m_attachments)
-        attach->Draw(context);
+        attach->Draw(static_cast<RenderListContext&>(context));
 
     return status;
     }

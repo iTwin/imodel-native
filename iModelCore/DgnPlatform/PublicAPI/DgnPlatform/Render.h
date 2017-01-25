@@ -1834,7 +1834,6 @@ public:
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
-    DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}
