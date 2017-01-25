@@ -306,7 +306,7 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
             {
             //if single property is mapped to more than the max, we error out. 
             LOG.errorv("Failed to create ECInstanceUpdater. ECProperty '%s' in ECClass '%s' is mapped to %" PRIu32 " virtual columns in the overflow column. "
-                       "In ECSQL UPDATE only %" PRIu32 " virtual columns in the overflow column per property are supported. "
+                       "In ECSQL UPDATE an ECProperty  must not be mapped to more than %" PRIu32 " virtual columns in the overflow column. "
                        "Try breaking down the ECProperty into its member properties when constructing the ECInstanceUpdater.",
                        accessString, m_ecClass.GetFullName(), getColumnsVisitor.GetOverflowColumnCount(), MAX_COLUMNS_IN_OVERFLOW_FOR_UPDATE);
             return;

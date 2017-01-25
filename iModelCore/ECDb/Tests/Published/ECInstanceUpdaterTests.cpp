@@ -579,7 +579,7 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
         Utf8String ecschemaXml;
         ecschemaXml.Sprintf("<?xml version='1.0' encoding='utf-8'?>"
                             "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                            "    <ECEntityClass typeName='Foo'>"
+                            "    <ECEntityClass typeName='ClassWithPrimitiveProps'>"
                             "        <ECCustomAttributes>"
                             "           <ClassMap xmlns='ECDbMap.02.00'>"
                             "                <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -590,7 +590,21 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
                             "        </ECCustomAttributes>"
                             "%s"
                             "    </ECEntityClass>"
-                            "</ECSchema>", propertiesXml.c_str());
+                            "    <ECStructClass typeName='LargeStruct'>"
+                            "%s"
+                            "    </ECStructClass>"
+                            "    <ECEntityClass typeName='ClassWithStruct'>"
+                            "        <ECCustomAttributes>"
+                            "           <ClassMap xmlns='ECDbMap.02.00'>"
+                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                            "            </ClassMap>"
+                            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+                            "              <SharedColumnCount>1</SharedColumnCount>"
+                            "           </ShareColumns>"
+                            "        </ECCustomAttributes>"
+                            "        <ECStructProperty propertyName='MyStructProp' typeName='LargeStruct'/>"
+                            "    </ECEntityClass>"
+                            "</ECSchema>", propertiesXml.c_str(), propertiesXml.c_str());
 
         Utf8String fileName;
         fileName.Sprintf("ecinstanceupdater_%d_propsmappedtooverflow.ecdb", propCount);
@@ -601,21 +615,41 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
         SetupECDb(fileName.c_str(), SchemaItem(ecschemaXml.c_str()));
         ASSERT_TRUE(GetECDb().IsDbOpen());
 
-        ECClassCP ecClass = GetECDb().Schemas().GetECClass("testSchema", "Foo");
-        ASSERT_TRUE(ecClass != nullptr);
+        ECClassCP classWithPrims = GetECDb().Schemas().GetECClass("testSchema", "ClassWithPrimitiveProps");
+        ASSERT_TRUE(classWithPrims != nullptr);
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Foo(ECInstanceId) VALUES(NULL)")) << "Prop count: " << propCount;
-        ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << "Prop count: " << propCount;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.ClassWithPrimitiveProps(ECInstanceId) VALUES(NULL)")) << "Prop count: " << propCount;
+        ECInstanceKey classWithPrimsKey;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(classWithPrimsKey)) << "Prop count: " << propCount;
         stmt.Finalize();
 
-        ECInstanceUpdater instanceUpdater(GetECDb(), *ecClass, nullptr);
-        ASSERT_TRUE(instanceUpdater.IsValid()) << "Prop count: " << propCount << GetECDb().GetLastError().c_str();
+        ECInstanceUpdater classWithPrimsUpdater(GetECDb(), *classWithPrims, nullptr);
+        ASSERT_TRUE(classWithPrimsUpdater.IsValid()) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount << GetECDb().GetLastError().c_str();
 
-        IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(key.GetECInstanceId().ToString().c_str())) << " Prop count: " << propCount;
-        ASSERT_EQ(BE_SQLITE_OK, instanceUpdater.Update(*instance)) << "Prop count: " << propCount;
+        IECInstancePtr instance = classWithPrims->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithPrimsKey.GetECInstanceId().ToString().c_str())) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount;
+        ASSERT_EQ(BE_SQLITE_OK, classWithPrimsUpdater.Update(*instance)) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount;
+
+        ECClassCP classWithStruct = GetECDb().Schemas().GetECClass("testSchema", "ClassWithStruct");
+        ASSERT_TRUE(classWithStruct != nullptr);
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.ClassWithStruct(ECInstanceId) VALUES(NULL)")) << "Prop count: " << propCount;
+        ECInstanceKey classWithStructKey;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(classWithStructKey)) << "Prop count: " << propCount;
+        stmt.Finalize();
+
+        ECInstanceUpdater classWithStructUpdater(GetECDb(), *classWithStruct, nullptr);
+        if (propCount > 63)
+            {
+            ASSERT_FALSE(classWithStructUpdater.IsValid()) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount << GetECDb().GetLastError().c_str();
+            return;
+            }
+
+        instance = classWithStruct->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithStructKey.GetECInstanceId().ToString().c_str())) << "ECClass: " << classWithStruct->GetName().c_str() << " Prop count: " << propCount;
+
+        ASSERT_EQ(BE_SQLITE_OK, classWithStructUpdater.Update(*instance)) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount;
         }
     }
 
