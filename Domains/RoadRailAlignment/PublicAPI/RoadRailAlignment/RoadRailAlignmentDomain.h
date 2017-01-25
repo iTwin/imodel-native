@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/RoadRailAlignmentDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ protected:
 public:
     RoadRailAlignmentDomain();
 
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnAuthorityId QueryAlignmentAuthorityId(Dgn::DgnDbCR dgndb);
+    ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::DgnDbR);
 }; // RoadRailAlignmentDomain

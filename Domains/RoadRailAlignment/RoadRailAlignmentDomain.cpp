@@ -2,7 +2,7 @@
 |
 |     $Source: RoadRailAlignmentDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -50,23 +50,23 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     AlignmentCategory::InsertDomainCategories(dgndb);
 
-    auto authority = DatabaseScopeAuthority::Create(BRRA_AUTHORITY_Alignment, dgndb);
-    BeAssert(authority.IsValid());
-    if (authority.IsValid())
+    auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment);
+    BeAssert(codeSpec.IsValid());
+    if (codeSpec.IsValid())
         {
-        authority->Insert();
-        BeAssert(authority->GetAuthorityId().IsValid());
+        codeSpec->Insert();
+        BeAssert(codeSpec->GetCodeSpecId().IsValid());
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId RoadRailAlignmentDomain::QueryAlignmentAuthorityId(DgnDbCR dgndb)
+CodeSpecId RoadRailAlignmentDomain::QueryAlignmentCodeSpecId(DgnDbCR dgndb)
     {
-    DgnAuthorityId authorityId = dgndb.Authorities().QueryAuthorityId(BRRA_AUTHORITY_Alignment);
-    BeAssert(authorityId.IsValid());
-    return authorityId;
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRA_CODESPEC_Alignment);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,5 +74,5 @@ DgnAuthorityId RoadRailAlignmentDomain::QueryAlignmentAuthorityId(DgnDbCR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadRailAlignmentDomain::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return DatabaseScopeAuthority::CreateCode(BRRA_AUTHORITY_Alignment, dgndb, value);
+    return CodeSpec::CreateCode(dgndb, BRRA_CODESPEC_Alignment, value);
     }

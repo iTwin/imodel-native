@@ -91,9 +91,9 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
-// Authority names
+// CodeSpec names
 //-----------------------------------------------------------------------------------------
-#define BRRA_AUTHORITY_Alignment                                    "Alignment"
+#define BRRA_CODESPEC_Alignment                                    "Alignment"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
