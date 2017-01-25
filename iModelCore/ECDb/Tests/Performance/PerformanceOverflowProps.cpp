@@ -37,8 +37,7 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
         enum class JsonApi
             {
             RapidJson,
-            String,
-            JsonCpp
+            String
             };
     private:
         DateTime m_testDate;
@@ -68,7 +67,6 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
         
         BentleyStatus BindRegularPropsForInsert(Statement&, int firstParameterIndex, PrimitiveType propType, int propCount) const;
         BentleyStatus CreateOverflowPropsStringForInsert(Utf8StringR, JsonApi, PrimitiveType propType, int propCount) const;
-        BentleyStatus CreateOverflowPropsStringForInsertWithJsonCpp(Utf8StringR, PrimitiveType propType, int propCount) const;
         BentleyStatus CreateOverflowPropsStringForInsertWithRapidJson(Utf8StringR, PrimitiveType propType, int propCount) const;
         BentleyStatus CreateOverflowPropsStringForInsertWithStringApi(Utf8StringR, PrimitiveType propType, int propCount) const;
 
@@ -265,21 +263,6 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps_JsonCpp)
-    {
-    const int propCount = 10;
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps_RapidJson)
     {
     const int propCount = 10;
@@ -320,24 +303,8 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_FewProps)
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
 
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::JsonCpp));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::RapidJson));
 
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps_JsonCpp)
-    {
-    const int propCount = 100;
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -383,7 +350,6 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_ManyProps)
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
 
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::JsonCpp));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::RapidJson));
     }
 
@@ -730,23 +696,6 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 {
                 switch (pointxdJsonApi)
                     {
-                        case JsonApi::JsonCpp:
-                        {
-                        Json::Value json;
-                        Json::Reader reader;
-                        if (!reader.Parse(stmt.GetValueText(0), json, false))
-                            return ERROR;
-
-                        DPoint2d pt;
-                        if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, json))
-                            return ERROR;
-
-                        if (!pt.AlmostEqual(GetTestPoint2d()))
-                            return ERROR;
-
-                        break;
-                        }
-
                         case JsonApi::RapidJson:
                         {
                         rapidjson::Document json;
@@ -773,23 +722,6 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 {
                 switch (pointxdJsonApi)
                     {
-                        case JsonApi::JsonCpp:
-                        {
-                        Json::Value json;
-                        Json::Reader reader;
-                        if (!reader.Parse(stmt.GetValueText(0), json, false))
-                            return ERROR;
-
-                        DPoint3d pt;
-                        if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, json))
-                            return ERROR;
-
-                        if (!pt.AlmostEqual(GetTestPoint3d()))
-                            return ERROR;
-
-                        break;
-                        }
-
                         case JsonApi::RapidJson:
                         {
                         rapidjson::Document json;
@@ -947,9 +879,6 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsert(
     {
     switch (jsonApi)
         {
-            case JsonApi::JsonCpp:
-                return CreateOverflowPropsStringForInsertWithJsonCpp(jsonStr, propType, propCount);
-
             case JsonApi::RapidJson:
                 return CreateOverflowPropsStringForInsertWithRapidJson(jsonStr, propType, propCount);
 
@@ -1031,9 +960,8 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 }
                 case PRIMITIVETYPE_Long:
                 {
-                //int64 must be serialized as strings in JSON
-                char str[32];
-                sprintf(str, "\"%" PRId64 "\"", INT64VALUE);
+                Utf8String str;
+                str.Sprintf("%" PRId64, INT64VALUE);
                 json.append(str);
                 break;
                 }
@@ -1127,7 +1055,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 }
                 case PRIMITIVETYPE_Long:
                 {
-                ECRapidJsonUtilities::Int64ToStringJsonValue(v, INT64VALUE, json.GetAllocator());
+                v.SetInt64(INT64VALUE);
                 break;
                 }
                 case PRIMITIVETYPE_Point2d:
@@ -1162,100 +1090,6 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
     json.Accept(writer);
 
     jsonStr.assign(stringBuffer.GetString());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertWithJsonCpp(Utf8String& jsonStr, PrimitiveType propType, int propCount) const
-    {
-    Json::Value json(Json::objectValue);
-    for (int j = 0; j < propCount; j++)
-        {
-        Utf8String colName;
-        GetColumnName(colName, j + 1);
-        Json::Value& val = json[colName.c_str()];
-        switch (propType)
-            {
-                case PRIMITIVETYPE_Binary:
-                {
-                if (SUCCESS != ECJsonUtilities::BinaryToJson(val, GetTestBlob(), GetTestBlobSize()))
-                    return ERROR;
-
-                break;
-                }
-
-                case PRIMITIVETYPE_Boolean:
-                {
-                val = Json::Value(BOOLVALUE);
-                break;
-                }
-
-                case PRIMITIVETYPE_DateTime:
-                {
-                double jd = -1.0;
-                if (SUCCESS != GetTestDate().ToJulianDay(jd))
-                    return ERROR;
-
-                val = Json::Value(jd);
-                break;
-                }
-
-                case PRIMITIVETYPE_Double:
-                {
-                val = Json::Value(DOUBLEVALUE);
-                break;
-                }
-
-                case PRIMITIVETYPE_IGeometry:
-                {
-                bvector<Byte> fb;
-                BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-
-                if (SUCCESS != ECJsonUtilities::BinaryToJson(val, fb.data(), fb.size()))
-                    return ERROR;
-
-                break;
-                }
-
-                case PRIMITIVETYPE_Integer:
-                {
-                val = Json::Value(INTVALUE);
-                break;
-                }
-                case PRIMITIVETYPE_Long:
-                {
-                val = BeJsonUtilities::StringValueFromInt64(INT64VALUE);
-                break;
-                }
-                case PRIMITIVETYPE_Point2d:
-                {
-                if (SUCCESS != ECJsonUtilities::Point2dToJson(val, GetTestPoint2d()))
-                    return ERROR;
-
-                break;
-                }
-                case PRIMITIVETYPE_Point3d:
-                {
-                if (SUCCESS != ECJsonUtilities::Point3dToJson(val, GetTestPoint3d()))
-                    return ERROR;
-
-                break;
-                }
-                case PRIMITIVETYPE_String:
-                {
-                val = Json::Value(STRINGVALUE);
-                break;
-                }
-
-                default:
-                    return ERROR;
-            }
-        }
-
-    Json::FastWriter writer;
-    jsonStr.assign(writer.write(json));
     return SUCCESS;
     }
 
@@ -1427,7 +1261,6 @@ Utf8CP PerformanceOverflowPropsTests::JsonApiToString(JsonApi jsonApi)
     {
     switch (jsonApi)
         {
-            case JsonApi::JsonCpp: return "JsonCpp";
             case JsonApi::RapidJson: return "RapidJson";
             case JsonApi::String: return "String API";
 
