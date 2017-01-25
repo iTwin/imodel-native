@@ -128,14 +128,6 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTaskPtr Scene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads) 
-    {
-    return new ThreeMxProgressive(*this, args.m_missing, loads, args.m_clip);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::Load(SystemP renderSys) const
