@@ -61,7 +61,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual void _OutputGraphics(ViewContext& viewContext) override
+void _OutputGraphics(ViewContext& viewContext) override
     {
     Render::GraphicBuilderPtr graphic = viewContext.CreateGraphic();
     Render::GeometryParams defaultParams;

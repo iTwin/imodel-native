@@ -35,6 +35,6 @@ protected:
 public:
     ChangeTestFixture(WCharCP testFileName, bool wantTestDomain=false);
     virtual ~ChangeTestFixture() {}
-    virtual void SetUp() override {}
-    virtual void TearDown() override { if (m_db.IsValid()) m_db->SaveChanges("Saving DgnDb at end of test"); }
+    void SetUp() override {}
+    void TearDown() override { if (m_db.IsValid()) m_db->SaveChanges("Saving DgnDb at end of test"); }
 };

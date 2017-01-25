@@ -1157,7 +1157,7 @@ protected:
     virtual ~Graphic() {}
     virtual bool _IsForDisplay() const {return false;}
     virtual StatusInt _EnsureClosed() = 0;
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}

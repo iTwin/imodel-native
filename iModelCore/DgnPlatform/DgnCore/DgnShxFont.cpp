@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnShxFont.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -983,11 +983,11 @@ private:
 public:
     DgnShxGlyph(T_Id glyphId, IDgnShxFontData& data, int64_t dataOffset, size_t dataSize) : m_glyphId(glyphId), m_data(&data), m_dataOffset(dataOffset), m_dataSize(dataSize), m_areMetricsValid(false) {}
     static DgnShxGlyph* CreateBlankGlyph() { return new DgnShxGlyph(); }
-    virtual T_Id _GetId() const override { return m_glyphId; }
-    virtual DRange2d _GetRange() const override { EnsureMetrics(); return m_range; }
-    virtual DRange2d _GetExactRange() const override { EnsureMetrics(); return m_exactRange; }
-    virtual BentleyStatus _FillGpa(GPArrayR) const override;
-    virtual bool _IsBlank() const override { EnsureMetrics(); return m_isBlank; }
+    T_Id _GetId() const override { return m_glyphId; }
+    DRange2d _GetRange() const override { EnsureMetrics(); return m_range; }
+    DRange2d _GetExactRange() const override { EnsureMetrics(); return m_exactRange; }
+    BentleyStatus _FillGpa(GPArrayR) const override;
+    bool _IsBlank() const override { EnsureMetrics(); return m_isBlank; }
     DoFixup _DoFixup () const override { return DoFixup::Never; }
 
 };

@@ -16,37 +16,37 @@ struct MasterBriefcaseManager : IBriefcaseManager
 private:
     MasterBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
 
-    virtual Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
-    virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
-    virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
-    virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
-    virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
-    virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
-    virtual RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
-    virtual void _OnElementInserted(DgnElementId) override { }
-    virtual void _OnModelInserted(DgnModelId) override { }
-    virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
+    Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
+    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
+    RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
+    RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
+    RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
+    RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
+    RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
+    void _OnElementInserted(DgnElementId) override { }
+    void _OnModelInserted(DgnModelId) override { }
+    RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
         {
         for (auto const& id : lockIds)
             levels.insert(DgnLock(id, LockLevel::Exclusive));
 
         return RepositoryStatus::Success;
         }
-    virtual bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
+    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
         {
         if (nullptr != status)
             *status = RepositoryStatus::Success;
         return true;
         }
-    virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
+    RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
         {
         auto bcId = GetDgnDb().GetBriefcaseId();
         for (auto const& code : codes)
             states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
         return RepositoryStatus::Success;
         }
-    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
-    virtual RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
+    RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
+    RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
 };
@@ -70,28 +70,28 @@ private:
     Db      m_localDb;
     DbState m_localDbState;
 
-    virtual Response _ProcessRequest(Request&, RequestPurpose purpose) override;
-    virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
-    virtual RepositoryStatus _Relinquish(Resources which) override;
-    virtual bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus*) override;
-    virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
-    virtual RepositoryStatus _QueryLockLevel(LockLevel&, LockableId) override;
-    virtual RepositoryStatus _QueryLockLevels(DgnLockSet&, LockableIdSet&) override;
-    virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
-    virtual RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
-    virtual void _OnElementInserted(DgnElementId) override;
-    virtual void _OnModelInserted(DgnModelId) override;
-    virtual void _OnDgnDbDestroyed() override;
+    Response _ProcessRequest(Request&, RequestPurpose purpose) override;
+    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
+    RepositoryStatus _Relinquish(Resources which) override;
+    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus*) override;
+    RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
+    RepositoryStatus _QueryLockLevel(LockLevel&, LockableId) override;
+    RepositoryStatus _QueryLockLevels(DgnLockSet&, LockableIdSet&) override;
+    RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
+    RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
+    void _OnElementInserted(DgnElementId) override;
+    void _OnModelInserted(DgnModelId) override;
+    void _OnDgnDbDestroyed() override;
 
     void Save(TxnManager& mgr) { if (&mgr.GetDgnDb() == &GetDgnDb()) Save(); }
-    virtual void _OnCommit(TxnManager& mgr) override { Save(mgr); }
-    virtual void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
-    virtual void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
-    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
+    void _OnCommit(TxnManager& mgr) override { Save(mgr); }
+    void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
+    void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
+    RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {
         return el.PopulateRequest(req, op);
         }
-    virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
+    RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
         {
         return model.PopulateRequest(req, op);
         }
@@ -444,7 +444,7 @@ struct VirtualCodeSet : VirtualSet
 
     VirtualCodeSet(DgnCodeSet const& codes) : m_codes(codes) { }
 
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+    bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
@@ -702,7 +702,7 @@ void BriefcaseManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModelI
 
         VSet(bvector<DgnModelId> const& models, DgnDbR db) : m_models(models), m_db(db) { }
 
-        virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+        bool _IsInSet(int nVals, DbValue const* vals) const override
             {
             BeAssert(1 == nVals);
             auto el = m_db.Elements().GetElement(DgnElementId(vals[0].GetValueUInt64()));
@@ -776,7 +776,7 @@ struct VirtualLockSet : VirtualSet
 {
     DgnLockSet const& m_locks;
     VirtualLockSet(DgnLockSet const& locks) : m_locks(locks) { }
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+    bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         BeAssert(3 == nVals);
         LockableId id(static_cast<LockableType>(vals[0].GetValueInt()), BeInt64Id(vals[1].GetValueUInt64()));
@@ -858,7 +858,7 @@ RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockReques
     struct VSet : VirtualLockSet
     {
         VSet(DgnLockSet const& locks) : VirtualLockSet(locks) { }
-        virtual bool _IsLockInSet(DgnLockCR lock) const override
+        bool _IsLockInSet(DgnLockCR lock) const override
             {
             BeAssert(LockLevel::None != lock.GetLevel());
 
@@ -1216,7 +1216,7 @@ RepositoryStatus BriefcaseManager::_QueryLockLevels(DgnLockSet& levels, Lockable
     {
         LockableIdSet const& m_ids;
         VSet(LockableIdSet const& ids) : m_ids(ids) { }
-        virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+        bool _IsInSet(int nVals, DbValue const* vals) const override
             {
             LockableId id(static_cast<LockableType>(vals[0].GetValueInt()), BeInt64Id(vals[1].GetValueUInt64()));
             return m_ids.end() != m_ids.find(id);

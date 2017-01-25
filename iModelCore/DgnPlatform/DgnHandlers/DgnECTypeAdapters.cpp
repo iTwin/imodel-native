@@ -3095,7 +3095,7 @@ bool FormatStringTypeAdapter::GetUnformattedStringValue (Utf8StringR valueAsStri
         ECValueCR m_value;
         ValueList (ECValueCR v) : m_value (v) { }
 
-        virtual uint32_t    GetCount() const override               { return 1; }
+        uint32_t    GetCount() const override               { return 1; }
         virtual ECValueCP   operator[](uint32_t index) const override { return index == 0 ? &m_value : NULL; }
         };
 

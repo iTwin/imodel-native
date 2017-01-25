@@ -31,11 +31,11 @@ private:
     Db  m_db;
 
     // impl
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
-    virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
-    virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
-    virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
+    RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
+    RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
+    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
+    RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
     DbResult CreateLocksTable();
     DbResult CreateCodesTable();
@@ -127,7 +127,7 @@ static void ExpectRequestsEqual(LockRequestCR a, LockRequestCR b)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LockVirtualSet : VirtualSet
 {
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+    bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         if (3 != nVals)
             {
@@ -160,7 +160,7 @@ struct InRequestVirtualSet : LockRequestVirtualSet
 {
     InRequestVirtualSet(LockRequestCR request) : LockRequestVirtualSet(request) { }
 
-    virtual bool _IsLockInSet(DgnLockCR lock) const override
+    bool _IsLockInSet(DgnLockCR lock) const override
         {
         return m_request.Contains(lock);
         }
@@ -173,7 +173,7 @@ struct RequestConflictsVirtualSet : LockRequestVirtualSet
 {
     RequestConflictsVirtualSet(LockRequestCR request) : LockRequestVirtualSet(request) { }
 
-    virtual bool _IsLockInSet(DgnLockCR lock) const override
+    bool _IsLockInSet(DgnLockCR lock) const override
         {
         // input: an entry for a lock ID in our request, from the server's db
         // output: true if the input lock conflicts with our request
@@ -191,7 +191,7 @@ struct LockSetVirtualSet : LockVirtualSet
 
     LockSetVirtualSet(DgnLockSet const& set) : m_set(set) { }
 
-    virtual bool _IsLockInSet(DgnLockCR lock) const override
+    bool _IsLockInSet(DgnLockCR lock) const override
         {
         return m_set.end() != m_set.find(lock);
         }
@@ -206,7 +206,7 @@ struct LockLevelVirtualSet : LockSetVirtualSet
 
     LockLevelVirtualSet(DgnLockSet const& set, LockLevel level) : LockSetVirtualSet(set), m_level(level) { }
 
-    virtual bool _IsLockInSet(DgnLockCR lock) const override
+    bool _IsLockInSet(DgnLockCR lock) const override
         {
         auto found = m_set.find(lock);
         return m_set.end() != found && found->GetLevel() == m_level;
@@ -721,7 +721,7 @@ struct VirtualCodeSet : VirtualSet
 
     VirtualCodeSet(DgnCodeSet const& codes) : m_codes(codes) { }
 
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+    bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
@@ -991,7 +991,7 @@ public:
     void RegisterServer() { m_host.SetRepositoryAdmin(this); }
     void UnregisterServer() { m_host.SetRepositoryAdmin(nullptr); }   // GetRepositoryManager() => nullptr; Attempts to contact server => RepositoryStatus::ServerUnavailable
 
-    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
+    IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
 
     virtual void _OnSetupDb(DgnDbR db) { }
 
@@ -1229,7 +1229,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
     DgnModelId      m_modelId;
     DgnElementId    m_elemId;
 
-    virtual void _OnSetupDb(DgnDbR db) override
+    void _OnSetupDb(DgnDbR db) override
         {
         m_db = &db;
         m_modelId = DgnModel::DictionaryId();
@@ -2625,7 +2625,7 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 {
     DgnElementId    m_displayStyleId;
 
-    virtual void _InitMasterFile() override
+    void _InitMasterFile() override
         {
         DisplayStyle style(*m_db, "MyDisplayStyle");
         style.Insert();

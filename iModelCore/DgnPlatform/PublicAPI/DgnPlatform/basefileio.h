@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/basefileio.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,7 @@ struct BaseFileType : DgnFileType
 {
     BaseFileType (int format) : DgnFileType (format){}
 
-    virtual void GetCapabilities (DgnFileCapabilities *cap) override;
+    void GetCapabilities (DgnFileCapabilities *cap) override;
     virtual bool                ValidateFile    (int *pFormat, int *pMajorVersion, int *pMinorVersion, bool *pDefaultModelIs3D, IThumbnailPropertyValuePtr*, const WChar *pName) = 0;
     virtual DgnFileIOP Factory (DgnDbP pFile) = 0;
     virtual int _GetFormat () = 0;
@@ -40,24 +40,24 @@ private:
 protected:
     // If the file type can be written, you must override _CanExclusiveLock to return true, and you must override DgnFileIO's _OnCreateFile and _WriteChanges methods.
     // If _CanExclusiveLock is not overridden, all file writing is prevented and you do not need to override the DgnFileIO Write-oriented methods to return ERROR - they'll never be called.
-    virtual bool _CanExclusiveLock () override { return false; }
-    virtual StatusInt _OnCreateFile (DesignFileHeader* pHdr, WChar const* pFileName, DgnFileIO* pDonor) override { return (ERROR); }
-    virtual StatusInt _LoadModelIndex (IStorage* pRootStore) override;
+    bool _CanExclusiveLock () override { return false; }
+    StatusInt _OnCreateFile (DesignFileHeader* pHdr, WChar const* pFileName, DgnFileIO* pDonor) override { return (ERROR); }
+    StatusInt _LoadModelIndex (IStorage* pRootStore) override;
 
 public:
     BaseFileIO (DgnFile* pFile) : DgnFileIO (pFile){}
     virtual ~BaseFileIO () {}
 
     // methods that are concerned with reading files, overriding methods in DgnFileIO.
-    virtual int _GetFormat () override = 0;
+    int _GetFormat () override = 0;
     virtual StatusInt _GetModelReader (DgnModelReader** ppModelReader, DgnModel* pCache) = 0;
-    virtual StatusInt _CreateModelAndLoadHeader (DgnModelP& cache, ModelId modelIDtoRead) override;
-    virtual StatusInt _LoadFile (DesignFileHeader* pHdr, bool* openedReadonly, StatusInt* rwStatus, DgnFileOpenMode openMode) override;
-    virtual StatusInt _CloseDgnFileIO () override;
-    virtual void* GetReadHandle () override { return 0; }
-    virtual int GetReadIStorage (void**) override { return ERROR; }
+    StatusInt _CreateModelAndLoadHeader (DgnModelP& cache, ModelId modelIDtoRead) override;
+    StatusInt _LoadFile (DesignFileHeader* pHdr, bool* openedReadonly, StatusInt* rwStatus, DgnFileOpenMode openMode) override;
+    StatusInt _CloseDgnFileIO () override;
+    void* GetReadHandle () override { return 0; }
+    int GetReadIStorage (void**) override { return ERROR; }
 
-    virtual double GetFileTime () override;
+    double GetFileTime () override;
 
     // these methods are not in DgnFileIO. They can't be called from DgnFileObj.
     virtual bool ValidateFile () = 0;
@@ -65,7 +65,7 @@ public:
     virtual bool UseSeedLevels () { return true; }
     Transform const*         GetTransformToDGN       ()                         { return &m_transformToDGN; }
     double GetScaleToDGN () { return m_scaleToDGN; }
-    virtual StatusInt WriteDictionaryElements (bool doFullSave) override { return ERROR; }
+    StatusInt WriteDictionaryElements (bool doFullSave) override { return ERROR; }
     virtual StatusInt GetUnits (UnitInfo* pStorageUnits, UnitInfo* pMasterUnits, UnitInfo* pSubUnits) { return ERROR; }
     static StatusInt GetSeedFileName (WChar*);
     static WChar*             s_defaultModelName;
@@ -82,7 +82,7 @@ class BaseModelReader : public DgnModelReader
 public:
     BaseModelReader         (DgnModel* pCache, BaseFileIO* pBaseFileIO);
     ~BaseModelReader        ();
-    virtual StatusInt _ReadSectionsIntoCache (uint32_t* majorVersion, uint32_t* minorVersion, DgnModelSections sections) override;
+    StatusInt _ReadSectionsIntoCache (uint32_t* majorVersion, uint32_t* minorVersion, DgnModelSections sections) override;
 
 protected:
 

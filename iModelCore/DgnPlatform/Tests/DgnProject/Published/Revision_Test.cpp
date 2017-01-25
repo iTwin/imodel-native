@@ -37,7 +37,7 @@ protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionTestCopy.ibim";
 
-    virtual void _SetupDgnDb() override;
+    void _SetupDgnDb() override;
 
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
@@ -473,8 +473,8 @@ struct TestElementDependency : TestElementDrivesElementHandler::Callback
     int32_t GetMostRecentValue() const { return m_mostRecentValue; }
     uint32_t GetInvocationCount() const { return m_invocationCount; }
 
-    virtual void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
-    virtual void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
+    void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
+    void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
 
     TestElementDependency() { TestElementDrivesElementHandler::SetCallback(this); }
     ~TestElementDependency() { TestElementDrivesElementHandler::SetCallback(nullptr); }

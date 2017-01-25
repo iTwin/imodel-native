@@ -112,7 +112,7 @@ BEGIN_UNNAMED_NAMESPACE
 struct FitQuery : SpatialViewController::SpatialQuery
     {
     FitContextR m_context;
-    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+    int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
     FitQuery(SpatialViewController::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : SpatialViewController::SpatialQuery(special, volume), m_context(context)

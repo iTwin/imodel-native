@@ -51,8 +51,8 @@ private:
 protected:
     TextAnnotationPtr m_annotation;
     
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData); }
@@ -90,10 +90,10 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
-    virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
+    SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
     DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
@@ -136,10 +136,10 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
-    virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const override {return nullptr;} // Don't flash text box...
+    SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
     DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }

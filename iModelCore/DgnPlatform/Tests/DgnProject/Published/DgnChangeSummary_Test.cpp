@@ -36,7 +36,7 @@ struct DgnChangeSummaryTestFixture : public ChangeTestFixture
     };
 
 private:
-    virtual void _SetupDgnDb() override;
+    void _SetupDgnDb() override;
  
 protected:
     DgnCode CreateCode(int iFloor, int iQuadrant);

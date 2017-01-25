@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/BriefcaseManagerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -41,11 +41,11 @@ using Response = IBriefcaseManager::Response;
 struct PerformanceRepositoryManager : IRepositoryManager
 {
 public:
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
-    virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
-    virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
-    virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
+    RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
+    RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
+    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
+    RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 };
 
 //=======================================================================================
@@ -63,7 +63,7 @@ public:
     void RegisterServer() { m_host.SetRepositoryAdmin(this); }
     void UnregisterServer() { m_host.SetRepositoryAdmin(nullptr); }
 
-    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
+    IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
 
     DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId=BeBriefcaseId(2), WCharCP baseFile=L"3dMetricGeneral.ibim");
 

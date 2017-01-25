@@ -232,11 +232,11 @@ struct DummyTypeAdapter : IDgnECTypeAdapter
 protected:
     DummyTypeAdapter () { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP) const override { return false; }
-    virtual bool            _ConvertFromString(ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR, IDgnECTypeAdapterContextCR) const override { return false; }
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP) const override { return false; }
+    bool            _ConvertFromString(ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _GetPlaceholderValue(ECN::ECValueR, IDgnECTypeAdapterContextCR) const override { return false; }
 public:
     static IDgnECTypeAdapterPtr Create () { return new DummyTypeAdapter(); }
     };

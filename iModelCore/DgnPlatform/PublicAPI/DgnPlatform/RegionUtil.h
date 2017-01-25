@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RegionUtil.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -127,18 +127,18 @@ private:
 
     bool                ComputePostFlattenTransform (CurveVectorCR region);
     void                ResetPostFlattenTransform ();
-    virtual bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
-    virtual bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
-    virtual bool        _DoTextGeometry () const override {return false;}
-    virtual bool        _DoSymbolGeometry () const override {return false;}
-    virtual StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool filled) override;
-    virtual StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
-    virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
-    virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
-    virtual StatusInt   _ProcessBody (IBRepEntityCR entity) override {return SUCCESS;}
-    virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
+    bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
+    bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
+    bool        _DoTextGeometry () const override {return false;}
+    bool        _DoSymbolGeometry () const override {return false;}
+    StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool filled) override;
+    StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
+    StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
+    StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
+    StatusInt   _ProcessBody (IBRepEntityCR entity) override {return SUCCESS;}
+    StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
 
-    virtual void        _AddTextString (TextStringCR text, double* zDepth) override;
+    void        _AddTextString (TextStringCR text, double* zDepth) override;
 
 public:
 
@@ -209,12 +209,12 @@ DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
 
-virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
+Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
 
 DgnModelP GetViewTarget () {return m_targetModel;}
 
-virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
-virtual void            _AddTextString (TextStringCR text) override;
+void            _DrawAreaPattern (ClipStencil& boundary) override {}
+void            _AddTextString (TextStringCR text) override;
 
 BentleyStatus           PushBooleanCandidate (GeometrySourceCR element, TransformCP trans);
 BentleyStatus           SetTargetModel (DgnModelR targetModel);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -330,8 +330,8 @@ private:
 
     DgnGeoCoordinationAdmin(BeFileNameCR dataDirectory);
 
-    virtual IGeoCoordinateServicesP _GetServices() const override;
-    virtual BeFileName _GetDataDirectory() override {return m_dataDirectory;}
+    IGeoCoordinateServicesP _GetServices() const override;
+    BeFileName _GetDataDirectory() override {return m_dataDirectory;}
 
 public:
     DGNPLATFORM_EXPORT static DgnGeoCoordinationAdmin* Create(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/);
