@@ -209,6 +209,17 @@ namespace IndexECPlugin.Source.Helpers
 
             UploadPackageInDatabase(instance, version, requestor, requestorVersion);
 
+#if FTRACKING
+            string regionString = String.Join(" ", m_selectedRegion.Select(d => Convert.ToString(d)));
+
+            Dictionary<string, object> additionalProperties = new Dictionary<string, object>();
+            additionalProperties.Add("Polygon", regionString);
+
+
+            IndexECPlugin.MarkFeature(new Guid(IndexConstants.PackageFeatureGuid), additionalProperties);
+
+#endif
+
             Log.Logger.info("Created the package file " + instance.InstanceId + ". Region selected : " + selectedRegionStr);
             return instance.InstanceId;
             }

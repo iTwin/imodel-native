@@ -34,5 +34,14 @@ namespace IndexECPlugin.Source
         public const string UsgsRawMetadataURLEnding = "?format=fgdc";
         public const string UsgsDataProviderString = "USGS";
         public const string UsgsDataProviderNameString = "United States Geological Survey";
+
+        //Product constants
+        public const string ProductGUID = "614a68c4-c15d-46b9-98a9-9d4d10893623";
+        public const int ProductId = 2537;
+
+
+        //Features GUIDs
+
+        public const string PackageFeatureGuid = "496da74d-b86b-45a7-bbd3-6f2ea025bdd8";
         }
     }

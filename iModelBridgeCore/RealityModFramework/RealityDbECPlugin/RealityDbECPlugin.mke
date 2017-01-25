@@ -14,17 +14,20 @@ appName     = RealityDbECPluginC
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 always:
     ~mkdir $(o)
-
+	
 %ifdef IMSOFF
-    CSCOpt = \/define:IMSOFF
+    CSCOpt = \/define:IMSOFF 
 %endif
     
+%ifdef FTRACKING
+	CSCOpt +% \/define:FTRACKING
+%endif
+
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)RealityServicesNet.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
@@ -79,6 +82,15 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.Entity.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
 %include csrefapnd.mki
+
+%ifdef FTRACKING
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.SelectServer.SaaS.Client.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.ServiceBus.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.WindowsAzure.Configuration.dll
+%include csrefapnd.mki
+%endif
 
 #-----------------------------------------------------------------------
 # Define default assembly meta-data attributes

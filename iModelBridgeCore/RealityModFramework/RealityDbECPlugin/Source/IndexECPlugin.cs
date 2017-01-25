@@ -49,6 +49,11 @@ using System.IdentityModel.Services.Configuration;
 using System.IdentityModel.Tokens;
 #endif
 
+#if FTRACKING
+using Bentley.SelectServer.SaaS.Client;
+using Bentley.SelectServer.SaaS.Client.FeatureTracking;
+#endif
+
 namespace IndexECPlugin.Source
     {
     /*====================================================================================**/
@@ -76,6 +81,44 @@ namespace IndexECPlugin.Source
         /// </summary>
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
+
+#if FTRACKING
+
+        private static IUsageTrackingContext m_usageTrackingContext = null;
+        private static IUsageTrackingSender m_usageTrackingSender = null;
+
+        
+
+        /// <summary>
+        /// Usage tracking context
+        /// </summary>
+        public static IUsageTrackingContext UsageTrackingContext
+            {
+            get
+                {
+                if ( null == m_usageTrackingContext )
+                    {
+                    m_usageTrackingContext = UsageTrackingContextFactory.Current.CreateContext(typeof(IndexECPlugin).Assembly.GetName().Version.ToString(), Environment.MachineName, IndexConstants.ProductId);
+                    }
+                return m_usageTrackingContext;
+                }
+            }
+
+        /// <summary>
+        /// Usage tracking sender
+        /// </summary>
+        public static IUsageTrackingSender UsageTrackingSender
+            {
+            get
+                {
+                string ftConnectionString = ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString");
+                if ( null == m_usageTrackingSender && ftConnectionString != null)
+                    m_usageTrackingSender = new FeatureSender(ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString"));
+                return m_usageTrackingSender;
+                }
+            }
+
+#endif
 
         private string ConnectionString
             {
@@ -691,6 +734,66 @@ namespace IndexECPlugin.Source
             }
 #endif
 
+#if FTRACKING
+        private static string GetClaimValue (string claimType)
+            {
+            var user = (ClaimsPrincipal) System.Web.HttpContext.Current.User;
+            if ( user == null )
+                {
+                return null;
+                }
+            var claimsIdentity = (ClaimsIdentity) user.Identity;
+            if ( claimsIdentity.Claims == null )
+                {
+                return null;
+                }
+            var claim = claimsIdentity.Claims.FirstOrDefault(c => c.Type == claimType);
+            if ( null == claim )
+                return null;
+            return claim.Value;
+            }
+
+        /// <summary>
+        /// Mark a feature for usage tracking purpose
+        /// </summary>
+        /// <param name="featureGuid">The unique GUID associated to the feature</param>
+        /// <param name="additionalProperties">User defined properties to be included in the feature marking</param>
+        public static void MarkFeature (Guid featureGuid, IEnumerable<KeyValuePair<string, object>> additionalProperties = null)
+            {
+
+            IUsageTrackingContext eventContext = UsageTrackingContext.AsVolatile();
+            if ( null == eventContext )
+                return;
+
+            string userId = GetClaimValue("http://schemas.bentley.com/ws/2011/03/identity/claims/userid");
+
+            string ipAddress = System.Web.HttpContext.Current.Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+            if ( string.IsNullOrEmpty(ipAddress) )
+                {
+                ipAddress = System.Web.HttpContext.Current.Request.UserHostAddress;
+                }
+            else
+                {
+                ipAddress = ipAddress.Split(',')[0];
+                }
+
+            //eventContext.UserImsId = new Guid(userId);
+            //eventContext.FeatureId = featureGuid;
+            //eventContext.ProjectId = Guid.Empty;
+            //eventContext.ClientId = ipAddress;
+
+            // Add additional arbitrary properties.
+            if ( additionalProperties != null )
+                {
+                foreach ( KeyValuePair<string, object> additionalProperty in additionalProperties )
+                    {
+                    eventContext.Properties.Add(additionalProperty);
+                    }
+                }
+            UsageTrackingSender.MarkFeature(eventContext.AsMarkEvent());
+            }
+
+#endif
         /// <summary>
         /// Get email address of the caller from the connection
         /// </summary>
