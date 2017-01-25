@@ -24,12 +24,12 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 enum DgnDbSchemaValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 11,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 12,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
     DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the schema supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 11,
+    DGNDB_SUPPORTED_VERSION_Minor = 12,
 };
 
 //=======================================================================================
@@ -179,7 +179,7 @@ protected:
     DgnFonts            m_fonts;
     DgnLineStylesPtr    m_lineStyles;
     DgnUnits            m_units;
-    DgnAuthorities      m_authorities;
+    DgnCodeSpecs        m_codeSpecs;
     TxnManagerPtr       m_txnManager;
     SessionManager      m_sessionManager;
     MemoryManager       m_memoryManager;
@@ -196,7 +196,7 @@ protected:
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
-    BeSQLite::DbResult CreateAuthorities(); //!< @private
+    BeSQLite::DbResult CreateCodeSpecs(); //!< @private
     BeSQLite::DbResult CreateRepositoryModel(); //!< @private
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, Utf8CP); //!< @private
@@ -246,7 +246,7 @@ public:
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
+    DgnCodeSpecs& CodeSpecs() const {return const_cast<DgnCodeSpecs&>(m_codeSpecs);} //!< The codeSpecs associated with this DgnDb
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.

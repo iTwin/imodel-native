@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
@@ -136,9 +136,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::SetPerfElementPropertyValues(Dgn
         stringVal.append("InitValue");
         }
 
-    if ((DgnDbStatus::Success == element->SetPropertyValue("Str", stringVal.c_str())) &&
-        (DgnDbStatus::Success == element->SetPropertyValue("Long", ECN::ECValue(longVal))) &&
-        (DgnDbStatus::Success == element->SetPropertyValue("Double", doubleVal)))
+    if ((DgnDbStatus::Success == element->SetPropertyValue("BaseStr", stringVal.c_str())) &&
+        (DgnDbStatus::Success == element->SetPropertyValue("BaseLong", ECN::ECValue(longVal))) &&
+        (DgnDbStatus::Success == element->SetPropertyValue("BaseDouble", doubleVal)))
         return DgnDbStatus::Success;
 
     return DgnDbStatus::WriteError;
@@ -236,16 +236,40 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::SetPerfElementSub3PropertyValues
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbStatus PerformanceElementsCRUDTestFixture::SetPropertyValues(Utf8CP className, DgnElementPtr element, bool update) const
     {
-    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
         return SetPerfElementPropertyValues(element, update);
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
         return SetPerfElementSub1PropertyValues(element, update);
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
         return SetPerfElementSub2PropertyValues(element, update);
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
         return SetPerfElementSub3PropertyValues(element, update);
 
     return DgnDbStatus::BadElement;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                       01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId) const
+    {
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
+        return PerfElement::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
+        return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
+        return PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
+        return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
+        return PerfElementCHBase::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
+        return PerfElementCHSub1::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
+        return PerfElementCHSub2::Create(*m_db, targetModel.GetModelId(), catId);
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
+        return PerfElementCHSub3::Create(*m_db, targetModel.GetModelId(), catId);
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -261,89 +285,23 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
     bool addMultiAspect = false;
     bool addExtKey = false;
 
-    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
+    for (int i = 0; i < numInstances; i++)
         {
-        for (int i = 0; i < numInstances; i++)
+        Dgn::PhysicalElementPtr element = CreatePerfElement(className, *targetModel, catId);
+        ASSERT_EQ(DgnDbStatus::Success, SetPropertyValues(className, element));
+        ASSERT_TRUE(element != nullptr);
+
+        AddGeometry(element);
+        if (addMultiAspect)
+            DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+        if (addExtKey)
             {
-            PerfElementPtr element = PerfElement::Create(*m_db, targetModel->GetModelId(), catId);
-            ASSERT_EQ(DgnDbStatus::Success, SetPropertyValues(className, element));
-            ASSERT_TRUE(element != nullptr);
-
-            AddGeometry(element);
-            if (addMultiAspect)
-                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addExtKey)
-                {
-                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
-                ASSERT_TRUE(extkeyAspect.IsValid());
-                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
-                }
-
-            elements.push_back(element);
+            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(CodeSpecId((uint64_t) 1), "TestExtKey");
+            ASSERT_TRUE(extkeyAspect.IsValid());
+            element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
             }
-        }
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerfElementSub1Ptr element = PerfElementSub1::Create(*m_db, targetModel->GetModelId(), catId);
-            ASSERT_EQ(DgnDbStatus::Success, SetPropertyValues(className, element));
-            ASSERT_TRUE(element != nullptr);
 
-            AddGeometry(element);
-            if (addMultiAspect)
-                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addExtKey)
-                {
-                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
-                ASSERT_TRUE(extkeyAspect.IsValid());
-                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
-                }
-
-            elements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerfElementSub2Ptr element = PerfElementSub2::Create(*m_db, targetModel->GetModelId(), catId);
-            ASSERT_EQ(DgnDbStatus::Success, SetPropertyValues(className, element));
-            ASSERT_TRUE(element != nullptr);
-
-            AddGeometry(element);
-            if (addMultiAspect)
-                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addExtKey)
-                {
-                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
-                ASSERT_TRUE(extkeyAspect.IsValid());
-                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
-                }
-
-            elements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerfElementSub3Ptr element = PerfElementSub3::Create(*m_db, targetModel->GetModelId(), catId);
-            ASSERT_EQ(DgnDbStatus::Success, SetPropertyValues(className, element));
-            ASSERT_TRUE(element != nullptr);
-
-            AddGeometry(element);
-            if (addMultiAspect)
-                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addExtKey)
-                {
-                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t) 1), "TestExtKey");
-                ASSERT_TRUE(extkeyAspect.IsValid());
-                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
-                }
-
-            elements.push_back(element);
-            }
+        elements.push_back(element);
         }
     ASSERT_EQ(numInstances, (int) elements.size());
     }
@@ -353,9 +311,9 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSelectParams(DgnElementCR element)
     {
-    if (0 != strcmp("PerfElement - InitValue", element.GetPropertyValueString("Str").c_str()) ||
-        (10000000 != element.GetPropertyValueUInt64("Long")) ||
-        (-3.1416 != element.GetPropertyValueDouble("Double")))
+    if (0 != strcmp("PerfElement - InitValue", element.GetPropertyValueString("BaseStr").c_str()) ||
+        (10000000 != element.GetPropertyValueUInt64("BaseLong")) ||
+        (-3.1416 != element.GetPropertyValueDouble("BaseDouble")))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -574,7 +532,7 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
 
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str());
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif
@@ -601,6 +559,17 @@ TEST_F(PerformanceElementsCRUDTestFixture, InsertApi)
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Sam.Wilson                      01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, InsertApiCH)
+    {
+    ApiInsertTime(PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME);
     }
 
 //---------------------------------------------------------------------------------------

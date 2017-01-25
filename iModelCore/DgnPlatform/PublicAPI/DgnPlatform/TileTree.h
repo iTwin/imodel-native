@@ -83,7 +83,6 @@ DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 
-typedef std::chrono::steady_clock::time_point TimePoint;
 typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 
 //=======================================================================================
@@ -136,7 +135,7 @@ protected:
     int     m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
-    mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
+    mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
     void UnloadChildren(TimePoint olderThan) const;
@@ -165,7 +164,7 @@ public:
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
 
     virtual void _OnChildrenUnloaded() const {}
-    DGNPLATFORM_EXPORT virtual void _UnloadChildren(TimePoint olderThan) const;
+    DGNPLATFORM_EXPORT virtual void _UnloadChildren(BeTimePoint olderThan) const;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
     virtual bool _HasChildren() const = 0;
@@ -226,7 +225,7 @@ protected:
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
-    std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
+    BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
@@ -235,6 +234,7 @@ protected:
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
+    virtual ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) = 0;
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
@@ -274,10 +274,10 @@ public:
     DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
-    void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;}
+    void SetExpirationTime(BeDuration val) {m_expirationTime = val;}
 
-    //! Get expiration time for unused Tiles, in seconds.
-    std::chrono::seconds GetExpirationTime() const {return m_expirationTime;}
+    //! Get expiration time for unused Tiles.
+    BeDuration GetExpirationTime() const {return m_expirationTime;}
 
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
@@ -464,16 +464,17 @@ struct DrawArgs
     Transform m_location;
     Render::GraphicBranch m_graphics;
     MissingNodes m_missing;
-    TimePoint m_now;
-    TimePoint m_purgeOlderThan;
+    BeTimePoint m_now;
+    BeTimePoint m_purgeOlderThan;
     ClipVectorCP m_clip;
 
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch);
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    DrawArgs(RenderContextR context, TransformCR location, RootR root, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
+    DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {}
+    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
     TransformCR GetLocation() const {return m_location;}
@@ -514,7 +515,7 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    ClipVectorCPtr m_clip;     //! clip volume applied to tiles, in tile coordinates
+    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
 
     virtual ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 

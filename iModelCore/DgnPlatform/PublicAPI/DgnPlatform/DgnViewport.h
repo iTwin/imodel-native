@@ -72,7 +72,6 @@ struct IViewportAnimator : RefCountedBase
     virtual void _OnInterrupted(DgnViewportR viewport) { }
 };
 
-struct TileViewport;
 //=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
@@ -131,7 +130,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     {
         virtual ~Tracker() {}
         virtual void _OnViewChanged() const {} //!< Called after this DgnViewport has been modified, e.g. through a viewing tool
-        virtual void _OnViewClose() const {} //!< Called when this DgnViewport is about to be closed.
+        virtual void _OnViewClose() const {}   //!< Called when this DgnViewport is about to be closed.
     };
 
 protected:
@@ -223,7 +222,7 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     void SynchronizeViewport(UpdatePlan const&);
-    DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliSeconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
@@ -232,9 +231,9 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewDefinitionCR val, int animationTime);
-    DGNVIEW_EXPORT void ApplyNext(int animationTime);
-    DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
+    void ApplyViewState(ViewDefinitionCR val, BeDuration animationTime);
+    DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
+    DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     // Find world distance to nearest element in view rect.
@@ -439,7 +438,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -560,23 +559,18 @@ public:
     //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize={0,0});
+    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize=Point2d::From(0,0));
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/16
+// @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
-struct TileViewport : DgnViewport
+struct OffscreenViewport : DgnViewport
 {
     BSIRect m_rect;
-    Transform m_toParent = Transform::FromIdentity();
-    Render::GraphicListPtr m_terrain;
-    virtual void _QueueScene() = 0;
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
-    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
-    void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetTileRect(rect);}
-    TileViewport();
+    void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
+    OffscreenViewport();
 };
 
 //=======================================================================================

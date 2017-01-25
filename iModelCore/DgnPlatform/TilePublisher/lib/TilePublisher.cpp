@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
 #include "Constants.h"
+#include <crunch/CrnLib.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -100,6 +102,20 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
+#endif
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::PublisherContext::Statistics::~Statistics()
+    {
+#define STATISTICS
+#ifdef STATISTICS
+    if (0.0 != m_textureCompressionMegaPixels)
+        {
+        printf ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
+        printf ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
+        }
 #endif
     }
 
@@ -271,7 +287,7 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
     WString rootName;
     BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), GetBinaryDataFileExtension(m_tile.ContainsParts())).c_str(), nullptr);
+    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_tile.GetFileExtension().c_str()).c_str(), nullptr);
     }
 
 
@@ -340,9 +356,14 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
+        
     if (publishableGeometry.Parts().empty())
         {
-        WriteGeometryTiles(outputFile, publishableGeometry);
+        BeAssert (publishableGeometry.PointClouds().empty() || publishableGeometry.Meshes().empty());   // We don't expect point clouds with meshes (although these could be handled as a composite if necessary).
+        if (!publishableGeometry.PointClouds().empty())
+            WritePointCloud(outputFile, *publishableGeometry.PointClouds().front());
+        else
+            WriteTileMeshes(outputFile, publishableGeometry);
         }
     else
         {
@@ -355,7 +376,7 @@ PublisherContext::Status TilePublisher::Publish()
         std::fwrite(&zero, 1, 4, outputFile);                   // Filled in below...
         std::fwrite(&tileCount, 1, 4, outputFile);
 
-        WriteGeometryTiles(outputFile, publishableGeometry);
+        WriteTileMeshes(outputFile, publishableGeometry);
 
         uint32_t    compositeSize = std::ftell(outputFile);
         std::fseek (outputFile, compositeSizeLocation, SEEK_SET);
@@ -417,7 +438,16 @@ static void    padTo4ByteBoundary(std::FILE* outputFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
+static void    padTo4ByteBoundary(Utf8String& string)
+    {
+    while (0 != string.size() % 4)
+        string = string + " ";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
     {
     DRange3d    publishedRange = DRange3d::NullRange();
 
@@ -431,6 +461,81 @@ void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGe
         WritePartInstances(outputFile, publishedRange, part);
 
     m_tile.SetPublishedRange (publishedRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud) 
+    {
+    long            startPosition = ftell (outputFile);
+    Json::Value     featureTable;
+    ByteStream      binaryData;
+
+    featureTable["POINTS_LENGTH"] = pointCloud.Points().size();
+    featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
+
+
+    DRange3d        positionRange = DRange3d::NullRange();
+
+    positionRange.Extend(pointCloud.Points());
+
+    DVec3d positionScale = DVec3d::FromStartEnd(positionRange.low, positionRange.high);
+
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.z);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.x);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.y);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.z);
+
+    for (auto& point : pointCloud.Points())
+        {
+        int16_t             quantizedPosition[3];
+        static double       range = (double) (0xffff);
+
+        quantizedPosition[0] = (uint16_t) (.5 + range * (point.x - positionRange.low.x) / positionScale.x);
+        quantizedPosition[1] = (uint16_t) (.5 + range * (point.y - positionRange.low.y) / positionScale.y);
+        quantizedPosition[2] = (uint16_t) (.5 + range * (point.z - positionRange.low.z) / positionScale.z);
+
+        binaryData.Append ((uint8_t const*) quantizedPosition, sizeof(quantizedPosition));
+        }     
+    if (pointCloud.Colors().size() == pointCloud.Points().size())
+        {
+        featureTable["RGB"]["byteOffset"] = binaryData.size();
+        binaryData.Append ((uint8_t const*)pointCloud.Colors().data(), pointCloud.Colors().size() * sizeof(TileMeshPointCloud::Rgb));
+        }
+
+
+    Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
+
+    padTo4ByteBoundary(featureTableStr);
+
+    uint32_t        zero = 0, 
+                    featureTableStrLen = featureTableStr.size(),
+                    featureTableBinaryLength = binaryData.size();
+
+
+    std::fwrite(s_pointCloudMagic, 1, 4, outputFile);
+    std::fwrite(&s_pointCloudVersion, 1, 4, outputFile);                                                                                                                                  
+    long    lengthDataPosition = ftell(outputFile);
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // Total length filled in below.
+    std::fwrite(&featureTableStrLen, 1, sizeof(uint32_t), outputFile);          
+    std::fwrite(&featureTableBinaryLength, 1, sizeof(uint32_t), outputFile);    
+
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
+
+    std::fwrite(featureTableStr.data(), 1, featureTableStrLen, outputFile);
+    std::fwrite(binaryData.data(), 1, binaryData.size(), outputFile);
+
+    uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
+
+
+    m_tile.SetPublishedRange (positionRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -519,8 +624,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
     // Pad the feature table string to insure that the binary is 4 byte aligned.
-    while (0 != featureTableStr.size() % 4)
-        featureTableStr = featureTableStr + " ";
+    padTo4ByteBoundary(featureTableStr);
 
     uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
@@ -693,7 +797,6 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
 
-
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
     Utf8String  bvImageId = Utf8String ("imageBufferView") + suffix;
@@ -705,14 +808,12 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     tileData.m_json["textures"][textureId]["source"] = imageId;
 
     tileData.m_json["images"][imageId] = Json::objectValue;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
+
 
     DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
     Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
-    // This calculation should actually be made for each triangle and maximum used. 
+    // This calculation should actually be made for each triangle and maximum used.
     static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
     double      requiredSize = std::min (s_sizeLimit, s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * std::min (1.0, uvRange.DiagonalDistance())));
     DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
@@ -751,6 +852,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     ImageSource         imageSource = textureImage.GetImageSource();
     static const int    s_imageQuality = 50;
 
+
     if (targetImageSize.x != imageSize.x || targetImageSize.y != imageSize.y)
         {
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
@@ -758,13 +860,71 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
         }
 
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-    tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+    if (m_context.GetTextureMode() == PublisherContext::External ||
+        m_context.GetTextureMode() == PublisherContext::Compressed)
+        {
+        WString     name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
 
-    ByteStream const& imageData = imageSource.GetByteStream();
-    tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
-    tileData.m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
-    tileData.AddBinaryData (imageData.data(), imageData.size());
+        if (m_context.GetTextureMode() == PublisherContext::Compressed) 
+            {
+            extension = L"crn";
+
+            static crn_uint32       s_qualityLevel = 128;
+            static crn_dxt_quality  s_dxtQuality   = cCRNDXTQualitySuperFast;
+
+            Image       image (imageSource, Image::Format::Rgba);
+
+            crn_comp_params     compressParams;                                                                                                                 
+            
+            compressParams.m_width  = image.GetWidth(); 
+            compressParams.m_height = image.GetHeight();
+            compressParams.m_quality_level = s_qualityLevel; 
+            compressParams.m_dxt_quality = s_dxtQuality;
+            compressParams.m_file_type = cCRNFileTypeCRN;
+
+            compressParams.m_dxt_compressor_type = cCRNDXTCompressorCRN;
+            compressParams.m_pImages[0][0] = reinterpret_cast <crn_uint32 const*> (image.GetByteStream().GetData());
+
+            crn_uint32      compressedSize;
+            StopWatch       timer(true);
+            
+            void*   compressedData = crn_compress (compressParams, compressedSize);
+
+            BeMutexHolder lock(m_context.m_statistics.m_mutex);
+            m_context.m_statistics.m_textureCompressionSeconds    += timer.GetCurrentSeconds();
+            m_context.m_statistics.m_textureCompressionMegaPixels += (double) (image.GetWidth() * image.GetHeight()) / (1024.0 * 1024.0);
+
+             std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            fwrite (compressedData, 1, compressedSize, outputFile);
+            crn_free_block (compressedData);
+            fclose (outputFile);
+            }
+        else
+            {
+            extension = ImageSource::Format::Jpeg == imageSource.GetFormat() ? L"jpg" : L"png";
+            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            fwrite (imageSource.GetByteStream().GetData(), 1, imageSource.GetByteStream().GetSize(), outputFile);
+            fclose (outputFile);
+
+            }
+        tileData.m_json["images"][imageId]["uri"] = Utf8String(BeFileName(nullptr, nullptr, name.c_str(), extension.c_str()).c_str());
+        tileData.m_json["images"][imageId]["name"] = imageId; 
+        }
+    else
+        {
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
+
+
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+
+        ByteStream const& imageData = imageSource.GetByteStream();
+        tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
+        tileData.m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+        tileData.AddBinaryData (imageData.data(), imageData.size());
+        }
 
     m_textureImages.Insert (&textureImage, textureId);
 
@@ -1586,8 +1746,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental, TextureMode textureMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental), m_textureMode(textureMode)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1791,7 +1951,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
     if (!contentRange.IsNull())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, TilePublisher::GetBinaryDataFileExtension(tile.ContainsParts())));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, tile.GetFileExtension().c_str()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }
@@ -1963,11 +2123,6 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 continue;
                 }
 
-            Json::Value modelJson(Json::objectValue);
-
-            modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
-
             DRange3d modelRange;
             auto modelRangeIter = m_modelRanges.find(modelId);
             if (m_modelRanges.end() != modelRangeIter)
@@ -1975,9 +2130,21 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             else
                 modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
 
+            if (modelRange.IsNull())
+                {
+                BeAssert(false && "Null model range");
+                continue;
+                }
+
+            Json::Value modelJson(Json::objectValue);
+
+            modelJson["name"] = model->GetName();
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+
+
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
-            modelJson["extents"] = RangeToJson(modelRange);
+ 			modelJson["extents"] = RangeToJson(modelRange);
 
             if (nullptr == spatialModel && !modelTransform.IsIdentity())
                 modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...

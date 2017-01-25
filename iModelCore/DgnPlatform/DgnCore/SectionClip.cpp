@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SectionClip.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DgnPlatformInternal.h"
@@ -83,7 +83,7 @@ virtual Utf8String _GetFactoryId() const override;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _FromJson (JsonValueCR json)
+virtual void _FromJson (JsonValueCR json) override
     {
     // WIP_SECTION_CLIP -- keep consistent with ForeignFormat::DgnV8::SectionSectionObject::ToJson
     m_clipData.params.cropMask = json["crop_mask"].asUInt();
@@ -102,7 +102,7 @@ virtual void _FromJson (JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _ToJson (JsonValueR json) const
+virtual void _ToJson (JsonValueR json) const override
     {
     json["crop_mask"] = m_clipData.params.cropMask;
     json["preserve_up"] = TO_BOOL(m_clipData.params.preserveUp);
@@ -180,7 +180,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RotMatrixCR             _GetRotationMatrix () const
+RotMatrixCR             _GetRotationMatrix () const override
     {
     return m_clipData.rotMatrix;
     }
@@ -188,7 +188,7 @@ RotMatrixCR             _GetRotationMatrix () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _SetRotationMatrix (RotMatrixCR rMatrix)
+void                    _SetRotationMatrix (RotMatrixCR rMatrix) override
     {
     m_clipData.rotMatrix = rMatrix;
     }
@@ -196,7 +196,7 @@ void                    _SetRotationMatrix (RotMatrixCR rMatrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-double                  _GetSize (ClipVolumeSizeProp prop) const
+double                  _GetSize (ClipVolumeSizeProp prop) const override
     {
     switch (prop)
         {
@@ -215,7 +215,7 @@ double                  _GetSize (ClipVolumeSizeProp prop) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _SetSize (ClipVolumeSizeProp prop, double size)
+void                    _SetSize (ClipVolumeSizeProp prop, double size) override
     {
     switch (prop)
         {
@@ -237,7 +237,7 @@ void                    _SetSize (ClipVolumeSizeProp prop, double size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                    _GetCrop (ClipVolumeCropProp prop) const
+bool                    _GetCrop (ClipVolumeCropProp prop) const override
     {
     switch (prop)
         {
@@ -256,7 +256,7 @@ bool                    _GetCrop (ClipVolumeCropProp prop) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _SetCrop (ClipVolumeCropProp prop, bool crop)
+void                    _SetCrop (ClipVolumeCropProp prop, bool crop) override
     {
     switch (prop)
         {
@@ -279,7 +279,7 @@ void                    _SetCrop (ClipVolumeCropProp prop, bool crop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _CopyCrops (IViewClipObject const* from)
+void                    _CopyCrops (IViewClipObject const* from) override
     {
     if (!from)
         return;
@@ -295,7 +295,7 @@ void                    _CopyCrops (IViewClipObject const* from)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t                     _GetNumPoints () const
+size_t                     _GetNumPoints () const override
     {
     return m_points.size();
     }
@@ -303,7 +303,7 @@ size_t                     _GetNumPoints () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt               _GetPoints (DPoint3dVector& points, size_t iFromPoint, size_t numPoints) const
+StatusInt               _GetPoints (DPoint3dVector& points, size_t iFromPoint, size_t numPoints) const override
     {
     if (static_cast <int> (iFromPoint + numPoints) > m_points.size())
         return ERROR;
@@ -315,7 +315,7 @@ StatusInt               _GetPoints (DPoint3dVector& points, size_t iFromPoint, s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _SetPoints (size_t numPoints, DPoint3dCP points)
+void                    _SetPoints (size_t numPoints, DPoint3dCP points) override
     {
     // NEEDSWORK: Verify that the points meet the following requirements
     // Cannot be closed.
@@ -365,7 +365,7 @@ virtual void    _SetWidth (double newWidth) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                    _SetPreserveUp (bool flag)
+void                    _SetPreserveUp (bool flag) override
     {
     m_clipData.params.preserveUp = flag;
     }
@@ -373,7 +373,7 @@ void                    _SetPreserveUp (bool flag)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                    _GetPreserveUp () const
+bool                    _GetPreserveUp () const override
     {
     return m_clipData.params.preserveUp;
     }

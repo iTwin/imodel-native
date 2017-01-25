@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ChangeTestFixture.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "ChangeTestFixture.h"
@@ -37,8 +37,8 @@ void ChangeTestFixture::_SetupDgnDb()
 
     TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
 
-    m_defaultAuthorityId = InsertDatabaseScopeAuthority("TestAuthority");
-    ASSERT_TRUE(m_defaultAuthorityId.IsValid());
+    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestCodeSpec");
+    ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
 
     m_db->SaveChanges();
 
@@ -61,8 +61,8 @@ void ChangeTestFixture::OpenDgnDb()
     m_db = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    m_defaultAuthority = m_db->Authorities().Get<DatabaseScopeAuthority>(m_defaultAuthorityId);
-    ASSERT_TRUE(m_defaultAuthority.IsValid());
+    m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
+    ASSERT_TRUE(m_defaultCodeSpec.IsValid());
 
     m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
     ASSERT_TRUE(m_defaultModel.IsValid());
@@ -76,7 +76,7 @@ void ChangeTestFixture::CloseDgnDb()
     m_db->CloseDb();
     m_db = nullptr;
     m_defaultModel = nullptr;
-    m_defaultAuthority = nullptr;
+    m_defaultCodeSpec = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -94,20 +94,6 @@ DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
 
     return persistentCategory->GetCategoryId();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-DgnAuthorityId ChangeTestFixture::InsertDatabaseScopeAuthority(Utf8CP authorityName)
-    {
-    RefCountedPtr<DatabaseScopeAuthority> testAuthority = DatabaseScopeAuthority::Create(authorityName, *m_db);
-
-    DgnDbStatus status = testAuthority->Insert();
-    BeAssert(status == DgnDbStatus::Success);
-
-    return testAuthority->GetAuthorityId();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
@@ -182,9 +168,8 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::UpdateDgnDbExtents()
     {
-    AxisAlignedBox3d physicalExtents;
-    physicalExtents = m_db->Units().ComputeProjectExtents();
-    m_db->Units().SetProjectExtents(physicalExtents);
+    m_db->Units().InitializeProjectExtents();
+    AxisAlignedBox3d physicalExtents = m_db->Units().GetProjectExtents();
 
     auto view = ViewDefinition::Get(*m_db, "Default");
     ASSERT_TRUE(view.IsValid());

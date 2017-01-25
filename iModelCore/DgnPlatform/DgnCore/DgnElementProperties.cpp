@@ -169,8 +169,8 @@ bool DgnElement::SetPropertyFilter::IsBootStrappingProperty(Utf8StringCR propNam
         s_ignoreList->insert("Id");
         s_ignoreList->insert(BIS_ELEMENT_PROP_ECInstanceId);
         s_ignoreList->insert(BIS_ELEMENT_PROP_Model);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeAuthority);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeNamespace);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeSpec);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeScope);
         s_ignoreList->insert(BIS_ELEMENT_PROP_CodeValue);
         });
 
@@ -366,6 +366,7 @@ bool DgnElement::_Equals(DgnElementCR other, DgnElement::ComparePropertyFilter c
                 other.LoadUserProperties();
             if (!m_userProperties->ToString().Equals(other.m_userProperties->ToString()))
                 return false;
+            continue;
             }
 
         if (!_EqualProperty(otherProp, other))
@@ -458,21 +459,16 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
     DgnClassId classId(properties.GetClass().GetId().GetValue());
 
     DgnCode code;
-        //! The authority ID must be non-null and identify a valid authority.
-        //! The namespace may not be null, but may be a blank string.
-        //! The value may be null if and only if the namespace is blank, signifying that the authority
-        //! assigns no special meaning to the object's code.
-        //! The value may not be an empty string.
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthority) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeSpec) || v.IsNull())
             {
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
-        DgnAuthorityId authorityId = v.GetNavigationInfo().GetId<DgnAuthorityId>();
+        CodeSpecId codeSpecId = v.GetNavigationInfo().GetId<CodeSpecId>();
 
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeScope) || v.IsNull())
             {
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
@@ -486,7 +482,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code.From(authorityId, v.GetUtf8CP(), codeName);
+        code.From(codeSpecId, v.GetUtf8CP(), codeName);
         }
 
     DgnElement::CreateParams params(db, modelId, classId, code);
@@ -635,7 +631,8 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         }
 
     ECInstanceECSqlSelectAdapter adapter(*stmt); // This adapter extracts the values from the statement and sets them into the ECDBuffer
-    adapter.SetInstanceData(*this, true);
+    if (BSISUCCESS != adapter.GetInstance(*this))
+        return BSIERROR;
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer; // initial state should InBuffer, not Dirty
 
@@ -727,7 +724,7 @@ BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, E
     if (propertiesToBind.empty())
         return m_updaters[eclassId] = nullptr;
 
-    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind);
+    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind, "NoECClassIdFilter");
     }
 
 /*---------------------------------------------------------------------------------**//**

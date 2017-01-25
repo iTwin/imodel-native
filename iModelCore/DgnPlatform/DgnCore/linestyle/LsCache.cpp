@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -398,17 +398,6 @@ void LsCompoundComponent::_StartTextureGeneration() const
         comp.m_subComponent->_StartTextureGeneration();
     }
   
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsCompoundComponent::_QuerySymbology (SymbologyQueryResults& results) const
-    {
-    for (LsOffsetComponent const & comp : m_components)
-        {
-        comp.m_subComponent->_QuerySymbology(results);
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------

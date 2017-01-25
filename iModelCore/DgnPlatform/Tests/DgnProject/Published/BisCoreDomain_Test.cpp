@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/BisCoreDomain_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -43,8 +43,8 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedColumnNames.push_back("Id");
         expectedColumnNames.push_back("ECClassId");
         expectedColumnNames.push_back("FederationGuid");
-        expectedColumnNames.push_back("CodeAuthorityId");
-        expectedColumnNames.push_back("CodeNamespace");
+        expectedColumnNames.push_back("CodeSpecId");
+        expectedColumnNames.push_back("CodeScope");
         expectedColumnNames.push_back("CodeValue");
         expectedColumnNames.push_back("ModelId");
         expectedColumnNames.push_back("ParentId");
@@ -79,12 +79,12 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[FederationGuid] BLOB UNIQUE,"));
-        ASSERT_TRUE(ddl.Contains("[CodeAuthorityId] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[CodeNamespace] TEXT NOT NULL COLLATE NOCASE,"));
+        ASSERT_TRUE(ddl.Contains("[CodeSpecId] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.Contains("[CodeScope] TEXT NOT NULL COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[CodeValue] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
         ASSERT_FALSE(ddl.Contains("PRIMARY KEY([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CodeAuthorityId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Authority) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CodeSpecId]) REFERENCES [" BIS_TABLE(BIS_CLASS_CodeSpec) "]([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])")); // Element API does the "cascade delete"
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
@@ -137,7 +137,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeSpecId], [CodeScope], [CodeValue])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {
@@ -162,7 +162,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Authority)          "]([ECClassId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_CodeSpec)          "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)              "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ParentId]) WHERE ([ParentId] IS NOT NULL)");
@@ -249,38 +249,37 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    03/2016
 //---------------------------------------------------------------------------------------
-TEST_F(BisCoreDomainTests, ValidateAutoCreatedAuthorities)
+TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     {
     SetupSeedProject();
 
-    // validate that authorities were properly inserted by DgnDb::CreateAuthorities
-    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_NullAuthority).IsValid());
+    // validate that CodeSpecs were properly inserted by DgnDb::CreateCodeSpecs
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_NullCodeSpec)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationFrameStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationLeaderStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationTextStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LightDefinition)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LineStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Session)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialCategory)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TextAnnotationSeed)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TrueColor)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ViewDefinition)->IsRepositoryScope());
 
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationFrameStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationLeaderStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationTextStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_CategorySelector).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_DisplayStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_GeometryPart).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_LightDefinition).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_LineStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_MaterialElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_ModelSelector).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_Session).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_SpatialCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_TextAnnotationSeed).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_Texture).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_TrueColor).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_ViewDefinition).IsValid());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Drawing)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DrawingCategory)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LinkElement)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Sheet)->IsModelScope());
 
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_Drawing).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_DrawingCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_LinkElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_Sheet).IsValid());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_InformationPartitionElement)->IsParentElementScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SubCategory)->IsParentElementScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Subject)->IsParentElementScope());
 
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_InformationPartitionElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_SubCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_Subject).IsValid());
-
-    ASSERT_EQ(24, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_CLASS_Authority)));
+    ASSERT_EQ(24, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_CLASS_CodeSpec)));
     }

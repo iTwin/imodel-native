@@ -2977,7 +2977,11 @@ struct DrawHelper
 static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicBuilderR graphic, bool& geomParamsChanged)
     {
     if (!geomParamsChanged)
+        {
+        // NOTE: Even if we aren't activating, make sure to resolve so that we can test for linestyles, display priority, etc.
+        geomParams.Resolve(context);
         return;
+        }
 
     context.CookGeometryParams(geomParams, graphic);
     geomParamsChanged = false;
@@ -3086,6 +3090,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
     {
     bool isQVis = /* ###TODO_GLES IsForDisplay() does not imply "is quickvision"... mainGraphic.IsForDisplay();*/ false;
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
     Render::GraphicBuilderP currGraphic = &mainGraphic;
@@ -3133,9 +3138,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
 
-                // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
-                // ...unless we're a SimplifyGraphic, in which case our geometry processor wants the params resolved immediately
-                geomParamsChanged = !isQVis; 
+                // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
+                // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
+//                geomParamsChanged = !isQVis;
+//                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
+//                subGraphicParams = graphicParams; // Save current params for AddSubGraphic in case there are symbology changes...
+
+                geomParams.Resolve(context);
+                subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
+
+                if (!isQVis)
+                    {
+                    currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
+                    geomParamsChanged = false;
+                    }
 
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
@@ -3201,7 +3217,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                             for (int iPt = 0; iPt < nPts; ++iPt)
                                 localPoints3dBuf[iPt].Init(pts[iPt]);
 
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
                             }
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
@@ -3209,18 +3225,34 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         }
                     }
 
+                if (FB::BoundaryType_None != boundary)
+                    {
+                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                    if (strokeLineStyle)
+                        {
+                        std::valarray<DPoint3d> localPoints3dBuf(nPts);
+
+                        for (int iPt = 0; iPt < nPts; ++iPt)
+                            localPoints3dBuf[iPt].Init(pts[iPt]);
+
+                        context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
+                        break;
+                        }
+                    }
+
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        currGraphic->AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority(context));
+                        currGraphic->AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Open:
-                        currGraphic->AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority(context));
+                        currGraphic->AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
+                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -3250,10 +3282,21 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
+                        }
+                    }
+
+                if (FB::BoundaryType_None != boundary)
+                    {
+                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                    if (strokeLineStyle)
+                        {
+                        context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
+                        break;
                         }
                     }
 
@@ -3297,19 +3340,27 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams);
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
                         }
                     }
 
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *CurveVector::Create(FB::BoundaryType_Closed == boundary ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(arc)), geomParams, false);
+                    break;
+                    }
+
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority(context));
+                        currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
+                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
@@ -3335,12 +3386,42 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
-                // A single curve primitive is always open (or none for a point string)...
-                CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType())
+                    {
+                    if (!context.Is3dView())
+                        {
+                        bvector<DPoint3d> const* points = curvePrimitivePtr->GetPointStringCP();
+                        int nPts = (int) points->size();
+                        std::valarray<DPoint2d> localPoints2dBuf(nPts);
+
+                        for (int iPt = 0; iPt < nPts; ++iPt)
+                            {
+                            DPoint3dCP tmpPt = &points->front()+iPt;
+
+                            localPoints2dBuf[iPt].x = tmpPt->x;
+                            localPoints2dBuf[iPt].y = tmpPt->y;
+                            }
+
+                        currGraphic->AddPointString2d(nPts, &localPoints2dBuf[0], geomParams.GetNetDisplayPriority());
+                        break;
+                        }
+
+                    currGraphic->AddPointString((int) curvePrimitivePtr->GetPointStringCP()->size(), &curvePrimitivePtr->GetPointStringCP()->front());
+                    break;
+                    }
+
+                CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // A single curve primitive (that isn't a point string) is always open...
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *curvePtr, geomParams, false);
+                    break;
+                    }
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority(context));
+                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
@@ -3370,16 +3451,24 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     if (nullptr != (pattern = geomParams.GetPatternParams()))
                         {
                         if (context.WantAreaPatterns())
-                            context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams);
+                            context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams, false);
                            
                         if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
                             break;
                         }
                     }
 
+                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+
+                if (strokeLineStyle)
+                    {
+                    context.DrawStyledCurveVector(*currGraphic, *curvePtr, geomParams, false);
+                    break;
+                    }
+
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
+                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
@@ -3535,7 +3624,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority(context));
+                    currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
@@ -3549,12 +3638,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
         if (subGraphic.IsValid())
             {
-            // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
-            GraphicParams graphicParams;
-            context.CookGeometryParams(geomParams, graphicParams);
-
             subGraphic->Close(); // Make sure graphic is closed...
-            mainGraphic.AddSubGraphic(*subGraphic, Transform::FromIdentity(), graphicParams);
+            mainGraphic.AddSubGraphic(*subGraphic, Transform::FromIdentity(), subGraphicParams);
 
             // NOTE: Main graphic controls what pixel range is used for all sub-graphics.
             //       Since we can't have independent pixel range for sub-graphics, choose most restrictive...
@@ -4067,12 +4152,16 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId, TransformCR sourceToWorld) : m_state(dgnDb)
+GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, Render::GeometryParamsCP baseParams, TransformCP sourceToWorld) : m_state(dgnDb)
     {
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
-    m_state.m_geomParams.SetCategoryId(categoryId);
-    m_state.m_sourceToWorld = sourceToWorld;
+
+    if (nullptr != baseParams)
+        m_state.m_geomParams = *baseParams;
+
+    if (nullptr != sourceToWorld)
+        m_state.m_sourceToWorld = *sourceToWorld;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4993,7 +5082,10 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStre
     if (!builder.IsValid())
         return nullptr;
     
-    GeometryCollection collection(stream, source.GetSourceDgnDb(), source.GetCategoryId(), source.GetPlacementTransform());
+    Render::GeometryParams sourceParams(categoryId);
+    Transform sourceTransform = source.GetPlacementTransform();
+
+    GeometryCollection collection(stream, source.GetSourceDgnDb(), &sourceParams, &sourceTransform);
 
     for (auto iter : collection)
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/PickContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,24 +85,24 @@ struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
     friend struct SheetAttachmentPicker;
 
 private:
-    bool              m_doneSearching;
-    bool              m_unusableLStyleHit;
-    bool              m_doLocateSilhouettes;
-    bool              m_doLocateInteriors;
-    TestLStylePhase   m_testingLStyle;
-    GeomDetail        m_currGeomDetail;
-    HitListP          m_hitList;
-    HitPriority       m_hitPriorityOverride;
-    DPoint3d          m_pickPointWorld;
-    DPoint4d          m_pickPointView;
-    double            m_pickAperture;
-    double            m_pickApertureSquared;
-    double            m_pixelScale = 1.0; // only changes for sheet attachments
-    uint32_t          m_overflowCount;
-    LocateOptions     m_options;
-    StopLocateTest*   m_stopTester;
-    DgnViewportP      m_sheetViewport = nullptr;
-    GeometrySourceCP  m_currentGeomSource;
+    bool m_doneSearching;
+    bool m_unusableLStyleHit;
+    bool m_doLocateSilhouettes;
+    bool m_doLocateInteriors;
+    TestLStylePhase m_testingLStyle;
+    GeomDetail m_currGeomDetail;
+    HitListP m_hitList;
+    HitPriority m_hitPriorityOverride;
+    DPoint3d m_pickPointWorld;
+    DPoint4d m_pickPointView;
+    double m_pickAperture;
+    double m_pickApertureSquared;
+    uint32_t m_overflowCount;
+    LocateOptions m_options;
+    StopLocateTest* m_stopTester;
+    DgnViewportP m_sheetViewport = nullptr;
+    DMap4dCP m_sheetMap = nullptr; // from attachement world to sheet world.
+    GeometrySourceCP m_currentGeomSource;
     IElemTopologyCPtr m_currElemTopo;
 
     void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
@@ -111,10 +111,8 @@ private:
     bool _CheckStop() override;
     StatusInt _InitContextForView() override;
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
-    void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) override;
-    void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
-    void _DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) override;
-    void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
+    void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
+    void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP, ClipVectorCP) override {return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);}
     DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic) const;
@@ -165,7 +163,7 @@ public:
     void _AddHit(HitDetailR) override;
     IElemTopologyCP _GetElemTopology() const override {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
     void _SetElemTopology(IElemTopologyCP topo) override {m_currElemTopo = topo;}
-    virtual bool _ProcessSheetAttachment(TileViewport&);
+    virtual bool _ProcessSheetAttachment(Sheet::Attachment::ViewportR);
 
     DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
     DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);

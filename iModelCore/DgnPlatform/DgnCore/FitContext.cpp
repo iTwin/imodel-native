@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FitContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -39,13 +39,13 @@ bool FitContext::IsRangeContained(RangeIndex::FBoxCR range) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RangeIndex::Traverser::Accept FitContext::_CheckRangeTreeNode(RangeIndex::FBoxCR range, bool is3d) const
     {
-    if (Traverser::Accept::No == T_Super::_CheckRangeTreeNode(range, is3d))
-        return Traverser::Accept::No ;
-
+    // We're trying to find the volume of the outermost elements that would be drawn in this view using the current category list and view rotation.
+    // If the range of the node is fully contained in the already-computed volume, there's nothing further
+    // to learn from this node. We can skip it.
     return IsRangeContained(range) ? Traverser::Accept::No : Traverser::Accept::Yes;
     }
 

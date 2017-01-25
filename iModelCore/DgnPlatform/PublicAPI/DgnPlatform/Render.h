@@ -588,14 +588,14 @@ private:
     double      m_maxCompress;
     double      m_totalLength;      // length of entire element.
     double      m_xElemPhase;       // where we left off from last element (for compound elements)
+    double      m_styleWidth;
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
+    bool        m_useStroker;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
-    bool        m_useStroker;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
-
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -618,6 +618,7 @@ public:
     double GetMaxCompress() const {return m_maxCompress;}
     int GetNumIterations() const {return m_nIterate;}
     DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetStyleWidth() const {return m_styleWidth;}
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
@@ -666,7 +667,7 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
-    bool UseStroker() const {return m_useStroker;}
+    bool GetUseStroker() const {return m_useStroker;}
     void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
@@ -683,8 +684,6 @@ protected:
     DgnStyleId          m_styleId;
     LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
     LineStyleSymb       m_lStyleSymb; //!< cooked form of linestyle
-    DVec3d              m_startTangent;
-    DVec3d              m_endTangent;
 
     DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
@@ -702,10 +701,6 @@ public:
     LineStyleParamsCP GetStyleParams() const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
     LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
     LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
-    DVec3dCR GetStartTangent() const {return m_startTangent;}
-    DVec3dCR GetEndTangent() const {return m_endTangent;}
-    void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
-    void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
 
     DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
  };
@@ -851,6 +846,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT GeometryParams();
+    DGNPLATFORM_EXPORT GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId());
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
@@ -877,8 +873,13 @@ public:
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
-    int32_t GetNetDisplayPriority(ViewContextR context) {Resolve(context); return m_netPriority;} // Resolve and return net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
+
+    void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
+    void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
+    void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
+    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
+    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = m_appearanceOverrides.m_bgFill = false;}
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
@@ -936,6 +937,8 @@ public:
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
+
+    bool HasStrokedLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return (m_styleInfo.IsValid() ? (nullptr != m_styleInfo->GetLineStyleSymb().GetILineStyle() && m_styleInfo->GetLineStyleSymb().GetUseStroker()) : false);}
 
     //! Get whether this GeometryParams contains information that needs to be transformed (ex. to apply local to world).
     bool IsTransformable() const {return m_pattern.IsValid();} // NEEDSWORK: LineStyleInfo???
@@ -1699,6 +1702,19 @@ struct GraphicBranch
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
+    void Clear() {m_entries.clear();}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct ViewletPosition
+{
+    DPoint3d m_center;
+    double m_width;
+    double m_height;
+    ClipVectorCPtr m_clip;
+    ViewletPosition(DPoint3dCR center, double width, double height, ClipVectorCP clip) : m_center(center), m_width(width), m_height(height), m_clip(clip) {}
 };
 
 //=======================================================================================
@@ -1729,7 +1745,7 @@ struct System
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
-    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, TransformCR, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1783,7 +1799,6 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool m_abort;
-    bool m_tileTarget = false;
     int  m_id; // for debugging
     System& m_system;
     DevicePtr m_device;
@@ -1817,8 +1832,9 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
-    virtual void _SetTileRect(BSIRect rect) {}
+    virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}
@@ -1837,7 +1853,6 @@ public:
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
-    void SetTileTarget() {m_tileTarget=true;}
 
     static constexpr double DefaultTileSizeModifier()
         {

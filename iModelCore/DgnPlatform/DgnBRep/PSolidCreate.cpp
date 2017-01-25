@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidCreate.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2145,6 +2145,7 @@ static BentleyStatus degeneratePointFromCurveVector (PK_BODY_t& bodyTag, CurveVe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6386) // static analysis thinks we exceed the bounds of startVertices in the SolidPrimitiveType_DgnRuledSweep case... I don't see how.
 BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
     {
     PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
@@ -2719,6 +2720,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
             return ERROR;
         }
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12

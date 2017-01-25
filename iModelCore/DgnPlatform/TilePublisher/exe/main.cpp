@@ -3,11 +3,12 @@
 |
 |     $Source: TilePublisher/exe/main.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include <PointCloud/PointCloudApi.h>
 #include <DgnPlatform/TilePublisher/TilePublisher.h>
 #include "Constants.h"
 
@@ -50,6 +51,7 @@ enum class ParamId
     NoReplace,
     Incremental,
     VerboseStatistics,
+    TextureMode,
     Invalid,
 };
 
@@ -86,6 +88,7 @@ static CommandParam s_paramTable[] =
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"up", L"update", L"Update existing tileset from model changes", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
+        { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -150,23 +153,24 @@ struct CommandArg
 struct PublisherParams
 {
 private:
-    BeFileName      m_inputFileName;    //!< Path to the .bim
-    Utf8String      m_viewName;         //!< Name of the view definition from which to publish
-    BeFileName      m_outputDir;        //!< Directory in which to place the output
-    WString         m_tilesetName;      //!< Root name of the output tileset files
-    double          m_groundHeight;     //!< Height of ground plane.
-    DPoint3d        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
-    GroundMode      m_groundMode;
-    double          m_tolerance;
-    uint32_t        m_depth = 0xffffffff;
-    bool            m_surfacesOnly = false;
-    bool            m_verbose = false;
-    Utf8String      m_imageryProvider;
-    Utf8String      m_terrainProvider;
-    bool            m_displayGlobe = false;
-    GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
-    bool            m_overwriteExisting = true;
-    bool            m_publish = false;
+    BeFileName                      m_inputFileName;    //!< Path to the .bim
+    Utf8String                      m_viewName;         //!< Name of the view definition from which to publish
+    BeFileName                      m_outputDir;        //!< Directory in which to place the output
+    WString                         m_tilesetName;      //!< Root name of the output tileset files
+    double                          m_groundHeight;     //!< Height of ground plane.
+    DPoint3d                        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
+    GroundMode                      m_groundMode;
+    double                          m_tolerance;
+    uint32_t                        m_depth = 0xffffffff;
+    bool                            m_surfacesOnly = false;
+    bool                            m_verbose = false;
+    Utf8String                      m_imageryProvider;
+    Utf8String                      m_terrainProvider;
+    bool                            m_displayGlobe = false;
+    GeoPoint                        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
+    bool                            m_overwriteExisting = true;
+    bool                            m_publish = false;
+    PublisherContext::TextureMode   m_textureMode = PublisherContext::TextureMode::Embedded;
 
     DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
@@ -185,6 +189,7 @@ public:
     GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     bool GetIncremental() const { return m_publish; }
+    PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -382,6 +387,27 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 m_publish = true;
                 break;
 
+            case ParamId::TextureMode:
+                {
+                WString     textureModeString = arg.m_value;
+                
+                textureModeString.ToLower();
+                if (textureModeString == L"embedded")
+                    m_textureMode = PublisherContext::TextureMode::Embedded;
+                else if (textureModeString == L"external")
+                    m_textureMode = PublisherContext::TextureMode::External;
+                else if (textureModeString == L"compressed")
+                    m_textureMode = PublisherContext::TextureMode::Compressed;
+                else
+                    {
+                    printf ("Unrecognized texture mode: %ls\n", arg.m_value.c_str());
+                    return false;
+                    }
+                    
+
+                break;
+                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -450,8 +476,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool publishIncremental, bool verbose)
-        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, publishIncremental),
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool publishIncremental, bool verbose, TextureMode textureMode)
+        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, publishIncremental, textureMode),
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
@@ -800,7 +826,8 @@ int wmain(int ac, wchar_t const** av)
     DgnPlatformLib::Initialize(host, false);
 
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain());
-
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain());
+                                                                                  
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
@@ -813,7 +840,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
     TilesetPublisher publisher(*db, viewsToPublish, defaultView, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
-                                createParams.GetDepth(), createParams.SurfacesOnly(), createParams.GetIncremental(), createParams.WantVerboseStatistics());
+                                createParams.GetDepth(), createParams.SurfacesOnly(), createParams.GetIncremental(), createParams.WantVerboseStatistics(), createParams.GetTextureMode());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {
@@ -836,5 +863,6 @@ int wmain(int ac, wchar_t const** av)
 
     return static_cast<int>(status);
     }
+
 
 

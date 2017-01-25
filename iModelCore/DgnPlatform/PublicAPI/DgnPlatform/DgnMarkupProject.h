@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMarkupProject.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,7 +120,7 @@ public:
     //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
     DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return DatabaseScopeAuthority::CreateCode(MARKUP_AUTHORITY_Redline, db, value);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return CodeSpec::CreateCode(db, MARKUP_AUTHORITY_Redline, value);}
     };
 
 //=======================================================================================
@@ -526,7 +526,9 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : InformationContent
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
+
 
 //! The handler for MarkupExternalLinkGroup elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationContent

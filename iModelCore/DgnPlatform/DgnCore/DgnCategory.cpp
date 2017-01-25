@@ -120,7 +120,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DrawingCategory::CreateCode(DgnModelCR model, Utf8StringCR categoryName)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_DrawingCategory, model, categoryName);
+    return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, *model.GetModeledElement(), categoryName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode SpatialCategory::CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace)
     {
-    return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_SpatialCategory, db, categoryName, nameSpace);
+    return CodeSpec::CreateCode(db, BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,6 +287,7 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
     : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, catId, name), nullptr, catId), m_data(app, descr)
     {
+    m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_CategoryOwnsSubCategories);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +304,7 @@ DgnCode DgnSubCategory::CreateCode(DgnDbR db, DgnCategoryId categoryId, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnSubCategory::CreateCode(DgnCategoryCR category, Utf8StringCR subCategoryName)
     {
-    return ElementScopeAuthority::CreateCode(BIS_AUTHORITY_SubCategory, category, subCategoryName);
+    return CodeSpec::CreateCode(BIS_CODESPEC_SubCategory, category, subCategoryName);
     }
 
 /*---------------------------------------------------------------------------------**//**

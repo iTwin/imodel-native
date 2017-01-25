@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsPointComponent.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -66,24 +66,6 @@ StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3d
         }
 
     return  SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsPointComponent::_QuerySymbology(SymbologyQueryResults& results) const
-    {
-    for (LsSymbolReference const& symref : m_symbols)
-        {
-        LsSymbolComponentCP comp = symref.GetSymbolComponentCP();
-        if (nullptr == comp)
-            continue;
-        if (!symref.GetUseElementWeight())
-            results.SetWeight(comp->GetLineWeight());
-
-        if (!symref.GetUseElementColor())
-            results.SetColors(comp->IsColorByLevel(), comp->GetLineColor(), comp->GetFillColor());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

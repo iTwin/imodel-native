@@ -2,14 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCodesManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnAuthority.h>
+#include <DgnPlatform/CodeSpec.h>
 
 DGNPLATFORM_TYPEDEFS(DgnCodeState);
 DGNPLATFORM_TYPEDEFS(DgnCodeInfo);
@@ -17,7 +17,7 @@ DGNPLATFORM_TYPEDEFS(DgnCodeInfo);
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! The possible states in which an authority-issued code can exist.
+//! The possible states in which a code can exist.
 //! The server is the ultimate authority on every code's state.
 //!
 //! A code can be in exactly one of four possible states:

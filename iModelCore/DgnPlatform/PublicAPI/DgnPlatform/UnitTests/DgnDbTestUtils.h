@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/DgnPlatform/UnitTests/DgnDbTestUtils.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -99,8 +99,8 @@ public:
     //! @see InsertSpatialCategory
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
-    //! Create a new CodeAuthority
-    static DgnAuthorityId InsertDatabaseScopeAuthority(DgnDbR, Utf8CP authorityName);
+    //! Create a new CodeSpec
+    static CodeSpecId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);
     
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);
@@ -115,7 +115,7 @@ public:
     static int SelectCountFromTable(DgnDbR, Utf8CP tableName);
 
     //! Return true if any element has the specified CodeValue.
-    //! @note CodeNamespace and CodeAuthorityId are not considered
+    //! @note CodeScope and CodeSpecId are not considered
     static bool CodeValueExists(DgnDbR, Utf8CP codeValue);
 };
 

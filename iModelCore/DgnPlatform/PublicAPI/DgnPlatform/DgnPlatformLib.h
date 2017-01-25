@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,7 @@
 #include "TxnManager.h"
 #include "SolidKernel.h"
 #include "DgnViewport.h"
+#include "Sheet.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
 
@@ -512,6 +513,45 @@ public:
             virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
+        //! Supervises the creation and management of element codes.
+        struct CodeAdmin : IHostObject
+        {
+        private:
+            DgnElementId GetCodeScopeElementId(DgnElementCR, CodeScopeSpecCR) const;
+
+        public:
+            //! Register the default CodeSpec for the specified ECClass
+            //! @see _GetDefaultCodeSpecId
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName);
+
+            //! Get the default CodeSpec associated with the specified ECClass
+            //! @note Called by DgnElement::GenerateCode
+            //! @see _RegisterDefaultCodeSpec
+            DGNPLATFORM_EXPORT virtual CodeSpecId _GetDefaultCodeSpecId(DgnDbR, ECN::ECClassCR) const;
+
+            //! Generate a DgnCode for the specified element using the specified CodeSpec
+            DGNPLATFORM_EXPORT virtual DgnCode _GenerateCode(DgnElementCR, CodeSpecCR) const;
+            
+            //! Build the sequence mask needed by _GetNextSequenceNumber
+            //! @note Called by _GenerateCode
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _BuildSequenceMask(Utf8StringR, CodeSpecCR, CodeFragmentStringListCR) const;
+
+            //! Get the next sequence number given an element and CodeSpec context
+            //! @note Called by _GenerateCode
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeFragmentSpecCR, CodeScopeSpecCR, Utf8StringCR) const;
+
+            //! Get the class name for the specified element
+            //! @note Called by _GenerateCode
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
+
+            //! Get the value of a property as specified by the CodeFragmentSpec
+            //! @note Called by _GenerateCode
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
+
+            //! Validate the code of the specified element against the specified CodeSpec
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnCodeCR, CodeSpecCR) const;
+        };
+
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -529,6 +569,7 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
+        CodeAdmin*              m_codeAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
 
@@ -571,12 +612,15 @@ public:
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
+        //! Supply the CodeAdmin.
+        DGNPLATFORM_EXPORT virtual CodeAdmin& _SupplyCodeAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
-        virtual RefCountedPtr<TileViewport> _CreateTileViewport() {return nullptr;}
+        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
         Host()
             {
@@ -594,6 +638,7 @@ public:
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
+            m_codeAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -613,6 +658,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
+        CodeAdmin&              GetCodeAdmin()             {return *m_codeAdmin;} 
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}

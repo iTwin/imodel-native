@@ -149,7 +149,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
         {
         iter.Dump(m_dgndb, false, 1);
         BeAssert(false);
@@ -329,7 +329,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
         {
         BeAssert(false);
         return ChangeSet::ConflictResolution::Abort;
@@ -509,13 +509,13 @@ static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const&
 //---------------------------------------------------------------------------------------
 static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
     {
-    DbDupValue authorityId = GetValueFromChangeOrDb(columnIter, "CodeAuthority.Id", stage);
-    DbDupValue nameSpace = GetValueFromChangeOrDb(columnIter, "CodeNamespace", stage);
+    DbDupValue codeSpecId = GetValueFromChangeOrDb(columnIter, "CodeSpec.Id", stage);
+    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope", stage);
     DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
 
     DgnCode code;
-    if (authorityId.IsValid() && nameSpace.IsValid() && value.IsValid())
-        code.From(authorityId.GetValueId<DgnAuthorityId>(), value.GetValueText(), nameSpace.GetValueText());
+    if (codeSpecId.IsValid() && scope.IsValid() && value.IsValid())
+        code.From(codeSpecId.GetValueId<CodeSpecId>(), value.GetValueText(), scope.GetValueText());
 
     return code;
     }

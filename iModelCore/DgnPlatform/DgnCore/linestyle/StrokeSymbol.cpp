@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -176,7 +176,7 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
 #else
-    m_symbol->Draw(lineStyleContext, transform);
+    m_symbol->Draw(lineStyleContext, transform, GetUseElementColor(), GetUseElementWeight());
 #endif
 
     return  SUCCESS;
@@ -185,23 +185,56 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform)
+void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, bool ignoreColor, bool ignoreWeight)
     {
     DgnGeometryPartCPtr geomPart = GetGeometryPart();
+
     if (!geomPart.IsValid())
         return;
 
-    BeAssert(nullptr != context.GetViewContext());
-    GeometryCollection  collection(geomPart->GetGeometryStream(), *GetDgnDbP());
+    Render::GraphicBuilderR graphic = context.GetGraphicR();
+    Render::GeometryParamsCR baseParams = context.GetGeometryParams();
+    bool cookParams = baseParams.GetCategoryId().IsValid(); // NOTE: LineStyleRangeCollector doesn't care about base symbology...
+    bool creatingTexture = context.GetCreatingTexture();
+
+    GeometryCollection collection(geomPart->GetGeometryStream(), *GetDgnDbP(), &baseParams, &transform);
+
     for (auto iter : collection)
         {
-        GeometricPrimitivePtr source = iter.GetGeometryPtr();
-        if (!source.IsValid())
+        GeometricPrimitivePtr geometry = iter.GetGeometryPtr();
+
+        if (!geometry.IsValid())
             continue;
 
-        GeometricPrimitivePtr gp = source->Clone();
-        gp->TransformInPlace(transform);
-        gp->AddToGraphic(context.GetGraphicR());
+        if (cookParams) // NEEDSWORK: Is there a reason to keep IsColorByLevel/GetLineColor/GetFillColor?
+            {
+            // NOTE: Symbol geometry can have line codes and other symbology changes.
+            Render::GeometryParams symbParams(iter.GetGeometryParams());
+
+            if (ignoreColor)
+                {
+                symbParams.SetLineColor(baseParams.GetLineColor()); // Should transparency also come from baseParams???
+                symbParams.SetFillColor(baseParams.GetFillColor()); // Does color also mean fill color?
+                }
+            else if (creatingTexture)
+                {
+                context.SetHasTextureColors();
+                }
+            
+            if (ignoreWeight || creatingTexture) // TextureParams cache doesn't support weight changes on symbol components...
+                symbParams.SetWeight(baseParams.GetWeight());
+
+            context.GetViewContext().CookGeometryParams(symbParams, graphic);
+            }
+
+        geometry->TransformInPlace(iter.GetSourceToWorld());
+        geometry->AddToGraphic(graphic);
+        }
+
+    if (cookParams)
+        {
+        Render::GeometryParams params(baseParams);
+        context.GetViewContext().CookGeometryParams(params, graphic); // Restore base symbology...
         }
     }
 
@@ -229,10 +262,6 @@ LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src
     m_symSize = src.m_symSize;
     m_symBase = src.m_symBase;;
     m_symFlags = src.m_symFlags;
-    m_lineColor = src.m_lineColor;
-    m_fillColor = src.m_fillColor;
-    m_weight = src.m_weight;
-    m_lineColorByLevel = src.m_lineColorByLevel;
     m_postProcessed = false;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -244,7 +273,6 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
     m_storedScale = 0.0;
     m_symFlags    = 0;
     m_postProcessed = false;
-    m_lineColorByLevel = false;
 
     memset (&m_symSize, 0, sizeof(m_symSize));
     }
@@ -298,21 +326,6 @@ void            LsSymbolComponent::_ClearPostProcess ()
     //  Assume we need to regenerate the XGraphics
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsSymbolComponent::SetColors(bool colorByLevel, ColorDef lineColor, ColorDef fillColor)
-    {
-    m_lineColorByLevel = colorByLevel;
-    m_lineColor = lineColor;
-    m_fillColor = fillColor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsSymbolComponent::SetWeight(uint32_t weight) { m_weight = weight; }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -331,12 +344,6 @@ double              LsSymbolComponent::GetUnitScale () const { return m_muDef; }
 bool                LsSymbolComponent::IsNoScale () const { return IsNotScaled (); }
 void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = (m_symFlags & ~LSSYM_NOSCALE) | (value ? LSSYM_NOSCALE : 0); }
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-void                LsSymbolComponent::GetRange (DRange3dR range) const 
-    { 
-    _GetRange (range);
-    }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015

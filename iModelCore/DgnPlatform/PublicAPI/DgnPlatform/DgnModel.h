@@ -10,7 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
-#include "DgnAuthority.h"
+#include "CodeSpec.h"
 #include "ECSqlClassParams.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
@@ -472,6 +472,9 @@ public:
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
 
+    //! Get the DgnElement that this DgnModel is describing/modeling
+    DGNPLATFORM_EXPORT DgnElementCPtr GetModeledElement() const;
+
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}
 
@@ -846,7 +849,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
@@ -864,8 +867,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
 

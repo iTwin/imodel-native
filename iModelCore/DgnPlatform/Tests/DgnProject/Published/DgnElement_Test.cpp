@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnElement_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -860,8 +860,8 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     EXPECT_EQ(element->GetModelId(), element->GetPropertyValueId<DgnModelId>("Model"));
     EXPECT_EQ(element->GetCategoryId(), element->GetPropertyValueId<DgnCategoryId>("Category"));
     EXPECT_STREQ(element->GetUserLabel(), element->GetPropertyValueString("UserLabel").c_str());
-    EXPECT_EQ(element->GetCode().GetAuthority(), element->GetPropertyValueId<DgnAuthorityId>("CodeAuthority"));
-    EXPECT_STREQ(element->GetCode().GetNamespace().c_str(), element->GetPropertyValueString("CodeNamespace").c_str());
+    EXPECT_EQ(element->GetCode().GetCodeSpecId(), element->GetPropertyValueId<CodeSpecId>("CodeSpec"));
+    EXPECT_STREQ(element->GetCode().GetScope().c_str(), element->GetPropertyValueString("CodeScope").c_str());
     EXPECT_STREQ(element->GetCode().GetValue().c_str(), element->GetPropertyValueString("CodeValue").c_str());
     }
 
@@ -1277,8 +1277,8 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
@@ -2169,7 +2169,7 @@ TEST_F(DgnElementTests, TestSpatialLocation)
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
-    SpatialLocationModelPtr physicalModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestPhysicalModel");
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
 
     TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
     ASSERT_TRUE(element1.IsValid());
@@ -2346,8 +2346,8 @@ TEST_F(DgnElementTests, DemoArrayProblem)
         "\"CONN_PREP\" : null,"
         "\"CREATES_BOLTS\" : false,"
         "\"Category\" : {\"id\" : \"398\"},"
-        "\"CodeAuthority\" : {\"id\" : \"1\"},"
-        "\"CodeNamespace\" : \"\","
+        "\"CodeSpec\" : {\"id\" : \"1\"},"
+        "\"CodeScope\" : \"\","
         "\"CodeValue\" : null,"
         "\"ELEMENT_ID\" : \"22000\","
         "\"FL_TYPE\" : [\"#\"],"
@@ -2470,12 +2470,11 @@ TEST_F(DgnElementTests, DemoArrayProblem)
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
     DgnElementPtr dgnElement = m_db->Elements().CreateElement(*ecInstance);
     DgnElementCPtr inserted = dgnElement->Insert();
     ASSERT_TRUE(inserted != nullptr);
     }
-

@@ -21,9 +21,14 @@
 #define PERF_TEST_PERFELEMENTSUB1_CLASS_NAME "PerfElementSub1"
 #define PERF_TEST_PERFELEMENTSUB2_CLASS_NAME "PerfElementSub2"
 #define PERF_TEST_PERFELEMENTSUB3_CLASS_NAME "PerfElementSub3"
+#define PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME "PerfElementCHBase"
+#define PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME "PerfElementCHSub1"
+#define PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME "PerfElementCHSub2"
+#define PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME "PerfElementCHSub3"
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
+#define DPTEST_SCHEMA(className)                        DPTEST_SCHEMA_NAME "." className
 #define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
@@ -97,8 +102,6 @@ protected:
     Dgn::DgnDbStatus _InsertInDb() override;
     Dgn::DgnDbStatus _UpdateInDb() override;
     Dgn::DgnDbStatus _DeleteInDb() const override;
-    Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
-    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _CopyFrom(Dgn::DgnElementCR el) override;
@@ -147,6 +150,7 @@ typedef TestElement const& TestElementCR;
 struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    void _RegisterPropertyAccessors(Dgn::ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
 
 struct PerfElement;
@@ -253,6 +257,41 @@ struct PerfElementSub3Handler : PerfElementSub2Handler
     ELEMENTHANDLER_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, PerfElementSub3, PerfElementSub3Handler, PerfElementSub2Handler, )
     };
 
+#define DECLARE_PERF_ELEMENTCH_CLASS(CN,SCN,SUPERCN,SUPERHCN)                                                                               \
+struct CN;                                                                                                                                  \
+struct CN ## Handler;                                                                                                                       \
+DEFINE_REF_COUNTED_PTR(CN)                                                                                                                  \
+struct CN : SUPERCN                                                                                                                         \
+    {                                                                                                                                       \
+    friend struct PerfElementCHHandler;                                                                                                     \
+    DGNELEMENT_DECLARE_MEMBERS(# CN, SUPERCN)                                                                                               \
+  public:                                                                                                                                   \
+    CN (CreateParams const& params) : T_Super(params) {}                                                                                    \
+                                                                                                                                            \
+    Utf8String m_ ## SCN ## _str;                                                                                                           \
+    uint64_t m_ ## SCN ## _long;                                                                                                            \
+    double m_ ## SCN ## _double;                                                                                                            \
+                                                                                                                                            \
+    Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;        \
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;                                                               \
+    void _CopyFrom(Dgn::DgnElementCR el) override {/*TBD*/BeAssert("false");}                                                               \
+  public:                                                                                                                                   \
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, # CN)); }    \
+    static CN ## Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);                                            \
+    };                                                                                                                                      \
+                                                                                                                                            \
+struct CN ## Handler : SUPERHCN                                                                                                             \
+    {                                                                                                                                       \
+    ELEMENTHANDLER_DECLARE_MEMBERS(# CN, CN, CN ## Handler, SUPERHCN, )                                                                     \
+    void _RegisterPropertyAccessors(Dgn::ECSqlClassInfo&, ECN::ClassLayoutCR) override;                                                     \
+    };
+
+DECLARE_PERF_ELEMENTCH_CLASS(PerfElementCHBase,Base,Dgn::PhysicalElement,Dgn::dgn_ElementHandler::Physical)
+DECLARE_PERF_ELEMENTCH_CLASS(PerfElementCHSub1,Sub1,PerfElementCHBase,PerfElementCHBaseHandler)
+DECLARE_PERF_ELEMENTCH_CLASS(PerfElementCHSub2,Sub2,PerfElementCHSub1,PerfElementCHSub1Handler)
+DECLARE_PERF_ELEMENTCH_CLASS(PerfElementCHSub3,Sub3,PerfElementCHSub2,PerfElementCHSub2Handler)
+
+
 //=======================================================================================
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
@@ -324,7 +363,7 @@ protected:
     explicit TestSpatialLocation(CreateParams const& params) : T_Super(params) {}
 
 public:
-    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialLocationModelR, Dgn::DgnCategoryId);
+    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialModelR, Dgn::DgnCategoryId);
 };
 
 typedef RefCountedPtr<TestSpatialLocation> TestSpatialLocationPtr;

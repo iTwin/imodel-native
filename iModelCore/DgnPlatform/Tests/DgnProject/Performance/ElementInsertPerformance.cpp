@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ElementInsertPerformance.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -14,7 +14,7 @@
 struct PerformanceElementTestFixture : public DgnDbTestFixture
     {
     protected:
-        static const DgnAuthorityId s_codeAuthorityId;
+        static const CodeSpecId s_codeSpecId;
         static const int s_instanceCount = 500000;
         static Utf8CP const s_textVal;
         static const int64_t s_int64Val = 20000000LL;
@@ -80,7 +80,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
     };
 
 //static
-const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((uint64_t) 1);
+const CodeSpecId PerformanceElementTestFixture::s_codeSpecId = CodeSpecId((uint64_t) 1);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 
@@ -127,7 +127,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeAuthority.Id,CodeValue,CodeNamespace,Category.Id,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeSpec.Id,CodeValue,CodeScope,Category.Id,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
@@ -139,7 +139,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         const ECInstanceId id((uint64_t) (i + 10));
         stmt.BindId(1, id);
         stmt.BindId(2, modelId);
-        stmt.BindId(3, s_codeAuthorityId);
+        stmt.BindId(3, s_codeSpecId);
         code.Sprintf("Id-%d", i);
         stmt.BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
         stmt.BindId(5, catid);
@@ -167,7 +167,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Single Insert (numeric parameters)", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Single Insert (numeric parameters)");
     }
 
 
@@ -191,7 +191,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeAuthority.Id,CodeValue,CodeNamespace, Category.Id) VALUES (?,?,?,?,'',?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeSpec.Id,CodeValue,CodeScope, Category.Id) VALUES (?,?,?,?,'',?)");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -214,7 +214,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         const ECInstanceId id((uint64_t) (i + 10));
         insertStmt->BindId(1, id);
         insertStmt->BindId(2, modelId);
-        insertStmt->BindId(3, s_codeAuthorityId);
+        insertStmt->BindId(3, s_codeSpecId);
         code.Sprintf("Id-%d", i);
         insertStmt->BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
 
@@ -239,7 +239,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Insert & Update sub props", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Insert and Update sub props");
     }
 
 //--------------------------------------------------------------------------------------
@@ -261,12 +261,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeAuthority.Id,CodeValue,CodeNamespace,Category.Id,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,Model.Id,CodeSpec.Id,CodeValue,CodeScope,Category.Id,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (:ecinstanceid,:modelid,:authorityid,:code,'',:categoryid,"
+                                                                             "VALUES (:ecinstanceid,:modelid,:codespecid,:code,'',:categoryid,"
                                                                              ":p11,:p12,:p13,"
                                                                              ":p21,:p22,:p23,"
                                                                              ":p31,:p32,:p33,"
@@ -278,7 +278,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         const ECInstanceId id((uint64_t) (i + 10));
         stmt.BindId(stmt.GetParameterIndex("ecinstanceid"), id);
         stmt.BindId(stmt.GetParameterIndex("modelid"), modelId);
-        stmt.BindId(stmt.GetParameterIndex("authorityid"), s_codeAuthorityId);
+        stmt.BindId(stmt.GetParameterIndex("codespecid"), s_codeSpecId);
         code.Sprintf("Id-%d", i);
         stmt.BindText(stmt.GetParameterIndex("code"), code.c_str(), IECSqlBinder::MakeCopy::No);
         stmt.BindId(stmt.GetParameterIndex("categoryid"), catid);
@@ -306,7 +306,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Single Insert (named parameters)", s_instanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_instanceCount, "Single Insert (named parameters)");
     }
 
 struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture

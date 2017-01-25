@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -238,11 +238,10 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraViewDefinition::Camera const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
-    DVec3d    xVector, yVector, zVector;
+    DVec3d xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
 
-    DPoint3d xExtent, yExtent, zExtent;
-    DPoint3d origin;
+    DPoint3d origin, xExtent, yExtent, zExtent;
 
     // Compute root vectors along edges of view frustum.
     if (camera)
@@ -1117,6 +1116,30 @@ ColorDef DgnViewport::GetBackgroundColor() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+ProgressiveTask::Completion DgnViewport::ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, RenderListContext& context)
+    {
+    ProgressiveTask::Completion status = ProgressiveTask::Completion::Finished;
+    for (auto entry=m_progressiveTasks.begin(); entry != m_progressiveTasks.end(); )
+        {
+        ProgressiveTask::WantShow thisShowFrame = ProgressiveTask::WantShow::No;
+        status = (*entry)->_DoProgressive(context, thisShowFrame);
+
+        if (thisShowFrame == ProgressiveTask::WantShow::Yes) // any of them can cause showframe
+            showFrame = ProgressiveTask::WantShow::Yes;
+
+        if (ProgressiveTask::Completion::Aborted == status)
+            break;
+
+        entry = m_progressiveTasks.erase(entry);
+        showFrame = ProgressiveTask::WantShow::Yes;
+        }
+
+    return status;
+    }
+
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SaveViewUndo()
@@ -1251,4 +1274,18 @@ void Frustum::ScaleAboutCenter(double scale)
     m_pts[NPC_101].Interpolate(orig.GetCorner(NPC_010), f, orig.GetCorner(NPC_101));
     m_pts[NPC_011].Interpolate(orig.GetCorner(NPC_100), f, orig.GetCorner(NPC_011));
     m_pts[NPC_111].Interpolate(orig.GetCorner(NPC_000), f, orig.GetCorner(NPC_111));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DMap4d Frustum::ToDMap4d() const
+    {
+    DPoint3d org = GetCorner(NPC_LeftBottomRear);
+    DVec3d xVec = DVec3d::FromStartEnd(org, GetCorner(NPC_RightBottomRear));
+    DVec3d yVec = DVec3d::FromStartEnd(org, GetCorner(NPC_LeftTopRear));
+    DVec3d zVec = DVec3d::FromStartEnd(org, GetCorner(NPC_LeftBottomFront));
+    DMap4d map;
+    bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
+    return map;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HitDetail.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,17 +90,18 @@ ENUM_IS_FLAGS(HitDetailSource)
 //=======================================================================================
 struct  GeomDetail
 {
+    friend struct PickContext;
 private:
-    ICurvePrimitivePtr      m_primitive;                // curve primitve for hit (world coordinates).
-    DPoint3d                m_closePoint;               // the closest point on geometry (world coordinates).
-    DVec3d                  m_normal;                   // surface hit normal (world coordinates).
-    HitGeomType             m_geomType;                 // category hit geometry falls into.
-    HitDetailSource         m_detailSource;             // mask of HitDetailSource values.
-    HitPriority             m_hitPriority;              // Relative priority of hit.
-    bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
-    double                  m_viewDist;                 // xy distance to hit (view coordinates).
-    double                  m_viewZ;                    // z distance to hit (view coordinates).
-    GeometryStreamEntryId   m_geomId;                   // id of geometric primitive that generated this hit.
+    ICurvePrimitivePtr m_primitive;     // curve primitve for hit (world coordinates).
+    DPoint3d m_closePoint;              // the closest point on geometry (world coordinates).
+    DVec3d m_normal;                    // surface hit normal (world coordinates).
+    HitGeomType m_geomType;             // category hit geometry falls into.
+    HitDetailSource m_detailSource;     // mask of HitDetailSource values.
+    HitPriority m_hitPriority;          // Relative priority of hit.
+    bool m_nonSnappable;                // non-snappable detail, ex. pattern or line style.
+    double m_viewDist;                  // xy distance to hit (view coordinates).
+    double m_viewZ;                     // z distance to hit (view coordinates).
+    GeometryStreamEntryId m_geomId;     // id of geometric primitive that generated this hit.
 
 public:
     DGNPLATFORM_EXPORT void Init();
@@ -157,14 +158,14 @@ public:
 struct HitDetail : RefCountedBase
 {
 protected:
-    DgnViewportR        m_viewport;
-    DgnViewportP        m_sheetViewport; // null unless this hit was generated from a view attachment on a sheet
-    DgnElementId        m_elementId;
-    HitSource           m_locateSource;         // Operation that generated the hit.
-    DPoint3d            m_testPoint;            // the point that was used to search (world coordinates).
-    GeomDetail          m_geomDetail;           // element specific hit details.
-    IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
-    SubSelectionMode    m_subSelectionMode;     // segment hilite/flash mode.
+    DgnViewportR m_viewport;
+    Sheet::Attachment::ViewportP m_sheetViewport; // null unless this hit was generated from a view attachment on a sheet
+    DgnElementId m_elementId;
+    HitSource m_locateSource;         // Operation that generated the hit.
+    DPoint3d m_testPoint;            // the point that was used to search (world coordinates).
+    GeomDetail m_geomDetail;           // element specific hit details.
+    IElemTopologyPtr m_elemTopo;             // details about the topology of the element.
+    SubSelectionMode m_subSelectionMode;     // segment hilite/flash mode.
 
     virtual HitDetailType _GetHitType() const {return HitDetailType::Hit;}
     virtual void _GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
@@ -178,16 +179,16 @@ protected:
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewportP, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, Sheet::Attachment::ViewportP attachVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
-
     void SetLocateSource(HitSource source) {m_locateSource = source;}
     void SetHitPoint(DPoint3dCR pt) {_SetHitPoint(pt);}
     void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
-
+    bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
+    Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     void Draw(ViewContextR context) const {_Draw(context);}
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
@@ -199,22 +200,18 @@ public:
     DgnViewportR GetViewport() const {return m_viewport;}
     HitSource GetLocateSource() const {return m_locateSource;}
     DPoint3dCR GetTestPoint() const {return m_testPoint;}
-
     DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
     SubSelectionMode GetSubSelectionMode() const {return _GetSubSelectionMode(); }
     bool IsSameHit(HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
-
     GeomDetailCR GetGeomDetail() const {return m_geomDetail;}
     GeomDetailR GetGeomDetailW() {return m_geomDetail;}
-
     IElemTopologyCP GetElemTopology() const {return m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr;}
     void SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
 };
 
-typedef RefCountedPtr<HitDetail> HitDetailPtr;
-typedef RefCountedCPtr<HitDetail> HitDetailCPtr;
-typedef bvector<RefCountedPtr<HitDetail>> HitDetailArray;
+DEFINE_REF_COUNTED_PTR(HitDetail)
+typedef bvector<HitDetailPtr> HitDetailVector;
 
 //=======================================================================================
 //! The result of a "locate" is a sorted list of objects that
@@ -222,7 +219,7 @@ typedef bvector<RefCountedPtr<HitDetail>> HitDetailArray;
 //! are somehow "better" than those later on.
 // @bsiclass                                                      KeithBentley    04/01
 //=======================================================================================
-struct  HitList : private HitDetailArray
+struct HitList : private HitDetailVector
 {
     // NOTE: use private inheritance -- we don't want anybody calling the base class "empty" method!
     int             m_currHit;
@@ -288,23 +285,23 @@ enum SnapHeat
 //=======================================================================================
 // @bsiclass                                                      KeithBentley    04/01
 //=======================================================================================
-struct  SnapDetail : HitDetail
+struct SnapDetail : HitDetail
 {
     DEFINE_T_SUPER(HitDetail)
 
 protected:
-    SnapHeat    m_heat;
-    Point2d     m_screenPt;
-    uint32_t    m_divisor;
-    Render::ISpriteP    m_sprite;
-    SnapMode    m_snapMode;         // snap mode currently associated with this snap
-    SnapMode    m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
-    double      m_minScreenDist;    // minimum distance to element in screen coordinates.
-    DPoint3d    m_snapPoint;        // hitpoint adjusted by snap
-    DPoint3d    m_adjustedPt;       // sometimes accusnap adjusts the point after the snap.
-    int         m_customKeypointSize;
-    Byte*       m_customKeypointData;
-    bool        m_allowAssociations;
+    SnapHeat m_heat;
+    Point2d m_screenPt;
+    uint32_t m_divisor;
+    Render::ISpriteP m_sprite;
+    SnapMode m_snapMode;         // snap mode currently associated with this snap
+    SnapMode m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
+    double m_minScreenDist;    // minimum distance to element in screen coordinates.
+    DPoint3d m_snapPoint;        // hitpoint adjusted by snap
+    DPoint3d m_adjustedPt;       // sometimes accusnap adjusts the point after the snap.
+    int m_customKeypointSize;
+    Byte* m_customKeypointData;
+    bool m_allowAssociations;
 
     DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint() const override;
     DGNPLATFORM_EXPORT virtual void _SetHitPoint(DPoint3dCR snapPt) override;
@@ -315,17 +312,13 @@ public:
     DGNPLATFORM_EXPORT explicit SnapDetail(HitDetailCP from);
     DGNPLATFORM_EXPORT explicit SnapDetail(SnapDetail const&);
     DGNPLATFORM_EXPORT ~SnapDetail();
-
     void SetScreenPoint(Point2d const& pt) {m_screenPt = pt;} //!< Always set by DgnPlatform snap logic
     bool GetAllowAssociations() const {return m_allowAssociations;}
     void SetAllowAssociations(bool allowAssociations) {m_allowAssociations = allowAssociations;}
-
     Render::ISpriteP GetSprite() const {return m_sprite;}
     void SetSprite(Render::ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
-
     DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
-
     bool IsHot() const {return m_heat != SNAP_HEAT_None;}
     bool IsPointOnCurve() const {return m_heat == SNAP_HEAT_InRange;}
     SnapHeat GetHeat() const {return m_heat;}
@@ -336,14 +329,11 @@ public:
     Point2d const& GetScreenPoint() const {return m_screenPt;}
     SnapMode GetSnapMode() const {return m_snapMode;}
     SnapMode GetOriginalSnapMode() const {return m_originalSnapMode;}
-
     DGNPLATFORM_EXPORT bool PointWasAdjusted() const;
-
     void SetSnapMode(SnapMode snapMode, bool isOriginal=true) {m_snapMode=snapMode; if(isOriginal) m_originalSnapMode=snapMode;}
     void SetSnapDivisor(uint32_t divisor) {m_divisor = divisor ? divisor : 2;}
     void SetAdjustedPoint(DPoint3dCR adjustedPt) {m_adjustedPt = adjustedPt;}
     void SetHeat(SnapHeat isHot) {m_heat = isHot;}
-
     DGNPLATFORM_EXPORT void SetSnapPoint(DPoint3dCR snapPt, bool forceHot, double hotDistance); //!< Sets hit point, screen point, screen distance, and snap heat from world input point. 
 };
 

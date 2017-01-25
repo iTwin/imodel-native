@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ECSqlClassParams.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,25 +42,48 @@ private:
     bmap<uint32_t, bpair<T_ElementPropGet, T_ElementPropSet>> m_propertyAccessors; // custom-handled property get and set functions
     bmap<uint32_t, T_ElementPropValidator> m_autoPropertyValidators; // auto-handled property custom validation functions
 public:
+    //! @private
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
 
+    //! @private
     Utf8StringCR GetSelectECSql() const { return m_select; }
+    //! @private
     Utf8StringCR GetInsertECSql() const { return m_insert; }
+    //! @private
     Utf8StringCR GetUpdateECSql() const { return m_update; }
 
+    //! @private
     BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
+    //! @private
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
+    //! @private
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
 
+    //! @private
     void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
+    //! @private
     Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
 
-    void RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc);
+    //! Register the C++ functions that should be used to access custom-handled properties by name. @see DgnElement::_GetPropertyValue
+    //! @param layout The layout of the element's class
+    //! @param propName The name of the property
+    //! @param getFunc The function to get the property value
+    //! @param setFunc The function to set the property value
+    DGNPLATFORM_EXPORT void RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc);
+
+    //! @private
     bpair<T_ElementPropGet,T_ElementPropSet> const* GetPropertyAccessors(uint32_t propIdx) const;
 
-    void RegisterPropertyValidator(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropValidator);
+    //! Register a C++ function that should be used to validate auto-handled property values when they are set. @see DgnElement::_SetPropertyValue
+    //! @param layout The layout of the element's class
+    //! @param propName The name of the property
+    //! @param validator The function to validate new property values before they are set
+    void RegisterPropertyValidator(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropValidator validator);
+
+    //! @private
     T_ElementPropValidator const* GetPropertyValidator(uint32_t propIdx) const;
 
+    //! @private
     uint32_t GetAutoPropertyStatementType(uint32_t propIdx);
     };
 

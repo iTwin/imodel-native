@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LinkElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -500,18 +500,21 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The handler for EmbeddedFileLink elements
     struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The handler for RepositoryLink elements
     struct EXPORT_VTABLE_ATTRIBUTE RepositoryLinkHandler : UrlLinkHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, RepositoryLink, RepositoryLinkHandler, UrlLinkHandler, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

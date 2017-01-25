@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsDb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -364,38 +364,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
     pSym->m_geomPartId = DgnGeometryPartId(LsJsonHelpers::GetUInt64(jsonDef, "geomPartId", 0));
     pSym->m_symFlags = LsJsonHelpers::GetUInt32(jsonDef, "symFlags", 0);
     pSym->m_storedScale = LsJsonHelpers::GetDouble(jsonDef, "scale", 0.0);
-    pSym->m_lineColorByLevel = LsJsonHelpers::GetInt32(jsonDef, "colorBySubCat", 0) != 0;
-    pSym->m_lineColor = ColorDef(LsJsonHelpers::GetUInt32(jsonDef, "color", 0));
-    pSym->m_fillColor = ColorDef(LsJsonHelpers::GetUInt32(jsonDef, "fillColor", 0));
-    pSym->m_weight = LsJsonHelpers::GetUInt32(jsonDef, "weight", 0);
 
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    // If we don't have a solid color fill, set fill to match line color...
-    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
-        {
-        if (params.IsLineColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else
-            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
-        }
-    else
-        {
-        if (params.IsFillColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else if (params.IsFillColorFromViewBackground())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
-        else
-            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
-        }
-#endif
-
-
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    if (params.IsWeightFromSubCategoryAppearance())
-        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
-    else
-        v10Symbol->m_weight = params.GetWeight();
-#endif
     *newComp = pSym;
     return LINESTYLE_STATUS_Success;
     }
@@ -403,8 +372,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale, 
-                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight)
+void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale) 
     {
     if (base.x != 0)
         result["baseX"] = base.x;
@@ -424,42 +392,6 @@ void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR bas
 
     if (storedScale != 0)
         result["scale"] = storedScale;
-
-    if (colorBySubcategory)
-        result["colorBySubCat"] = 1;
-    else
-        result["color"] = lineColor.GetValue();
-
-    result["fillColor"] = fillColor.GetValue();
-
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    // If we don't have a solid color fill, set fill to match line color...
-    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
-        {
-        if (params.IsLineColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else
-            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
-        }
-    else
-        {
-        if (params.IsFillColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else if (params.IsFillColorFromViewBackground())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
-        else
-            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
-        }
-#endif
-
-    result["weight"] = weight;
-
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    if (params.IsWeightFromSubCategoryAppearance())
-        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
-    else
-        v10Symbol->m_weight = params.GetWeight();
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -469,34 +401,7 @@ void LsSymbolComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
 
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    // If we don't have a solid color fill, set fill to match line color...
-    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
-        {
-        if (params.IsLineColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else
-            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
-        }
-    else
-        {
-        if (params.IsFillColorFromSubCategoryAppearance())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
-        else if (params.IsFillColorFromViewBackground())
-            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
-        else
-            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
-        }
-#endif
-
-#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
-    if (params.IsWeightFromSubCategoryAppearance())
-        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
-    else
-        v10Symbol->m_weight = params.GetWeight();
-#endif
-
-    SaveSymbolDataToJson(result, m_symBase, m_symSize, m_geomPartId, m_symFlags, m_storedScale, m_lineColorByLevel, m_lineColor, m_fillColor, false, m_weight);
+    SaveSymbolDataToJson(result, m_symBase, m_symSize, m_geomPartId, m_symFlags, m_storedScale);
     }
 
 //---------------------------------------------------------------------------------------

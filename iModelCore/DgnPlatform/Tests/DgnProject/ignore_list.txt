@@ -6,7 +6,7 @@ GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
 #TFS 627787
 IndirectLocksTest.*
 
-BackwardsCompatibilityTests.OpenDgndbInCurrent
+BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -17,24 +17,15 @@ ConfigurationManagerTest.*                             # UmarH -- Tests are port
 #TFS 386647 : Does not import element aspects
 ElementAspectTests.ImportElementsWithAspect
 
-# no prepublished files
-DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
-
 #TFS 557952: FindSection method in Csvfile.h does not work properly
 CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
 CsvFileTests.GetSections
 
-#TFS 629338
-# bim0200dev, x64 & x86, DEBUG, after merge
-ImportTest.ImportElementsWithDependencies
-ImportTest.ImportElementsWithAuthorities
-
 #TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
-
 DgnECNavigatorTest.GetElementInfo
 
 EcutilsTests.ConvertECValueToJson
@@ -46,4 +37,3 @@ EcutilsTests.ConvertECValueToJson
     #       Which is: 32768
     # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
 
-ElementAspectTests.GenericUniqueAspect_CRUD #TFS 642436

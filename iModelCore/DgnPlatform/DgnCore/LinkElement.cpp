@@ -355,7 +355,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
 //---------------------------------------------------------------------------------------
 DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8CP name)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_LinkElement, model, name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -569,4 +569,107 @@ BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                             02/17
+//---------------------------------------------------------------------------------------
+void dgn_ElementHandler::UrlLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    
+    params.RegisterPropertyAccessors(layout, URLLINK_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (UrlLink&) elIn;
+            value.SetUtf8CP(el.GetDescription());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (UrlLink&) elIn;
+            el.SetDescription(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, URLLINK_Url,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (UrlLink&) elIn;
+            value.SetUtf8CP(el.GetUrl());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (UrlLink&) elIn;
+            el.SetUrl(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                             02/17
+//---------------------------------------------------------------------------------------
+void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    
+    params.RegisterPropertyAccessors(layout, EMBEDDEDFILELINK_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (EmbeddedFileLink&) elIn;
+            value.SetUtf8CP(el.GetDescription());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (EmbeddedFileLink&) elIn;
+            el.SetDescription(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, EMBEDDEDFILELINK_Name,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (EmbeddedFileLink&) elIn;
+            value.SetUtf8CP(el.GetName());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (EmbeddedFileLink&) elIn;
+            el.SetName(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            });
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                             02/17
+//---------------------------------------------------------------------------------------
+void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    
+#define NOT_AVAILABLE_VIA_PROPERTY_API(PROPNAME)\
+    params.RegisterPropertyAccessors(layout, PROPNAME,\
+        [] (ECValueR value, DgnElementCR elIn)\
+            {\
+            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
+            },\
+        [] (DgnElementR elIn, ECValueCR value)\
+            {\
+            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
+            });
+
+    NOT_AVAILABLE_VIA_PROPERTY_API("Url")
+    NOT_AVAILABLE_VIA_PROPERTY_API("Descr")
+    NOT_AVAILABLE_VIA_PROPERTY_API("RepositoryGuid")
+
+#undef NOT_AVAILABLE_VIA_PROPERTY_API
+    }
 END_BENTLEY_DGN_NAMESPACE

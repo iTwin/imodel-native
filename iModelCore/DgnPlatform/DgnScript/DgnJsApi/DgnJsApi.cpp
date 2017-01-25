@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnJsApi/DgnJsApi.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -490,9 +490,9 @@ JsDgnCode* JsDgnCode::FromJson(JsDgnDbP jsdb, Utf8StringCR jsonStr)
         }
 
     auto db = jsdb->m_db;
-    auto a = db->Authorities().QueryAuthorityId(json["AuthorityId"].asCString());
+    auto a = db->CodeSpecs().QueryCodeSpecId(json["CodeSpecId"].asCString());
     auto v = json["Value"].asCString();
-    auto n = json["Namespace"].asCString();
+    auto n = json["Scope"].asCString();
     return new JsDgnCode(DgnCode(a, v, n));
     }
 
@@ -940,7 +940,7 @@ struct ModelMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarsha
 
 struct ObjectIdSetMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
     {
-    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr)
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) override
         {
         np = ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectIdSet(*(DgnElementIdSet*)ptr), true);
         }

@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/Constants.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,12 +14,14 @@ static const char s_gltfMagic[]              = "glTF";
 static const char s_b3dmMagic[]              = "b3dm";
 static const char s_compositeTileMagic[]     = "cmpt";
 static const char s_instanced3dMagic[]       = "i3dm";
+static const char s_pointCloudMagic[]        = "pnts";
 
 static const uint32_t s_b3dmVersion          = 1;
 static const uint32_t s_gltfVersion          = 1;
 static const uint32_t s_gltfSceneFormat      = 0;
 static const uint32_t s_compositeTileVersion = 1; 
 static const uint32_t s_instanced3dVersion   = 1;
+static const uint32_t s_pointCloudVersion    = 1;
 
 
 #define GLTF_LINES 1

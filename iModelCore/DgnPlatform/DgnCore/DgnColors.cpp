@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnColors.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -109,7 +109,7 @@ DgnTrueColorId DgnTrueColor::FindMatchingColor(ColorDef colorDef, DgnDbR db)
     }
 
 #define COUNT_TrueColor "SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_TrueColor)
-#define COUNT_TrueColorByBook COUNT_TrueColor " WHERE [CodeNamespace]=?"
+#define COUNT_TrueColorByBook COUNT_TrueColor " WHERE [CodeScope]=?"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -139,9 +139,9 @@ ColorDef DgnTrueColor::Entry::GetColorDef() const
     return ColorDef(static_cast<uint32_t>(m_statement->GetValueInt(3)));
     }
 
-#define SELECT_TrueColor "SELECT ECInstanceId, [CodeValue], [CodeNamespace], Data FROM " BIS_SCHEMA(BIS_CLASS_TrueColor)
-#define SELECT_TrueColorByBook SELECT_TrueColor " WHERE [CodeNamespace]=?"
-#define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY [CodeNamespace], [CodeValue]"
+#define SELECT_TrueColor "SELECT ECInstanceId, [CodeValue], [CodeScope], Data FROM " BIS_SCHEMA(BIS_CLASS_TrueColor)
+#define SELECT_TrueColorByBook SELECT_TrueColor " WHERE [CodeScope]=?"
+#define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY [CodeScope], [CodeValue]"
 #define SELECT_ORDERED_TrueColorByBook SELECT_TrueColorByBook " ORDER BY [CodeValue]"
 
 /*---------------------------------------------------------------------------------**//**

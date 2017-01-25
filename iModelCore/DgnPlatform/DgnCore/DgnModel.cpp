@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnModel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -155,9 +155,18 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
 Utf8String DgnModel::GetName() const
     {
     // WIP: keep this method around to avoid having to change too much source code.  Use the CodeValue of the modeled element as this model's name.
+    DgnElementCPtr modeledElement = GetModeledElement();
+    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnModel::GetModeledElement() const
+    {
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
-    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
+    return modeledElement;
     }
 
 /*---------------------------------------------------------------------------------**//**

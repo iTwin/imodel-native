@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RealityDataCache.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,12 +25,11 @@ DEFINE_REF_COUNTED_PTR(Cache)
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase
 {
-    typedef std::chrono::steady_clock::time_point TimePoint;
     struct Worker : RefCountedBase
     {
         Cache& m_cache;
         bool m_hasChanges = false;
-        TimePoint m_saveTime;
+        BeTimePoint m_saveTime;
 
         Worker(Cache& cache) : m_cache(cache) {}
         Worker(Worker const&) = delete;
@@ -46,7 +45,7 @@ protected:
     bool m_saveActive = false;
     bool m_workerRunning = false;
     int m_accessors = 0;
-    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(5);
+    BeDuration m_saveDelay = BeDuration::Seconds(5);
     WorkerPtr m_worker;
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;

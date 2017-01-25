@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/BisCoreNames.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,8 @@
 #define BIS_ELEMENT_PROP_ECInstanceId "ECInstanceId"
 #define BIS_ELEMENT_PROP_Model "Model"
 #define BIS_ELEMENT_PROP_FederationGuid "FederationGuid"
-#define BIS_ELEMENT_PROP_CodeAuthority "CodeAuthority"
-#define BIS_ELEMENT_PROP_CodeNamespace "CodeNamespace"
+#define BIS_ELEMENT_PROP_CodeSpec "CodeSpec"
+#define BIS_ELEMENT_PROP_CodeScope "CodeScope"
 #define BIS_ELEMENT_PROP_CodeValue "CodeValue"
 #define BIS_ELEMENT_PROP_UserLabel "UserLabel"
 #define BIS_ELEMENT_PROP_Parent "Parent"
@@ -27,3 +27,5 @@
 #define GEOM3_Yaw "Yaw"
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
+
+#define PHYSICAL_PhysicalType   "PhysicalType"

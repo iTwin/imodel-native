@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGraphics.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1132,64 +1132,10 @@ void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicBuilderR grap
         }
     }
 
-#if defined (WIP_NEEDSWORK_ELEMENT)
-static const double TOLERANCE_ChainMiterCosLimit = .707;
-
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/12
 +===============+===============+===============+===============+===============+======*/
-struct CurveVectorStroker : GraphicStroker
-{
-CurveVectorCR   m_curves;
-
-CurveVectorStroker(CurveVectorCR curves) : m_curves(curves) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AddCurveVector(ElementHandleCR eh, ViewContextR context, bool isFilled)
-    {
-    // NOTE: Always send outline to QVis as open profiles, avoids expensive QV topological analysis and problems with non-planar geometry...
-    if (!isFilled && m_curves.IsAnyRegionType() && context.GetIViewDraw().IsOutputQuickVision())
-        {
-        if (eh.GetDgnModelP ()->Is3d())
-            WireframeGeomUtil::DrawOutline(m_curves, context.GetCurrentGraphicR());
-        else
-            WireframeGeomUtil::DrawOutline2d(m_curves, context.GetCurrentGraphicR(), context.GetDisplayPriority());
-        return;
-        }
-
-    if (eh.GetDgnModelP ()->Is3d())
-        context.GetCurrentGraphicR().AddCurveVector(m_curves, isFilled);
-    else
-        context.GetCurrentGraphicR().AddCurveVector2d(m_curves, isFilled, context.GetDisplayPriority());
-    }
-
-}; // CurveVectorStroker
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  02/12
-+===============+===============+===============+===============+===============+======*/
-struct CurveVectorFillStroker : CurveVectorStroker
-{
-CurveVectorFillStroker(CurveVectorCR curves) : CurveVectorStroker(curves) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _StrokeForCache(CachedDrawHandleCR dh, ViewContextR context, double pixelSize) override
-    {
-    ElementHandleCR eh = *dh.GetElementHandleCP();
-
-    AddCurveVector(eh, context, true);
-    }
-
-}; // CurveVectorFillStroker
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  02/12
-+===============+===============+===============+===============+===============+======*/
-struct CurveVectorOutlineStroker : CurveVectorStroker
+struct CurveVectorOutlineStroker
 {
 /*----------------------------------------------------------------------------------*//**
 * @bsiclass                                                     Keith.Bentley   04/03
@@ -1213,18 +1159,6 @@ struct ChainTangentInfo
     void        Init(DPoint3dCR point, DVec3dCR tangent) {m_point = point; m_tangent = tangent; m_isValid = true;}
 
     }; // ChainTangentInfo
-
-CurveVectorOutlineStroker(CurveVectorCR curves) : CurveVectorStroker(curves) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _StrokeForCache(CachedDrawHandleCR dh, ViewContextR context, double pixelSize) override
-    {
-    ElementHandleCR eh = *dh.GetElementHandleCP();
-
-    AddCurveVector(eh, context, false);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
@@ -1258,270 +1192,262 @@ static void GetChainTangents(ChainTangentInfo* startInfo, ChainTangentInfo* endI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void DrawStyled(ViewContextR context, CurveVectorCR curves, bool is3d, double zDepth)
+static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineStyleCR currLStyle, LineStyleSymbCR lsSymbIn)
     {
     if (1 > curves.size())
         return;
 
-    bool              isClosed  = curves.IsClosedPath();
-    bool              isComplex = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive());
-    ChainTangentInfo  currEnd, prevEnd, nextEnd, currStart, nextStart, chainStart;
-
-    if (isComplex) // Support start/end tangents for linestyle w/thickness...
+    if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
-        GetChainTangents(&currStart, &currEnd, *curves.front());
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (curve.IsNull())
+                continue;
 
-        if (isClosed)
-            GetChainTangents(NULL, &prevEnd, *curves.back());
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                {
+                BeAssert (false && "Unexpected entry in union/parity region.");
 
-        chainStart = currStart;
+                return; // Each loop must be a child curve bvector (a closed loop or parity region for a union region)...
+                }
+
+            DrawStyled(*curve->GetChildCurveVectorCP(), lsContext, currLStyle, lsSymbIn);
+            }
         }
-
-    DPoint3d    startTangent, endTangent;
-    DPoint3d    *pStartTangent, *pEndTangent;
-    size_t      nCmpns = curves.size();
-
-    for (size_t iCmpn = 0; iCmpn < nCmpns; ++iCmpn)
+    else
         {
-        ICurvePrimitivePtr curve = curves.at(iCmpn);
-
-        if (!curve.IsValid())
-            continue;
+        bool              isClosed  = curves.IsClosedPath();
+        bool              isComplex = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive());
+        bool              is3d = lsContext.GetViewContext().Is3dView();
+        double            zDepth = (is3d ? 0.0 : lsContext.GetGeometryParams().GetNetDisplayPriority());
+        ChainTangentInfo  currEnd, prevEnd, nextEnd, currStart, nextStart, chainStart;
+        LineStyleSymb     lsSymb = lsSymbIn;
 
         if (isComplex) // Support start/end tangents for linestyle w/thickness...
             {
-            ICurvePrimitivePtr nextCurve = iCmpn < nCmpns-1 ? curves.at(iCmpn+1) : NULL;
+            GetChainTangents(&currStart, &currEnd, *curves.front());
 
-            if (!nextCurve.IsValid())
+            if (isClosed)
+                GetChainTangents(NULL, &prevEnd, *curves.back());
+
+            chainStart = currStart;
+            }
+
+        static double chainMiterCosLimit = 0.707;
+        DVec3d startTangent, endTangent;
+        DVec3d *pStartTangent, *pEndTangent;
+        size_t nCmpns = curves.size();
+
+        for (size_t iCmpn = 0; iCmpn < nCmpns; ++iCmpn)
+            {
+            ICurvePrimitivePtr curve = curves.at(iCmpn);
+
+            if (!curve.IsValid())
+                continue;
+
+            if (isComplex) // Support start/end tangents for linestyle w/thickness...
                 {
-                if (isClosed)
+                ICurvePrimitivePtr nextCurve = iCmpn < nCmpns-1 ? curves.at(iCmpn+1) : NULL;
+
+                if (!nextCurve.IsValid())
                     {
-                    nextStart = chainStart;
+                    if (isClosed)
+                        {
+                        nextStart = chainStart;
+                        }
+                    else
+                        {
+                        nextStart.SetValid(false);
+                        nextEnd.SetValid(false);
+                        }
                     }
                 else
                     {
-                    nextStart.SetValid(false);
-                    nextEnd.SetValid(false);
+                    GetChainTangents(&nextStart, &nextEnd, *nextCurve);
                     }
                 }
-            else
+
+            pStartTangent = pEndTangent = NULL;
+
+            if (prevEnd.IsValid() && currStart.IsValid())
                 {
-                GetChainTangents(&nextStart, &nextEnd, *nextCurve);
-                }
-            }
-
-        pStartTangent = pEndTangent = NULL;
-
-        if (prevEnd.IsValid() && currStart.IsValid())
-            {
-            if (currStart.GetTangent().DotProduct(prevEnd.GetTangent()) < TOLERANCE_ChainMiterCosLimit)
-                {
-                startTangent.DifferenceOf(currStart.GetTangent(), prevEnd.GetTangent());
-
-                if (0.0 != startTangent.Normalize())
-                    pStartTangent = &startTangent;
-                }
-            }
-
-        if (currEnd.IsValid() && nextStart.IsValid())
-            {
-            if (currEnd.GetTangent().DotProduct(nextStart.GetTangent()) < TOLERANCE_ChainMiterCosLimit)
-                {
-                endTangent.DifferenceOf(currEnd.GetTangent(), nextStart.GetTangent());
-
-                if (0.0 != endTangent.Normalize())
-                    pEndTangent = &endTangent;
-                }
-            }
-
-        context.SetLinestyleTangents(pStartTangent, pEndTangent); // NOTE: This needs to happen before CookGeometryParams to setup modifiers!
-
-        if (isComplex)
-            context.CookGeometryParams(); // Set/Clear linestyle start/end tangent modifiers. (needed for constant width change...)
-
-        switch (curve->GetCurvePrimitiveType())
-            {
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-                {
-                DSegment3d  segment = *curve->GetLineCP();
-
-                if (is3d)
+                if (currStart.GetTangent().DotProduct(prevEnd.GetTangent()) < chainMiterCosLimit)
                     {
-                    context.DrawStyledLineString3d(2, segment.point, NULL);
+                    startTangent.DifferenceOf(currStart.GetTangent(), prevEnd.GetTangent());
+
+                    if (0.0 != startTangent.Normalize())
+                        pStartTangent = &startTangent;
+                    }
+                }
+
+            if (currEnd.IsValid() && nextStart.IsValid())
+                {
+                if (currEnd.GetTangent().DotProduct(nextStart.GetTangent()) < chainMiterCosLimit)
+                    {
+                    endTangent.DifferenceOf(currEnd.GetTangent(), nextStart.GetTangent());
+
+                    if (0.0 != endTangent.Normalize())
+                        pEndTangent = &endTangent;
+                    }
+                }
+
+            lsSymb.SetTangents(pStartTangent, pEndTangent);
+
+            switch (curve->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    {
+                    DSegment3d segment = *curve->GetLineCP();
+
+                    if (!is3d)
+                        segment.point[0].z = segment.point[1].z = zDepth;
+
+                    currLStyle._GetComponent()->_StrokeLineString(lsContext, lsSymb, segment.point, 2, false);
                     break;
                     }
 
-                DPoint2d    points[2];
-
-                points[0].Init(segment.point[0]);
-                points[1].Init(segment.point[1]);
-                    
-                context.DrawStyledLineString2d(2, points, zDepth, NULL);
-                break;
-                }
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                {
-                bvector<DPoint3d> const* points = curve->GetLineStringCP();
-
-                if (is3d)
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
                     {
-                    context.DrawStyledLineString3d((int) points->size(), &points->front(), NULL, !isComplex && isClosed);
+                    if (!is3d)
+                        {
+                        bvector<DPoint3d> points = *curve->GetLineStringCP();
+
+                        for (DPoint3dR pt : points)
+                            pt.z = zDepth;
+
+                        currLStyle._GetComponent()->_StrokeLineString(lsContext, lsSymb, &points.front(), (int) points.size(), !isComplex && isClosed);
+                        break;
+                        }
+
+                    currLStyle._GetComponent()->_StrokeLineString(lsContext, lsSymb, &curve->GetLineStringCP()->front(), (int) curve->GetLineStringCP()->size(), !isComplex && isClosed);
                     break;
                     }
 
-                int                      nPts = (int) points->size();
-                std::valarray<DPoint2d>  localPoints2dBuf(nPts);
-
-                for (int iPt = 0; iPt < nPts; ++iPt)
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                     {
-                    DPoint3dCP  tmpPt = &points->front()+iPt;
-
-                    localPoints2dBuf[iPt].x = tmpPt->x;
-                    localPoints2dBuf[iPt].y = tmpPt->y;
-                    }
-
-                context.DrawStyledLineString2d(nPts, &localPoints2dBuf[0], zDepth, NULL, !isComplex && isClosed);
-                break;
-                }
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-                {
-                DEllipse3d  ellipse = *curve->GetArcCP();
-
-                if (is3d)
-                    {
-                    context.DrawStyledArc3d(ellipse, !isComplex && isClosed, NULL);
+                    currLStyle._GetComponent()->_StrokeArc(lsContext, lsSymb, *curve->GetArcCP(), is3d, zDepth, !isComplex && isClosed);
                     break;
                     }
 
-                context.DrawStyledArc2d(ellipse, !isComplex && isClosed, zDepth, NULL);
-                break;
-                }
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-                {
-                MSBsplineCurveCP bcurve = curve->GetProxyBsplineCurveCP();
-        
-                if (is3d)
+                default:
                     {
-                    context.DrawStyledBSplineCurve3d(*bcurve);
+                    MSBsplineCurveCP bcurve = curve->GetProxyBsplineCurveCP();
+
+                    if (nullptr != bcurve && bcurve->GetIntOrder() > 0 && bcurve->GetIntNumPoles() > 0)
+                        currLStyle._GetComponent()->_StrokeBSplineCurve(lsContext, lsSymb, *bcurve, is3d, zDepth);
+                    else
+                        BeAssert(false && "Unexpected entry in CurveVector.");
                     break;
                     }
-
-                context.DrawStyledBSplineCurve2d(*bcurve, zDepth);
-                break;
                 }
 
-            default:
-                {
-                BeAssert(false && "Unexpected entry in CurveVector.");
-                break;
-                }
+            prevEnd   = currEnd;
+            currStart = nextStart;
+            currEnd   = nextEnd;
             }
-
-        prevEnd   = currEnd;
-        currStart = nextStart;
-        currEnd   = nextEnd;
         }
-
-    context.SetLinestyleTangents(NULL, NULL); // Make sure we clear linestyle tangents...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void DrawStyledCurveVector2d(ViewContextR context, CurveVectorCR curve, double zDepth)
-    {
-    if (NULL == context.GetCurrLineStyle(NULL))
-        {
-        if (context.GetIViewDraw().IsOutputQuickVision())
-            WireframeGeomUtil::DrawOutline2d(curve, context.GetCurrentGraphicR(), zDepth);
-        else
-            context.GetCurrentGraphicR().AddCurveVector2d(curve, false, zDepth);
-            
-        return;
-        }
-
-    DrawStyled(context, curve, false, zDepth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawStyledCurveVector(ElementHandleCR eh, ViewContextR context)
-    {
-    // Only open/closed paths are valid for linestyle display. (ex. exclude point strings)
-    if (CurveVector::BOUNDARY_TYPE_None == m_curves.GetBoundaryType())
-        {
-        AddCurveVector(eh, context, false);
-        return;
-        }
-
-    bool    is3d = eh.GetDgnModelP ()->Is3d();
-
-    DrawStyled(context, m_curves, is3d, is3d ? 0.0 : context.GetDisplayPriority());
     }
 
 }; // CurveVectorOutlineStroker
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/12
+* @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddCurveVector(ElementHandleCR eh, CurveVectorCR curves, GeomRepresentations info, bool allowCachedOutline)
+bool ViewContext::_WantLineStyles()
     {
-    if (0 != (info & DISPLAY_INFO_Thickness))
-        {
-        CurveVectorThicknessStroker  stroker(curves);
-
-        DrawWithThickness(eh, stroker, 2);
-        }
-
-    if (0 != (info & (DISPLAY_INFO_Fill | DISPLAY_INFO_Surface)))
-        {
-        CurveVectorFillStroker  stroker(curves);
-
-        DrawCached(eh, stroker, 1);
-        }
-
-    if (0 != (info & DISPLAY_INFO_Edge))
-        {
-        CurveVectorOutlineStroker  stroker(curves);
-
-        if (allowCachedOutline && NULL == GetCurrLineStyle(NULL))
-            {
-            if (allowCachedOutline)
-                DrawCached(eh, stroker, 0);
-            else
-                stroker.AddCurveVector(eh, *this, false);
-            }
-        else
-            {
-            stroker.DrawStyledCurveVector(eh, *this);
-            }
-        }
-
-    if (0 != (info & DISPLAY_INFO_Pattern))
-        {
-        CurveVectorFillStroker           stroker(curves);
-        ViewContext::ClipStencil         clipStencil(stroker, 1);
-        ViewContext::PatternParamSource  patParamSrc;
-        
-        DrawAreaPattern(eh, clipStencil, patParamSrc); // NOTE: Changes current matsymb...should do this last...
-        }
+    return GetViewFlags().ShowStyles();
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
+* @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth)
+bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const
     {
-#if defined (WIP_NEEDSWORK_ELEMENT)
-    CurveVectorOutlineStroker::DrawStyledCurveVector2d(*this, curve, zDepth);
-//    GetCurrentGraphicR().AddCurveVector2d(curve, false, zDepth);
-#endif
+    if (!lsSymb.GetUseStroker())
+        return false;
+
+    double pixelSize = builder.GetPixelSize();
+
+    if (0.0 != pixelSize)
+        {
+        double maxWidth = lsSymb.GetStyleWidth();
+        double pixelThreshold = 5.0;
+
+        if ((maxWidth / pixelSize) < pixelThreshold)
+            {
+            builder.UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
+
+            return false; // Width not discernable...
+            }
+
+        builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
+        }
+
+    // NOTE: Need a fairly small angle for QVis since we're not always re-stroking to a view tolerance...
+    facetOptions = IFacetOptions::CreateForCurves();
+    facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+
+    return true; // Width discernable...
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook)
+    {
+    // NOTE: It is left up to the caller if they want to call WantLineStyles, some decorator might want to display a style regardless of the ViewFlags.
+    if (doCook)
+        CookGeometryParams(params, graphic);
+
+    LineStyleInfoCP lsInfo = params.GetLineStyle();
+
+    // Only open/closed paths are valid for linestyle display. (ex. exclude point strings)
+    if (nullptr != lsInfo && CurveVector::BOUNDARY_TYPE_None != curve.GetBoundaryType())
+        {
+        IFacetOptionsPtr facetOptions;
+        LineStyleSymbCR  lsSymb = lsInfo->GetLineStyleSymb();
+        ILineStyleCP     currLStyle = (_UseLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
+
+        if (nullptr != currLStyle)
+            {
+            LineStyleContext lsContext(graphic, params, *this, facetOptions.get());
+
+            CurveVectorOutlineStroker::DrawStyled(curve, lsContext, *currLStyle, lsSymb);
+
+            if (!curve.IsAnyRegionType() || FillDisplay::Never == params.GetFillDisplay())
+                return;
+
+            Render::GeometryParams fillParams(params);
+
+            if (nullptr == fillParams.GetGradient())
+                {
+                fillParams.SetFillDisplay(FillDisplay::Blanking);
+                }
+            else if (0 != (fillParams.GetGradient()->GetFlags() & GradientSymb::Flags::Outline))
+                {
+                GradientSymbPtr gradient = GradientSymb::Create();
+                
+                gradient->CopyFrom(*fillParams.GetGradient());
+                gradient->SetFlags((GradientSymb::Flags) (((Byte) gradient->GetFlags()) & ~GradientSymb::Flags::Outline));
+
+                fillParams.SetGradient(gradient.get());
+                }
+
+            CookGeometryParams(fillParams, graphic); // Activate fill with auto-outline disabled...
+
+            if (Is3dView())
+                graphic.AddCurveVector(curve, true);
+            else
+                graphic.AddCurveVector2d(curve, true, params.GetNetDisplayPriority());
+
+            CookGeometryParams(params, graphic); // Restore original...
+            return;
+            }
+        }
+
+    if (Is3dView())
+        graphic.AddCurveVector(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay());
+    else
+        graphic.AddCurveVector2d(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay(), params.GetNetDisplayPriority());
+    }
+

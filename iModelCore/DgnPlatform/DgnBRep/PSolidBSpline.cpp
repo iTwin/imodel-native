@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidBSpline.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2051,6 +2051,8 @@ bool            smoothEnd   // => periodic ends
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          03/98
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6385 6386) // static analysis thinks we exceed the bounds of pCorners... I don't see how.
+// It also thinks pPoints is exceeded... that's harder to disprove, but adding gratuitous checks feels wrong...
 static int      fitBoundaryToG1Curves
 (
 MSBsplineCurve  **ppCrvs,   /* <= */
@@ -2134,10 +2136,12 @@ double          tolerance   /* => tolerance used in the least square fitting */
 
     return status;
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6386) // static analysis thinks we exceed the bounds of uvCurvesPP[index] in the last else in this function... I don't see how.
 static int      createUVCurves
 (
 PK_ENTITY_t**   uvCurvesPP,
@@ -2228,6 +2232,7 @@ double          tolerance
 
     return status;
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          03/98

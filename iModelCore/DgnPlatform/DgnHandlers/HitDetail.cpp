@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -375,7 +375,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, DgnViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
+HitDetail::HitDetail(DgnViewportR viewport, Sheet::Attachment::ViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
     {
     m_elementId         = (nullptr != geomSource && nullptr != geomSource->ToElement() ? geomSource->ToElement()->GetElementId() : DgnElementId());
     m_locateSource      = source;
@@ -398,7 +398,7 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_she
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
+* @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitDetail::~HitDetail() {}
 
@@ -599,7 +599,7 @@ SnapDetail* SnapDetail::_Clone() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3dCR SnapDetail::_GetHitPoint() const
     {
-    return (IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint());
+    return IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint();
     }
 
 /*---------------------------------------------------------------------------------**//**

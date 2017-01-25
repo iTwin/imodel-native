@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCore.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -321,6 +321,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
+    BeAssert(NULL == m_codeAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -358,13 +359,14 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
-DgnPlatformLib::Host::NotificationAdmin&     DgnPlatformLib::Host::_SupplyNotificationAdmin()     {return *new NotificationAdmin();}
-DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineStyleAdmin()        {return *new LineStyleAdmin();}
-DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return *new TxnAdmin();}
-DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
-DgnPlatformLib::Host::ScriptAdmin&           DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
-DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyRepositoryAdmin()       {return *new RepositoryAdmin();}
+DgnPlatformLib::Host::FontAdmin&            DgnPlatformLib::Host::_SupplyFontAdmin()            {return *new FontAdmin();}
+DgnPlatformLib::Host::NotificationAdmin&    DgnPlatformLib::Host::_SupplyNotificationAdmin()    {return *new NotificationAdmin();}
+DgnPlatformLib::Host::LineStyleAdmin&       DgnPlatformLib::Host::_SupplyLineStyleAdmin()       {return *new LineStyleAdmin();}
+DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmin()             {return *new TxnAdmin();}
+DgnPlatformLib::Host::FormatterAdmin&       DgnPlatformLib::Host::_SupplyFormatterAdmin()       {return *new FormatterAdmin();}
+DgnPlatformLib::Host::ScriptAdmin&          DgnPlatformLib::Host::_SupplyScriptingAdmin()       {return *new ScriptAdmin();}
+DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
+DgnPlatformLib::Host::CodeAdmin&            DgnPlatformLib::Host::_SupplyCodeAdmin()            {return *new CodeAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014

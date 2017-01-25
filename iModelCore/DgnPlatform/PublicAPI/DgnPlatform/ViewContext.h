@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,8 +32,8 @@ struct     ILineStyleComponent
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const = 0;
 };
 
 //=======================================================================================
@@ -88,7 +88,7 @@ protected:
     bool m_ignoreViewRange = false;
     bool m_scanRangeValid = false;
     bool m_stopAfterTimeout = false;
-    uint64_t m_endTime = 0;     // abort after this time.
+    BeTimePoint m_endTime;     // abort after this time.
     Render::ViewFlags m_viewflags;
     DrawPurpose m_purpose;
     DRange3d m_npcSubRange;
@@ -105,11 +105,10 @@ protected:
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
-    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
-    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
+    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
+    DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    DGNPLATFORM_EXPORT virtual bool _UseLineStyleStroker(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr& facetOptions) const;
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
@@ -156,7 +155,7 @@ public:
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
     ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
-    void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
+    void EnableStopAfterTimout(BeDuration::MilliSeconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, TransformCP trans=nullptr, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, trans, clips);}
@@ -167,63 +166,63 @@ public:
 /** @name Coordinate Query and Conversion */
 /** @{ */
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
-    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] npcPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
-    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] npcPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts  Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts     Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out]  viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
+    //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View.
+    //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
-    //! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
-    //!                             closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
+    //! @param[in] origin The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
+    //!                   closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
@@ -270,40 +269,19 @@ public:
 /** @} */
 
     bool WantAreaPatterns() {return _WantAreaPatterns();}
-    void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) {_DrawAreaPattern(graphic, boundary, params);}
+    void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook = true) {_DrawAreaPattern(graphic, boundary, params, doCook);}
 
-/** @name Draw Geometry Using Current Linestyle */
+/** @name Draw Geometry Using current Linestyle */
 /** @{ */
-    //! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-    //! @param[in]      nPts        Number of vertices in \c pts.
-    //! @param[in]      pts         Array of points in linestring.
-    //! @param[in]      zDepth      Display priority for all vertices.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    //! @param[in]      closed      Do point represent a shape or linestring.
-    void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed=false){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
+    bool WantLineStyles() {return _WantLineStyles();}
 
-    //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-    //! @param[in]      ellipse     The arc data.
-    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-    //! @param[in]      zDepth      Z depth value.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
-
-    //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-    //! @param        curve       bspline curve parameters
-    //! @param[in]    zDepth      Z depth value.
-    void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-
-    //! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-    //! @param        curve       curve geometry
-    //! @param[in]    zDepth      Z depth value.
-    DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
+    //! Draw a 2D or 3D curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
+    //! @param[in]      graphic     Graphic to add to.
+    //! @param[in]      curve       curve geometry
+    //! @param[in]      params      GraphicParams for cooked style information.
+    //! @param[in]      doCook      true if CookGeometryParams needs to be called for supplied GeometryParams.
+    void DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook = true) {_DrawStyledCurveVector(graphic, curve, params, doCook);}
 /** @} */
-
-    //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
-    void AddTextString(TextStringCR textString) {_AddTextString(textString);}
 
     StatusInt VisitElement(DgnElementId elementId, bool allowLoad) {return _VisitElement(elementId, allowLoad);}
 
@@ -347,10 +325,10 @@ struct RenderListContext : RenderContext
 
 protected:
     bool m_wantStroke = true;
-    int32_t m_checkStopInterval;
+    BeDuration m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
-    uint64_t m_nextCheckStop;
+    BeTimePoint m_nextCheckStop;
     Render::GraphicListPtr m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
@@ -362,7 +340,7 @@ protected:
     bool DoCheckStop();
 
 public:    
-    void EnableCheckStop(int stopInterval, int const* motionTolerance);
+    void EnableCheckStop(BeDuration stopInterval, int const* motionTolerance);
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
     Render::GraphicListPtr GetList() const {return m_list;}
@@ -423,10 +401,14 @@ struct DecorateContext : RenderContext
 private:
     bool    m_isFlash = false;
     Render::Decorations& m_decorations;
+    Render::GraphicBranch* m_viewlet = nullptr;
+
+    StatusInt VisitSheetHit(HitDetailCR hit);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+
 public:
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

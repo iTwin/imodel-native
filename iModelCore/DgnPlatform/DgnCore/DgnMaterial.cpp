@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMaterial.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -129,6 +129,8 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf
   : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId),
     m_data(value, descr)
     {
+    if (parentMaterialId.IsValid())
+        m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,15 +197,15 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,Parent.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeScope,Parent.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
-        ecsql.append(" WHERE CodeNamespace=?");
+        ecsql.append(" WHERE CodeScope=?");
 
     if (options.m_byParent)
         ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("Parent.Id=?");
 
     if (options.m_ordered)
-        ecsql.append(" ORDER BY CodeNamespace,CodeValue");
+        ecsql.append(" ORDER BY CodeScope,CodeValue");
 
     Iterator iter;
     ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);

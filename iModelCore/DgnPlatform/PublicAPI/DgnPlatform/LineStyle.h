@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LineStyle.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,38 +87,28 @@ struct LineStyleContext
 {
 private:
     Render::GraphicBuilderPtr   m_graphic;
-    Render::GraphicParamsR  m_graphParams;
-    ViewContextP        m_viewContext;
+    Render::GeometryParamsCR    m_params;
+    ViewContextR                m_context;
+    IFacetOptionsPtr            m_facetOptions;
+    bool                        m_isTextureCreate = false;
+    bool                        m_hasTextureColors = false;
 public:
-    LineStyleContext(Render::GraphicBuilderR graphic, Render::GraphicParamsR graphicParams, ViewContextP context) : m_graphic(&graphic), m_graphParams(graphicParams), m_viewContext(context) { }
-    Render::GraphicBuilderR GetGraphicR() { return *m_graphic; }
-    Render::GraphicParamsR GetGraphicParamsR() { return m_graphParams; }
-    //  GraphicParamsR GetGraphicParamsR(){return m_elemMatSymb};
-    ViewContextP GetViewContext() { return m_viewContext; }
-};
+    LineStyleContext(Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, ViewContextR context, IFacetOptionsP facetOptions = nullptr) : m_graphic(&graphic), m_params(params), m_context(context)
+        {
+        m_facetOptions = facetOptions;
 
-//=======================================================================================
-//! Used to decide if the entire line style should be drawn with symbology from the host
-//! or symbology from one of the symbols.
-//!
-// @bsiclass                                                    John.Gooding    11/2015
-//=======================================================================================
-struct SymbologyQueryResults
-{
-private:
-    bool        m_colorBySymbol;
-    bool        m_weightBySymbol;
-    bool        m_isColorByLevel;
-    uint32_t    m_weight;
-    ColorDef    m_lineColor;
-    ColorDef    m_fillColor;
-public:
-    SymbologyQueryResults() : m_colorBySymbol(false), m_weightBySymbol(false) {}
-    void SetColors(bool isColorByLevel, ColorDef lineColor, ColorDef fillColor) { m_isColorByLevel = isColorByLevel; m_colorBySymbol = true; m_lineColor = lineColor; m_fillColor = fillColor; }
-    void SetWeight(uint32_t lineWeight) { m_weightBySymbol = true; m_weight = lineWeight; }
-    bool IsColorBySymbol(ColorDef& lineColor, ColorDef& fillColor) { lineColor = m_lineColor; fillColor = m_fillColor; return m_colorBySymbol; }
-    bool IsColorByLevel() { return m_isColorByLevel; }
-    bool IsWeightBySymbol(uint32_t& lineWeight) { lineWeight = m_weight; return m_weightBySymbol; }
+        if (!m_facetOptions.IsValid())
+            m_facetOptions = IFacetOptions::CreateForCurves();
+        }
+
+    void SetCreatingTexture() {m_isTextureCreate = true;}
+    bool GetCreatingTexture() const {return m_isTextureCreate;}
+    void SetHasTextureColors() {m_hasTextureColors = true;}
+    bool GetHasTextureColors() const {return m_hasTextureColors;}
+    Render::GraphicBuilderR GetGraphicR() {return *m_graphic;}
+    Render::GeometryParamsCR GetGeometryParams() {return m_params;}
+    ViewContextR GetViewContext() {return m_context;}
+    IFacetOptionsCR GetFacetOptions() {return *m_facetOptions;}
 };
 
 //=======================================================================================
@@ -314,8 +304,8 @@ private:
     LsLocation              m_location;    // Where to find components of resource
     Utf8String              m_descr;
 
-    BentleyStatus       StrokeContinuousArc (LineStyleContextR, Render::LineStyleSymbCP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
-                                             double const* start, double const* sweep, DPoint3dCP range) const;
+    BentleyStatus       StrokeContinuousArc (LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR arc, bool isClosed) const;
+
 protected:
     bool                m_isDirty;
 
@@ -339,10 +329,7 @@ public:
     DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
     DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
-    bool                IsWidthDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
-    bool                IsSingleRepDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
-    LsLocationCP        GetLocation() const   {return &m_location;}
-
+    LsLocationCP        GetLocation() const {return &m_location;}
     virtual             ~LsComponent() {};
     virtual bool        _IsBySegment() const {return false;}
     virtual bool        _HasLineCodes() const {return false;}
@@ -360,10 +347,9 @@ public:
     virtual void        _PostProcessLoad        () { return; }
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (LineStyleContextR, Render::LineStyleSymbCR, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
-                                                    double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _StrokeLineString2d     (LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
@@ -371,7 +357,6 @@ public:
     virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
     virtual BentleyStatus _GetTextureWidth (double& width) const                                      { return BSIERROR; }
-    virtual void _QuerySymbology (SymbologyQueryResults& results) const { return; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -436,7 +421,7 @@ protected:
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
@@ -464,18 +449,13 @@ struct          LsSymbolComponent : LsComponent
     {
 //__PUBLISH_SECTION_END__
 private:
-    bool                m_isModified;
-
+    bool                        m_isModified;
     DgnGeometryPartId           m_geomPartId;
     double                      m_storedScale;              //
     double                      m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d                    m_symSize;
     DPoint3d                    m_symBase;                  // Not needed to display; used just to reconstruct range for GetRange method
     uint32_t                    m_symFlags;                 // Flags from point symbol resource
-    ColorDef                    m_lineColor;
-    ColorDef                    m_fillColor;
-    uint32_t                    m_weight;
-    bool                        m_lineColorByLevel;
     bool                        m_postProcessed;
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
@@ -483,7 +463,7 @@ private:
     LsSymbolComponent(LsSymbolComponentCR src);
 
 protected:
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
     
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
@@ -491,12 +471,6 @@ public:
     void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsSymbolComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
-    void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
-    void                SetWeight           (uint32_t weight);
-    bool                IsColorByLevel() const { return m_lineColorByLevel; }
-    ColorDef            GetLineColor() const { return m_lineColor; }
-    ColorDef            GetFillColor() const { return m_fillColor; }
-    uint32_t            GetLineWeight() const { return m_weight; }
     double              GetMuDef            () const {return m_muDef;}
     DPoint3dCP          GetSymSize          () const {return &m_symSize;}
     uint32_t            GetFlags            () const {return m_symFlags;}
@@ -504,14 +478,10 @@ public:
 
     void                _PostProcessLoad    () override;
     void                _ClearPostProcess   () override;
-    void                Draw                (LineStyleContextR, TransformCR);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    StatusInt           _GetRange           (DRange3dR range) const override;
-#endif
-
-    void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
-    DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
-    DgnGeometryPartCPtr     GetGeometryPart         () const;
+    void                Draw                (LineStyleContextR, TransformCR, bool ignoreColor, bool ignoreWeight);
+    void                SetGeometryPartId   (DgnGeometryPartId id) {m_geomPartId = id;}
+    DgnGeometryPartId   GetGeometryPartId   () const {return m_geomPartId;}
+    DgnGeometryPartCPtr GetGeometryPart     () const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
     void                SetSymBase          (DPoint3dCP sz){m_symBase = *sz;}
@@ -523,8 +493,7 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
-    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale, 
-                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight);
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -701,7 +670,7 @@ private:
                     LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
@@ -715,7 +684,7 @@ public:
     virtual void    _ClearPostProcess           () override;
     size_t          GetNumComponents            () const {return m_components.size ();}
     double          GetOffset                   (size_t index)   const   {return m_components[index].m_offset;}
-    virtual double  _GetLength                  () const {return m_size.x;}
+    virtual double  _GetLength                  () const override {return m_size.x;}
     virtual double  _GetMaxWidth                 () const override   {return m_size.y;}
     virtual bool    _HasWidth                   () const override;
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
@@ -724,11 +693,10 @@ public:
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
-    bool            _HasUniformFullWidth         (double *pWidth)   const;
+    bool            _HasUniformFullWidth         (double *pWidth)   const override;
     virtual void _StartTextureGeneration() const override;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
-    virtual void _QuerySymbology (SymbologyQueryResults& results) const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -923,7 +891,7 @@ protected:
     void            StrokeLocal             (LineStyleContextR, ISymbolProcess const*, DPoint3dCP, int, double, Render::LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
 
@@ -942,7 +910,7 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
-    double          _CalcRepetitions         (Render::LineStyleSymbCP) const;
+    double          _CalcRepetitions         (Render::LineStyleSymbCP) const override;
     LsStrokeP       AppendStroke            (LsStrokeCR stroke);
     void            AppendStroke            (double length, bool isDash);
     void            DeleteStroke            (size_t index);
@@ -1120,7 +1088,7 @@ private:
 
 protected:
     ~LsPointComponent   ();
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override;
 
 public:
     virtual void                    _PostProcessLoad        () override;
@@ -1130,10 +1098,8 @@ public:
     virtual StatusInt               _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     static LsPointComponent*        LoadLinePoint           (LsComponentReader*reader);
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
-    virtual double                  _GetMaxWidth             ()  const override;
-    //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
-    virtual bool                    _ContainsComponent       (LsComponentP other) const override;
-    virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
+    virtual double                  _GetMaxWidth            ()  const override;
+    virtual bool                    _ContainsComponent      (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
@@ -1203,7 +1169,7 @@ public:
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
-    virtual LsComponentPtr _Import(DgnImportContext& importer) const { return const_cast<LsInternalComponent*>(this); }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const override { return const_cast<LsInternalComponent*>(this); }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1292,9 +1258,9 @@ private:
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
-    int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
-    StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
+    int GetUnits() const {return m_attributes & LSATTR_UNITMASK;}
+    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
+    StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
     LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
 public:
@@ -1327,7 +1293,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, uint32_t weight);
+    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, Render::GeometryParamsCR params);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
@@ -1595,13 +1561,13 @@ struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
     
 private:
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_LineStyle, db, name); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(db, BIS_CODESPEC_LineStyle, name); }
 
 protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(Utf8String(GetDescription()).size() + Utf8String(GetData()).size() + 2); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle); }

@@ -80,6 +80,7 @@
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
+    <ClCompile Include="Published\BRepUtil_Tests.cpp" />
     <ClCompile Include="Published\BriefcaseManager_Test.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
@@ -97,7 +98,7 @@
     <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
     <ClCompile Include="Published\ElementGroup_Tests.cpp" />
     <ClCompile Include="Published\ExampleTestGroup.cpp" />
-	<ClCompile Include="Published\Ecutils_Tests.cpp" />
+    <ClCompile Include="Published\Ecutils_Tests.cpp" />
     <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\LinearDimension_Test.cpp" />
@@ -105,7 +106,6 @@
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\MemoryManager_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
-	<ClCompile Include="Published\ParaSolids_Tests.cpp" />
     <ClCompile Include="Published\Revision_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />

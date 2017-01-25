@@ -255,7 +255,7 @@ $(CoreObjs)ElementGraphics$(oext) :                 $(DgnCoreDir)ElementGraphics
 
 $(CoreObjs)MeasureGeom$(oext) :                     $(DgnCoreDir)MeasureGeom.cpp $(DgnPlatformAPISrc)MeasureGeom.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlines.h $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h  ${MultiCompileDepends}
+$(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlines.h $(DgnPlatformAPISrc)DgnPlatformLib.h  ${MultiCompileDepends}
 
 $(CoreObjs)HandlerTypeInfo$(oext) :                 $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
@@ -294,6 +294,8 @@ $(CoreObjs)DgnCoreValueFormat$(oext) :              $(DgnCoreDir)DgnCoreValueFor
 $(CoreObjs)ValueParse$(oext) :                      $(DgnCoreDir)ValueParse.cpp $(DgnPlatformAPISrc)ValueParse.h ${MultiCompileDepends}
 
 $(CoreObjs)ACSManager$(oext) :                      $(DgnCoreDir)ACSManager.cpp $(DgnPlatformAPISrc)IAuxCoordSys.h ${MultiCompileDepends}
+
+$(CoreObjs)CodeAdmin$(oext) :                       $(DgnCoreDir)CodeAdmin.cpp $(DgnPlatformAPISrc)DgnPlatformLib.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnFont$(oext) :                         $(DgnCoreDir)DgnFont.cpp $(DgnPlatformAPISrc)DgnFont.h $(contextDepends) ${MultiCompileDepends}
 
@@ -337,7 +339,7 @@ $(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(Dgn
 
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+$(CoreObjs)CodeSpec$(oext) :                        $(DgnCoreDir)CodeSpec.cpp $(DgnPlatformAPISrc)CodeSpec.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 

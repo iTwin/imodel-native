@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RealityDataCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -41,7 +41,7 @@ void Cache::Worker::Work()
             if (!m_hasChanges)
                 m_cache.m_cv.InfiniteWait(lock);
 
-            while (m_saveTime > std::chrono::steady_clock::now() && !m_cache.IsStopped())
+            while (m_saveTime > BeTimePoint::Now() && !m_cache.IsStopped())
                 m_cache.m_cv.RelativeWait(lock, 1000);
             }
 
@@ -81,7 +81,7 @@ void Cache::Worker::Start()
 void Cache::ScheduleSave()
     {
     m_worker->m_hasChanges = true;
-    m_worker->m_saveTime = std::chrono::steady_clock::now() + m_saveDelay;
+    m_worker->m_saveTime = BeTimePoint::FromNow(m_saveDelay);
     }
 
 /*---------------------------------------------------------------------------------**//**

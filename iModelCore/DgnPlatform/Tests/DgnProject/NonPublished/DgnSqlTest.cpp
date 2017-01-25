@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -33,7 +33,7 @@ struct SqlFunctionsTest : public ::testing::Test
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
-    DgnCode CreateCode(Utf8StringCR value) const { return DatabaseScopeAuthority::CreateCode("SqlFunctionsTest", *m_db, value); }
+    DgnCode CreateCode(Utf8StringCR value) const { return CodeSpec::CreateCode(*m_db, "SqlFunctionsTest", value); }
     };
 
 
@@ -70,9 +70,9 @@ void SqlFunctionsTest::SetUpTestCase()
 
     DgnSqlTestDomain::ImportSchemaFromPath(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
 
-    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create("SqlFunctionsTest", *db);
-    if (authority.IsValid())
-        authority->Insert();
+    CodeSpecPtr codeSpec = CodeSpec::Create(*db, "SqlFunctionsTest");
+    if (codeSpec.IsValid())
+        codeSpec->Insert();
 
     db->SaveChanges();
     }

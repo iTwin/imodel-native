@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/NonPublished/DgnAuthority_Test.cpp $
+|  $Source: Tests/DgnProject/NonPublished/CodeSpec_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -15,30 +15,30 @@ USING_NAMESPACE_BENTLEY_DPTEST
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnAuthoritiesTest : public DgnDbTestFixture
+struct DgnCodeSpecsTest : public DgnDbTestFixture
     {
-    void Compare(DgnAuthorityId id, Utf8CP name)
+    void Compare(CodeSpecId id, Utf8CP name)
         {
-        DgnAuthorityCPtr auth = GetDgnDb().Authorities().GetAuthority(id);
-        ASSERT_TRUE(auth.IsValid());
-        EXPECT_EQ(auth->GetName(), name);
+        CodeSpecCPtr codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(id);
+        ASSERT_TRUE(codeSpec.IsValid());
+        EXPECT_EQ(codeSpec->GetName(), name);
 
-        DgnAuthorityId authId = GetDgnDb().Authorities().QueryAuthorityId(name);
-        EXPECT_TRUE(authId.IsValid());
-        EXPECT_EQ(authId, id);
+        CodeSpecId codeSpecId = GetDgnDb().CodeSpecs().QueryCodeSpecId(name);
+        EXPECT_TRUE(codeSpecId.IsValid());
+        EXPECT_EQ(codeSpecId, id);
         }
 
-    DatabaseScopeAuthorityPtr Create(Utf8CP name, bool insert = true)
+    CodeSpecPtr Create(Utf8CP name, bool insert = true)
         {
-        auto auth = DatabaseScopeAuthority::Create(name, GetDgnDb());
+        auto codeSpec = CodeSpec::Create(GetDgnDb(), name);
         if (insert)
             {
-            EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
-            auto authId = auth->GetAuthorityId();
-            EXPECT_TRUE(authId.IsValid());
+            EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());
+            auto codeSpecId = codeSpec->GetCodeSpecId();
+            EXPECT_TRUE(codeSpecId.IsValid());
             }
 
-        return auth;
+        return codeSpec;
         }
 
     typedef DgnCode::Iterator::Options IteratorOptions;
@@ -88,28 +88,28 @@ static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnAuthoritiesTest, Authorities)
+TEST_F (DgnCodeSpecsTest, CodeSpecs)
     {
     SetupSeedProject();
 
-    // Create some new authorities
-    auto auth1Id = Create("Auth1")->GetAuthorityId();
-    auto auth2Id = Create("Auth2")->GetAuthorityId();
+    // Create some new CodeSpecs
+    auto codeSpec1Id = Create("CodeSpec1")->GetCodeSpecId();
+    auto codeSpec2Id = Create("CodeSpec2")->GetCodeSpecId();
 
     // Test persistent
-    Compare(auth1Id, "Auth1");
-    Compare(auth2Id, "Auth2");
+    Compare(codeSpec1Id, "CodeSpec1");
+    Compare(codeSpec2Id, "CodeSpec2");
 
     // Names must be unique
-    auto badAuth = Create("Auth1", false);
+    auto badAuth = Create("CodeSpec1", false);
     EXPECT_EQ(DgnDbStatus::DuplicateName, badAuth->Insert());
-    EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
+    EXPECT_FALSE(badAuth->GetCodeSpecId().IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnAuthoritiesTest, IterateCodes)
+TEST_F(DgnCodeSpecsTest, IterateCodes)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
@@ -143,45 +143,29 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
     EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(true)));
     EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(false)));
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ridha.Malik   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnAuthoritiesTest, RegenerateCode)
-    {
-    SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "testcode");
-    ASSERT_TRUE(model->IsPhysicalModel());
-    DgnElementId eleid = model->GetModeledElementId();
-    DgnElementCPtr ele = m_db->Elements().GetElement(eleid);
-    DgnAuthorityCPtr elea = ele->GetCodeAuthority();
-    DgnCode partitionCode1 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "testcode");
-    EXPECT_TRUE(DgnDbStatus::Success==elea->RegenerateCode(partitionCode1, *ele));
-    EXPECT_TRUE(partitionCode1.GetValue()== "testcode");
-    EXPECT_TRUE(CodeExists(partitionCode1, IteratorOptions(true)));
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnAuthoritiesTest, ImportAuthority)
+TEST_F(DgnCodeSpecsTest, ImportCodeSpec)
     {
     SetupSeedProject();
-    // Create new authority
-    DatabaseScopeAuthorityPtr auth1 = Create("Auth1");
-    DgnAuthorityId auth1Id=auth1->GetAuthorityId();
+    // Create new CodeSpec
+    CodeSpecPtr codeSpec1 = Create("CodeSpec1");
+    CodeSpecId codeSpec1Id=codeSpec1->GetCodeSpecId();
     // Test persistent
-    Compare(auth1Id, "Auth1");
-    DgnDbPtr db2 = openCopyOfDb(L"AuthorityImported.bim");
+    Compare(codeSpec1Id, "CodeSpec1");
+    DgnDbPtr db2 = openCopyOfDb(L"CodeSpecImported.bim");
     ASSERT_TRUE(db2.IsValid());
     DgnImportContext import3(*m_db, *db2);
     DgnDbStatus status;
-    DgnAuthorityPtr autp = DgnAuthority::Import(&status,*auth1,import3);
+    CodeSpecPtr autp = CodeSpec::Import(&status,*codeSpec1,import3);
     ASSERT_TRUE(status==DgnDbStatus::Success);
     ASSERT_TRUE(autp.IsValid());
-    //Verify Imported Authority
-    Compare(autp->GetAuthorityId(), "Auth1");
-    // Try to import duplicade authority code
-    autp = DgnAuthority::Import(&status, *auth1, import3);
+    //Verify Imported CodeSpec
+    Compare(autp->GetCodeSpecId(), "CodeSpec1");
+    // Try to import duplicate CodeSpec name
+    autp = CodeSpec::Import(&status, *codeSpec1, import3);
     ASSERT_TRUE(status == DgnDbStatus::DuplicateName);
     ASSERT_FALSE(autp.IsValid());
     db2->SaveChanges();

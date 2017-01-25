@@ -2,7 +2,7 @@
 |
 |     $Source: DgnPlatformNET/DgnPlatformNet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -365,11 +365,11 @@ public ref struct DgnElementId : BeInt64Id
     DgnElementId (BeInt64Id^ val) : BeInt64Id (val) {}
     };
 
-public ref struct DgnAuthorityId : BeInt64Id
+public ref struct CodeSpecId : BeInt64Id
     {
     // the additional methods we might want to add are those having to do with BriefcaseId.
-    DgnAuthorityId () : BeInt64Id () {}
-    DgnAuthorityId (uint64_t u) : BeInt64Id (u) {}
+    CodeSpecId () : BeInt64Id () {}
+    CodeSpecId (uint64_t u) : BeInt64Id (u) {}
     };
 
 public ref struct DgnCategoryId : DgnElementId
@@ -1584,23 +1584,12 @@ public:
             }
         }
 
-    //! Get the namespace for this DgnCode
-    property System::String^ Namespace
+    //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
+    property CodeSpecId^ Authority
         {
-        System::String^ get ()
+        CodeSpecId^ get ()
             {
-            Utf8StringCR nameSpace = m_native->GetNamespace();
-            WString wNameSpace (nameSpace.c_str(), true);
-            return gcnew System::String (wNameSpace.c_str());
-            }
-        }
-
-    //! Get the DgnAuthorityId of the DgnAuthority that issued this DgnCode.
-    property DgnAuthorityId^ Authority
-        {
-        DgnAuthorityId^ get ()
-            {
-            return gcnew DgnAuthorityId (m_native->GetAuthority().GetValue());
+            return gcnew CodeSpecId (m_native->GetCodeSpecId().GetValue());
             }
         }
 
@@ -1620,9 +1609,6 @@ public:
             }
         }
 };
-
-
-
 
 /*=================================================================================**//**
 * Specialization of IdSet for DgnModelIds.
@@ -1762,20 +1748,20 @@ public:
         }
 
     /** Look for the element that has the specified code
-      * @param codeAuthorityName    The name of the CodeAuthority
+      * @param codeSpecName    The name of the CodeSpec
       * @param codeValue            The name portion of the Code
       * @param nameSpace            The namespace portion of the Code
       * @return the DgnElementId of the element found or null if no element with that specified code was found
       */
-    DgnElementId^ QueryElementIdByCode (System::String^ codeAuthorityName, System::String^ codeValue, System::String^ nameSpace)
+    DgnElementId^ QueryElementIdByCode (System::String^ codeSpecName, System::String^ codeValue, System::String^ nameSpace)
         {
-        pin_ptr<wchar_t const> codeAuthorityPinned  = PtrToStringChars (codeAuthorityName);
+        pin_ptr<wchar_t const> codeSpecPinned  = PtrToStringChars (codeSpecName);
         pin_ptr<wchar_t const> codeValuePinned      = PtrToStringChars (codeValue);
         pin_ptr<wchar_t const> nameSpacePinned      = PtrToStringChars (nameSpace);
-        Utf8String utf8Authority (codeAuthorityPinned);
+        Utf8String utf8CodeSpec (codeSpecPinned);
         Utf8String utf8CodeValue (codeValuePinned);
         Utf8String utf8NameSpace (nameSpacePinned);
-        BDGN::DgnElementId nativeElementId = m_native->QueryElementIdByCode (utf8Authority.c_str(), utf8CodeValue.c_str(), utf8NameSpace.c_str());
+        BDGN::DgnElementId nativeElementId = m_native->QueryElementIdByCode (utf8CodeSpec.c_str(), utf8CodeValue.c_str(), utf8NameSpace.c_str());
         return gcnew DgnElementId (nativeElementId.GetValue());
         }
 

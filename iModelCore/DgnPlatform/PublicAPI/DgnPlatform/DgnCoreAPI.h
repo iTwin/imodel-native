@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCoreAPI.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
-#include "DgnAuthority.h"
+#include "CodeSpec.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
 #include "TextString.h"

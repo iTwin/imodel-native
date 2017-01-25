@@ -50,7 +50,7 @@ protected:
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
 
-    static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
+    static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetScope().c_str(), code.GetValueCP()); }
     static void ExpectCode(DgnCode const& code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
     static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
         {
@@ -420,11 +420,11 @@ TEST_F(RevisionTestFixture, Codes)
 
     // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
     auto defaultCode = DgnCode::CreateEmpty();
-    auto auth = DatabaseScopeAuthority::Create("MyAuthority", db);
-    EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
+    auto codeSpec = CodeSpec::Create(db, "MyCodeSpec");
+    EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());
 
-    auto cpElX1 = InsertPhysicalElementByCode(auth->CreateCode("X", "1")),
-        cpElY2 = InsertPhysicalElementByCode(auth->CreateCode("Y", "2")),
+    auto cpElX1 = InsertPhysicalElementByCode(codeSpec->CreateCode("X", "1")),
+        cpElY2 = InsertPhysicalElementByCode(codeSpec->CreateCode("Y", "2")),
         cpUncoded = InsertPhysicalElementByCode(defaultCode);
 
     ExtractCodesFromRevision(createdCodes, discardedCodes);
@@ -437,7 +437,7 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, createdCodes);
 
     // Set one code to empty, and one empty code to a non-empty code, and delete one coded element, and create a new element with the same code as the deleted element
-    cpUncoded = RenameElement(*cpUncoded, auth->CreateCode("Z"));
+    cpUncoded = RenameElement(*cpUncoded, codeSpec->CreateCode("Z"));
     auto codeX1 = cpElX1->GetCode();
     cpElX1 = RenameElement(*cpElX1, defaultCode);
     auto codeY2 = cpElY2->GetCode();

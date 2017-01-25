@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -72,7 +72,7 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 void MarkupExternalLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindNavigationValue(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
+    stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_linkedElementId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
+    m_linkedElementId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
     return DgnDbStatus::Success;
     }
 
@@ -157,11 +157,11 @@ static void createImageCategory(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-static void createRedlineCodeAuthority(DgnDbR db)
+static void createRedlineCodeSpec(DgnDbR db)
     {
-    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create(MARKUP_AUTHORITY_Redline, db);
-    if (authority.IsValid())
-        authority->Insert();
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline);
+    if (codeSpec.IsValid())
+        codeSpec->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ static void createRedlineCodeAuthority(DgnDbR db)
 void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     {
     createImageCategory(db);
-    createRedlineCodeAuthority(db);
+    createRedlineCodeSpec(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,4 +931,32 @@ RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     // DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
     RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId());
     return new RedlineModel(params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::MarkupExternalLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId, 
+        [](ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (MarkupExternalLink&)elIn;
+            value.SetNavigationInfo(el.GetLinkedElementId());
+            return DgnDbStatus::Success;
+            },
+
+        [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            auto& el = (MarkupExternalLink&)elIn;
+            el.SetLinkedElementId(value.GetNavigationInfo().GetId<DgnCategoryId>());
+            return DgnDbStatus::Success;
+            });
     }

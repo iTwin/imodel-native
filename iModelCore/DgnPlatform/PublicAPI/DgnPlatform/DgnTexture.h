@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnTexture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     
 public:
     static DgnTextureId ImportTexture(DgnImportContext& context, DgnTextureId source);
@@ -97,7 +97,7 @@ public:
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Update<DgnTexture>(*this, status);} //!< Updates the texture in the DgnDb and returns the persistent copy.
 
     // Creates a DgnCode for a texture with the specified name.
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR textureName) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_Texture, db, textureName);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR textureName) {return CodeSpec::CreateCode(db, BIS_CODESPEC_Texture, textureName);}
 
     //! Looks up the ID of a texture by DgnCode
     DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(DgnDbR db, DgnCodeCR code);
@@ -118,6 +118,7 @@ namespace dgn_ElementHandler
     struct Texture : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

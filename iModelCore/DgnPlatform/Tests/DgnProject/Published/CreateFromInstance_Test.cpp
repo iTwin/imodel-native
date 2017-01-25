@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/CreateFromInstance_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -49,8 +49,8 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
 
     Utf8PrintfString json(
         "{"
-        "\"CodeAuthority\" : {\"id\" : \"%d\"},"
-        "\"CodeNamespace\" : \"\","
+        "\"CodeSpec\" : {\"id\" : \"%d\"},"
+        "\"CodeScope\" : \"\","
         "\"CodeValue\" : \"Hub\","
         "\"Descr\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"
@@ -59,7 +59,7 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null"
         "}", 
-        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_SpatialCategory).GetValue())); // value for CodeAuthority.Id
+        static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_SpatialCategory).GetValue())); // value for CodeSpec.Id
 
     DgnElementPtr inserted = nullptr;
     CreateAndInsertElement(inserted, json.c_str(), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
@@ -80,8 +80,8 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"$ECClassLabel\" : \"CameraViewDefinition\","
         "\"$ECInstanceId\" : \"502\","
         "\"$ECInstanceLabel\" : \"CameraViewDefinition\","
-        "\"CodeAuthority\" : {\"id\" : \"%d\"},"
-        "\"CodeNamespace\" : \"ViewDefinition\","
+        "\"CodeSpec\" : {\"id\" : \"%d\"},"
+        "\"CodeScope\" : \"ViewDefinition\","
         "\"CodeValue\" : \"Default - View 1\","
         "\"Descr\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"
@@ -110,7 +110,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"UserProperties\" : null,"
         "\"Yaw\" : 29.999999999999986"
         "}",
-        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_ViewDefinition).GetValue())); // value for CodeAuthority.Id
+        static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_ViewDefinition).GetValue())); // value for CodeSpec.Id
 
     ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);

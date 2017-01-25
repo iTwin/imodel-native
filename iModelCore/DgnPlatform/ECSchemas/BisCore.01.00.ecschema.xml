@@ -84,8 +84,8 @@
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="Authority">
-        <!-- Authority for element codes and classifications -->
+    <ECEntityClass typeName="CodeSpec" modifier="Sealed">
+        <!-- determines element codes -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -93,7 +93,7 @@
             </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" description="Name of authority">
+        <ECProperty propertyName="Name" typeName="string" description="Name of CodeSpec">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <Collation>NoCase</Collation>
@@ -104,45 +104,17 @@
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
-    <ECEntityClass typeName="NullAuthority" modifier="Sealed">
-        <!-- Authority that issues null codes -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DatabaseScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique name+namespace combinations within the scope of the database -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ModelScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a model -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ElementScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a "parent" element -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
 
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="CodeSpecDeterminesElementCode" strength="referencing" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="issues codes for" polymorphic="true">
-            <Class class="Authority"/>
+        <Source multiplicity="(1..1)" roleLabel="determines codes for" polymorphic="true">
+            <Class class="CodeSpec"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="code is issued by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="code is determined by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
@@ -311,7 +283,12 @@
     <ECEntityClass typeName="IModellableElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can be modeled (by a "sub" Model) -->
         <!-- Mutually exclusive with IParentElement -->
-        <!-- WIP: Need to mark interface as only valid for Elements -->
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <!-- Only subclasses of bis:Element can implement the IModellableElement interface -->
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <ECCustomAttributes>
@@ -376,8 +353,8 @@
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthority.Id</string>
-                            <string>CodeNamespace</string>
+                            <string>CodeSpec.Id</string>
+                            <string>CodeScope</string>
                             <string>CodeValue</string>
                         </Properties>
                     </DbIndex>
@@ -408,7 +385,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="CodeAuthority" relationshipName="AuthorityIssuesElementCode" direction="Backward">
+        <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecDeterminesElementCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -416,7 +393,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="CodeNamespace" typeName="string">
+        <ECProperty propertyName="CodeScope" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
@@ -502,7 +479,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -546,6 +523,23 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="Subject" modifier="Sealed">
+        <BaseClass>InformationReferenceElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="InformationPartitionElement"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
@@ -610,14 +604,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="Subject" modifier="Sealed">
-        <BaseClass>InformationReferenceElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
@@ -824,7 +810,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>16</SharedColumnCount>
+                <SharedColumnCount>32</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -834,7 +820,7 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
@@ -898,6 +884,10 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="PhysicalType" relationshipName="PhysicalElementIsOfType" direction="Forward">
+          <ECCustomAttributes>
+            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
@@ -920,7 +910,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
+                <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -929,7 +919,7 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
@@ -1271,6 +1261,7 @@
         <ECProperty propertyName="Details" typeName="string" />
         <ECProperty propertyName="DisplayPriority" typeName="int" />
         <ECProperty propertyName="Scale" typeName="double" />
+        <ECProperty propertyName="Clip" typeName="string" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding" modifier="Sealed">
@@ -1288,9 +1279,14 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="IParentElement" modifier="Abstract">
-        <!-- Interface implemented by Elements that can composite/own child elements -->
+        <!-- Interface implemented by Elements that can own child elements -->
         <!-- Mutually exclusive with IModellableElement -->
-        <!-- WIP: Need to mark interface as only valid for Elements -->
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <!-- Only subclasses of bis:Element can implement the IParentElement interface -->
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <!-- WIP: Should be abstract? -->
@@ -1423,29 +1419,29 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name>
+                        <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            Only one ExternalKey per Authority per Element
+                            Only one ExternalKey per CodeSpec per Element
                             <string>Element.Id</string>
-                            <string>AuthorityId</string>
+                            <string>CodeSpecId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name>
+                        <Name>ix_bis_ElementExternalKey_CodeSpecId_ExternalKey</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>AuthorityId</string>
+                            <string>CodeSpecId</string>
                             <string>ExternalKey</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECProperty propertyName="AuthorityId" typeName="long">
-            <!-- WIP: Foreign key relationship to Authority that controls the ExternalKey -->
+        <ECProperty propertyName="CodeSpecId" typeName="long">
+            <!-- WIP: Foreign key relationship to CodeSpec that controls the ExternalKey -->
             <!-- IsNullable = False -->
         </ECProperty>
         <ECProperty propertyName="ExternalKey" typeName="string">
@@ -1490,7 +1486,6 @@
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <!-- WIP: MinimumSharedColumnCount? -->
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>8</SharedColumnCount>
@@ -1511,10 +1506,11 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Category" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
@@ -1530,23 +1526,32 @@
     </ECEntityClass>
     <ECEntityClass typeName="DrawingCategory" modifier="Sealed">
         <!-- Category that only applies to drawing elements (2d) -->
+        <BaseClass>Category</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>Category</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialCategory" modifier="Sealed">
         <!-- Category that only applies to SpatialElements (3d) -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
         <BaseClass>Category</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CategoryOwnsSubCategories" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="Category"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="SubCategory"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1586,7 +1591,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="TrueColor">
+    <ECEntityClass typeName="TrueColor" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1600,11 +1605,12 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="MaterialElement">
+    <ECEntityClass typeName="MaterialElement" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1616,8 +1622,17 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+    <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="MaterialElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="MaterialElement"/>
+        </Target>
+    </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTextStyle">
+    <ECEntityClass typeName="AnnotationTextStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1635,7 +1650,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="AnnotationFrameStyle">
+    <ECEntityClass typeName="AnnotationFrameStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1653,7 +1668,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="AnnotationLeaderStyle">
+    <ECEntityClass typeName="AnnotationLeaderStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1671,7 +1686,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TextAnnotationSeed">
+    <ECEntityClass typeName="TextAnnotationSeed" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1689,7 +1704,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="LineStyle">
+    <ECEntityClass typeName="LineStyle" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1698,7 +1713,7 @@
         <ECProperty propertyName="Data" typeName="string" description="Encoded style properties" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Texture">
+    <ECEntityClass typeName="Texture" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1751,7 +1766,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="LightDefinition">
+    <ECEntityClass typeName="LightDefinition" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1768,7 +1783,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -1781,7 +1796,7 @@
             <Class class="ViewDefinition2d"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1790,7 +1805,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1799,7 +1814,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1808,7 +1823,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1817,7 +1832,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="Sealed">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="CategorySelector"/>
@@ -1827,7 +1842,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
@@ -2002,7 +2017,7 @@
     <ECEntityClass typeName="GeometryPart">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECProperty propertyName="GeometryStream" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream">
             <!-- IsNullable = False -->
             <ECCustomAttributes>
                 <CustomHandledProperty/>

@@ -654,109 +654,6 @@ bool ViewContext::_VisitAllModelElements()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    12/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double priority, DPoint2dCP range, bool closed)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (nPts < 1)
-        return;
-
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle && (nPts > 2 || !pts->IsEqual(pts[1])))
-        {
-        currLStyle->_GetComponent()->_StrokeLineString2d(this, currLsSymb, pts, nPts, priority, closed);
-        return;
-        }
-
-    if (closed)
-        GetCurrentGraphicR().AddShape2d(nPts, pts, false, priority, range);
-    else
-        GetCurrentGraphicR().AddLineString2d(nPts, pts, priority, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        double      r0, r1, start, sweep;
-        RotMatrix   rMatrix;
-        DPoint3d    center;
-
-        ellipse.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-        center.z = zDepth; // Set priority on center...
-        currLStyle->_GetComponent()->_StrokeArc(this, currLsSymb, &center, &rMatrix, r0, r1, isEllipse ? nullptr : &start, isEllipse ? nullptr : &sweep, nullptr);
-        return;
-        }
-
-    GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDepth)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        if (0.0 == zDepth)
-            {
-            currLStyle->_GetComponent()->_StrokeBSplineCurve(this, currLsSymb, &bcurve, nullptr);
-            return;
-            }
-
-        // NOTE: Copy curve and set priority on poles since we won't be drawing cached...
-        MSBsplineCurvePtr tmpCurve = bcurve.CreateCopy();
-        bool useWeights = tmpCurve->rational && nullptr != tmpCurve->GetWeightCP();
-        for (int iPoint = 0; iPoint < tmpCurve->params.numPoles; ++iPoint)
-            {
-            DPoint3d xyz = tmpCurve->GetPole(iPoint);
-            if (useWeights)
-                xyz.z = zDepth * tmpCurve->GetWeight(iPoint);
-            else
-                xyz.z = zDepth;
-            tmpCurve->SetPole(iPoint, xyz);
-            }
-
-        currLStyle->_GetComponent()->_StrokeBSplineCurve(this, currLsSymb, tmpCurve.get(), nullptr);
-        return;
-        }
-
-    GetCurrentGraphicR().AddBSplineCurve2d(bcurve, false, zDepth);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddTextString(TextStringCR text)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    text.GetGlyphSymbology(GetCurrentGeometryParams());
-    CookGeometryParams();
-
-    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
-    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
-    text.DrawTextAdornments(*this);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
@@ -878,8 +775,10 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         if (nullptr != lsSymb.GetILineStyle())
             {
             if (lsSymb.UseLinePixels())
-                SetLinePixels((LinePixels)lsSymb.GetLinePixels());
-            else if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
+                {
+                SetLinePixels((LinePixels) lsSymb.GetLinePixels());
+                }
+            else if (lsSymb.IsContinuous() && !lsSymb.GetUseStroker()) // NOTE: QVis can handle this case for 2d and 3d...
                 {
                 m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
                 m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
@@ -887,6 +786,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
             else
                 {
                 m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+
                 if (m_lineTexture.IsValid())
                     {
                     m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
@@ -1031,6 +931,15 @@ GeometryParams::GeometryParams()
     m_fillTransparency = 0;            
     m_netFillTransparency = 0;         
     m_geometryClass = DgnGeometryClass::Primary; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  1/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryParams::GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
+    {
+    m_categoryId = categoryId;
+    m_subCategoryId = subCategoryId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1218,6 +1127,12 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
+    if (nullptr != m_viewlet)
+        {
+        m_viewlet->Add(graphic);
+        return;
+        }
+
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 
