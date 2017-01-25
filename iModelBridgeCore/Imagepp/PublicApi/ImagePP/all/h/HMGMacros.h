@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMacros.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Macros for the HMG messaging mechanism
@@ -26,9 +26,9 @@
 
 #define HMG_DECLARE_MESSAGE_MAP_DLL(HDLL) \
     public: \
-        HDLL virtual bool ProcessMessage(const HMGMessage& pi_rMessage); \
+        HDLL bool ProcessMessage(const HMGMessage& pi_rMessage) override; \
     protected: \
-        HDLL virtual bool NeedsCoherenceSecurity() const;
+        HDLL bool NeedsCoherenceSecurity() const override;
 
 #define HMG_DECLARE_MESSAGE_MAP()   HMG_DECLARE_MESSAGE_MAP_DLL(HMG_NO_ARG)
 

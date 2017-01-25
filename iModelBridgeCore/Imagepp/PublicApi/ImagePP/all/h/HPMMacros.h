@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMMacros.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Macros to use when defining a class of persistent objects //
@@ -13,11 +13,11 @@
 #define HPM_DECLARE_CLASS_DLL(HDLL, pi_ClassID) \
     public: \
         enum { CLASS_ID = pi_ClassID }; \
-        virtual HCLASS_ID GetClassID() const { return CLASS_ID; } \
-        HDLL virtual bool IsCompatibleWith(HCLASS_ID pi_AncClassID) const; \
-        HDLL virtual size_t GetObjectSize() const; \
-        virtual void AddHFCPtr() { _internal_NotifyAdditionOfASmartPointer(); } \
-        virtual void RemoveHFCPtr() { _internal_NotifyRemovalOfASmartPointer(); }
+        HCLASS_ID GetClassID() const override { return CLASS_ID; } \
+        HDLL bool IsCompatibleWith(HCLASS_ID pi_AncClassID) const override; \
+        HDLL size_t GetObjectSize() const override; \
+        void AddHFCPtr() override { _internal_NotifyAdditionOfASmartPointer(); } \
+        void RemoveHFCPtr() override { _internal_NotifyRemovalOfASmartPointer(); }
 
 // Macro to call in .cpp file of class if class is not instanciable, like having
 // protected constructor or pure virtual methods
