@@ -27,6 +27,14 @@ protected:
 
 public:
     DataCaptureDomain();
+    DATACAPTURE_EXPORT static Dgn::DgnAuthorityId QueryDataCaptureAuthorityId(Dgn::DgnDbCR dgndb);
+    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+    //! Format a BeBriefcaseBasedId as BeBriefcaseId-LocalId 
+    DATACAPTURE_EXPORT static Utf8String FormatId(BeSQLite::BeBriefcaseBasedId id);
+
+    //! Build a default name from the specified prefix and BeBriefcaseBasedId
+    DATACAPTURE_EXPORT static Utf8String BuildDefaultName(Utf8CP prefix, BeSQLite::BeBriefcaseBasedId id);
+
 
     }; // DataCaptureDomain
 

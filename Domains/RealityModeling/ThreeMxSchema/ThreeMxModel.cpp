@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxModel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -51,7 +51,7 @@ BentleyStatus Scene::LoadScene()
     m_rootTile = root;
 
     auto result = _RequestTile(*root, nullptr);
-    result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+    result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
 
@@ -125,6 +125,14 @@ BentleyStatus Scene::LocateFromSRS()
 ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
     {
     RegisterHandler(ModelHandler::GetHandler());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTaskPtr Scene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads) 
+    {
+    return new ThreeMxProgressive(*this, args.m_missing, loads, args.m_clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,7 +246,7 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
         JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
 
     if (m_clip.IsValid())
-        JsonUtils::ClipVectorToJson(val[JSON_CLIP()], *m_clip);
+        val[JSON_CLIP()] = m_clip->ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,11 +263,7 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
         m_location.InitIdentity();
 
     if (val.isMember(JSON_CLIP()))
-        {
-        ClipVectorPtr clip = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson(*clip, val[JSON_CLIP()]);
-        m_clip = clip;
-        }
+        m_clip = ClipVector::FromJson(val[JSON_CLIP()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,6 +333,7 @@ struct  PublishTileNode : ModelTileNode
     PublishTileNode(DgnModelCR model, SceneR scene, NodeR node, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent, ClipVectorCP clip)
         : ModelTileNode(model, DRange3d::NullRange(), transformDbToTile, depth, siblingIndex, parent, 0.0), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
+    virtual WString _GetFileExtension() const override { return L"b3dm"; }
 
     void    SetTolerance (double tolerance) { m_tolerance = tolerance; }
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
@@ -449,7 +454,7 @@ struct Publish3mxScene : Scene
 {
     using Scene::Scene;
 
-    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return new Publish3mxTexture(source, targetFormat, bottomUp);}
+    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const override {return new Publish3mxTexture(source, targetFormat, bottomUp);}
     GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
 };
 typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
@@ -475,7 +480,7 @@ struct Publish3MxContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t siblingIndex)
+void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth)
     { 
     double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
     DRange3d        dgnRange;
@@ -506,18 +511,17 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
         size_t      childIndex = 0;
-        depth++;
         for (auto& child : *node._GetChildren(true))
             {
             NodeR   childNode = (NodeR) *child;
 
             if (childNode._HasChildren())
                 {
-                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex, &tile, m_tileClip);
+                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex++, &tile, m_tileClip);
 
                 m_totalTiles++;
                 tile.GetChildren().push_back(childTile);
-                ProcessTile(*childTile, (NodeR) *child,  depth+1, childIndex++);
+                ProcessTile(*childTile, (NodeR) *child,  depth+1);
                 }
             }
         }
@@ -558,7 +562,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
+TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, m_sceneFile.c_str(), nullptr);
     if (SUCCESS != scene->LoadScene())
@@ -577,11 +581,10 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
 
     rootTile = rootPublishTile;
 
-    publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0, 0);
+    publishContext.ProcessTile(*rootPublishTile, (NodeR) *scene->GetRootTile(), 0);
 
-    static const uint32_t s_sleepMillis = 1000.0;
     while (publishContext.ProcessingRemains())
-        BeThreadUtilities::BeSleep(s_sleepMillis);
+        BeDuration::FromSeconds(1).Sleep();
 
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ScalableMeshSchema/ScalableMeshHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -84,7 +84,7 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
-        private:
+    private:
 
         //NEEDS_WORK_MS : Modify remove mutable
         mutable IScalableMeshPtr                m_smPtr;
@@ -99,7 +99,11 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
         mutable bset<uint64_t>                          m_activeClips;
 
         BeFileName                              m_path;
-        bool                                    m_isProgressiveDisplayOn;        
+        bool                                    m_isProgressiveDisplayOn;     
+        bool                                    m_isInsertingClips;
+        
+        IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
+
                        
         void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
                        

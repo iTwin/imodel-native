@@ -135,7 +135,7 @@ public:
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
-    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
 };
@@ -158,6 +158,7 @@ private:
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+
 public:
     using Root::Root;
     ~Scene() {ClearAllTiles();}
@@ -212,7 +213,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
+    THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.

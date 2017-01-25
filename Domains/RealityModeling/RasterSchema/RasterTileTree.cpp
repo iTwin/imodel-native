@@ -99,4 +99,12 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
     }
 
 
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ProgressiveTaskPtr RasterRoot::_CreateProgressiveTask(Dgn::TileTree::DrawArgsR args, Dgn::TileTree::TileLoadStatePtr loads) 
+    {
+    return new RasterProgressive(*this, args.m_missing, loads, args.GetLocation());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 

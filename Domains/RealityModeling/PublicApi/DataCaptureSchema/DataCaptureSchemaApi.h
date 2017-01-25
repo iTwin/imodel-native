@@ -12,6 +12,7 @@
 #include "DataCaptureDomain.h"
 #include "XmlReader.h"
 #include "XmlWriter.h"
-#include "Camera.h"
-#include "Photo.h"
+#include "CameraDevice.h"
+#include "Pose.h"
+#include "Shot.h"
 

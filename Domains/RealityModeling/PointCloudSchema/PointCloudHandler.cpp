@@ -334,4 +334,3 @@ void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
     T_Super::_ReadJsonProperties(val);
     m_properties.FromJson(val[JSON_PointCloudModel]);
     }
-

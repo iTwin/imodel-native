@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudProgressiveDisplay.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -177,6 +177,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
     
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
+
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
 
     RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);
@@ -312,7 +313,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
 // This callback is invoked on a timer during progressive display.
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::RenderListContext& context, WantShow& wantShow)
     {
     // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?
     //  ex: if accurate we could use pointsToLoad and PtsLoadedInViewportSinceLastDraw to detect that

@@ -83,6 +83,7 @@ protected:
     RasterModel& m_model;
 
     bvector<Resolution> m_resolution;
+    Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
 
     Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
     Transform _GetTransform(Dgn::RenderContextR context) const override;

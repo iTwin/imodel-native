@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudProgressiveDisplay.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,7 @@ protected:
     PointCloudModel const& m_model;
 
     //! Displays point cloud and schedules downloads. 
-    virtual Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
+    virtual Completion _DoProgressive(Dgn::RenderListContext& context, WantShow&) override;
 
     void DrawView(Dgn::RenderContextR);
 

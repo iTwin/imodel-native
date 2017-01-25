@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Tests/BackDoor/DataCaptureTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
@@ -49,6 +49,36 @@ DgnModelId DataCaptureTestsFixture::QueryFirstSpatialModelId(DgnDbR db)
     BeAssert(false && "No SpatialModel found");
     return DgnModelId();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DataCaptureTestsFixture::QueryFirstDefinitionModelId(DgnDbR db)
+    {
+    for (auto const& modelEntry : db.Models().MakeIterator())
+        {
+        if ((DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+
+        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
+        if (model->IsDefinitionModel() && dynamic_cast<DefinitionModelP>(model.get()))
+            return modelEntry.GetModelId();
+        }
+
+    //Create a definition model
+    auto& handler = dgn_ModelHandler::Definition::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnCode modelCode = DgnModel::CreateModelCode("DataCaptureDefinition");
+    DefinitionModelPtr model = DefinitionModel::Create(DefinitionModel::CreateParams(db, classId, modelCode));
+    if (DgnDbStatus::Success == model->Insert())
+        {
+        return model->GetModelId();
+        }
+
+    BeAssert(false && "No DefinitionModelP found");
+    return DgnModelId();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -146,45 +176,46 @@ void DataCaptureTestsFixture::CloseProject()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCamera(Dgn::DgnDbR dgndb, Utf8CP cameraLable)
+void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
     {
     DgnModelId spatialModelId = QueryFirstSpatialModelId(dgndb);
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(dgndb);
     DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
 
-    // Create Camera
-    auto cameraPtr = Camera::Create(*spatialModelP);
-    cameraPtr->SetLabel(cameraLable);
-    cameraPtr->SetFocalLenghtPixels(4798.35);
+    // Create CameraDevice
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP);
+    cameraDevicePtr->SetLabel(cameraDeviceLable);
+    cameraDevicePtr->SetFocalLength(4798.35);
     ImageDimensionType imgDimension(5456, 3632);
-    cameraPtr->SetImageDimension(imgDimension);
+    cameraDevicePtr->SetImageDimension(imgDimension);
     DPoint2d principalPoint = { 2677.8,1772 };
-    cameraPtr->SetPrincipalPoint(principalPoint);
-    CameraDistortionType distortion(1, 2, 3, 4, 5);
-    cameraPtr->SetDistortion(distortion);
-    cameraPtr->SetAspectRatio(1.0);
-    cameraPtr->SetSkew(1.0);
-    cameraPtr->Insert();
-    CameraElementId cameraId = cameraPtr->GetId();
+    cameraDevicePtr->SetPrincipalPoint(principalPoint);
+    CameraDeviceDistortionType distortion(1, 2, 3, 4, 5);
+    cameraDevicePtr->SetDistortion(distortion);
+    cameraDevicePtr->SetAspectRatio(1.0);
+    cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->Insert();
+    CameraDeviceElementId cameraDeviceId = cameraDevicePtr->GetId();
 
 
-    //Insert ten photos for this camera
+    //Insert ten photos for this cameraDevice
     for (int photoNumber = 0; photoNumber < 10; photoNumber++)
         {
-        // Create Photo for the camera
-        auto PhotoPtr = Photo::Create(*spatialModelP, cameraId);
+        // Create Photo for the cameraDevice
+        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId);
 
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
-        PhotoPtr->SetLabel(photoLabel.c_str());
-        RotationMatrixType rotation(RotationMatrixType::FromIdentity());
+        ShotPtr->SetLabel(photoLabel.c_str());
+        RotMatrix rotation(RotMatrix::FromIdentity());
         DPoint3d center = { 1.0,2.0,3.0 };
-        PoseType pose(center, rotation);
-        PhotoPtr->SetPose(pose);
-        PhotoPtr->SetPhotoId(photoNumber);
+        Pose pose(center, rotation);
+        ShotPtr->SetPose(pose);
+        ShotPtr->SetPhotoId(photoNumber);
 
         //Insert Photo element
-        PhotoPtr->Insert();
+        ShotPtr->Insert();
         }
 
     //Save changes

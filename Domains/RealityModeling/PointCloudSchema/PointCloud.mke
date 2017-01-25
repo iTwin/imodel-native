@@ -2,7 +2,7 @@
 #
 #     $Source: PointCloudSchema/PointCloud.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -95,6 +95,8 @@ $(o)PointCloudProgressiveDisplay$(oext) : $(SrcPointCloud)PointCloudProgressiveD
 
 $(o)PointCloudDomain$(oext)             : $(SrcPointCloud)PointCloudDomain.cpp               $(pointCloudDepends)  ${MultiCompileDepends} 
 
+$(o)PointCloudTilePublish$(oext)        : $(SrcPointCloud)PointCloudTilePublish.cpp               $(pointCloudDepends)  ${MultiCompileDepends} 
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
@@ -124,6 +126,7 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
 
