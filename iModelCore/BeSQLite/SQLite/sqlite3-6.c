@@ -12217,38 +12217,36 @@ static void icuLoadCollation(
 ** Register the ICU extension functions with database db.
 */
 SQLITE_PRIVATE int sqlite3IcuInit(sqlite3 *db){
-  struct IcuScalar {
+  static const struct IcuScalar {
     const char *zName;                        /* Function name */
-    int nArg;                                 /* Number of arguments */
-    int enc;                                  /* Optimal text encoding */
-    void *pContext;                           /* sqlite3_user_data() context */
+    unsigned char nArg;                       /* Number of arguments */
+    unsigned short enc;                       /* Optimal text encoding */
+    unsigned char iContext;                   /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,          0, icuRegexpFunc},
-
-    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
-
-    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
-
-    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
-    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
-
-    {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
+    {"icu_load_collation",  2, SQLITE_UTF8,              255, icuLoadCollation},
+    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,         0, icuRegexpFunc},
+    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
+    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
   };
-
   int rc = SQLITE_OK;
   int i;
 
+  
   for(i=0; rc==SQLITE_OK && i<(int)(sizeof(scalars)/sizeof(scalars[0])); i++){
-    struct IcuScalar *p = &scalars[i];
+    const struct IcuScalar *p = &scalars[i];
     rc = sqlite3_create_function(
-        db, p->zName, p->nArg, p->enc, p->pContext, p->xFunc, 0, 0
+        db, p->zName, p->nArg, p->enc, 
+        p->iContext==255 ? (void*)db : (void*)(((char*)0)+p->iContext),
+        p->xFunc, 0, 0
     );
   }
 
@@ -15456,7 +15454,7 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** Open the database handle and attach the RBU database as "rbu". If an
 ** error occurs, leave an error code and message in the RBU handle.
 */
-static void rbuOpenDatabase(sqlite3rbu *p){
+static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
   assert( p->rc || (p->dbMain==0 && p->dbRbu==0) );
   assert( p->rc || rbuIsVacuum(p) || p->zTarget!=0 );
 
@@ -15531,7 +15529,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     }else{
       RbuState *pState = rbuLoadState(p);
       if( pState ){
-        bOpen = (pState->eStage>RBU_STAGE_MOVE);
+        bOpen = (pState->eStage>=RBU_STAGE_MOVE);
         rbuFreeState(pState);
       }
     }
@@ -15543,6 +15541,15 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     if( !rbuIsVacuum(p) ){
       p->dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
     }else if( p->pRbuFd->pWalFd ){
+      if( pbRetry ){
+        p->pRbuFd->bNolock = 0;
+        sqlite3_close(p->dbRbu);
+        sqlite3_close(p->dbMain);
+        p->dbMain = 0;
+        p->dbRbu = 0;
+        *pbRetry = 1;
+        return;
+      }
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf("cannot vacuum wal mode database");
     }else{
@@ -15723,16 +15730,18 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
   }
 
-  if( p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && p->nFrame>0 ){
     p->eStage = RBU_STAGE_CKPT;
     p->nStep = (pState ? pState->nRow : 0);
     p->aBuf = rbuMalloc(p, p->pgsz);
     p->iWalCksum = rbuShmChecksum(p);
   }
 
-  if( p->rc==SQLITE_OK && pState && pState->iWalCksum!=p->iWalCksum ){
-    p->rc = SQLITE_DONE;
-    p->eStage = RBU_STAGE_DONE;
+  if( p->rc==SQLITE_OK ){
+    if( p->nFrame==0 || (pState && pState->iWalCksum!=p->iWalCksum) ){
+      p->rc = SQLITE_DONE;
+      p->eStage = RBU_STAGE_DONE;
+    }
   }
 }
 
@@ -15905,7 +15914,7 @@ static void rbuMoveOalFile(sqlite3rbu *p){
 #endif
 
       if( p->rc==SQLITE_OK ){
-        rbuOpenDatabase(p);
+        rbuOpenDatabase(p, 0);
         rbuSetupCheckpoint(p, 0);
       }
     }
@@ -16616,6 +16625,7 @@ static sqlite3rbu *openRbuHandle(
     /* Open the target, RBU and state databases */
     if( p->rc==SQLITE_OK ){
       char *pCsr = (char*)&p[1];
+      int bRetry = 0;
       if( zTarget ){
         p->zTarget = pCsr;
         memcpy(p->zTarget, zTarget, nTarget+1);
@@ -16627,7 +16637,18 @@ static sqlite3rbu *openRbuHandle(
       if( zState ){
         p->zState = rbuMPrintf(p, "%s", zState);
       }
-      rbuOpenDatabase(p);
+
+      /* If the first attempt to open the database file fails and the bRetry
+      ** flag it set, this means that the db was not opened because it seemed
+      ** to be a wal-mode db. But, this may have happened due to an earlier
+      ** RBU vacuum operation leaving an old wal file in the directory.
+      ** If this is the case, it will have been checkpointed and deleted
+      ** when the handle was closed and a second attempt to open the 
+      ** database may succeed.  */
+      rbuOpenDatabase(p, &bRetry);
+      if( bRetry ){
+        rbuOpenDatabase(p, 0);
+      }
     }
 
     if( p->rc==SQLITE_OK ){
@@ -23226,7 +23247,7 @@ SQLITE_API int sqlite3changeset_concat_strm(
 ** how JSONB might improve on that.)
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1)
-#if !defined(_SQLITEINT_H_)
+#if !defined(SQLITEINT_H)
 /* #include "sqlite3ext.h" */
 #endif
 SQLITE_EXTENSION_INIT1

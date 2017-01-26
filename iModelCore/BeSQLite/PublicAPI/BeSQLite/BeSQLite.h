@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1639,11 +1639,8 @@ public:
     //! @return BE_SQLITE_OK if the entry was successfully removed, and error status otherwise.
     BE_SQLITE_EXPORT DbResult Remove(Utf8CP name);
 
-    //__PUBLISH_SECTION_END__
     //! Create the Embedded file table if it doesn't exist
     DbResult CreateTable() const;
-
-    //__PUBLISH_SECTION_START__
 };
 
 //! SQLite Transaction modes corresponding to https://www.sqlite.org/lang_transaction.html

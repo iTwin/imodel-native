@@ -18010,14 +18010,20 @@ static const unsigned char aJournalMagic[] = {
 #define isOpen(pFd) ((pFd)->pMethods!=0)
 
 /*
-** Return true if this pager uses a write-ahead log instead of the usual
-** rollback journal. Otherwise false.
+** Return true if this pager uses a write-ahead log to read page pgno.
+** Return false if the pager reads pgno directly from the database.
 */
-#ifndef SQLITE_OMIT_WAL
-SQLITE_PRIVATE int sqlite3PagerUseWal(Pager *pPager){
-  return (pPager->pWal!=0);
+#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_DIRECT_OVERFLOW_READ)
+SQLITE_PRIVATE int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
+  u32 iRead = 0;
+  int rc;
+  if( pPager->pWal==0 ) return 0;
+  rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+  return rc || iRead;
 }
-# define pagerUseWal(x) sqlite3PagerUseWal(x)
+#endif
+#ifndef SQLITE_OMIT_WAL
+# define pagerUseWal(x) ((x)->pWal!=0)
 #else
 # define pagerUseWal(x) 0
 # define pagerRollbackWal(x) 0
@@ -29149,16 +29155,24 @@ SQLITE_PRIVATE int sqlite3BtreeHoldsMutex(Btree *p){
 ** two or more btrees in common both try to lock all their btrees
 ** at the same instant.
 */
-SQLITE_PRIVATE void sqlite3BtreeEnterAll(sqlite3 *db){
+static void SQLITE_NOINLINE btreeEnterAll(sqlite3 *db){
   int i;
+  int skipOk = 1;
   Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    if( p ) sqlite3BtreeEnter(p);
+    if( p && p->sharable ){
+      sqlite3BtreeEnter(p);
+      skipOk = 0;
+    }
   }
+  db->skipBtreeMutex = skipOk;
 }
-SQLITE_PRIVATE void sqlite3BtreeLeaveAll(sqlite3 *db){
+SQLITE_PRIVATE void sqlite3BtreeEnterAll(sqlite3 *db){
+  if( db->skipBtreeMutex==0 ) btreeEnterAll(db);
+}
+static void SQLITE_NOINLINE btreeLeaveAll(sqlite3 *db){
   int i;
   Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
@@ -29166,6 +29180,9 @@ SQLITE_PRIVATE void sqlite3BtreeLeaveAll(sqlite3 *db){
     p = db->aDb[i].pBt;
     if( p ) sqlite3BtreeLeave(p);
   }
+}
+SQLITE_PRIVATE void sqlite3BtreeLeaveAll(sqlite3 *db){
+  if( db->skipBtreeMutex==0 ) btreeLeaveAll(db);
 }
 
 #ifndef NDEBUG

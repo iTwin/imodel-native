@@ -6319,7 +6319,7 @@ static Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 
   rc = fts5ParseStringFromToken(pToken, &z);
   if( rc==SQLITE_OK ){
-    int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_QUERY : 0);
+    int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_PREFIX : 0);
     int n;
     sqlite3Fts5Dequote(z);
     n = (int)strlen(z);
@@ -9993,7 +9993,7 @@ static void fts5SegIterNext(
       else if( pLeaf->nn>pLeaf->szLeaf ){
         pIter->iPgidxOff = pLeaf->szLeaf + fts5GetVarint32(
             &pLeaf->p[pLeaf->szLeaf], iOff
-            );
+        );
         pIter->iLeafOffset = iOff;
         pIter->iEndofDoclist = iOff;
         bNewTerm = 1;
@@ -10027,6 +10027,7 @@ static void fts5SegIterNext(
       */
       int nSz;
       assert( p->rc==SQLITE_OK );
+      assert( pIter->iLeafOffset<=pIter->pLeaf->nn );
       fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
       pIter->bDel = (nSz & 0x0001);
       pIter->nPos = nSz>>1;
@@ -11021,7 +11022,7 @@ static void fts5ChunkIterate(
       break;
     }else{
       pgno++;
-      pData = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
+      pData = fts5LeafRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
       if( pData==0 ) break;
       pChunk = &pData->p[4];
       nChunk = MIN(nRem, pData->szLeaf - 4);
@@ -13783,7 +13784,7 @@ static void fts5IndexIntegrityCheckSegment(
     ** ignore this b-tree entry. Otherwise, load it into memory. */
     if( iIdxLeaf<pSeg->pgnoFirst ) continue;
     iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf);
-    pLeaf = fts5DataRead(p, iRow);
+    pLeaf = fts5LeafRead(p, iRow);
     if( pLeaf==0 ) break;
 
     /* Check that the leaf contains at least one term, and that it is equal
@@ -17059,7 +17060,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-12-30 14:25:42 0bdbe49c6d392c4c86a6c01219c9d91d150dea7d", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-01-26 02:26:02 9879be1899adf5634f551a2077b15ccb1133e4e3", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){

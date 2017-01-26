@@ -1,6 +1,6 @@
 /******************************************************************************
-** This file is an amalgamation of many separate C source files from SQLite
-** version 3.8.7.  By combining all the individual C code files into this 
+** This file is an amalgamation of many separate C source files from SQLite.
+** By combining all the individual C code files into this 
 ** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
@@ -27,6 +27,7 @@
 #define SQLITE_ENABLE_PREUPDATE_HOOK 1
 #define SQLITE_ENABLE_ZIPVFS 1
 #define SQLITE_USE_URI 1
+#define SQLITE_ENABLE_NULL_TRIM 1 // trim null columns from end of rows. Experimental for now, per DRH
 
 #define SQLITE_ENABLE_FTS5 1    // include support for full text search
 #define SQLITE_ENABLE_JSON1 1   // include support for json
