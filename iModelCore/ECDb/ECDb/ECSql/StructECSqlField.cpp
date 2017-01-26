@@ -28,8 +28,7 @@ bool StructECSqlField::_IsNull() const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructECSqlField::_GetPrimitive() const
     {
-    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
-    BeAssert(false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
+    LOG.error("GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
@@ -38,8 +37,7 @@ IECSqlPrimitiveValue const& StructECSqlField::_GetPrimitive() const
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructECSqlField::_GetArray() const
     {
-    ReportError(ECSqlStatus::Error, "GetArray cannot be called for a struct column. Call GetStruct instead.");
-    BeAssert(false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
+    LOG.error("GetArray cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton().GetArray();
     }
 
@@ -50,9 +48,7 @@ IECSqlValue const& StructECSqlField::_GetValue(int columnIndex) const
     {
     if (columnIndex < 0 || columnIndex >= _GetMemberCount())
         {
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
-        ReportError(ECSqlStatus::Error, errorMessage.c_str());
+        LOG.errorv("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
         return NoopECSqlValue::GetSingleton().GetValue(columnIndex);
         }
 

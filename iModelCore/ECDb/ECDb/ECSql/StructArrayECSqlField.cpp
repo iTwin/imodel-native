@@ -33,7 +33,7 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, 
             BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
             if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeMetadata, *property) != ECObjectsStatus::Success)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+                LOG.error("Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
                 BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
                 return nullptr;
                 }
@@ -99,7 +99,7 @@ bool JsonECSqlValue::_IsNull() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlPrimitiveValue const& JsonECSqlValue::_GetPrimitive() const
     {
-    ReportError("Type mismatch. Cannot call primitive IECSqlValue getters on non-primitive IECSqlValue.");
+    LOG.error("Type mismatch. Cannot call primitive IECSqlValue getters on non-primitive IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
@@ -108,7 +108,7 @@ IECSqlPrimitiveValue const& JsonECSqlValue::_GetPrimitive() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlStructValue const& JsonECSqlValue::_GetStruct() const
     {
-    ReportError("Type mismatch. Cannot call GetStruct on non-struct IECSqlValue.");
+    LOG.error("Type mismatch. Cannot call GetStruct on non-struct IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
 
@@ -117,7 +117,7 @@ IECSqlStructValue const& JsonECSqlValue::_GetStruct() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue const& JsonECSqlValue::_GetArray() const
     {
-    ReportError("Type mismatch. Cannot call GetArray on non-array IECSqlValue.");
+    LOG.error("Type mismatch. Cannot call GetArray on non-array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetArray();
     }
 
@@ -139,10 +139,9 @@ void const* PrimitiveJsonECSqlValue::_GetBlob(int* blobSize) const
     m_blobCache.Resize(0);
     if (SUCCESS != ECJsonUtilities::JsonToBinary(m_blobCache, GetJson()))
         {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetBlob failed for '%s'. Invalid JSON format for Blob.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            LOG.errorv("IECSqlValue::GetBlob failed for '%s'. Invalid JSON format for Blob.", GetColumnInfo().GetPropertyPath().ToString().c_str());
+        
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
         }
 
@@ -243,10 +242,9 @@ DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
     DPoint2d pt;
     if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, GetJson()))
         {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            LOG.errorv("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.", GetColumnInfo().GetPropertyPath().ToString().c_str());
+
         return NoopECSqlValue::GetSingleton().GetPoint2d();
         }
 
@@ -264,10 +262,9 @@ DPoint3d PrimitiveJsonECSqlValue::_GetPoint3d() const
     DPoint3d pt;
     if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, GetJson()))
         {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            LOG.errorv("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.", GetColumnInfo().GetPropertyPath().ToString().c_str());
+
         return NoopECSqlValue::GetSingleton().GetPoint3d();
         }
 
@@ -302,11 +299,11 @@ bool PrimitiveJsonECSqlValue::CanCallGetFor(ECN::PrimitiveType getMethodType) co
 
     if (actualDataType != getMethodType)
         {
-        Utf8String msg;
-        msg.Sprintf("Type mismatch: Cannot call IECSqlValue::%s for the struct array member '%s' which is of type '%s'.",
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            LOG.errorv("Type mismatch: Cannot call IECSqlValue::%s for the struct array member '%s' which is of type '%s'.",
                     ECSqlField::GetPrimitiveGetMethodName(getMethodType), GetColumnInfo().GetPropertyPath().ToString().c_str(),
                     ExpHelper::ToString(actualDataType));
-        ReportError(msg.c_str());
+
         return false;
         }
 
@@ -352,10 +349,10 @@ IECSqlValue const& StructJsonECSqlValue::_GetValue(int columnIndex) const
     {
     if (columnIndex < 0 && columnIndex >= (int) m_members.size())
         {
-        Utf8String msg;
-        msg.Sprintf("IECSqlStructValue::GetValue failed for '%s': Index %d is out of bounds.",
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            LOG.errorv("IECSqlStructValue::GetValue failed for '%s': Index %d is out of bounds.",
                     GetColumnInfo().GetPropertyPath().ToString().c_str(),  columnIndex);
-        ReportError(msg.c_str());
+
         return NoopECSqlValue::GetSingleton();
         }
 
@@ -384,10 +381,9 @@ ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, E
         {
         if (StandardCustomAttributeHelper::GetDateTimeInfo(m_primitiveArrayDatetimeMetadata, *GetColumnInfo().GetProperty()) != ECObjectsStatus::Success)
             {
-            Utf8String msg;
-            msg.Sprintf("IECSqlValue::GetArray failed for '%s': Could not read DateTimeInfo custom attribute from the corresponding primitive array ECProperty. DateTimeInfo will be ignored.",
+            if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+                LOG.errorv("IECSqlValue::GetArray failed for '%s': Could not read DateTimeInfo custom attribute from the corresponding primitive array ECProperty. DateTimeInfo will be ignored.",
                         GetColumnInfo().GetPropertyPath().ToString().c_str());
-            ReportError(msg.c_str());
             }
 
         if (!m_primitiveArrayDatetimeMetadata.IsValid())
@@ -459,10 +455,12 @@ ECSqlStatus StructArrayECSqlField::_OnAfterStep()
         m_json = Json::Value(Json::arrayValue);
     else
         {
-        Utf8String jsonStr(GetSqliteStatement().GetValueText(m_sqliteColumnIndex));
-        Json::Reader reader;
-        if (!reader.Parse(jsonStr, m_json, false))
-            return ReportError(ECSqlStatus::Error, "Could not deserialize struct array JSON.");
+        Utf8CP jsonStr = GetSqliteStatement().GetValueText(m_sqliteColumnIndex);
+        if (m_json.Parse<0>(jsonStr).HasParseError())
+            {
+            LOG.error("Could not deserialize struct array JSON.");
+            return ECSqlStatus::Error;
+            }
         }
 
     BeAssert(m_json.isArray());
@@ -493,7 +491,7 @@ void StructArrayECSqlField::DoReset() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlPrimitiveValue const& StructArrayECSqlField::_GetPrimitive() const
     {
-    ReportError(ECSqlStatus::Error, "Type mismatch. Cannot call primitive IECSqlValue getters on struct array IECSqlValue.");
+    LOG.error("Type mismatch. Cannot call primitive IECSqlValue getters on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
@@ -502,7 +500,7 @@ IECSqlPrimitiveValue const& StructArrayECSqlField::_GetPrimitive() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlStructValue const& StructArrayECSqlField::_GetStruct() const
     {
-    ReportError(ECSqlStatus::Error, "Type mismatch. Cannot call GetStruct on struct array IECSqlValue.");
+    LOG.error("Type mismatch. Cannot call GetStruct on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
 

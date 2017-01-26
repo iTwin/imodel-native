@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -79,18 +79,6 @@ Statement& ECSqlField::GetSqliteStatement() const
     {
     BeAssert(GetECSqlStatementR().IsPrepared());
     return GetECSqlStatementR().GetPreparedStatementP()->GetSqliteStatementR();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      10/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::ReportError(ECSqlStatus status, Utf8CP errorMessage) const
-    {
-    ECDb const* ecdb = m_ecsqlStatement.GetECDb();
-    if (ecdb != nullptr)
-        ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
-
-    return status;
     }
 
 //-----------------------------------------------------------------------------------------

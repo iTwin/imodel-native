@@ -332,7 +332,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                     }
                     case PRIMITIVETYPE_Long:
                     {
-                    ECRapidJsonUtilities::Int64ToStringJsonValue(arrayElementJson, INT64VALUE, json.GetAllocator());
+                    arrayElementJson.SetInt64(INT64VALUE);
                     break;
                     }
                     case PRIMITIVETYPE_Point2d:
@@ -514,11 +514,10 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     }
                     case PRIMITIVETYPE_Long:
                     {
-                    if (!it->IsString())
+                    if (!it->IsInt64())
                         return ERROR;
 
-                    const int64_t val = ECRapidJsonUtilities::Int64FromJson(*it);
-                    if (INT64VALUE != val)
+                    if (INT64VALUE != it->GetInt64())
                         return ERROR;
 
                     break;

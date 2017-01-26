@@ -24,7 +24,7 @@ PrimitiveArrayECSqlField::PrimitiveArrayECSqlField(ECSqlStatementBase& ecsqlStat
     ECValue arrayMetaInfo;
     if (m_emptyArrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
         {
-        ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
+        LOG.error("Could not retrieve array information from array ECInstance.");
         BeAssert(false && "Could not retrieve array information from array ECInstance.");
         return;
         }
@@ -37,7 +37,7 @@ PrimitiveArrayECSqlField::PrimitiveArrayECSqlField(ECSqlStatementBase& ecsqlStat
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         if (StandardCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
-            ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
+            LOG.error("Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
             BeAssert(false && "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
             return;
             }
@@ -68,14 +68,18 @@ ECSqlStatus PrimitiveArrayECSqlField::_OnAfterStep()
     const int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
     if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
-        return ReportError(ECSqlStatus::Error, "BLOB is not a valid ECD BLOB used to persist primitive arrays.");
+        {
+        LOG.error("BLOB is not a valid ECD BLOB used to persist primitive arrays.");
+        return ECSqlStatus::Error;
+        }
 
     //Initialize ECInstance from blob
     m_arrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateSharedInstance(arrayBlob, arrayBlobSize);
     if (m_arrayValueECInstance == nullptr)
         {
         BeAssert(false && "Shared ECInstance created from array ECD BLOB is nullptr.");
-        return ReportError(ECSqlStatus::Error, "Shared ECInstance created from array ECD BLOB is nullptr.");
+        LOG.error("Shared ECInstance created from array ECD BLOB is nullptr.");
+        return ECSqlStatus::Error;
         }
 
     //Get array information 
@@ -83,7 +87,8 @@ ECSqlStatus PrimitiveArrayECSqlField::_OnAfterStep()
     if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
         {
         BeAssert(false && "Could not retrieve array information from array ECInstance.");
-        return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
+        LOG.error("Could not retrieve array information from array ECInstance.");
+        return ECSqlStatus::Error;
         }
 
     m_arrayInfo = arrayMetaInfo.GetArrayInfo();
@@ -134,7 +139,7 @@ void PrimitiveArrayECSqlField::_MoveNext(bool onInitializingIterator) const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& PrimitiveArrayECSqlField::_GetPrimitive() const
     {
-    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for array value. Call GetArray instead.");
+    LOG.error("GetPrimitive cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
@@ -143,7 +148,7 @@ IECSqlPrimitiveValue const& PrimitiveArrayECSqlField::_GetPrimitive() const
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayECSqlField::_GetStruct() const
     {
-    ReportError(ECSqlStatus::Error, "GetStruct cannot be called for array value. Call GetArray instead.");
+    LOG.error("GetStruct cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
 
@@ -315,7 +320,7 @@ IGeometryPtr PrimitiveArrayECSqlField::ArrayElementValue::_GetGeometry() const
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetStruct() const
     {
-    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
+    LOG.error("GetStruct cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
 
@@ -324,7 +329,7 @@ IECSqlStructValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetStruct
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetArray() const
     {
-    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
+    LOG.error("GetArray cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton().GetArray();
     }
 
@@ -343,7 +348,7 @@ bool PrimitiveArrayECSqlField::ArrayElementValue::CanRead(PrimitiveType requeste
 
     if (requestedType != fieldType)
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
+        LOG.error("For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
         return false;
         }
 

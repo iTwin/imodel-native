@@ -44,9 +44,9 @@ ECSqlStatus IdECSqlBinder::_BindNull()
 
     if (!m_isNoop)
         {
-        const auto sqliteStat = GetSqliteStatementR().BindNull(m_sqliteIndex);
+        const DbResult sqliteStat = GetSqliteStatementR().BindNull(m_sqliteIndex);
         if (sqliteStat != BE_SQLITE_OK)
-            return ReportError(sqliteStat, "ECSqlStatement::BindNull against id property.");
+            return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull against id property.");
         }
 
     return ECSqlStatus::Success;
@@ -57,7 +57,7 @@ ECSqlStatus IdECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindPoint2d(DPoint2dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point2d value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind Point2d value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -66,7 +66,7 @@ ECSqlStatus IdECSqlBinder::_BindPoint2d(DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindPoint3d(DPoint3dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3d value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind Point3d value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -75,7 +75,7 @@ ECSqlStatus IdECSqlBinder::_BindPoint3d(DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindBoolean(bool value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind boolean value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind boolean value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -84,7 +84,7 @@ ECSqlStatus IdECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind Blob value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -93,7 +93,7 @@ ECSqlStatus IdECSqlBinder::_BindBlob(const void* value, int blobSize, IECSqlBind
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindZeroBlob(int blobSize)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind Zeroblob value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -102,7 +102,7 @@ ECSqlStatus IdECSqlBinder::_BindZeroBlob(int blobSize)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const&)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind DateTime value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -111,7 +111,7 @@ ECSqlStatus IdECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const&
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const&)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind DateTime value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -120,7 +120,7 @@ ECSqlStatus IdECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info c
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindDouble(double value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind double value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind double value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -129,7 +129,7 @@ ECSqlStatus IdECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindInt(int value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind 32 bit integer value to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind 32 bit integer value to Id parameter.");
     return ECSqlStatus::Error;
     }
 
@@ -154,7 +154,7 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
         BeAssert(m_sqliteIndex > 0);
         const DbResult sqliteStat = GetSqliteStatementR().BindInt64(m_sqliteIndex, value);
         if (sqliteStat != BE_SQLITE_OK)
-            return ReportError(sqliteStat, "ECSqlStatement::BindInt64");
+            return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
         }
 
     auto onBindEventHandler = GetOnBindECInstanceIdEventHandler();
@@ -184,7 +184,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
         {
         const auto sqliteStat = GetSqliteStatementR().BindText(m_sqliteIndex, value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
         if (sqliteStat != BE_SQLITE_OK)
-            return ReportError(sqliteStat, "ECSqlStatement::BindText");
+            return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
         }
 
     auto onBindEventHandler = GetOnBindECInstanceIdEventHandler();
@@ -193,7 +193,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
         ECInstanceId id;
         if (SUCCESS != ECInstanceId::FromString(id, value))
             {
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Binding string value to Id parameter failed. Value cannot be converted to an ECInstanceId.");
+            LOG.error("Binding string value to Id parameter failed. Value cannot be converted to an ECInstanceId.");
             return ECSqlStatus::Error;
             }
 
@@ -208,7 +208,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 //---------------------------------------------------------------------------------------
 IECSqlBinder& IdECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind ECStruct to Id parameter.");
     return NoopECSqlBinder::Get();
     }
 
@@ -217,7 +217,7 @@ IECSqlBinder& IdECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
 //---------------------------------------------------------------------------------------
 IECSqlBinder& IdECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind ECStruct to Id parameter.");
     return NoopECSqlBinder::Get();
     }
 
@@ -226,7 +226,7 @@ IECSqlBinder& IdECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPro
 //---------------------------------------------------------------------------------------
 IECSqlBinder& IdECSqlBinder::_AddArrayElement()
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to Id parameter.");
+    LOG.error("Type mismatch. Cannot bind array to Id parameter.");
     return NoopECSqlBinder::Get();
     }
 

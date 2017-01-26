@@ -25,7 +25,7 @@ PrimitiveECSqlField::PrimitiveECSqlField(ECSqlStatementBase& ecsqlStatement, ECS
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         if (StandardCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
-            ReportError(ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+            LOG.error("Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             return;
             }
@@ -82,7 +82,7 @@ IGeometryPtr PrimitiveECSqlField::_GetGeometry() const
     byteVec.assign(blob, blob + blobSizeU);
     if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
         {
-        ReportError(ECSqlStatus::Error, "Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
+        LOG.error("Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
         return nullptr;
         }
 
@@ -98,8 +98,7 @@ IGeometryPtr PrimitiveECSqlField::_GetGeometry() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint2d PrimitiveECSqlField::_GetPoint2d() const
     {
-    ReportError(ECSqlStatus::Error, "GetPoint2d cannot be called for columns which are not of the Point2d type.");
-    BeAssert(false && "GetPoint2d cannot be called for columns which are not of the Point2d type.");
+    LOG.error("GetPoint2d cannot be called for columns which are not of the Point2d type.");
     return NoopECSqlValue::GetSingleton().GetPoint2d();
     }
 
@@ -108,8 +107,7 @@ DPoint2d PrimitiveECSqlField::_GetPoint2d() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint3d PrimitiveECSqlField::_GetPoint3d() const
     {
-    ReportError(ECSqlStatus::Error, "GetPoint3d cannot be called for columns which are not of the Point3d type.");
-    BeAssert(false && "GetPoint3d cannot be called for columns which are not of the Point3d type.");
+    LOG.error("GetPoint3d cannot be called for columns which are not of the Point3d type.");
     return NoopECSqlValue::GetSingleton().GetPoint3d();
     }
 
@@ -118,8 +116,7 @@ DPoint3d PrimitiveECSqlField::_GetPoint3d() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue const& PrimitiveECSqlField::_GetArray() const
     {
-    ReportError(ECSqlStatus::Error, "GetArray cannot be called for primitive columns.");
-    BeAssert(false && "GetArray cannot be called for primitive columns.");
+    LOG.error("GetArray cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton().GetArray();
     }
 
@@ -128,8 +125,7 @@ IECSqlArrayValue const& PrimitiveECSqlField::_GetArray() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlStructValue const& PrimitiveECSqlField::_GetStruct() const
     {
-    ReportError(ECSqlStatus::Error, "GetStruct cannot be called for primitive columns.");
-    BeAssert(false && "GetStruct cannot be called for primitive columns.");
+    LOG.error("GetStruct cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
 

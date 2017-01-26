@@ -44,7 +44,6 @@ protected:
         : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    ECSqlStatus ReportError(ECSqlStatus status, Utf8CP errorMessage) const;
     ECSqlStatementBase& GetECSqlStatementR() const;
     Statement& GetSqliteStatement() const;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -37,10 +37,7 @@ IECSqlValue const& NavigationPropertyECSqlField::_GetValue(int columnIndex) cons
 
             default:
             {
-            Utf8String errorMessage;
-            errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
-            ReportError(ECSqlStatus::Error, errorMessage.c_str());
-
+            LOG.errorv("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
             return NoopECSqlValue::GetSingleton().GetValue(columnIndex);
             }
         }
@@ -51,8 +48,7 @@ IECSqlValue const& NavigationPropertyECSqlField::_GetValue(int columnIndex) cons
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& NavigationPropertyECSqlField::_GetPrimitive() const
     {
-    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
-    BeAssert(false);
+    LOG.error("GetPrimitive cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
@@ -61,8 +57,7 @@ IECSqlPrimitiveValue const& NavigationPropertyECSqlField::_GetPrimitive() const
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& NavigationPropertyECSqlField::_GetArray() const
     {
-    ReportError(ECSqlStatus::Error, "GetArray cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
-    BeAssert(false);
+    LOG.error("GetArray cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
     return NoopECSqlValue::GetSingleton().GetArray();
     }
 

@@ -34,7 +34,6 @@ protected:
     JsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
     Json::Value const& GetJson() const { return m_json; }
 
-    void ReportError(Utf8CP error) const { GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error); }
     ECDbCR GetECDb() const { return m_ecdb; }
 
 public:

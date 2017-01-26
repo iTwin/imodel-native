@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ struct ECSqlBinder : IECSqlBinder
         std::function<void(ECInstanceId bindValue)> GetOnBindECInstanceIdEventHandler() const { return m_onBindECInstanceIdEventHandler; }
         std::vector<IECSqlBinder*>* GetOnBindEventHandlers() { return m_onBindEventHandlers.get(); }
 
-        ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
+        ECSqlStatus LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
         Statement& GetSqliteStatementR() const;
         ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }

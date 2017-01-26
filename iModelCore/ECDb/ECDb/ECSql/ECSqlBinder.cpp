@@ -46,10 +46,24 @@ ECDbCR ECSqlBinder::GetECDb() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
+ECSqlStatus ECSqlBinder::LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
     BeAssert(m_ecsqlStatement.IsPrepared());
-    GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, sqliteStat, errorMessageHeader);
+    if (BE_SQLITE_OK != sqliteStat && LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        {
+        if (errorMessageHeader == nullptr)
+            errorMessageHeader = "SQLite error:";
+
+        Utf8CP dbResultStr = ECDb::InterpretDbResult(sqliteStat);
+
+        Utf8String lastSqliteErrorMsg = GetECDb().GetLastError();
+        //ECDb sometimes returns DbResult errors on its own. In that case there is no SQLite error to output
+        if (lastSqliteErrorMsg.empty())
+            LOG.errorv("%s %s", errorMessageHeader, dbResultStr);
+        else
+            LOG.errorv("%s %s: %s", errorMessageHeader, dbResultStr, lastSqliteErrorMsg.c_str());
+        }
+
     return ECSqlStatus(sqliteStat);
     }
 
@@ -360,7 +374,7 @@ ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const&
     const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs();
     if (actualArrayLength < expectedMinOccurs)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
         return ECSqlStatus::Error;
         }
 
@@ -376,7 +390,7 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
     if (actualArrayLength > expectedMaxOccurs)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
         return ECSqlStatus::Error;
         }
 
