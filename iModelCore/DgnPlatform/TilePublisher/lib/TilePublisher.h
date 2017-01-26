@@ -96,6 +96,13 @@ struct PublisherContext : TileGenerator::ITileCollector
         BeMutex     m_mutex;
         double      m_textureCompressionSeconds = 0.0;
         double      m_textureCompressionMegaPixels = 0.0;
+        size_t      m_pointCloudCount = 0;
+        size_t      m_pointCloudTotalPoints = 0;
+        size_t      m_pointCloudMaxPoints = 0;
+        size_t      m_pointCloudMinPoints = 0;
+        size_t      m_pointCloudTiles = 0;
+
+        void RecordPointCloud (size_t nPoints);
         };
     Statistics                              m_statistics;
 
