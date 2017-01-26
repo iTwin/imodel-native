@@ -301,7 +301,7 @@ struct WSGServer
     {
 public:
     
-    REALITYDATAPLATFORM_EXPORT WSGServer(Utf8String serverName): m_serverName(serverName), m_version(""){}
+    REALITYDATAPLATFORM_EXPORT WSGServer(Utf8String serverName, bool verifyPeer = true) : m_serverName(serverName), m_version("") { m_verifyPeer = verifyPeer?1:0; }
     
     //! Returns a list plugins installed to the indicated WSG server
     REALITYDATAPLATFORM_EXPORT bvector<Utf8String> GetPlugins() const;
@@ -325,6 +325,7 @@ public:
 
 private:
     Utf8String m_serverName;
+    int m_verifyPeer;
     mutable Utf8String m_version;
     };
 
@@ -342,7 +343,7 @@ public:
 
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string.
-    REALITYDATAPLATFORM_EXPORT  Utf8String PerformRequest(const WSGURL& wsgRequest, int& result) const;
+    REALITYDATAPLATFORM_EXPORT  Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1) const;
     };
 
 

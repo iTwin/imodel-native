@@ -88,7 +88,7 @@ void WSGRequest::RefreshToken()
     m_token.append(charToken);
     }
 
-Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result) const
+Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer) const
     {
     //CURLcode result = performCurl(wsgRequest, returnJsonString);
 
@@ -114,7 +114,7 @@ Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result) con
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 
-    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, verifyPeer);
 
     curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -211,7 +211,7 @@ WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -232,7 +232,7 @@ WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -256,7 +256,7 @@ WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8St
 void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -283,7 +283,7 @@ WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String v
 void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -312,7 +312,7 @@ WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8Stri
 void WSGPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -332,7 +332,7 @@ void WSGPagedRequest::_PrepareHttpRequestStringAndPayload() const
 void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -361,7 +361,7 @@ bvector<Utf8String> WSGServer::GetPlugins() const
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
     int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
@@ -389,7 +389,7 @@ Utf8String WSGServer::GetVersion() const
 
     int status = 1;
 
-    Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     if (status != CURLE_OK)
         return "";
@@ -419,7 +419,7 @@ bvector<Utf8String> WSGServer::GetRepositories() const
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
     int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
     
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
@@ -449,7 +449,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
     int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
@@ -480,7 +480,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
     int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
     if((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
@@ -509,7 +509,7 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
     WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
     int status = 0;
-    Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     bvector<Utf8String> props;
     BeStringUtilities::Split(returnString.c_str(), "{}", props);

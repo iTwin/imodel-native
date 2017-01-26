@@ -19,7 +19,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 int main(int argc, char *argv[])
     {
-    WSGServer server = WSGServer("s3mxcloudservice.cloudapp.net");
+    // the sandbox server does not have a certificate, so we must set verify peer to false;
+    // normally it is recommended to always verify the peer
+    WSGServer server = WSGServer("s3mxcloudservice.cloudapp.net", false); 
 
     Utf8String version = server.GetVersion(); 
 
@@ -64,7 +66,7 @@ int main(int argc, char *argv[])
     WSGNavRootRequest* navRoot = new WSGNavRootRequest(server.GetServerName(), server.GetVersion(), repos[0]);
     
     int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navRoot, status);
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navRoot, status, 0); //again, normally you should call PerformRequest without the 0
 
     Json::Value instances(Json::objectValue);
     BeAssert ((status == CURLE_OK) && Json::Reader::Parse(returnJsonString, instances) && (!instances.isMember("errorMessage") && instances.isMember("instances")));
@@ -76,9 +78,14 @@ int main(int argc, char *argv[])
             nodes.push_back(instance["instanceId"].asCString());
         }
 
+    std::cout << "NavRoots:" << std::endl;
+    for (Utf8String root : nodes)
+        std::cout << root << std::endl;
+    std::cout << std::endl;
+
     WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repos[0], nodes[0]);
     status = 0;
-    returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status);
+    returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
 
     Json::Value instances2(Json::objectValue);
     BeAssert((status == CURLE_OK) && Json::Reader::Parse(returnJsonString, instances2) && (!instances2.isMember("errorMessage") && instances2.isMember("instances")));
@@ -89,6 +96,12 @@ int main(int argc, char *argv[])
         if (instance.isMember("instanceId"))
             subNodes.push_back(instance["instanceId"].asCString());
         }
+
+    std::cout << "NavNodes under "<< nodes[0] << " :" << std::endl;
+    for (Utf8String subNode : subNodes)
+        std::cout << subNode << std::endl;
+    std::cout << std::endl;
+
     getch();
 
     return 0;
