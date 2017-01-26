@@ -595,6 +595,35 @@ public:
     REALITYDATAPLATFORM_EXPORT void AddDataSource(SpatialEntityDataSourceR dataSource);
     REALITYDATAPLATFORM_EXPORT size_t GetDataSourceCount() const;
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetEnterprise() const;
+    REALITYDATAPLATFORM_EXPORT void SetEnterprise(Utf8CP enterprise);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
+    REALITYDATAPLATFORM_EXPORT void SetContainerName(Utf8CP containerName);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
+    REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRootDocument() const;
+    REALITYDATAPLATFORM_EXPORT void SetRootDocument(Utf8CP rootDocument);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataURL() const;
+    REALITYDATAPLATFORM_EXPORT void SetMetadataURL(Utf8CP metadataUrl);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAccuracy() const;
+    REALITYDATAPLATFORM_EXPORT void SetAccuracy(Utf8CP accuracy);
+
+    REALITYDATAPLATFORM_EXPORT bool GetPublicAccess() const;
+    REALITYDATAPLATFORM_EXPORT void SetPublicAccess(bool publicAccess);
+
+    REALITYDATAPLATFORM_EXPORT bool GetListable() const;
+    REALITYDATAPLATFORM_EXPORT void SetListable(bool listable);
+
+    REALITYDATAPLATFORM_EXPORT DateTime GetModifiedTimestamp() const;
+    REALITYDATAPLATFORM_EXPORT void SetModifiedTimestamp(DateTime modifiedDate);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOwner() const;
+    REALITYDATAPLATFORM_EXPORT void SetOwner(Utf8CP owner);
 
     //! Get/Set
     //! A reference to a metadata object. This object can be used by many spatial entities.
@@ -631,6 +660,17 @@ protected:
     uint64_t m_approximateFileSize;
     SpatialEntityMetadataPtr m_pMetadata;
     bvector<SpatialEntityDataSourcePtr> m_DataSources;
+
+    Utf8String m_enterprise;
+    Utf8String m_containerName;
+    Utf8String m_description;
+    Utf8String m_rootDocument;
+    Utf8String m_metadataUrl;
+    Utf8String m_accuracy;
+    bool m_publicAccess;
+    bool m_listable;
+    DateTime m_modifiedDate;
+    Utf8String m_owner;
 
     float m_occlusion = -1.0f;
     mutable SQLINTEGER m_serverId = -1;

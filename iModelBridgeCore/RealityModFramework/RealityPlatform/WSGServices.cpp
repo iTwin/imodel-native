@@ -12,6 +12,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/WSGServices.h>
 #include <BentleyDesktopClient/CCApi/CCPublic.h>
+#include <RealityPlatform/RealityPlatformAPI.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -179,42 +180,63 @@ void WSGURL::SetId(Utf8String id) { m_id = id; }
 bool WSGURL::GetContentFlag() const { return m_objectContent; }
 WSGURL::HttpRequestType WSGURL::GetRequestType() const { return m_requestType; }
 
-Utf8String WSGURL::GetRepoId() const { return m_repoId; }
+Utf8StringCR WSGURL::GetRepoId() const { return m_repoId; }
 void WSGURL::SetRepoId(Utf8String repoId) { m_repoId = repoId; }
 
-bool WSGURL::_PrepareHttpRequestStringAndPayload() const
+void WSGURL::_PrepareHttpRequestStringAndPayload() const
     {
     m_validRequestString = false;
     //https://localhost/ws/v2.1/
     m_httpRequestString = "https://";
     m_httpRequestString.append(m_serverName);
-
+    
     m_requestHeader = bvector<Utf8String>();
     /*m_requestHeader.push_back("Accept: application / json");
     m_requestHeader.push_back("Content-Type: application/json");
     m_requestHeader.push_back("charsets: utf-8");*/
 
     m_validRequestString = true;
-    return true;
     }
 
-WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, Utf8String nodeId)
+WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId)
     {
     m_serverName = server;
     m_version = version;
-    m_pluginName = pluginName;
-    m_schema = schema;
     m_repoId = repoId;
-    m_id = nodeId;
-    m_validRequestString = true;
+    m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
+    m_interface = WSGInterface::NavNode;
+    }
 
+void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
+    {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/ws/");
+    m_httpRequestString.append("/");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
-    m_httpRequestString.append("/Navigation/NavNode");
+    m_httpRequestString.append("/Navigation/NavNode/");
+    }
+
+WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String nodeId)
+    {
+    m_serverName = server;
+    m_version = version;
+    m_repoId = repoId;
+    m_id = nodeId;
+    m_validRequestString = false;
+    m_requestType = HttpRequestType::GET_Request;
+    m_interface = WSGInterface::NavNode;
+    }
+
+void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_version);
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(m_repoId);
+    m_httpRequestString.append("/Navigation/NavNode/");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("/NavNode");
     }
@@ -227,8 +249,23 @@ WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8St
     m_schema = schema;
     m_className = className;
     m_id = objectId;
-    m_validRequestString = true;
+    m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
+    }
+
+void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_version);
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(m_repoId);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_schema);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_className);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_id);
     }
 
 WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className, Utf8String objectId)
@@ -239,24 +276,81 @@ WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String v
     m_schema = schema;
     m_className = className;
     m_id = objectId;
-    m_validRequestString = true;
+    m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
+    }
+
+void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_version);
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(m_repoId);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_schema);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_className);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_id);
+    m_httpRequestString.append("/$file");
     }
 
 WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className)
     {
+    m_startIndex = 0;
+    m_pageSize = 25;
     m_serverName = server;
     m_version = version;
     m_pluginName = pluginName;
     m_schema = schema;
     m_className = className;
-    m_validRequestString = true;
+    m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
+    }
+
+void WSGPagedRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_version);
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(m_repoId);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_schema);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_className);
+    m_httpRequestString.append("?$skip=");
+    Utf8P buf = new Utf8Char();
+    BeStringUtilities::FormatUInt64(buf, m_startIndex);
+    m_httpRequestString.append(buf);
+    m_httpRequestString.append("&$top=");
+    BeStringUtilities::FormatUInt64(buf, m_pageSize);
+    m_httpRequestString.append(buf);
+    }
+
+void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_version);
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(m_repoId);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_schema);
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(m_className);
+    m_httpRequestString.append("?$skip=");
+    Utf8P buf = new Utf8Char();
+    BeStringUtilities::FormatUInt64(buf, m_startIndex);
+    m_httpRequestString.append(buf);
+    m_httpRequestString.append("&$top=");
+    BeStringUtilities::FormatUInt64(buf, m_pageSize);
+    m_httpRequestString.append(buf);
     }
 
 bvector<Utf8String> WSGServer::GetPlugins() const
     {
-    //WSGInterface Repositories, NavNode
     //https://localhost/v2.4/Plugins 
     Utf8String serverName = m_serverName;
     serverName.append("/v");
@@ -270,7 +364,7 @@ bvector<Utf8String> WSGServer::GetPlugins() const
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
+    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
         return returnVec;
 
     for (auto instance : instances["instances"])
@@ -288,7 +382,7 @@ Utf8String WSGServer::GetVersion() const
         return m_version;
 
     Utf8String serverName = m_serverName;
-    serverName.append("/v2.1/Plugins");
+    serverName.append("/v2.4/Plugins");
     WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
@@ -328,7 +422,7 @@ bvector<Utf8String> WSGServer::GetRepositories() const
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
     
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
+    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -358,7 +452,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
+    if ((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
         return returnVec;
     
     for (auto instance : instances["instances"])
@@ -389,7 +483,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
 
     Json::Value instances(Json::objectValue);
-    if((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
+    if((status != CURLE_OK) || (!Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances")))
         return returnVec;
 
     for(auto instance : instances["instances"])

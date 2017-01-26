@@ -10,6 +10,8 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatform/SpatialEntity.h>
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
@@ -17,6 +19,34 @@
 #include <sqlext.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+//=====================================================================================
+//! Overview:
+//! We want RealityData Requests to inherit from WSGURL requests, but there are many
+//! functions and variables that won't be used because we'll be calling the
+//! RealityDataService class; so we need to override them to avoid confusion, in case
+//! a user tries to call methods from the base class
+//!
+//! @bsiclass                                         Spencer.Mason             12/2016
+//! RealityDataUrl
+//! This class represents an URL for a RealityData request.
+//=====================================================================================
+struct RealityDataUrl : public WSGURL
+    {
+public:
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
+
+    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
+
+    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+    };
 
 //=====================================================================================
 //! Overview:
@@ -46,20 +76,18 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! RealityDataByIdRequest
 //! This class represents a request for specific RealityData class object.
 //=====================================================================================
-struct RealityDataByIdRequest : public WSGObjectRequest
+struct RealityDataByIdRequest : public RealityDataUrl
     {
 public:
 	// Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
-    //REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8CP identifier): m_identifier(identifier) {}
+    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
    
 protected:
-    virtual bool _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataByIdRequest() {}
-    Utf8String m_identifier;
-    }
+    };
 	
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
@@ -68,57 +96,51 @@ private:
 //!  class object. Need to check if this class is necessary. We can return
 //!  all projects that have a link with a certain RealityData
 //=====================================================================================
-struct RealityDataProjectRelationshipByIdRequest : public WSGObjectRequest
+struct RealityDataProjectRelationshipByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
-    //REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8CP identifier): m_identifier(identifier){}
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
-    virtual bool _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataProjectRelationshipByIdRequest() {}
-    Utf8String m_identifier;
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataFolderByIdRequest
 //! This class represents a request for specific RealityDataFolder class object.
 //=====================================================================================
-struct RealityDataFolderByIdRequest : public WSGObjectRequest
+struct RealityDataFolderByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
-    //REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
+    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
-    virtual bool _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataFolderByIdRequest() {}
-    Utf8String m_identifier;
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataDocumentByIdRequest
 //! This class represents a request for specific RealityDataDocument class object.
 //=====================================================================================
-struct RealityDataDocumentByIdRequest : public WSGObjectRequest
+struct RealityDataDocumentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
-    //REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 	
 protected:
-    virtual bool _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentByIdRequest() {}
-    Utf8String m_identifier; 
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
@@ -149,24 +171,25 @@ private:
 //!
 //!    }
 //=====================================================================================
-struct RealityDataDocumentContentByIdRequest : public WSGObjectContentRequest
+struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_identifier = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(RealityDataDocumentContentByIdRequest object) 
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
 	
     //! This call modify the indentifier of the object. Since we want a 
 	//!  different ressource. This can be a folder, document or anything
 	//!  else. 
-    REALITYDATAPLATFORM_EXPORT ChangeInstanceId(instanceId);
+    REALITYDATAPLATFORM_EXPORT void ChangeInstanceId(Utf8String instanceId);
 
     //! This call creates the URL request to obtain the azure redirection URL.
     REALITYDATAPLATFORM_EXPORT Utf8String GetAzureRedirectionRequestUrl();
 
     //! Once the azure blob container URL has been obtained it must be set
     //!  using this method after which the object will create azure redirection.
-    REALITYDATAPLATFORM_EXPORT StatusInt SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl);
+    REALITYDATAPLATFORM_EXPORT void SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl);
 
     //! Indicates that an azure blob redirection url has been set to object
     REALITYDATAPLATFORM_EXPORT bool IsAzureBlobRedirected();
@@ -174,21 +197,97 @@ public:
     //! Used to indicate the azure blob redirection is possible or not. The default value is true
     //!  but if the service does not support azure redirection it must be set to false to
     //!  prevent attempts at obtaining redirection.
-    REALITYDATAPLATFORM_EXPORT StatusInt SetAzureRedirectionPossible(bool possible);
+    REALITYDATAPLATFORM_EXPORT void SetAzureRedirectionPossible(bool possible);
 
     //! Indicates if azure blob container redirection is possible
     REALITYDATAPLATFORM_EXPORT bool IsAzureRedirectionPossible();
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentContentByIdRequest() {}
-    Utf8String m_identifier; 
     bool m_AzureRedirected;
     bool m_allowAzureRedirection;
     Utf8String m_AzureRedirectionURL;
 
-    }
+    };
+
+struct RealityDataFilterCreator
+    { 
+    //! Sets filtering upon the classification. The classification may contain
+    //!  more than one classification by bitwise oring the classification
+    //!  values.
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByClassification(int classification);
+
+    //! Filters the returned set by the reality data size.
+    //! Both the min and max size must be specified
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterBySize(double minSize, double maxSize);
+
+    //! Sets a spatial filter. Only RealityData for which the footprint overlaps (even
+    //! partially) the given region will be selected.
+    //! The area provided is a list of geo points (longitude/latitude)
+    //!  that must form a closed area. The last point of the list must
+    //!  be equal to the first point.
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys);
+
+    //! Filters the list by owner. Only reality data belonging to given owner
+    //!  will be returned. The owner is specified by the email address
+    //!  and is case insensitive.
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByOwner(Utf8String owner);
+
+    //! Filters the list by creation date. To indicate either min or max date
+    //!  are unbounded simply provide an invalid/unset DataTime object
+    //!  If both dates are invalid/unset then the command will return an error
+    //!  and no filtering will be set.
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByCreationDate(DateTime minDate, DateTime maxDate);
+
+    //! Filters the list by modification date. To indicate either min or max date
+    //!  are unbounded simply provide an invalid/unset DataTime object.
+    //! If both dates are invalid/unset then the command will return an error
+    //!  and no filtering will be set.  
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByModificationDate(DateTime minDate, DateTime maxDate);
+
+    //! Filters in or out public data as specified
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterPublic(bool isPublic);
+        
+    //! Filter by resolution. As resolution may be confusing since minimum resolution is
+    //!  expressed a higher number the resolution can be specified in any order and
+    //!  internally the resolution will be applied accordingly.
+    //! Reality data that have no resolution set will be considered 'unspecified' and
+    //!  will be returned whatever the resolution bracket given if filterOutUnspecified is false
+    //!  and will be discarded if true
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
+
+    //! Filter by accuracy. As accuracy may be confusing since minimum accuracy is
+    //!  expressed a higher number the accuracy can be specified in any order and
+    //!  internally the accuracy will be applied accordingly.    
+    //! Reality data that have no accuracy set will be considered 'unspecified' and
+    //!  will be returned whatever the bracket given if filterOutUnspecified is false
+    //!  and will be discarded if true
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
+
+    //! Filter by type. The type is specified by a string in the reality data.
+    //! The filter type specification here can contain many types
+    //!  separated by semi-colons. All reality data of any of the specified types
+    //!  will be returned in the list.
+    //!  types are case insensitive
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByType(Utf8String types);
+
+    //! Filter by dataset. Only reality data of specified dataset will be returned
+    //!  note that Dataset names are case-sensitive.
+    REALITYDATAPLATFORM_EXPORT Utf8String FilterByDataset(Utf8String dataset);
+
+    //! Groups all filters inside of parentheses, all criteria must be met ( && )
+    REALITYDATAPLATFORM_EXPORT Utf8String GroupFilters(bvector<Utf8String> filters);
+
+    //! Groups all filters inside of parentheses, only one of the criteria must be met ( || )
+    REALITYDATAPLATFORM_EXPORT Utf8String GroupAlternativeFilters(bvector<Utf8String> filters);
+
+/*protected:
+    RealityDataField m_sortField;
+    bool m_sortAscending;
+    bool m_sorted;*/
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
@@ -198,117 +297,85 @@ private:
 //!  are located within provided spatial area (usually the project area) for the 
 //!  incdicated classification. Additional parameters can be provided after creation.
 //=====================================================================================
-struct RealityDataPagedRequest : public WSGObjectListPagedRequest
+struct RealityDataPagedRequest : public WSGPagedRequest
     {
 public:
     enum class RealityDataField
-        {
+    {
         Id,
-		Enterprise,
-		ContainerName,
-		Name,
-		Dataset,
-		Description,
-		RootDocument,
-		Size,
-		Classification,
-		Type,
-		Footprint,
-		ThumbnailDocument,
-		MetadataURL,
-		ResolutionInMeters,
-		AccuracyInMeters,
-		PublicAccess,
-		Listable,
-		ModifiedTimestamp,
-		CreatedTimestamp,
-		OwnedBy
-        };
+        Enterprise,
+        ContainerName,
+        Name,
+        Dataset,
+        Description,
+        RootDocument,
+        Size,
+        Classification,
+        Type,
+        Footprint,
+        ThumbnailDocument,
+        MetadataURL,
+        ResolutionInMeters,
+        AccuracyInMeters,
+        PublicAccess,
+        Listable,
+        ModifiedTimestamp,
+        CreatedTimestamp,
+        OwnedBy
+    };
 
-public:
-    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false), m_requestType(GET_Request), m_sort(false) {}
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
+    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
+    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+
+    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_requestType = HttpRequestType::GET_Request; m_sort = false; }
+
+    REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
 
     //! Sets the sort order for the list. This sorting is performed server-side.
     //! Note that it is not possible to specify two sorts (sort by field a then by filed b is not supported).
     //! The server will decide how sorted groups are ordered.
     //! Note that some fields in the server are considered case-sensitive and others
     //!  case insensitive. The server will apply sort rules accordingly.
-    REALITYDATAPLATFORM_EXPORT StatusInt SortBy(RealityDataField, bool ascending);
+    REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
 
-    //! Sets filtering upon the classification. The classification may contain
-    //!  more than one classification by bitwise oring the classification
-    //!  values.
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByClassification(int classification);
-
-    //! Filters the returned set by the reality data size.
-    //! Both the min and max size must be specified
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterBySize(double minSize, double maxSize);
-
-    //! Sets a spatial filter. Only RealityData for which the footprint overlaps (even
-    //! partially) the given region will be selected.
-    //! The area provided is a list of geo points (longitude/latitude)
-    //!  that must form a closed area. The last point of the list must
-    //!  be equal to the first point.
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterSpatial(bvector<GeoPoint2d> area);
-
-    //! Filters the list by owner. Only reality data belonging to given owner
-    //!  will be returned. The owner is specified by the email address
-    //!  and is case insensitive.
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByOwner(Utf8String owner);
-
-    //! Filters the list by creation date. To indicate either min or max date
-    //!  are unbounded simply provide an invalid/unset DataTime object
-    //!  If both dates are invalid/unset then the command will return an error
-    //!  and no filtering will be set.
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByCreationDate(DataTime minDate, DateTime maxDate);
-
-    //! Filters the list by modification date. To indicate either min or max date
-    //!  are unbounded simply provide an invalid/unset DataTime object.
-    //! If both dates are invalid/unset then the command will return an error
-    //!  and no filtering will be set.  
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByModificationDate(DataTime minDate, DateTime maxDate);
-
-    //! Filters in or out public data as specified
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterPublic(bool public);
-        
-    //! Filter by resolution. As resolution may be confusing since minimum resolution is
-    //!  expressed a higher number the resolution can be specified in any order and
-    //!  internally the resolution will be applied accordingly.
-    //! Reality data that have no resolution set will be considered 'unspecified' and
-    //!  will be returned whatever the resolution bracket given if filterOutUnspecified is false
-    //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
-
-    //! Filter by accuracy. As accuracy may be confusing since minimum accuracy is
-    //!  expressed a higher number the accuracy can be specified in any order and
-    //!  internally the accuracy will be applied accordingly.    
-    //! Reality data that have no accuracy set will be considered 'unspecified' and
-    //!  will be returned whatever the bracket given if filterOutUnspecified is false
-    //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
-
-    //! Filter by type. The type is specified by a string in the reality data.
-    //! The filter type specification here can contain many types
-    //!  separated by semi-colons. All reality data of any of the specified types
-    //!  will be returned in the list.
-    //!  types are case insensitive
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByType(Utf8String types);
-
-    //! Filter by dataset. Only reality data of specified dataset will be returned
-    //!  note that Dataset names are case-sensitive.
-    REALITYDATAPLATFORM_EXPORT StatusInt FilterByDataset(Utf8String dataset);
-
-    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;
+    Utf8String m_order;
+    Utf8String m_filter;
+    Utf8String m_sort;
+    };
 
-    RealityDataField m_sortField;
-    bool m_sortAscending;
-    bool m_sorted;
-    }
+struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex, uint8_t pageSize) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataListByEnterprisePagedRequest() {}
+    };
+
+struct RealityDataProjectRelationByProjectIdPagedRequest : public RealityDataPagedRequest
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
+
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataProjectRelationByProjectIdPagedRequest() {}
+    };
 
 //! Callback function to follow the download progression.
 //! @param[out] index       Url index set at the creation, (-1)General error, (-2)Retry the command. 
@@ -357,7 +424,7 @@ typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
 //! One and only one of SetSourcePath(), SetSourceFile() or SetSourceFiles()
 //!  will be called.
 //=====================================================================================
-struct RealityDataServiceUpload : public RefCounted
+struct RealityDataServiceUpload : public RefCountedBase
     {
     //where the curl upload ended, either in success or failure
     struct UploadResult
@@ -375,19 +442,19 @@ struct RealityDataServiceUpload : public RefCounted
     //! @param thumbnailDocument The thumbnail document. It must designate a JPG or PNG file providing a
     //!  a visual overview of the reality data.
 	//! Keep in mind that you can upload 1 to many files
-    REALITYDATAPLATFORM_EXPORT StatusInt SetSourcePath(Utf8String sourcePath, Utf8String rootDocument = null, Utf8String thumbnailDocument = null);
+    REALITYDATAPLATFORM_EXPORT void SetSourcePath(Utf8String sourcePath, Utf8String rootDocument = "", Utf8String thumbnailDocument = "");
 
     //! Sets the RealityDataID that also designates the container to which the data is uploaded
-    REALITYDATAPLATFORM_EXPORT StatusInt SetRealityDataId(Utf8String realityDataId);
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8String realityDataId);
 
     //! Set proxy informations
     REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
 
     //! Set certificate path for https upload.
-    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(WStringCR certificatePath) { m_certPath = certificatePath; };
+    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; };
 
     //! Set callback to follow progression of the upload.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func, float pi_step = 0.01) 
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func, float pi_step = 0.01)
                                                                    {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
     //! Set callback to allow the user to mass cancel all uploads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceUpload_HeartbeatCallBack pi_func)
@@ -397,10 +464,18 @@ struct RealityDataServiceUpload : public RefCounted
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
     //! Start the upload progress for all links.
-    REALITYDATAPLATFORM_EXPORT UploadReport* Perform();
+    //TODO: REALITYDATAPLATFORM_EXPORT UploadReport* Perform();
 
-    
-    }
+private:
+    Utf8String m_id;
+    Utf8String m_proxyUrl;
+    Utf8String m_proxyCreds;
+    BeFileName m_certPath;
+    RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
+    float m_progressStep;
+    RealityDataServiceUpload_StatusCallBack m_pStatusFunc;
+    RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -428,7 +503,7 @@ public:
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of RealityData Service.
-    static SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
+    static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
         {
         BeAssert(server.size() != 0);
         BeAssert(WSGProtocol.size() != 0);
@@ -454,88 +529,66 @@ public:
     static Utf8StringCR GetSchemaName();
 
     //! The classification codes. The high level interface only supports the four base classification
-//&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
+    //&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
     enum class Classification
         {
         Imagery = 0x1,
-        Terrain = 0x2;
-        Model = 0x4;
-        Pinned = 0x8;
-        }
-
-
-public:
+        Terrain = 0x2,
+        Model = 0x4,
+        Pinned = 0x8
+        };
 
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(RealityDataPagedRequestR request);
-
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(RealityDataPagedRequestCR request);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(RealityDataByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(RealityDataByIdRequestCR request);
 
     //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdCR request);
+    //TODO: REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequestCR request);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static bvector<byte> Request(RealityDataDocumentContentByIdCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<Byte> Request(RealityDataDocumentContentByIdRequestCR request);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdCR request);
+    //TODO: REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequestCR request);
 
     //! Returns a list of RealityData objects that belongs to the enterprise.
     //! Notice that the enterprise is not usually provided and the enterprise of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(RealityDataListByEnterprisePagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(RealityDataListByEnterprisePagedRequestCR request);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationPtr> Request(RealityDataProjectRelationByProjectPagedRequestCR request);
-
+    //TODO: REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationPtr> Request(RealityDataProjectRelationByProjectIdPagedRequestCR request);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataPagedRequestR request);
-
+    REALITYDATAPLATFORM_EXPORT static BentleyStatus PagedRequestToJSON(RealityDataPagedRequestPtr request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataByIdRequestCR request);
-
-    //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataDocumentByIdCR request);
-
-    //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataDocumentContentByIdCR request);
-
-    //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataFolderByIdCR request);
-
-    //! Returns the full WSG JSON returned by the request.
-    //! Since this request is a paged request it will advance to next page automatically
-    //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(RealityDataListByEnterprisePagedRequestCR request);
-
+    REALITYDATAPLATFORM_EXPORT static BentleyStatus RequestToJSON(RealityDataUrlPtr request, Utf8StringR jsonResponse);
 
     //! Returns a RealityDataServiceUpload object
     REALITYDATAPLATFORM_EXPORT static RealityDataServiceUploadPtr CreateUpload();
 
-
 private:
-    static Utf8String s_realityDataServer = "https://connect-contextservices.bentley.com/";
-    static Utf8String s_realityDataWSGProtocol = "2.4";
-    static Utf8String s_realityDataName = "IndexECPlugin-Server";
-    static Utf8String s_realityDataSchemaName = "RealityModeling";
+    static Utf8String s_realityDataServer;
+    static Utf8String s_realityDataWSGProtocol;
+    static Utf8String s_realityDataName;
+    static Utf8String s_realityDataSchemaName;
 
-    static const Utf8String s_ImageryKey = "Imagery";
-    static const Utf8String s_TerrainKey = "Terrain";
-    static const Utf8String s_ModelKey = "Model";
-    static const Utf8String s_PinnedKey = "Pinned";
-    }
+    static const Utf8String s_ImageryKey;
+    static const Utf8String s_TerrainKey;
+    static const Utf8String s_ModelKey;
+    static const Utf8String s_PinnedKey;
+    };
 
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

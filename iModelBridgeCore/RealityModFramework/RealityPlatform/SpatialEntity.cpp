@@ -178,6 +178,36 @@ SpatialEntityDataSourceR SpatialEntity::GetDataSource(size_t index) { return *m_
 void SpatialEntity::AddDataSource(SpatialEntityDataSourceR dataSource) { m_DataSources.push_back(&dataSource); }
 size_t SpatialEntity::GetDataSourceCount() const {return m_DataSources.size();}
 
+Utf8StringCR SpatialEntity::GetEnterprise() const { return m_enterprise; }
+void SpatialEntity::SetEnterprise(Utf8CP enterprise) { m_enterprise = enterprise; }
+
+Utf8StringCR SpatialEntity::GetContainerName() const { return m_containerName; }
+void SpatialEntity::SetContainerName(Utf8CP containerName) { m_containerName = containerName; }
+
+Utf8StringCR SpatialEntity::GetDescription() const { return m_description; }
+void SpatialEntity::SetDescription(Utf8CP description) { m_description = description; }
+
+Utf8StringCR SpatialEntity::GetRootDocument() const { return m_rootDocument; }
+void SpatialEntity::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
+
+Utf8StringCR SpatialEntity::GetMetadataURL() const { return m_metadataUrl; }
+void SpatialEntity::SetMetadataURL(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; }
+
+Utf8StringCR SpatialEntity::GetAccuracy() const { return m_accuracy; }
+void SpatialEntity::SetAccuracy(Utf8CP accuracy) { m_accuracy = accuracy; }
+
+bool SpatialEntity::GetPublicAccess() const { return m_publicAccess; }
+void SpatialEntity::SetPublicAccess(bool publicAccess) { m_publicAccess = publicAccess; }
+
+bool SpatialEntity::GetListable() const { return m_listable; }
+void SpatialEntity::SetListable(bool listable) { m_listable = listable; }
+
+DateTime SpatialEntity::GetModifiedTimestamp() const { return m_modifiedDate; }
+void SpatialEntity::SetModifiedTimestamp(DateTime modifiedDate) { m_modifiedDate = modifiedDate; }
+
+Utf8StringCR SpatialEntity::GetOwner() const { return m_owner; }
+void SpatialEntity::SetOwner(Utf8CP owner) { m_owner = owner; }
+
 float SpatialEntity::GetOcclusion() const { return m_occlusion; }
 void SpatialEntity::SetOcclusion(float cover) { BeAssert(cover <=100.0); m_occlusion = cover; }
 

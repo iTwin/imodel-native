@@ -42,7 +42,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! Finally the last one is specialised to build URL intended to obtain list
 //! of objects using pages, sort orders, etc.
 //=====================================================================================
-struct WSGURL
+struct WSGURL : public RefCountedBase
     {
 public:
 
@@ -64,38 +64,38 @@ public:
     //! the server name without trailling or leading slashes and without the communication version
     //! for example the server name could be 'dev-contextservices.connect.com'
     //! SetServer() will return an error is the server string provided is invalid
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetServerName() const;
 
     //! A string containing the version. The version must of the format number dot number such as '2.4'
     //! otherwise an error will be returned
     //! Note that the method does not validate the support of the specified version.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetVersion() const;
 
     //! A string containing the plug-in name. A WSG server can host many plug-ins so specification is required.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetPluginName() const;
 
     //! The Schema. A plugin can publish many schemas so specification is required.
     //! Note that the method does not validate the publication of the specified schema.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetSchema() const;
 
     //! The interface. WSG plugins can implement one on many interfaces. We currently only support two
     //! The Repository interface enables accessing objects related to a schema while the NavNode interface
     //! lists an exposed tree-like structure.
     //! Note that the method does not validate the implementation of the specified interface.
-    REALITYDATAPLATFORM_EXPORT WSGInterface GetInterface() const;
+    REALITYDATAPLATFORM_EXPORT virtual WSGInterface GetInterface() const;
 
     //! The class name. 
     //! Note that the method does not validate the class is part of the schema.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetClassName() const;
 
     //! The id of the object requested. If the request does not require
     //! an identifier then this field should remain empty
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
-    REALITYDATAPLATFORM_EXPORT void SetId(Utf8String id);
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT virtual void SetId(Utf8String id);
 
     //! The object content flag indicates we want or not the content of the file associated with designated object.
     //! The default is false.
-    REALITYDATAPLATFORM_EXPORT bool GetContentFlag() const;
+    REALITYDATAPLATFORM_EXPORT virtual bool GetContentFlag() const;
 
     enum class HttpRequestType
         {
@@ -104,9 +104,9 @@ public:
         POST_Request
         };
 
-    REALITYDATAPLATFORM_EXPORT HttpRequestType GetRequestType() const;
+    REALITYDATAPLATFORM_EXPORT virtual HttpRequestType GetRequestType() const;
 
-    REALITYDATAPLATFORM_EXPORT Utf8String GetRepoId() const;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRepoId() const;
 
     //! Returns the full http request string
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const
@@ -158,14 +158,14 @@ protected:
     void SetRepoId(Utf8String repoId);
 
 
-    virtual bool _PrepareHttpRequestStringAndPayload() const;
+    virtual void _PrepareHttpRequestStringAndPayload() const;
 
-    Utf8String m_serverName;
+    mutable Utf8String m_serverName;
     Utf8String m_version;
     Utf8String m_pluginName;
     Utf8String m_schema;
     Utf8String m_className;
-    WSGInterface m_interface;
+    WSGInterface m_interface = WSGInterface::Repositories;
     Utf8String m_repoId;
     Utf8String m_id;
     bool m_objectContent = false;
@@ -178,6 +178,20 @@ protected:
     mutable HttpRequestType m_requestType;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Alain.Robert              12/2016
+//! WSGNavNodeRequest
+//! This class represents a URL to a WSG request using the NavNode interface.
+//! The WSG NavNode interface enables to navigate a tree-like structure exposed by a WSG 
+//! service.
+//=====================================================================================
+struct WSGNavRootRequest : public WSGURL
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -189,7 +203,9 @@ protected:
 struct WSGNavNodeRequest: public WSGURL
     {
 public:
-    REALITYDATAPLATFORM_EXPORT WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, Utf8String nodeId);
+    REALITYDATAPLATFORM_EXPORT WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String nodeId);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -201,6 +217,8 @@ struct WSGObjectRequest: public WSGURL
     {
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className, Utf8String objectId);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -212,6 +230,8 @@ struct WSGObjectContentRequest: public WSGURL
     {
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className, Utf8String objectId);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -235,7 +255,6 @@ public:
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(WSGPagedRequest const& object);
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object);
 
-
     REALITYDATAPLATFORM_EXPORT void SetPageSize(uint8_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
     REALITYDATAPLATFORM_EXPORT uint8_t GetPageSize() {return m_pageSize;}
   
@@ -246,7 +265,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint16_t)(page * m_pageSize);}
 
 protected:
-    // Default constructor
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
 
     uint16_t m_startIndex;
     uint8_t m_pageSize;
@@ -263,6 +282,8 @@ struct WSGObjectListPagedRequest: public WSGPagedRequest
     {
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectListPagedRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================

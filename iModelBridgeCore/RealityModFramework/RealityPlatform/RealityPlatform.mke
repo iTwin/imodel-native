@@ -61,7 +61,7 @@ $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(Publi
 
 $(o)WSGServices$(oext) : $(baseDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
 
-#$(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+$(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
