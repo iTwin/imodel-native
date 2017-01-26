@@ -1740,7 +1740,7 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
     {
-    return nullptr != GetDgnDb().Units().GetDgnGCS();
+    return nullptr != GetDgnDb().GeoLocation().GetDgnGCS();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1754,10 +1754,10 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_dataDir = m_outputDir;
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
-    DPoint3d        origin = db.Units().GetProjectExtents().GetCenter();
+    DPoint3d        origin = db.GeoLocation().GetProjectExtents().GetCenter();
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
-    DgnGCS*         dgnGCS = db.Units().GetDgnGCS();
+    DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
@@ -2316,7 +2316,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
-    AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
+    AxisAlignedBox3d projectExtents = GetDgnDb().GeoLocation().GetProjectExtents();
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
