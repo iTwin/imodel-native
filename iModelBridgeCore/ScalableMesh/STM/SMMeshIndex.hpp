@@ -3609,7 +3609,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
         {
         SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, GetBlockID());
+        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, HPMBlockID(texID));
         assert(poolMemBlobItemPtr.IsValid());
 
         m_textureIds.insert(texID);
