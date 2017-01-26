@@ -171,8 +171,8 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 TEST_F(ECInstanceUpdaterTests, ReadonlyAndCalculatedProperties)
     {
     ECDbR ecdb = SetupECDb("updatereadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                                     "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                                     "   <ECSchemaReference version='01.12' prefix='bsca' name='Bentley_Standard_CustomAttributes'/>"
+                                                                     "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "   <ECSchemaReference version='01.12' alias='bsca' name='Bentley_Standard_CustomAttributes'/>"
                                                                      "    <ECEntityClass typeName='A' >"
                                                                      "        <ECProperty propertyName='RInt' typeName='int' readOnly='True'/>"
                                                                      "        <ECProperty propertyName='RString' typeName='string' readOnly='True'/>"
@@ -281,7 +281,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "        <ECProperty propertyName='P2' typeName='string' />"
@@ -349,7 +349,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "        <ECProperty propertyName='P2' typeName='string' />"
@@ -492,34 +492,13 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
 //Failing case, if number of property indices less then 1, updater should be invalid
 TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
     {
-    SchemaItem schemaItem(
+    ECDbCR ecdb = SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Base'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "           <SharedColumnCount>1</SharedColumnCount>"
-        "         </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Prop1' typeName='double' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1'>"
-        "        <ECCustomAttributes>"
-        "           <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "           </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='Prop2' typeName='double' />"
-        "        <ECProperty propertyName='Center' typeName='point3d' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-
-    ECDbR ecdb = SetupECDb("updaterbasesonparameterindices.ecdb", schemaItem);
+        "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
@@ -538,7 +517,7 @@ TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"

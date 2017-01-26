@@ -209,7 +209,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindInt64(int64_t value)
     if (!stat.IsSuccess())
         return stat;
 
-    *m_json = BeJsonUtilities::StringValueFromInt64(value);
+    *m_json = Json::Value(value);
     return ECSqlStatus::Success;
     }
 

@@ -217,7 +217,7 @@ int64_t PrimitiveJsonECSqlValue::_GetInt64() const
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Long))
         return NoopECSqlValue::GetSingleton().GetInt64();
 
-    return BeJsonUtilities::Int64FromValue(GetJson());
+    return GetJson().asInt64();
     }
 
 
