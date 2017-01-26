@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/VolumeElement_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -28,7 +28,7 @@ protected:
     GenericPhysicalObjectCPtr InsertBlock(DPoint3dCR origin, double dimension);
 
 public:
-    VolumeElementTestFixture() : T_Super(L"VolumeElementTest.bim") {}
+    VolumeElementTestFixture() {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR cente
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, CrudTest)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"CrudTest.bim");
 
     DPoint3d origin = {0.0, 0.0, 0.0};
     DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
@@ -137,7 +137,7 @@ TEST_F(VolumeElementTestFixture, CrudTest)
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, QueryTest)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryTest.bim");
 
     // Entirely inside
     GenericPhysicalObjectCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
@@ -159,8 +159,8 @@ TEST_F(VolumeElementTestFixture, QueryTest)
     VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "QueryTestVolume");
     ASSERT_TRUE(volume.IsValid());
 
-    CreateDefaultView(m_defaultModel->GetModelId());
-    UpdateDgnDbExtents();
+    ChangeTestFixture::CreateDefaultView(*m_db);
+    DgnDbTestUtils::UpdateProjectExtents(*m_db);
     m_db->SaveChanges("Finished inserts");
     
     DgnElementIdSet idSet;

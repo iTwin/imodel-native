@@ -12,6 +12,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 //=======================================================================================
 //! DgnChangeSummaryTestFixture
@@ -35,9 +36,6 @@ struct DgnChangeSummaryTestFixture : public ChangeTestFixture
         }
     };
 
-private:
-    void _SetupDgnDb() override;
- 
 protected:
     DgnCode CreateCode(int iFloor, int iQuadrant);
         
@@ -54,18 +52,47 @@ protected:
     void CompareSessions(DgnChangeSummaryTestFixture::ChangedElements& changedElements, uint32_t startSession, uint32_t endSession);
 
 public:
-    DgnChangeSummaryTestFixture() : T_Super(L"DgnChangeSummaryTest.bim") {}
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
+    static void SetUpTestCase();
+    DgnChangeSummaryTestFixture() {}
 };
 
+DgnPlatformSeedManager::SeedDbInfo DgnChangeSummaryTestFixture::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::_SetupDgnDb()
+void DgnChangeSummaryTestFixture::SetUpTestCase()
     {
-    T_Super::_SetupDgnDb();
-    CreateDefaultView(m_defaultModel->GetModelId());
-    UpdateDgnDbExtents();
-    m_db->SaveChanges();
+    //Start from parent fixture's seed Db
+    ScopedDgnHost tempHost;
+
+    //  Request a root seed file.
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(false, true));
+
+    //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
+    //  Note that we must put our group seed file in a group-specific sub-directory
+    DgnChangeSummaryTestFixture::s_seedFileInfo = rootSeedInfo;
+    DgnChangeSummaryTestFixture::s_seedFileInfo.fileName.SetName(L"DgnChangeSummaryTestFixture/DgnChangeSummaryTestFixture.bim");
+
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, DgnChangeSummaryTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
+    TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+
+    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
+    ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
+
+    db->SaveChanges();
+    // Create a dummy revision to purge transaction table for the test
+    DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
+    BeAssert(rev.IsValid());
+    db->Revisions().FinishCreateRevision();
+
+    db->SaveChanges();
+
+    CreateDefaultView(*db);
+    DgnDbTestUtils::UpdateProjectExtents(*db);
+    db->SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -223,24 +250,23 @@ TxnManager::TxnId DgnChangeSummaryTestFixture::QueryLastTxnId(DgnDbR dgndb, uint
 //---------------------------------------------------------------------------------------
 void DgnChangeSummaryTestFixture::CreateSampleBuilding()
     {
-    SetupDgnDb();
-
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     for (int ii = 0; ii < 5; ii++)
         {
-        OpenDgnDb();
+        OpenDgnDb(fileName);
         InsertFloor(ii);
         CloseDgnDb();
         }
 
-    OpenDgnDb();
+    OpenDgnDb(fileName);
     UpdateFloorGeometry(1);
     CloseDgnDb();
 
-    OpenDgnDb();
+    OpenDgnDb(fileName);
     DeleteFloor(3);
     CloseDgnDb();
 
-    OpenDgnDb();
+    OpenDgnDb(fileName);
     InsertFloor(5);
     CloseDgnDb();
     }
@@ -295,9 +321,10 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
 //---------------------------------------------------------------------------------------
 TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
     {
+    SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"CreateSampleDataSet.bim");
     CreateSampleBuilding();
 
-    printf("Created sample data set: %ls\n", m_testFileName.c_str());
+    printf("Created sample data set: CreateSampleDataSet.bim\n");
     }
 
 //---------------------------------------------------------------------------------------
@@ -305,8 +332,11 @@ TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     {
+    SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"ValidateChangeSummaries.bim");
+    BeFileName fullFileName = BeFileName(m_db->GetDbFileName(), true);
     CreateSampleBuilding();
-    OpenDgnDb();
+
+    OpenDgnDb(fullFileName);
 
     /*
     Dump of TxnTable -
@@ -329,14 +359,14 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 7, 7);
-    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 4);// TODO: Updates due to LastMod change. Needs a fix. 
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
-    EXPECT_EQ(changedElements.m_businessUpdates.size(), 4); // TODO: Updates due to LastMod change. Needs a fix. 
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0); 
 
     CompareSessions(changedElements, 8, 8);
     EXPECT_EQ(changedElements.m_inserts.size(), 0);
-    EXPECT_EQ(changedElements.m_deletes.size(), 4);
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
     EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 4);
     }
