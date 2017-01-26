@@ -9,6 +9,7 @@
 #include "NestedStructArrayTestSchemaHelper.h"
 #include <cmath>
 #include <algorithm>
+#include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -1503,6 +1504,48 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(stmt);
     ASSERT_FALSE(stmt.Step() == BE_SQLITE_ROW);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
+    {
+    ECDbCR ecdb = SetupECDb("Int64InStructArrays.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECStructClass typeName='MyStruct' >"
+        "        <ECProperty propertyName='I' typeName='int' />"
+        "        <ECProperty propertyName='I64' typeName='long' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECStructArrayProperty propertyName='StructArrayProp' typeName='MyStruct' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Foo(StructArrayProp) VALUES(?)"));
+    IECSqlBinder& arrayElementBinder = stmt.GetBinder(1).AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["I"].BindInt(123456));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["I64"].BindInt64(id.GetValue()));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Statement rawStmt;
+    ASSERT_EQ(BE_SQLITE_OK, rawStmt.Prepare(ecdb, "SELECT StructArrayProp FROM ts_Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, rawStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, rawStmt.Step()) << rawStmt.GetSql();
+    rapidjson::Document actualStructArrayJson;
+    ASSERT_TRUE(!actualStructArrayJson.Parse<0>(rawStmt.GetValueText(0)).HasParseError());
+
+    ASSERT_TRUE(actualStructArrayJson.IsArray());
+    ASSERT_EQ(123456, actualStructArrayJson[0]["I"]);
+    ASSERT_EQ(id.GetValue(), actualStructArrayJson[0]["I64"]) << "Int64 are expected to not be stringified in the JSON";
     }
 
 //---------------------------------------------------------------------------------------

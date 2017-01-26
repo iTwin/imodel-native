@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonLibrary_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -57,7 +57,6 @@ TEST(JsonCpp, RoundTripDoubles)
 
     double d2 = obj2["pi"].asDouble();
     double n2 = obj2["negative"].asDouble();
-    (void) n2;
 
 #if 0
     printf("d1=%#.17g\n", d1);
@@ -67,11 +66,63 @@ TEST(JsonCpp, RoundTripDoubles)
     printf("n2=%#.17g\n", n2);
 #endif
 
-    ASSERT_EQ(d1, d2);
+    ASSERT_DOUBLE_EQ(d1, d2);
+    ASSERT_DOUBLE_EQ(n1, n2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(JsonCpp, RoundTripInt64)
+    {
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+    Json::Value obj1(Json::objectValue);
+    obj1["positive"] = expectedPositiveInt64;
+    obj1["negative"] = expectedNegativeInt64;
+
+    Utf8String str = Json::FastWriter().write(obj1);
+
+    Json::Value obj2(Json::objectValue);
+    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+    ASSERT_TRUE(parseSuccessful);
+
+    const int64_t actualPositiveInt64 = obj2["positive"].asInt64();
+    const int64_t actualNegativeInt64 = obj2["negative"].asInt64();
+
+    ASSERT_EQ(expectedPositiveInt64, actualPositiveInt64);
+    ASSERT_EQ(expectedNegativeInt64, actualNegativeInt64);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(JsonCpp, Int64Rendering)
+    {
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+    Utf8String expectedPositiveInt64Str;
+    expectedPositiveInt64Str.Sprintf("%" PRIi64, expectedPositiveInt64);
+
+    Utf8String expectedNegativeInt64Str;
+    expectedNegativeInt64Str.Sprintf("%" PRIi64, expectedNegativeInt64);
+
+    Json::Value json1(expectedPositiveInt64);
+    Utf8String jsonStr = Json::FastWriter().write(json1);
+    jsonStr.TrimEnd();
+    ASSERT_STREQ(expectedPositiveInt64Str.c_str(), jsonStr.c_str());
+
+    Json::Value json2(expectedNegativeInt64);
+    jsonStr = Json::FastWriter().write(json2);
+    jsonStr.TrimEnd();
+    ASSERT_STREQ(expectedNegativeInt64Str.c_str(), jsonStr.c_str());
     }
 
 struct RapidJsonTests : public ECDbTestFixture
-    {};
+ {};
 
 //---------------------------------------------------------------------------------------
 // Test code grabbed (and refactored) from rapidjson/examples/tutorial/tutorial.cpp
@@ -252,7 +303,6 @@ TEST_F(RapidJsonTests, RoundTripDoubles)
 
     double d2 = document2["pi"].GetDouble();
     double n2 = document2["negative"].GetDouble();
-    (void) n2;
 
 #if 0
     printf("d1=%#.17g\n", d1);
@@ -262,7 +312,69 @@ TEST_F(RapidJsonTests, RoundTripDoubles)
     printf("n2=%#.17g\n", n2);
 #endif
 
-    ASSERT_EQ(d1, d2);
+    ASSERT_DOUBLE_EQ(d1, d2);
+    ASSERT_DOUBLE_EQ(n1, n2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RapidJsonTests, Int64Rendering)
+    {
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+    Utf8String expectedPositiveInt64Str;
+    expectedPositiveInt64Str.Sprintf("%" PRIi64, expectedPositiveInt64);
+
+    Utf8String expectedNegativeInt64Str;
+    expectedNegativeInt64Str.Sprintf("%" PRIi64, expectedNegativeInt64);
+
+    rapidjson::Value json;
+    json.SetInt64(expectedPositiveInt64);
+
+    rapidjson::StringBuffer stringBuffer1;
+    rapidjson::Writer<rapidjson::StringBuffer> writer1(stringBuffer1);
+    json.Accept(writer1);
+    ASSERT_STREQ(expectedPositiveInt64Str.c_str(), stringBuffer1.GetString());
+
+    json.SetInt64(expectedNegativeInt64);
+
+    rapidjson::StringBuffer stringBuffer2;
+    rapidjson::Writer<rapidjson::StringBuffer> writer2(stringBuffer2);
+    json.Accept(writer2);
+    ASSERT_STREQ(expectedNegativeInt64Str.c_str(), stringBuffer2.GetString());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RapidJsonTests, RoundTripInt64)
+    {
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+
+    rapidjson::Document document1;
+    document1.SetObject();
+
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+
+    rapidjson::Value v;
+    v.SetInt64(expectedPositiveInt64);
+    document1.AddMember("positive", v, document1.GetAllocator());
+
+    v.SetInt64(expectedNegativeInt64);
+    document1.AddMember("negative", v, document1.GetAllocator());
+
+    rapidjson::StringBuffer stringBuffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
+    document1.Accept(writer);
+
+    rapidjson::Document document2;
+    ASSERT_TRUE(!document2.Parse<0>(stringBuffer.GetString()).HasParseError());
+
+    ASSERT_EQ(expectedPositiveInt64, document2["positive"].GetInt64());
+    ASSERT_EQ(expectedNegativeInt64, document2["negative"].GetInt64());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1139,5 +1251,97 @@ TEST_F(RapidJsonTests, WriterString)
     RAPIDJSON_TEST_ROUNDTRIP("[\"Hello\\u0000World\"]");
     RAPIDJSON_TEST_ROUNDTRIP("[\"\\\"\\\\/\\b\\f\\n\\r\\t\"]");
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+struct SqliteJsonTests : public ECDbTestFixture
+    {};
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SqliteJsonTests, Int64Rendering)
+    {
+    ECDbCR ecdb = SetupECDb("sqlitejsontests.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+    Utf8String expectedPositiveInt64Str;
+    expectedPositiveInt64Str.Sprintf("%" PRIi64, expectedPositiveInt64);
+
+    Utf8String expectedNegativeInt64Str;
+    expectedNegativeInt64Str.Sprintf("%" PRIi64, expectedNegativeInt64);
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT json_object('positive',?), json_object('negative',?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, expectedPositiveInt64));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(2, expectedNegativeInt64));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String positiveInt64JsonStr(stmt.GetValueText(0));
+    Utf8String negativeInt64JsonStr(stmt.GetValueText(1));
+    stmt.Finalize();
+
+    size_t colon = positiveInt64JsonStr.find_first_of(':');
+    ASSERT_STREQ(expectedPositiveInt64Str.c_str(), Utf8String(positiveInt64JsonStr.substr(colon + 1, expectedPositiveInt64Str.size())).Trim().c_str());
+
+    colon = negativeInt64JsonStr.find_first_of(':');
+    ASSERT_STREQ(expectedNegativeInt64Str.c_str(), Utf8String(negativeInt64JsonStr.substr(colon + 1, expectedNegativeInt64Str.size())).Trim().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
+    {
+    ECDbCR ecdb = SetupECDb("sqlitejsontests.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    const double expectedPositiveDouble = PI;
+    const double expectedNegativeDouble = -1.0 / 17.0;
+    BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
+    const int64_t expectedPositiveInt64 = id.GetValue();
+    const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
+
+
+    //double round-trip
+    Statement toStmt;
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.Prepare(ecdb, "SELECT json_object('positive',?,'negative',?)"));
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.BindDouble(1, expectedPositiveDouble));
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.BindDouble(2, expectedNegativeDouble));
+    ASSERT_EQ(BE_SQLITE_ROW, toStmt.Step());
+    Utf8String jsonStr(toStmt.GetValueText(0));
+    toStmt.Reset();
+    toStmt.ClearBindings();
+
+    Statement fromStmt;
+    ASSERT_EQ(BE_SQLITE_OK, fromStmt.Prepare(ecdb, "SELECT json_extract(?1,'$.positive'), json_extract(?1,'$.negative')"));
+    ASSERT_EQ(BE_SQLITE_OK, fromStmt.BindText(1, jsonStr.c_str(), Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, fromStmt.Step());
+    ASSERT_NEAR(expectedPositiveDouble, fromStmt.GetValueDouble(0), 0.00000000000001);
+    ASSERT_NEAR(expectedNegativeDouble, fromStmt.GetValueDouble(1), 0.00000000000001);
+    fromStmt.Reset();
+    fromStmt.ClearBindings();
+
+    //int64 round-trip
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.BindInt64(1, expectedPositiveInt64));
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.BindInt64(2, expectedNegativeInt64));
+    ASSERT_EQ(BE_SQLITE_ROW, toStmt.Step());
+    jsonStr.assign(toStmt.GetValueText(0));
+    toStmt.Reset();
+    toStmt.ClearBindings();
+
+    ASSERT_EQ(BE_SQLITE_OK, fromStmt.BindText(1, jsonStr.c_str(), Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, fromStmt.Step());
+    ASSERT_EQ(expectedPositiveInt64, fromStmt.GetValueInt64(0));
+    ASSERT_EQ(expectedNegativeInt64, fromStmt.GetValueInt64(1));
+    fromStmt.Reset();
+    fromStmt.ClearBindings();
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
