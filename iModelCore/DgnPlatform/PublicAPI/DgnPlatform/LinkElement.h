@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LinkElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -93,7 +93,7 @@ public:
     };
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit LinkModel(CreateParams const& params) : T_Super(params) {}
 
@@ -119,7 +119,7 @@ protected:
     explicit LinkElement(CreateParams const& params) : T_Super(params) {}
 
     //! Called when an element is about to be inserted into the DgnDb.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
 
 public:
     //! Add the link to a source element
@@ -304,9 +304,9 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
     //! Parameters used to construct a UrlLink
@@ -434,9 +434,9 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
     //! Constructor
@@ -500,18 +500,21 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The handler for EmbeddedFileLink elements
     struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The handler for RepositoryLink elements
     struct EXPORT_VTABLE_ATTRIBUTE RepositoryLinkHandler : UrlLinkHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, RepositoryLink, RepositoryLinkHandler, UrlLinkHandler, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

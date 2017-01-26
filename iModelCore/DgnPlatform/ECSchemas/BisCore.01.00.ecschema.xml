@@ -500,6 +500,9 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="PhysicalElementIsOfType" strength="referencing" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="PhysicalElement" />
         </Source>
@@ -515,6 +518,9 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="GraphicalElement2d" />
         </Source>
@@ -752,6 +758,9 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="Sheet" />
         </Source>
@@ -761,6 +770,9 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetTemplate" />
         </Source>
@@ -770,6 +782,9 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetBorder" />
         </Source>
@@ -1375,6 +1390,9 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1404,6 +1422,9 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1422,7 +1443,7 @@
                         <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            Only one ExternalKey per CodeSpec per Element
+                            <!-- Only one ExternalKey per CodeSpec per Element -->
                             <string>Element.Id</string>
                             <string>CodeSpecId</string>
                         </Properties>
@@ -1797,6 +1818,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
@@ -1806,6 +1830,9 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -1815,6 +1842,9 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="Sealed">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>

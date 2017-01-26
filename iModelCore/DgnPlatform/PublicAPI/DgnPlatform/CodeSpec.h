@@ -225,7 +225,7 @@ public:
 // Macro used for declaring the members of a CodeSpec handler
 //=======================================================================================
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
-    private: virtual Dgn::CodeSpecP _CreateInstance(Dgn::CodeSpec::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+    private: Dgn::CodeSpecP _CreateInstance(Dgn::CodeSpec::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
@@ -238,7 +238,7 @@ namespace dgn_CodeSpecHandler
         DOMAINHANDLER_DECLARE_MEMBERS (BIS_CLASS_CodeSpec, CodeSpec, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
-        virtual CodeSpecHandlerP _ToCodeSpecHandler() override { return this; }
+        CodeSpecHandlerP _ToCodeSpecHandler() override { return this; }
         virtual CodeSpecP _CreateInstance(Dgn::CodeSpec::CreateParams const& params) { return new Dgn::CodeSpec(params); }
     public:
         DGNPLATFORM_EXPORT static CodeSpecHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);

@@ -189,11 +189,11 @@ protected:
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     SceneQueue m_sceneQueue;
 
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
+    DGNPLATFORM_EXPORT void _OnDbClose() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    virtual void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
+    void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private

@@ -78,7 +78,7 @@ ClipPlanesPrimitive(ClipPlanesPrimitive const& donor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _TransformInPlace(TransformCR transform) override 
+BentleyStatus _TransformInPlace(TransformCR transform) override 
     {
     if (NULL != m_clipPlanes)
         m_clipPlanes->TransformInPlace(transform);  
@@ -92,7 +92,7 @@ virtual BentleyStatus _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (NULL != m_clipPlanes)
         m_clipPlanes->MultiplyPlanesTimesMatrix(matrix);  
@@ -106,7 +106,7 @@ virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
+bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     return (NULL == m_clipPlanes) ? false : m_clipPlanes->GetRange(range, pTransform); 
     }
@@ -125,7 +125,7 @@ static void setPlaneInvisible(ClipPlaneSetCP planeSet, bool invisible)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetInvisible(bool invisible) override 
+void _SetInvisible(bool invisible) override 
     {
     if (invisible)
         m_flags |= Mask_Invisible;
@@ -874,7 +874,7 @@ void    Init(bool outside, double const* zLow, double const* zHigh, TransformCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
+bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     double          zHigh = 1.0e20, zLow = -1.0e20;
     ClipPolygonCP   clipPolygon;
@@ -910,7 +910,7 @@ virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ClipPlaneSetCP           _GetClipPlanes() const override  
+ClipPlaneSetCP           _GetClipPlanes() const override  
     {
     if (NULL != m_clipPlanes)
         return  m_clipPlanes;
@@ -928,7 +928,7 @@ virtual ClipPlaneSetCP           _GetClipPlanes() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ClipPlaneSetP           _GetMaskPlanes() const override  
+ClipPlaneSetP           _GetMaskPlanes() const override  
     {
     if (!m_isMask)
         return NULL;
@@ -988,7 +988,7 @@ virtual bool _PointInside(DPoint3dCR point, double onTolerance, bool applyTransf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _TransformInPlace(TransformCR transform) override
+BentleyStatus _TransformInPlace(TransformCR transform) override
     {
     if (transform.IsIdentity())
         return SUCCESS;
@@ -1010,7 +1010,7 @@ virtual BentleyStatus _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (m_isMask)
         return ERROR;

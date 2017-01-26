@@ -4858,9 +4858,9 @@ private:
 public:
     TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder, GeometryBuilder::CoordSystem coord) : m_text(text), m_builder(builder), m_coord(coord) {}
 
-    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
-    virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
-    virtual void _OutputGraphics(ViewContextR) override;
+    bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
+    bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
+    void _OutputGraphics(ViewContextR) override;
 };
 
 //---------------------------------------------------------------------------------------

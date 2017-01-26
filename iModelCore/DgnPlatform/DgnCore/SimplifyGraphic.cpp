@@ -20,7 +20,7 @@ CurveVectorPtr  m_curves;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
+bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
     CurveVectorPtr childCurve = curves.Clone(); // NOTE: Don't apply local to world...want geometry in local coords of parent graphic...
 
@@ -360,8 +360,8 @@ bool m_unclipped;
 bvector<PolyfaceHeaderPtr> m_output;
         
 SimplifyPolyfaceClipper() : m_unclipped(false) {}
-virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
-virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
+StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
 bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
 bool IsUnclipped() {return m_unclipped;}
 
@@ -2180,7 +2180,7 @@ struct FacetOutlineMeshGatherer : PolyfaceQuery::IClipToPlaneSetOutput
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override
+StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override
     {
     PolyfaceHeaderPtr   tempPolyface = PolyfaceHeader::New();
 
@@ -2194,7 +2194,7 @@ virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) overr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
+StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
     {
     polyfaceHeader.Transform(m_transform);
     m_builder.AddPolyface(polyfaceHeader);
@@ -2377,12 +2377,12 @@ void _DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorCR curve, Rend
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsPtr _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb) const override
+bool _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const override
     {
     if (!lsSymb.GetUseStroker())
-        return nullptr;
+        return false;
 
-    return m_processor._DoLineStyleStroke(builder, lsSymb);
+    return m_processor._DoLineStyleStroke(builder, lsSymb, facetOptions);
     }
 
 public:

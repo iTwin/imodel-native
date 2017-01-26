@@ -398,19 +398,6 @@ void LsCompoundComponent::_StartTextureGeneration() const
         comp.m_subComponent->_StartTextureGeneration();
     }
   
-#if defined (NOT_NOW)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsCompoundComponent::_QuerySymbology (SymbologyQueryResults& results) const
-    {
-    for (LsOffsetComponent const & comp : m_components)
-        {
-        comp.m_subComponent->_QuerySymbology(results);
-        }
-    }
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------

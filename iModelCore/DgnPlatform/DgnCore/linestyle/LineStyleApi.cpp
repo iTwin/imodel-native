@@ -6,212 +6,43 @@
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/VecMath.h>
 
 USING_NAMESPACE_BENTLEY_RENDER
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
+StatusInt LsComponent::_StrokeLineString(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP pts, int nPts, bool isClosed) const
     {
-    DPoint3dCP point = pts + 1;
-    DPoint3dCP last  = pts + (nPts-1);
+    if (nPts < 2)
+        return ERROR;
 
-    double  length  = 0.0;
+    LineStyleSymb lsSymb = lsSymbIn;
 
-    while (point <= last)
+    lsSymb.SetElementClosed(isClosed);
+    lsSymb.SetTotalLength(PolylineOps::Length(pts, nullptr, 1, nPts));
+
+    if (0.0 == lsSymb.GetTotalLength())
         {
-        // Ignore disconnects.
-        if (point->x == DISCONNECT)
-            {
-            disconnectPt = static_cast<int>(point-pts);
-            return 0.0;
-            }
-
-        length += (point-1)->Distance (*point);
-        point++;
-        }
-
-    return  length;
-    }
-    enum {DEFAULT_MINUMUM_LOD   = 50,};       // extent squared
-
-/*---------------------------------------------------------------------------------**//**
-* Check to see whether a single repeitition of this linestyle for this element is discernible in
-* this context. If not, we just draw a solid line.
-* @bsimethod                                                    Keith.Bentley   04/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSymbCP lsSymb, DPoint3dCR pt) const
-    {
-    // Not attached...is discernable...
-    if (NULL == context->GetViewport())
-        return true;
-
-    // Line codes are always discernible.  This catches line codes in a compound.
-    if (_HasLineCodes())
-        return true;
-
-    DPoint3d    max;
-
-    max.Init (_GetLength(), _GetMaxWidth() * 1.5, 0);
-    max.Scale (lsSymb->GetScale());
-
-    // see if there's a width modifier on the element, and if the linestyle is affected by it.
-    if (_IsAffectedByWidth(true))
-        {
-        double  maxSymbWidth = lsSymb->GetMaxWidth() * 1.5;
-
-        if (maxSymbWidth > max.y)
-            max.y = maxSymbWidth;
-        }
-
-    if (_IsContinuousOrSingleDash()) // Ignore length for stuff that is continuous
-        max.x = max.y;
-
-    DPoint3d    vec[2];
-
-    vec[0] = pt;
-    vec[1].SumOf (*vec,max);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context->LocalToView (vec, vec, 2);
-#else
-    context->WorldToView (vec, vec, 2);
-#endif
-
-
-    double minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
-
-    return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            LsComponent::IsSingleRepDiscernible
-(
-ViewContextP   context,
-LineStyleSymbCP lsSymb,
-DPoint3dCR      pt
-) const
-    {
-    // Not attached...is discernable...
-    if (NULL == context->GetViewport ())
-        return true;
-
-    if (_IsContinuous())
-        return true;
-
-    double      length = _GetLength();
-    DPoint3d    max;
-
-    max.Init (length, length, 0);
-    max.Scale (lsSymb->GetScale());
-
-    DPoint3d    vec[2];
-
-    vec[0] = pt;
-    vec[1].SumOf (*vec,max);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context->LocalToView (vec, vec, 2);
-#else
-    context->WorldToView (vec, vec, 2);
-#endif
-
-    double      minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
-
-    return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   04/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP pts, int nPts, bool isClosed) const
-    {
-//    ViewContextR    viewContext = lsContext.GetViewConte``xt();
-    double          totalLength;
-    int             disconnect=0;
-    LineStyleSymb   lsSymb = lsSymbIn;
-
-    // totalLength of 0.0 can be a disconnect.
-//    if (!IsWidthDiscernible (viewContext, &lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
-    if (0.0 == (totalLength = getLinearLength (pts, nPts, disconnect))) // NEEDWORK: Can remove disconnect checks...
-        {
-        if (disconnect > 1) // if we have a disconnect, recursively draw the part before and after
-            {
-            _StrokeLineString (lsContext, lsSymb, pts, disconnect, false);
-
-            return _StrokeLineString (lsContext, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
-            }
-
-        auto& graphic = lsContext.GetGraphicR();
-        graphic.AddLineString (nPts, pts);
+        lsContext.GetGraphicR().AddLineString(nPts, pts);
 
         return SUCCESS;
         }
 
-    lsSymb.SetElementClosed (isClosed);
-    lsSymb.SetTotalLength (totalLength);
-
-    double iterationLength = _GetLength() * lsSymb.GetScale();
-//    if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
-    if (iterationLength == 0 || totalLength/iterationLength < 1000)
-        return _DoStroke (lsContext, pts, nPts, &lsSymb);
-
-    //  We should never encounter this if drawing line styles with textures.  
-    BeAssert (false && L"Trying to clip line string");
- #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //  If there are more than a thousand iterations we assume it is not essential 
-    //  to have all of the intermediate iterations start in the correct place. Therefore,
-    //  we can skip drawing some of the segments.  In some cases, this is absolutely 
-    //  essential for performance -- especially on tablets.
-    context->ValidateScanRange();
-
-    TransformClipStackR clipStack = context->GetTransformClipStack();
-
-    int startPoint = 0;
-    int accepted = -1;
-    for (int i = 0; i < nPts-1; ++i)
-        {
-        if (clipStack.ClassifyPoints(pts + i, 2) == ClipPlaneContainment_StronglyOutside)  //  rejected -- draw whatever we have accepted
-            {
-            //  Current point and next point are both excluded by the same plane.  This segment is excluded
-            if (accepted >= 0)
-                {
-                _DoStroke (context, pts+accepted, i-accepted+1, lsSymb);
-                }
-
-            accepted = -1;
-            startPoint = i+1;
-            continue;
-            }
-
-        if (-1 == accepted)
-            //  Nothing previously accepted; current point and next are not rejected by the same plane.
-            accepted = startPoint;
-        }
-    if (accepted >= 0)
-        {
-        _DoStroke (context, pts+accepted, nPts-accepted, lsSymb);
-        }
-#endif
-
-    return BSIERROR;
+    return _DoStroke(lsContext, pts, nPts, &lsSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString2d (LineStyleContextR lsContext, LineStyleSymbCR lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt LsComponent::_StrokeLineString2d(LineStyleContextR lsContext, LineStyleSymbCR lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
 
     // allocate a local 3d buffer for the points
-    ScopedArray<DPoint3d, 50>   pointsArray((unsigned)nPts);
-    DPoint3dP   pts3d = pointsArray.GetData();
+    ScopedArray<DPoint3d, 50> pointsArray((unsigned) nPts);
+    DPoint3dP pts3d = pointsArray.GetData();
 
     // copy points, set zDepth
     for (int i=0; i<nPts; i++, pts++)
@@ -222,13 +53,13 @@ StatusInt       LsComponent::_StrokeLineString2d (LineStyleContextR lsContext, L
         }
 
     // output points in 3d
-    return _StrokeLineString (lsContext, lsSymb, pts3d, nPts, isClosed);
+    return _StrokeLineString(lsContext, lsSymb, pts3d, nPts, isClosed);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
+BentleyStatus LsComponent::StrokeContinuousArc(LineStyleContextR context, LineStyleSymbCR lsSymb, DEllipse3dCR arc, bool isClosed) const
     {
     /* Sometimes we see arcs with a truewidth that is exactly equal to the radius*2. They are intended to represent a filled half-circle (or
        quarter circle). This comes from DWG, because apparently AutoCAD is too feeble to have a filled circle (so we see two of them in a row).
@@ -319,12 +150,31 @@ void arcAddStrokes(DEllipse3dCR ellipse, bvector<DPoint3d>& points, IFacetOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DEllipse3dCR arc, bool isClosed) const
+StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DEllipse3dCR arc, bool is3d, double zDepth, bool isClosed) const
     {
-    if (SUCCESS == StrokeContinuousArc (lsContext, lsSymbIn, arc, isClosed))
+    if (SUCCESS == StrokeContinuousArc(lsContext, lsSymbIn, arc, isClosed))
         return SUCCESS;
 
+    bvector<DPoint3d> points;
+
+    arcAddStrokes(arc, points, lsContext.GetFacetOptions());
+
+    if (points.size() < 2)
+        return ERROR;
+
+    if (!is3d)
+        {
+        for (DPoint3dR pt : points)
+            pt.z = zDepth;
+        }
+
     LineStyleSymb lsSymb = lsSymbIn;
+
+    lsSymb.SetTreatAsSingleSegment(true);
+    lsSymb.SetIsCurve(true);
+    lsSymb.SetElementClosed(isClosed);
+    lsSymb.SetTotalLength(PolylineOps::Length(points));
+
     bool hasStartTan = lsSymb.HasStartTangent();
     bool hasEndTan = lsSymb.HasEndTangent();
 
@@ -342,96 +192,35 @@ StatusInt LsComponent::_StrokeArc (LineStyleContextR lsContext, LineStyleSymbCR 
         lsSymb.SetTangents(hasStartTan ? lsSymb.GetStartTangent() : &startTan, hasEndTan ? lsSymb.GetEndTangent() : &endTan);
         }
 
-    bvector<DPoint3d> points;
-
-    arcAddStrokes(arc, points, lsContext.GetFacetOptions());
-
-    int     disconnect;
-    double  totalLength = getLinearLength(&points.front(), (int) points.size(), disconnect);
-
-    lsSymb.SetTreatAsSingleSegment(true);
-    lsSymb.SetIsCurve(true);
-    lsSymb.SetElementClosed(isClosed);
-    lsSymb.SetTotalLength(totalLength);
-
-    return _DoStroke (lsContext, &points.front(), (int) points.size(), &lsSymb);
+    return _DoStroke(lsContext, &points.front(), (int) points.size(), &lsSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCR curve) const
+StatusInt LsComponent::_StrokeBSplineCurve(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCR curve, bool is3d, double zDepth) const
     {
-    DPoint3d    firstPt;
-    curve.FractionToPoint (firstPt, 0.0);
-
-    ViewContextR viewContext = lsContext.GetViewContext();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
-    if (!IsWidthDiscernible (viewContext, &lsSymbIn, firstPt))
-        {
-        auto& graphic = lsContext.GetGraphicR();
-        graphic.AddBSplineCurve (*curve, false);
-
-        return SUCCESS;
-        }
-#endif
-
-    LineStyleSymb lsSymb = lsSymbIn;
     bvector<DPoint3d> points;
-    //  NEEDS_WORK_CONTINUOUS_RENDER should be using GetPixelSizeAtPoint when generating a texture
-//    double      tolerance = (optTolerance ? *optTolerance : viewContext.GetPixelSizeAtPoint (&firstPt)); // <- NEEDSWORK: Should at least get pixel size from graphic...
-    double      tolerance = viewContext.GetPixelSizeAtPoint(&firstPt); // <- NEEDSWORK: Should at least get pixel size from graphic...
 
-    // NEEDSWORK: Should pass in FacetOptions instead of optTolerance...
-    curve.AddStrokes (points, tolerance);
-    int nPoints = (int)points.size ();
-    if (nPoints == 0)
+    curve.AddStrokes(lsContext.GetFacetOptions(), points);
+
+    if (points.size() < 2)
         return ERROR;
 
-    if (nPoints > 1)
+    if (!is3d)
         {
-        // NOTE: LineJoint::FromVertices isn't happy with coincident points (perpvec set to x), should really fix this...de-dup here is safer change for Athens...
-        // Accept point 0.
-        // for each later point, compare to tail of packed and growing (block of) accepted points.
-        bvector<DPoint3d>::iterator  lastAcceptedPoint = points.begin ();
-        for (bvector<DPoint3d>::iterator  candidatePoint    = lastAcceptedPoint,
-                                          endPoint          = points.end ();
-            ++candidatePoint < endPoint;
-            )
-            {
-            if (!lastAcceptedPoint->IsEqual (*candidatePoint, 1.0e-12))
-                *(++lastAcceptedPoint) = *candidatePoint;
-            }
-        nPoints = (int)(std::distance (points.begin(), lastAcceptedPoint) + 1);
+        for (DPoint3dR pt : points)
+            pt.z = zDepth;
         }
 
-    StatusInt   status = SUCCESS;
+    LineStyleSymb lsSymb = lsSymbIn; // NOTE: For whatever reason, start/end tangents aren't setup as with _StrokeArc?!?
 
-    if (nPoints > 1)
-        {
-        // NOTE: Save/Restore flags that aren't setup every time...
-        bool    saveTreatAsSingle = lsSymb.IsTreatAsSingleSegment ();
-        bool    saveIsCurve = lsSymb.IsCurve ();
+    lsSymb.SetTreatAsSingleSegment(true);
+    lsSymb.SetIsCurve(true);
+    lsSymb.SetElementClosed(curve.IsClosed());
+    lsSymb.SetTotalLength(PolylineOps::Length(points));
 
-        lsSymb.SetTreatAsSingleSegment (true);
-        lsSymb.SetIsCurve (true);
-        lsSymb.SetElementClosed (curve.IsClosed ());
-    
-        int     disconnect;
-        double  totalLength = getLinearLength (&points[0], nPoints, disconnect);
-
-        lsSymb.SetTotalLength (totalLength);
-
-        status = _DoStroke (lsContext, &points[0], nPoints, &lsSymb);
-
-        lsSymb.SetTreatAsSingleSegment (saveTreatAsSingle);
-        lsSymb.SetIsCurve (saveIsCurve);
-        }
-
-
-    return status;
+    return _DoStroke(lsContext, &points.front(), (int) points.size(), &lsSymb);
     }
 
 LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnECInteropStringFormatter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,10 +42,10 @@ struct IECInteropStringFormatter
 struct InteropStringFormatter : IECInteropStringFormatter
 {
 public:
-    virtual bool                Format (Utf8StringR formatted, Utf8CP formatString, IECValueList const& values) const override;
-    virtual bool                FormatValue (Utf8StringR formatted, Utf8CP formatString, ECValueCR v) const override;
-    virtual bool                Parse (ECN::ECValueR parsedValue, Utf8CP valueAsString, ECN::PrimitiveType parseAsType) const override;
-    virtual void                Release() const override { }
+    bool                Format (Utf8StringR formatted, Utf8CP formatString, IECValueList const& values) const override;
+    bool                FormatValue (Utf8StringR formatted, Utf8CP formatString, ECValueCR v) const override;
+    bool                Parse (ECN::ECValueR parsedValue, Utf8CP valueAsString, ECN::PrimitiveType parseAsType) const override;
+    void                Release() const override { }
 
     static InteropStringFormatter const&    GetInstance()
         {

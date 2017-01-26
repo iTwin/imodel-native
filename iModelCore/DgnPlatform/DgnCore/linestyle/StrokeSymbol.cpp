@@ -262,10 +262,6 @@ LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src
     m_symSize = src.m_symSize;
     m_symBase = src.m_symBase;;
     m_symFlags = src.m_symFlags;
-    m_lineColor = src.m_lineColor;
-    m_fillColor = src.m_fillColor;
-    m_weight = src.m_weight;
-    m_lineColorByLevel = src.m_lineColorByLevel;
     m_postProcessed = false;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -277,7 +273,6 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
     m_storedScale = 0.0;
     m_symFlags    = 0;
     m_postProcessed = false;
-    m_lineColorByLevel = false;
 
     memset (&m_symSize, 0, sizeof(m_symSize));
     }
@@ -331,21 +326,6 @@ void            LsSymbolComponent::_ClearPostProcess ()
     //  Assume we need to regenerate the XGraphics
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsSymbolComponent::SetColors(bool colorByLevel, ColorDef lineColor, ColorDef fillColor)
-    {
-    m_lineColorByLevel = colorByLevel;
-    m_lineColor = lineColor;
-    m_fillColor = fillColor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsSymbolComponent::SetWeight(uint32_t weight) { m_weight = weight; }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -364,12 +344,6 @@ double              LsSymbolComponent::GetUnitScale () const { return m_muDef; }
 bool                LsSymbolComponent::IsNoScale () const { return IsNotScaled (); }
 void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = (m_symFlags & ~LSSYM_NOSCALE) | (value ? LSSYM_NOSCALE : 0); }
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-void                LsSymbolComponent::GetRange (DRange3dR range) const 
-    { 
-    _GetRange (range);
-    }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015

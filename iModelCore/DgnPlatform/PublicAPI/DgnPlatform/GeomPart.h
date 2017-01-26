@@ -53,8 +53,8 @@ protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
     void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geometry.GetAllocSize();}
-    virtual DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geometry.GetAllocSize();}
+    DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
 
 public:
     //! Create a DgnGeometryPart
@@ -99,6 +99,7 @@ namespace dgn_ElementHandler
     struct GeometryPart : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 };
 

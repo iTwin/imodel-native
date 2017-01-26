@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/ConfigurationManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,11 +68,11 @@ struct EXPORT_VTABLE_ATTRIBUTE SimpleConfigurationVariableMonitor : public IVari
     DGNPLATFORM_EXPORT SimpleConfigurationVariableMonitor ();
 
 public:
-    DGNPLATFORM_EXPORT virtual void _VariableChanged (WCharCP variableName) override;
-    DGNPLATFORM_EXPORT virtual void _VariableRootChanged (WCharCP variableName, WCharCP rootVariableName) override;
-    DGNPLATFORM_EXPORT virtual void _VariableUndefined (WCharCP variableName) override;
-    DGNPLATFORM_EXPORT virtual void _VariableRootUndefined (WCharCP variableName, WCharCP rootVariableName) override;
-    DGNPLATFORM_EXPORT virtual void _MonitorStopped (WCharCP variableName) override;
+    DGNPLATFORM_EXPORT void _VariableChanged (WCharCP variableName) override;
+    DGNPLATFORM_EXPORT void _VariableRootChanged (WCharCP variableName, WCharCP rootVariableName) override;
+    DGNPLATFORM_EXPORT void _VariableUndefined (WCharCP variableName) override;
+    DGNPLATFORM_EXPORT void _VariableRootUndefined (WCharCP variableName, WCharCP rootVariableName) override;
+    DGNPLATFORM_EXPORT void _MonitorStopped (WCharCP variableName) override;
 
     //! Called when any change to the monitored Variable is detected. Application should retrieve the new configuration variable value and refresh their internal state.
     virtual void _UpdateState (WCharCP variableName) = 0;

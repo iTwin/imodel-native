@@ -261,8 +261,8 @@ void DgnViewport::StartRenderThread()
 //=======================================================================================
 struct DestroyTargetTask : Render::SceneTask
 {
-    virtual Utf8CP _GetName() const override {return "Destroy Target";}
-    virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
+    Utf8CP _GetName() const override {return "Destroy Target";}
+    Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
     DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget, Priority::Highest()) {}
 };
 

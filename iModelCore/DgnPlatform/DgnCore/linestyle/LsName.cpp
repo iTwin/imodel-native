@@ -61,7 +61,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual void _OutputGraphics(ViewContext& viewContext) override
+void _OutputGraphics(ViewContext& viewContext) override
     {
     Render::GraphicBuilderPtr graphic = viewContext.CreateGraphic();
     Render::GeometryParams defaultParams;
@@ -462,18 +462,6 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, componentScaleFactor * comp->_GetLengthForTexture());
-
-#if defined (NOT_NOW)
-    SymbologyQueryResults  symbologyResults;
-    comp->_QuerySymbology(symbologyResults);
-    ColorDef lineColor, fillColor;
-    bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
-
-    uint32_t lineWeight;
-    m_usesSymbolWeight = symbologyResults.IsWeightBySymbol(lineWeight);
-    if (!m_usesSymbolWeight)
-        lineWeight = weight;
-#endif
 
     ComponentToTextureStroker stroker(viewContext.GetDgnDb(), lineStyleSymb, geomParams, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);

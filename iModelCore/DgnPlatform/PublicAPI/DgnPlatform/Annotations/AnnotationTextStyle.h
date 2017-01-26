@@ -80,8 +80,8 @@ private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
 protected:
-    DGNPLATFORM_EXPORT virtual bool _IsIntegerProperty(T_Key) const override;
-    DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT bool _IsIntegerProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT bool _IsRealProperty(T_Key) const override;
 
 public:
     AnnotationTextStylePropertyBag() : T_Super() {}
@@ -123,14 +123,14 @@ private:
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(db, BIS_CODESPEC_AnnotationTextStyle, name); }
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
-    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
-    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
-    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
+    DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle); }

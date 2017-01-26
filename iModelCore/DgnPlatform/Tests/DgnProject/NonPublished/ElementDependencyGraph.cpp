@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementDependencyGraph.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -806,9 +806,9 @@ struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
 
     void Clear() {m_hadError=false; m_relIds.clear();}
 
-    virtual void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
-    virtual void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
-    virtual void _OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
+    void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
+    void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
+    void _OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
     };
 
 /*---------------------------------------------------------------------------------**//**

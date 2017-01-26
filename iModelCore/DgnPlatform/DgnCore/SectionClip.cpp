@@ -67,23 +67,23 @@ bool IsDraw3D (ViewContextR context, DVec3dCR zVec);
 
 StatusInt GetClipBoundaryByShape (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const;
 #if defined (NEEDS_WORK_DGNITEM)
-virtual StatusInt _GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const override; // added in graphite
-virtual bool      _IsClipVolumePassValid (ClipVolumePass pass) const override;
-virtual StatusInt _GetCuttingPlane (DPlane3dR cutPlane, DVec3dR xDirection, DVec3dR yDirection, ClipMask& clipMask, DRange2dR clipRange, bool& forward, int index, ViewContextR context) const override;
-virtual bool      _GetAuxTransform (TransformR transform, ClipVolumePass pass) const override;
-virtual StatusInt _GetTransform (TransformR trans) const override;
-virtual size_t    _GetPrimaryCutPlaneCount() const override;
+StatusInt _GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const override; // added in graphite
+bool      _IsClipVolumePassValid (ClipVolumePass pass) const override;
+StatusInt _GetCuttingPlane (DPlane3dR cutPlane, DVec3dR xDirection, DVec3dR yDirection, ClipMask& clipMask, DRange2dR clipRange, bool& forward, int index, ViewContextR context) const override;
+bool      _GetAuxTransform (TransformR transform, ClipVolumePass pass) const override;
+StatusInt _GetTransform (TransformR trans) const override;
+size_t    _GetPrimaryCutPlaneCount() const override;
 #endif
-virtual StatusInt _ApplyTransform (TransformCR) override;
+StatusInt _ApplyTransform (TransformCR) override;
 
-virtual void _Draw (ViewContextR) override;
+void _Draw (ViewContextR) override;
 
-virtual Utf8String _GetFactoryId() const override;
+Utf8String _GetFactoryId() const override;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _FromJson (JsonValueCR json) override
+void _FromJson (JsonValueCR json) override
     {
     // WIP_SECTION_CLIP -- keep consistent with ForeignFormat::DgnV8::SectionSectionObject::ToJson
     m_clipData.params.cropMask = json["crop_mask"].asUInt();
@@ -102,7 +102,7 @@ virtual void _FromJson (JsonValueCR json) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _ToJson (JsonValueR json) const override
+void _ToJson (JsonValueR json) const override
     {
     json["crop_mask"] = m_clipData.params.cropMask;
     json["preserve_up"] = TO_BOOL(m_clipData.params.preserveUp);
@@ -329,7 +329,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double  _GetWidth () const override
+double  _GetWidth () const override
     {
     DVec3d startSegVector, StartEndScalar;
     startSegVector.NormalizedDifference (m_points[1], m_points[0]);
@@ -340,7 +340,7 @@ virtual double  _GetWidth () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mukesh.Pant                     05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _SetWidth (double newWidth) override
+void    _SetWidth (double newWidth) override
     {
     DVec3d startSegVector;
     startSegVector.NormalizedDifference (m_points[1], m_points[0]);

@@ -31,25 +31,25 @@ struct UnitTestLineStyleAdmin : public DgnPlatformLib::Host::LineStyleAdmin
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LoggingNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
 {
-    virtual StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
+    StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
         {
         NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
         return SUCCESS;
         }
 
-    virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
+    NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
         {
         NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
         printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
         return NotificationManager::MESSAGEBOX_VALUE_Ok;
         }
 
-    virtual void      _OutputPrompt(Utf8CP msg) override
+    void      _OutputPrompt(Utf8CP msg) override
         {// Log this as an error because we cannot prompt while running a unit test!
         NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
         }
 
-    virtual bool _GetLogSQLiteErrors() override 
+    bool _GetLogSQLiteErrors() override 
         {
         return NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(NativeLogging::LOG_INFO);
         }
@@ -69,8 +69,8 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(m_appDir);
         }
 
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tmp;}
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_appDir;}
+    BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tmp;}
+    BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_appDir;}
     };
 
 //=======================================================================================
@@ -100,11 +100,11 @@ struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
     RepositoryAdmin* m_impl;
 
     ProxyRepositoryAdmin() : m_impl(nullptr) {}
-    virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
+    IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
         return nullptr != m_impl ? m_impl->_CreateBriefcaseManager(db) : T_Super::_CreateBriefcaseManager(db);
         }
-    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
+    IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
         {
         return nullptr != m_impl ? m_impl->_GetRepositoryManager(db) : T_Super::_GetRepositoryManager(db);
         }

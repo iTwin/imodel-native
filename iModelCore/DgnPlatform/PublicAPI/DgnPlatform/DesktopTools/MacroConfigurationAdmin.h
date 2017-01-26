@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/MacroConfigurationAdmin.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,16 +66,16 @@ private:
     bool                m_dependenciesSuspended;
     MacroEntry*         m_searchEntry;
 
-    DGNPLATFORM_EXPORT    virtual void              _OnHostTermination (bool isProcessShutdown) override;
-    DGNPLATFORM_EXPORT    virtual BeFileNameCR      _GetLocalTempDirectoryBaseName () override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus     _GetConfigVariable (WStringR envStr, WCharCP envVar, ConfigurationVariableLevel level) override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus     _UndefineConfigVariable (WCharCP cfgVarName) override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus     _DefineConfigVariable (WCharCP cfgVarName, WCharCP cfgValue, ConfigurationVariableLevel level) override;
-    DGNPLATFORM_EXPORT    virtual bool              _IsConfigVariableDefined (WCharCP cfgVarName, ConfigurationVariableLevel level) override;
-    DGNPLATFORM_EXPORT    virtual bool              _IsConfigVariableDefinedAndTrue (WCharCP cfgVarName, ConfigurationVariableLevel level) override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus     _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus     _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override;
-    DGNPLATFORM_EXPORT    virtual void              _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override;
+    DGNPLATFORM_EXPORT    void              _OnHostTermination (bool isProcessShutdown) override;
+    DGNPLATFORM_EXPORT    BeFileNameCR      _GetLocalTempDirectoryBaseName () override;
+    DGNPLATFORM_EXPORT    BentleyStatus     _GetConfigVariable (WStringR envStr, WCharCP envVar, ConfigurationVariableLevel level) override;
+    DGNPLATFORM_EXPORT    BentleyStatus     _UndefineConfigVariable (WCharCP cfgVarName) override;
+    DGNPLATFORM_EXPORT    BentleyStatus     _DefineConfigVariable (WCharCP cfgVarName, WCharCP cfgValue, ConfigurationVariableLevel level) override;
+    DGNPLATFORM_EXPORT    bool              _IsConfigVariableDefined (WCharCP cfgVarName, ConfigurationVariableLevel level) override;
+    DGNPLATFORM_EXPORT    bool              _IsConfigVariableDefinedAndTrue (WCharCP cfgVarName, ConfigurationVariableLevel level) override;
+    DGNPLATFORM_EXPORT    BentleyStatus     _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override;
+    DGNPLATFORM_EXPORT    BentleyStatus     _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override;
+    DGNPLATFORM_EXPORT    void              _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override;
 
                         MacroEntry const*           GetMacroDefinition (WCharCP macroName);
                         bool                        ContainsExpression (WCharCP expression);

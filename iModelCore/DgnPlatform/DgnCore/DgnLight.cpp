@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnLight.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -75,4 +75,45 @@ DgnLightId LightDefinition::QueryLightId(DgnDbR db, DgnCodeCR code)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnLightId(elemId.GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::LightDef::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    
+    params.RegisterPropertyAccessors(layout, PROPNAME_Descr,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (LightDefinition&) elIn;
+            value.SetUtf8CP(el.GetDescr().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (LightDefinition&) elIn;
+            el.SetDescr(value.ToString());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROPNAME_Value,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (LightDefinition&) elIn;
+            value.SetUtf8CP(el.GetValue().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (LightDefinition&) elIn;
+            // *** WIP_LIGHT - validate input value before calling SetValue?
+            el.SetValue(value.ToString());
+            return DgnDbStatus::Success;
+            });
     }

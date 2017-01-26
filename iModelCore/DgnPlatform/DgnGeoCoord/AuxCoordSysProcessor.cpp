@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/AuxCoordSysProcessor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <Geom\msgeomstructs.hpp>
@@ -68,7 +68,7 @@ virtual StatusInt       _CompleteSetupFromViewInfo (ViewInfoCP info)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IAuxCoordSysPtr _Clone () const override
+IAuxCoordSysPtr _Clone () const override
     {
     return new GeoAuxCoordSys (this);
     }
@@ -76,7 +76,7 @@ virtual IAuxCoordSysPtr _Clone () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool            _Equals (IAuxCoordSysCP other) const override
+bool            _Equals (IAuxCoordSysCP other) const override
     {
     if (NULL == other)
         return false;
@@ -91,7 +91,7 @@ virtual bool            _Equals (IAuxCoordSysCP other) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetName () const override
+WString         _GetName () const override
     {
     WString displayName;
     m_dgnGCSPtr->GetDisplayName (displayName);
@@ -101,7 +101,7 @@ virtual WString         _GetName () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetDescription () const override
+WString         _GetDescription () const override
     {
     return WString (m_dgnGCSPtr->GetDescription());
     }
@@ -109,7 +109,7 @@ virtual WString         _GetDescription () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ACSType         _GetType () const override
+ACSType         _GetType () const override
     {
     return ACSType::Extended;
     }
@@ -117,7 +117,7 @@ virtual ACSType         _GetType () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetTypeName () const override
+WString         _GetTypeName () const override
     {
     WString buffer;
     return WString (BaseGeoCoordResource::GetLocalizedString (buffer, Bentley::GeoCoordinates::DGNGEOCOORD_Msg_GeoCoordACSType));
@@ -126,7 +126,7 @@ virtual WString         _GetTypeName () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double          _GetScale () const override
+double          _GetScale () const override
     {
     return 1.0;
     }
@@ -134,7 +134,7 @@ virtual double          _GetScale () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
+DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
     {
     pOrigin.init (0.0, 0.0, 0.0);
     return pOrigin;
@@ -143,7 +143,7 @@ virtual DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR      _GetRotation (RotMatrixR pRot) const override
+RotMatrixR      _GetRotation (RotMatrixR pRot) const override
     {
     pRot.initIdentity();
     return pRot;
@@ -152,7 +152,7 @@ virtual RotMatrixR      _GetRotation (RotMatrixR pRot) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const override
+RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const override
     {
     pRot.initIdentity();
     return pRot;
@@ -161,7 +161,7 @@ virtual RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ElementId       _GetElementId () const override
+ElementId       _GetElementId () const override
     {
     return 0;
     }
@@ -169,7 +169,7 @@ virtual ElementId       _GetElementId () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool            _GetIsReadOnly () const override
+bool            _GetIsReadOnly () const override
     {
     return true;
     }
@@ -177,7 +177,7 @@ virtual bool            _GetIsReadOnly () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ACSFlags        _GetFlags () const override
+ACSFlags        _GetFlags () const override
     {
     return ACSFlags::Default;
     }
@@ -185,7 +185,7 @@ virtual ACSFlags        _GetFlags () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WCharCP       _GetAxisLabel
+WCharCP       _GetAxisLabel
 (
 uint32_t    axis,
 WCharP    axisLabel,
@@ -222,7 +222,7 @@ uint32_t    length
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _PointFromString (DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
+StatusInt       _PointFromString (DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
     {
     // from inPoint, get Latitude/Longitude.
     DgnGCSP     dgnGCS;
@@ -346,7 +346,7 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, Utf8StringR errorM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
+StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
                                         DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
     {
     // format input into Latitude/Longitude/Elevation
@@ -396,24 +396,24 @@ virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void            _DrawGrid (ViewportP vP) const override {}
-virtual void            _PointToGrid (ViewportP vP, DPoint3dR point) const override {}
+void            _DrawGrid (ViewportP vP) const override {}
+void            _PointToGrid (ViewportP vP, DPoint3dR point) const override {}
 
-virtual uint32_t        _GetExtenderId() const override {return GEOCOORD_ACS_EXTENDERID;}
-virtual uint32_t        _GetSerializedSize () const override {return 0;};
-virtual StatusInt       _Serialize (void *buffer, uint32_t maxSize) const override {return SUCCESS;}
+uint32_t        _GetExtenderId() const override {return GEOCOORD_ACS_EXTENDERID;}
+uint32_t        _GetSerializedSize () const override {return 0;};
+StatusInt       _Serialize (void *buffer, uint32_t maxSize) const override {return SUCCESS;}
 
-virtual StatusInt       _SetName (WCharCP name) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetDescription (WCharCP descr) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetType (ACSType type) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetScale (double scale) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetOrigin (DPoint3dCR pOrigin) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetRotation (RotMatrixCR pRot) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetFlags (ACSFlags flags) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetElementId (ElementId elementId, DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetName (WCharCP name) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetDescription (WCharCP descr) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetType (ACSType type) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetScale (double scale) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetOrigin (DPoint3dCR pOrigin) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetRotation (RotMatrixCR pRot) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetFlags (ACSFlags flags) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetElementId (ElementId elementId, DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
 
-virtual StatusInt       _SaveToFile (DgnModelRefP modelRef, ACSSaveOptions option) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _DeleteFromFile (DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SaveToFile (DgnModelRefP modelRef, ACSSaveOptions option) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _DeleteFromFile (DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
 
 private:
 /*---------------------------------------------------------------------------------**//**
@@ -439,7 +439,7 @@ class   GeoCoordinateAuxSystemExtender : public Dgn::IAuxCoordSystemExtender
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 public:
-virtual bool            _TraverseExtendedACS
+bool            _TraverseExtendedACS
 (
 IACSTraversalHandler&   traverser,
 DgnModelRefP            modelRef
@@ -468,12 +468,12 @@ DgnModelRefP            modelRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual uint32_t        _GetExtenderId() const override {return GEOCOORD_ACS_EXTENDERID;}
+uint32_t        _GetExtenderId() const override {return GEOCOORD_ACS_EXTENDERID;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IAuxCoordSysP   _Deserialize (void *persistentData, uint32_t dataSize, DgnModelRefP modelRef) override
+IAuxCoordSysP   _Deserialize (void *persistentData, uint32_t dataSize, DgnModelRefP modelRef) override
     {
     // if we don't have a GCS, can't do anything.
     DgnGCSP     dgnGCS;
@@ -559,7 +559,7 @@ virtual StatusInt       _CompleteSetupFromViewInfo (ViewInfoCP info)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IAuxCoordSysPtr _Clone () const override 
+IAuxCoordSysPtr _Clone () const override 
     {
     return new MilitaryGridAuxCoordSys (this);
     }
@@ -567,7 +567,7 @@ virtual IAuxCoordSysPtr _Clone () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool            _Equals (IAuxCoordSysCP other) const override 
+bool            _Equals (IAuxCoordSysCP other) const override 
     {
     if (NULL == other)
         return false;
@@ -587,7 +587,7 @@ virtual bool            _Equals (IAuxCoordSysCP other) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetName () const override 
+WString         _GetName () const override 
     {
     DgnGeoCoordStrings  nameKey;
 
@@ -607,7 +607,7 @@ virtual WString         _GetName () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetDescription () const override
+WString         _GetDescription () const override
     {
     DgnGeoCoordStrings  descrKey;
 
@@ -627,7 +627,7 @@ virtual WString         _GetDescription () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ACSType         _GetType () const override
+ACSType         _GetType () const override
     {
     return ACSType::Extended;
     }
@@ -635,7 +635,7 @@ virtual ACSType         _GetType () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString         _GetTypeName () const override
+WString         _GetTypeName () const override
     {
     WString buffer;
     return WString (BaseGeoCoordResource::GetLocalizedString (buffer, DGNGEOCOORD_Msg_MilitaryGridACSType));
@@ -644,7 +644,7 @@ virtual WString         _GetTypeName () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double          _GetScale () const override
+double          _GetScale () const override
     {
     return 1.0;
     }
@@ -652,7 +652,7 @@ virtual double          _GetScale () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
+DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
     {
     pOrigin.init (0.0, 0.0, 0.0);
     return pOrigin;
@@ -661,7 +661,7 @@ virtual DPoint3dR       _GetOrigin (DPoint3dR pOrigin) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR      _GetRotation (RotMatrixR pRot) const override
+RotMatrixR      _GetRotation (RotMatrixR pRot) const override
     {
     pRot.initIdentity();
     return pRot;
@@ -670,7 +670,7 @@ virtual RotMatrixR      _GetRotation (RotMatrixR pRot) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const override
+RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const override
     {
     pRot.initIdentity();
     return pRot;
@@ -679,7 +679,7 @@ virtual RotMatrixR      _GetRotation (RotMatrixR pRot, DPoint3dR pPosition) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ElementId       _GetElementId () const override
+ElementId       _GetElementId () const override
     {
     return 0;
     }
@@ -687,7 +687,7 @@ virtual ElementId       _GetElementId () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool            _GetIsReadOnly () const override
+bool            _GetIsReadOnly () const override
     {
     return true;
     }
@@ -695,7 +695,7 @@ virtual bool            _GetIsReadOnly () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ACSFlags        _GetFlags () const override
+ACSFlags        _GetFlags () const override
     {
     return ACSFlags::Default;
     }
@@ -703,7 +703,7 @@ virtual ACSFlags        _GetFlags () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WCharCP       _GetAxisLabel
+WCharCP       _GetAxisLabel
 (
 uint32_t    axis,
 WCharP    axisLabel,
@@ -740,7 +740,7 @@ uint32_t    length
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
+StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
     {
     // The input string should be in military grid, which is UTM zone (1 or 2chars); the 8degree latitude zone (1 char, C-X); 100km zone identifier (2chars), easting (up to 5 chars) and northing (up to 5 chars), e.g. 14UNK21345413
 
@@ -784,7 +784,7 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
+StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
                                     DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
     {
     // can't be relative
@@ -899,7 +899,7 @@ struct SavedParameters
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual uint32_t        _GetSerializedSize () const override 
+uint32_t        _GetSerializedSize () const override 
     {
     return sizeof (SavedParameters);
     }
@@ -907,7 +907,7 @@ virtual uint32_t        _GetSerializedSize () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _Serialize (void *buffer, uint32_t maxSize) const override 
+StatusInt       _Serialize (void *buffer, uint32_t maxSize) const override 
     {
     if (maxSize != sizeof (SavedParameters))
         {
@@ -926,22 +926,22 @@ virtual StatusInt       _Serialize (void *buffer, uint32_t maxSize) const overri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void            _DrawGrid (ViewportP vP) const override {}
-virtual void            _PointToGrid (ViewportP vP, DPoint3dR point) const override {;}
+void            _DrawGrid (ViewportP vP) const override {}
+void            _PointToGrid (ViewportP vP, DPoint3dR point) const override {;}
 
-virtual uint32_t        _GetExtenderId() const override {return GEOCOORD_MGRS_EXTENDERID;}
+uint32_t        _GetExtenderId() const override {return GEOCOORD_MGRS_EXTENDERID;}
 
-virtual StatusInt       _SetName (WCharCP name) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetDescription (WCharCP descr) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetType (ACSType type) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetScale (double scale) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetOrigin (DPoint3dCR pOrigin) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetRotation (RotMatrixCR pRot) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetFlags (ACSFlags flags) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _SetElementId (ElementId elementId, DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetName (WCharCP name) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetDescription (WCharCP descr) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetType (ACSType type) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetScale (double scale) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetOrigin (DPoint3dCR pOrigin) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetRotation (RotMatrixCR pRot) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetFlags (ACSFlags flags) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SetElementId (ElementId elementId, DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
 
-virtual StatusInt       _SaveToFile (DgnModelRefP modelRef, ACSSaveOptions option) override {return MDLERR_WRITEINHIBIT;}
-virtual StatusInt       _DeleteFromFile (DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _SaveToFile (DgnModelRefP modelRef, ACSSaveOptions option) override {return MDLERR_WRITEINHIBIT;}
+StatusInt       _DeleteFromFile (DgnModelRefP modelRef) override {return MDLERR_WRITEINHIBIT;}
 
 };
 
@@ -1073,7 +1073,7 @@ bool            InUnitedStates (GeoPoint2dCR latLong)
 * @bsimethod                                                    Barry.Bentley   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 public:
-virtual bool            _TraverseExtendedACS 
+bool            _TraverseExtendedACS 
 (
 IACSTraversalHandler&   traverser, 
 DgnModelRefP            modelRef
@@ -1142,12 +1142,12 @@ DgnModelRefP            modelRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual uint32_t        _GetExtenderId() const override {return GEOCOORD_MGRS_EXTENDERID;}
+uint32_t        _GetExtenderId() const override {return GEOCOORD_MGRS_EXTENDERID;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IAuxCoordSysP   _Deserialize (void *persistentData, uint32_t dataSize, DgnModelRefP modelRef) override
+IAuxCoordSysP   _Deserialize (void *persistentData, uint32_t dataSize, DgnModelRefP modelRef) override
     {
     // if we don't have a GCS, can't do anything.
     DgnGCSP    dgnGCS;

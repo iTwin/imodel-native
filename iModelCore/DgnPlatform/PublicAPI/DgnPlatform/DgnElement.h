@@ -419,16 +419,16 @@ public:
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
-    protected: virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
-               virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
+    protected: Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+               Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 #define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
     private:    typedef __superclass__ T_Super;\
     public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
                 static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
-                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    protected:  Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 
 /**
@@ -853,10 +853,20 @@ public:
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
         //! @param ecinstanceid The Id of the ElementAspect to load
-        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        //! @note Call this method only if you intend to modify the aspect.
         DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
 
         template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
+
+        //! Get read-only access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @param ecinstanceid The Id of the ElementAspect to load
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @see GetP, GetAspectP for read-write access
+        DGNPLATFORM_EXPORT static MultiAspect const* GetAspect(DgnElementCR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
+
+        template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId ecinstanceid) {return dynamic_cast<T const*>(GetAspect(el,cls,ecinstanceid));}
 
         //! Prepare to insert an aspect for the specified element
         //! @param el The host element
@@ -908,12 +918,21 @@ public:
         //! Get the specified type of generic multi aspect, if any, from an element, with the intention of modifying the aspect's properties.
         //! @note Call Update on the host element after modifying the properties of the instance. 
         //! @note Do not free the returned instance!
-        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        //! @note Call this method only if you intend to modify the aspect.
         //! @param el   The host element
         //! @param ecclass The type of aspect to look for
         //! @param id  The ID of the particular multiaspect that should be loaded
         //! @return the properties of the aspect or nullptr if no such aspect is found.
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId id);
+
+        //! Get the specified type of generic multi aspect, if any, from an element, with the intention of looking at the aspect's properties <em>but not modifying them</em>.
+        //! @note Do not free the returned instance!
+        //! @note Call this method only if you <em>do not</em> intend to modify the aspect.
+        //! @param el   The host element
+        //! @param ecclass The type of aspect to look for
+        //! @param id  The ID of the particular multiaspect that should be loaded
+        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        DGNPLATFORM_EXPORT static ECN::IECInstanceCP GetAspect(DgnElementCR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId id);
         };
 
     //! Represents an ElementAspect subclass in the case where the host Element can have 0 or 1 instance of the subclass. The aspect's Id is the same as the element's Id,
@@ -1036,7 +1055,7 @@ public:
             }
 
     protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR) override;
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
@@ -2042,8 +2061,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 
@@ -2058,8 +2077,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement2dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
 
@@ -2129,7 +2148,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
+    DGNPLATFORM_EXPORT bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -2257,7 +2276,7 @@ protected:
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -2387,7 +2406,7 @@ public:
     //! Create a AnnotationElement2d from CreateParams.
     static AnnotationElement2dPtr Create(CreateParams const& params) {return new AnnotationElement2d(params);}
 protected:
-    virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
+    AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
     explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) {}
 }; // AnnotationElement2d
@@ -2405,7 +2424,7 @@ public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
 protected:
-    virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
+    DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
     explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
 
@@ -2542,7 +2561,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationContentElement : DgnElement
     friend struct dgn_ElementHandler::InformationContent;
 
 protected:
-    virtual InformationContentElementCP _ToInformationContentElement() const override final {return this;}
+    InformationContentElementCP _ToInformationContentElement() const override final {return this;}
     explicit InformationContentElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2560,7 +2579,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
     friend struct dgn_ElementHandler::Document;
 
 protected:
-    virtual DocumentCP _ToDocumentElement() const override final {return this;}
+    DocumentCP _ToDocumentElement() const override final {return this;}
     explicit Document(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2633,8 +2652,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     friend struct dgn_ElementHandler::Definition;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2655,8 +2674,8 @@ protected:
     explicit Session(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnInsert() override {SaveVariables(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveVariables(); return T_Super::_OnUpdate(original);}
 
@@ -2981,8 +3000,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
     friend struct dgn_ElementHandler::Role;
 
 protected:
-    virtual RoleElementCP _ToRoleElement() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    RoleElementCP _ToRoleElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -3075,8 +3094,8 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-    virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    virtual uint64_t _Purge(uint64_t memTarget) override;
+    uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
+    uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
