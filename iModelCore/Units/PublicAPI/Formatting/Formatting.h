@@ -532,7 +532,9 @@ public:
     UNITS_EXPORT int static FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
     UNITS_EXPORT size_t FormatDouble(double dval, CharP buf, size_t bufLen, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String RefFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
+    UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
     UNITS_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator);

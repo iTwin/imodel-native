@@ -35,6 +35,14 @@ TEST(FormattingTest, FormattingUOM)
     QuantityTriad qtr = QuantityTriad(*len, yrdUOM, ftUOM, inUOM);
     EXPECT_STREQ ("24_YRD 2_FT 6_IN", qtr.FormatQuantTriad("_", false).c_str());
     EXPECT_STREQ ("24 YRD 2 FT 6 IN", qtr.FormatQuantTriad(" ", false).c_str());
+    EXPECT_STREQ ("22 45/64", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract").c_str());
+    EXPECT_STREQ ("22 11/16", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
+    EXPECT_STREQ ("22 11/16", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    EXPECT_STREQ ("22 3/4", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract8").c_str());
+
+    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract8").c_str());
+
 #if defined FORMAT_DEBUG_PRINT
     UnitCP mileUOM = UnitRegistry::Instance().LookupUnit("MILE");
     if (nullptr != mileUOM && nullptr != yrdUOM)

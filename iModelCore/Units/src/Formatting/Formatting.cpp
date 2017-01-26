@@ -679,6 +679,15 @@ Utf8String NumericFormat::FormatDouble(double dval, int prec, double round)
     return Utf8String(buf);
     }
 
+Utf8String NumericFormat::FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec, double round)
+    {
+    UnitCP unitQ = qty.GetUnit();
+    QuantityPtr temp = qty.ConvertTo(unitQ->GetName());
+    char buf[64];
+    FormatDouble(temp->GetMagnitude(), buf, sizeof(buf), prec, round);
+    return Utf8String(buf);
+    }
+
 Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
     {
     return FormatDouble(RoundedValue(dval, round));
@@ -702,6 +711,19 @@ Utf8String NumericFormat::RefFormatDouble(double dval, Utf8P stdName, int prec, 
         return "";
     return fmtP->FormatDouble(dval, prec, round);
     }
+
+Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
+    {
+    NumericFormatP fmtP = StdFormatSet::FindFormat(stdName);
+    if (nullptr == fmtP)  // invalid name
+        fmtP = StdFormatSet::DefaultDecimal();
+    if (nullptr == fmtP)
+        return "";
+    UnitCP unitQ = qty.GetUnit();
+    QuantityPtr temp = qty.ConvertTo(unitQ->GetName());
+    return fmtP->FormatDouble(temp->GetMagnitude(), prec, round);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1093,6 +1115,18 @@ void StdFormatSet::StdInit()
     AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
     AddFormat(new NumericFormat("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
     AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
+    NumericFormatP tmp = new NumericFormat("Fractional16", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    tmp->SetAlias("fract16");
+    tmp->SetFractionaPrecision(FractionalPrecision::Sixteenth);
+    AddFormat(tmp);
+    tmp = new NumericFormat("Fractional8", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    tmp->SetAlias("fract8");
+    tmp->SetFractionaPrecision(FractionalPrecision::Eighth);
+    AddFormat(tmp);
+    tmp = new NumericFormat("Fractional32", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    tmp->SetAlias("fract32");
+    tmp->SetFractionaPrecision(FractionalPrecision::Over_32);
+    AddFormat(tmp);
     }
 
 //---------------------------------------------------------------------------------------
