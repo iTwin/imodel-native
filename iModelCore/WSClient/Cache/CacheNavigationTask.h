@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CacheNavigationTask.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -39,7 +39,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
         std::shared_ptr<ECSqlStatementCache> m_statementCache;
 
     protected:
-        virtual void _OnExecute();
+        virtual void _OnExecute() override;
 
         void ContinueCachingChildrenRecursively(bool forceFullRecursiveCaching);
         void CacheNavigationTrees(const bvector<ObjectId>& navigationTrees, bool forceFullRecursiveCaching);
