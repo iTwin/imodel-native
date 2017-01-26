@@ -1545,7 +1545,7 @@ TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
 
     ASSERT_TRUE(actualStructArrayJson.IsArray());
     ASSERT_EQ(123456, actualStructArrayJson[0]["I"]);
-    //ASSERT_EQ(id.GetValue(), actualStructArrayJson[0]["I64"]);
+    ASSERT_EQ(id.GetValue(), actualStructArrayJson[0]["I64"]) << "Int64 are expected to not be stringified in the JSON";
     }
 
 //---------------------------------------------------------------------------------------
