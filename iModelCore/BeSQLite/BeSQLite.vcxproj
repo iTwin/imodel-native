@@ -58,6 +58,7 @@
     <NMakeOutput>BeSQLite.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\PublicAPI\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)Winx64\BuildContexts\BeSQLite\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(LOCALAPPDATA)\temp\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>BeSQLite.exe</NMakeOutput>
