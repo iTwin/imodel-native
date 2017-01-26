@@ -47,10 +47,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         enum DataOrigin
             {
-            CachedData = 1,         // Only Cached needed, no cached data will result in error
-            RemoteData = 2,         // Download and cache, connection issues will result in error
-            CachedOrRemoteData = 3, // Use cached if exists, else - download, connection issues will result in an error.
-            RemoteOrCachedData = 4  // If online, download, else - get from cache
+            CachedData = 1,         // Only return if data is cached, do not query server 
+            RemoteData = 2,         // Always query server to update the cache
+            CachedOrRemoteData = 3, // Return data if it's cached or query server if it's not
+            RemoteOrCachedData = 4  // Query server first to update the cache or return cached data if query failed 
             };
 
         struct SelectProvider;
