@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/ConnectC/ConnectWebServicesClientCTests.cpp $
+|     $Source: Tests/UnitTests/NotPublished/ConnectC/ConnectWebServicesClientCTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
