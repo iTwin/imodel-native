@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsName.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -63,9 +63,9 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& viewContext) override
     {
-    Render::GraphicBuilderPtr  graphic = viewContext.CreateGraphic();
-    Render::GraphicParams   defaultParams;
-    LineStyleContext lsContext(*graphic, defaultParams, &viewContext);
+    Render::GraphicBuilderPtr graphic = viewContext.CreateGraphic();
+    Render::GeometryParams defaultParams;
+    LineStyleContext lsContext(*graphic, defaultParams, viewContext);
 
     m_component._StrokeLineString(lsContext, m_lsSymb, m_points, 2, false);
     }
@@ -252,17 +252,16 @@ struct ComponentToTextureStroker : ComponentStroker
 private:
     LineStyleSymbR      m_lsSymb;
     Transform           m_transformForTexture;
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;
-    uint32_t            m_lineWeight;
+    GeometryParamsCR    m_geomParams;
+    mutable bool        m_useTextureColors = false;
 
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(DgnDbR dgndb, LineStyleSymbR lsSymb, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
-            ComponentStroker(dgndb, component, lsSymb.GetScale()), m_lsSymb(lsSymb), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
+ComponentToTextureStroker(DgnDbR dgndb, LineStyleSymbR lsSymb, GeometryParamsCR geomParams, LsComponentR component) : 
+    ComponentStroker(dgndb, component, lsSymb.GetScale()), m_lsSymb(lsSymb), m_geomParams(geomParams)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -280,31 +279,31 @@ ComponentToTextureStroker(DgnDbR dgndb, LineStyleSymbR lsSymb, ColorDef lineColo
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  01/2017
+//---------------------------------------------------------------------------------------
+bool GetUseTextureColors() {return m_useTextureColors;}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 Render::GraphicPtr Stroke(ViewContextR context) const
     {
-    GraphicParams         elemMatSymb;
-
-    elemMatSymb.Init();
-    //  Generally the line style will be drawn with the color of the element. We accomplish that
-    //  by passing QV_GEOTEXTURE_DEFERCLRSEL to  _DefineQVGeometryMap.
-    //
-    //  A line style may specify that a symbol get its color from the symbol.  In a vector line style,
-    //  it is possible for different symbols to have different colors and for some symbols to be
-    //  drawn with the element color while others are drawn with the symbol color. For a texture
-    //  style the entire line style has to be drawn with the same color.
-    elemMatSymb.SetLineColor(m_lineColor);
-    elemMatSymb.SetFillColor(m_fillColor);
-    elemMatSymb.SetWidth(m_lineWeight);
-
-    //  Create the graphic
+    // Create the graphic
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+    LineStyleContext lsContext(*graphic, m_geomParams, context);
 
-    //  Add symbology
-    graphic->ActivateGraphicParams(elemMatSymb);
-    LineStyleContext lsContext(*graphic, elemMatSymb, &context);
+    lsContext.SetCreatingTexture();
+
+    // Stroke component
     m_component->_StrokeLineString(lsContext, m_lsSymb, m_points, 2, false);
+
+    // Generally the line style will be drawn with the color of the element. We accomplish that by passing QV_GEOTEXTURE_DEFERCLRSEL to _DefineQVGeometryMap.
+    // A line style may specify that a symbol get its color from the symbol. In a vector line style, it is possible for different symbols to have different 
+    // colors and for some symbols to be drawn with the element color while others are drawn with the symbol color. For a texture style the entire line style 
+    // has to be drawn with the same color.
+    if (lsContext.GetHasTextureColors())
+        m_useTextureColors = true;
+
     graphic->Close();
 
     return graphic;
@@ -400,7 +399,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymbIn, uint32_t weight)
+StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymbIn, GeometryParamsCR geomParams)
     {
     textureDescr.m_hasTextureWidth = false;
     textureDescr.m_textureWidth = 0;
@@ -464,6 +463,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, componentScaleFactor * comp->_GetLengthForTexture());
 
+#if defined (NOT_NOW)
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
     ColorDef lineColor, fillColor;
@@ -473,8 +473,9 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     m_usesSymbolWeight = symbologyResults.IsWeightBySymbol(lineWeight);
     if (!m_usesSymbolWeight)
         lineWeight = weight;
+#endif
 
-    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), lineStyleSymb, lineColor, fillColor, lineWeight, *comp);
+    ComponentToTextureStroker stroker(viewContext.GetDgnDb(), lineStyleSymb, geomParams, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
     if (!graphic.IsValid() || viewContext.CheckStop())
@@ -489,7 +490,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
         return BSIERROR;
         }
 
-    textureDescr.m_texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
+    textureDescr.m_texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, stroker.GetUseTextureColors(), false);
 
     double yRange = range2d.high.y - range2d.low.y;
     BeAssert(0.0 != yRange);
@@ -507,19 +508,16 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2016
 //---------------------------------------------------------------------------------------
-StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, uint32_t weight)
+StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, GeometryParamsCR geomParams)
     {
-    if (m_usesSymbolWeight)
-        weight = 0;   // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
-
+    uint32_t weight = (m_usesSymbolWeight || !viewContext.GetViewFlags().m_weights ? 0 : geomParams.GetWeight()); // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
     uint32_t modifiers = 0;
     if (lineStyleSymb.IsScaled())
         modifiers |= STYLEMOD_SCALE;
     if (lineStyleSymb.HasOrgWidth())
         modifiers |= STYLEMOD_SWIDTH;
 
-    //  Dash and gap scales purposely omitted since the MicroStation user interface does not provide any way to set them.
-
+    // Dash and gap scales purposely omitted since the MicroStation user interface does not provide any way to set them.
     TextureParams params(weight, modifiers, lineStyleSymb.GetScale(), lineStyleSymb.GetOriginWidth());
 
     if (m_firstTextureInitialized)
@@ -535,7 +533,7 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR vi
             }
         }
 
-    if (LsDefinition::GenerateTexture(tDescr,  viewContext, lineStyleSymb, weight) != BSISUCCESS)
+    if (LsDefinition::GenerateTexture(tDescr, viewContext, lineStyleSymb, geomParams) != BSISUCCESS)
         return BSIERROR;
 
     m_textures[params] = tDescr;
@@ -545,7 +543,7 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, uint32_t weight) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, GeometryParamsCR params) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
@@ -555,8 +553,8 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
         if (!m_firstTextureInitialized)
             {
             uint8_t const* image;
-            Point2d     imageSize;
-            uint32_t      flags = 0;
+            Point2d        imageSize;
+            uint32_t       flags = 0;
 
             m_firstTextureInitialized = true;
             if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
@@ -605,9 +603,9 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             case DrawPurpose::Redraw:
             case DrawPurpose::Heal:
                 {
-                BeAssert (weight >=0 && weight < 32);
-                TextureDescr    tDescr;
-                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, weight) != BSISUCCESS)
+                TextureDescr tDescr;
+
+                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, params) != BSISUCCESS)
                     return nullptr;
 
                 //  Do not apply the scaling factor here.  It must be applied when generating the texture, not when applying the texture.
@@ -617,10 +615,12 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
 
                 return tDescr.m_texture.get();
                 }
-                break;
+      
             default:
+                {
                 //  Very rare to get here. It does happen if checkstop stops us from creating the texture and then the user tries to pick the element.
                 return nullptr;
+                }
             }
         }
 

@@ -143,23 +143,26 @@ int BimConsole::Run(int argc, WCharP argv[])
         {
         Command const* openCommand = GetCommand(".open");
         BeAssert(openCommand != nullptr);
-        std::vector<Utf8String> args;
-        args.push_back(openCommand->GetName());
-        args.push_back(Utf8String(argv[1]));
+        Utf8String argsUnparsed;
+        //ignore first arg as it is the path to the bimconsole exe
+        for (size_t i = 1; i < (size_t) argc; i++)
+            {
+            if (i > 1)
+                argsUnparsed.append(" ");
 
-        if (argc == 3)
-            args.push_back(Utf8String(argv[2]));
+            argsUnparsed.append(Utf8String(argv[i]));
+            }
 
-        openCommand->Run(m_session, args);
+        openCommand->Run(m_session, argsUnparsed);
         }
 
-    return WaitForUserInput(argc, argv);
+    return WaitForUserInput();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-int BimConsole::WaitForUserInput(int argc, WCharP argv[])
+int BimConsole::WaitForUserInput()
     {
     Utf8String cmd;
 
@@ -183,22 +186,25 @@ void BimConsole::RunCommand(Utf8StringCR cmd)
 
     Command const* command = nullptr;
 
-    std::vector<Utf8String> args;
+    Utf8String args;
     if (isECSqlCommand)
         {
-        args.push_back(cmd);
+        args.assign(cmd);
         command = GetCommand(".ecsql");
         }
     else
         {
-        Command::Tokenize(args, WString(cmd.c_str(), BentleyCharEncoding::Utf8), L' ', L'"');
-        if (args.empty())
+        Utf8String commandName;
+        const size_t nextStartIndex = FindNextToken(commandName, WString(cmd.c_str(), BentleyCharEncoding::Utf8), 0, L' ', L'"');
+        if (commandName.empty())
             {
             WriteErrorLine("Syntax error in command");
             return;
             }
 
-        command = GetCommand(args[0]);
+        command = GetCommand(commandName);
+        if (nextStartIndex < cmd.size())
+            args.assign(cmd.substr(nextStartIndex));
         }
 
     //Unsupported command, use help command to display available commands
@@ -267,6 +273,100 @@ BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
     return BeSQLite::L10N::SqlangFiles(defaultSqlang);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     01/2017
+//---------------------------------------------------------------------------------------
+//static
+size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
+    {
+    auto postProcessToken = [&token] (WStringR tokenW, size_t currentIndex)
+        {
+        tokenW.Trim();
+        token.Assign(tokenW.c_str());
+        return currentIndex + 1;
+        };
+
+    enum class State
+        {
+        IsDelimiter,
+        NotInEscapeSequence,
+        InEscapeSequence,
+        EscapeCharInEscapeSequence
+        };
+
+    const size_t inputStrLength = inputString.size();
+    const bool doEscapeDelimiter = delimiterEscapeChar != L'\0';
+    State state = State::NotInEscapeSequence;
+    WString currentToken;
+    for (size_t i = startIndex; i < inputStrLength; i++)
+        {
+        WChar c = inputString[i];
+        switch (state)
+            {
+                case State::IsDelimiter:
+                {
+                if (c == delimiter)
+                    break;
+
+                currentToken.Trim();
+                token = Utf8String(currentToken);
+                return i;
+                }
+                case State::NotInEscapeSequence:
+                {
+                if (c == delimiter)
+                    {
+                    state = State::IsDelimiter;
+                    break;
+                    }
+
+                if (doEscapeDelimiter && c == delimiterEscapeChar)
+                    state = State::InEscapeSequence;
+                else
+                    currentToken.append(1, c);
+
+                break;
+                }
+
+                case State::InEscapeSequence:
+                {
+                if (c == delimiterEscapeChar)
+                    state = State::EscapeCharInEscapeSequence;
+                else
+                    currentToken.append(1, c);
+
+                break;
+                }
+
+                case State::EscapeCharInEscapeSequence:
+                {
+                if (c == delimiterEscapeChar)
+                    {
+                    //two subsequent double-quotes in an escape sequence mean to escape the escape char
+                    currentToken.append(1, c);
+                    state = State::InEscapeSequence;
+                    }
+                else if (c == delimiter)
+                    state = State::IsDelimiter;
+                else
+                    {
+                    currentToken.append(1, c);
+                    state = State::NotInEscapeSequence;
+                    }
+                
+                break;
+                }
+
+                default:
+                    BeAssert(false);
+                    return Utf8String::npos;
+            }
+        }
+
+    currentToken.Trim();
+    token = Utf8String(currentToken);
+    return inputStrLength;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013

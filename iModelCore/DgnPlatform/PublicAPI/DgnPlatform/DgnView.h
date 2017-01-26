@@ -831,7 +831,7 @@ protected:
     //! Construct a new OrthographicViewDefinition prior to loading it
     explicit OrthographicViewDefinition(CreateParams const& params) : T_Super(params) {}
 
-    OrthographicViewDefinitionCP _ToOrthographicView() const {return this;}
+    OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
@@ -957,7 +957,7 @@ protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
-    CameraViewDefinitionCP _ToCameraView() const {return this;}
+    CameraViewDefinitionCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
     bool _IsEyePointAbove(double elevation) const override {return GetEyePoint().z > elevation;}
     DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
@@ -1193,7 +1193,7 @@ protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
     void _GetExtentLimits(double& minExtent, double& maxExtent) const override {minExtent=DgnUnits::OneMillimeter(); maxExtent=100*DgnUnits::OneMeter();}
-    virtual SheetViewDefinitionCP _ToSheetView() const {return this;}
+    virtual SheetViewDefinitionCP _ToSheetView() const override {return this;}
 
     //! Construct a SheetViewDefinition from the supplied params prior to loading it
     explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
@@ -1219,25 +1219,25 @@ namespace ViewElementHandler
     struct View : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition, ViewDefinition, View, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct View3d : View
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition3d, ViewDefinition3d, View3d, View, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct SpatialView : View3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialView, View3d, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct View2d : View
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition2d, ViewDefinition2d, View2d, View, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct OrthographicView : SpatialView
@@ -1248,7 +1248,7 @@ namespace ViewElementHandler
     struct CameraView : SpatialView
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraView, SpatialView, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct DrawingView : View2d
@@ -1274,7 +1274,7 @@ namespace ViewElementHandler
     struct ViewDisplayStyle : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DisplayStyle, ViewDisplayStyle, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct ViewDisplayStyle3d : ViewDisplayStyle

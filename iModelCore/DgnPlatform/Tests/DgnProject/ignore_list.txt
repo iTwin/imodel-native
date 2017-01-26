@@ -22,11 +22,6 @@ CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
 CsvFileTests.GetSections
 
-#TFS 629338
-# bim0200dev, x64 & x86, DEBUG, after merge
-ImportTest.ImportElementsWithDependencies
-ImportTest.ImportElementsWithCodeSpecs
-
 #TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 

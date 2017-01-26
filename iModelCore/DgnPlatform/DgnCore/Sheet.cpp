@@ -361,7 +361,7 @@ struct SceneReadyTask : ProgressiveTask
             return ProgressiveTask::Completion::Aborted; // no, keep waiting
 
         m_tree.m_sceneReady = true; // yes, mark it as ready and draw its tiles
-        m_tree.DrawInView(context);
+        m_tree.DrawInView(context, m_tree.GetLocation(), m_tree.m_clip.get());
         return ProgressiveTask::Completion::Finished; // we're done.
         }
 };
@@ -388,7 +388,7 @@ void Attachment::Tree::Draw(TerrainContextR context)
         }
     
     // the scene is available, draw its tiles
-    DrawInView(context);
+    DrawInView(context, GetLocation(), m_clip.get());
 
 #ifdef DEBUG_ATTACHMENT_RANGE
     ElementAlignedBox3d range(0,0,0, 1.0/m_scale.x,1.0/m_scale.y,1.0);

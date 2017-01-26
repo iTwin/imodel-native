@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGraphics.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1516,12 +1516,159 @@ void ViewContext::_AddCurveVector(ElementHandleCR eh, CurveVectorCR curves, Geom
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
+* @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth)
+bool ViewContext::_WantLineStyles()
     {
-#if defined (WIP_NEEDSWORK_ELEMENT)
-    CurveVectorOutlineStroker::DrawStyledCurveVector2d(*this, curve, zDepth);
-//    GetCurrentGraphicR().AddCurveVector2d(curve, false, zDepth);
-#endif
+    return GetViewFlags().ShowStyles();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const
+    {
+    if (!lsSymb.GetUseStroker())
+        return false;
+
+    double pixelSize = builder.GetPixelSize();
+
+    if (0.0 != pixelSize)
+        {
+        double maxWidth = lsSymb.GetStyleWidth();
+        double pixelThreshold = 5.0;
+
+        if ((maxWidth / pixelSize) < pixelThreshold)
+            {
+            builder.UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
+
+            return false; // Width not discernable...
+            }
+
+        builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
+        }
+
+    // NOTE: Need a fairly small angle for QVis since we're not always re-stroking to a view tolerance...
+    facetOptions = IFacetOptions::CreateForCurves();
+    facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+
+    return true; // Width discernable...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook)
+    {
+    // NOTE: It is left up to the caller if they want to call WantLineStyles, some decorator might want to display a style regardless of the ViewFlags.
+    if (doCook)
+        CookGeometryParams(params, graphic);
+
+    LineStyleInfoCP lsInfo = params.GetLineStyle();
+
+    if (nullptr != lsInfo)
+        {
+        IFacetOptionsPtr facetOptions;
+        LineStyleSymbCR  lsSymb = lsInfo->GetLineStyleSymb();
+        ILineStyleCP     currLStyle = (_UseLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
+
+        if (nullptr != currLStyle)
+            {
+            // NEEDSWORK: Complex, Partity Region, etc...
+#if defined (WIP_NEEDSWORK_ELEMENT)
+            if (is3d)
+                CurveVectorOutlineStroker::DrawStyledCurveVector(*this, curve);
+            else
+                CurveVectorOutlineStroker::DrawStyledCurveVector2d(*this, curve, zDepth);
+#else
+            LineStyleContext lsContext(graphic, params, *this, facetOptions.get());
+
+            switch (curve.HasSingleCurvePrimitive())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    {
+                    DSegment3d segment = *curve.front()->GetLineCP();
+
+                    if (!Is3dView())
+                        segment.point[0].z = segment.point[1].z = params.GetNetDisplayPriority();
+
+                    currLStyle->_GetComponent()->_StrokeLineString(lsContext, lsSymb, segment.point, 2, curve.IsAnyRegionType());
+                    break;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    {
+                    if (!Is3dView())
+                        {
+                        bvector<DPoint3d> points = *curve.front()->GetLineStringCP();
+                        double zDepth = params.GetNetDisplayPriority();
+
+                        for (DPoint3dR pt : points)
+                            pt.z = zDepth;
+
+                        currLStyle->_GetComponent()->_StrokeLineString(lsContext, lsSymb, &points.front(), (int) points.size(), curve.IsAnyRegionType());
+                        break;
+                        }
+
+                    currLStyle->_GetComponent()->_StrokeLineString(lsContext, lsSymb, &curve.front()->GetLineStringCP()->front(), (int) curve.front()->GetLineStringCP()->size(), curve.IsAnyRegionType());
+                    break;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    currLStyle->_GetComponent()->_StrokeArc(lsContext, lsSymb, *curve.front()->GetArcCP(), Is3dView(), params.GetNetDisplayPriority(), curve.IsAnyRegionType());
+                    break;
+                    }
+
+                default:
+                    {
+                    MSBsplineCurveCP bcurve = curve.front()->GetProxyBsplineCurveCP();
+
+                    if (nullptr != bcurve && bcurve->GetIntOrder() > 0 && bcurve->GetIntNumPoles() > 0)
+                        currLStyle->_GetComponent()->_StrokeBSplineCurve(lsContext, lsSymb, *bcurve, Is3dView(), params.GetNetDisplayPriority());
+                    else if (Is3dView())
+                        graphic.AddCurveVector(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay());
+                    else
+                        graphic.AddCurveVector2d(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay(), params.GetNetDisplayPriority());
+                    break;
+                    }
+                }
+#endif
+
+            if (!curve.IsAnyRegionType() || FillDisplay::Never == params.GetFillDisplay())
+                return;
+
+            Render::GeometryParams fillParams(params);
+
+            if (nullptr == fillParams.GetGradient())
+                {
+                fillParams.SetFillDisplay(FillDisplay::Blanking);
+                }
+            else if (0 != (fillParams.GetGradient()->GetFlags() & GradientSymb::Flags::Outline))
+                {
+                GradientSymbPtr gradient = GradientSymb::Create();
+                
+                gradient->CopyFrom(*fillParams.GetGradient());
+                gradient->SetFlags((GradientSymb::Flags) (((Byte) gradient->GetFlags()) & ~GradientSymb::Flags::Outline));
+
+                fillParams.SetGradient(gradient.get());
+                }
+
+            CookGeometryParams(fillParams, graphic); // Activate fill with auto-outline disabled...
+
+            if (Is3dView())
+                graphic.AddCurveVector(curve, true);
+            else
+                graphic.AddCurveVector2d(curve, true, params.GetNetDisplayPriority());
+
+            CookGeometryParams(params, graphic); // Restore original...
+            return;
+            }
+        }
+
+    if (Is3dView())
+        graphic.AddCurveVector(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay());
+    else
+        graphic.AddCurveVector2d(curve, curve.IsAnyRegionType() && FillDisplay::Never != params.GetFillDisplay(), params.GetNetDisplayPriority());
+    }
+

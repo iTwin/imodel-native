@@ -185,9 +185,7 @@ SpatialLocationModelPtr DgnDbTestUtils::InsertSpatialLocationModel(DgnDbR db, Ut
 //---------------------------------------------------------------------------------------
 void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
     {
-    AxisAlignedBox3d physicalExtents;
-    physicalExtents = db.Units().ComputeProjectExtents();
-    db.Units().SetProjectExtents(physicalExtents);
+    db.Units().InitializeProjectExtents();
     }
 
 //---------------------------------------------------------------------------------------

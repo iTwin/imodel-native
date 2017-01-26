@@ -940,7 +940,7 @@ struct ModelMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarsha
 
 struct ObjectIdSetMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
     {
-    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr)
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) override
         {
         np = ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectIdSet(*(DgnElementIdSet*)ptr), true);
         }

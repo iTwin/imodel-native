@@ -687,8 +687,6 @@ protected:
     DgnStyleId          m_styleId;
     LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
     LineStyleSymb       m_lStyleSymb; //!< cooked form of linestyle
-    DVec3d              m_startTangent;
-    DVec3d              m_endTangent;
 
     DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
@@ -705,10 +703,6 @@ public:
     LineStyleParamsCP GetStyleParams() const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
     LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
     LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
-    DVec3dCR GetStartTangent() const {return m_startTangent;}
-    DVec3dCR GetEndTangent() const {return m_endTangent;}
-    void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
-    void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
 
     DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
  };
@@ -854,6 +848,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT GeometryParams();
+    DGNPLATFORM_EXPORT GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId());
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
@@ -882,7 +877,12 @@ public:
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
-    bool IsResolved() const {return m_resolved;}
+    void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
+    void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
+    void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
+    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
+    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = m_appearanceOverrides.m_bgFill = false;}
+
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
@@ -939,6 +939,8 @@ public:
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
+
+    bool HasStrokedLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return (m_styleInfo.IsValid() ? (nullptr != m_styleInfo->GetLineStyleSymb().GetILineStyle() && m_styleInfo->GetLineStyleSymb().GetUseStroker()) : false);}
 
     //! Get whether this GeometryParams contains information that needs to be transformed (ex. to apply local to world).
     bool IsTransformable() const {return m_pattern.IsValid();} // NEEDSWORK: LineStyleInfo???

@@ -158,7 +158,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         fragmentSpec.SetMaxChars(maxChars);
         RoundtripCodeFragmentSpec(fragmentSpec, CodeFragmentSpec::Type::SequenceNumber, prompt, inSequenceMask, minChars, maxChars);
         }
-    
+
     // CodeFragmentSpec::To/FromJson for PropertyValue
         {
         Utf8CP propertyName = "PropertyName";
@@ -270,4 +270,60 @@ TEST_F(CodeAdminTests, CodeAdmin)
         ASSERT_EQ(DgnDbStatus::Success, T_HOST.GetCodeAdmin()._GetElementTypeCode(className, *element, CodeFragmentSpec::FromElementTypeCode()));
         ASSERT_STREQ("P", className.c_str());
         }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Ridha.Malik                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(CodeAdminTests, CodeFragmentSpecMinMaxChars)
+    {
+    m_host.SetCodeAdmin(new TestCodeAdmin());
+    SetupSeedProject();
+    // CodeFragmentSpec::Invalid min and max chars
+    Utf8CP prompt = "SequenceNumberPrompt";
+    bool inSequenceMask = false;
+    int minChars = 0;
+    int maxChars = 257;
+    CodeFragmentSpec fragmentSpec = CodeFragmentSpec::FromSequenceNumber(prompt);
+    fragmentSpec.SetMaxChars(maxChars);
+    fragmentSpec.SetMinChars(minChars);
+    ASSERT_NE(0, fragmentSpec.GetMinChars());
+    ASSERT_EQ(1, fragmentSpec.GetMinChars());
+    ASSERT_NE(257, fragmentSpec.GetMaxChars());
+    ASSERT_EQ(256, fragmentSpec.GetMaxChars());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Ridha.Malik                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(CodeAdminTests, GenerateCode)
+    {
+    m_host.SetCodeAdmin(new TestCodeAdmin());
+    SetupSeedProject();
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+
+    TestElementPtr element = TestElement::Create(*m_db, physicalModel->GetModelId(), categoryId);
+
+    ASSERT_TRUE(element.IsValid());
+    element->SetPropertyValue("i", 1);
+    ASSERT_FALSE(element->GetCode().IsValid());
+    //GenerateCode with out inserting codespec it should return invalid
+    ASSERT_EQ(DgnDbStatus::InvalidCodeSpec, element->GenerateCode());
+
+    CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_TEST_ELEMENT_CLASS_NAME), CodeScopeSpec::CreateModelScope());
+    ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Model);
+    ASSERT_TRUE(codeSpec->IsModelScope());
+    //CanGenerateCode should return false before inserting any CodeFragmentSpec
+    ASSERT_FALSE(codeSpec->CanGenerateCode());
+    codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
+    codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString(":"));
+    //CanGenerateCode should return true after inserting any CodeFragmentSpec
+    ASSERT_TRUE(codeSpec->CanGenerateCode());
+    ASSERT_EQ(DgnDbStatus::Success, codeSpec->Insert()); 
+    ASSERT_EQ(DgnDbStatus::Success, element->GenerateCode());
+    ASSERT_TRUE(element->GetCode().IsValid());
+    ASSERT_TRUE(element->Insert().IsValid());
+    Utf8String className;
+    ASSERT_EQ(DgnDbStatus::Success, T_HOST.GetCodeAdmin()._GetElementTypeCode(className, *element, CodeFragmentSpec::FromElementTypeCode()));
+    ASSERT_STREQ("T", className.c_str());
     }

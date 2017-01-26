@@ -470,9 +470,42 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     {
     long            startPosition = ftell (outputFile);
     Json::Value     featureTable;
+    ByteStream      binaryData;
 
     featureTable["POINTS_LENGTH"] = pointCloud.Points().size();
-    featureTable["POSITION"]["byteOffset"] = 0;
+    featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
+
+
+    DRange3d        positionRange = DRange3d::NullRange();
+
+    positionRange.Extend(pointCloud.Points());
+
+    DVec3d positionScale = DVec3d::FromStartEnd(positionRange.low, positionRange.high);
+
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.z);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.x);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.y);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.z);
+
+    for (auto& point : pointCloud.Points())
+        {
+        int16_t             quantizedPosition[3];
+        static double       range = (double) (0xffff);
+
+        quantizedPosition[0] = (uint16_t) (.5 + range * (point.x - positionRange.low.x) / positionScale.x);
+        quantizedPosition[1] = (uint16_t) (.5 + range * (point.y - positionRange.low.y) / positionScale.y);
+        quantizedPosition[2] = (uint16_t) (.5 + range * (point.z - positionRange.low.z) / positionScale.z);
+
+        binaryData.Append ((uint8_t const*) quantizedPosition, sizeof(quantizedPosition));
+        }     
+    if (pointCloud.Colors().size() == pointCloud.Points().size())
+        {
+        featureTable["RGB"]["byteOffset"] = binaryData.size();
+        binaryData.Append ((uint8_t const*)pointCloud.Colors().data(), pointCloud.Colors().size() * sizeof(TileMeshPointCloud::Rgb));
+        }
+
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
 
@@ -480,7 +513,7 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 
     uint32_t        zero = 0, 
                     featureTableStrLen = featureTableStr.size(),
-                    featureTableBinaryLength = pointCloud.Points().size() * 3 * sizeof(float);
+                    featureTableBinaryLength = binaryData.size();
 
 
     std::fwrite(s_pointCloudMagic, 1, 4, outputFile);
@@ -494,27 +527,15 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
 
     std::fwrite(featureTableStr.data(), 1, featureTableStrLen, outputFile);
+    std::fwrite(binaryData.data(), 1, binaryData.size(), outputFile);
 
-    for (auto& point : pointCloud.Points())
-        {
-        float   x = (float) point.x, 
-                y = (float) point.y,
-                z = (float) point.z;
-
-        std::fwrite(&x, 1, sizeof(float), outputFile);    
-        std::fwrite(&y, 1, sizeof(float), outputFile);    
-        std::fwrite(&z, 1, sizeof(float), outputFile);    
-        }
-    
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
     std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
     std::fseek(outputFile, 0, SEEK_END);
 
-    DRange3d        publishedRange = DRange3d::NullRange();
-    publishedRange.Extend(pointCloud.Points());
 
-    m_tile.SetPublishedRange (publishedRange);
+    m_tile.SetPublishedRange (positionRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2102,11 +2123,6 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 continue;
                 }
 
-            Json::Value modelJson(Json::objectValue);
-
-            modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
-
             DRange3d modelRange;
             auto modelRangeIter = m_modelRanges.find(modelId);
             if (m_modelRanges.end() != modelRangeIter)
@@ -2114,9 +2130,21 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             else
                 modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
 
+            if (modelRange.IsNull())
+                {
+                BeAssert(false && "Null model range");
+                continue;
+                }
+
+            Json::Value modelJson(Json::objectValue);
+
+            modelJson["name"] = model->GetName();
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+
+
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
-            modelJson["extents"] = RangeToJson(modelRange);
+ 			modelJson["extents"] = RangeToJson(modelRange);
 
             if (nullptr == spatialModel && !modelTransform.IsIdentity())
                 modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...

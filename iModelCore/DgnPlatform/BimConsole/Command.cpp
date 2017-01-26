@@ -20,71 +20,30 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void Command::Run(Session& session, std::vector<Utf8String> const& args) const
+void Command::Run(Session& session, Utf8StringCR args) const
     {
     session.GetIssues().Reset();
     return _Run(session, args);
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
 //static
-void Command::Tokenize(std::vector<Utf8String>& tokens, WStringCR string, WChar delimiter, WChar delimiterEscapeChar)
+BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR inputString, WChar delimiter, WChar delimiterEscapeChar)
     {
-    auto addToken = [] (std::vector<Utf8String>& tokens, WStringR token)
+    const size_t inputStrLength = inputString.size();
+    Utf8String token;
+    size_t nextStartIndex = 0;
+    while (nextStartIndex < inputStrLength)
         {
-        token.Trim();
-        tokens.push_back(Utf8String(token));
-        };
-
-    const bool doEscapeDelimiter = delimiterEscapeChar != L'\0';
-    bool isEscaped = false;
-    WString currentToken;
-    for (WChar c : string)
-        {
-        if (doEscapeDelimiter && c == delimiterEscapeChar)
-            {
-            isEscaped = !isEscaped;
-            continue;
-            }
-
-        if (!isEscaped && c == delimiter)
-            {
-            addToken(tokens, currentToken);
-            currentToken.resize(0);
-            continue;
-            }
-
-        currentToken.append(1, c);
+        nextStartIndex = BimConsole::FindNextToken(token, inputString, nextStartIndex, delimiter, delimiterEscapeChar);
+        tokens.push_back(token);
+        token.resize(0);
         }
 
-    addToken(tokens, currentToken);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-//static
-Utf8String Command::ConcatArgs(uint32_t startIndex, std::vector<Utf8String> const& args)
-    {
-    const uint32_t count = (uint32_t) args.size();
-    if (startIndex > count)
-        {
-        BeAssert(false);
-        return "";
-        }
-
-    Utf8String argStr;
-    for (uint32_t i = startIndex; i < count; i++)
-        {
-        argStr.append(args[i]);
-
-        if (i != count - 1)
-            argStr.append(" ");
-        }
-
-    return argStr;
+    return SUCCESS;
     }
 
 //******************************* HelpCommand ******************
@@ -92,7 +51,7 @@ Utf8String Command::ConcatArgs(uint32_t startIndex, std::vector<Utf8String> cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void HelpCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
     BeAssert(m_commandMap.size() == 22 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
@@ -141,10 +100,12 @@ Utf8String OpenCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
     const auto argCount = args.size();
-    if (argCount != 2 && argCount != 3)
+    if (argCount != 1 && argCount != 2)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -156,17 +117,17 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
         return;
         }
 
-    Utf8String const& firstArg = args[1];
+    Utf8String const& firstArg = args[0];
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
-    size_t filePathIndex = 1;
+    size_t filePathIndex = 0;
     bool isReadWrite = false;
     if ((isReadWrite = firstArg.EqualsI(READWRITE_SWITCH)) || firstArg.EqualsI(READONLY_SWITCH))
         {
         if (isReadWrite)
             openMode = Db::OpenMode::ReadWrite;
 
-        filePathIndex = 2;
+        filePathIndex = 1;
         }
 
 
@@ -219,7 +180,7 @@ void OpenCommand::_Run(Session& session, std::vector<Utf8String> const& args) co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void CloseCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
     if (session.IsFileLoaded(true))
         {
@@ -244,9 +205,11 @@ Utf8String CreateCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    if (args.size() < 2)
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    if (args.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -261,39 +224,28 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     BeFileName filePath;
     SessionFile::Type fileType = SessionFile::Type::Bim;
     Utf8CP rootSubjectName = nullptr;
-    if (args[1].EqualsIAscii("ecdb") || args[1].EqualsIAscii("besqlite"))
+    if (args[0].EqualsIAscii("ecdb") || args[0].EqualsIAscii("besqlite"))
         {
-        if (args.size() == 2)
+        if (args.size() == 1)
             {
             BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
-        if (args.size() > 3)
+        if (args.size() > 2)
             {
             BimConsole::WriteErrorLine("You can only specify a root subject label for BIM files. Usage: %s", GetUsage().c_str());
             return;
             }
 
-        fileType = args[1].EqualsIAscii("ecdb") ? SessionFile::Type::ECDb : SessionFile::Type::BeSQLite;
-        filePath.AssignUtf8(args[2].c_str());
+        fileType = args[0].EqualsIAscii("ecdb") ? SessionFile::Type::ECDb : SessionFile::Type::BeSQLite;
+        filePath.AssignUtf8(args[1].c_str());
         }
     else
         {
         size_t rootSubjectNameIndex = 0;
         size_t filePathIndex = 0;
-        if (args[1].EqualsIAscii("bim"))
-            {
-            if (args.size() != 4)
-                {
-                BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-                return;
-                }
-
-            rootSubjectNameIndex = 2;
-            filePathIndex = 3;
-            }
-        else
+        if (args[0].EqualsIAscii("bim"))
             {
             if (args.size() != 3)
                 {
@@ -303,6 +255,17 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
 
             rootSubjectNameIndex = 1;
             filePathIndex = 2;
+            }
+        else
+            {
+            if (args.size() != 2)
+                {
+                BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+                return;
+                }
+
+            rootSubjectNameIndex = 0;
+            filePathIndex = 1;
             }
 
         rootSubjectName = args[rootSubjectNameIndex].c_str();
@@ -350,6 +313,7 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
             BimConsole::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
             ecdbFile->GetECDbHandleP()->SaveChanges();
             session.SetFile(std::move(ecdbFile));
+            return;
             }
 
         case SessionFile::Type::BeSQLite:
@@ -366,17 +330,16 @@ void CreateCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         BimConsole::WriteLine("Successfully created BeSQLite file %s and loaded it in read/write mode", filePath.GetNameUtf8().c_str());
         sqliteFile->GetHandleR().SaveChanges();
         session.SetFile(std::move(sqliteFile));
+        return;
         }
         }
-
-
     }
 
 //******************************* FileInfoCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void FileInfoCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsFileLoaded(true))
         return;
@@ -493,10 +456,9 @@ void FileInfoCommand::_Run(Session& session, std::vector<Utf8String> const& args
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-void CommitCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void CommitCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    const auto argCount = args.size();
-    if (argCount != 1)
+    if (!argsUnparsed.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -537,10 +499,9 @@ Utf8String RollbackCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-void RollbackCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void RollbackCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    const size_t argCount = args.size();
-    if (argCount != 1)
+    if (!argsUnparsed.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -593,16 +554,19 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "Imports the specified CSV file into a plain table.\r\n"
         COMMAND_USAGE_IDENT "hascolumnheader: if true, the first line's values become the column names of the new table (default: false)\r\n"
         COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n"
-        COMMAND_USAGE_IDENT "delimiterescapechar: if a string is enclosed by the escape char any delimiters\r\n"
-        COMMAND_USAGE_IDENT "within the string are not considered as delimiter. Default: no escape char\r\n";
+        COMMAND_USAGE_IDENT "nodelimiterescaping: By default, delimiters are escaped if they are enclosed by double-quotes. If this parameter\r\n"
+        COMMAND_USAGE_IDENT "is set, delimiters are not escaped. Default: false\r\n";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void ImportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    if (args.size() < 3 || (!args[1].EqualsIAscii(ECSCHEMA_SWITCH) && !args[1].EqualsIAscii(CSV_SWITCH)))
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    const size_t switchArgIndex = 0;
+    if (args.size() < 2 || (!args[switchArgIndex].EqualsIAscii(ECSCHEMA_SWITCH) && !args[switchArgIndex].EqualsIAscii(CSV_SWITCH)))
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -617,7 +581,7 @@ void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         return;
         }
 
-    BeFileName path(args[2]);
+    BeFileName path(args[1]);
     path.Trim(L"\"");
     if (!path.DoesPathExist())
         {
@@ -625,7 +589,7 @@ void ImportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
         return;
         }
 
-    Utf8StringCR commandSwitch = args[1];
+    Utf8StringCR commandSwitch = args[switchArgIndex];
     if (commandSwitch.EqualsIAscii(ECSCHEMA_SWITCH))
         {
         if (!session.IsECDbFileLoaded(true))
@@ -716,16 +680,16 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
 //---------------------------------------------------------------------------------------
 void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std::vector<Utf8String> const& args) const
     {
-    if(args.size() != 4)
+    if(args.size() < 3)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    Utf8StringCR tableName = args[3];
-    const bool hasColumnHeader = args.size() == 5 ? GetArgAsBool(args[4]) : false;
-    WChar delimiter = args.size() == 6 ? WString(args[5].c_str(), BentleyCharEncoding::Utf8)[0] : L',';
-    WChar escapeChar = args.size() == 7 ? WString(args[6].c_str(), BentleyCharEncoding::Utf8)[0] : L'\0';
+    Utf8StringCR tableName = args[2];
+    const bool hasColumnHeader = args.size() >= 4 ? GetArgAsBool(args[3]) : false;
+    WChar delimiter = args.size() >= 5 ? WString(args[4].c_str(), BentleyCharEncoding::Utf8)[0] : L',';
+    WChar escapeChar = args.size() >= 6 && GetArgAsBool(args[5]) ? L'\0' : L'"';
 
     BeFileStatus stat;
     BeTextFilePtr file = BeTextFile::Open(stat, csvFilePath.GetName(), TextFileOpenType::Read, TextFileOptions::KeepNewLine);
@@ -737,13 +701,19 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
 
     WString line;
     Statement stmt;
-    int rowCount = 0;
+    int lineNo = 0, rowCount = 0;
     bool isFirstLine = true;
     int columnCount = -1;
+    std::vector<Utf8String> tokens;
     while (TextFileReadStatus::Success == file->GetLine(line))
         {
-        std::vector<Utf8String> tokens;
-        Tokenize(tokens, line, delimiter, escapeChar);
+        lineNo++;
+        tokens.resize(0);
+        if (SUCCESS != TokenizeString(tokens, line, delimiter, escapeChar))
+            {
+            BimConsole::WriteErrorLine("Error when parsing line #d in CSV file %s.", lineNo, csvFilePath.GetNameUtf8().c_str());
+            return;
+            }
 
         for (Utf8StringR token : tokens)
             {
@@ -864,6 +834,7 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
     return SUCCESS;
     }
 
+
 //******************************* ExportCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -886,10 +857,11 @@ Utf8String ExportCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExportCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void ExportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
     const size_t argCount = args.size();
-    if (!(argCount == 3 || (argCount == 4 && args[2].EqualsI("v2"))))
+    if (!(argCount == 2 || (argCount == 2 && args[1].EqualsI("v2"))))
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -898,28 +870,28 @@ void ExportCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
     if (!session.IsFileLoaded(true))
         return;
 
-    if (args[1].EqualsI(ECSCHEMA_SWITCH))
+    if (args[0].EqualsI(ECSCHEMA_SWITCH))
         {
         if (!session.IsECDbFileLoaded(true))
             return;
 
         Utf8CP outFolder = nullptr;
         bool useECXmlV2 = false;
-        if (argCount == 3)
-            outFolder = args[2].c_str();
+        if (argCount == 2)
+            outFolder = args[1].c_str();
         else
             {
             useECXmlV2 = true;
-            outFolder = args[3].c_str();
+            outFolder = args[2].c_str();
             }
 
         RunExportSchema(session, outFolder, useECXmlV2);
         return;
         }
 
-    if (args[1].EqualsI(TABLES_SWITCH))
+    if (args[0].EqualsI(TABLES_SWITCH))
         {
-        RunExportTables(session, args[2].c_str());
+        RunExportTables(session, args[1].c_str());
         return;
         }
 
@@ -1006,10 +978,10 @@ void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
 //---------------------------------------------------------------------------------------
 void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP tableName) const
     {
-    auto& tableObj = out.append(Json::ValueType::objectValue);
+    Json::Value& tableObj = out.append(Json::ValueType::objectValue);
     tableObj["Name"] = tableName;
     tableObj["Rows"] = Json::Value(Json::ValueType::arrayValue);
-    auto& rows = tableObj["Rows"];
+    Json::Value& rows = tableObj["Rows"];
     rows.clear();
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), SqlPrintfString("SELECT * FROM %s", tableName));
@@ -1057,7 +1029,7 @@ Utf8String CreateECClassViewsCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-void CreateECClassViewsCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void CreateECClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1088,10 +1060,9 @@ Utf8String MetadataCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void MetadataCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    const size_t argSize = args.size();
-    if (argSize <= 1)
+    if (argsUnparsed.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -1100,18 +1071,10 @@ void MetadataCommand::_Run(Session& session, std::vector<Utf8String> const& args
     if (!session.IsECDbFileLoaded(true))
         return;
 
-    Utf8String ecsql;
-    for (size_t i = 1; i < argSize; i++)
-        {
-        ecsql.append(args[i]);
-
-        if (i != argSize - 1)
-            ecsql.append(" ");
-        }
-
+    Utf8CP ecsql = argsUnparsed.c_str();
 
     ECSqlStatement stmt;
-    ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
+    ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql);
     if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
@@ -1164,10 +1127,9 @@ Utf8String ParseCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    const size_t argCount = args.size();
-    if (argCount < 2)
+    if (argsUnparsed.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -1176,89 +1138,97 @@ void ParseCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
     if (!session.IsECDbFileLoaded(true))
         return;
 
-    Utf8StringCR firstArg = args[1];
-    if (firstArg.EqualsIAscii("exp"))
+    Utf8String commandSwitch;
+    const size_t nextStartIndex = BimConsole::FindNextToken(commandSwitch, WString(argsUnparsed.c_str(), BentleyCharEncoding::Utf8), 0, L' ');
+
+    enum class ParseMode
         {
-        if (argCount < 3)
-            {
-            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
-            }
+        Default,
+        Exp,
+        Token,
+        Sql
+        };
 
-        Utf8String ecsql = ConcatArgs(2, args);
-        Utf8String ecsqlFromExpTree;
-        Json::Value expTree;
-        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
-            {
-            if (session.GetIssues().HasIssue())
-                BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
-            else
-                BimConsole::WriteErrorLine("Failed to parse ECSQL.");
-            return;
-            }
-
-        BimConsole::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
-        BimConsole::WriteLine();
-        BimConsole::WriteLine("ECSQL expression tree:");
-
-        Utf8String expTreeStr;
-        ExpTreeToString(expTreeStr, expTree, 0);
-        BimConsole::WriteLine("%s", expTreeStr.c_str());
-        return;
-        }
-
-    if (firstArg.EqualsIAscii("token"))
-        {
-        if (argCount < 3)
-            {
-            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
-            }
-
-        Utf8String ecsql = ConcatArgs(2, args);
-
-        Utf8String parseTree;
-        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
-            {
-            if (session.GetIssues().HasIssue())
-                BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
-            else
-                BimConsole::WriteErrorLine("Failed to parse ECSQL.");
-
-            return;
-            }
-
-        BimConsole::WriteLine("Raw ECSQL parse tree:");
-        BimConsole::WriteLine("%s", parseTree.c_str());
-        return;
-        }
+    ParseMode parseMode = ParseMode::Default;
+    if (commandSwitch.EqualsIAscii("exp"))
+        parseMode = ParseMode::Exp;
+    else if (commandSwitch.EqualsIAscii("token"))
+        parseMode = ParseMode::Token;
+    else if (commandSwitch.EqualsIAscii("sql"))
+        parseMode = ParseMode::Sql;
 
     Utf8String ecsql;
-    if (firstArg.EqualsIAscii("sql"))
+    if (parseMode == ParseMode::Default)
+        ecsql.assign(argsUnparsed);
+    else
         {
-        if (argCount < 3)
+        if (nextStartIndex < argsUnparsed.size())
+            ecsql.assign(argsUnparsed.substr(nextStartIndex));
+        }
+
+    if (ecsql.empty())
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    switch (parseMode)
+        {
+            case ParseMode::Exp:
             {
-            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            Utf8String ecsqlFromExpTree;
+            Json::Value expTree;
+            if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+                return;
+                }
+
+            BimConsole::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
+            BimConsole::WriteLine();
+            BimConsole::WriteLine("ECSQL expression tree:");
+
+            Utf8String expTreeStr;
+            ExpTreeToString(expTreeStr, expTree, 0);
+            BimConsole::WriteLine("%s", expTreeStr.c_str());
             return;
             }
 
-        ecsql = ConcatArgs(2, args);
-        }
-    else
-        {
-        //default mode ('sql' was not specified)
-        ecsql = ConcatArgs(1, args);
-        }
+            case ParseMode::Token:
+            {
+            Utf8String parseTree;
+            if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL.");
 
-    ECSqlStatement stmt;
-    ECSqlStatus stat = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
-    if (!stat.IsSuccess())
-        if (session.GetIssues().HasIssue())
-            BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
-        else
-            BimConsole::WriteErrorLine("Failed to parse ECSQL.");
+                return;
+                }
 
-    BimConsole::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
+            BimConsole::WriteLine("Raw ECSQL parse tree:");
+            BimConsole::WriteLine("%s", parseTree.c_str());
+            return;
+            }
+
+            default:
+            {
+            ECSqlStatement stmt;
+            ECSqlStatus stat = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
+            if (!stat.IsSuccess())
+                if (session.GetIssues().HasIssue())
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    BimConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+            BimConsole::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1294,10 +1264,7 @@ Utf8String ExitCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExitCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
-    {
-    exit(0);
-    }
+void ExitCommand::_Run(Session& session, Utf8StringCR args) const { exit(0); }
 
 //******************************* SqliteCommand ******************
 
@@ -1312,10 +1279,10 @@ Utf8String SqliteCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     07/2015
 //---------------------------------------------------------------------------------------
-void SqliteCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
-    const size_t argSize = args.size();
-    if (argSize <= 1)
+    Utf8StringCR sql = argsUnparsed;
+    if (sql.empty())
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -1323,8 +1290,6 @@ void SqliteCommand::_Run(Session& session, std::vector<Utf8String> const& args) 
 
     if (!session.IsFileLoaded(true))
         return;
-
-    Utf8String sql = ConcatArgs(1, args);
 
     Statement stmt;
     DbResult status = stmt.Prepare(session.GetFile().GetHandle(), sql.c_str());
@@ -1398,18 +1363,21 @@ Utf8String DbSchemaCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
 //---------------------------------------------------------------------------------------
-void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void DbSchemaCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
     if (args.size() < 2)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    Utf8StringCR switchArg = args[1];
+    Utf8StringCR switchArg = args[0];
 
     if (switchArg.EqualsI("search"))
         {
+        //delete the switch arg
+        args.erase(args.begin()); 
         Search(session, args);
         return;
         }
@@ -1420,24 +1388,24 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
 //---------------------------------------------------------------------------------------
-void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& args) const
+void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& searchArgs) const
     {
-    const size_t argSize = args.size();
+    const size_t argSize = searchArgs.size();
     Utf8CP searchTerm = nullptr;
     const bool isFileOpen = session.IsFileLoaded(false);
 
-    if (isFileOpen && argSize != 3)
+    if (isFileOpen && argSize != 1)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
-    else if (!isFileOpen && argSize != 5)
+    else if (!isFileOpen && argSize != 3)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    searchTerm = args[2].c_str();
+    searchTerm = searchArgs[0].c_str();
 
     if (isFileOpen)
         {
@@ -1446,10 +1414,10 @@ void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& ar
         }
 
     bvector<BeFileName> filePaths;
-    Utf8String folder(args[3]);
+    Utf8String folder(searchArgs[1]);
     folder.Trim("\"");
 
-    Utf8String fileExtension(args[4]);
+    Utf8String fileExtension(searchArgs[2]);
     Utf8String fileFilter;
     if (fileExtension.StartsWith("*."))
         fileFilter = fileExtension;
@@ -1521,7 +1489,7 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2016
 //---------------------------------------------------------------------------------------
-void DebugCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+void DebugCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsFileLoaded(true))
         return;
@@ -1536,7 +1504,8 @@ void DebugCommand::_Run(Session& session, std::vector<Utf8String> const& args) c
     ImportCommand importCmd;
     for (BeFileNameCR schemaFile : diegoSchemas)
         {
-        std::vector<Utf8String> cmdArgs {".import", "ecschema", schemaFile.GetNameUtf8()};
+        Utf8String cmdArgs;
+        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8());
         importCmd.Run(session, cmdArgs);
         }
     }
