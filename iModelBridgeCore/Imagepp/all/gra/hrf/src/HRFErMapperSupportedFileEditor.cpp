@@ -551,7 +551,7 @@ class ErMapperLibrary
                 {
                 NCSecwInit();           
                                         // SDK 5.3 key
-                NCSEcwCompressSetOEMKey("Bentley Systems, Inc.", "53d8f77acc8c1cb537ce52a0e148348f7d2f7372a5ca286fda98a7d4dd334d6f8b0feae42d7ce8e88e14e7dfc05e9f369467944abcfb4282a0abf9c3e482885a");
+                NCSEcwCompressSetOEMKey("Bentley Systems Incorporated", "0f6a3bf2bea4eaa2fa16cabe9b5f98bc261fb6b5cc4994da536b1bcce7e0f0d8f04cde9825f57b0b9128000f48c6ed7a183937bbe41830b28cc48aabd7208f9d");
                 m_ErMapperInitalized = true;
                 }
             };
