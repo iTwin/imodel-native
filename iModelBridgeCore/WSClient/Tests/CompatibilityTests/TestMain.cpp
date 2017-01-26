@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../Cache/ArgumentParser.h"
-#include "../Cache/RepositoryCompatibilityTests.h"
+#include "Parser/ArgumentParser.h"
+#include "RepositoryCompatibilityTests.h"
 #include "TestsHost.h"
 
 #include <Windows.h>
