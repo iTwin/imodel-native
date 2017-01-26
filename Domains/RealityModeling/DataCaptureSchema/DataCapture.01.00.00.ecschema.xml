@@ -58,6 +58,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CameraDeviceIsDefinedByCameraDeviceModel" displayLabel="CameraDevice is a type of cameraDevice model type" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="CameraDevice" />
         </Source>
@@ -97,6 +100,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     <!-- END Photogroup element classes -->
 
     <ECRelationshipClass typeName="ShotIsTakenByCameraDevice" displayLabel="Shot is taken by CameraDevice" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="Shot" />
         </Source>
@@ -106,6 +112,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ShotIsTakenAtPose" displayLabel="Shot is taken at Pose" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source cardinality="(1,N)" polymorphic="False">
             <Class class="Shot" />
         </Source>
