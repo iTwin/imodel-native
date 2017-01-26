@@ -57,6 +57,7 @@ namespace ViewProperties
     static Utf8CP str_Format() {return "format";}
     static Utf8CP str_Jpeg() {return "jpeg";}
     static Utf8CP str_Png() {return "png";}
+    static Utf8CP str_Clip() {return "clip";}
 };
 
 using namespace ViewProperties;
@@ -196,6 +197,25 @@ Utf8String ViewDefinition::ToDetailJson()
     {
     _Save();
     return Json::FastWriter::ToString(m_details);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetViewClip(ClipVectorPtr clip)
+    {
+    if (clip.IsValid())
+        SetDetail(str_Clip(), clip->ToJson());
+    else
+        RemoveDetail(str_Clip());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ViewDefinition::GetViewClip() const
+    {
+    return ClipVector::FromJson(GetDetail(str_Clip()));
     }
 
 /*---------------------------------------------------------------------------------**//**

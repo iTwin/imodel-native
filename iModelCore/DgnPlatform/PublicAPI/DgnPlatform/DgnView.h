@@ -422,7 +422,7 @@ public:
     //! Change the valuue of a view detail 
     void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value;}
 
-    //! Remove of a view detail 
+    //! Remove a view detail 
     void RemoveDetail(Utf8CP name) {m_details.removeMember(name);}
     /** @} */
 
@@ -628,6 +628,12 @@ public:
     //! @param[in] standardView the rotation to which the view should be set.
     //! @return SUCCESS if the view was changed.
     DGNPLATFORM_EXPORT BentleyStatus SetStandardViewRotation(StandardView standardView);
+
+    //! Set the clipping volume for elements in this view
+    DGNPLATFORM_EXPORT void SetViewClip(ClipVectorPtr clip);
+
+    //! Get the clipping volume for elements in this view
+    DGNPLATFORM_EXPORT ClipVectorPtr GetViewClip() const;
 
     /*=================================================================================**//**
     * Margins for "white space" to be left around view volumes for #LookAtVolume.

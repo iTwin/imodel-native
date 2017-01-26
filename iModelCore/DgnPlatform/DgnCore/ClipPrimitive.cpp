@@ -813,7 +813,7 @@ static ClipPrimitivePtr FromJson(JsonValueCR val)
         zHigh = val["zhigh"].asDouble();
         }
 
-    return new ClipShapePrimitive(points.data(), points.size(), val.isMember("outside"), zlowP, zhighP, transP, val.isMember("invisible"));
+    return new ClipShapePrimitive(points.data(), points.size(), val["mask"].asBool(), zlowP, zhighP, transP, val["invisible"].asBool());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -829,6 +829,9 @@ Json::Value ToJson() const
 
     if (!m_transformFromClip.IsIdentity())
         JsonUtils::TransformToJson(val["trans"], m_transformFromClip);
+
+    if (m_isMask)
+        val["mask"] = true;
 
     if (m_zLow != -HUGE_VALUE)
         val["zlow"] = m_zLow;

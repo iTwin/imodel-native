@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -120,6 +120,8 @@ ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_LoadState()
     {
+    m_activeVolume = m_definition->GetViewClip();
+
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_Load(*m_definition);
     }
@@ -129,6 +131,7 @@ void ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_StoreState()
     {
+    m_definition->SetViewClip(m_activeVolume);
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
     }

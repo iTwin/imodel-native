@@ -691,7 +691,7 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
+* Add the Render::Graphics from all tiles that were found from this draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)

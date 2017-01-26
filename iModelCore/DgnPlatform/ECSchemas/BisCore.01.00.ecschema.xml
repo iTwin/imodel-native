@@ -1805,15 +1805,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
-            <Class class="ViewDefinition3d"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="true">
-            <Class class="ClipVolumeDefinition"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
@@ -1876,14 +1867,6 @@
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ClipVolumeDefinition">
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="ClipPlaneSet" typeName="string"/>
-    </ECEntityClass>
-  
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
@@ -1903,7 +1886,6 @@
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
         <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>

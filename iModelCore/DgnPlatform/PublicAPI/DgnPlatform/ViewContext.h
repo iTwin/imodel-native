@@ -96,7 +96,7 @@ protected:
     DMap4d m_worldToView;
     Render::FrustumPlanes m_frustumPlanes;
     DgnViewportP m_viewport = nullptr;
-    ClipPrimitiveCPtr m_volume;
+    ClipVectorCPtr m_volume;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
@@ -153,8 +153,8 @@ public:
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(GeometricModelR model){return _VisitDgnModel(model);}
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
-    void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
-    ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
+    void SetActiveVolume(ClipVectorCR volume) {m_volume=&volume;}
+    ClipVectorCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(BeDuration::MilliSeconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
