@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -127,7 +127,7 @@ struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
                 ECN::ECClassCR m_ecClass;
                 std::vector<ECN::ECPropertyCP> m_invalidProperties;
 
-                virtual Utf8String _ToString() const override;
+                Utf8String _ToString() const override;
 
             public:
                 Error(Type ruleType, ECN::ECClassCR ecClass)
@@ -142,8 +142,8 @@ struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
 
         mutable std::unique_ptr<Error> m_error;
 
-        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
-        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
+        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
     public:
         explicit NoPropertiesOfSameTypeAsClassRule(ECN::ECClassCR ecClass);
@@ -188,7 +188,7 @@ struct ValidRelationshipRule : ECSchemaValidationRule
 
                 std::vector<Inconsistency> m_inconsistencies;
 
-                virtual Utf8String _ToString() const override;
+                Utf8String _ToString() const override;
 
 
             public:
@@ -201,8 +201,8 @@ struct ValidRelationshipRule : ECSchemaValidationRule
 
         mutable std::unique_ptr<Error> m_error;
 
-        virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
+        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
         bool ValidateConstraint(ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
@@ -241,7 +241,7 @@ struct ValidNavigationPropertyRule : ECSchemaValidationRule
                 ECN::ECClassCP m_ecClass;
                 std::vector<Inconsistency> m_inconsistencies;
 
-                virtual Utf8String _ToString() const override;
+                Utf8String _ToString() const override;
 
 
             public:
@@ -254,8 +254,8 @@ struct ValidNavigationPropertyRule : ECSchemaValidationRule
 
         mutable std::unique_ptr<Error> m_error;
 
-        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
-        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
+        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
     public:
         explicit ValidNavigationPropertyRule(ECN::ECClassCR);

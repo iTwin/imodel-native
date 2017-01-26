@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceSchemaManagerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -65,7 +65,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
     runLookup(timer, ecdb, expectedClassIds, repetitionCount);
     Utf8String logMessage;
     logMessage.Sprintf("ECClassId look-up by name for %d ECClasses in %d ECSchemas.", classCount, (int) schemas.size());
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, logMessage.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     timer.Stop();
     Utf8String logMessage;
     logMessage.Sprintf("ECClassId look-up for a single ECClass in a file with %d ECClasses.", classCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, logMessage.c_str());
     }
 
 
@@ -139,7 +139,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     timer.Stop();
     Utf8String logMessage;
     logMessage.Sprintf("ECSQL preparation for a single ECClass with ECClassId cache in a file with %d ECClasses.", classCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, logMessage.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
         }
     timer.Stop();
     stmt.Finalize();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "ECClassId by schema and class name (via join)", opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, "ECClassId by schema and class name (via join)");
 
     //Scenario 2: By schema id and no join
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?"));
@@ -206,7 +206,7 @@ TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
         stmt.Reset();
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "ECClassId by schema id and class name (no join)", opCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, "ECClassId by schema id and class name (no join)");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

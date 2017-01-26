@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbJoinedTable_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -536,6 +536,129 @@ TEST_F(JoinedTableECDbMapStrategyTests, BasicCRUD)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         1/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableECDbMapStrategyTests, CRUDOnColumnTypes_Physical_Shared_Overflow)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Goo'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>2</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Foo'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "        <ECProperty propertyName='B' typeName='int'/>"
+        "        <ECProperty propertyName='C' typeName='double'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("crud.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    Utf8String sql;
+    Statement sqlstmt;
+
+    //Verifying that the properties are mapped correctly to the desired columns
+    std::vector<Utf8Char> Props = { 'A','B','C' };
+    for (size_t i = 0; i < 3; i++)
+        {
+        sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(GetECDb(), sql.c_str())) << "Prepare failed for sql: " << sql;
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+        switch (i) {
+            case 0:
+                ASSERT_EQ(64, sqlstmt.GetValueInt(0)); //Column A is unshared Data Column
+                break;
+            case 1:
+                ASSERT_EQ(128, sqlstmt.GetValueInt(0)); //Column B is a Shared Column
+                break;
+            case 2:
+                ASSERT_EQ(1152, sqlstmt.GetValueInt(0)); //Column B is Overflow Column
+                break;
+            }
+        sqlstmt.Finalize();
+        }
+
+    //-----------------------------INSERT----------------------------------------------------
+    ASSERT_EQ(stmt.Prepare(ecdb, "INSERT INTO ts.Foo (ECInstanceId, A, B, C) VALUES (?,?,?,?)"), ECSqlStatus::Success);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 100));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "val1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(3, 22));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(4, 100.12));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 200));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "val2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(3, 34));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(4, 34.56));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    stmt.Finalize();
+
+    //-----------------------------SELECT----------------------------------------------------
+    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 100));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+    ASSERT_STRCASEEQ(stmt.GetValueText(0), "val1");
+    ASSERT_EQ(stmt.GetValueInt(1), 22);
+    ASSERT_EQ(stmt.GetValueDouble(2), 100.12);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    stmt.Finalize();
+
+    //-----------------------------UPDATE----------------------------------------------------
+
+    ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ts.Foo SET A= ?, B= ?, C= ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "modVal1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 44));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(3, 78.21));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 100));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    stmt.Finalize();
+    ecdb.SaveChanges();
+
+    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 100"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+    ASSERT_STRCASEEQ(stmt.GetValueText(0), "modVal1");
+    ASSERT_EQ(stmt.GetValueInt(1), 44);
+    ASSERT_EQ(stmt.GetValueDouble(2), 78.21);
+    stmt.Finalize();
+
+    //-----------------------------DELETE----------------------------------------------------
+
+    ASSERT_EQ(stmt.Prepare(ecdb, "DELETE FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 200));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 200"), ECSqlStatus::Success);
+    ASSERT_NE(stmt.Step(), BE_SQLITE_ROW);
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     11/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
@@ -615,7 +738,91 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
         ASSERT_EQ(expectedMapStrategy.m_tphInfo, actualMapStrategy.m_tphInfo);
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         10/15
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
+	{
+	SchemaItem testSchema(
+		"<?xml version='1.0' encoding='utf-8'?>"
+		"<ECSchema schemaName='JoinedTableTest' alias='dgn' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+		"    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+		"    <ECEntityClass typeName='Foo' >"
+		"        <ECCustomAttributes>"
+		"            <ClassMap xmlns='ECDbMap.02.00'>"
+		"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+		"            </ClassMap>"
+		"            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+		"        </ECCustomAttributes>"
+		"        <ECProperty propertyName='A' typeName='long'/>"
+		"        <ECProperty propertyName='B' typeName='string'/>"
+		"    </ECEntityClass>"
+		"   <ECEntityClass typeName='Goo' >"
+		"        <BaseClass>Foo</BaseClass>"
+		"        <ECProperty propertyName='C' typeName='long'/>"
+		"        <ECProperty propertyName='D' typeName='string'/>"
+		"    </ECEntityClass>"
+		"   <ECEntityClass typeName='Boo' >"
+		"        <BaseClass>Foo</BaseClass>"
+		"        <ECProperty propertyName='E' typeName='long'/>"
+		"        <ECProperty propertyName='F' typeName='string'/>"
+		"    </ECEntityClass>"
+		"   <ECEntityClass typeName='Roo' >"
+		"        <BaseClass>Boo</BaseClass>"
+		"        <ECProperty propertyName='G' typeName='long'/>"
+		"        <ECProperty propertyName='H' typeName='string'/>"
+		"    </ECEntityClass>"
+		"</ECSchema>");
 
+	ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
+	ASSERT_TRUE(db.IsDbOpen());
+	//Only properties in joined table accessed should not uncessary add join to base table.
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(),"UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] = :id_0");
+	}		
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] = :id_0");
+	}
+
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] = :id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=63))");
+	}
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id"), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] = :id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=63))");
+	}
+
+	//accessing property of parent should add join to base
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
+	}
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
+	}
+
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0)  AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=63))");
+	}
+	{
+	ECSqlStatement stmt;
+	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0)  AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=63))");
+	}
+
+	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1209,7 +1416,6 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
     }
 
-    db.Schemas().CreateECClassViewsInDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2324,7 +2530,7 @@ struct PowSqlFunction : ScalarFunction
     {
     private:
 
-        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             if (args[0].IsNull() || args[1].IsNull())
                 {

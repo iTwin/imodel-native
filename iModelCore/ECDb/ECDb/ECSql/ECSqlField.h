@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,10 +28,11 @@ private:
     static Collection* s_emptyChildCollection;
     ECSqlStatementBase& m_ecsqlStatement;
 
-    virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
+    ECSqlColumnInfoCR _GetColumnInfo() const override;
 
     virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
+    virtual Collection const& _GetChildren() const { return GetEmptyChildCollection(); }
 
     static Collection const& GetEmptyChildCollection();
 
@@ -50,7 +51,7 @@ protected:
 public:
     virtual ~ECSqlField() {}
 
-    virtual Collection const& GetChildren() const { return GetEmptyChildCollection(); }
+    Collection const& GetChildren() const { return _GetChildren(); }
 
     bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
     ECSqlStatus OnAfterStep();

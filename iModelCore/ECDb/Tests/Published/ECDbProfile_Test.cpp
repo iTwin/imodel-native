@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbProfile_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -118,5 +118,61 @@ TEST_F(ECDbTestFixture, CreateECDbProfileFailsIfAlreadyCreated)
     EXPECT_EQ(BE_SQLITE_ERROR, stat);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
+    {
+    ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
+
+    std::vector<std::tuple<SchemaVersion, Db::OpenMode, DbResult, bool>> testVersions {
+            {SchemaVersion(3,6,99,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,6,99,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,2), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,2), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,3,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,4,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,7,4,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {SchemaVersion(3,100,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {SchemaVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {SchemaVersion(3,100,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,100,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
+            {SchemaVersion(3,101,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {SchemaVersion(3,101,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {SchemaVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {SchemaVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
+        };
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
+    for (std::tuple<SchemaVersion, Db::OpenMode, DbResult, bool> const& testVersion : testVersions)
+        {
+        Utf8String schemaVersionJson = std::get<0>(testVersion).ToJson();
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, schemaVersionJson, Statement::MakeCopy::Yes));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaVersionJson.c_str();
+        ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << schemaVersionJson.c_str();
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        Db::OpenMode openMode = std::get<1>(testVersion);
+        DbResult expectedResult = std::get<2>(testVersion);
+        bool expectedNeedsUpgrade = std::get<3>(testVersion);
+        
+        bool actualNeedsUpgrade = false;
+        ASSERT_EQ(expectedResult, ecdb.CheckECDbProfileVersion(actualNeedsUpgrade, openMode == Db::OpenMode::Readonly)) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
+        ASSERT_EQ(expectedNeedsUpgrade, actualNeedsUpgrade) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
+        }
+
+    ecdb.AbandonChanges();
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

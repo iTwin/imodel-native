@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceUpdaterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -494,9 +494,28 @@ TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='A' >"
-        "        <ECProperty propertyName='P1' typeName='int' />"
+        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Base'>"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "           <SharedColumnCount>1</SharedColumnCount>"
+        "         </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Prop1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1'>"
+        "        <ECCustomAttributes>"
+        "           <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "           </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Prop2' typeName='double' />"
+        "        <ECProperty propertyName='Center' typeName='point3d' />"
         "    </ECEntityClass>"
         "</ECSchema>");
 
@@ -538,6 +557,100 @@ TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ASSERT_EQ(BE_SQLITE_ERROR, instanceUpdater.Update(*updatedInstance));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
+    {
+    std::vector<int> propCounts {60, 63, 64, 70, 126, 127, 140, 189, 190, 210, 280};
+    for (int propCount : propCounts)
+        {
+        Utf8String propertiesXml;
+        for (int i = 0; i < propCount; i++)
+            {
+            Utf8String propertyXml;
+            propertyXml.Sprintf("<ECProperty propertyName='Prop%d' typeName='string'/>", i + 1);
+            propertiesXml.append(propertyXml);
+            }
+
+
+        Utf8String ecschemaXml;
+        ecschemaXml.Sprintf("<?xml version='1.0' encoding='utf-8'?>"
+                            "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                            "    <ECEntityClass typeName='ClassWithPrimitiveProps'>"
+                            "        <ECCustomAttributes>"
+                            "           <ClassMap xmlns='ECDbMap.02.00'>"
+                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                            "            </ClassMap>"
+                            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+                            "              <SharedColumnCount>1</SharedColumnCount>"
+                            "           </ShareColumns>"
+                            "        </ECCustomAttributes>"
+                            "%s"
+                            "    </ECEntityClass>"
+                            "    <ECStructClass typeName='LargeStruct'>"
+                            "%s"
+                            "    </ECStructClass>"
+                            "    <ECEntityClass typeName='ClassWithStruct'>"
+                            "        <ECCustomAttributes>"
+                            "           <ClassMap xmlns='ECDbMap.02.00'>"
+                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                            "            </ClassMap>"
+                            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+                            "              <SharedColumnCount>1</SharedColumnCount>"
+                            "           </ShareColumns>"
+                            "        </ECCustomAttributes>"
+                            "        <ECStructProperty propertyName='MyStructProp' typeName='LargeStruct'/>"
+                            "    </ECEntityClass>"
+                            "</ECSchema>", propertiesXml.c_str(), propertiesXml.c_str());
+
+        Utf8String fileName;
+        fileName.Sprintf("ecinstanceupdater_%d_propsmappedtooverflow.ecdb", propCount);
+
+        if (GetECDb().IsDbOpen())
+            GetECDb().CloseDb();
+
+        SetupECDb(fileName.c_str(), SchemaItem(ecschemaXml.c_str()));
+        ASSERT_TRUE(GetECDb().IsDbOpen());
+
+        ECClassCP classWithPrims = GetECDb().Schemas().GetECClass("testSchema", "ClassWithPrimitiveProps");
+        ASSERT_TRUE(classWithPrims != nullptr);
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.ClassWithPrimitiveProps(ECInstanceId) VALUES(NULL)")) << "Prop count: " << propCount;
+        ECInstanceKey classWithPrimsKey;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(classWithPrimsKey)) << "Prop count: " << propCount;
+        stmt.Finalize();
+
+        ECInstanceUpdater classWithPrimsUpdater(GetECDb(), *classWithPrims, nullptr);
+        ASSERT_TRUE(classWithPrimsUpdater.IsValid()) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount << GetECDb().GetLastError().c_str();
+
+        IECInstancePtr instance = classWithPrims->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithPrimsKey.GetECInstanceId().ToString().c_str())) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount;
+        ASSERT_EQ(BE_SQLITE_OK, classWithPrimsUpdater.Update(*instance)) << "ECClass: " << classWithPrims->GetName().c_str() << " Prop count: " << propCount;
+
+        ECClassCP classWithStruct = GetECDb().Schemas().GetECClass("testSchema", "ClassWithStruct");
+        ASSERT_TRUE(classWithStruct != nullptr);
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.ClassWithStruct(ECInstanceId) VALUES(NULL)")) << "Prop count: " << propCount;
+        ECInstanceKey classWithStructKey;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(classWithStructKey)) << "Prop count: " << propCount;
+        stmt.Finalize();
+
+        ECInstanceUpdater classWithStructUpdater(GetECDb(), *classWithStruct, nullptr);
+        if (propCount > 63)
+            {
+            ASSERT_FALSE(classWithStructUpdater.IsValid()) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount << GetECDb().GetLastError().c_str();
+            return;
+            }
+
+        instance = classWithStruct->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithStructKey.GetECInstanceId().ToString().c_str())) << "ECClass: " << classWithStruct->GetName().c_str() << " Prop count: " << propCount;
+
+        ASSERT_EQ(BE_SQLITE_OK, classWithStructUpdater.Update(*instance)) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount;
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -39,7 +39,7 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
 
         Utf8String logMessage;
         logMessage.Sprintf("ECSQL: %s", stmt.GetECSql());
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), opCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, logMessage.c_str(), true);
         };
 
     std::vector<Utf8CP> testECSqls {"SELECT B,Bi,D,Dt,DtUtc,P2D,P3D,MyPSA FROM ecsql.P",

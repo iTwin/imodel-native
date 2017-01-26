@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceJsonComparison.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <rapidjson/BeRapidJson.h>
@@ -58,7 +58,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     timer.Stop();
     printf("Parsing large JSON object (%d rows) with JsonCpp took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
     Utf8String testDetailsParseCpp = "PerformanceJsonComparison,ParseJsonCppUsingStartupCompany";
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json", 1000);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1000, "Parsing large JSON object  having 1000 rows with JsonCpp using StartupCompany.json");
     //-----------------------------------------------------------------------------------
     //  Parse using RapidJson
     //-----------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
         }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json", 1000);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1000, "Parsing large JSON object having 1000 rows with RapidJson using StartupCompany.json");
     }
 
 //---------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ TEST(PerformanceJsonComparison, AddJson)
     }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Adding and Verifying entries with JsonCpp", (int) numEntries);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) numEntries, "Adding and Verifying entries with JsonCpp");
     //-----------------------------------------------------------------------------------
     //  Add using RapidJson
     //-----------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ TEST(PerformanceJsonComparison, AddJson)
     }
 
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Adding and Verifying entries with RapidJson", (int) numEntries);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) numEntries, "Adding and Verifying entries with RapidJson");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

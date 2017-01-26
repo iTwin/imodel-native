@@ -77,7 +77,7 @@
             <Directory ProductDirectoryName="UnitTests-ECDbTestData" SourceName="Delivery/UnitTests/ECDbTestData" />        </Bindings>
     </Part>
 
-    <Part Name="BackDoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/WhereExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,20 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct WhereExp : Exp
+struct WhereExp final : Exp
     {
-DEFINE_EXPR_TYPE(Where) 
-
 private:
-    virtual Utf8String _ToECSql() const override { return "WHERE " + GetSearchConditionExp()->ToECSql(); }
-    virtual Utf8String _ToString() const override { return "Where"; }
+    Utf8String _ToECSql() const override { return "WHERE " + GetSearchConditionExp()->ToECSql(); }
+    Utf8String _ToString() const override { return "Where"; }
 
 public:
     explicit WhereExp(std::unique_ptr<BooleanExp> expression);
 
     BooleanExp const* GetSearchConditionExp() const;
     };
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

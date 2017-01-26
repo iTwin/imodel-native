@@ -93,7 +93,7 @@ struct PowSqlFunction : ScalarFunction
     {
     private:
 
-        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             if (args[0].IsNull() || args[1].IsNull())
                 {
@@ -4424,7 +4424,6 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
 
         ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
-        db.Schemas().CreateECClassViewsInDb();
         };
 
     ECDbR ecdb = SetupECDb("ImportTwoInARow.ecdb");

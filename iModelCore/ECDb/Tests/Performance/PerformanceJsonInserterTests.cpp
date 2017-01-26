@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceJsonInserterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -52,7 +52,7 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     ASSERT_EQ(repetitionCount, statement.GetValueInt(0)) << "Expected Number of Instances not inserted in Db";
 
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", repetitionCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, "Inserting JsonCpp JSON objects into ECDb");
     }
 
 //---------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     ASSERT_EQ(repetitionCount, statement.GetValueInt(0)) << "Expected Number of Instances not inserted in Db";
 
     LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", repetitionCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, "Inserting RapidJson JSON objects into ECDb");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

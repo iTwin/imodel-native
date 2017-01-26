@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 DeleteStatementExp::DeleteStatementExp(unique_ptr<ClassRefExp> classNameExp, unique_ptr<WhereExp> whereClauseExp, unique_ptr<OptionsExp> optionsClauseExp)
-    : Exp(), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
+    : Exp(Type::Delete), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
     BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
     m_classNameExpIndex = AddChild(move(classNameExp));

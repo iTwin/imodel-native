@@ -241,7 +241,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(PrimitiveType ar
     if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - JSON - regular" : "INSERT - JSON - overflow", 
+    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT,JSON,regular" : "INSERT,JSON,overflow", 
               arrayType, arraySize, rowCount);
     return SUCCESS;
     }
@@ -565,7 +565,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - JSON - regular" : "SELECT - JSON - overflow", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT,JSON,regular" : "SELECT,JSON,overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -583,7 +583,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(PrimitiveType arr
     if (SUCCESS != RunInsertECD(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT - ECD - regular" : "INSERT - ECD - overflow", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "INSERT,ECD,regular" : "INSERT,ECD,overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -836,7 +836,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT - ECD - regular" : "SELECT - ECD - overflow", arrayType, arraySize, rowCount);
+    LogTiming(timer, mode == ColumnMode::Regular ? "SELECT, ECD, regular" : "SELECT, ECD, overflow", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -950,8 +950,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::SetupTest(Utf8CP fileName, ECD
 void PerformancePrimArrayJsonVsECDTests::LogTiming(StopWatch& timer, Utf8CP scenario, ECN::PrimitiveType primType, uint32_t arraySize, int rowCount)
     {
     Utf8String logMessage;
-    logMessage.Sprintf("%s array [size %" PRIu32 "] - %s.", PrimitiveTypeToString(primType), arraySize, scenario);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), rowCount);
+    logMessage.Sprintf("%s array, array size %" PRIu32 ",%s.", PrimitiveTypeToString(primType), arraySize, scenario);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), rowCount, logMessage.c_str());
     }
 
 

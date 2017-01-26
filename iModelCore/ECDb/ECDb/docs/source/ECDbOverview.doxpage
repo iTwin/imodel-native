@@ -235,7 +235,6 @@
         - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
             - mapped to a shared column (see ShareColumns custom attribute in @ref CustomClassMapDescription)
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
-            - not used as @em Key property in an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
             - not overridden
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify

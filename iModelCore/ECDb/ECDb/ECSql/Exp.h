@@ -108,12 +108,9 @@ struct Exp : NonCopyableClass
             BetweenRangeValue,
             BinaryValue,
             BinaryBoolean,
-            Boolean,
             BooleanFactor,
             Cast,
             ClassName,
-            ClassRef,
-            Computed,
             CrossJoin,
             DateTimeConstantValue,
             Delete,
@@ -124,9 +121,7 @@ struct Exp : NonCopyableClass
             GroupBy,
             Having,
             Insert,
-            Join,
             JoinCondition,
-            JoinSpec,
             LikeRhsValue,
             LimitOffset,
             LiteralValue,
@@ -142,8 +137,6 @@ struct Exp : NonCopyableClass
             PropertyName,
             PropertyNameList,
             QualifiedJoin,
-            Query,
-            RangeClassRef,
             RowValueConstructorList,
             Select,
             Selection,
@@ -154,7 +147,6 @@ struct Exp : NonCopyableClass
             UnaryPredicate,
             UnaryValue,
             Update,
-            Value,
             ValueBinary,
             ValueExpList,
             Where,
@@ -264,6 +256,7 @@ struct Exp : NonCopyableClass
         static const int UNSET_CHILDINDEX = -1;
 
     private:
+        Type m_type;
         Exp* m_parent;
         mutable Exp::Collection m_children;
         bool m_isComplete;
@@ -274,7 +267,7 @@ struct Exp : NonCopyableClass
         virtual Utf8String _ToString() const = 0;
 
     protected:
-        Exp() : m_parent(nullptr), m_isComplete(false) {}
+        explicit Exp(Type type) : m_type(type), m_parent(nullptr), m_isComplete(false) {}
 
         void SetIsComplete() { m_isComplete = true; }
 
@@ -302,7 +295,7 @@ struct Exp : NonCopyableClass
 
         bool IsComplete() const { return m_isComplete; }
 
-        virtual Type GetType() const = 0;
+        Type GetType() const { return m_type; }
         bool IsParameterExp() const { return GetType() == Type::Parameter; }
         Exp const* GetParent() const { return m_parent; }
         Collection const& GetChildren() const;
@@ -351,7 +344,5 @@ struct RangeClasssInfo
         bool IsInherited() const { return m_scope == Scope::Inherited; }
         RangeClassRefExp const& GetExp() const { return *m_exp; }
     };
-
-#define DEFINE_EXPR_TYPE(X) public: virtual Type GetType () const override { return Type::X;} 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

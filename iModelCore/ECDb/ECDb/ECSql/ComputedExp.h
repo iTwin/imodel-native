@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,19 +20,17 @@ struct ValueExp;
 //+===============+===============+===============+===============+===============+======
 struct ComputedExp : Exp
     {
-    DEFINE_EXPR_TYPE(Computed)
-
 private:
     friend struct ECSqlParser;
 
     bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
 
-    virtual Utf8String _ToECSql() const override;
+    Utf8String _ToECSql() const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const = 0;
 
 protected:
-    explicit ComputedExp() : Exp(), m_hasParentheses(false) {}
+    explicit ComputedExp(Type type) : Exp(type), m_hasParentheses(false) {}
 
     void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
     void SetHasParentheses() { m_hasParentheses = true; }
@@ -49,10 +47,8 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct BooleanExp : ComputedExp
     {
-    DEFINE_EXPR_TYPE(Boolean)
-
 protected:
-    BooleanExp() : ComputedExp() { SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Boolean)); }
+    explicit BooleanExp(Type type) : ComputedExp(type) { SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Boolean)); }
 
 public:
     virtual ~BooleanExp () {}
@@ -63,19 +59,17 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct BinaryBooleanExp : BooleanExp
+struct BinaryBooleanExp final : BooleanExp
     {
-    DEFINE_EXPR_TYPE(BinaryBoolean)
-
 private:
     BooleanSqlOperator m_op;
     size_t m_leftOperandExpIndex;
     size_t m_rightOperandExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override;
+    FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
+    bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+    void _DoToECSql(Utf8StringR ecsql) const override;
+    Utf8String _ToString() const override;
 
     FinalizeParseStatus CanCompareTypes(ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
     static bool ContainsStructArrayProperty(ECN::ECClassCR);
@@ -92,16 +86,14 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct BooleanFactorExp : BooleanExp
+struct BooleanFactorExp final : BooleanExp
     {
-    DEFINE_EXPR_TYPE(BooleanFactor)
-
 private:
     bool m_notOperator;
     size_t m_operandExpIndex;
 
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override;
+    void _DoToECSql(Utf8StringR ecsql) const override;
+    Utf8String _ToString() const override;
 
 public:
     BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool notOperator = false);
@@ -113,15 +105,14 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      04/2015
 //+===============+===============+===============+===============+===============+======
-struct UnaryPredicateExp : BooleanExp
+struct UnaryPredicateExp final : BooleanExp
     {
-    DEFINE_EXPR_TYPE(UnaryPredicate)
 private:
     size_t m_booleanValueExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override { return "UnaryPredicate"; }
+    FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+    void _DoToECSql(Utf8StringR ecsql) const override;
+    Utf8String _ToString() const override { return "UnaryPredicate"; }
 
 public:
     explicit UnaryPredicateExp(std::unique_ptr<ValueExp> predicateExp);

@@ -2,11 +2,10 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistenceHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 

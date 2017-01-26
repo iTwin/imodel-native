@@ -79,7 +79,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTest(int intValues[], Scenar
 
     Utf8String testDescription;
     testDescription.Sprintf("Integer_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -103,7 +103,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTest(int intValues[], Scenar
         timer.Stop();
 
         testDescription.Sprintf("Integer_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -130,7 +130,7 @@ void PerformanceRegularVsOverflowColumns::RunLongTest(int64_t longValues[], Scen
 
     Utf8String testDescription;
     testDescription.Sprintf("Long_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -154,7 +154,7 @@ void PerformanceRegularVsOverflowColumns::RunLongTest(int64_t longValues[], Scen
         timer.Stop();
 
         testDescription.Sprintf("Long_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -181,7 +181,7 @@ void PerformanceRegularVsOverflowColumns::RunDoubleTest(double doubleValues[], S
 
     Utf8String testDescription;
     testDescription.Sprintf("Double_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -207,7 +207,7 @@ void PerformanceRegularVsOverflowColumns::RunDoubleTest(double doubleValues[], S
         timer.Stop();
 
         testDescription.Sprintf("Double_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -234,7 +234,7 @@ void PerformanceRegularVsOverflowColumns::RunBoolTest(bool boolValues[], Scenari
 
     Utf8String testDescription;
     testDescription.Sprintf("Bool_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -257,7 +257,7 @@ void PerformanceRegularVsOverflowColumns::RunBoolTest(bool boolValues[], Scenari
         timer.Stop();
 
         testDescription.Sprintf("Bool_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -284,7 +284,7 @@ void PerformanceRegularVsOverflowColumns::RunStringTest(Utf8String stringValues[
 
     Utf8String testDescription;
     testDescription.Sprintf("Text_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -307,7 +307,7 @@ void PerformanceRegularVsOverflowColumns::RunStringTest(Utf8String stringValues[
         timer.Stop();
 
         testDescription.Sprintf("Text_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -334,7 +334,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint2dTest(std::vector<DPoint2d> c
 
     Utf8String testDescription;
     testDescription.Sprintf("Point2d_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -358,7 +358,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint2dTest(std::vector<DPoint2d> c
         timer.Stop();
 
         testDescription.Sprintf("Point2d_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
 
     }
@@ -386,7 +386,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint3dTest(std::vector<DPoint3d> c
 
     Utf8String testDescription;
     testDescription.Sprintf("Point3d_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -409,7 +409,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint3dTest(std::vector<DPoint3d> c
         timer.Stop();
 
         testDescription.Sprintf("Point3d_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -436,7 +436,7 @@ void PerformanceRegularVsOverflowColumns::RunBlobTest(Utf8String stringValues[],
 
     Utf8String testDescription;
     testDescription.Sprintf("Binary_Insert_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
     statement.Finalize();
 
     if (getReadTime)
@@ -461,7 +461,7 @@ void PerformanceRegularVsOverflowColumns::RunBlobTest(Utf8String stringValues[],
         timer.Stop();
 
         testDescription.Sprintf("Binary_Read_Performance_%s [Initial count: %d]", ScenarioToString(scenario), s_initialInstanceCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_readCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_readCount, testDescription.c_str());
         }
     }
 
@@ -498,7 +498,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intV
 
     Utf8String testDescription;
     testDescription.Sprintf("Insert_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
 
     ReopenECDb();
 
@@ -544,7 +544,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intV
         statement.Finalize();
 
         testDescription.Sprintf("Read_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescription.c_str(), s_insertCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
         }
     }
 

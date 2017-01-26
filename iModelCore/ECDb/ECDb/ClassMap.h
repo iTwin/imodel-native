@@ -203,8 +203,8 @@ struct NotMappedClassMap : public ClassMap
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}
 
-    virtual ClassMappingStatus _Map(ClassMappingContext&) override;
-    virtual BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
+    ClassMappingStatus _Map(ClassMappingContext&) override;
+    BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:
     ~NotMappedClassMap() {}

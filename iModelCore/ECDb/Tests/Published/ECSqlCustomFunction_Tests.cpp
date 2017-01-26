@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlCustomFunction_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -17,7 +17,7 @@ struct PowSqlFunction : ScalarFunction
     {
 private:
 
-    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         if (args[0].IsNull() || args[1].IsNull())
             {
@@ -43,7 +43,7 @@ struct IntegerToBlobSqlFunction : ScalarFunction
     {
     private:
 
-        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             const void* blob = nullptr;
             int blobSize = 0;
@@ -68,7 +68,7 @@ struct IntegerToBlobSqlFunction : ScalarFunction
 struct ToBoolStrSqlFunction : ScalarFunction
     {
     private:
-        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             if (nArgs != 1)
                 {
@@ -100,7 +100,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
 
          double runningSum = 0;
          int valueToSet = 0;
-         virtual void _StepAggregate (AggregateFunction::Context& ctx, int nArgs, DbValue* args) override
+         void _StepAggregate (AggregateFunction::Context& ctx, int nArgs, DbValue* args) override
              {
              if (nArgs != 1)
                  {
@@ -118,7 +118,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
              valueToSet = 1;
              }
 
-         virtual void _FinishAggregate (AggregateFunction::Context& ctx) override
+         void _FinishAggregate (AggregateFunction::Context& ctx) override
              {
              switch (valueToSet)
                  {
@@ -401,7 +401,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
 struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
     {
     private:
-        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
             {
             if (nArgs != 1)
                 {
@@ -481,7 +481,7 @@ TEST_F(ECSqlStatementTestFixture, DateECSqlFunction)
 struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
     {
     private:
-        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+        void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
             {
             if (nArgs != 1)
                 {

@@ -327,6 +327,7 @@ struct ChangeExtractor : NonCopyableClass
         bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const;
         bool RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
 
+        static ECN::ECClassId ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId);
     public:
         ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable);
         BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);

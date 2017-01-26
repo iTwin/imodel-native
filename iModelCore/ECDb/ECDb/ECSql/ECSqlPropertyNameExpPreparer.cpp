@@ -96,8 +96,8 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
-    const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumns().size();
-    const bool allColumnsAreOverflow = columnVisitor.GetOverflowColumnCount() == columnVisitor.GetColumns().size();
+    const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount();
+    const bool allColumnsAreOverflow = columnVisitor.GetOverflowColumnCount() == columnVisitor.GetColumnCount();
 
     if (allColumnsAreVirtual || isConstraintIdPropertyMap)
         {
@@ -211,7 +211,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
         !propMap.IsMappedToClassMapTables() && 
-        columnVisitor.GetVirtualColumnCount() < columnVisitor.GetColumns().size())
+        columnVisitor.GetVirtualColumnCount() < columnVisitor.GetColumnCount())
         {
         if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
             {
@@ -250,7 +250,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     NativeSqlBuilder selectSql;
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
-        if (columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumns().size())
+        if (columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount())
             selectSql.Append(propMap.GetDefaultECClassId());
         else
             selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());

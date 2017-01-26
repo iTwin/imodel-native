@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbRelationshipStrength_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -653,8 +653,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     }
     ASSERT_EQ(count_FooOwnsManyGoo, GetInsertedRelationshipsCount("ts.FooOwnsManyGoo"));
 
-    m_ecdb.Schemas().CreateECClassViewsInDb();
-
     //Delete fooKeys[0]
     {
     ECSqlStatement stmt;
@@ -748,8 +746,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     InsertRelationshipInstances("ts.FooOwnedByManyGoo", fooKeys, gooKeys, FooOwnedByManyGooResult, count_FooOwnedByManyGoo);
     }
     ASSERT_EQ(count_FooOwnedByManyGoo, GetInsertedRelationshipsCount("ts.FooOwnedByManyGoo"));
-
-    m_ecdb.Schemas().CreateECClassViewsInDb();
 
     //Delete gooKeys[0]
     {
@@ -859,8 +855,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     InsertRelationshipInstances("ts.ManyFoohaveManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyFoohaveManyGoo);
     }
     ASSERT_EQ(count_ManyFoohaveManyGoo, GetInsertedRelationshipsCount("ts.ManyFoohaveManyGoo"));
-
-    m_ecdb.Schemas().CreateECClassViewsInDb();
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
@@ -997,8 +991,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     InsertRelationshipInstances("ts.ManyGooHaveManyFoo", fooKeys, gooKeys, ManyGooOwnManyFooResult, count_ManyGooHaveManyFoo);
     }
     ASSERT_EQ(count_ManyGooHaveManyFoo, GetInsertedRelationshipsCount("ts.ManyGooHaveManyFoo"));
-
-    m_ecdb.Schemas().CreateECClassViewsInDb();
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Goo WHERE ECInstanceId=?"));
@@ -1196,8 +1188,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     }
     ASSERT_EQ(count_FooHoldManyGoo, GetInsertedRelationshipsCount("ts.FooHoldManyGoo"));
 
-    m_ecdb.Schemas().CreateECClassViewsInDb();
-
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
     //Delete fooKeys[0]
@@ -1320,8 +1310,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     InsertRelationshipInstances("ts.ManyFooHoldManyGoo", fooKeys, gooKeys, ManyFooHoldManyGooResult, count_ManyFooHoldManyGoo);
     }
     ASSERT_EQ(count_ManyFooHoldManyGoo, GetInsertedRelationshipsCount("ts.ManyFooHoldManyGoo"));
-
-    m_ecdb.Schemas().CreateECClassViewsInDb();
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
@@ -1455,8 +1443,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     InsertRelationshipInstances("ts.ManyFooHeldByManyGoo", fooKeys, gooKeys, manyFooHeldByManyGoo, count_ManyFooHeldByManyGoo);
     }
     ASSERT_EQ(count_ManyFooHeldByManyGoo, GetInsertedRelationshipsCount("ts.ManyFooHeldByManyGoo"));
-
-    m_ecdb.Schemas().CreateECClassViewsInDb();
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Goo WHERE ECInstanceId=?"));

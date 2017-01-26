@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,26 +16,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct DeleteStatementExp : Exp
+struct DeleteStatementExp final : Exp
     {
-DEFINE_EXPR_TYPE (Delete)
-private:
-    size_t m_classNameExpIndex;
-    int m_whereClauseIndex;
-    int m_optionsClauseIndex;
+    private:
+        size_t m_classNameExpIndex;
+        int m_whereClauseIndex;
+        int m_optionsClauseIndex;
 
-    RangeClasssInfo::List m_finalizeParsingArgCache;
+        RangeClasssInfo::List m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString () const override { return "Delete"; }
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        Utf8String _ToECSql() const override;
+        Utf8String _ToString() const override { return "Delete"; }
 
-public:
-    DeleteStatementExp (std::unique_ptr<ClassRefExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
+    public:
+        DeleteStatementExp(std::unique_ptr<ClassRefExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
 
-    ClassNameExp const* GetClassNameExp () const;
-    WhereExp const* GetWhereClauseExp () const;
-    OptionsExp const* GetOptionsClauseExp() const;
+        ClassNameExp const* GetClassNameExp() const;
+        WhereExp const* GetWhereClauseExp() const;
+        OptionsExp const* GetOptionsClauseExp() const;
     };
 
 

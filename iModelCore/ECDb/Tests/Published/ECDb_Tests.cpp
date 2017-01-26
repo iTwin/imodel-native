@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDb_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -54,7 +54,7 @@ struct TestOtherConnectionECDb : ECDb
         : m_changeCount(0)
         {}
 
-    virtual void _OnDbChangedByOtherConnection() override
+    void _OnDbChangedByOtherConnection() override
         {
         m_changeCount++;
         ECDb::_OnDbChangedByOtherConnection();
@@ -121,7 +121,7 @@ struct TestBusyRetry : BusyRetry
         : m_retryCount(retryCount), m_actualRetryCount(0), m_savepointToCommitDuringRetry(nullptr), m_retryCountBeforeCommit(-1)
         {}
 
-    virtual int _OnBusy(int count) const override
+    int _OnBusy(int count) const override
         {
         //count is 0-based
         if (count >= m_retryCount)

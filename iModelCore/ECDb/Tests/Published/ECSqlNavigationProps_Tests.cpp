@@ -1158,7 +1158,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
                          "</ECSchema>"), rowCount);
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     ECClassId parentHasChildrenRelClassId = ecdb.Schemas().GetECClassId("TestSchema", "ParentHasChildren");
     ASSERT_TRUE(parentHasChildrenRelClassId.IsValid());

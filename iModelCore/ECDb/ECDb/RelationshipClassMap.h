@@ -188,7 +188,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 
         void AddIndexToRelationshipEnd();
 
-        virtual ClassMappingStatus _Map(ClassMappingContext&) override;
+        ClassMappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, Utf8StringCR colName, bool makeNotNull) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
@@ -200,7 +200,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;
         BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
 
-        virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
+        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
 
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
     public:
@@ -216,8 +216,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
         ConstraintECClassIdPropertyMap const* GetForeignEndECClassIdPropMap() const;
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
-        virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
-        virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
+        ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
+        bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
 		Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
 			{
 			Utf8String temp = GetRelationshipClass().GetFullName();
@@ -242,7 +242,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
     private:
         RelationshipClassLinkTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        virtual ClassMappingStatus _Map(ClassMappingContext&) override;
+        ClassMappingStatus _Map(ClassMappingContext&) override;
         ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);
 
         ClassMappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
@@ -253,7 +253,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
 
 
-        virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
+        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
@@ -265,7 +265,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         ~RelationshipClassLinkTableMap() {}
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR relClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(ecdb, relClass, mapStrategy, setIsDirty); }
 
-        virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
+        ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

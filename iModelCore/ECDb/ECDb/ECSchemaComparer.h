@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaComparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -122,7 +122,7 @@ enum class SystemId
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Binary
+struct Binary final
     {
 private:
     void* m_buff;
@@ -212,9 +212,9 @@ struct ECObjectChange : ECChange
     private:
         bmap<Utf8CP, ECChangePtr, CompareUtf8> m_changes;
 
-        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        virtual bool _IsEmpty() const override;
-        virtual void _Optimize() override;
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
+        bool _IsEmpty() const override;
+        void _Optimize() override;
         
     protected:
         template<typename T>
@@ -239,7 +239,7 @@ struct ECChangeArray : ECChange
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
             AppendBegin(str, *this, currentIndex);
             AppendEnd(str);
@@ -252,7 +252,7 @@ struct ECChangeArray : ECChange
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual bool _IsEmpty() const override
+        bool _IsEmpty() const override
             {
             for (ECChangePtr const& change : m_changes)
                 {
@@ -266,7 +266,7 @@ struct ECChangeArray : ECChange
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual void _Optimize() override
+        void _Optimize() override
             {
             auto itor = m_changes.begin();
             while (itor != m_changes.end())
@@ -283,7 +283,8 @@ struct ECChangeArray : ECChange
             :ECChange(state, systemId, parent, customId), m_elementType(elementId)
             {
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
-            }        
+            }
+
         virtual ~ECChangeArray() {}
 
         //---------------------------------------------------------------------------------------
@@ -291,9 +292,6 @@ struct ECChangeArray : ECChange
         //+---------------+---------------+---------------+---------------+---------------+------
         SystemId GetElementType() const { return m_elementType; }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
         T& Add(ChangeState state, Utf8CP customId = nullptr)
             {
             ECChangePtr changePtr = new T(state, m_elementType, this, customId);
@@ -302,17 +300,7 @@ struct ECChangeArray : ECChange
             return *changeP;
             }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        T& At(size_t index)
-            {
-            return static_cast<T&>(*m_changes[index]);
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
+        T& At(size_t index) { return static_cast<T&>(*m_changes[index]); }
         T* Find(Utf8CP customId)
             {
             for (auto& v : m_changes)
@@ -334,16 +322,13 @@ struct ECChangeArray : ECChange
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
-        void Erase(size_t index)
-            {
-            m_changes.erase(m_changes.begin() + index);
-            }
+        void Erase(size_t index) { m_changes.erase(m_changes.begin() + index); }
     };
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaChanges : ECChangeArray<ECSchemaChange>
+struct ECSchemaChanges final: ECChangeArray<ECSchemaChange>
     {
     public:
         ECSchemaChanges()
@@ -360,7 +345,7 @@ struct ECSchemaChanges : ECChangeArray<ECSchemaChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECClassChanges : ECChangeArray<ECClassChange>
+struct ECClassChanges final: ECChangeArray<ECClassChange>
     {
     public:
         ECClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -374,7 +359,7 @@ struct ECClassChanges : ECChangeArray<ECClassChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
+struct ECEnumerationChanges final: ECChangeArray<ECEnumerationChange>
     {
     public:
         ECEnumerationChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -388,7 +373,7 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
+struct ECKindOfQuantityChanges final: ECChangeArray<KindOfQuantityChange>
     {
     public:
         ECKindOfQuantityChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -402,7 +387,7 @@ struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceChanges : ECChangeArray<ECPropertyValueChange>
+struct ECInstanceChanges final : ECChangeArray<ECPropertyValueChange>
     {
     public:
         ECInstanceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -416,7 +401,7 @@ struct ECInstanceChanges : ECChangeArray<ECPropertyValueChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECPropertyChanges : ECChangeArray<ECPropertyChange>
+struct ECPropertyChanges final: ECChangeArray<ECPropertyChange>
     {
     public:
         ECPropertyChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -430,7 +415,7 @@ struct ECPropertyChanges : ECChangeArray<ECPropertyChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipConstraintClassChanges : ECChangeArray<ECRelationshipConstraintClassChange>
+struct ECRelationshipConstraintClassChanges final: ECChangeArray<ECRelationshipConstraintClassChange>
     {
     public:
         ECRelationshipConstraintClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -444,7 +429,7 @@ struct ECRelationshipConstraintClassChanges : ECChangeArray<ECRelationshipConstr
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECEnumeratorChanges : ECChangeArray<ECEnumeratorChange>
+struct ECEnumeratorChanges final: ECChangeArray<ECEnumeratorChange>
     {
     public:
         ECEnumeratorChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -458,7 +443,7 @@ struct ECEnumeratorChanges : ECChangeArray<ECEnumeratorChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct StringChanges : ECChangeArray<StringChange>
+struct StringChanges final: ECChangeArray<StringChange>
     {
     public:
         StringChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -470,7 +455,7 @@ struct StringChanges : ECChangeArray<StringChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct BaseClassChanges : ECChangeArray<StringChange>
+struct BaseClassChanges final : ECChangeArray<StringChange>
     {
     public:
         BaseClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -482,7 +467,7 @@ struct BaseClassChanges : ECChangeArray<StringChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ReferenceChanges : ECChangeArray<StringChange>
+struct ReferenceChanges final: ECChangeArray<StringChange>
     {
     public:
         ReferenceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -501,13 +486,13 @@ struct ECPrimitiveChange : ECChange
         Nullable<T> m_old;
         Nullable<T> m_new;
 
-        virtual  bool _IsEmpty() const override { return m_old == m_new; }
-        virtual Utf8String _ToString(ValueId id) const { return "_TOSTRING_NOT_IMPLEMENTED_"; }
+        bool _IsEmpty() const override { return m_old == m_new; }
+        virtual Utf8String _ToString(ValueId id) const = 0;
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
             AppendBegin(str, *this, currentIndex);
             str.append(": ");
@@ -628,11 +613,11 @@ struct ECPrimitiveChange : ECChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct StringChange : ECPrimitiveChange<Utf8String>
+struct StringChange final: ECPrimitiveChange<Utf8String>
     {
    
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         StringChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -644,10 +629,10 @@ struct StringChange : ECPrimitiveChange<Utf8String>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct BooleanChange : ECPrimitiveChange<bool>
+struct BooleanChange final: ECPrimitiveChange<bool>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         BooleanChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -659,10 +644,10 @@ struct BooleanChange : ECPrimitiveChange<bool>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct UInt32Change : ECPrimitiveChange<uint32_t>
+struct UInt32Change final: ECPrimitiveChange<uint32_t>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         UInt32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -674,9 +659,10 @@ struct UInt32Change : ECPrimitiveChange<uint32_t>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Int32Change : ECPrimitiveChange<int32_t>
+struct Int32Change final: ECPrimitiveChange<int32_t>
     {
-    virtual Utf8String _ToString(ValueId id) const override;
+    private:
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         Int32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -687,10 +673,10 @@ struct Int32Change : ECPrimitiveChange<int32_t>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct DoubleChange: ECPrimitiveChange<double>
+struct DoubleChange final: ECPrimitiveChange<double>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         DoubleChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -702,10 +688,10 @@ struct DoubleChange: ECPrimitiveChange<double>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct DateTimeChange: ECPrimitiveChange<DateTime>
+struct DateTimeChange final: ECPrimitiveChange<DateTime>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         DateTimeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -717,8 +703,11 @@ struct DateTimeChange: ECPrimitiveChange<DateTime>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct BinaryChange: ECPrimitiveChange<Binary>
+struct BinaryChange final: ECPrimitiveChange<Binary>
     {
+    private:
+        Utf8String _ToString(ValueId id) const override;
+
     public:
         BinaryChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Binary>(state, systemId, parent, customId)
@@ -729,10 +718,10 @@ struct BinaryChange: ECPrimitiveChange<Binary>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Point2dChange: ECPrimitiveChange<DPoint2d>
+struct Point2dChange final: ECPrimitiveChange<DPoint2d>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         Point2dChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DPoint2d>(state, systemId, parent, customId)
@@ -743,10 +732,10 @@ struct Point2dChange: ECPrimitiveChange<DPoint2d>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Point3dChange: ECPrimitiveChange<DPoint3d>
+struct Point3dChange final: ECPrimitiveChange<DPoint3d>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         Point3dChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DPoint3d>(state, systemId, parent, customId)
@@ -757,10 +746,10 @@ struct Point3dChange: ECPrimitiveChange<DPoint3d>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Int64Change: ECPrimitiveChange<int64_t>
+struct Int64Change final: ECPrimitiveChange<int64_t>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
 
     public:
         Int64Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -772,10 +761,10 @@ struct Int64Change: ECPrimitiveChange<int64_t>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
+struct StrengthTypeChange final : ECPrimitiveChange<ECN::StrengthType>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         StrengthTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::StrengthType>(state, systemId, parent, customId)
@@ -786,10 +775,10 @@ struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>
+struct StrengthDirectionChange final: ECPrimitiveChange<ECN::ECRelatedInstanceDirection>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         StrengthDirectionChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>(state, systemId, parent, customId)
@@ -800,10 +789,10 @@ struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirecti
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ClassModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
+struct ClassModifierChange final :ECPrimitiveChange<ECN::ECClassModifier>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         ClassModifierChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassModifier>(state, systemId, parent, customId)
@@ -814,10 +803,10 @@ struct ClassModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ClassTypeChange :ECPrimitiveChange<ECN::ECClassType>
+struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
     {
     private:
-        virtual Utf8String _ToString(ValueId id) const override;
+        Utf8String _ToString(ValueId id) const override;
     public:
         ClassTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassType>(state, systemId, parent, customId)
@@ -828,7 +817,7 @@ struct ClassTypeChange :ECPrimitiveChange<ECN::ECClassType>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaChange : ECObjectChange
+struct ECSchemaChange final : ECObjectChange
     {
     public:
         ECSchemaChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -855,7 +844,7 @@ struct ECSchemaChange : ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECEnumeratorChange :ECObjectChange
+struct ECEnumeratorChange final :ECObjectChange
     {
     public:
         ECEnumeratorChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -872,7 +861,7 @@ struct ECEnumeratorChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECEnumerationChange :ECObjectChange
+struct ECEnumerationChange final :ECObjectChange
     {
     public:
         ECEnumerationChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -892,17 +881,17 @@ struct ECEnumerationChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECPropertyValueChange : ECChange
+struct ECPropertyValueChange final : ECChange
     {
     private:
         std::unique_ptr<ECChange> m_value;
         std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_children;
         ECN::PrimitiveType m_type;
         Utf8String m_accessString;
-    private:
-        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        virtual bool _IsEmpty() const override;
-        virtual void _Optimize();
+
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
+        bool _IsEmpty() const override;
+        void _Optimize() override;
         BentleyStatus InitValue(ECN::PrimitiveType type);
 
         template< typename T >
@@ -1009,7 +998,7 @@ struct ECPropertyValueChange : ECChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct KindOfQuantityChange :ECObjectChange
+struct KindOfQuantityChange final :ECObjectChange
     {
     public:
         KindOfQuantityChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -1030,7 +1019,7 @@ struct KindOfQuantityChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipConstraintClassChange :ECObjectChange
+struct ECRelationshipConstraintClassChange final :ECObjectChange
     {
     public:
         ECRelationshipConstraintClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -1045,7 +1034,7 @@ struct ECRelationshipConstraintClassChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipConstraintChange :ECObjectChange
+struct ECRelationshipConstraintChange final :ECObjectChange
     {
     public:
         ECRelationshipConstraintChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -1065,7 +1054,7 @@ struct ECRelationshipConstraintChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipChange :ECObjectChange
+struct ECRelationshipChange final :ECObjectChange
     {
     public:
         ECRelationshipChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) 
@@ -1083,7 +1072,7 @@ struct ECRelationshipChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECClassChange :ECObjectChange
+struct ECClassChange final :ECObjectChange
     {
     public:
         ECClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -1106,7 +1095,7 @@ struct ECClassChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct NavigationChange :ECObjectChange
+struct NavigationChange final :ECObjectChange
     {
     public:
         NavigationChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) 
@@ -1122,7 +1111,7 @@ struct NavigationChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ArrayChange :ECObjectChange
+struct ArrayChange final :ECObjectChange
     {
     public:
         ArrayChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -1138,7 +1127,7 @@ struct ArrayChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECPropertyChange :ECObjectChange
+struct ECPropertyChange final :ECObjectChange
     {
     public:
         ECPropertyChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) 

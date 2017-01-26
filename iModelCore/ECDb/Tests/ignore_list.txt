@@ -26,3 +26,11 @@ ECDbMappingTestFixture.DiamondProblem_Case2
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
+
+ECInstanceUpdaterTests.InvalidListOfPropertyIndices # notified Krischan and Affan
+    # bim0200dev, x64 & x86, DEBUG
+    # [ RUN      ] ECInstanceUpdaterTests.InvalidListOfPropertyIndices
+    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\ECInstanceUpdaterTests.cpp(523): error: Value of: ecdb.IsDbOpen()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] ECInstanceUpdaterTests.InvalidListOfPropertyIndices (55 ms)

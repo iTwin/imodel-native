@@ -780,11 +780,11 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlAndCustomSQLiteFunctions.sampleCode
 
     // SQLite custom function that computes the power of a given number
-    struct PowSqlFunction : BeSQLite::ScalarFunction
+    struct PowSqlFunction final : BeSQLite::ScalarFunction
         {
         private:
 
-            virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override
+            void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override
                 {
                 if (args[0].IsNull() || args[1].IsNull())
                     {

@@ -71,7 +71,7 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ECDbProfileManager::CreateECProfile(m_ecdb);
+    return ECDbProfileManager::CreateProfile(m_ecdb);
     }
 
 

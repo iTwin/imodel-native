@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,19 +15,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle 10/2015
 //+===============+===============+===============+===============+===============+======
-struct OptionExp : Exp
+struct OptionExp final : Exp
     {
-DEFINE_EXPR_TYPE(Option)
-
 private:
     Utf8String m_name;
     Utf8String m_val;
 
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString() const override { return "OptionExp"; }
+    Utf8String _ToECSql() const override;
+    Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
-    explicit OptionExp(Utf8CP name, Utf8CP val) : Exp(), m_name(name), m_val(val) {}
+    explicit OptionExp(Utf8CP name, Utf8CP val) : Exp(Type::Option), m_name(name), m_val(val) {}
 
     Utf8CP GetName() const { return m_name.c_str(); }
     bool IsNameValuePair() const { return !m_val.empty(); }
@@ -37,10 +35,8 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle 10/2015
 //+===============+===============+===============+===============+===============+======
-struct OptionsExp : Exp
+struct OptionsExp final : Exp
     {
-    DEFINE_EXPR_TYPE(Options)
-
 public:
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
     static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
@@ -48,11 +44,11 @@ public:
 private:
     bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;
 
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString() const override { return "OptionsExp"; }
+    Utf8String _ToECSql() const override;
+    Utf8String _ToString() const override { return "OptionsExp"; }
 
 public:
-    OptionsExp() :Exp() {}
+    OptionsExp() :Exp(Type::Options) {}
     BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp);
     //! Checks whether an option with the given name was defined.
     //! If it exists and if it has a value, the value is checked for truth.
@@ -69,7 +65,6 @@ public:
     //! Options are case-insensitive
     bool TryGetOption(OptionExp const*&, Utf8CP optionName) const;
     };
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

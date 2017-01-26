@@ -950,6 +950,29 @@ void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
+// static
+ECClassId ChangeExtractor::ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId)
+    {
+    ECClassIdPropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap();
+    if (classIdPropMap->IsVirtual(*rowEntry.GetTableMap()->GetDbTable()))
+        return classIdPropMap->GetDefaultECClassId();
+
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
+    classIdPropMap->AcceptVisitor(columnsDisp);
+    if (columnsDisp.GetColumns().size() != 1)
+        {
+        BeAssert(false);
+        return ECClassId();
+        }
+
+    DbColumn const* classIdColumn = columnsDisp.GetColumns()[0];
+    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumn->GetName().c_str(), instanceId);
+    return classId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     10/2015
+//---------------------------------------------------------------------------------------
 void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassEndTableMap const& relClassMap)
     {    
     ECClassId relClassId = relClassMap.GetClass().GetId();
@@ -959,6 +982,11 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     // Check that this end of the relationship matches the actual class found.
     ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
     if (!ClassIdMatchesConstraint(relClassId, thisEnd, thisEndClassId))
+        return;
+
+    // Check that the relationship class matches the class of the entry found
+    ECClassId foundClassId = ExtractClassId(rowEntry, relClassMap, relInstanceId);
+    if (relClassId != foundClassId)
         return;
 
     ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
@@ -1041,7 +1069,8 @@ void ChangeExtractor::RecordInstance(ChangeSummary::InstanceCR instance, ChangeI
     m_instancesTable.InsertOrUpdate(instance);
 
     bool updatedProperties = false;
-    for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakePrimaryColumnIterator())
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(classId);
+    for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakeColumnIterator(*ecClass))
         {
         if (columnEntry.IsPrimaryKeyColumn())
             continue;  // Primary key columns need not be included in the values table
@@ -1166,7 +1195,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
         return GetRelEndClassIdFromRelClass(relClassMap.GetClass().GetRelationshipClassCP(), relEnd);
         }
 
-    // Case #2: End is in only one table    
+    // Case #2: End is in only one table (Note: not in the current table the row belongs to, but some OTHER end table)
     const bool endIsInOneTable = classIdPropMap->GetTables().size() == 1;
     if (endIsInOneTable)
         {
@@ -1186,9 +1215,6 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
 
     // Case #3: End could be in many tables
     Utf8StringCR classIdColumnName = classIdColumn->GetName();
-    int classIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(classIdColumnName);
-    BeAssert(classIdColumnIndex >= 0);
-
     ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
     BeAssert(classId.IsValid());
     return classId;

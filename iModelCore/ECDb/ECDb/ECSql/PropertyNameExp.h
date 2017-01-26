@@ -17,7 +17,7 @@ struct DerivedPropertyExp;
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct PropertyNameExp : ValueExp
+struct PropertyNameExp final : ValueExp
     {
     struct PropertyRef
         {
@@ -37,8 +37,6 @@ struct PropertyNameExp : ValueExp
             bool IsConverted() const { return m_isConverted; }
             BentleyStatus ToNativeSql(NativeSqlBuilder::List const& snippets);
         };
-    public:
-        DEFINE_EXPR_TYPE(PropertyName)
     private:
         PropertyPath m_propertyPath;
         std::unique_ptr<PropertyRef> m_propertyRef;
@@ -49,11 +47,11 @@ struct PropertyNameExp : ValueExp
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
-        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void SetClassRefExp(RangeClassRefExp const& classRefExp);
         void SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
-        virtual void _DoToECSql(Utf8StringR ecsql) const override;
-        virtual Utf8String _ToString() const override;
+        void _DoToECSql(Utf8StringR ecsql) const override;
+        Utf8String _ToString() const override;
 
     public:
         explicit PropertyNameExp(PropertyPath&& propPath);

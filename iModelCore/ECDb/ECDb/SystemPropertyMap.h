@@ -23,7 +23,7 @@ struct SystemPropertyMap : PropertyMap
                 : SingleColumnDataPropertyMap(Type::SystemPerTablePrimitive, parentPropertyMap, ecProperty, column, false)
                 {}
 
-            virtual DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }
+            DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }
 
         public:
             virtual ~PerTablePrimitivePropertyMap() {}
@@ -36,7 +36,7 @@ struct SystemPropertyMap : PropertyMap
         std::vector<PerTablePrimitivePropertyMap const*> m_dataPropMapList;
         std::vector<DbTable const*> m_tables;
 
-        virtual bool _IsMappedToTable(DbTable const& table) const override
+        bool _IsMappedToTable(DbTable const& table) const override
             {
             for (DbTable const* t : m_tables)
                 if (t == &table)
@@ -45,7 +45,7 @@ struct SystemPropertyMap : PropertyMap
             return false;
             }
 
-        virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
+        BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
 
     protected:
         SystemPropertyMap(Type, ClassMap const&, ECN::PrimitiveECPropertyCR);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlAsserter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ struct ECSqlSelectAsserter : public ECSqlAsserter
         typedef std::pair<ECN::ECTypeDescriptor, std::function<void()>> GetValueCall;
         typedef std::vector<GetValueCall> GetValueCallList;
 
-        virtual void _Assert(ECSqlTestItem const& testItem) const override;
+        void _Assert(ECSqlTestItem const& testItem) const override;
 
         void AssertStep(ECSqlTestItem const& testItem, ECSqlStatement& statement, ResultCountECSqlExpectedResult const& expectedResult) const;
 
@@ -104,7 +104,7 @@ struct ECSqlSelectAsserter : public ECSqlAsserter
 struct ECSqlNonSelectAsserter : public ECSqlAsserter
     {
     private:
-        virtual void _Assert(ECSqlTestItem const& testItem) const override;
+        void _Assert(ECSqlTestItem const& testItem) const override;
 
         void AssertStep(ECSqlTestItem const& testItem, ECSqlStatement& statement, ECSqlExpectedResult const& expectedResult) const;
 

@@ -20,13 +20,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!     SELECT el.ECInstanceId
 //!     FROM dgn.Element el
 //!     JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom
-//!     WHERE IsChangedInstance(elg.GetECClassId(), elg.ECInstanceId)
+//!     WHERE IsChangedInstance(:changeSummary, elg.GetECClassId(), elg.ECInstanceId)
 //! @bsiclass                                                 Ramanujam.Raman      08/2015
 //=======================================================================================
 struct IsChangedInstanceSqlFunction final : ScalarFunction
 {
 private:
-    virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
+    void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
+
 public:
     IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}

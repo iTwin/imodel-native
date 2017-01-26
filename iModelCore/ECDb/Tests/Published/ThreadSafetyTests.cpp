@@ -2,12 +2,11 @@
 |
 |  $Source: Tests/Published/ThreadSafetyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <rapidjson/BeRapidJson.h>
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -38,7 +37,7 @@ private:
         BeAtomic<State> m_stat;
         BeConditionVariable m_conditionalVar;
     private:
-        virtual bool _TestCondition(struct BeConditionVariable &cv) override
+        bool _TestCondition(struct BeConditionVariable &cv) override
         {
             return m_stat.load() == BeThread::State::Stop || m_stat.load() == BeThread::State::Error;
         }
@@ -153,13 +152,8 @@ struct ThreadSafetyTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, AllThreadsShareDb)
 {
-
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    EXPECT_EQ(BE_SQLITE_OK, stat);
+    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3, Db::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     Utf8CP ecsql = "SELECT Name, NumberOfEmployees FROM stco.Company";
 
@@ -177,7 +171,7 @@ TEST_F(ThreadSafetyTests, AllThreadsShareDb)
             for (int i = 0; i < 100; ++i)
             {
                 ECSqlStatement stmt;
-                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
                 int rowCount = 0;
                 while (stmt.Step() != BE_SQLITE_DONE)
                 {
@@ -203,9 +197,10 @@ TEST_F(ThreadSafetyTests, AllThreadsShareDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
 {
-
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDbR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    BeFileName ecdbFileName(ecdb.GetDbFileName());
+    ecdb.CloseDb();
 
     Utf8CP ecsql = "SELECT Name, NumberOfEmployees FROM stco.Company";
 
@@ -223,7 +218,7 @@ TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
             for (int i = 0; i < 100; ++i)
             {
                 ECDb db;
-                DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
+                DbResult stat = db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly));
                 EXPECT_EQ(BE_SQLITE_OK, stat);
 
                 ECSqlStatement stmt;
@@ -254,8 +249,10 @@ TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
 TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_SQL)
 {
 
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDbR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    BeFileName ecdbFileName(ecdb.GetDbFileName());
+    ecdb.CloseDb();
 
     Utf8CP sql = "SELECT Name, NumberOfEmployees FROM sc_Company";
 
@@ -273,7 +270,7 @@ TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_SQL)
             for (int i = 0; i < 100; ++i)
             {
                 ECDb db;
-                DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
+                DbResult stat = db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly));
                 EXPECT_EQ(BE_SQLITE_OK, stat);
 
                 Statement stmt;

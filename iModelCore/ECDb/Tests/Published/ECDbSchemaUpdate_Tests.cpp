@@ -85,8 +85,8 @@ struct ECSchemaDuplicator :IECSchemaLocater
     {
     private:
         ECSchemaCacheCR m_fromCache;
-    private:
-        virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
+    
+        ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
             {
             if (auto schema = schemaContext.GetCache().GetSchema(key, matchType))
                 return schema;
@@ -488,7 +488,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
@@ -543,7 +542,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (6, 't6')");
@@ -584,7 +582,6 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
@@ -644,7 +641,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -708,7 +704,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
@@ -763,7 +758,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -832,7 +826,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -887,7 +880,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
@@ -931,7 +923,6 @@ TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -993,7 +984,6 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -1335,6 +1325,241 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
     bool asserted = false;
     AssertSchemaImport(asserted, restrictedECDb, schemaWithNewSubClassWithProperty);
     ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         1/17
+//+---------------+---------------+---------------+---------------+---------------+------
+auto assertInsertECSql = [](ECDbCR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << " ECSQL: " << ecsql;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << " ECSQL: " << ecsql;
+    stmt.Finalize();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         1/17
+//+---------------+---------------+---------------+---------------+---------------+------
+auto assertSelectSql = [](ECDbCR ecdb, Utf8CP sql, int expectedColumnCount, int expectedRowCount, Utf8CP expectedColumnName)
+    {
+    Statement stmt;
+
+    //Verify Column count
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(ecdb, sql)) << " ECSQL: " << sql;
+    ASSERT_EQ(expectedColumnCount, stmt.GetColumnCount()) << " ECSQL: " << sql;
+
+    //Verify Row count
+    int actualRowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        actualRowCount++;
+
+    ASSERT_EQ(expectedRowCount, actualRowCount) << " ECSQL: " << sql;
+
+    //Verify that the columns generated are same as expected
+    Utf8String actualColumnNames;
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        actualColumnNames.append(stmt.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnName, actualColumnNames.c_str());
+    stmt.Finalize();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         1/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowColumnOnJoinedTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='C1'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='int'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C2'>"
+        "       <BaseClass>C1</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='int'/>"
+        "        <ECProperty propertyName='D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("overflowproperties.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    BeFileName filePath(GetECDb().GetDbFileName());
+
+    //Inserting Instances for C1 and C2
+    assertInsertECSql(GetECDb(), "INSERT INTO ts.C2 (A,B,C,D) VALUES (1,'val1',2,33)");
+    GetECDb().SaveChanges();
+
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "ECInstanceIdECClassIdAB");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 3, 1, "C1ECInstanceIdECClassIdscoverflow");
+
+    //Verifying the inserted values for classes C1 and C2
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT A,B,C,D FROM ts.C2"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    ASSERT_STREQ("val1", stmt.GetValueText(1));
+    ASSERT_EQ(2, stmt.GetValueInt(2));
+    ASSERT_EQ(33, stmt.GetValueInt(3));
+    stmt.Finalize();
+
+    GetECDb().CloseDb();
+
+    Utf8CP addingEntityClassC3(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='C1'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='int'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C2'>"
+        "       <BaseClass>C1</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='int'/>"
+        "        <ECProperty propertyName='D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C3'>"
+        "       <BaseClass>C1</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='double'/>"
+        "        <ECProperty propertyName='F' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(addingEntityClassC3, filePath, { true, false }, "Adding New Entity Class");
+    GetECDb().CloseDb();
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify that the class is added successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetClassCP("C3") != nullptr);
+
+        GetECDb().CloseDb();
+        }
+
+    Utf8CP addingEntityClassesC31C32(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='C1'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='int'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C2'>"
+        "       <BaseClass>C1</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='int'/>"
+        "        <ECProperty propertyName='D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C3'>"
+        "       <BaseClass>C1</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='double'/>"
+        "        <ECProperty propertyName='F' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C31'>"
+        "       <BaseClass>C3</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='double'/>"
+        "        <ECProperty propertyName='H' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='C32'>"
+        "       <BaseClass>C3</BaseClass>"
+        "        <ECProperty propertyName='I' typeName='string'/>"
+        "        <ECProperty propertyName='J' typeName='double'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(addingEntityClassesC31C32, filePath, { true, false }, "Adding Entity Classes C31 and C32");
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify that the classes are added successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetClassCP("C31") != nullptr);
+        ASSERT_TRUE(testSchema->GetClassCP("C32") != nullptr);
+
+        //Tables for C1,C2,C3 should exist.
+        ASSERT_TRUE(GetECDb().TableExists("ts_C1"));
+        ASSERT_TRUE(GetECDb().TableExists("ts_C2"));
+        ASSERT_TRUE(GetECDb().TableExists("ts_C3"));
+
+        //C31 and C32 should not exist.
+        ASSERT_FALSE(GetECDb().TableExists("ts_C31"));
+        ASSERT_FALSE(GetECDb().TableExists("ts_C32"));
+
+        //Verifying that the properties are mapped to the overflow columns
+        std::vector<Utf8Char> Props = { 'C','D','E','F','G','H','I','J' };
+        for (size_t i = 0; i < 8; i++)
+            {
+            Utf8String sql;
+            Statement sqlstmt;
+            sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(GetECDb(), sql.c_str())) << "Prepare failed for sql: " << sql;
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(1152, sqlstmt.GetValueInt(0));  // 128 + 1024 = 1152 (OR between SharedDataColumn(128) and InOverflow(1024) column kinds)   
+            }
+
+        //Inserting Instances in Classes C31 and C32
+        assertInsertECSql(GetECDb(), "INSERT INTO ts.C31 (E,F,G,H) VALUES (10.32,3,11.1,50)");
+        assertInsertECSql(GetECDb(), "INSERT INTO ts.C32 (E,F,I,J) VALUES (23.45,6,'val4',44.60)");
+        GetECDb().SaveChanges();
+
+        //Verifying values
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1ECInstanceIdECClassIdscoverflow");
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(11.1, stmt.GetValueDouble(0));
+        ASSERT_EQ(50, stmt.GetValueInt(1));
+        stmt.Finalize();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT I,J FROM ts.C32"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("val4", stmt.GetValueText(0));
+        ASSERT_EQ(44.60, stmt.GetValueDouble(1));
+        stmt.Finalize();
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1695,7 +1920,6 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
     ECInstanceKey row2;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(row2));
     stmt.Finalize();
-    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT BaseProp1, Prop1, Prop2 FROM ts.Sub WHERE ECInstanceId=?"));
@@ -6905,7 +7129,6 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
         ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
 
-        GetECDb().Schemas().CreateECClassViewsInDb();
         //Insert Test Data
         //Model
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(101, 'Model1')");

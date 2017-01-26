@@ -23,12 +23,12 @@ private:
     Json::Value const& m_json;
     ECSqlColumnInfo m_columnInfo;
 
-    virtual ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
-    virtual bool _IsNull() const override;
+    ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
+    bool _IsNull() const override;
 
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
-    virtual IECSqlStructValue const& _GetStruct() const override;
-    virtual IECSqlArrayValue const& _GetArray() const override;
+    IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    IECSqlStructValue const& _GetStruct() const override;
+    IECSqlArrayValue const& _GetArray() const override;
 
 protected:
     JsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
@@ -50,19 +50,19 @@ private:
     DateTime::Info m_datetimeMetadata;
     mutable ByteStream m_blobCache;
 
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
+    IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
 
-    virtual void const* _GetBlob(int* blobSize) const override;
-    virtual bool _GetBoolean() const override;
-    virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
-    virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
-    virtual double _GetDouble() const override;
-    virtual int _GetInt() const override;
-    virtual int64_t _GetInt64() const override;
-    virtual Utf8CP _GetText() const override;
-    virtual DPoint2d _GetPoint2d() const override;
-    virtual DPoint3d _GetPoint3d() const override;
-    virtual IGeometryPtr _GetGeometry() const override;
+    void const* _GetBlob(int* blobSize) const override;
+    bool _GetBoolean() const override;
+    uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
+    double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+    double _GetDouble() const override;
+    int _GetInt() const override;
+    int64_t _GetInt64() const override;
+    Utf8CP _GetText() const override;
+    DPoint2d _GetPoint2d() const override;
+    DPoint3d _GetPoint3d() const override;
+    IGeometryPtr _GetGeometry() const override;
 
     bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 public:
@@ -78,11 +78,11 @@ struct StructJsonECSqlValue : public JsonECSqlValue, public IECSqlStructValue
 private:
     std::vector<std::unique_ptr<JsonECSqlValue>> m_members;
 
-    virtual bool _IsNull() const override;
-    virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
+    bool _IsNull() const override;
+    IECSqlStructValue const& _GetStruct() const override { return *this; }
 
-    virtual int _GetMemberCount() const override { return (int) m_members.size(); }
-    virtual IECSqlValue const& _GetValue(int columnIndex) const override;
+    int _GetMemberCount() const override { return (int) m_members.size(); }
+    IECSqlValue const& _GetValue(int columnIndex) const override;
 
 public:
     StructJsonECSqlValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
@@ -100,13 +100,13 @@ private:
     DateTime::Info m_primitiveArrayDatetimeMetadata;
     ECN::ECStructClassCP m_structArrayElementType;
 
-    virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
+    IECSqlArrayValue const& _GetArray() const override { return *this; }
 
     //IECSqlArrayValue
-    virtual void _MoveNext(bool onInitializingIterator) const override;
-    virtual bool _IsAtEnd() const override;
-    virtual IECSqlValue const* _GetCurrent() const override;
-    virtual int _GetArrayLength() const override { return (int) GetJson().size(); }
+    void _MoveNext(bool onInitializingIterator) const override;
+    bool _IsAtEnd() const override;
+    IECSqlValue const* _GetCurrent() const override;
+    int _GetArrayLength() const override { return (int) GetJson().size(); }
 
 public:
     ArrayJsonECSqlValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&);
@@ -138,14 +138,14 @@ private:
     mutable std::unique_ptr<ArrayJsonECSqlValue> m_value;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
-    virtual IECSqlStructValue const& _GetStruct() const override;
-    virtual IECSqlArrayValue const& _GetArray() const override { return *m_value; }
+    bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
+    IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    IECSqlStructValue const& _GetStruct() const override;
+    IECSqlArrayValue const& _GetArray() const override { return *m_value; }
 
     //ECSqlField
-    virtual ECSqlStatus _OnAfterReset() override;
-    virtual ECSqlStatus _OnAfterStep() override;
+    ECSqlStatus _OnAfterReset() override;
+    ECSqlStatus _OnAfterStep() override;
 
     void DoReset() const;
 

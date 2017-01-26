@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbExpressionSymbolProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,8 +28,8 @@ private:
     static ECN::ExpressionStatus GetECClassId(ECN::EvaluationResult& evalResult, void* context, ECN::EvaluationResultVector& args);
     static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 
-    virtual Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
-    virtual void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
+    Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
+    void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
 public:
     explicit ECDbExpressionSymbolProvider(ECDbCR db) : ECN::IECSymbolProvider(), m_db(db) {}

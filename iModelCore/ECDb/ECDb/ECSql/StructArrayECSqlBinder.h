@@ -46,23 +46,23 @@ private:
             JsonValueBinder(JsonValueBinder&&);
             JsonValueBinder& operator=(JsonValueBinder&&);
 
-            virtual ECSqlStatus _BindNull() override;
-            virtual ECSqlStatus _BindBoolean(bool value) override;
-            virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) override;
-            virtual ECSqlStatus _BindZeroBlob(int blobSize) override;
-            virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
-            virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
-            virtual ECSqlStatus _BindDouble(double value) override;
-            virtual ECSqlStatus _BindInt(int value) override;
-            virtual ECSqlStatus _BindInt64(int64_t value) override;
-            virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
-            virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
-            virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+            ECSqlStatus _BindNull() override;
+            ECSqlStatus _BindBoolean(bool value) override;
+            ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) override;
+            ECSqlStatus _BindZeroBlob(int blobSize) override;
+            ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
+            ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
+            ECSqlStatus _BindDouble(double value) override;
+            ECSqlStatus _BindInt(int value) override;
+            ECSqlStatus _BindInt64(int64_t value) override;
+            ECSqlStatus _BindPoint2d(DPoint2dCR) override;
+            ECSqlStatus _BindPoint3d(DPoint3dCR) override;
+            ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
-            virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
-            virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+            IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+            IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
-            virtual IECSqlBinder& _AddArrayElement() override;
+            IECSqlBinder& _AddArrayElement() override;
 
         };
 
@@ -72,27 +72,27 @@ private:
 
     void Initialize();
 
-    virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override { m_sqliteIndex = (int) sqliteParameterIndex; }
-    virtual void _OnClearBindings() override { Initialize(); }
-    virtual ECSqlStatus _OnBeforeStep() override;
+    void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override { m_sqliteIndex = (int) sqliteParameterIndex; }
+    void _OnClearBindings() override { Initialize(); }
+    ECSqlStatus _OnBeforeStep() override;
 
-    virtual ECSqlStatus _BindNull() override { _OnClearBindings(); return ECSqlStatus::Success; }
-    virtual ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder.BindBoolean(value); }
-    virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override { return m_rootBinder.BindBlob(value, blobSize, makeCopy); }
-    virtual ECSqlStatus _BindZeroBlob(int blobSize) override { return m_rootBinder.BindZeroBlob(blobSize); }
-    virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDayMsec, dtInfo); }
-    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDay, dtInfo); }
-    virtual ECSqlStatus _BindDouble(double value) override { return m_rootBinder.BindDouble(value); }
-    virtual ECSqlStatus _BindInt(int value) override { return m_rootBinder.BindInt(value); }
-    virtual ECSqlStatus _BindInt64(int64_t value) override { return m_rootBinder.BindInt64(value); }
-    virtual ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_rootBinder.BindPoint2d(value); }
-    virtual ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_rootBinder.BindPoint3d(value); }
-    virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { return m_rootBinder.BindText(stringValue, makeCopy, byteCount); }
+    ECSqlStatus _BindNull() override { _OnClearBindings(); return ECSqlStatus::Success; }
+    ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder.BindBoolean(value); }
+    ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override { return m_rootBinder.BindBlob(value, blobSize, makeCopy); }
+    ECSqlStatus _BindZeroBlob(int blobSize) override { return m_rootBinder.BindZeroBlob(blobSize); }
+    ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDayMsec, dtInfo); }
+    ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDay, dtInfo); }
+    ECSqlStatus _BindDouble(double value) override { return m_rootBinder.BindDouble(value); }
+    ECSqlStatus _BindInt(int value) override { return m_rootBinder.BindInt(value); }
+    ECSqlStatus _BindInt64(int64_t value) override { return m_rootBinder.BindInt64(value); }
+    ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_rootBinder.BindPoint2d(value); }
+    ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_rootBinder.BindPoint3d(value); }
+    ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { return m_rootBinder.BindText(stringValue, makeCopy, byteCount); }
 
-    virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return m_rootBinder[structMemberPropertyName]; }
-    virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder[structMemberPropertyId]; }
+    IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return m_rootBinder[structMemberPropertyName]; }
+    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder[structMemberPropertyId]; }
 
-    virtual IECSqlBinder& _AddArrayElement() override { return m_rootBinder.AddArrayElement(); }
+    IECSqlBinder& _AddArrayElement() override { return m_rootBinder.AddArrayElement(); }
 
 public:
     StructArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     private:
         ECDbR m_ecdb;
         mutable ECDbIssue m_issue;
-        virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
+        void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
 
     public:
         explicit ECDbIssueListener(ECDbR ecdb) : BeSQLite::EC::ECDb::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }
@@ -89,6 +89,7 @@ struct ECDbTestUtility
         static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
 
         static DbResult CreateECDb(ECDbR ecdb, BeFileNameP ecdbFullPath, WCharCP ecdbFileName);
+        static DbResult CloneECDb(ECDbR clone, WCharCP cloneFileName, BeFileNameCR seedFilePath, Db::OpenParams openParams);
         static ECN::ECSchemaPtr ReadECSchemaFromDisk(WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
         static void     ReadECSchemaFromDisk(ECN::ECSchemaPtr& ecSchema, ECN::ECSchemaReadContextPtr& ecSchemaContext, WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
         static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr& schemaContext, Utf8CP ecschemaXmlString);

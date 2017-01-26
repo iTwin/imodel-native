@@ -167,11 +167,8 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter::FormatOptions::FormatOptions
-(
-    ECValueFormat format /* = ECValueFormat::FormattedStrings */,
-    ECPropertyFormatterP propertyFormatter /* = nullptr */
-) : m_format(format), m_propertyFormatter(propertyFormatter)
+JsonECSqlSelectAdapter::FormatOptions::FormatOptions(ECValueFormat format /* = ECValueFormat::FormattedStrings */, ECPropertyFormatterP propertyFormatter /* = nullptr */) 
+    : m_format(format), m_propertyFormatter(propertyFormatter)
     {
     if (m_format == ECValueFormat::FormattedStrings && m_propertyFormatter.IsNull())
         m_propertyFormatter = ECPropertyFormatter::Create();
@@ -180,12 +177,8 @@ JsonECSqlSelectAdapter::FormatOptions::FormatOptions
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter::JsonECSqlSelectAdapter
-(
-    ECSqlStatementCR ecsqlStatement,
-    FormatOptions formatOptions /* = FormatOptions (ECValueFormat::FormattedStrings) */
-) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_structArrayAsString(false)
-    {}
+JsonECSqlSelectAdapter::JsonECSqlSelectAdapter(ECSqlStatementCR ecsqlStatement, FormatOptions formatOptions /* = FormatOptions (ECValueFormat::FormattedStrings) */) 
+    : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_structArrayAsString(false) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
@@ -546,13 +539,7 @@ ECN::IECInstancePtr ECPropertyFormatter::_GetPropertyCategory(ECN::ECPropertyCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyFormatter::_FormattedStringFromECValue
-(
-    Utf8StringR strVal,
-    ECN::ECValueCR ecValue,
-    ECN::ECPropertyCR ecProperty,
-    bool isArrayMember
-) const
+bool ECPropertyFormatter::_FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const
     {
     /*
      * Note: We could conceivably use the IECTypeAdapter and IECTypeAdapterContext

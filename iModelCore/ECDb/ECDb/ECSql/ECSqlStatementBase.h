@@ -81,7 +81,7 @@ struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
         ECN::ECClassId m_classId;
         IECSqlBinder* m_ecInstanceIdBinder;
 
-        virtual ECSqlPrepareContext _InitializePrepare(ECDb const& ecdb, ECCrudWriteToken const* token) override { return ECSqlPrepareContext(ecdb, *this, m_classId, token); }
+        ECSqlPrepareContext _InitializePrepare(ECDb const& ecdb, ECCrudWriteToken const* token) override { return ECSqlPrepareContext(ecdb, *this, m_classId, token); }
 
     public:
         explicit ParentOfJoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}

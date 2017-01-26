@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
+DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
     {
     LOG.debugv("Creating " PROFILENAME " profile in %s...", ecdb.GetDbFileName());
 
@@ -58,6 +58,20 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     return BE_SQLITE_OK;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle  01/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
+    {
+    fileIsAutoUpgradable = false;
+    const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
+    if (BE_SQLITE_OK != stat)
+        return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
+
+    return ECDb::CheckProfileVersion(fileIsAutoUpgradable, GetExpectedVersion(), actualProfileVersion, GetMinimumSupportedVersion(), openModeIsReadOnly, PROFILENAME);
+    }
+
 //=======================================================================================
 //! Whenever a profile upgrade needs to rename or remove tables/columns
 //! a ProfileUpgradeContext is needed which prepares SQLite accordingly, 
@@ -91,19 +105,14 @@ struct ProfileUpgradeContext : NonCopyableClass
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& openParams)
+DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
     StopWatch timer(true);
 
+    bool runProfileUpgrade = false;
     SchemaVersion actualProfileVersion(0, 0, 0, 0);
-    DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
-    if (stat != BE_SQLITE_OK)
-        return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
-
-    const SchemaVersion expectedVersion = GetExpectedVersion();
-    bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
-    if (!profileNeedsUpgrade)
+    DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
+    if (!runProfileUpgrade)
         return stat;
 
     //if ECDb file is readonly, reopen it in read-write mode
@@ -144,12 +153,13 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
-                  actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
+                  actualProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
     return BE_SQLITE_OK;
     }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle  06/2016
