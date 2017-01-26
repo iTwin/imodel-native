@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitRegistry.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -73,8 +73,8 @@ public:
     UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
     UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
-    BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
-    BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
+    UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
+    UNITS_EXPORT BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
     
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;

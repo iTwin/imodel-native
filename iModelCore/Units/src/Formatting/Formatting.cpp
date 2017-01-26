@@ -719,8 +719,9 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
         return "";
-    UnitCP unitQ = qty.GetUnit();
-    QuantityPtr temp = qty.ConvertTo(unitQ->GetName());
+    UnitCP unitQ = qty.GetUnit();   
+    Utf8CP useUOM = (nullptr == useUnit) ? unitQ->GetName() : useUnit->GetName();
+    QuantityPtr temp = qty.ConvertTo(useUOM);
     return fmtP->FormatDouble(temp->GetMagnitude(), prec, round);
     }
 

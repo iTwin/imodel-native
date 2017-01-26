@@ -29,21 +29,27 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 TEST(FormattingTest, FormattingUOM)
     {
     UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
+    UnitRegistry::Instance().AddSynonym("YRD", "YARD");
+    UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
     UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
     UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
     QuantityPtr len = Quantity::Create(22.7, "M");
     QuantityTriad qtr = QuantityTriad(*len, yrdUOM, ftUOM, inUOM);
     EXPECT_STREQ ("24_YRD 2_FT 6_IN", qtr.FormatQuantTriad("_", false).c_str());
-    EXPECT_STREQ ("24 YRD 2 FT 6 IN", qtr.FormatQuantTriad(" ", false).c_str());
-    EXPECT_STREQ ("22 45/64", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract").c_str());
-    EXPECT_STREQ ("22 11/16", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
-    EXPECT_STREQ ("22 11/16", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
-    EXPECT_STREQ ("22 3/4", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract8").c_str());
 
-    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
-    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract8").c_str());
+    EXPECT_STREQ ("24 YRD 2 FT 6 IN", qtr.FormatQuantTriad(" ", false).c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract").c_str());
+    EXPECT_STREQ ("74 1/2", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormat::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
 
 #if defined FORMAT_DEBUG_PRINT
+
+    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    LOG.infov("22.7 M = %s YRD", NumericFormat::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
+    LOG.infov("22.7 M = %s FT(16)", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
+    LOG.infov("22.7 M = %s FT(32)", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+
     UnitCP mileUOM = UnitRegistry::Instance().LookupUnit("MILE");
     if (nullptr != mileUOM && nullptr != yrdUOM)
         {
