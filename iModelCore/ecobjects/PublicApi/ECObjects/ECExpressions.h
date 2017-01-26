@@ -175,9 +175,9 @@ protected:
     MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context);
 
     bool _CanReuseResult() override {return true;}
-    bool _SupportsStaticMethodCall() const override {return nullptr != m_staticMethod;}
-    bool _SupportsInstanceMethodCall() const override {return nullptr != m_instanceMethod;}
-    bool _SupportsValueListMethodCall() const override {return nullptr != m_valueListMethod;}
+    bool _SupportsStaticMethodCall() const override {return NULL != m_staticMethod;}
+    bool _SupportsInstanceMethodCall() const override {return NULL != m_instanceMethod;}
+    bool _SupportsValueListMethodCall() const override {return NULL != m_valueListMethod;}
 
     //  The vector of arguments does not include the object used to invoke the method. It is
     //  up to the specific implementation of MethodReference to hold onto the instance and to use
