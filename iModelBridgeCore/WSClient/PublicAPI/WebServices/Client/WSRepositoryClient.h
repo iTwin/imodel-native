@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSRepositoryClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -294,10 +294,10 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT IWSClientPtr GetWSClient() const override;
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
-        WSCLIENT_EXPORT void SetCredentials(Credentials credentials);
+        WSCLIENT_EXPORT void SetCredentials(Credentials credentials) override;
 
-        WSCLIENT_EXPORT void SetCompressionOptions(CompressionOptions options);
-        WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const;
+        WSCLIENT_EXPORT void SetCompressionOptions(CompressionOptions options) override;
+        WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const override;
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
