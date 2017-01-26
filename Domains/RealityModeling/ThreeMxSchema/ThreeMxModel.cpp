@@ -70,7 +70,7 @@ BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
 //----------------------------------------------------------------------------------------
 BentleyStatus Scene::LocateFromSRS()
     {
-    DgnGCSPtr bimGCS = m_db.Units().GetDgnGCS();
+    DgnGCSPtr bimGCS = m_db.GeoLocation().GetDgnGCS();
     if (!bimGCS.IsValid())
         return ERROR; // BIM is not geolocated, can't use geolocation in 3mx scene
 

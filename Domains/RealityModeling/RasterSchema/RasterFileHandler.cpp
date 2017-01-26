@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -50,7 +50,7 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
     {
     GeoCoordinates::BaseGCSPtr pSourceGcs = raster.GetBaseGcs();
 
-    DgnGCSP pDgnGcs = dgndb.Units().GetDgnGCS();
+    DgnGCSP pDgnGcs = dgndb.GeoLocation().GetDgnGCS();
 
     if (pSourceGcs.IsNull() || nullptr == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid() ||
         pSourceGcs->IsEquivalent(*pDgnGcs))
