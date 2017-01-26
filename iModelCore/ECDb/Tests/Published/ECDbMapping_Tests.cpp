@@ -2424,7 +2424,81 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertExplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OverflowColumns_SharedColumns2)
+	{
+	ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+		"<?xml version='1.0' encoding='utf-8'?> "
+		"<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+		"    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+		"    <ECEntityClass typeName='Element' modifier='Abstract'>"
+		"        <ECCustomAttributes>"
+		"            <ClassMap xmlns='ECDbMap.02.00'>"
+		"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+		"            </ClassMap>"
+		"            <ShareColumns xmlns='ECDbMap.02.00'>"
+		"              <SharedColumnCount>4</SharedColumnCount>"
+		"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+		"            </ShareColumns>"
+		"        </ECCustomAttributes>"
+		"        <ECProperty propertyName='Code' typeName='string' />"
+		"    </ECEntityClass>"
+		"    <ECEntityClass typeName='D1' modifier='None'>"
+		"        <BaseClass>Element</BaseClass>"
+		"        <ECProperty propertyName='D1A' typeName='int'/>"
+		"        <ECProperty propertyName='D1B' typeName='int'/>"
+		"        <ECProperty propertyName='D1C' typeName='int'/>"
+		"        <ECProperty propertyName='D1D' typeName='int'/>"
+		"    </ECEntityClass>"
+		"    <ECEntityClass typeName='D2' modifier='None'>"
+		"        <BaseClass>Element</BaseClass>"
+		"        <ECProperty propertyName='D2A' typeName='int'/>"
+		"        <ECProperty propertyName='D2B' typeName='int'/>"
+		"        <ECProperty propertyName='D2C' typeName='int'/>"
+		"        <ECProperty propertyName='D2D' typeName='int'/>"
+		"    </ECEntityClass>"
+		"    <ECEntityClass typeName='D11' modifier='None'>"
+		"        <BaseClass>D1</BaseClass>"
+		"        <ECProperty propertyName='D11A' typeName='int'/>"
+		"        <ECProperty propertyName='D11B' typeName='int'/>"
+		"        <ECProperty propertyName='D11C' typeName='int'/>"
+		"        <ECProperty propertyName='D11D' typeName='int'/>"
+		"    </ECEntityClass>"
+		"    <ECEntityClass typeName='D21' modifier='None'>"
+		"        <BaseClass>Element</BaseClass>"
+		"        <ECProperty propertyName='D21A' typeName='int'/>"
+		"        <ECProperty propertyName='D21B' typeName='int'/>"
+		"        <ECProperty propertyName='D21C' typeName='int'/>"
+		"        <ECProperty propertyName='D21D' typeName='int'/>"
+		"    </ECEntityClass>"
+		"</ECSchema>"));
+	
 
+	SchemaItem thirdSchema(
+		"<?xml version='1.0' encoding='utf-8'?>"
+		"<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+		"    <ECSchemaReference name='TestSchema1' version='01.00' prefix='ts1' />"
+		"    <ECEntityClass typeName='D111'>"
+		"        <BaseClass>ts1:D11</BaseClass>"
+		"        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
+		"        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
+		"    </ECEntityClass>"
+		"    <ECEntityClass typeName='D211'>"
+		"        <BaseClass>ts1:D21</BaseClass>"
+		"        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
+		"        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
+		"    </ECEntityClass>"
+		"</ECSchema>",true);
+
+	bool asserted = false;
+	AssertSchemaImport(asserted, ecdb, thirdSchema);
+	ASSERT_FALSE(asserted);
+
+	ecdb.Schemas().CreateECClassViewsInDb();
+	ecdb.SaveChanges();
+	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -7100,6 +7174,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7139,6 +7217,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7179,6 +7261,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' >"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7216,6 +7302,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -7267,6 +7357,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -7318,6 +7412,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+					"    <ECCustomAttributes>"
+					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+					"        </ForeignKeyConstraint>"
+					"    </ECCustomAttributes>"
                     "    <Source cardinality='(1,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -8134,6 +8232,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
+						"    <ECCustomAttributes>"
+						"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+						"        </ForeignKeyConstraint>"
+						"    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"

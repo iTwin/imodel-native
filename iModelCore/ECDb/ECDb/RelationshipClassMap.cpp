@@ -1743,10 +1743,10 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 		return nullptr;
 		}
 
-	ClassMapCP firstClassMap = itor->second;
+	ClassMapCP rootClassMap = itor->second;
 	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-	if (!firstClassMap->GetMapStrategy().IsTablePerHierarchy() ||
-		firstClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+	if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+		rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
 		{
 		return table.CreateColumn(colName, colType, position, colKind, persType);
 		}
@@ -1755,7 +1755,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 	ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
 	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
 	ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
-	return firstClassMap->GetColumnFactory().AllocateDataColumn(
+	return rootClassMap->GetColumnFactory().AllocateDataColumn(
 		*constraintECInstanceIdProp,
 		colType,
 		DbColumn::CreateParams(colName.c_str()),

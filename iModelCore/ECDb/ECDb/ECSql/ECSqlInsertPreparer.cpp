@@ -225,7 +225,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
 			{
 			if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap.GetType()))
 				{
-				return propertyMap.GetAs<SingleColumnDataPropertyMap>()->GetColumn().IsInOverflow();
+				return true;
 				}
 
 			return Enum::Contains(PropertyMap::Type::System, propertyMap.GetType());
