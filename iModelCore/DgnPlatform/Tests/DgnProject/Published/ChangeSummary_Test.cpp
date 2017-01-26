@@ -37,7 +37,7 @@ protected:
     int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 
 public:
-    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.bim") {}
+    ChangeSummaryTestFixture() {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromCurrentTransaction.bim");
 
     ChangeSummary changeSummary(*m_db);
 
@@ -215,7 +215,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
-    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
@@ -403,9 +403,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromSavedTransactions.bim");
 
-    DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 0, 0, 0);
 
     m_db->SaveChanges();
 
@@ -521,11 +521,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ValidateInstanceIterator.bim");
 
     PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
-    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
 
     ChangeSummary changeSummary(*m_db);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -551,7 +551,7 @@ extern IECInstancePtr CreateStartupCompanyInstance(ECSchemaCR startupSchema);
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"RelationshipChangesFromCurrentTransaction.bim");
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
@@ -752,13 +752,13 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChildRelationshipChanges.bim");
 
     PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
-    DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
-    DgnElementId childElementId = InsertPhysicalElement(*csModel, csCategoryId, 1, 1, 1);
+    DgnElementId parentElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
+    DgnElementId childElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 1, 1, 1);
     DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     m_db->SaveChanges();
@@ -843,7 +843,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryChangedElements.bim");
     m_db->SaveChanges();
 
     ChangeSummary changeSummary(*m_db);
@@ -851,7 +851,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, ii, 0, 0);
+        DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, ii, 0, 0);
         insertedElements.insert(elementId);
         }
 
@@ -893,24 +893,25 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryMultipleSessions.bim");
     
     int nSessions = 5;
     int nTransactionsPerSession = 5;
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     for (int ii = 0; ii < nSessions; ii++)
         {
-        OpenDgnDb();
+        OpenDgnDb(fileName);
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {
-            InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, ii, jj, 0);
+            InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, ii, jj, 0);
             m_db->SaveChanges();
             }
 
         CloseDgnDb();
         }
 
-    OpenDgnDb();
+    OpenDgnDb(fileName);
 
     TxnManager::TxnId startTxnId(TxnManager::SessionId(1), 0); // First session, First transaction
     ChangeSummary changeSummary(*m_db);

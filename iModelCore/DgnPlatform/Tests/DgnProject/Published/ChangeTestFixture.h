@@ -5,6 +5,8 @@
 
 #include "DgnHandlersTests.h"
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
@@ -12,29 +14,28 @@
 struct ChangeTestFixture : public DgnDbTestFixture
 {
 protected:
-    BeFileName m_testFileName;
-    bool    m_wantTestDomain;
 
     PhysicalModelPtr m_defaultModel;
 
-    CodeSpecId m_defaultCodeSpecId;
     CodeSpecCPtr m_defaultCodeSpec;
 
-    virtual void _SetupDgnDb();
-
-    void SetupDgnDb() { _SetupDgnDb();}
-    void OpenDgnDb();
+    void SetupDgnDb(BeFileName seedFileName, WCharCP newFileName);
+    void OpenDgnDb(BeFileName fileName);
     void CloseDgnDb();
-        
     DgnCategoryId InsertCategory(Utf8CP categoryName);
-    DgnElementId InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);
-    
-    void CreateDefaultView(DgnModelId defaultModelId);
-    void UpdateDgnDbExtents();
+    static DgnElementId InsertPhysicalElement(DgnDbR db, PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);
+
+    static void CreateDefaultView(DgnDbR db);
 
 public:
-    ChangeTestFixture(WCharCP testFileName, bool wantTestDomain=false);
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
+    static CodeSpecId m_defaultCodeSpecId;
+
+    ChangeTestFixture(){}
     virtual ~ChangeTestFixture() {}
+    static void SetUpTestCase();
+
     void SetUp() override {}
     void TearDown() override { if (m_db.IsValid()) m_db->SaveChanges("Saving DgnDb at end of test"); }
 };
+
