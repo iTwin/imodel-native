@@ -370,7 +370,6 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
-        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClientTestAssets" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
