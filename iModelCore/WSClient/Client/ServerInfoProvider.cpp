@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -25,6 +25,15 @@ m_serverInfoUpdated(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ServerInfoProvider::~ServerInfoProvider()
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Adam.Eichelkraut       01/2017
+* @remarks Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
++---------------+---------------+---------------+---------------+---------------+------*/
+void ServerInfoProvider::EnableWsgServerHeader(bool enable)
+    {
+    m_enableWsgServerHeader = enable;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
@@ -156,7 +165,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
 
     return request.PerformAsync()->Then<WSInfoHttpResult>([=] (Http::Response& response)
         {
-        WSInfo info(response);
+        WSInfo info(response, m_enableWsgServerHeader);
         if (info.IsValid())
             {
             return WSInfoHttpResult::Success(info);
