@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -35,15 +35,16 @@ m_type(serverType)
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
+* @remarks Note: Temporary useWsgVersionHeader until WSG defect 651740 is fixed for BIMReviewSharing
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSInfo::WSInfo(Http::ResponseCR response) : WSInfo()
+WSInfo::WSInfo(Http::ResponseCR response, bool useWsgVersionHeader) : WSInfo()
     {
     if (!response.IsSuccess())
         {
         return;
         }
 
-    ParseHeaders(response.GetHeaders(), m_type, m_serverVersion, m_webApiVersion);
+    ParseHeaders(response.GetHeaders(), useWsgVersionHeader, m_type, m_serverVersion, m_webApiVersion);
     if (IsValid())
         {
         return;
@@ -98,10 +99,20 @@ Utf8String WSInfo::ToString() const
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
+* @remarks Note: Temporary useWsgVersionHeader until WSG defect 651740 is fixed for BIMReviewSharing
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
+void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, bool useWsgVersionHeader, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
     Utf8CP serverHeader = headers.GetServer();
+
+    //Try the WsgServer header, if not available, resort back to Server header.
+    if (useWsgVersionHeader)
+        {
+        serverHeader = headers.GetValue("WsgServer");
+        if (nullptr == serverHeader)
+            serverHeader = headers.GetServer();
+        }
+
     if (nullptr == serverHeader)
         {
         return;
