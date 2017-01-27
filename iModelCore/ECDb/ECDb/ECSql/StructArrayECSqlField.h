@@ -19,6 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct JsonECSqlValue : public IECSqlValue
     {
 private:
+    static rapidjson::Value const* s_nullJson;
+
     ECDbCR m_ecdb;
     rapidjson::Value const& m_json;
     ECSqlColumnInfo m_columnInfo;
@@ -30,11 +32,13 @@ private:
     IECSqlStructValue const& _GetStruct() const override;
     IECSqlArrayValue const& _GetArray() const override;
 
+
 protected:
     JsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
     rapidjson::Value const& GetJson() const { return m_json; }
 
     ECDbCR GetECDb() const { return m_ecdb; }
+    static rapidjson::Value const& GetNullJson();
 
 public:
     virtual ~JsonECSqlValue() {}

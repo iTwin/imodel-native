@@ -87,12 +87,15 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(E
 // JsonECSqlValue
 //************************************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+rapidjson::Value const* JsonECSqlValue::s_nullJson = nullptr;
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JsonECSqlValue::_IsNull() const
-    {
-    return GetJson().IsNull();
-    }
+bool JsonECSqlValue::_IsNull() const { return GetJson().IsNull(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
@@ -110,6 +113,18 @@ IECSqlStructValue const& JsonECSqlValue::_GetStruct() const
     {
     LOG.error("Type mismatch. Cannot call GetStruct on non-struct IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetStruct();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+rapidjson::Value const& JsonECSqlValue::GetNullJson()
+    {
+    if (s_nullJson == nullptr)
+        s_nullJson = new rapidjson::Value(rapidjson::kNullType);
+
+    return *s_nullJson;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -322,9 +337,18 @@ StructJsonECSqlValue::StructJsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& 
     {
     for (ECPropertyCP structMemberProp : structClass.GetProperties(true))
         {
-        rapidjson::Value const& val = json[structMemberProp->GetName().c_str()];
+        rapidjson::Value const* memberJson = &GetNullJson();
+
+        if (!json.IsNull())
+            {
+            BeAssert(json.IsObject());
+            rapidjson::Value::ConstMemberIterator it = json.FindMember(structMemberProp->GetName().c_str());
+            if (it != json.MemberEnd())
+                memberJson = &it->value;
+            }
+
         ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(GetColumnInfo(), *structMemberProp);
-        m_members.push_back(JsonECSqlValueFactory::CreateValue(ecdb, val, memberColInfo));
+        m_members.push_back(JsonECSqlValueFactory::CreateValue(ecdb, *memberJson, memberColInfo));
         }
     }
 
@@ -367,8 +391,11 @@ IECSqlValue const& StructJsonECSqlValue::_GetValue(int columnIndex) const
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo)
-    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlArrayValue(), m_jsonIterator(json.End()), m_jsonIteratorIndex(-1), m_currentElement(nullptr), m_structArrayElementType(nullptr)
+    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlArrayValue(), m_jsonIteratorIndex(-1), m_currentElement(nullptr), m_structArrayElementType(nullptr)
     {
+    if (json.IsNull())
+        return;
+
     BeAssert(GetJson().IsArray());
 
     ECTypeDescriptor const& dataType = GetColumnInfo().GetDataType();
@@ -399,6 +426,12 @@ void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
     {
     if (onInitializingIterator)
         {
+        if (GetJson().IsNull())
+            {
+            BeAssert(m_currentElement == nullptr);
+            return;
+            }
+
         m_jsonIterator = GetJson().Begin();
         m_jsonIteratorIndex = 0;
         }
@@ -425,6 +458,10 @@ void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
 //---------------------------------------------------------------------------------------
 bool ArrayJsonECSqlValue::_IsAtEnd() const
     {
+    if (GetJson().IsNull())
+        return true;
+
+    BeAssert(GetJson().IsArray());
     return m_jsonIterator == GetJson().End();
     }
 
@@ -453,8 +490,6 @@ StructArrayECSqlField::StructArrayECSqlField(ECSqlStatementBase& ecsqlStatement,
 ECSqlStatus StructArrayECSqlField::_OnAfterStep()
     {
     DoReset();
-
-    BeAssert(m_json.IsArray());
 
     if (GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex))
         m_json.SetArray();

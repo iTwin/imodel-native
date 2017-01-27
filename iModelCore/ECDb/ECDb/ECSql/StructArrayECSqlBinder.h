@@ -32,14 +32,16 @@ private:
             //only relevant if binder is an array binder
             std::unique_ptr<JsonValueBinder> m_currentArrayElementBinder;
             
-            void InitJsonValue();
             //only relevant if binder is a struct binder
             IECSqlBinder& CreateStructMemberBinder(ECN::ECPropertyCR);
             //only relevant if binder is an array binder
-            IECSqlBinder& MoveCurrentArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo, rapidjson::Value& newArrayElementJson);
+            IECSqlBinder& MoveCurrentArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo);
             
             ECSqlStatus FailIfTypeMismatch(ECN::PrimitiveType boundType) const;
             ECSqlStatus FailIfInvalid() const;
+
+            void Reset(rapidjson::Value& newJsonValue) { m_json = &newJsonValue; Reset(); }
+            void Reset();
 
         public:
             JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator);
@@ -68,7 +70,7 @@ private:
         };
 
     int m_sqliteIndex = -1;
-    rapidjson::Document m_json = rapidjson::Document(rapidjson::kArrayType);
+    rapidjson::Document m_json;
     std::unique_ptr<JsonValueBinder> m_rootBinder = nullptr;
 
     void Initialize();
