@@ -191,8 +191,8 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
       size_t strL = (nullptr == str) ? 0 : strlen(str);
       if (strL < 1 || cap < 1)
           return index;
-      if (strL > cap)
-          strL = cap;
+      if (static_cast<int>(strL) > cap)
+          strL = static_cast<size_t>(cap);
       memcpy(static_cast<void*>(buf + index), str, strL);
       index += strL;
       buf[index] = '\0';     

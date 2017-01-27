@@ -514,7 +514,7 @@ size_t NumericFormat::InsertChar(CharP buf, size_t index, char c, int num)
     {
     if (nullptr != buf && 0 < num)
         {
-        for(size_t i = 0; i < num; buf[index++] = c, i++){}
+        for(size_t i = 0; i < static_cast<size_t>(num); buf[index++] = c, i++){}
         }
     return index;
     }
@@ -1280,7 +1280,7 @@ Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero)
+Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero, int prec)
     {
     NumericFormat fmt("Triad");
     Utf8CP blank = FormatConstant::BlankString();
@@ -1293,7 +1293,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
 
     if (!m_midAssigned)
         {
-        //fmt.SetDecimalPrecision(m_decPrecision);
+        fmt.SetPrecisionByValue(prec);
         return fmt.FormatDouble(GetWhole());
         }
 
@@ -1310,13 +1310,13 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
             mid = fmt.FormatDouble(m_midValue);
         if (m_lowValue > 0.0 || includeZero)
             {
-            //fmt.SetDecimalPrecision(m_decPrecision);
+            fmt.SetPrecisionByValue(prec);
             low = fmt.FormatDouble(m_lowValue);
             }
         }
     else if (m_midValue > 0.0 || includeZero)
         {
-        //fmt.SetDecimalPrecision(m_decPrecision);
+        fmt.SetPrecisionByValue(prec);
         mid = fmt.FormatDouble(m_midValue);
         }
 
@@ -1349,6 +1349,9 @@ void QuantityTriad::Init()
     m_topUnit = nullptr;
     m_midUnit = nullptr;
     m_lowUnit = nullptr;
+    m_topUnitSymbol = nullptr;
+    m_midUnitSymbol = nullptr;
+    m_lowUnitSymbol = nullptr;
     m_problemCode = FormatProblemCode::NoProblems;
     }
 
@@ -1516,15 +1519,15 @@ QuantityTriad::QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit = nu
         }
     }
 
-Utf8String QuantityTriad::FormatQuantTriad(Utf8CP space, bool includeZero)
+Utf8String QuantityTriad::FormatQuantTriad(Utf8CP space, bool includeZero, int prec)
     {
     if (IsProblem())
         return FormatConstant::FailedOperation();
 
-    Utf8CP topUOM = GetTopUOM();
-    Utf8CP midUOM = GetMidUOM();
-    Utf8CP lowUOM = GetLowUOM();
-    return FormatTriad(topUOM, midUOM, lowUOM, space, includeZero);
+    Utf8CP topUOM = (nullptr == m_topUnitSymbol) ? GetTopUOM(): m_topUnitSymbol;
+    Utf8CP midUOM = (nullptr == m_midUnitSymbol) ? GetMidUOM() : m_midUnitSymbol;
+    Utf8CP lowUOM = (nullptr == m_lowUnitSymbol) ? GetLowUOM() : m_lowUnitSymbol;
+    return FormatTriad(topUOM, midUOM, lowUOM, space, includeZero, prec);
     }
    
 

@@ -591,7 +591,7 @@ public:
     double GetMidValue() { return m_midValue; }
     double GetlowValue() { return m_lowValue; }
     UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
-    UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero);
+    UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero, int decPrec);
     };
 
 struct QuantityTriad : NumericTriad
@@ -601,11 +601,22 @@ private:
     UnitCP m_topUnit;
     UnitCP m_midUnit;
     UnitCP m_lowUnit;
+    Utf8CP m_topUnitSymbol;
+    Utf8CP m_midUnitSymbol;
+    Utf8CP m_lowUnitSymbol;
     FormatProblemCode m_problemCode;
+
     void Init();
     QuantityTriad();
     bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
 public:
+
+    Utf8CP SetTopUnitSymbol(Utf8CP symbol) { return m_topUnitSymbol = symbol; }
+    Utf8CP GetTopUnitSymbol() { return m_topUnitSymbol; }
+    Utf8CP SetMidUnitSymbol(Utf8CP symbol) { return m_midUnitSymbol = symbol; }
+    Utf8CP GetMidUnitSymbol() { return m_midUnitSymbol; }
+    Utf8CP SetLowUnitSymbol(Utf8CP symbol) { return m_lowUnitSymbol = symbol; }
+    Utf8CP GetLowUnitSymbol() { return m_lowUnitSymbol; }
 
     UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
     UNITS_EXPORT QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit, UnitCP lowUnit);
@@ -613,7 +624,7 @@ public:
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     FormatProblemCode GetProblemCode() { return m_problemCode; }
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-    UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, bool includeZero);
+    UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, bool includeZero, int prec);
     Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
     Utf8CP GetMidUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
     Utf8CP GetLowUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }

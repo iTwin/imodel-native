@@ -31,17 +31,36 @@ TEST(FormattingTest, FormattingUOM)
     UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
     UnitRegistry::Instance().AddSynonym("YRD", "YARD");
     UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
+    UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
+    UnitCP yrdsdUOM = UnitRegistry::Instance().LookupUnit("YRDS");
+    
     UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
     UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
     QuantityPtr len = Quantity::Create(22.7, "M");
     QuantityTriad qtr = QuantityTriad(*len, yrdUOM, ftUOM, inUOM);
-    EXPECT_STREQ ("24_YRD 2_FT 6_IN", qtr.FormatQuantTriad("_", false).c_str());
-
-    EXPECT_STREQ ("24 YRD 2 FT 6 IN", qtr.FormatQuantTriad(" ", false).c_str());
+    EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", false, 2).c_str());
+    EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", false, 2).c_str());
     EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract").c_str());
     EXPECT_STREQ ("74 1/2", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
     EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
     EXPECT_STREQ ("24 7/8", NumericFormat::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormat::RefFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
+
+    QuantityPtr ang = Quantity::Create(135.45, "ARC_DEG");
+    UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
+    UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
+    UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
+
+    QuantityTriad atr = QuantityTriad(*ang, degUOM, minUOM, secUOM);
+    LOG.infov(u8"135.45\xB0 = %s", NumericFormat::RefFormatQuantity(*ang, degUOM, "fract32").c_str());
+    LOG.infov(u8"135.45\xB0 = %s", atr.FormatQuantTriad("_", false, 4).c_str());
+    atr.SetTopUnitSymbol(u8"\xB0");
+    atr.SetMidUnitSymbol(u8"'");
+    atr.SetLowUnitSymbol(u8"\"");
+    LOG.infov(u8"135.45\xB0 = %s", atr.FormatQuantTriad("", false, 4).c_str());
+
+  /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
+    reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);*/
 
 #if defined FORMAT_DEBUG_PRINT
 
@@ -481,9 +500,9 @@ TEST(FormattingTest, Simple)
 
     NumericTriad tr = NumericTriad(1000.0, (size_t)3, (size_t)12);
 
-    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
-    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
-    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
+    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false, 2).c_str());
+    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false, 2).c_str());
+    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false, 2).c_str());
 
 #if defined FORMAT_DEBUG_PRINT
     size_t ucode = curs.GetNextSymbol();
