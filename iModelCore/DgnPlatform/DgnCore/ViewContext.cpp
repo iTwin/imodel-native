@@ -392,10 +392,10 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    if (!m_viewflags.m_weights)
+    if (!m_viewflags.ShowWeights())
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewflags.m_transparency)
+    if (!m_viewflags.ShowTransparency())
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -689,24 +689,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                    07/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicParams::Init()
-    {
-    m_isFilled          = false;
-    m_isBlankingRegion  = false;
-    m_linePixels        = (uint32_t) LinePixels::Solid;
-    m_rasterWidth       = 1;
-    m_lineColor         = ColorDef::Black();
-    m_fillColor         = ColorDef::Black();
-    m_trueWidthStart    = 0.0;
-    m_trueWidthEnd      = 0.0;
-    m_lineTexture       = nullptr;
-    m_material          = nullptr;
-    m_gradient          = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
@@ -918,32 +900,6 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_pattern               = rhs.m_pattern;
 
     return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParams::GeometryParams()
-    {
-    m_resolved = false;
-    m_elmPriority = 0;
-    m_netPriority = 0;    
-    m_weight = 0;
-    m_fillDisplay = FillDisplay::Never;
-    m_elmTransparency = 0;             
-    m_netElmTransparency = 0;          
-    m_fillTransparency = 0;            
-    m_netFillTransparency = 0;         
-    m_geometryClass = DgnGeometryClass::Primary; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  1/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParams::GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
-    {
-    m_categoryId = categoryId;
-    m_subCategoryId = subCategoryId;
     }
 
 //---------------------------------------------------------------------------------------

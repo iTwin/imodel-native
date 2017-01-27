@@ -876,7 +876,7 @@ static bool Cook(ViewContextR context, Render::GraphicBuilderR graphic, Render::
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_WantAreaPatterns()
     {
-    return GetViewFlags().m_patterns;
+    return GetViewFlags().ShowPatterns();
     }
 
 /*---------------------------------------------------------------------------------**//**
