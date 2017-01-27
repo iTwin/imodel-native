@@ -197,7 +197,7 @@ private:
 
     ECWrappedEnabler (ECEnablerR enabler) : ECEnabler (enabler.GetClass(), NULL), m_enabler (&enabler) { }
 
-    virtual Utf8CP                  _GetName() const override { return m_enabler->GetName(); }
+    Utf8CP                  _GetName() const override { return m_enabler->GetName(); }
     ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override{ return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
     ECObjectsStatus         _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override{ return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
     uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const override{ return m_enabler->GetFirstPropertyIndex (parentIndex); }

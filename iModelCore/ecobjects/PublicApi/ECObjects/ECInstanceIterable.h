@@ -97,7 +97,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
             while (NULL == *m_adapteriterator);
             }
 
-        virtual typename IInstanceCollectionIteratorAdapter<value_type>::reference GetCurrent () override
+        typename IInstanceCollectionIteratorAdapter<value_type>::reference GetCurrent () override
             {
             m_ptr = std::shared_ptr<value_type>(new value_type(*m_adapteriterator));
             return *m_ptr;
@@ -141,12 +141,12 @@ public:
         return new InstanceCollectionAdapterImpl(collection);
         }
 
-    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator begin() const override
+    typename IInstanceCollectionAdapterEx<value_type>::const_iterator begin() const override
         {
         return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
         }
 
-    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator end() const override
+    typename IInstanceCollectionAdapterEx<value_type>::const_iterator end() const override
         {
         return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
         }
@@ -175,11 +175,8 @@ struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* con
         {
         typename bvector<RefCountedPtr<T_Instance> >::const_iterator    m_iter;
         T_ReturnType*                                                   m_value;
-        virtual void                MoveToNext() override
-            {
-            ++m_iter;
-            }
-        virtual bool                IsDifferent(IInstanceCollectionIteratorAdapter<T_ReturnType* const> const & iter) const override
+        void MoveToNext() override {++m_iter;}
+        bool IsDifferent(IInstanceCollectionIteratorAdapter<T_ReturnType* const> const & iter) const override
             {
             ECInstancePVectorIterator const* rhsImpl = static_cast<ECInstancePVectorIterator const*> (&iter);
             if (NULL == rhsImpl)//TODO evaluate performance of this cast. Since only public facing collection do this it should be okay
@@ -187,7 +184,7 @@ struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* con
 
             return rhsImpl->m_iter != m_iter;
             }
-        virtual typename IInstanceCollectionIteratorAdapter<T_ReturnType* const>::reference GetCurrent() override
+        typename IInstanceCollectionIteratorAdapter<T_ReturnType* const>::reference GetCurrent() override
             {
             m_value = m_iter->get();
             return m_value;

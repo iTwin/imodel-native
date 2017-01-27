@@ -74,9 +74,6 @@
     <ClCompile Include="ECCustomAttribute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nonport\FileUtilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StandaloneECRelationshipInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -364,9 +361,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\Units.h">
       <Filter>ECUnits\Header Files</Filter>
     </ClInclude>
@@ -377,9 +371,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SchemaXml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\ecprovider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h">

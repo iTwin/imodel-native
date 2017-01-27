@@ -36,7 +36,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir>$(Configuration)\</OutDir>
+    <OutDir>$(LOCALAPPDATA)\temp\$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild ECObjectsNative </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild ECObjectsNative </NMakeReBuildCommandLine>
@@ -78,7 +78,6 @@
     <ClCompile Include="ExpressionContext.cpp" />
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
-    <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="presentation\auicommand.cpp" />
     <ClCompile Include="presentation\auievent.cpp" />
@@ -129,7 +128,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonContainer.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
@@ -144,7 +142,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\ecprovider.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
