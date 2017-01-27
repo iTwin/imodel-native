@@ -341,7 +341,12 @@ void EXP_LVL9 CSazmeaS (struct cs_Csprm_ *csprm)
 			{
 				csprm->min_ll [LAT] = cs_Km90;
 			}
+#ifdef GEOCOORD_ENHANCEMENT
+            // This line was definitely a bug in CSMAP
+		    csprm->max_ll [LAT] += cs_K30;
+#else
 			csprm->max_ll [LNG] += cs_K30;
+#endif
 			if (csprm->max_ll [LAT] > cs_K90)
 			{
 				csprm->max_ll [LAT] = cs_K90;
