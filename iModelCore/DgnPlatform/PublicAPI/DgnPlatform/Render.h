@@ -541,6 +541,7 @@ struct LineStyleParams
     //! Compare two LineStyleParams.
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
     void SetScale(double inScale) {modifiers |= 0x01; scale = inScale;}
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
 };
 
 //=======================================================================================
@@ -598,13 +599,12 @@ private:
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
     RotMatrix   m_planeByRows;
-    TexturePtr  m_texture;
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnDbR db);
 
-    void Clear() {m_lStyle = nullptr; m_texture = nullptr; }
+    void Clear() {m_lStyle = nullptr;}
     void Init(ILineStyleCP);
 
     DGNPLATFORM_EXPORT bool operator==(LineStyleSymbCR rhs) const; //!< Compare two LineStyleSymb.
@@ -625,7 +625,6 @@ public:
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
-    Texture* GetTexture() const {return m_texture.get();}
 
     bool IsScaled() const {return m_options.scale;}
     bool IsAutoPhase() const {return m_options.autoPhase;}
@@ -701,10 +700,11 @@ public:
 
     DgnStyleId GetStyleId() const {return m_styleId;}
     LineStyleParamsCP GetStyleParams() const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
+    LineStyleParamsR GetStyleParamsR() {return m_styleParams;}
     LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
     LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
 
-    DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
+    DGNPLATFORM_EXPORT void Resolve(DgnDbR); // Resolve effective values using the supplied DgnDb...
  };
 
 struct ISprite;
@@ -857,7 +857,7 @@ public:
     void SetCategoryId(DgnCategoryId categoryId, bool clearAppearanceOverrides = true) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId, bool clearAppearanceOverrides = true) {m_subCategoryId = subCategoryId; if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
     void SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
-    void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
+    void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo; if (styleInfo) m_resolved = false;}
     void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
     void SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
     void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_appearanceOverrides.m_bgFill = false; m_fillColor = color;}
@@ -943,10 +943,10 @@ public:
     bool HasStrokedLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return (m_styleInfo.IsValid() ? (nullptr != m_styleInfo->GetLineStyleSymb().GetILineStyle() && m_styleInfo->GetLineStyleSymb().GetUseStroker()) : false);}
 
     //! Get whether this GeometryParams contains information that needs to be transformed (ex. to apply local to world).
-    bool IsTransformable() const {return m_pattern.IsValid();} // NEEDSWORK: LineStyleInfo???
+    bool IsTransformable() const {return m_pattern.IsValid() || m_styleInfo.IsValid();}
 
     //! Transform GeometryParams data like PatternParams and LineStyleInfo.
-    void ApplyTransform(TransformCR transform) {if (m_pattern.IsValid()) m_pattern->ApplyTransform(transform);} // NEEDSWORK: LineStyleInfo???
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
 };
 
 //=======================================================================================

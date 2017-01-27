@@ -496,17 +496,19 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2016
 //---------------------------------------------------------------------------------------
-StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, GeometryParamsCR geomParams)
+StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR context, LineStyleSymbR lsSymb, GeometryParamsCR geomParams)
     {
-    uint32_t weight = (m_usesSymbolWeight || !viewContext.GetViewFlags().m_weights ? 0 : geomParams.GetWeight()); // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
+    uint32_t weight = (m_usesSymbolWeight || !context.GetViewFlags().m_weights ? 0 : geomParams.GetWeight()); // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
     uint32_t modifiers = 0;
-    if (lineStyleSymb.IsScaled())
+
+    if (lsSymb.IsScaled())
         modifiers |= STYLEMOD_SCALE;
-    if (lineStyleSymb.HasOrgWidth())
+
+    if (lsSymb.HasOrgWidth())
         modifiers |= STYLEMOD_SWIDTH;
 
     // Dash and gap scales purposely omitted since the MicroStation user interface does not provide any way to set them.
-    TextureParams params(weight, modifiers, lineStyleSymb.GetScale(), lineStyleSymb.GetOriginWidth());
+    TextureParams params(weight, modifiers, lsSymb.GetScale(), lsSymb.GetOriginWidth());
 
     if (m_firstTextureInitialized)
         {
@@ -521,98 +523,143 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR vi
             }
         }
 
-    if (LsDefinition::GenerateTexture(tDescr, viewContext, lineStyleSymb, geomParams) != BSISUCCESS)
+    if (LsDefinition::GenerateTexture(tDescr, context, lsSymb, geomParams) != BSISUCCESS)
         return BSIERROR;
 
     m_textures[params] = tDescr;
+
     return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, GeometryParamsCR params) 
+Texture* LsDefinition::GetRasterTexture(double& textureWidth, ViewContextR context, GeometryParamsCR geomParams)
     {
     if (!m_lsComp.IsValid())
         return nullptr;
 
-    if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
-        {
-        if (!m_firstTextureInitialized)
-            {
-            uint8_t const* image;
-            Point2d        imageSize;
-            uint32_t       flags = 0;
-
-            m_firstTextureInitialized = true;
-            if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
-                {
-                if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
-                    {
-                    size_t          imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
-                    bool            invert     = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
-
-                    bvector<uint8_t>   alpha (imageBytes);
-
-                    for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
-                        alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
-#endif
-                    }
-                else
-                    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
-#endif
-                    }
-                }
-            }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
-        if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
-            lineStyleSymb.SetWidth (m_textureWidth * __unused);
-    
-        return m_texture.get();
-#endif
+    if (LsComponentType::RasterImage != m_lsComp->GetComponentType())
         return nullptr;
+
+    LineStyleInfoCP lsInfo = geomParams.GetLineStyle();
+
+    if (nullptr == lsInfo)
+        return nullptr;
+
+    LineStyleSymb lsSymb = lsInfo->GetLineStyleSymb();
+    textureWidth = 0.0;
+    if (SUCCESS == m_lsComp->_GetTextureWidth(textureWidth) && lsSymb.IsScaled())
+        textureWidth *= lsSymb.GetScale();
+
+    TextureParams params(0, 0, 0.0, 0.0);
+
+    if (m_firstTextureInitialized)
+        {
+        ParamsToTexture_t::iterator tDescrIter = m_textures.find(params);
+
+        if (tDescrIter == m_textures.end())
+            return nullptr;
+
+        TextureDescr tDescr = tDescrIter->second;
+
+        return tDescr.m_texture.get();
         }
 
-    if (forceTexture)
+    m_firstTextureInitialized = true;
+
+    uint8_t const* image;
+    Point2d        imageSize;
+    uint32_t       flags = 0;
+
+    if (SUCCESS != m_lsComp->_GetRasterTexture(image, imageSize, flags))
+        return nullptr;
+
+    TextureDescr tDescr;
+
+    if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))
         {
-        switch(viewContext.GetDrawPurpose())
+        size_t           imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
+        bool             invert = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
+        bvector<uint8_t> alpha(imageBytes);
+
+        for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
+            alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+#endif
+        }
+    else
+        {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+#endif
+        }
+
+    return tDescr.m_texture.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Texture* LsDefinition::GetGeometryTexture(double& textureWidth, ViewContextR context, GeometryParamsCR params)
+    {
+    if (!m_lsComp.IsValid())
+        return nullptr;
+
+    if (LsComponentType::RasterImage == m_lsComp->GetComponentType())
+        return nullptr; // Shouldn't be calling this method... 
+
+    switch (context.GetDrawPurpose())
+        {
+        case DrawPurpose::CreateScene:
+        case DrawPurpose::Progressive:
+        case DrawPurpose::Plot:
+        case DrawPurpose::Dynamics:
+        case DrawPurpose::Redraw:
+        case DrawPurpose::Heal:
             {
-            case DrawPurpose::CreateScene:
-            case DrawPurpose::Progressive:
-            case DrawPurpose::Plot:
-            case DrawPurpose::Dynamics:
-            case DrawPurpose::Redraw:
-            case DrawPurpose::Heal:
-                {
-                TextureDescr tDescr;
+            LineStyleInfoCP lsInfo = params.GetLineStyle();
 
-                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, params) != BSISUCCESS)
-                    return nullptr;
-
-                //  Do not apply the scaling factor here.  It must be applied when generating the texture, not when applying the texture.
-                //  Line widths should not be scaled, but scaling the result texture would scale the line widths.
-                if (tDescr.m_texture.IsValid() && tDescr.m_hasTextureWidth)
-                    lineStyleSymb.SetWidth (tDescr.m_textureWidth);
-
-                return tDescr.m_texture.get();
-                }
-      
-            default:
-                {
-                //  Very rare to get here. It does happen if checkstop stops us from creating the texture and then the user tries to pick the element.
+            if (nullptr == lsInfo)
                 return nullptr;
-                }
+
+            TextureDescr   tDescr;
+            LineStyleSymb  lsSymb = lsInfo->GetLineStyleSymb();
+            GeometryParams strokeParams(params);
+
+            strokeParams.SetLineStyle(nullptr);
+
+            if (SUCCESS != GetGeometryTexture(tDescr, context, lsSymb, strokeParams))
+                return nullptr;
+
+            // Do not apply the scaling factor here. It must be applied when generating the texture, not when applying the texture.
+            // Line widths should not be scaled, but scaling the result texture would scale the line widths.
+            textureWidth = (tDescr.m_texture.IsValid() && tDescr.m_hasTextureWidth ? tDescr.m_textureWidth : 0.0);
+
+            return tDescr.m_texture.get();
+            }
+      
+        default:
+            {
+            // Very rare to get here. It does happen if checkstop stops us from creating the texture and then the user tries to pick the element.
+            return nullptr;
             }
         }
+    }
 
-    return nullptr;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Texture* LsDefinition::_GetTexture(double& textureWidth, ViewContextR context, GeometryParamsCR params, bool createGeometryTexture)
+    {
+    Texture* texture = GetRasterTexture(textureWidth, context, params);
+
+    if (nullptr == texture && createGeometryTexture)
+        texture = GetGeometryTexture(textureWidth, context, params);
+
+    return texture;
     }
 
 /*---------------------------------------------------------------------------------**//**

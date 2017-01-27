@@ -785,12 +785,16 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
                 }
             else
                 {
-                m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                double       textureWidth = 0.0;
+                ILineStyleCP currLStyle = lsSymb.GetILineStyle();
+
+                if (nullptr != currLStyle)
+                    m_lineTexture = (const_cast<ILineStyleP> (currLStyle))->_GetTexture(textureWidth, context, elParams, false);
 
                 if (m_lineTexture.IsValid())
                     {
-                    m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
-                    m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
+                    m_trueWidthStart = textureWidth;
+                    m_trueWidthEnd = textureWidth;
                     }
                 }
             }
@@ -1075,6 +1079,9 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     else
         m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
 
+    if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
+        m_styleInfo->Resolve(dgnDb);
+
     m_resolved = true;
     }
 
@@ -1084,9 +1091,18 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
+    }
 
-    if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
-        m_styleInfo->Cook(context, *this);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
+    {
+    if (m_pattern.IsValid())
+        m_pattern->ApplyTransform(transform, options);
+
+    if (m_styleInfo.IsValid())
+        m_styleInfo->GetStyleParamsR().ApplyTransform(transform, options);
     }
 
 /*---------------------------------------------------------------------------------**//**

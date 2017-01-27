@@ -30,10 +30,10 @@ struct     ILineStyleComponent
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
     virtual double _GetLength() const = 0;
-    virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbCR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbCR, MSBsplineCurveCR, bool is3d, double zDepth) const = 0;
+    virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbR, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(LineStyleContextR, Render::LineStyleSymbR, DEllipse3dCR, bool is3d, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(LineStyleContextR, Render::LineStyleSymbR, MSBsplineCurveCR, bool is3d, double zDepth) const = 0;
 };
 
 //=======================================================================================
@@ -44,6 +44,7 @@ struct  ILineStyle
     virtual Utf8CP _GetName() const = 0;
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
+    virtual Render::Texture* _GetTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR, bool createGeometryTexture) = 0;
 };
 
 //=======================================================================================

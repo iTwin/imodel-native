@@ -1222,6 +1222,7 @@ static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineS
         double            zDepth = (is3d ? 0.0 : lsContext.GetGeometryParams().GetNetDisplayPriority());
         ChainTangentInfo  currEnd, prevEnd, nextEnd, currStart, nextStart, chainStart;
         LineStyleSymb     lsSymb = lsSymbIn;
+        bool              treatAsSingleSegment = lsSymb.IsTreatAsSingleSegment(); // Save initial value as this gets changed by arc/bcurve strokers...
 
         if (isComplex) // Support start/end tangents for linestyle w/thickness...
             {
@@ -1291,7 +1292,9 @@ static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineS
                     }
                 }
 
+            lsSymb.SetTreatAsSingleSegment(treatAsSingleSegment); // Restore initial value in case arc/bcurve strokers changed it...
             lsSymb.SetTangents(pStartTangent, pEndTangent);
+            lsSymb.CheckContinuationData();
 
             switch (curve->GetCurvePrimitiveType())
                 {
