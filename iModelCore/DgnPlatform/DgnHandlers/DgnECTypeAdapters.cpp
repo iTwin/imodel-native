@@ -1931,7 +1931,7 @@ bool PointFormatTypeAdapter::ExtractOptions(DPoint3d& pt, bool& useX, bool& useY
         {
         DgnModelP model = context.GetDgnModel();
         if (model)
-            pt.Subtract (model->GetDgnDb().Units().GetGlobalOrigin());
+            pt.Subtract (model->GetDgnDb().GeoLocation().GetGlobalOrigin());
         }
 
     return true;
@@ -2414,7 +2414,7 @@ bool DirectionAngleTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgn
         parser->SetBaseDirection(displayInfo.GetDirectionBaseDir());
         parser->SetClockwise(displayInfo.GetDirectionClockwise());
         parser->GetAngleParser().SetAngleMode(displayInfo.GetAngularMode());
-        DgnGCS* gcs = model->GetDgnDb().Units().GetDgnGCS();
+        DgnGCS* gcs = model->GetDgnDb().GeoLocation().GetDgnGCS();
         if (gcs)
             parser->SetTrueNorthValue(gcs->GetAzimuth());
 
@@ -2752,7 +2752,7 @@ bool CoordinatesTypeAdapter::_GetUnits (UnitSpecR units, IDgnECTypeAdapterContex
 bool CoordinatesTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const
     {
     GeometricModelCP model = context.GetDgnModel() ? context.GetDgnModel()->ToGeometricModel() : nullptr;
-    DPoint3d globalOrigin = model ? model->GetDgnDb().Units().GetGlobalOrigin() : DPoint3d::FromXYZ(0, 0, 0);
+    DPoint3d globalOrigin = model ? model->GetDgnDb().GeoLocation().GetGlobalOrigin() : DPoint3d::FromXYZ(0, 0, 0);
 
     DPoint3d pt;
     uint32_t componentIndex = context.GetComponentIndex();

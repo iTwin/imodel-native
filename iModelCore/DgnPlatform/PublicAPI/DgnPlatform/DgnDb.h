@@ -178,7 +178,7 @@ protected:
     DgnDomains          m_domains;
     DgnFonts            m_fonts;
     DgnLineStylesPtr    m_lineStyles;
-    DgnUnits            m_units;
+    DgnGeoLocation      m_geoLocation;
     DgnCodeSpecs        m_codeSpecs;
     TxnManagerPtr       m_txnManager;
     SessionManager      m_sessionManager;
@@ -243,7 +243,7 @@ public:
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
-    DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
+    DgnGeoLocation& GeoLocation() const {return const_cast<DgnGeoLocation&>(m_geoLocation);}  //!< The geolocation information for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.

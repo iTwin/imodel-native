@@ -1182,7 +1182,7 @@ enum
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
     {
     // Limit grid to project extents in 3d views, but ask the viewcontroller for its extents for 2d views.
-    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().Units().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
+    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().GeoLocation().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
     if (range.IsEmpty())
         return 0;
 

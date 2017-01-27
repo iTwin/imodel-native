@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ValueParse.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -634,7 +634,7 @@ void            DirectionParser::InitModelSettings(GeometricModelCR model)
     SetClockwise(displayInfo.GetDirectionClockwise());
     SetBaseDirection(displayInfo.GetDirectionBaseDir());
 
-    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS* dgnGcs = model.GetDgnDb().GeoLocation().GetDgnGCS();
     double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
     SetTrueNorthValue(azimuth);
     }
