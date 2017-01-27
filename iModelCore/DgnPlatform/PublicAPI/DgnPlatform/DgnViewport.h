@@ -245,8 +245,6 @@ public:
     //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
 
-    int GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
-
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private
     DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange(DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);

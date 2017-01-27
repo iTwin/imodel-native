@@ -884,14 +884,6 @@ int DgnViewport::GetDefaultIndexedLineWidth(int index)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnViewport::_GetIndexedLineWidth(int index) const
-    {
-    return GetDefaultIndexedLineWidth(index);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::AdjustColorForContrast(ColorDef thisColor, ColorDef againstColor) const
