@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmMark.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2060,9 +2060,9 @@ BENTLEYDTM_Public int bcdtmMark_internalPolygonPointsDtmObject
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
       {
-
        //  Scan Around dtmFeature Polygon And mark Internal Points And Create Internal Tptr List
-       
+       spnt = dtmFeatureP->dtmFeaturePts.firstPoint;
+       if (spnt == dtmP->nullPnt ) return(0);
        pp = spnt ;
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,pp,&sp)) goto errexit ; 
        do
