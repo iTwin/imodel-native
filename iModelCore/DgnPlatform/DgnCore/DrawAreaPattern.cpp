@@ -58,7 +58,7 @@ static double getTransformPatternScale(TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PatternParams::ApplyTransform(TransformCR transform)
+void PatternParams::ApplyTransform(TransformCR transform, uint32_t options)
     {
     if (m_symbolId.IsValid())
         {
