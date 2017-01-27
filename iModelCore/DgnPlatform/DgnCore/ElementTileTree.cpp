@@ -313,7 +313,7 @@ struct TileInstances : IGraphicBuilder::Instances
     void Init(MeshInstanceList const& meshInstances)
         {
         Clear();
-        m_meshTransforms.resize(meshInstances.size());
+        m_meshTransforms.reserve(meshInstances.size());
         for (auto const& meshInstance : meshInstances)
             m_meshTransforms.push_back(meshInstance.GetTransform());
 
@@ -536,7 +536,7 @@ enum class InstancingOptions
 
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
-static bool s_cacheInstances = false;
+static bool s_cacheInstances = true;
 static InstancingOptions s_instancingOptions = InstancingOptions::AsInstances;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
