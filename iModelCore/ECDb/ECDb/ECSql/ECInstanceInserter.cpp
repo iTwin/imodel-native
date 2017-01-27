@@ -247,7 +247,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init(instance.GetECDBuffer());
 
-    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, actualUserProvidedInstanceId);
+    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, actualUserProvidedInstanceId, true);
     //now add parameter values for regular properties
     for (ECValueBindingInfo const* bindingInfo : m_ecValueBindingInfos)
         {

@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo)
+std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo)
     {
     ECTypeDescriptor const& dataType = columnInfo.GetDataType();
     if (dataType.IsPrimitive())
@@ -64,7 +64,7 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata, ECN::ECStructClassCP structClass)
+std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata, ECN::ECStructClassCP structClass)
     {
     if (columnInfo.GetDataType().IsStruct())
         {
@@ -91,7 +91,7 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(E
 //+---------------+---------------+---------------+---------------+---------------+------
 bool JsonECSqlValue::_IsNull() const
     {
-    return GetJson().isNull();
+    return GetJson().IsNull();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ IECSqlArrayValue const& JsonECSqlValue::_GetArray() const
 //************************************************
 // PrimitiveJsonECSqlValue
 //************************************************
-PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata) 
+PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata)
     : JsonECSqlValue(ecdb, json, columnInfo), IECSqlPrimitiveValue(), m_datetimeMetadata(dateTimeMetadata)
     {}
 
@@ -133,11 +133,11 @@ PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const&
 //+---------------+---------------+---------------+---------------+---------------+------
 void const* PrimitiveJsonECSqlValue::_GetBlob(int* blobSize) const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Binary))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Binary))
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
 
     m_blobCache.Resize(0);
-    if (SUCCESS != ECJsonUtilities::JsonToBinary(m_blobCache, GetJson()))
+    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(m_blobCache, GetJson()))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetBlob failed for '%s'. Invalid JSON format for Blob.", GetColumnInfo().GetPropertyPath().ToString().c_str());
@@ -153,10 +153,10 @@ void const* PrimitiveJsonECSqlValue::_GetBlob(int* blobSize) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveJsonECSqlValue::_GetBoolean() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Boolean))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Boolean))
         return NoopECSqlValue::GetSingleton().GetBoolean();
 
-    return GetJson().asBool();
+    return GetJson().GetBool();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ uint64_t PrimitiveJsonECSqlValue::_GetDateTimeJulianDaysMsec(DateTime::Info& met
     {
     metadata = m_datetimeMetadata;
 
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_DateTime))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_DateTime))
         return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
 
     const double jd = _GetDateTimeJulianDays(metadata);
@@ -180,10 +180,10 @@ double PrimitiveJsonECSqlValue::_GetDateTimeJulianDays(DateTime::Info& metadata)
     {
     metadata = m_datetimeMetadata;
 
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_DateTime))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_DateTime))
         return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
 
-    return GetJson().asDouble();
+    return GetJson().GetDouble();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -191,10 +191,10 @@ double PrimitiveJsonECSqlValue::_GetDateTimeJulianDays(DateTime::Info& metadata)
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveJsonECSqlValue::_GetDouble() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Double))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Double))
         return NoopECSqlValue::GetSingleton().GetDouble();
 
-    return GetJson().asDouble();
+    return GetJson().GetDouble();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -202,10 +202,10 @@ double PrimitiveJsonECSqlValue::_GetDouble() const
 //+---------------+---------------+---------------+---------------+---------------+------
 int PrimitiveJsonECSqlValue::_GetInt() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Integer))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Integer))
         return NoopECSqlValue::GetSingleton().GetInt();
 
-    return GetJson().asInt();
+    return GetJson().GetInt();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -213,10 +213,10 @@ int PrimitiveJsonECSqlValue::_GetInt() const
 //+---------------+---------------+---------------+---------------+---------------+------
 int64_t PrimitiveJsonECSqlValue::_GetInt64() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Long))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Long))
         return NoopECSqlValue::GetSingleton().GetInt64();
 
-    return GetJson().asInt64();
+    return GetJson().GetInt64();
     }
 
 
@@ -225,10 +225,10 @@ int64_t PrimitiveJsonECSqlValue::_GetInt64() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP PrimitiveJsonECSqlValue::_GetText() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_String))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_String))
         return NoopECSqlValue::GetSingleton().GetText();
 
-    return GetJson().asCString();
+    return GetJson().GetString();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -236,11 +236,11 @@ Utf8CP PrimitiveJsonECSqlValue::_GetText() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point2d))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Point2d))
         return NoopECSqlValue::GetSingleton().GetPoint2d();
 
     DPoint2d pt;
-    if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, GetJson()))
+    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, GetJson()))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.", GetColumnInfo().GetPropertyPath().ToString().c_str());
@@ -256,11 +256,11 @@ DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint3d PrimitiveJsonECSqlValue::_GetPoint3d() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point3d))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_Point3d))
         return NoopECSqlValue::GetSingleton().GetPoint3d();
 
     DPoint3d pt;
-    if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, GetJson()))
+    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, GetJson()))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.", GetColumnInfo().GetPropertyPath().ToString().c_str());
@@ -276,7 +276,7 @@ DPoint3d PrimitiveJsonECSqlValue::_GetPoint3d() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IGeometryPtr PrimitiveJsonECSqlValue::_GetGeometry() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_IGeometry))
+    if (GetJson().IsNull() || !CanCallGetFor(PRIMITIVETYPE_IGeometry))
         return NoopECSqlValue::GetSingleton().GetGeometry();
 
     int blobSize = -1;
@@ -317,12 +317,12 @@ bool PrimitiveJsonECSqlValue::CanCallGetFor(ECN::PrimitiveType getMethodType) co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructJsonECSqlValue::StructJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, ECN::ECStructClassCR structClass)
+StructJsonECSqlValue::StructJsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo, ECN::ECStructClassCR structClass)
     : JsonECSqlValue(ecdb, json, columnInfo), IECSqlStructValue()
     {
     for (ECPropertyCP structMemberProp : structClass.GetProperties(true))
         {
-        Json::Value const& val = json[structMemberProp->GetName().c_str()];
+        rapidjson::Value const& val = json[structMemberProp->GetName().c_str()];
         ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(GetColumnInfo(), *structMemberProp);
         m_members.push_back(JsonECSqlValueFactory::CreateValue(ecdb, val, memberColInfo));
         }
@@ -366,10 +366,10 @@ IECSqlValue const& StructJsonECSqlValue::_GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo)
-    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlArrayValue(), m_jsonIterator(json.end()), m_currentElement(nullptr), m_structArrayElementType(nullptr)
+ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo)
+    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlArrayValue(), m_jsonIterator(json.End()), m_jsonIteratorIndex(-1), m_currentElement(nullptr), m_structArrayElementType(nullptr)
     {
-    BeAssert(GetJson().isArray());
+    BeAssert(GetJson().IsArray());
 
     ECTypeDescriptor const& dataType = GetColumnInfo().GetDataType();
     if (dataType.IsStructArray())
@@ -398,9 +398,15 @@ ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, E
 void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
     {
     if (onInitializingIterator)
-        m_jsonIterator = GetJson().begin();
+        {
+        m_jsonIterator = GetJson().Begin();
+        m_jsonIteratorIndex = 0;
+        }
     else
+        {
         m_jsonIterator++;
+        m_jsonIteratorIndex++;
+        }
 
     if (_IsAtEnd())
         {
@@ -408,9 +414,8 @@ void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
         return;
         }
 
-    ECSqlColumnInfo elementColumnInfo = ECSqlColumnInfo::CreateForArrayElement(GetColumnInfo(), (int) m_jsonIterator.index());
+    ECSqlColumnInfo elementColumnInfo = ECSqlColumnInfo::CreateForArrayElement(GetColumnInfo(), m_jsonIteratorIndex);
     
-
     m_currentElement = JsonECSqlValueFactory::CreateArrayElementValue(GetECDb(), *m_jsonIterator, elementColumnInfo, m_primitiveArrayDatetimeMetadata, m_structArrayElementType);
     BeAssert(m_currentElement != nullptr);
     }
@@ -420,7 +425,7 @@ void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
 //---------------------------------------------------------------------------------------
 bool ArrayJsonECSqlValue::_IsAtEnd() const
     {
-    return m_jsonIterator == GetJson().end();
+    return m_jsonIterator == GetJson().End();
     }
 
 //---------------------------------------------------------------------------------------
@@ -439,7 +444,7 @@ IECSqlValue const* ArrayJsonECSqlValue::_GetCurrent() const
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 StructArrayECSqlField::StructArrayECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
-    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(Json::arrayValue), m_value(nullptr)
+    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(rapidjson::kArrayType), m_value(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -449,10 +454,10 @@ ECSqlStatus StructArrayECSqlField::_OnAfterStep()
     {
     DoReset();
 
-    BeAssert(m_json.isArray());
+    BeAssert(m_json.IsArray());
 
     if (GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex))
-        m_json = Json::Value(Json::arrayValue);
+        m_json.SetArray();
     else
         {
         Utf8CP jsonStr = GetSqliteStatement().GetValueText(m_sqliteColumnIndex);
@@ -463,7 +468,7 @@ ECSqlStatus StructArrayECSqlField::_OnAfterStep()
             }
         }
 
-    BeAssert(m_json.isArray());
+    BeAssert(m_json.IsArray());
     m_value = std::unique_ptr<ArrayJsonECSqlValue>(new ArrayJsonECSqlValue(*GetECSqlStatementR().GetECDb(), m_json, GetColumnInfo()));
     return ECSqlStatus::Success;
     }
@@ -482,7 +487,7 @@ ECSqlStatus StructArrayECSqlField::_OnAfterReset()
 //---------------------------------------------------------------------------------------
 void StructArrayECSqlField::DoReset() const
     {
-    m_json.clear();
+    m_json.Clear();
     m_value = nullptr;
     }
 

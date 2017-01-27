@@ -272,8 +272,33 @@ TEST_F(RapidJsonTests, AddMemberBehavior)
     ASSERT_FALSE(document["y"].IsNull());
     ASSERT_EQ(1, document["x"].GetInt());
     ASSERT_EQ(2, document["y"].GetInt());
+
+    //return value of AddMember is not the created member but the caller
+    rapidjson::Value& returnValueOfAddMember = document.AddMember("testmember", rapidjson::Value(111).Move(), document.GetAllocator());
+    ASSERT_TRUE(returnValueOfAddMember.IsObject());
+    ASSERT_EQ(111, document["testmember"].GetInt());
+    ASSERT_EQ(111, returnValueOfAddMember["testmember"].GetInt()) << "AddMember returns the calling object, not the inserted member";
+    ASSERT_TRUE(&document == &returnValueOfAddMember) << "AddMember returns the calling object, not the inserted member";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest                                    Krischan.Eberle                  01/17
+//---------------------------------------------------------------------------------------
+TEST_F(RapidJsonTests, PushBackBehavior)
+    {
+    rapidjson::Document json(rapidjson::kArrayType);
+
+    const int arrayElementVal = 123;
+    BeAssertIgnoreContext ignoreAsserts;
+
+    //return value is not the inserted array element, but the array itself!
+    rapidjson::Value& returnValueOfPushBack = json.PushBack(rapidjson::Value(arrayElementVal).Move(), json.GetAllocator());
+
+    ASSERT_TRUE(&returnValueOfPushBack == &json) << "PushBack returns the array, not the inserted array element";
+
+    ASSERT_EQ(arrayElementVal, json[0].GetInt());
+    ASSERT_EQ(arrayElementVal, returnValueOfPushBack[0].GetInt()) << "PushBack returns the array, not the inserted array element";
+    }
 
 //---------------------------------------------------------------------------------------
 // Make sure there is no loss of precision roundtripping double values.
@@ -476,6 +501,19 @@ TEST_F(RapidJsonTests, ValueNull)
     rapidjson::Value z(true);
     z.SetNull();
     ASSERT_TRUE(z.IsNull());
+    ASSERT_FALSE(z.IsBool());
+
+    rapidjson::Document array(rapidjson::kArrayType);
+    array.PushBack(rapidjson::Value(1).Move(), array.GetAllocator()).PushBack(rapidjson::Value(2).Move(), array.GetAllocator());
+    ASSERT_EQ(2, (int) array.Size());
+    array.SetNull();
+    ASSERT_FALSE(array.IsArray());
+
+    rapidjson::Document obj(rapidjson::kObjectType);
+    obj.AddMember("m1", rapidjson::Value(1).Move(), array.GetAllocator()).AddMember("m2", rapidjson::Value(2).Move(), array.GetAllocator());
+    ASSERT_EQ(2, (int) obj.MemberCount());
+    obj.SetNull();
+    ASSERT_FALSE(obj.IsObject());
     }
 
 //---------------------------------------------------------------------------------------

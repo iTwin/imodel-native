@@ -420,7 +420,7 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         }
 
     BeAssert(ecinstanceId.IsValid());
-    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, ecinstanceId);
+    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, ecinstanceId, true);
 
     for (std::unique_ptr<CompositeECSqlStatement::Leaf> const& leafStatement : m_compositeStatement.GetStatements())
         {

@@ -254,7 +254,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
 
     //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
-    value.SetAllowsPointersIntoInstanceMemory(true);
+    value.SetAllowsPointersIntoInstanceMemory(instanceInfo.AllowPointersIntoInstanceMemory());
     if (ECObjectsStatus::Success != instanceInfo.GetInstance().GetValue(value, valueBindingInfo.GetPropertyIndex()))
         return ERROR;
 
@@ -418,7 +418,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
             BeAssert(elementValue.IsStruct());
             BeAssert(arrayInfo.IsStructArray());
             IECInstancePtr structInstance = elementValue.GetStruct();
-            if (SUCCESS != BindStructValue(arrayElementBinder, ECInstanceInfo(*structInstance), valueBindingInfo.GetStructArrayElementBindingInfo()))
+            if (SUCCESS != BindStructValue(arrayElementBinder, ECInstanceInfo(*structInstance, false), valueBindingInfo.GetStructArrayElementBindingInfo()))
                 return ERROR;
             }
         }

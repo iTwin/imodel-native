@@ -8,8 +8,8 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
+#include <rapidjson/BeRapidJson.h>
 #include <Bentley/ByteStream.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -20,7 +20,7 @@ struct JsonECSqlValue : public IECSqlValue
     {
 private:
     ECDbCR m_ecdb;
-    Json::Value const& m_json;
+    rapidjson::Value const& m_json;
     ECSqlColumnInfo m_columnInfo;
 
     ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
@@ -31,8 +31,8 @@ private:
     IECSqlArrayValue const& _GetArray() const override;
 
 protected:
-    JsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
-    Json::Value const& GetJson() const { return m_json; }
+    JsonECSqlValue(ECDbCR ecdb, rapidjson::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
+    rapidjson::Value const& GetJson() const { return m_json; }
 
     ECDbCR GetECDb() const { return m_ecdb; }
 
@@ -65,7 +65,7 @@ private:
 
     bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 public:
-    PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata);
+    PrimitiveJsonECSqlValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&, DateTime::Info const&);
     ~PrimitiveJsonECSqlValue() {}
     };
 
@@ -84,7 +84,7 @@ private:
     IECSqlValue const& _GetValue(int columnIndex) const override;
 
 public:
-    StructJsonECSqlValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
+    StructJsonECSqlValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
     ~StructJsonECSqlValue() {}
     };
 
@@ -94,7 +94,8 @@ public:
 struct ArrayJsonECSqlValue : public JsonECSqlValue, public IECSqlArrayValue
     {
 private:
-    mutable Json::ValueConstIterator m_jsonIterator;
+    mutable rapidjson::Value::ConstValueIterator m_jsonIterator;
+    mutable int m_jsonIteratorIndex;
     mutable std::unique_ptr<JsonECSqlValue> m_currentElement;
     DateTime::Info m_primitiveArrayDatetimeMetadata;
     ECN::ECStructClassCP m_structArrayElementType;
@@ -105,10 +106,10 @@ private:
     void _MoveNext(bool onInitializingIterator) const override;
     bool _IsAtEnd() const override;
     IECSqlValue const* _GetCurrent() const override;
-    int _GetArrayLength() const override { return (int) GetJson().size(); }
+    int _GetArrayLength() const override { return (int) GetJson().Size(); }
 
 public:
-    ArrayJsonECSqlValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&);
+    ArrayJsonECSqlValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&);
     ~ArrayJsonECSqlValue() {}
     };
 
@@ -122,8 +123,8 @@ private:
     ~JsonECSqlValueFactory();
 
 public:
-    static std::unique_ptr<JsonECSqlValue> CreateValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&);
-    static std::unique_ptr<JsonECSqlValue> CreateArrayElementValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&, DateTime::Info const&, ECN::ECStructClassCP);
+    static std::unique_ptr<JsonECSqlValue> CreateValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&);
+    static std::unique_ptr<JsonECSqlValue> CreateArrayElementValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&, DateTime::Info const&, ECN::ECStructClassCP);
     };
 
 //=======================================================================================
@@ -133,7 +134,7 @@ struct StructArrayECSqlField : public ECSqlField
     {
 private:
     int m_sqliteColumnIndex;
-    mutable Json::Value m_json;
+    mutable rapidjson::Document m_json;
     mutable std::unique_ptr<ArrayJsonECSqlValue> m_value;
 
     //IECSqlValue

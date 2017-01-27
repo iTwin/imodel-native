@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlBinder.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <rapidjson/BeRapidJson.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -25,23 +25,24 @@ private:
             ECDb const* m_ecdb = nullptr;
             ECSqlTypeInfo m_typeInfo;
 
-            Json::Value* m_json = nullptr;
+            rapidjson::Value* m_json = nullptr;
+            rapidjson::MemoryPoolAllocator<>* m_jsonAllocator = nullptr;
             //only relevant if binder is a struct binder
             std::map<ECN::ECPropertyId, JsonValueBinder> m_structMemberBinders;
             //only relevant if binder is an array binder
             std::unique_ptr<JsonValueBinder> m_currentArrayElementBinder;
             
+            void InitJsonValue();
             //only relevant if binder is a struct binder
             IECSqlBinder& CreateStructMemberBinder(ECN::ECPropertyCR);
             //only relevant if binder is an array binder
-            IECSqlBinder& MoveCurrentArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo, Json::Value& newArrayElementJson);
+            IECSqlBinder& MoveCurrentArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo, rapidjson::Value& newArrayElementJson);
             
             ECSqlStatus FailIfTypeMismatch(ECN::PrimitiveType boundType) const;
             ECSqlStatus FailIfInvalid() const;
 
         public:
-            JsonValueBinder() : IECSqlBinder() {}
-            JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Json::Value& json) : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_currentArrayElementBinder(nullptr) {}
+            JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator);
 
             JsonValueBinder(JsonValueBinder&&);
             JsonValueBinder& operator=(JsonValueBinder&&);
@@ -66,9 +67,9 @@ private:
 
         };
 
-    int m_sqliteIndex;
-    Json::Value m_json;
-    JsonValueBinder m_rootBinder;
+    int m_sqliteIndex = -1;
+    rapidjson::Document m_json = rapidjson::Document(rapidjson::kArrayType);
+    std::unique_ptr<JsonValueBinder> m_rootBinder = nullptr;
 
     void Initialize();
 
@@ -77,22 +78,22 @@ private:
     ECSqlStatus _OnBeforeStep() override;
 
     ECSqlStatus _BindNull() override { _OnClearBindings(); return ECSqlStatus::Success; }
-    ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder.BindBoolean(value); }
-    ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override { return m_rootBinder.BindBlob(value, blobSize, makeCopy); }
-    ECSqlStatus _BindZeroBlob(int blobSize) override { return m_rootBinder.BindZeroBlob(blobSize); }
-    ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDayMsec, dtInfo); }
-    ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override { return m_rootBinder.BindDateTime(julianDay, dtInfo); }
-    ECSqlStatus _BindDouble(double value) override { return m_rootBinder.BindDouble(value); }
-    ECSqlStatus _BindInt(int value) override { return m_rootBinder.BindInt(value); }
-    ECSqlStatus _BindInt64(int64_t value) override { return m_rootBinder.BindInt64(value); }
-    ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_rootBinder.BindPoint2d(value); }
-    ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_rootBinder.BindPoint3d(value); }
-    ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { return m_rootBinder.BindText(stringValue, makeCopy, byteCount); }
+    ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder->BindBoolean(value); }
+    ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override { return m_rootBinder->BindBlob(value, blobSize, makeCopy); }
+    ECSqlStatus _BindZeroBlob(int blobSize) override { return m_rootBinder->BindZeroBlob(blobSize); }
+    ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override { return m_rootBinder->BindDateTime(julianDayMsec, dtInfo); }
+    ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override { return m_rootBinder->BindDateTime(julianDay, dtInfo); }
+    ECSqlStatus _BindDouble(double value) override { return m_rootBinder->BindDouble(value); }
+    ECSqlStatus _BindInt(int value) override { return m_rootBinder->BindInt(value); }
+    ECSqlStatus _BindInt64(int64_t value) override { return m_rootBinder->BindInt64(value); }
+    ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_rootBinder->BindPoint2d(value); }
+    ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_rootBinder->BindPoint3d(value); }
+    ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { return m_rootBinder->BindText(stringValue, makeCopy, byteCount); }
 
-    IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return m_rootBinder[structMemberPropertyName]; }
-    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder[structMemberPropertyId]; }
+    IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return m_rootBinder->operator[](structMemberPropertyName); }
+    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder->operator[](structMemberPropertyId); }
 
-    IECSqlBinder& _AddArrayElement() override { return m_rootBinder.AddArrayElement(); }
+    IECSqlBinder& _AddArrayElement() override { return m_rootBinder->AddArrayElement(); }
 
 public:
     StructArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);

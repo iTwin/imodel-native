@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -276,18 +276,19 @@ struct ECInstanceAdapterHelper
         struct ECInstanceInfo : NonCopyableClass
             {
             private:
-                ECN::IECInstanceCP m_instance;
+                ECN::IECInstanceCP m_instance = nullptr;
+                bool m_allowPointersIntoInstanceMemory = true;
                 ECInstanceId m_instanceId;
                 ECInstanceId m_sourceId;
                 ECInstanceId m_targetId;
 
             public:
-                explicit ECInstanceInfo(ECN::IECInstanceCR instance)
-                    : m_instance(&instance)
+                explicit ECInstanceInfo(ECN::IECInstanceCR instance, bool allowPointersIntoInstanceMemory)
+                    : m_instance(&instance), m_allowPointersIntoInstanceMemory(allowPointersIntoInstanceMemory)
                     {}
 
-                ECInstanceInfo(ECN::IECInstanceCR instance, ECInstanceId instanceId)
-                    : m_instance(&instance), m_instanceId(instanceId)
+                ECInstanceInfo(ECN::IECInstanceCR instance, ECInstanceId instanceId, bool allowPointersIntoInstanceMemory)
+                    : m_instance(&instance), m_allowPointersIntoInstanceMemory(allowPointersIntoInstanceMemory), m_instanceId(instanceId)
                     {}
 
                 ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId)
@@ -300,6 +301,7 @@ struct ECInstanceAdapterHelper
 
                 bool HasInstance() const { return m_instance != nullptr; }
                 ECN::IECInstanceCR GetInstance() const { BeAssert(HasInstance()); return *m_instance; }
+                bool AllowPointersIntoInstanceMemory() const { BeAssert(HasInstance()); return m_allowPointersIntoInstanceMemory; }
                 bool HasInstanceId() const { return m_instanceId.IsValid(); }
                 ECInstanceId GetInstanceId() const { return m_instanceId; }
                 ECInstanceId GetSourceId() const { return m_sourceId; }
