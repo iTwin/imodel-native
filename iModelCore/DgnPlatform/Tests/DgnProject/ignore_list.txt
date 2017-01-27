@@ -37,5 +37,4 @@ EcutilsTests.ConvertECValueToJson
     #       Which is: 32768
     # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
 
-DgnChangeSummaryTestFixture.ValidateChangeSummaries # Gives different counts withe each run. Need to check
 

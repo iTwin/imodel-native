@@ -353,7 +353,7 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     DgnChangeSummaryTestFixture::ChangedElements changedElements;
     
     CompareSessions(changedElements, 2, 6);
-    EXPECT_EQ(changedElements.m_inserts.size(), 20);
+    EXPECT_EQ(changedElements.m_inserts.size(), 16);
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 20);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
@@ -365,8 +365,8 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0); 
 
     CompareSessions(changedElements, 8, 8);
-    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 4);
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    EXPECT_EQ(changedElements.m_businessUpdates.size(), 4);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
     }
