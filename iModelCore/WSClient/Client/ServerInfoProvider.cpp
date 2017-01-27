@@ -17,7 +17,8 @@ ServerInfoProvider::ServerInfoProvider(std::shared_ptr<const ClientConfiguration
 m_configuration(configuration),
 m_thread(WorkerThread::Create("ServerInfoProvider")),
 m_serverInfo(Http::Response()),
-m_serverInfoUpdated(0)
+m_serverInfoUpdated(0),
+m_enableWsgServerHeader(false)
     {}
 
 /*--------------------------------------------------------------------------------------+
