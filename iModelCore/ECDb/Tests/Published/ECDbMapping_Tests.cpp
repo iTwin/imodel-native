@@ -4455,6 +4455,63 @@ TEST_F(ECDbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTabl
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     1/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, IndexSkippedForIdSpecificationCA)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='ecdbmap' />"
+        "<ECEntityClass typeName='ClassWithBusinessKey' modifier='None' >"
+        "           <ECCustomAttributes>"
+        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </BusinessKeySpecification>"
+        "           </ECCustomAttributes>"
+        "   <ECProperty propertyName='Name' typeName='string' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='ClassWithSyncId' modifier='None' >"
+        "           <ECCustomAttributes>"
+        "            <SyncIDSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <Property>Name</Property>"
+        "            </SyncIDSpecification>"
+        "           </ECCustomAttributes>"
+        "   <ECProperty propertyName='Name' typeName='string' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='ClassWithGlobalId' modifier='None' >"
+        "           <ECCustomAttributes>"
+        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </GlobalIdSpecification>"
+        "           </ECCustomAttributes>"
+        "   <ECProperty propertyName='Name' typeName='string' />"
+        "</ECEntityClass>"
+        "</ECSchema>");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "IdSpecification.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithBusinessKey")->GetPropertyCount(false));
+    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithGlobalId")->GetPropertyCount(false));
+    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithSyncId")->GetPropertyCount(false));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithBusinessKey_BusinessKeySpecification_Name' AND type='index'"));
+    ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for BusinessKeyCA should'nt be created";
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithGlobalId_GlobalIdSpecification_Name' AND type='index'"));
+    ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for GlobalIdCA should'nt be created";
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithSyncId_SyncIDSpecification_Name' AND type='index'"));
+    ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for SyncIdCA should'nt be created";
+    }
+
+//---------------------------------------------------------------------------------------
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
