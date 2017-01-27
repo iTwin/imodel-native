@@ -1226,10 +1226,10 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
             // Check for view flag changes that may require us to re-generate cached graphic...
             if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
-                newFlags.m_constructions == oldFlags.m_constructions &&
-                newFlags.m_text == oldFlags.m_text &&
-                newFlags.m_dimensions == oldFlags.m_dimensions &&
-                newFlags.m_fill == oldFlags.m_fill)
+                newFlags.ShowConstructions() == oldFlags.ShowConstructions() &&
+                newFlags.ShowText() == oldFlags.ShowText() &&
+                newFlags.ShowDimensions() == oldFlags.ShowDimensions() &&
+                newFlags.ShowFill() == oldFlags.ShowFill())
                 {
                 // Both sub-category visibility and appearance gets baked into cached graphic...
                 if (!m_viewController->GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride() && !viewController.GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride())

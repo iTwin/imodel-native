@@ -2997,17 +2997,17 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     switch (geomParams.GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
-            if (!viewFlags.m_constructions)
+            if (!viewFlags.ShowConstructions())
                 return false;
             break;
 
         case DgnGeometryClass::Dimension:
-            if (!viewFlags.m_dimensions)
+            if (!viewFlags.ShowDimensions())
                 return false;
             break;
 
         case DgnGeometryClass::Pattern:
-            if (!viewFlags.m_patterns)
+            if (!viewFlags.ShowPatterns())
                 return false;
             break;
         }

@@ -26,7 +26,7 @@ struct GraphicBuilderPtr;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-enum class RenderMode
+enum class RenderMode : int32_t
 {
     Wireframe      = 0,
     HiddenLine     = 3,
@@ -41,9 +41,7 @@ enum class RenderMode
 struct ViewFlags
 {
 private:
-    RenderMode m_renderMode;
-
-public:
+    RenderMode m_renderMode = RenderMode::Wireframe;
     uint32_t m_text:1;             //!< Shows or hides text.
     uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
     uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
@@ -66,9 +64,9 @@ public:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
+public:
     ViewFlags()
         {
-        m_renderMode = RenderMode::Wireframe;
         m_text = 1;
         m_dimensions = 1;
         m_patterns = 1;
@@ -780,7 +778,7 @@ protected:
     double m_tint = 0.0;
     double m_shift = 0.0;
     ColorDef m_colors[MAX_GRADIENT_KEYS];
-    double   m_values[MAX_GRADIENT_KEYS];
+    double m_values[MAX_GRADIENT_KEYS];
 
 public:
     GradientSymb() {}
@@ -826,29 +824,30 @@ private:
         AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
-    AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
-    bool                m_resolved;                     //!< whether Resolve has established SubCategory::Appearance/effective values.
-    DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
-    DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearance of subsequent geometry.
-    DgnMaterialId       m_materialId;                   //!< render material ID.
-    int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
-    int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
-    uint32_t            m_weight;
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;                    //!< fill color (applicable only if filled)
-    FillDisplay         m_fillDisplay;                  //!< whether or not the element should be displayed filled
-    double              m_elmTransparency;              //!< transparency, 1.0 == completely transparent.
-    double              m_netElmTransparency;           //!< net transparency for element/category.
-    double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
-    double              m_netFillTransparency;          //!< net transparency for fill/category.
-    DgnGeometryClass    m_geometryClass;                //!< geometry class
-    LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
-    GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
-    PatternParamsPtr    m_pattern;                      //!< area pattern settings.
+    AppearanceOverrides m_appearanceOverrides; //!< flags for parameters that override SubCategory::Appearance.
+    bool m_resolved = false;  //!< whether Resolve has established SubCategory::Appearance/effective values.
+    DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
+    DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
+    DgnMaterialId m_materialId; //!< render material Id.
+    int32_t m_elmPriority = 0; //!< display priority (applies to 2d only)
+    int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
+    uint32_t m_weight = 0;
+    ColorDef m_lineColor;
+    ColorDef m_fillColor;  //!< fill color (applicable only if filled)
+    FillDisplay m_fillDisplay = FillDisplay::Never; //!< whether or not the element should be displayed filled
+    double m_elmTransparency = 0; //!< transparency, 1.0 == completely transparent.
+    double m_netElmTransparency = 0; //!< net transparency for element/category.
+    double m_fillTransparency = 0;  //!< fill transparency, 1.0 == completely transparent.
+    double m_netFillTransparency = 0; //!< net transparency for fill/category.
+    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary;   //!< geometry class
+    LineStyleInfoPtr m_styleInfo; //!< line style id plus modifiers.
+    GradientSymbPtr m_gradient; //!< gradient fill settings.
+    PatternParamsPtr m_pattern; //!< area pattern settings.
 
 public:
-    DGNPLATFORM_EXPORT GeometryParams();
-    DGNPLATFORM_EXPORT GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId());
+    GeometryParams() {}
+    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId) {}
+
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
@@ -874,7 +873,7 @@ public:
     double GetNetTransparency() const {BeAssert(m_resolved); return m_netElmTransparency;}
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
-    int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
+    int32_t GetNetDisplayPriority() const {return m_netPriority;} // Get net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
     void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
@@ -956,17 +955,17 @@ public:
 struct GraphicParams
 {
 private:
-    bool                m_isFilled;
-    bool                m_isBlankingRegion;
-    uint32_t            m_linePixels;
-    uint32_t            m_rasterWidth;
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;
-    double              m_trueWidthStart;
-    double              m_trueWidthEnd;
-    TexturePtr          m_lineTexture;
-    MaterialPtr         m_material;
-    GradientSymbPtr     m_gradient;
+    bool m_isFilled = false;
+    bool m_isBlankingRegion = false;
+    uint32_t m_linePixels = (uint32_t) LinePixels::Solid;
+    uint32_t m_rasterWidth = 1;
+    ColorDef m_lineColor;
+    ColorDef m_fillColor;
+    double m_trueWidthStart = 0;
+    double m_trueWidthEnd = 0;
+    TexturePtr m_lineTexture;
+    MaterialPtr m_material;
+    GradientSymbPtr m_gradient;
 
 public:
 
@@ -986,9 +985,9 @@ public:
 
     void Cook(GeometryParamsCR, ViewContextR);
 
-    GraphicParams() {Init();}
+    void Init() {*this = GraphicParams();}
+    GraphicParams() {}
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
-    DGNPLATFORM_EXPORT void Init();
 
     //! @name Query Methods
     //@{
