@@ -689,6 +689,25 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+int ViewContext::_GetIndexedLineWidth(int index) const
+    {
+    DgnViewportP vp = GetViewport();
+    return nullptr != vp ? vp->GetIndexedLineWidth(index) : DgnViewport::GetDefaultIndexedLineWidth(index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::MaterialPtr ViewContext::_GetMaterial(DgnMaterialId id) const
+    {
+    DgnViewportP vp = GetViewport();
+    Render::TargetP target = nullptr != vp ? vp->GetRenderTarget() : nullptr;
+    return nullptr != target ? target->GetMaterial(id, GetDgnDb()) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()
@@ -713,9 +732,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     {
     Init();
 
-    DgnViewportP vp = context.GetViewport();
-
-    m_rasterWidth = nullptr != vp ? vp->GetIndexedLineWidth(elParams.GetWeight()) : DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
+    m_rasterWidth = context.GetIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();
@@ -745,8 +762,8 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    if (vp && elParams.GetMaterialId().IsValid())
-        m_material = vp->GetRenderTarget()->GetMaterial(elParams.GetMaterialId(), context.GetDgnDb());
+    if (elParams.GetMaterialId().IsValid())
+        m_material = context.GetMaterial(elParams.GetMaterialId());
 
     if (0.0 != netElemTransparency)
         {

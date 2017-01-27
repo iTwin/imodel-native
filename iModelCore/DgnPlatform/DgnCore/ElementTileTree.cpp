@@ -1127,6 +1127,12 @@ private:
         facetOptions = m_processor.GetLineStyleStrokerOptions(lsSymb);
         return facetOptions.IsValid();
         }
+
+    Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
+        {
+        Render::SystemP system = m_processor.GetRoot().GetRenderSystem();
+        return nullptr != system ? system->_GetMaterial(id, m_processor.GetDgnDb()) : nullptr;
+        }
 public:
     GeometryProcessorContext(TileGeometryProcessor& processor, RootR root, LoadContextCR loadContext)
         : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(root.Is3d() ? GeometrySelector3d::GetSql() : GeometrySelector2d::GetSql())), m_loadContext(loadContext)
