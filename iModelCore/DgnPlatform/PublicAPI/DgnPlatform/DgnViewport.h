@@ -151,7 +151,6 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Task::Priority);
