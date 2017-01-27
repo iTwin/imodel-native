@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceIdSequence_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -68,43 +68,6 @@ ECSchemaCP* schema = nullptr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void CreateAndReopenTestDb
-(
-ECDbR testDb,
-Utf8CP dbName,
-Utf8CP schemaFullName,
-int instanceCount,
-Db::OpenMode openMode,
-ECSchemaCP* schema = nullptr
-)
-    {
-    Utf8String dbPath = CreateTestDb(dbName, schemaFullName, instanceCount);
-
-    OpenTestDb(testDb, dbPath, schemaFullName, openMode, schema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  12/12
-//+---------------+---------------+---------------+---------------+---------------+------
-void CreateAndReopenTestDb
-(
-ECDbR testDb,
-Utf8CP dbName,
-Utf8CP schemaFullName,
-int instanceCount,
-Db::OpenMode openMode,
-BeBriefcaseId repoId,
-ECSchemaCP* schema = nullptr
-)
-    {
-    Utf8String dbPath = CreateTestDb(dbName, schemaFullName, instanceCount, repoId);
-
-    OpenTestDb(testDb, dbPath, schemaFullName, openMode, schema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  11/12
-//+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr InsertInstance
 (
 ECInstanceKey& instanceKey,
@@ -148,14 +111,77 @@ ECInstanceKey InsertRelation(ECDbR ecdb, ECRelationshipClassCR relationClass, IE
     return instanceKey;
     }
 
+//=======================================================================================
+// @bsiclass                                   Majd.Uddin                           01/17
+//=======================================================================================
+struct ECInstanceIdSequenceTests : public ECDbTestFixture
+{
+public:
+    static Utf8CP seedFileName;
+    static Utf8CP seedFileWithInstancesName;
+
+    static void SetUpTestCase();
+    void CloneSeedECDb(ECDbR ecdb, Utf8CP testfileName, bool needInstances=false, ECSchemaCP* schema = nullptr);
+    Utf8String CloneDbWithNewRepId(Utf8CP testfileName, BeBriefcaseId repoId);
+};
+
+Utf8CP ECInstanceIdSequenceTests::seedFileName;
+Utf8CP ECInstanceIdSequenceTests::seedFileWithInstancesName;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                       01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECInstanceIdSequenceTests::SetUpTestCase()
+{
+    Initialize();
+    ECInstanceIdSequenceTests::seedFileName = "seed_ECInstanceIdSequenceTests.ecdb";
+    ECInstanceIdSequenceTests::seedFileWithInstancesName = "seed_ECInstanceIdSequenceTests_10.ecdb";
+    CreateTestDb(seedFileName, "StartupCompany.02.00", 0);
+    CreateTestDb(seedFileWithInstancesName, "StartupCompany.02.00", 10);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                       01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECInstanceIdSequenceTests::CloneSeedECDb(ECDbR ecdb, Utf8CP testfileName, bool needInstances, ECSchemaCP* schema)
+{
+    BeFileName seedFilePath;
+    if (needInstances)
+        seedFilePath = ECDbTestUtility::BuildECDbPath(ECInstanceIdSequenceTests::seedFileWithInstancesName);
+    else
+        seedFilePath = ECDbTestUtility::BuildECDbPath(ECInstanceIdSequenceTests::seedFileName);
+
+    CloneECDb(ecdb, testfileName, seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    if (schema != nullptr)
+    {
+        Utf8String name;
+        uint32_t minor, major;
+        ECSchema::ParseSchemaFullName(name, minor, major, "StartupCompany.02.00");
+        Utf8String schemaName(name);
+        *schema = ecdb.Schemas().GetECSchema(schemaName.c_str());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                       01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECInstanceIdSequenceTests::CloneDbWithNewRepId(Utf8CP testfileName, BeBriefcaseId repoId)
+{
+    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(ECInstanceIdSequenceTests::seedFileWithInstancesName);
+    ECDb testDb;
+    CloneECDb(testDb, testfileName, seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    testDb.ChangeBriefcaseId(repoId);
+    EXPECT_EQ(BE_SQLITE_OK, testDb.SaveChanges()) << L"Changing briefcase id in test DgnDb failed";
+
+    return Utf8String(testDb.GetDbFileName());
+}
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceFirstIdTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceFirstIdTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 0, Db::OpenMode::ReadWrite, &schema);
+    CloneSeedECDb(ecdb, "ECInstanceIdSequenceFirstIdTest.ecdb", false, &schema);
 
     const BeBriefcaseBasedId expectedFirstId(ecdb.GetBriefcaseId(), 1);
 
@@ -168,7 +194,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceFirstIdTest)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     {
     Utf8CP schemaFullName = "StartupCompany.02.00";
 
@@ -178,7 +204,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     int64_t twoBelowMaxId = 0LL;
     size_t sequenceIndex = 0;
     {
-    dbPath = CreateTestDb("StartupCompany.ecdb", schemaFullName, 1);
+    dbPath = CloneDbWithNewRepId("ECInstanceIdSequenceExcessTest.ecdb", BeBriefcaseId(1));
 
     //only open as Db without EC profile, so that ECInstanceId Sequence does not overwrite our manual value on closing the db
     Db db;
@@ -227,7 +253,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
     {
     Utf8CP const schemaFullName = "StartupCompany.02.00";
 
@@ -255,7 +281,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
         //create the test db and set the sequence to short before total excess
         {
         ECDb db;
-        CreateAndReopenTestDb(db, "StartupCompany.ecdb", schemaFullName, 0, Db::OpenMode::ReadWrite, expectedRepoId);
+        CloneSeedECDb(db, "ECInstanceIdSequenceTestWithMaximumRepoId.ecdb");
         dbPath = Utf8String(db.GetDbFileName());
 
         ASSERT_TRUE (db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
@@ -289,10 +315,10 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
     {
     ECDb ecdb;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 10, Db::OpenMode::ReadWrite);
+    CloneSeedECDb(ecdb, "ECInstanceIdSequenceExistsAcrossSessionTest.ecdb", true);
     size_t sequenceIndex = 0;
     ASSERT_TRUE (ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
 
@@ -310,11 +336,11 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
+    CloneSeedECDb(ecdb, "ECInstanceIdSequenceIncrementationTest.ecdb", true, &schema);
 
     ECInstanceKey id1;
     IECInstancePtr instance1 = InsertInstance(id1, ecdb, *(schema->GetClassCP ("AAA")));
@@ -340,11 +366,11 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyRelationshipsTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyRelationshipsTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
+    CloneSeedECDb(ecdb, "ECInstanceIdSequenceIncrementationWithOneToManyRelationshipsTest.ecdb", true, &schema);
 
     //insert parent instance
     ECInstanceKey parentId;
@@ -382,11 +408,11 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToManyRelationshipsTest)
+TEST_F(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToManyRelationshipsTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
+    CloneSeedECDb(ecdb, "ECInstanceIdSequenceIncrementationWithManyToManyRelationshipsTest.ecdb",true, &schema);
     
     //*** insert instances to relate ***
     //insert source instance #1
@@ -438,11 +464,11 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToMany
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
+TEST_F(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
+    CloneSeedECDb(ecdb, "ChangeBriefcaseIdTest.ecdb", true, &schema);
 
     size_t sequenceIndex = 0;
     ASSERT_TRUE (ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
