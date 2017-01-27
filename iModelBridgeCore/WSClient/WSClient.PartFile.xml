@@ -535,7 +535,22 @@
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
+  <Product Name="WSClient-IntegrationGTest" OnlyPlatforms="x64">
+    <SubPart PartName="WSClientIntegrationTests"/>
+    <Directories DirectoryListName="IntegrationGTestDirectories"/>
+  </Product>
+  
+  <ProductDirectoryList ListName="IntegrationGTestDirectories">
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+    <ProductDirectory Name="Assemblies" Path=""/>
+    <ProductDirectory Name="Assets" Path="Assets"/>
+    <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+  </ProductDirectoryList>
+  
+    <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>        
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
@@ -543,6 +558,12 @@
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/WSClientIntegrationTests.exe
+             </Files>
+        </Bindings>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
