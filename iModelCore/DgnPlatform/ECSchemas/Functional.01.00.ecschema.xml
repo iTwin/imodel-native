@@ -68,6 +68,9 @@
     </ECEntityClass>
     
     <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>

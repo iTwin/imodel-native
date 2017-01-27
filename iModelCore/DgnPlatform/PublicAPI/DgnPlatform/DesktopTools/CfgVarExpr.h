@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/CfgVarExpr.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma     once
@@ -62,7 +62,7 @@ public:
         {
     public:
         explicit Cfg (WCharCP value) : Node (value){}
-        virtual bool Evaluate (Result &result) const override;
+        bool Evaluate (Result &result) const override;
         static void Create (CfgVarExpression::NodePtr& ptr, WCharCP value)
             {
             ptr = new CfgVarExpression::Cfg (value);
@@ -77,7 +77,7 @@ public:
         {
     public:
         explicit General (WCharCP value) : Node (value) {}
-        virtual bool Evaluate (Result &result) const override;
+        bool Evaluate (Result &result) const override;
         static void Create (CfgVarExpression::NodePtr& ptr, WCharCP value)
             {
             ptr = new CfgVarExpression::General (value);

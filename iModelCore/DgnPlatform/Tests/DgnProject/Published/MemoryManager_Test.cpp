@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/MemoryManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -17,8 +17,8 @@ private:
     uint64_t m_allocation;
 
 public:
-    virtual uint64_t _CalculateBytesConsumed() const override { return m_allocation; }
-    virtual uint64_t _Purge(uint64_t target) override
+    uint64_t _CalculateBytesConsumed() const override { return m_allocation; }
+    uint64_t _Purge(uint64_t target) override
         {
         m_allocation = 0;
         return 0;

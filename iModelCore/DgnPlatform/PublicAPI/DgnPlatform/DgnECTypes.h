@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnECTypes.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -281,13 +281,13 @@ private:
 
     static bool Is3dContext(DgnModelP model, ECN::ECPropertyCR ecprop);
 
-    virtual ECN::ECPropertyCP   _GetProperty() const override           { return m_property; }
-    virtual uint32_t            _GetComponentIndex() const override     { return m_componentIndex; }
-    virtual bool                _Is3d() const override;
-    virtual DgnModelP           _GetDgnModel() const override { return m_model; }
-    virtual ECN::IECInstanceCP  _GetECInstance() const override         { BeAssert (false && "Unused in Graphite"); return NULL; }
-    virtual bool  _ReInitialize(ECN::ECPropertyCR ecproperty, uint32_t componentIndex, DgnModelP model) override;
-    virtual ECN::IECClassLocaterR _GetUnitsECClassLocater() const override;
+    ECN::ECPropertyCP   _GetProperty() const override           { return m_property; }
+    uint32_t            _GetComponentIndex() const override     { return m_componentIndex; }
+    bool                _Is3d() const override;
+    DgnModelP           _GetDgnModel() const override { return m_model; }
+    ECN::IECInstanceCP  _GetECInstance() const override         { BeAssert (false && "Unused in Graphite"); return NULL; }
+    bool  _ReInitialize(ECN::ECPropertyCR ecproperty, uint32_t componentIndex, DgnModelP model) override;
+    ECN::IECClassLocaterR _GetUnitsECClassLocater() const override;
     
 /*__PUBLISH_SECTION_START__*/
 /*__PUBLISH_CLASS_VIRTUAL__*/
@@ -310,30 +310,30 @@ struct IDgnECTypeAdapter : ECN::IECTypeAdapter
     {
 /*__PUBLISH_SECTION_END__*/
 private:
-    DGNPLATFORM_EXPORT virtual bool _ConvertToString(Utf8StringR str, ECN::ECValueCR v, ECN::IECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    DGNPLATFORM_EXPORT virtual bool _ConvertFromString(ECN::ECValueR v, Utf8CP str, ECN::IECTypeAdapterContextCR context) const override;
-    DGNPLATFORM_EXPORT virtual bool _ConvertToExpressionType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const override;
-    DGNPLATFORM_EXPORT virtual bool _ConvertFromExpressionType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const override;
-    DGNPLATFORM_EXPORT virtual bool _CanConvertFromString (ECN::IECTypeAdapterContextCR) const override;
-    DGNPLATFORM_EXPORT virtual bool _CanConvertToString (ECN::IECTypeAdapterContextCR) const override;
+    DGNPLATFORM_EXPORT bool _ConvertToString(Utf8StringR str, ECN::ECValueCR v, ECN::IECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    DGNPLATFORM_EXPORT bool _ConvertFromString(ECN::ECValueR v, Utf8CP str, ECN::IECTypeAdapterContextCR context) const override;
+    DGNPLATFORM_EXPORT bool _ConvertToExpressionType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const override;
+    DGNPLATFORM_EXPORT bool _ConvertFromExpressionType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const override;
+    DGNPLATFORM_EXPORT bool _CanConvertFromString (ECN::IECTypeAdapterContextCR) const override;
+    DGNPLATFORM_EXPORT bool _CanConvertToString (ECN::IECTypeAdapterContextCR) const override;
     DGNPLATFORM_EXPORT virtual bool _GetPlaceholderValue(ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const /*final*/ override;
 
-    DGNPLATFORM_EXPORT virtual bool _ConvertToDisplayType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    DGNPLATFORM_EXPORT virtual bool _GetUnits (ECN::UnitSpecR units, ECN::IECTypeAdapterContextCR context) const override;
+    DGNPLATFORM_EXPORT bool _ConvertToDisplayType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    DGNPLATFORM_EXPORT bool _GetUnits (ECN::UnitSpecR units, ECN::IECTypeAdapterContextCR context) const override;
 
 protected:
-    virtual bool            _HasStandardValues() const override     { return false; }
-    virtual bool            _SupportsUnits() const override         { return false; }
-    virtual bool            _IsStruct() const override              { return false; }
-    virtual bool            _AllowExpandMembers() const override    { return false; }
+    bool            _HasStandardValues() const override     { return false; }
+    bool            _SupportsUnits() const override         { return false; }
+    bool            _IsStruct() const override              { return false; }
+    bool            _AllowExpandMembers() const override    { return false; }
     //! Default implementation returns false, indicating properties represented by this adapter should be ignored for EC string comparison queries
-    virtual bool            _IsTreatedAsString() const override     { return false; }
+    bool            _IsTreatedAsString() const override     { return false; }
     //! Unused in Graphite.
-    virtual ECN::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const override   { BeAssert (false && "Should never be used in Graphite"); return NULL; }
+    ECN::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const override   { BeAssert (false && "Should never be used in Graphite"); return NULL; }
     //! Unused in Graphite.
-    DGNPLATFORM_EXPORT virtual ECN::IECInstancePtr   _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const override { BeAssert (false && "Should never be used in Graphite"); return NULL; }
+    DGNPLATFORM_EXPORT ECN::IECInstancePtr   _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const override { BeAssert (false && "Should never be used in Graphite"); return NULL; }
     //! Unused in Graphite.
-    DGNPLATFORM_EXPORT virtual ECN::IECInstancePtr   _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const override { BeAssert (false && "Should never be used in Graphite"); return NULL; }
+    DGNPLATFORM_EXPORT ECN::IECInstancePtr   _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const override { BeAssert (false && "Should never be used in Graphite"); return NULL; }
 
     virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const = 0;
     virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const = 0;
@@ -344,17 +344,17 @@ protected:
     virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const = 0;
 
     //! Default implementations assume no conversion needed.
-    virtual bool            _RequiresExpressionTypeConversion (ECN::EvaluationOptions evalOptions) const override { return false; }
+    bool            _RequiresExpressionTypeConversion (ECN::EvaluationOptions evalOptions) const override { return false; }
     virtual bool            _ConvertToExpressionType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const { return true; }
     virtual bool            _ConvertFromExpressionType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const { return true; }
 
     //! Default implementations assume:
     //! -If CanConvertToString(), display type is string and ConvertToDisplayType() calls ConvertToString()
     //! -Else assumes no display type and ConvertToDisplayType() returns false. 
-    DGNPLATFORM_EXPORT virtual bool            _GetDisplayType (ECN::PrimitiveType& type) const override;
+    DGNPLATFORM_EXPORT bool            _GetDisplayType (ECN::PrimitiveType& type) const override;
     DGNPLATFORM_EXPORT virtual bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const;
 
-    DGNPLATFORM_EXPORT virtual bool            _IsOrdinalType () const override;
+    DGNPLATFORM_EXPORT bool            _IsOrdinalType () const override;
 
     // Called immediately before the formatting instance is serialized to a persistent format.
     virtual void            _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const { }

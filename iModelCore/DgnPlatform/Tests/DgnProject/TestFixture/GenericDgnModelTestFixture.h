@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/GenericDgnModelTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -37,7 +37,7 @@ public:
 
     virtual ~GenericBaseFixture() {}
 
-    virtual void TearDown() override;
+    void TearDown() override;
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                             Umar.Hayat          07/16

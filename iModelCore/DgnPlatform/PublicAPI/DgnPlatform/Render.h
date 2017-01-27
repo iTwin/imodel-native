@@ -1157,7 +1157,7 @@ protected:
     virtual ~Graphic() {}
     virtual bool _IsForDisplay() const {return false;}
     virtual StatusInt _EnsureClosed() = 0;
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
@@ -1589,7 +1589,7 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-    ClipPrimitiveCPtr m_activeVolume;
+    ClipVectorPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -1754,7 +1754,7 @@ protected:
     int  m_id; // for debugging
     System& m_system;
     DevicePtr m_device;
-    ClipPrimitiveCPtr m_activeVolume;
+    ClipVectorCPtr m_activeVolume;
     GraphicListPtr m_currentScene;
     GraphicListPtr m_terrain;
     GraphicListPtr m_dynamics;
@@ -1784,7 +1784,7 @@ public:
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1803,7 +1803,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetViewRect(BSIRect rect) {}
-    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroConfigurationAdmin.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2488,7 +2488,7 @@ struct      PrintDebugOutput : IMacroDebugOutput
 {
 PrintDebugOutput () {}
 
-virtual void        ShowDebugMessage (int indent, WCharCP format, ...) override
+void        ShowDebugMessage (int indent, WCharCP format, ...) override
     {
     WString     message;
     va_list     ap;
@@ -2525,7 +2525,7 @@ T_WStringVector&    m_assignmentArgs;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _OnProcessError (WCharCP msg) override
+void    _OnProcessError (WCharCP msg) override
     {
     // for now, we're just fwprintfing this message, but perhaps it should be put in the message center or something.
     fwprintf (stderr, L"%ls", msg);
@@ -2534,7 +2534,7 @@ virtual void    _OnProcessError (WCharCP msg) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ConfigurationVariableLevel _ReinterpretConfigurationVariableLevel (ConfigurationVariableLevel inputLevel) override
+ConfigurationVariableLevel _ReinterpretConfigurationVariableLevel (ConfigurationVariableLevel inputLevel) override
     {
     switch (inputLevel)
         {
@@ -2895,7 +2895,7 @@ T_WStringVector&    m_assignmentArgs;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _OnProcessError (WCharCP msg) override
+void    _OnProcessError (WCharCP msg) override
     {
     // for now, we're just fwprintfing this message, but perhaps it should be put in the message center or something.
     fwprintf (stderr, L"%ls", msg);

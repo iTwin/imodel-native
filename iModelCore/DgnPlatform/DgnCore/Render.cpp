@@ -261,8 +261,8 @@ void DgnViewport::StartRenderThread()
 //=======================================================================================
 struct DestroyTargetTask : Render::SceneTask
 {
-    virtual Utf8CP _GetName() const override {return "Destroy Target";}
-    virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
+    Utf8CP _GetName() const override {return "Destroy Target";}
+    Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
     DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget, Priority::Highest()) {}
 };
 
@@ -313,9 +313,9 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    SpatialViewControllerCP sv = vp.GetSpatialViewControllerCP();
-    if (nullptr != sv)
-        m_activeVolume = sv->GetActiveVolume();
+    auto spatial = vp.GetSpatialViewControllerCP();
+    if (nullptr != spatial)
+        m_activeVolume = spatial->GetActiveVolume();
     }
 
 /*---------------------------------------------------------------------------------**//**

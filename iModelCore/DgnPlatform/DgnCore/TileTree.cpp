@@ -22,8 +22,8 @@ BEGIN_UNNAMED_NAMESPACE
 struct TileCache : RealityData::Cache
 {
     uint64_t m_allowedSize;
-    virtual BentleyStatus _Prepare() const override;
-    virtual BentleyStatus _Cleanup() const override;
+    BentleyStatus _Prepare() const override;
+    BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 };
 
@@ -691,7 +691,7 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
+* Add the Render::Graphics from all tiles that were found from this draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)

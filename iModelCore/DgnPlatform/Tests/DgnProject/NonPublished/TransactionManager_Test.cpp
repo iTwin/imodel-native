@@ -662,9 +662,9 @@ struct ModelTxnMonitor : TxnMonitor
             }
         }
 
-    virtual void _OnCommit(TxnManager& mgr) override {CollectChanges(mgr);}
-    virtual void _OnReversedChanges(TxnManager& mgr) override {CollectChanges(mgr);}
-    virtual void _OnUndoRedo(TxnManager& mgr, TxnAction action) override {CollectChanges(mgr);}
+    void _OnCommit(TxnManager& mgr) override {CollectChanges(mgr);}
+    void _OnReversedChanges(TxnManager& mgr) override {CollectChanges(mgr);}
+    void _OnUndoRedo(TxnManager& mgr, TxnAction action) override {CollectChanges(mgr);}
 
     void Clear() { m_changes.clear(); }
     ChangeMap& GetChanges() { return m_changes; }
@@ -1254,7 +1254,7 @@ struct DynamicChangesProcessor : DynamicTxnProcessor
         : m_expectedCount(0), m_expectedWidth(0), m_depId(depId), m_cb(cb), m_db(db),
           m_actualCount(0), m_actualWidth(0) { }
 
-    virtual void _ProcessDynamicChanges() override
+    void _ProcessDynamicChanges() override
         {
         m_actualCount = m_cb.GetInvokeCount();
         m_actualWidth = getDependentWidth(m_depId, m_db);

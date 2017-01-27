@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnFont.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -176,12 +176,12 @@ public:
     DGNPLATFORM_EXPORT virtual ~DgnTrueTypeFont();
     DgnTrueTypeFontR operator=(DgnTrueTypeFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
-    DGNPLATFORM_EXPORT virtual DgnFontPtr _Clone() const override;
-    DGNPLATFORM_EXPORT virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
-    virtual bool _CanDrawWithLineWeight() const override { return false; }
+    DGNPLATFORM_EXPORT DgnFontPtr _Clone() const override;
+    DGNPLATFORM_EXPORT BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
+    bool _CanDrawWithLineWeight() const override { return false; }
     DGNPLATFORM_EXPORT static BentleyStatus GetTrueTypeGlyphDataDirect(bvector<Byte>&, double& scaleFactor, DgnGlyphCR);
-    DGNPLATFORM_EXPORT virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const override;
-    DGNPLATFORM_EXPORT virtual double _GetDescenderRatio(DgnFontStyle) const override;
+    DGNPLATFORM_EXPORT DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const override;
+    DGNPLATFORM_EXPORT double _GetDescenderRatio(DgnFontStyle) const override;
 };
 
 //=======================================================================================
@@ -229,13 +229,13 @@ public:
     DGNPLATFORM_EXPORT virtual ~DgnRscFont();
     DgnRscFontR operator=(DgnRscFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
-    DGNPLATFORM_EXPORT virtual DgnFontPtr _Clone() const override;
-    DGNPLATFORM_EXPORT virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
-    virtual bool _CanDrawWithLineWeight() const override { return true; }
+    DGNPLATFORM_EXPORT DgnFontPtr _Clone() const override;
+    DGNPLATFORM_EXPORT BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
+    bool _CanDrawWithLineWeight() const override { return true; }
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
-    virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
-    virtual double _GetDescenderRatio(DgnFontStyle) const override { LoadGlyphs(); return m_descenderRatio; }
+    DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
+    double _GetDescenderRatio(DgnFontStyle) const override { LoadGlyphs(); return m_descenderRatio; }
 };
 
 //=======================================================================================
@@ -282,14 +282,14 @@ public:
     DgnShxFont(DgnShxFontCR rhs) : DgnFont(rhs) {}
     DgnShxFontR operator=(DgnShxFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
-    DGNPLATFORM_EXPORT virtual DgnFontPtr _Clone() const override;
-    DGNPLATFORM_EXPORT virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
-    virtual bool _CanDrawWithLineWeight() const override { return true; }
+    DGNPLATFORM_EXPORT DgnFontPtr _Clone() const override;
+    DGNPLATFORM_EXPORT BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
+    bool _CanDrawWithLineWeight() const override { return true; }
     DGNPLATFORM_EXPORT ShxType GetShxType() const;
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
-    virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
-    DGNPLATFORM_EXPORT virtual double _GetDescenderRatio(DgnFontStyle) const override;
+    DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
+    DGNPLATFORM_EXPORT double _GetDescenderRatio(DgnFontStyle) const override;
 };
 
 //=======================================================================================

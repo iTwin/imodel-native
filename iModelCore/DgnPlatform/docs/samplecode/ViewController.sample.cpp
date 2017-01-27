@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/ViewController.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ ViewController_Includes.sampleCode
@@ -29,7 +29,7 @@ DgnDbStatus viewControllerEdit(DgnViewportR viewport, DgnModelId newModel, DgnCa
     // There are ViewController functions to set the view geometry. 
     // In this example, we set up the view to look at the entire project.
     // Note that this example applies only to a spatial view.
-    controller.GetViewDefinition().LookAtVolume(controller.GetDgnDb().Units().GetProjectExtents());
+    controller.GetViewDefinition().LookAtVolume(controller.GetDgnDb().GeoLocation().GetProjectExtents());
     
     // If this is a camera view, then you can also use specialized Camera functions
     CameraViewControllerP cameraController = controller.ToCameraViewP();

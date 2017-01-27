@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnECSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -316,7 +316,7 @@ private:
         m_result.InitECValue().SetBoolean (!valueToStopOn);
         }
 
-    virtual bool ProcessResult (ExpressionStatus status, EvaluationResultCR member, EvaluationResultCR result) override
+    bool ProcessResult (ExpressionStatus status, EvaluationResultCR member, EvaluationResultCR result) override
         {
         if (ExpressionStatus::Success != status)
             return m_ignoreErrors;  // stop iteration if we're not ignoring errors
@@ -715,7 +715,7 @@ ECClassCP DgnECSymbolProvider::GetRelatedClassDefinition (ECN::IECRelationshipIn
         {
         Utf8CP relatedClassName;
         Visitor (Utf8CP rcn) : relatedClassName(rcn) { }
-        virtual bool Process (ECClassCR ecclass) override
+        bool Process (ECClassCR ecclass) override
             {
             return ecclass.GetName().Equals (relatedClassName);
             }

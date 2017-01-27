@@ -35,7 +35,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WCharCP GetGCSName (WStringR gcsName, DgnGCSP sourceGCS) override
+WCharCP GetGCSName (WStringR gcsName, DgnGCSP sourceGCS) override
     {
     gcsName.clear();
 
@@ -48,7 +48,7 @@ virtual WCharCP GetGCSName (WStringR gcsName, DgnGCSP sourceGCS) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WCharCP GetDescription (WStringR gcsDescription, DgnGCSP sourceGCS) override
+WCharCP GetDescription (WStringR gcsDescription, DgnGCSP sourceGCS) override
     {
     gcsDescription.clear();
     if (sourceGCS != NULL && sourceGCS->IsValid())
@@ -60,7 +60,7 @@ virtual WCharCP GetDescription (WStringR gcsDescription, DgnGCSP sourceGCS) over
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GeoReferenceStatus  ReprojectUorPoints
+GeoReferenceStatus  ReprojectUorPoints
 (
 DgnDbR    source,
 DgnDbR    target,
@@ -86,7 +86,7 @@ int             numPoints
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GeoReferenceStatus  ReprojectUorPoints
+GeoReferenceStatus  ReprojectUorPoints
 (
 DgnGCSP         sourceGCS,
 DgnGCSP         targetGCS,
@@ -107,7 +107,7 @@ int             numPoints
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool        HasGCS (DgnDbR project) override
+bool        HasGCS (DgnDbR project) override
     {
     return (NULL != DgnGCS::FromProject (project));
     }
@@ -115,7 +115,7 @@ virtual bool        HasGCS (DgnDbR project) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DgnGCS* GetGCSFromProject (DgnDbR project) override
+DgnGCS* GetGCSFromProject (DgnDbR project) override
     {
     return DgnGCS::FromProject (project);
     }
@@ -123,7 +123,7 @@ virtual DgnGCS* GetGCSFromProject (DgnDbR project) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) override
+bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) override
     {
     if ( (NULL == sourceGCS) || (NULL == targetGCS) )
         return false;
@@ -140,12 +140,12 @@ virtual bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool        GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, Dgn::StandardUnit&  standardUnitNumber) override
+bool        GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, Dgn::StandardUnit&  standardUnitNumber) override
     {
     return (SUCCESS == sourceGCS->GetUnitDefinition(unitDef,standardUnitNumber));
     }
 
-virtual  BentleyStatus UorsFromLatLong
+BentleyStatus UorsFromLatLong
 (
 DPoint3dR               outUors,
 GeoPointCR              inLatLong,
@@ -158,7 +158,7 @@ DgnGCS&                 gcs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual  BentleyStatus LatLongFromUors
+BentleyStatus LatLongFromUors
 (
 GeoPointR               outLatLong,
 DPoint3dCR              inUors,

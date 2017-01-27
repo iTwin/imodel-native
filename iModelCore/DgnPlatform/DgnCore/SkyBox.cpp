@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SkyBox.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -33,7 +33,7 @@ AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
             return extents; // view does not show ground plane
         }
 
-    extents = GetDgnDb().Units().GetProjectExtents();
+    extents = GetDgnDb().GeoLocation().GetProjectExtents();
     extents.low.z = extents.high.z = elevation;
 
     DPoint3d center = DPoint3d::FromInterpolate(extents.low, 0.5, extents.high);
@@ -51,7 +51,7 @@ AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
 double SpatialViewController::GetGroundElevation() const
     {
     auto& env = GetSpatialViewDefinition().GetDisplayStyle3d().GetEnvironmentDisplay();
-    return env.m_groundPlane.m_elevation + GetDgnDb().Units().GetGlobalOrigin().z; // adjust for global origin
+    return env.m_groundPlane.m_elevation + GetDgnDb().GeoLocation().GetGlobalOrigin().z; // adjust for global origin
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,7 +309,7 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     skyGraphic->ActivateGraphicParams(params);
 
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
-    drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().Units().GetGlobalOrigin().z);
+    drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
     // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
     ViewFlags flags = context.GetViewFlags();

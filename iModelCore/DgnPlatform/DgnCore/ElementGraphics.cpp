@@ -979,7 +979,7 @@ virtual ~RuleCollector() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
+bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
     if (m_curves.IsNull())
         m_curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
@@ -997,7 +997,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OutputGraphics(ViewContextR context) override
+void _OutputGraphics(ViewContextR context) override
     {
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 

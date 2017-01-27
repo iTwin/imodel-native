@@ -173,7 +173,7 @@ private:
 
     TileMeshPart (TileMeshList&& meshes) : m_meshes(meshes) { }
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} \
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} \
 
 public:
     TileMeshList const& Meshes() const { return m_meshes; }
@@ -515,7 +515,7 @@ private:
     size_t                  m_instanceCount;
     mutable size_t          m_facetCount;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} 
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} 
 
 protected:
     TileGeomPart(DRange3dCR range, TileGeometryList const& geometry);
@@ -583,7 +583,7 @@ struct TileModelDelta : RefCountedBase, ITileGenerationFilter
     DGNPLATFORM_EXPORT bool DoIncremental (TileNodeCR tile) const;     // Return true if this previously generated tile is available and compatible with the current tile.
 
 
-    virtual bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
+    bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
 
 
 private:
@@ -753,7 +753,7 @@ private:
     TileModelDeltaCP        m_modelDelta;
     mutable bool            m_containsParts;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} // A deep tree can trigger this assertion erroneously.
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} // A deep tree can trigger this assertion erroneously.
 
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
@@ -764,12 +764,12 @@ protected:
         : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_modelDelta(modelDelta), m_containsParts(false) { }
 
 
-    DGNPLATFORM_EXPORT virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool, bool, ITileGenerationFilterCP filter) const override;
-    virtual TileSource _GetSource() const override final { return TileSource::Element; }
-    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
-    virtual void _ClearGeometry() override { m_geometries.clear(); }
-    virtual TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
-    virtual WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
+    DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool, bool, ITileGenerationFilterCP filter) const override;
+    TileSource _GetSource() const override final { return TileSource::Element; }
+    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
+    void _ClearGeometry() override { m_geometries.clear(); }
+    TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
+    WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:
     static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) { return new ElementTileNode(model, modelDelta, transformFromDgn); }
@@ -796,7 +796,7 @@ protected:
     ModelTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance) { m_isEmpty = false; }
 
-    virtual TileSource _GetSource() const override final { return TileSource::Model; }
+    TileSource _GetSource() const override final { return TileSource::Model; }
 };
 
 //=======================================================================================

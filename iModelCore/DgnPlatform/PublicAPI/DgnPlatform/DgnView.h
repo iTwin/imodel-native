@@ -422,7 +422,7 @@ public:
     //! Change the valuue of a view detail 
     void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value;}
 
-    //! Remove of a view detail 
+    //! Remove a view detail 
     void RemoveDetail(Utf8CP name) {m_details.removeMember(name);}
     /** @} */
 
@@ -628,6 +628,12 @@ public:
     //! @param[in] standardView the rotation to which the view should be set.
     //! @return SUCCESS if the view was changed.
     DGNPLATFORM_EXPORT BentleyStatus SetStandardViewRotation(StandardView standardView);
+
+    //! Set the clipping volume for elements in this view
+    DGNPLATFORM_EXPORT void SetViewClip(ClipVectorPtr clip);
+
+    //! Get the clipping volume for elements in this view
+    DGNPLATFORM_EXPORT ClipVectorPtr GetViewClip() const;
 
     /*=================================================================================**//**
     * Margins for "white space" to be left around view volumes for #LookAtVolume.
@@ -1115,7 +1121,7 @@ protected:
     DVec2d m_delta=DVec2d::From(0.0,0.0);   //!< The extent of the view frustum.
     double m_rotAngle=0.0;      //!< Rotation of the view frustum.
 
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
@@ -1160,7 +1166,7 @@ protected:
 
     DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
     void _AdjustAspectRatio(double aspect, bool expandView) override {T_Super::_AdjustAspectRatio(aspect*GetAspectRatioSkew(), expandView);}
-    virtual DrawingViewDefinitionCP _ToDrawingView() const override {return this;}
+    DrawingViewDefinitionCP _ToDrawingView() const override {return this;}
 
     //! Construct a DrawingViewDefinition from the supplied params prior to loading
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
@@ -1193,7 +1199,7 @@ protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
     void _GetExtentLimits(double& minExtent, double& maxExtent) const override {minExtent=DgnUnits::OneMillimeter(); maxExtent=100*DgnUnits::OneMeter();}
-    virtual SheetViewDefinitionCP _ToSheetView() const override {return this;}
+    SheetViewDefinitionCP _ToSheetView() const override {return this;}
 
     //! Construct a SheetViewDefinition from the supplied params prior to loading it
     explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
@@ -1219,25 +1225,25 @@ namespace ViewElementHandler
     struct View : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition, ViewDefinition, View, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct View3d : View
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition3d, ViewDefinition3d, View3d, View, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct SpatialView : View3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialView, View3d, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct View2d : View
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition2d, ViewDefinition2d, View2d, View, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct OrthographicView : SpatialView
@@ -1248,7 +1254,7 @@ namespace ViewElementHandler
     struct CameraView : SpatialView
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraView, SpatialView, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct DrawingView : View2d
@@ -1274,7 +1280,7 @@ namespace ViewElementHandler
     struct ViewDisplayStyle : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DisplayStyle, ViewDisplayStyle, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct ViewDisplayStyle3d : ViewDisplayStyle
