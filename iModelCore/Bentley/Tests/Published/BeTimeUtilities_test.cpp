@@ -53,11 +53,11 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     
     BeDuration twoandhalf(BeDuration::FromSeconds(2.5));
     ASSERT_TRUE(twoandhalf == 2.5);
-    ASSERT_TRUE(twoandhalf == BeDuration::FromMilliSeconds(2500));
+    ASSERT_TRUE(twoandhalf == BeDuration::FromMilliseconds(2500));
     ASSERT_TRUE(twoandhalf.ToSeconds() == 2.5);
  
-    BeDuration::MilliSeconds twoInMillis = twoSeconds;
-    ASSERT_TRUE(twoInMillis == BeDuration::FromMilliSeconds(2000));
+    BeDuration::Milliseconds twoInMillis = twoSeconds;
+    ASSERT_TRUE(twoInMillis == BeDuration::FromMilliseconds(2000));
 
     BeTimePoint t1 = BeTimePoint::Now();
     BeTimePoint t2 = BeTimePoint::Now();
@@ -69,7 +69,7 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
     double diff = BeDuration(t3-t2);
     ASSERT_TRUE(diff>=3.0 && diff<4.0);
 
-    BeDuration::FromMilliSeconds(100).Sleep();
+    BeDuration::FromMilliseconds(100).Sleep();
     ASSERT_TRUE(!t1.IsInFuture());
     }
 
