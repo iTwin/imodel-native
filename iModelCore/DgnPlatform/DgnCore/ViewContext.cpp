@@ -697,7 +697,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
     DgnViewportP vp = context.GetViewport();
 
-    m_rasterWidth = nullptr != vp ? vp->GetIndexedLineWidth(elParams.GetWeight()) : DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
+    m_rasterWidth = DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();

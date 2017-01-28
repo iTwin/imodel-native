@@ -151,7 +151,6 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Task::Priority);
@@ -244,8 +243,6 @@ public:
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
     //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
-
-    int GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
 
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private
