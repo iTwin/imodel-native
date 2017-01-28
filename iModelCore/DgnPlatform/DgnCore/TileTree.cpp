@@ -783,7 +783,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
             break;
             }
 
-        BeDuration::FromMilliSeconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+        BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
         args.Clear(); // clear graphics/missing from previous attempt
         }
 

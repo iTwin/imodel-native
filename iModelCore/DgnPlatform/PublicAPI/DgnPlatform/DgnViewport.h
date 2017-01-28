@@ -207,7 +207,7 @@ public:
     StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
-    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliSeconds(500)); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliseconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 

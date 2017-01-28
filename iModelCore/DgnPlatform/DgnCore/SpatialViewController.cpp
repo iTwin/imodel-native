@@ -726,7 +726,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
-                context.EnableStopAfterTimout(BeDuration::FromMilliSeconds(SHOW_PROGRESS_INTERVAL));
+                context.EnableStopAfterTimout(BeDuration::FromMilliseconds(SHOW_PROGRESS_INTERVAL));
                 m_setTimeout = true;
                 }
 
