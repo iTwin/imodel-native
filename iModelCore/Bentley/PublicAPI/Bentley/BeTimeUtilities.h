@@ -138,7 +138,7 @@ struct BeDuration : std::chrono::steady_clock::duration
     typedef std::chrono::milliseconds Milliseconds;
     typedef std::chrono::seconds Seconds;
 
-    constexpr BeDuration() {}    //!< construct a BeDuration with 0 seconds
+    constexpr BeDuration() : T_Super(0) {}    //!< construct a BeDuration with 0 seconds
     constexpr BeDuration(Seconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Milliseconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Nanoseconds val) : T_Super(val) {} // allow implicit conversion
