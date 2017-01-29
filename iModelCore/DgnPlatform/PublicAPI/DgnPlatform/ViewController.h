@@ -261,6 +261,7 @@ public:
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     virtual void _CreateTerrain(TerrainContextR context) {}
+    virtual void _PickTerrain(PickContextR context) {}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -639,6 +640,7 @@ protected:
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
+    DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;

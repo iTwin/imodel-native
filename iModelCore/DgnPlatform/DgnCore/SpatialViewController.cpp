@@ -272,6 +272,24 @@ void SpatialViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_PickTerrain(PickContextR context)
+    {
+    auto& models = GetDgnDb().Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto geomModel = model->ToGeometricModel3d();
+        if (nullptr != geomModel)
+            geomModel->_PickTerrainGraphics(context);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewController::NonSceneQuery::NonSceneQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query(), nullptr)
