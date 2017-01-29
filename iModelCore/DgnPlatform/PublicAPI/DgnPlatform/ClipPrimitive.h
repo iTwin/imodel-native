@@ -72,7 +72,7 @@ public:
     ClipPlaneSetCP GetMaskPlanes() const {return _GetMaskPlanes();}
     ClipPlaneSetCP GetMaskOrClipPlanes() const {return NULL == _GetMaskPlanes() ? _GetClipPlanes() : _GetMaskPlanes();}
 
-    Json::Value ToJson() const;
+    virtual Json::Value _ToJson() const = 0;
     static ClipPrimitivePtr FromJson(JsonValueCR);
 
     GPArrayCP GetGPA(bool onlyIfNonLinear) const {return _GetGPA(onlyIfNonLinear);}

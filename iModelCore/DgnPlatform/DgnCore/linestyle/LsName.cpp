@@ -498,7 +498,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 //---------------------------------------------------------------------------------------
 StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR context, LineStyleSymbR lsSymb, GeometryParamsCR geomParams)
     {
-    uint32_t weight = (m_usesSymbolWeight || !context.GetViewFlags().m_weights ? 0 : geomParams.GetWeight()); // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
+    uint32_t weight = (m_usesSymbolWeight || !context.GetViewFlags().ShowWeights() ? 0 : geomParams.GetWeight()); // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
     uint32_t modifiers = 0;
 
     if (lsSymb.IsScaled())

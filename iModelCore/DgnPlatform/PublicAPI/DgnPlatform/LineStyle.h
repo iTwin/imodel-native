@@ -1295,7 +1295,7 @@ public:
     // Raster Images...
     Render::Texture* GetRasterTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR);
     Render::Texture* GetGeometryTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR);
-    Render::Texture* _GetTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR, bool createGeometryTexture);
+    Render::Texture* _GetTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR, bool createGeometryTexture) override;
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
@@ -1361,7 +1361,7 @@ public:
     //!  may reference other components.
     DGNPLATFORM_EXPORT LineStyleStatus          SetComponent            (LsComponentP lsComp);
     //!  Gets the name of the line style
-    DGNPLATFORM_EXPORT Utf8String                  GetStyleName            () const;
+    DGNPLATFORM_EXPORT Utf8String               GetStyleName            () const;
     };
 
 //__PUBLISH_SECTION_END__

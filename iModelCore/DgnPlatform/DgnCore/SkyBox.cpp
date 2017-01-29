@@ -314,11 +314,11 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.m_textures = true;
-    flags.m_visibleEdges = false;
-    flags.m_materials = true;
-    flags.m_shadows = false;
-    flags.m_ignoreLighting = true;
+    flags.SetShowTextures(true);
+    flags.SetShowVisibleEdges(false);
+    flags.SetShowMaterials(true);
+    flags.SetShowShadows(false);
+    flags.SetIgnoreLighting(true);
 
     GraphicBranch branch;
     branch.Add(*skyGraphic); // put the mesh into the branch

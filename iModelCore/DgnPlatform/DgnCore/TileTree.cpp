@@ -698,10 +698,10 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     {
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.m_textures = true;
-    flags.m_visibleEdges = false;
-    flags.m_shadows = false;
-    flags.m_ignoreLighting = true;
+    flags.SetShowTextures(true);
+    flags.SetShowVisibleEdges(false);
+    flags.SetShowShadows(false);
+    flags.SetIgnoreLighting(true);
 
     DrawBranch(flags, m_graphics, 0.0, "Main");
     DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
@@ -783,7 +783,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
             break;
             }
 
-        BeDuration::FromMilliSeconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+        BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
         args.Clear(); // clear graphics/missing from previous attempt
         }
 
