@@ -202,8 +202,10 @@ void ThreeMxModel::Load(SystemP renderSys) const
 
     // if we ask for the model with a different Render::System, we just throw the old one away.
     m_scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), renderSys);
+    m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,6 +265,16 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (m_scene.IsValid())
         m_scene->DrawInView(context, m_scene->GetLocation(), m_clip.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called whenever the camera moves. Must be fast.
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
+    {
+    if (m_scene.IsValid())
+        m_scene->Pick(context, m_scene->GetLocation(), m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

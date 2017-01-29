@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxNode.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -48,6 +48,18 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Node::_PickGraphics(PickArgsR args, int depth) const
+    {
+    if (!m_geometry.empty()) // if we have geometry, draw it now
+        {
+        for (auto geom : m_geometry)
+            geom->Pick(args);
+        }
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
@@ -58,7 +70,7 @@ TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
 
 /*---------------------------------------------------------------------------------**//**
 * Create a PolyfaceHeader from a Geometry
-* @bsimethod                                    Keith.Bentley                   05/16
+    * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
@@ -115,4 +127,16 @@ void Geometry::Draw(DrawArgsR args)
     {
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Geometry::Pick(PickArgsR args)
+    {
+    if (m_indices.empty())
+        return;
+
+    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
+    graphic->AddPolyface(*GetPolyface());
     }
