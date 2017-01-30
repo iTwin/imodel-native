@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -271,8 +271,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
             parserRegex = ParserRegex::Create (v.GetUtf8CP(), doNotUseECMAScript);
             if (NULL == parserRegex)
                 { 
-                // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
-                // BeAssert (false && "A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression"); 
+                LOG.errorv("A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression.  Failed to parse '%s' on ECProperty %s:%s", v.GetUtf8CP(), ecprop.GetClass().GetFullName(), ecprop.GetName().c_str()); 
                 return NULL; 
                 }
             }

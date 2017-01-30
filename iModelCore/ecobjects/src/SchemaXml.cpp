@@ -503,6 +503,12 @@ ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringC
         WriteLogMessage(ecClass, "relationship class", "Sealed");
         modifier = ECClassModifier::Sealed;
         }
+    else if (ecClass->IsDefined("ForceInstantiable"))
+        {
+        WriteLogMessage(ecClass, "relationship class", "None");
+        modifier = ECClassModifier::None;
+        }
+
 
     return modifier;
     }
