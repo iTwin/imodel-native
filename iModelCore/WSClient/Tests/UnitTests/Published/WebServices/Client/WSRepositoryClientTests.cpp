@@ -892,6 +892,112 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtNotExceeded_CorrectRequestCreated)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String expectedUrl = "https://srv.com/ws/v2.3/Repositories/foo/TestSchema/TestClass?$filter=filter";
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 3}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        EXPECT_EQ("GET", request.GetMethod());
+        EXPECT_EQ(NULL, request.GetHeaders().GetContentType());
+        EXPECT_TRUE(request.GetRequestBody().IsNull());
+        return StubHttpResponse();
+        });
+
+    auto query = StubWSQuery();
+    Utf8String filter = "filter";
+    query.SetFilter(filter);
+    
+    size_t maxLenght = expectedUrl.length();
+    client->Config().SetMaxUrlLength(maxLenght);
+
+    client->SendQueryRequest(query, nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtExceeded_CorrectRequestCreated)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String expectedUrl = "https://srv.com/ws/v2.3/Repositories/foo/TestSchema/TestClass?$filter=filter";
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 3}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        EXPECT_EQ("GET", request.GetMethod());
+        EXPECT_EQ(NULL, request.GetHeaders().GetContentType());
+        EXPECT_TRUE(request.GetRequestBody().IsNull());
+        return StubHttpResponse();
+        });
+
+    auto query = StubWSQuery();
+    Utf8String filter = "filter";
+    query.SetFilter(filter);
+
+    size_t maxLenght = expectedUrl.length() - 1;
+    client->Config().SetMaxUrlLength(maxLenght);
+    //Excpecting to have warning about url length
+    BeTest::SetFailOnAssert(false);
+    client->SendQueryRequest(query, nullptr, nullptr)->Wait();
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtNotExceeded_CorrectRequestCreated)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String expectedUrl = "https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass?$filter=filter";
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 4}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        EXPECT_EQ("GET", request.GetMethod());
+        EXPECT_EQ(NULL, request.GetHeaders().GetContentType());
+        EXPECT_TRUE(request.GetRequestBody().IsNull());
+        return StubHttpResponse();
+        });
+
+    auto query = StubWSQuery();
+    Utf8String filter = "filter";
+    query.SetFilter(filter);
+
+    size_t maxLenght = expectedUrl.length();
+    client->Config().SetMaxUrlLength(maxLenght);
+
+    client->SendQueryRequest(query, nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_CorrectRequestCreated)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 4}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/$query", request.GetUrl());
+        EXPECT_EQ("POST", request.GetMethod());
+        EXPECT_STREQ("application/json", request.GetHeaders().GetContentType());
+        EXPECT_STREQ("$filter=filter", request.GetRequestBody()->AsString().c_str());
+        return StubHttpResponse();
+        });
+
+    auto query = StubWSQuery();
+    Utf8String filter = "filter";
+    query.SetFilter(filter);
+
+    Utf8String expectedUrl = "https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass?$filter=filter";
+    size_t maxLenght = expectedUrl.length() - 1;
+    client->Config().SetMaxUrlLength(maxLenght);
+
+    client->SendQueryRequest(query, nullptr, nullptr)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
