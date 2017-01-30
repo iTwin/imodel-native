@@ -217,7 +217,7 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // test to see whether a single repetition of the pattern will be discernible in this view.
@@ -236,7 +236,7 @@ StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
     if (nPoints < 2)
         return ERROR;
@@ -244,16 +244,16 @@ StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISy
     DPoint3dCP  tan1 = NULL;
     DPoint3dCP  tan2 = NULL;
     DPoint3d    startTangent, endTangent;
-    bool        hasWidth = (0 != _GetMaxWidth() || 0 != modifiers->GetMaxWidth());
+    bool        hasWidth = (0 != _GetMaxWidth() || 0 != modifiers.GetMaxWidth());
 
     if (hasWidth)
         {
         tan1 = &startTangent;
         tan2 = &endTangent;
 
-        if (modifiers->HasStartTangent())
+        if (modifiers.HasStartTangent())
             {
-            startTangent = *modifiers->GetStartTangent();
+            startTangent = *modifiers.GetStartTangent();
             }
         else
             {
@@ -261,9 +261,9 @@ StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISy
                 tan1 = NULL;
             }
 
-        if (modifiers->HasEndTangent())
+        if (modifiers.HasEndTangent())
             {
-            endTangent = *modifiers->GetEndTangent();
+            endTangent = *modifiers.GetEndTangent();
             }
         else
             {
@@ -273,14 +273,14 @@ StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISy
             }
 
         // for closed elements, attempt to set the start and end tangents so first/last points join
-        if (modifiers->IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.DotProduct(endTangent)))
+        if (modifiers.IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.DotProduct(endTangent)))
             {
             if (0.0 != endTangent.NormalizedDifference(startTangent, endTangent))
                 startTangent.Scale(endTangent, -1.0);
             }
         }
 
-    if (CheckSegmentMode(modifiers))
+    if (CheckSegmentMode(&modifiers))
         {
         DPoint3dCP  currPoint = inPoints;
         DPoint3dCP  lastPoint = inPoints + (nPoints-1);
@@ -318,9 +318,11 @@ StatusInt LsStrokePatternComponent::ProcessStroke(LineStyleContextR context, ISy
     else
         {
         int32_t segFlag = FLAG_FirstSeg | FLAG_LastSeg;
+
         if (IsSingleSegment())  // This should be the case where it is an arc (IsTreatAsSingleSegment), but the style itself says to be single segment
             segFlag |= FLAG_NoEndPhase;
-        StrokeLocal(context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
+
+        StrokeLocal(context, symbolProcessor, inPoints, nPoints, modifiers.GetTotalLength(), modifiers, tan1, tan2, segFlag);
         }
 
     return context.GetViewContext().CheckStop() ? ERROR : SUCCESS;
@@ -698,9 +700,9 @@ void            LsStrokePatternComponent::FixDashWidths (double& orgWidth, doubl
 * public stroke method.
 * @bsimethod                                                    JimBartlett     03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context, ISymbolProcess const*symbolProcessor, DPoint3dCP inPoints, int nPoints, double length, LineStyleSymbCP modifiers, DPoint3dCP startTangent, DPoint3dCP endTangent, int segFlag) const
+void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context, ISymbolProcess const*symbolProcessor, DPoint3dCP inPoints, int nPoints, double length, LineStyleSymbR modifiers, DPoint3dCP startTangent, DPoint3dCP endTangent, int segFlag) const
     {
-    double patLength  = _GetLength () * modifiers->GetScale();
+    double patLength  = _GetLength () * modifiers.GetScale();
 
     // Make a copy of the stroke definitions so that the original are unchanged
     LsStrokePatternComponent   oClone (this);
@@ -708,19 +710,14 @@ void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context,
     // Occasionally due to problems in files, the number of iterations is huge.
     // In that case, just draw it as continuous.  TR #138719
     if (patLength <= 0.0 || ((length / patLength) > MAX_ITERATIONS))
-        {
         oClone.SetContinuous();
-        }
 
     oClone.m_startTangent = startTangent;
     oClone.m_endTangent   = endTangent;
 
     // Apply modifiers to the stroke pattern and check for length and taper requirements
-    bool        usesTaper = false;
     double      orgWidth=0, endWidth=0, taper=0;
-
-    if (modifiers != NULL)
-        usesTaper = oClone.ApplyModifiers (&orgWidth, &endWidth, modifiers);
+    bool        usesTaper = oClone.ApplyModifiers (&orgWidth, &endWidth, &modifiers);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     oClone.FixDashWidths (orgWidth, endWidth, usesTaper, context.GetViewContext(), inPoints);  // No dashes less than 1 pixel wide.
@@ -734,18 +731,18 @@ void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context,
 
     // Apply auto-phase and iteration control adjustments
     if (LsStrokePatternComponent::PHASEMODE_Center == oClone.GetPhaseMode())
-        oClone.ApplyCenterPhase (length, modifiers->IsElementClosed() && modifiers->IsCurve());
+        oClone.ApplyCenterPhase (length, modifiers.IsElementClosed() && modifiers.IsCurve());
     else if (LsStrokePatternComponent::PHASEMODE_Fraction == oClone.GetPhaseMode())
         oClone.ApplyAutomaticPhase(length);
     else if (m_options.iterationLimit)
         oClone.ApplyIteration(length);
 
-    double endPhase = oClone.GenerateStrokes (context, symbolProcessor, modifiers, inPoints, nPoints, length, orgWidth, taper, segFlag);
+    double endPhase = oClone.GenerateStrokes (context, symbolProcessor, &modifiers, inPoints, nPoints, length, orgWidth, taper, segFlag);
 
     if (!(segFlag & FLAG_NoEndPhase) && !oClone._IsContinuous() && (LsStrokePatternComponent::PHASEMODE_Center != oClone.GetPhaseMode()))
         {
-        endPhase /= modifiers->GetScale();    // Phase is assumed to be in line style units; it will be scaled the next time through.
-        ((LineStyleSymbP) modifiers)->SetXElemPhase (endPhase);
+        endPhase /= modifiers.GetScale(); // Phase is assumed to be in line style units; it will be scaled the next time through.
+        modifiers.SetXElemPhase (endPhase);
         }
     }
 

@@ -2997,17 +2997,17 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     switch (geomParams.GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
-            if (!viewFlags.m_constructions)
+            if (!viewFlags.ShowConstructions())
                 return false;
             break;
 
         case DgnGeometryClass::Dimension:
-            if (!viewFlags.m_dimensions)
+            if (!viewFlags.ShowDimensions())
                 return false;
             break;
 
         case DgnGeometryClass::Pattern:
-            if (!viewFlags.m_patterns)
+            if (!viewFlags.ShowPatterns())
                 return false;
             break;
         }
@@ -4476,8 +4476,35 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic)
+void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic)
     {
+    /* BEGIN - ADD LSWIDTH TO RANGE - Hopefully this can be removed when/if we start doing locate from mesh tiles */
+    DRange3d localRange = localRangeIn;
+
+    if (m_elParams.GetCategoryId().IsValid())
+        {
+        m_elParams.Resolve(m_dgnDb);
+
+        LineStyleInfoCP lsInfo = m_elParams.GetLineStyle();
+
+        if (nullptr != lsInfo)
+            {
+            double maxWidth = lsInfo->GetLineStyleSymb().GetStyleWidth();
+
+            localRange.low.x -= maxWidth;
+            localRange.low.y -= maxWidth;
+            localRange.high.x += maxWidth;
+            localRange.high.y += maxWidth;
+
+            if (m_is3d)
+                {
+                localRange.low.z -= maxWidth;
+                localRange.high.z += maxWidth;
+                }
+            }
+        }
+    /* END - ADD LSWIDTH TO RANGE */
+
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else

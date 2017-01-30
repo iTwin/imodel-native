@@ -12,13 +12,12 @@ USING_NAMESPACE_BENTLEY_RENDER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsComponent::_StrokeLineString(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP pts, int nPts, bool isClosed) const
+StatusInt LsComponent::_StrokeLineString(LineStyleContextR lsContext, LineStyleSymbR lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
 
-    LineStyleSymb lsSymb = lsSymbIn;
-
+    lsSymb.SetIsCurve(false);
     lsSymb.SetElementClosed(isClosed);
     lsSymb.SetTotalLength(PolylineOps::Length(pts, nullptr, 1, nPts));
 
@@ -29,13 +28,13 @@ StatusInt LsComponent::_StrokeLineString(LineStyleContextR lsContext, LineStyleS
         return SUCCESS;
         }
 
-    return _DoStroke(lsContext, pts, nPts, &lsSymb);
+    return _DoStroke(lsContext, pts, nPts, lsSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsComponent::_StrokeLineString2d(LineStyleContextR lsContext, LineStyleSymbCR lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt LsComponent::_StrokeLineString2d(LineStyleContextR lsContext, LineStyleSymbR lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
@@ -150,9 +149,9 @@ void arcAddStrokes(DEllipse3dCR ellipse, bvector<DPoint3d>& points, IFacetOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DEllipse3dCR arc, bool is3d, double zDepth, bool isClosed) const
+StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbR lsSymb, DEllipse3dCR arc, bool is3d, double zDepth, bool isClosed) const
     {
-    if (SUCCESS == StrokeContinuousArc(lsContext, lsSymbIn, arc, isClosed))
+    if (SUCCESS == StrokeContinuousArc(lsContext, lsSymb, arc, isClosed))
         return SUCCESS;
 
     bvector<DPoint3d> points;
@@ -168,12 +167,10 @@ StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbCR l
             pt.z = zDepth;
         }
 
-    LineStyleSymb lsSymb = lsSymbIn;
-
-    lsSymb.SetTreatAsSingleSegment(true);
     lsSymb.SetIsCurve(true);
     lsSymb.SetElementClosed(isClosed);
     lsSymb.SetTotalLength(PolylineOps::Length(points));
+    lsSymb.SetTreatAsSingleSegment(true);
 
     bool hasStartTan = lsSymb.HasStartTangent();
     bool hasEndTan = lsSymb.HasEndTangent();
@@ -192,13 +189,13 @@ StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbCR l
         lsSymb.SetTangents(hasStartTan ? lsSymb.GetStartTangent() : &startTan, hasEndTan ? lsSymb.GetEndTangent() : &endTan);
         }
 
-    return _DoStroke(lsContext, &points.front(), (int) points.size(), &lsSymb);
+    return _DoStroke(lsContext, &points.front(), (int) points.size(), lsSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsComponent::_StrokeBSplineCurve(LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCR curve, bool is3d, double zDepth) const
+StatusInt LsComponent::_StrokeBSplineCurve(LineStyleContextR lsContext, LineStyleSymbR lsSymb, MSBsplineCurveCR curve, bool is3d, double zDepth) const
     {
     bvector<DPoint3d> points;
 
@@ -213,16 +210,18 @@ StatusInt LsComponent::_StrokeBSplineCurve(LineStyleContextR lsContext, LineStyl
             pt.z = zDepth;
         }
 
-    LineStyleSymb lsSymb = lsSymbIn; // NOTE: For whatever reason, start/end tangents aren't setup as with _StrokeArc?!?
-
-    lsSymb.SetTreatAsSingleSegment(true);
     lsSymb.SetIsCurve(true);
     lsSymb.SetElementClosed(curve.IsClosed());
     lsSymb.SetTotalLength(PolylineOps::Length(points));
+    lsSymb.SetTreatAsSingleSegment(true);
 
-    return _DoStroke(lsContext, &points.front(), (int) points.size(), &lsSymb);
+    // NOTE: For whatever reason, start/end tangents aren't setup as with _StrokeArc?!?
+    return _DoStroke(lsContext, &points.front(), (int) points.size(), lsSymb);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    john.gooding                    09/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}
 LsComponentType     LsComponent::GetComponentType () const {return m_location.GetComponentType ();}
 Utf8String          LsComponent::GetDescription () const {return m_descr;}

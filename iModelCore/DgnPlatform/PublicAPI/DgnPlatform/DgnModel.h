@@ -29,7 +29,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler { struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; }
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -804,6 +804,8 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
     virtual void _AddTerrainGraphics(TerrainContextR) const {}
 
+    virtual void _PickTerrainGraphics(PickContextR) const {}
+
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
@@ -988,13 +990,17 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
+    friend struct dgn_ModelHandler::Definition;
+
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-public:
-    explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
 
-    static DefinitionModelPtr Create(CreateParams const& params) {return new DefinitionModel(params);}
+    explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
+    static DefinitionModelPtr Create(CreateParams const& params) { return new DefinitionModel(params); }
+public:
+    DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionPartitionCR modeledElement);
 };
 
 //=======================================================================================

@@ -604,10 +604,9 @@ public:
 };
 
 //=======================================================================================
-//! @see DgnDb::Units
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
-struct DgnUnits : NonCopyableClass
+struct DgnGeoLocation : NonCopyableClass
 {
 private:
     friend struct DgnDb;
@@ -618,7 +617,7 @@ private:
     mutable DgnGCS* m_gcs = nullptr;
     mutable IGeoCoordinateServicesP m_geoServices = nullptr;
 
-    DgnUnits(DgnDbR db);
+    DgnGeoLocation(DgnDbR db);
     void LoadProjectExtents() const;
 
 public:
@@ -671,7 +670,13 @@ public:
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
+};
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/13
+//=======================================================================================
+struct DgnUnits 
+{
     static double const OneMeter() {return 1.0;}
     static double const OneKilometer() {return 1000.0 * OneMeter();}
     static double const OneMillimeter() {return OneMeter() / 1000.0;}

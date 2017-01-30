@@ -164,6 +164,9 @@ public:
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 
+        GroundPlane& GetGroundPlane() {return m_groundPlane;}
+        SkyBox& GetSkyBox() {return m_skybox;}
+
         DGNPLATFORM_EXPORT void Initialize();
     };
 

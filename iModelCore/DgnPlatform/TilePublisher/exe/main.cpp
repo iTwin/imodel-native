@@ -680,7 +680,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
         {
-        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().Units().GetGlobalOrigin());
+        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().GeoLocation().GetGlobalOrigin());
         }
     else
         {

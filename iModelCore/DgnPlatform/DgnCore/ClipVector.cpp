@@ -508,7 +508,7 @@ Json::Value ClipVector::ToJson() const
     {
     Json::Value val = Json::arrayValue;
     for (auto clipPrimitive : *this)
-        val.append(clipPrimitive->ToJson());
+        val.append(clipPrimitive->_ToJson());
 
     return val;
     }

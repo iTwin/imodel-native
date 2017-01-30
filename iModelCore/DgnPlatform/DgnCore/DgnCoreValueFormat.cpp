@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCoreValueFormat.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -405,7 +405,7 @@ void DirectionFormatter::InitModelSettings(GeometricModelCR model)
     SetClockwise(displayInfo.GetDirectionClockwise());
     SetBaseDirection(displayInfo.GetDirectionBaseDir());
 
-    DgnGCS* dgnGCS = model.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS* dgnGCS = model.GetDgnDb().GeoLocation().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
     SetTrueNorthValue(azimuth);
     }
@@ -1047,7 +1047,7 @@ void            PointFormatter::InitModelSettings(GeometricModelCR model, bool a
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
         m_acs = IACSManager::GetManager().CreateACS ();
-        m_acs->SetOrigin(geomModel->GetDgnDb().Units().GetGlobalOrigin());
+        m_acs->SetOrigin(geomModel->GetDgnDb().GeoLocation().GetGlobalOrigin());
         }
 
     m_is3d = nullptr != geomModel && geomModel->Is3d();

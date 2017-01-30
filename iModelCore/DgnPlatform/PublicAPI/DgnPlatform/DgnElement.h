@@ -158,7 +158,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
     DGNPLATFORM_EXPORT virtual DgnStyleId _RemapLineStyleId(DgnStyleId sourceId);
 
-
 public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
@@ -286,7 +285,7 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         }
 
     //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
-    template <class T_ElementId>  void BuildIdList (bvector<T_ElementId>& idList)
+    template <class T_ElementId> void BuildIdList(bvector<T_ElementId>& idList)
         {
         for (ElementIteratorEntry entry : *this)
             idList.push_back(entry.GetId<T_ElementId>());
@@ -1182,6 +1181,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement was successfully imported into the database.
+    //! @note If you override this method, you @em must call T_Super::_OnImported.
     virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
@@ -1200,6 +1200,7 @@ protected:
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement. Only
     //! override this method if your element needs to do additional work when updating the element, such as updating
     //! a relationship.
+    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
     //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is 
@@ -1306,12 +1307,14 @@ protected:
     //! @param[in] child The original element which is being imported
     //! @param[in] destModel The model into which the child is being imported
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    //! @note If you override this method, you @em must call T_Super::_OnChildImport, forwarding its status.
     virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const {return DgnDbStatus::Success;}
 
     //! Called after an element, with this element as its parent, was successfully imported
     //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
     //! @param[in] imported The clone which was imported, which is a child of this element.
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    //! @note If you override this method, you @em must call T_Super::_OnChildImported.
     virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
     //! Called when this element is being <i>modeled</i> by a new DgnModel.
@@ -3347,18 +3350,18 @@ public:
     //! Add an element and editable copies of its children to the collection
     //! @param el       The parent element to be added and queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
+    void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
 
     //! Add an editable copy of the specified element to the collection.
     //! If the collection already contains an element with the same ElementId, then \a el is not added and the existing element is returned.
     //! @param el  The element to be edited
     //! @return The element that is in the collection or nullptr if the element could not be copied for edit.
-    DGNPLATFORM_EXPORT DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
+    DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
     
     //! Add an editable copy of the specified element and its children to the collection.
     //! @param el       The element to be added
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
+    void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
 
     //! Look up the editable copy of an element in the collection by its ElementId.
     //! @return The element that is in the collection or nullptr if not found.
@@ -3378,7 +3381,7 @@ public:
     //! Remove the specified editable copy of an element and its children (by Id) from the collection.
     //! @param el  The editable copy of the parent element to remove and to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
+    void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
 
     //! Get the number of elements currently in the collection
     size_t size() {return m_elements.size();}

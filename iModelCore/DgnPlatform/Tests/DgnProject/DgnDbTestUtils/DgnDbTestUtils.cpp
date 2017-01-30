@@ -185,7 +185,7 @@ SpatialLocationModelPtr DgnDbTestUtils::InsertSpatialLocationModel(DgnDbR db, Ut
 //---------------------------------------------------------------------------------------
 void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
     {
-    db.Units().InitializeProjectExtents();
+    db.GeoLocation().InitializeProjectExtents();
     }
 
 //---------------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
-    viewController->GetViewDefinition().LookAtVolume(db.Units().GetProjectExtents());
+    viewController->GetViewDefinition().LookAtVolume(db.GeoLocation().GetProjectExtents());
 
     DgnDbStatus stat;
     viewController->GetViewDefinition().Update(&stat);

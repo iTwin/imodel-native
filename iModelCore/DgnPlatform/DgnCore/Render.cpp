@@ -313,9 +313,9 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    SpatialViewControllerCP sv = vp.GetSpatialViewControllerCP();
-    if (nullptr != sv)
-        m_activeVolume = sv->GetActiveVolume();
+    auto spatial = vp.GetSpatialViewControllerCP();
+    if (nullptr != spatial)
+        m_activeVolume = spatial->GetActiveVolume();
     }
 
 /*---------------------------------------------------------------------------------**//**

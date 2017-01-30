@@ -73,6 +73,7 @@ HTTP request caching:
 */
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
@@ -143,6 +144,7 @@ public:
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d const& GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
+    DGNPLATFORM_EXPORT void Pick(PickArgsR args, int depth) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
@@ -174,6 +176,8 @@ public:
     //! @param[in] args The DrawArgs for the current display request.
     //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
+
+    virtual void _PickGraphics(PickArgsR args, int depth) const {}
 
     //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
@@ -267,6 +271,8 @@ public:
     //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
     DGNPLATFORM_EXPORT void DrawInView(RenderListContext& context, TransformCR, ClipVectorCP);
+
+    DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP clips);
 };
 
 //=======================================================================================
@@ -365,6 +371,23 @@ struct FileDataQuery
 };
 
 //=======================================================================================
+// Arguments for drawing or picking tiles.
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct TileArgs
+{
+    Transform m_location;
+    RootR m_root;
+    ClipVectorCP m_clip;
+
+    TileArgs(TransformCR location, RootR root, ClipVectorCP clip) : m_location(location), m_root(root), m_clip(clip) {}
+    TransformCR GetLocation() const {return m_location;}
+    DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
+    double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
+    void SetClip(ClipVectorCP clip) {m_clip = clip;}
+};
+
+//=======================================================================================
 //! Arguments for drawing a tile. As tiles are drawn, their Render::Graphics go into the GraphicBranch member of this object. After all
 //! in-view tiles are drawn, the accumulated list of Render::Graphics are placed in a GraphicBranch with the location
 //! transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)
@@ -375,30 +398,33 @@ struct FileDataQuery
 //! still-missing tiles until all have arrived, or the view changes externally.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
-struct DrawArgs
+struct DrawArgs : TileArgs
 {
     typedef bmultimap<int, TileCPtr> MissingNodes;
     RenderContextR m_context;
-    RootR m_root;
-    Transform m_location;
     Render::GraphicBranch m_graphics;
     Render::GraphicBranch m_hiResSubstitutes;
     Render::GraphicBranch m_loResSubstitutes;
     MissingNodes m_missing;
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
-    ClipVectorCP m_clip;
 
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
-    DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
-    double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
-    void SetClip(ClipVectorCP clip) {m_clip = clip;}
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
-            : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {}
+            : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
-    TransformCR GetLocation() const {return m_location;}
+};
+
+//=======================================================================================
+//! Arguments for performing a Pick of a tile.
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct PickArgs : TileArgs
+{
+    PickContextR m_context;
+    PickArgs(PickContextR context, TransformCR location, RootR root, ClipVectorCP clip = nullptr) : TileArgs(location, root, clip), m_context(context) {}
 };
 
 //=======================================================================================

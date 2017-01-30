@@ -11,7 +11,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
+DgnGeoLocation::DgnGeoLocation(DgnDbR project) : m_dgndb(project)
     {
     m_globalOrigin.Zero();
     }
@@ -19,7 +19,7 @@ DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGCS* DgnUnits::GetDgnGCS() const
+DgnGCS* DgnGeoLocation::GetDgnGCS() const
     {
     if (!m_hasCheckedForGCS)
         {
@@ -33,7 +33,7 @@ DgnGCS* DgnUnits::GetDgnGCS() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::SetGlobalOrigin(DPoint3dCR origin)
+void DgnGeoLocation::SetGlobalOrigin(DPoint3dCR origin)
     {
     m_globalOrigin=origin;
     if (m_gcs)
@@ -43,7 +43,7 @@ void DgnUnits::SetGlobalOrigin(DPoint3dCR origin)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
+BentleyStatus DgnGeoLocation::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
     {
     if (nullptr == GetDgnGCS())
         return BSIERROR;
@@ -54,7 +54,7 @@ BentleyStatus DgnUnits::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) const
+BentleyStatus DgnGeoLocation::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) const
     {
     if (nullptr == GetDgnGCS())
         return BSIERROR;
@@ -66,7 +66,7 @@ static Utf8CP DGNPROPERTYJSON_GlobalOrigin = "globalOrigin";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnUnits::Load()
+DgnDbStatus DgnGeoLocation::Load()
     {
     Utf8String value;
     DbResult result = m_dgndb.QueryProperty(value, DgnProjectProperty::Units());
@@ -86,7 +86,7 @@ DgnDbStatus DgnUnits::Load()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::Save()
+void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
     JsonUtils::DPoint3dToJson(jsonObj[DGNPROPERTYJSON_GlobalOrigin], m_globalOrigin);
@@ -96,7 +96,7 @@ void DgnUnits::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::SetProjectExtents(AxisAlignedBox3dCR newExtents)
+void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     {
     if (newExtents.IsEmpty())
         {
@@ -113,7 +113,7 @@ void DgnUnits::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::InitializeProjectExtents() 
+void DgnGeoLocation::InitializeProjectExtents() 
     {
     auto& models = GetDgnDb().Models();
 
@@ -137,7 +137,7 @@ void DgnUnits::InitializeProjectExtents()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::LoadProjectExtents() const
+void DgnGeoLocation::LoadProjectExtents() const
     {
     Json::Value  jsonObj;
     Utf8String value;
@@ -153,7 +153,7 @@ void DgnUnits::LoadProjectExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnUnits::GetProjectExtents() const
+AxisAlignedBox3d DgnGeoLocation::GetProjectExtents() const
     {
     if (m_extent.IsEmpty())
         LoadProjectExtents();
