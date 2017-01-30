@@ -285,7 +285,7 @@ void BeDuration::Sleep()
         }
 
     // Emulate sleep by waiting with timeout on an event that is never signalled.
-    MilliSeconds millis(*this);
+    Milliseconds millis(*this);
     WaitForSingleObjectEx(s_sleepEvent, (uint32_t)millis.count(), false);
 #else
     std::this_thread::sleep_for(*this);
