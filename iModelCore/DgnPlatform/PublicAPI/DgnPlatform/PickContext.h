@@ -144,6 +144,9 @@ private:
     bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) override;
     bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
+    bool _DoPatternStroke(PatternParamsCR, SimplifyGraphic&) const override {return true;} // locate/snap to pattern and line style geometry...
+    bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& options, SimplifyGraphic& graphic) const override {return TEST_LSTYLE_Component == m_testingLStyle;}
+
 public:
     double GetPickAperture() {return m_pickAperture;}
     HitListP GetHitList() {return m_hitList;}

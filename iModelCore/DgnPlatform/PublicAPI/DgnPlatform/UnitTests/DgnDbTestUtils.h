@@ -117,6 +117,61 @@ public:
     //! Return true if any element has the specified CodeValue.
     //! @note CodeScope and CodeSpecId are not considered
     static bool CodeValueExists(DgnDbR, Utf8CP codeValue);
+
+    //! @name BIM Management Utilities
+    //! @{
+
+    //! @private - internal function called by seed data managers
+    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase);
+
+    //! Create a DgnDb from scratch in the test output directory. 
+    //! The specified name must be a relative path, including an optional subdirectory path, and a filename.
+    //! If the file already exists, that is an ERROR, indicating that two test classs are trying to create seed DgnDbs with the same names.
+    //! Each test class should use its own class-specific, unique name for its subdirectory and/or seed DgnDbs.
+    //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
+    //! @param mustBeBriefcase If true, the new DgnDb is marked as a (fake) briefcase. This is the default.
+    //! @return a pointer to the newly created file, or nullptr if the location is invalid
+    //! @note Normally, this should be called only once for an entire test class in the class's SetUpTestCase function.
+    static DgnDbPtr CreateSeedDb(WCharCP relPath, bool mustBeBriefcase = true) {return CreateDgnDb(relPath, false, mustBeBriefcase);}
+
+    //! Open the specified seed DgnDb read-only
+    //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test class's SetUpTestCase logic, then you must specify the
+    //! relative path to it. 
+    //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist
+    static DgnDbPtr OpenSeedDb(WCharCP relSeedPath);
+        
+    //! Open <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
+    //! The copy will always be located in a subdirectory with the same name as the calling test.
+    //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
+    //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test class's SetUpTestCase logic, then you must specify the
+    //! relative path to it. 
+    //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
+    //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
+    //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist.
+    //! @see OpenDgnDb
+    static DgnDbPtr OpenSeedDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr);
+
+    //! This is a convenenience function that calls OpenSeedDbCopy and returns the full filename of the opened copy.
+    static DgnDbStatus MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName);
+
+    //! Open the specified seed DgnDb.
+    //! @param relPath Identifies a seed DgnDb that already exists in the specified subdirectory. Be sure to use forward slash (/) as a directory separator.
+    //! @param mode the file open mode
+    //! @return a pointer to the open DgnDb, or nullptr if the file does not exist
+    static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode);
+
+    //! Create a subdirectory in the test output directory. 
+    //! If the directory already exists, that is an ERROR, indicating that two test classs are trying to use the same output directory.
+    //! Each test class should use its own class-specific, unique name for its subdirectory and/or seed DgnDbs.
+    //! @param relPath  The name of the subdirectory to create. Be sure to use forward slash (/) as a directory separator.
+    //! @note Normally, this should be called only in the SetUpTestCase function, once for an entire test class
+    static BeFileNameStatus CreateSubDirectory(WCharCP relPath);
+
+    //! Empty a subdirectory in the test output directory. 
+    //! @param relPath  The name of the subdirectory to empty. Be sure to use forward slash (/) as a directory separator.
+    static void EmptySubDirectory(WCharCP relPath);
+
+    //! @}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

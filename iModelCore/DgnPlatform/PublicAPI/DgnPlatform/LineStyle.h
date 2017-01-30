@@ -98,7 +98,10 @@ public:
         m_facetOptions = facetOptions;
 
         if (!m_facetOptions.IsValid())
+            {
             m_facetOptions = IFacetOptions::CreateForCurves();
+            m_facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians()); // NOTE: Need a fairly small angle if not always re-stroking to a view tolerance...
+            }
         }
 
     void SetCreatingTexture() {m_isTextureCreate = true;}
