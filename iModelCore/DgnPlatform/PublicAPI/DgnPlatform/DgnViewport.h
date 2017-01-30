@@ -206,7 +206,7 @@ public:
     StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
-    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliSeconds(500)); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliseconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
@@ -553,7 +553,7 @@ struct OffscreenViewport : DgnViewport
     BSIRect m_rect;
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
-    OffscreenViewport();
+    DGNVIEW_EXPORT OffscreenViewport();
 };
 
 //=======================================================================================

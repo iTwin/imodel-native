@@ -272,6 +272,24 @@ void SpatialViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_PickTerrain(PickContextR context)
+    {
+    auto& models = GetDgnDb().Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto geomModel = model->ToGeometricModel3d();
+        if (nullptr != geomModel)
+            geomModel->_PickTerrainGraphics(context);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewController::NonSceneQuery::NonSceneQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query(), nullptr)
@@ -726,7 +744,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
-                context.EnableStopAfterTimout(BeDuration::FromMilliSeconds(SHOW_PROGRESS_INTERVAL));
+                context.EnableStopAfterTimout(BeDuration::FromMilliseconds(SHOW_PROGRESS_INTERVAL));
                 m_setTimeout = true;
                 }
 

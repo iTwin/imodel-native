@@ -629,6 +629,47 @@ void Tile::Draw(DrawArgsR args, int depth) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Pick(PickArgsR args, int depth) const
+    {
+    DgnDb::VerifyClientThread();
+
+    if (args.m_context.WasAborted())
+        return;
+
+    bool tooCoarse = true;
+
+    if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
+        {
+        Frustum box(m_range);
+
+        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
+            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
+            {
+            return;
+            }
+
+        double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
+        DPoint3d center = args.GetTileCenter(*this);
+        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+        tooCoarse = pixelSize > _GetMaximumSize();
+        }
+
+    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
+    if (tooCoarse && nullptr != children)
+        {
+        for (auto const& child : *children)
+            child->Pick(args, depth+1);
+
+        return;
+        }
+
+    _PickGraphics(args, depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementAlignedBox3d Tile::ComputeRange() const
@@ -783,11 +824,23 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
             break;
             }
 
-        BeDuration::FromMilliSeconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
+        BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
         args.Clear(); // clear graphics/missing from previous attempt
         }
 
     args.DrawGraphics(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
+    {
+    if (!GetRootTile().IsValid())
+        return;
+
+    PickArgs args(context, location, *this, clips);
+    m_rootTile->Pick(args, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
