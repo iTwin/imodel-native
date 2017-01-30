@@ -1700,7 +1700,7 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_CompressionIsNotEnabled_Req
         return StubHttpResponse();
         });
 
-    EXPECT_FALSE(client->GetCompressionOptions().IsRequestCompressionEnabled());
+    EXPECT_FALSE(client->Config().GetCompressionOptions().IsRequestCompressionEnabled());
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
     }
 
@@ -1717,10 +1717,10 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableCompression_RequestCo
         return StubHttpResponse();
         });
 
-    EXPECT_FALSE(client->GetCompressionOptions().IsRequestCompressionEnabled());
+    EXPECT_FALSE(client->Config().GetCompressionOptions().IsRequestCompressionEnabled());
     CompressionOptions options;
     options.EnableRequestCompression(true, 1111);
-    client->SetCompressionOptions(options);
+    client->Config().SetCompressionOptions(options);
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
     }
 
