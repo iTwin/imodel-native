@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,11 +58,9 @@ namespace rapidjson
     void PrintTo(const Document& value, ::std::ostream* os);
     }
 
-// DEPRECATED: Duplicating symbols with DgnClientFx SDK UnitTests
-// Now tests are build seperately for each library so no duplication should occur
 // In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) in active
 
-#ifndef BUILD_FOR_AGGREGATE_TESTS
+#ifdef BUILD_FOR_AGGREGATE_TESTS
 #define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 #endif
 

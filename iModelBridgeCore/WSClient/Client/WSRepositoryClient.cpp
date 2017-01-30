@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -40,7 +40,8 @@ IWSRepositoryClient::~IWSRepositoryClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection) :
 m_connection(connection),
-m_serverClient(WSClient::Create(m_connection))
+m_serverClient(WSClient::Create(m_connection)),
+m_config(std::make_shared<ClientConfig>(ClientConfig(*m_connection)))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -86,20 +87,13 @@ Utf8StringCR WSRepositoryClient::GetRepositoryId() const
     return m_connection->GetConfiguration().GetRepositoryId();
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                 julius.cepukenas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepositoryClient::SetCompressionOptions(CompressionOptions options)
-    {
-    m_connection->GetConfiguration().GetHttpClient().SetCompressionOptions(options);
-    }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                 julius.cepukenas   10/2013
+* @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CompressionOptionsCR WSRepositoryClient::GetCompressionOptions() const
+WSRepositoryClient::ClientConfig& WSRepositoryClient::Config()
     {
-    return m_connection->GetConfiguration().GetHttpClient().GetCompressionOptions();
+    return *m_config;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -334,4 +328,36 @@ ICancellationTokenPtr ct
         {
         return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, ct);
         }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::ClientConfig::SetCompressionOptions(CompressionOptions options)
+    {
+    m_connection.GetConfiguration().GetHttpClient().SetCompressionOptions(options);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::ClientConfig::SetMaxUrlLength(size_t length)
+    {
+    m_connection.GetConfiguration().SetMaxUrlLength(length);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CompressionOptionsCR WSRepositoryClient::ClientConfig::GetCompressionOptions() const
+    {
+    return m_connection.GetConfiguration().GetHttpClient().GetCompressionOptions();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t WSRepositoryClient::ClientConfig::GetMaxUrlLength() const
+    {
+    return m_connection.GetConfiguration().GetMaxUrlLength();
     }

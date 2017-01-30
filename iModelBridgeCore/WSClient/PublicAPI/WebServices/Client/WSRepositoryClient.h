@@ -78,8 +78,6 @@ struct IWSRepositoryClient
         virtual Utf8StringCR GetRepositoryId() const = 0;
 
         virtual void SetCredentials(Credentials credentials) = 0;
-        virtual void SetCompressionOptions(CompressionOptions options) = 0;
-        virtual CompressionOptionsCR GetCompressionOptions() const = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
@@ -128,6 +126,10 @@ struct IWSRepositoryClient
         //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
         //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
         //!         Select will be used as property list to select
+        //! The query is sent as a GET request with query information formated to the url.
+        //! From WSG 2.4 information stored in the WSQuery can be send as a POST request via json content.
+        //!          This is done if the URL constructed from query information exceeds the maximum Url Lenght
+        //!          By default the maximum Url Lenght is 2048
         //! @param query
         //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
         //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
@@ -262,16 +264,18 @@ struct IWSRepositoryClient::RequestOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSRepositoryClient : public IWSRepositoryClient
     {
+    struct ClientConfig;
+
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
         mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
+        std::shared_ptr<struct ClientConfig> m_config;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
 
     public:
-
         //! @param[in] serverUrl - address to supported server/site
         //! @param[in] repositoryId - repository identifier
         //! @param[in] clientInfo - client infomation for licensing and other information
@@ -295,9 +299,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials) override;
-
-        WSCLIENT_EXPORT void SetCompressionOptions(CompressionOptions options) override;
-        WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const override;
+        WSCLIENT_EXPORT ClientConfig& Config();
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
@@ -395,6 +397,38 @@ struct WSRepositoryClient : public IWSRepositoryClient
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     julius.cepukenas    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct WSRepositoryClient::ClientConfig
+    {
+    public:
+        friend WSRepositoryClient;
+    
+    private:
+        ClientConnection& m_connection;
+
+    private:
+        ClientConfig& operator= (const ClientConfig&) = delete;
+        ClientConfig(ClientConnection& connection) : m_connection(connection) {};
+
+    public:
+        //! Set the options of whether requests sent or responses retrieved should be compressed.
+        //! By default both, requests and responses are not compressed.
+        //! @param options compression options 
+        WSCLIENT_EXPORT void SetCompressionOptions(CompressionOptions options);
+
+        //! Set the suggested upper-bounds of request url.
+        //! Mostly these bounds are not reinforced by the client
+        //! From WSG 2.4 some features uses max url lenght when performing operations
+        //! By default the max url lenght is set to 2048
+        //! @param lenght
+        WSCLIENT_EXPORT void SetMaxUrlLength(size_t lenght);
+
+        WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const;
+        WSCLIENT_EXPORT size_t GetMaxUrlLength() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
