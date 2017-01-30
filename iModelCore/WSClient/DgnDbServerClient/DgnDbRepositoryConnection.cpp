@@ -133,11 +133,13 @@ WebServices::ClientInfoPtr clientInfo,
 IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
-    m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
+    auto wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
     options.EnableRequestCompression(true, 1024);
-    m_wsRepositoryClient->SetCompressionOptions(options);
-    m_wsRepositoryClient->SetCredentials(credentials);
+    wsRepositoryClient->Config().SetCompressionOptions(options);
+    wsRepositoryClient->SetCredentials(credentials);
+
+    m_wsRepositoryClient = wsRepositoryClient;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1604,32 +1606,6 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   julius.cepukenas              10/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerCodeLockSetTaskPtr ProcessCodeLocksQueries(bset<DgnDbServerCodeLockSetTaskPtr>& tasks)
-    {
-    const Utf8String methodName = "DgnDbRepositoryConnection::ProcessCodeLocksQueries";
-
-    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
-    return AsyncTask::WhenAll(tasks)
-        ->Then<DgnDbServerCodeLockSetResult>([=]
-        {
-        for (auto& task : tasks)
-            {
-            if (!task->GetResult().IsSuccess())
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, task->GetResult().GetError().GetMessage().c_str());
-                return DgnDbServerCodeLockSetResult::Error(task->GetResult().GetError());
-                }
-
-            auto codeLockSet = task->GetResult().GetValue();
-            finalValue->Insert(codeLockSet);
-            }
-        return DgnDbServerCodeLockSetResult::Success(*finalValue);
-        });
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksInternal
@@ -1642,140 +1618,213 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksInternal";
 
-    std::set<Utf8String> classes;
-
-    bset<DgnDbServerCodeLockSetTaskPtr> tasks;
-
-    std::deque<ObjectId> queryIds;
+    bset<DgnDbServerStatusTaskPtr> tasks;
+    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
 
     if (nullptr != codes)
         {
-        for (auto& code : *codes)
-            queryIds.push_back(GetCodeId(code, briefcaseId));
+        auto task = QueryCodesInternal(*codes, briefcaseId, finalValue, cancellationToken);
+        tasks.insert(task);
         }
 
     if (nullptr != locks)
         {
-        for (auto& lock : *locks)
-            queryIds.push_back(GetLockId(lock, briefcaseId));
-        }
-
-    if (nullptr != briefcaseId && queryIds.empty())
-        {
-        Utf8String filter;
-        filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
-        classes.insert(ServerSchema::Class::MultiLock);
-        classes.insert(ServerSchema::Class::MultiCode);
-
-        WSQuery query(ServerSchema::Schema::Repository, classes);
-        query.SetFilter(filter);
-        auto task = QueryCodesLocksInternal(query, cancellationToken);
-
+        auto task = QueryLocksInternal(*locks, briefcaseId, finalValue, cancellationToken);
         tasks.insert(task);
         }
 
-    classes.clear();
-    classes.insert(ServerSchema::Class::Lock);
-    classes.insert(ServerSchema::Class::Code);
-
-    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
-    int index = 0;
-    while (!queryIds.empty())
+    //Query codes locks by briefcase id
+    if (nullptr != briefcaseId && tasks.empty())
         {
-        WSQuery query(ServerSchema::Schema::Repository, classes);
-
-        query.AddFilterIdsIn(queryIds);
-        auto task = QueryCodesLocksInternal(query, cancellationToken);
-
+        auto task = QueryCodesInternal(briefcaseId, finalValue, cancellationToken);
         tasks.insert(task);
-        if (MAX_AsyncQueries == index)
+
+        task = QueryLocksInternal(briefcaseId, finalValue, cancellationToken);
+        tasks.insert(task);
+        }
+
+    return AsyncTask::WhenAll(tasks)
+        ->Then<DgnDbServerCodeLockSetResult>([=]
+        {
+        for (auto task : tasks)
             {
-            auto result = ProcessCodeLocksQueries(tasks)->GetResult();
-            if (!result.IsSuccess())
-                return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(result.GetError()));
-
-            auto codeLockSet = result.GetValue();
-            finalValue->Insert(codeLockSet);
-
-            tasks.clear();
-            index = 0;
+            if (!task->GetResult().IsSuccess())
+                return DgnDbServerCodeLockSetResult::Error(task->GetResult().GetError());
             }
+        return DgnDbServerCodeLockSetResult::Success(*finalValue);
+        });
+    }
 
-        index++;
-        }
-    auto result = ProcessCodeLocksQueries(tasks)->GetResult();
-    if (!result.IsSuccess())
-        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(result.GetError()));
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesInternal
+(
+const DgnCodeSet& codes,
+const BeSQLite::BeBriefcaseId*  briefcaseId,
+DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Code);
 
-    auto codeLockSet = result.GetValue();
-    finalValue->Insert(codeLockSet);
+    std::deque<ObjectId> queryIds;
+    for (auto& code : codes)
+        queryIds.push_back(GetCodeId(code, briefcaseId));
 
-    return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Success(*finalValue));
+    query.AddFilterIdsIn(queryIds, nullptr, 0, 0);
+
+    auto addCodesCallback = [&] (const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfoPtr codesLocksSetOut)
+        {
+        DgnCode        code;
+        DgnCodeState   codeState;
+        BeBriefcaseId  briefcaseId;
+        Utf8String     repositoryId;
+
+        if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId, repositoryId))
+            codesLocksSetOut->AddCode(code, codeState, briefcaseId, repositoryId);
+        };
+
+    return QueryCodesLocksInternal(query, codesLocksOut, addCodesCallback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesInternal
+(
+    const BeSQLite::BeBriefcaseId*  briefcaseId,
+    DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::MultiCode);
+
+    Utf8String filter;
+    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+    query.SetFilter(filter);
+
+    auto addMultiCodesCallback = [&] (const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfoPtr codesLocksSetOut)
+        {
+        DgnCode        code;
+        DgnCodeState   codeState;
+        BeBriefcaseId  briefcaseId;
+        Utf8String     repositoryId;
+
+        DgnCodeSet codeSet;
+        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId, repositoryId))
+            {
+            for (auto const& code : codeSet)
+                {
+                codesLocksSetOut->AddCode(code, codeState, briefcaseId, repositoryId);
+                }
+            }
+        };
+
+    return QueryCodesLocksInternal(query, codesLocksOut, addMultiCodesCallback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryLocksInternal
+(
+const LockableIdSet& locks,
+const BeSQLite::BeBriefcaseId*  briefcaseId,
+DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+
+    std::deque<ObjectId> queryIds;
+    for (auto& lock : locks)
+        queryIds.push_back(GetLockId(lock, briefcaseId));
+
+    query.AddFilterIdsIn(queryIds, nullptr, 0, 0);
+
+    auto addLocksCallback = [&] (const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfoPtr codesLocksSetOut)
+        {
+        DgnLock        lock;
+        BeBriefcaseId  briefcaseId;
+        Utf8String     repositoryId;
+
+        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, repositoryId))
+            {
+            if (lock.GetLevel() != LockLevel::None)
+                codesLocksSetOut->AddLock(lock, briefcaseId, repositoryId);
+            }
+        };
+
+    return QueryCodesLocksInternal(query, codesLocksOut, addLocksCallback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryLocksInternal
+(
+const BeSQLite::BeBriefcaseId*  briefcaseId,
+DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock);
+
+    Utf8String filter;
+    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+    query.SetFilter(filter);
+
+    auto addMultiLocksCallback = [&] (const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfoPtr codesLocksSetOut)
+        {
+        DgnLock        lock;
+        BeBriefcaseId  briefcaseId;
+        Utf8String     repositoryId;
+
+        DgnLockSet lockSet;
+        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, repositoryId))
+            {
+            for (auto const& lock : lockSet)
+                {
+                codesLocksSetOut->AddLock(lock, briefcaseId, repositoryId);
+                }
+            }
+        };
+
+    return QueryCodesLocksInternal(query, codesLocksOut, addMultiLocksCallback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksInternal
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksInternal
 (
 WSQuery query,
+DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+DgnDbCodeLocksSetAddFunction addFunction,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return ExecutionManager::ExecuteWithRetry<DgnDbCodeLockSetResultInfo>([=]()
+    return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
         //Execute query
-        return m_wsRepositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<DgnDbServerCodeLockSetResult>
+        return m_wsRepositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<DgnDbServerStatusResult>
             ([=] (const WSObjectsResult& result)
             {
             if (result.IsSuccess())
                 {
-                DgnDbCodeLockSetResultInfo codesLocks;
                 if (!result.GetValue().GetRapidJsonDocument().IsNull())
                     {
                     for (auto const& value : result.GetValue().GetInstances())
                         {
-                        DgnCode        code;
-                        DgnCodeState   codeState;
-                        DgnLock        lock;
-                        BeBriefcaseId  briefcaseId;
-                        Utf8String     repositoryId;
-                        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, repositoryId))
-                            {
-                            if (lock.GetLevel() != LockLevel::None)
-                                codesLocks.AddLock(lock, briefcaseId, repositoryId);
-                            }
-                        else if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId, repositoryId))
-                            {
-                            codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
-                            }
-
-                        DgnLockSet lockSet;
-                        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, repositoryId))
-                            {
-                            for (auto const& lock : lockSet)
-                                {
-                                codesLocks.AddLock(lock, briefcaseId, repositoryId);
-                                }
-                            }
-
-                        DgnCodeSet codeSet;
-                        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId, repositoryId))
-                            {
-                            for (auto const& code : codeSet)
-                                {
-                                codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
-                                }
-                            }
+                        addFunction(value, codesLocksOut);
                         }
                     //NEEDSWORK: log an error
-                    }
-                return DgnDbServerCodeLockSetResult::Success(codesLocks);
+                    }            
+                return DgnDbServerStatusResult::Success();
                 }
-            else
-                {
-                return DgnDbServerCodeLockSetResult::Error(result.GetError());
-                }
+
+            return DgnDbServerStatusResult::Error(result.GetError());
             });
         });
     }
