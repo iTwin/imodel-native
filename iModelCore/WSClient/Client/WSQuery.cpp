@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSQuery.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -134,9 +134,15 @@ size_t maxFilterLength
 
     Utf8String filter = "$id+in+[";
 
+    auto checkMaxLength = [&] () {return 0 == maxFilterLength || filter.length() < maxFilterLength;};
+    auto checkMaxObjectCount = [&] () {return 0 == maxIdsInFilter || objectCountInFilter < maxIdsInFilter;};
+
+    bool isMaxLengthReached = checkMaxLength();
+    bool isMaxObjectCountReached = checkMaxObjectCount();
+
     while (
-        filter.length() < maxFilterLength &&
-        objectCountInFilter < maxIdsInFilter &&
+        isMaxLengthReached &&
+        isMaxObjectCountReached &&
         !idsInOut.empty() &&
         idsInOut.front().schemaName.Equals(GetSchemaName()) &&
         GetClasses().end() != GetClasses().find(idsInOut.front().className)
@@ -152,6 +158,9 @@ size_t maxFilterLength
 
         idsInOut.pop_front();
         objectCountInFilter++;
+
+        isMaxLengthReached = checkMaxLength();
+        isMaxObjectCountReached = checkMaxObjectCount();
         }
 
     filter += "]";
