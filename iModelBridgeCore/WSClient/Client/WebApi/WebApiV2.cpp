@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -16,6 +16,9 @@
 
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
+#define VALUE_ContentType_Json          "application/json"
+
+#define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
 const BeVersion WebApiV2::s_maxTestedWebApi(2, 4);
 
@@ -84,6 +87,17 @@ Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webAp
 +--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
     {
+    Utf8String url = GetUrlWithoutLengthWarning(path, queryString, webApiVersion);
+
+    BeAssert(url.size() < m_configuration->GetMaxUrlLength() && WARNING_UrlLengthLimitations);
+    return url;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
+    {
     Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId(), webApiVersion);
 
     if (!path.empty())
@@ -96,7 +110,6 @@ Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersi
         url += "?" + queryString;
         }
 
-    BeAssert(url.size() < 2000 && "<Warning> Url length might be problematic as it is longer than most default settings");
     return url;
     }
 
@@ -127,6 +140,14 @@ Utf8String WebApiV2::CreateFileSubPath(ObjectIdCR objectId) const
 Utf8String WebApiV2::CreateClassSubPath(Utf8StringCR schemaName, Utf8StringCR className) const
     {
     return schemaName + "/" + className;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::CreatePostQueryPath(Utf8StringCR classSubPath) const
+    {
+    return classSubPath + "/$query";
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -458,8 +479,23 @@ ICancellationTokenPtr ct
 ) const
     {
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
-    Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
+    Utf8String url = GetUrlWithoutLengthWarning(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+
+    if (m_configuration->GetMaxUrlLength() < url.size())
+        {
+        if (m_info.GetWebApiVersion() >= BeVersion(2, 4))
+            {
+            url = GetUrl(CreatePostQueryPath(CreateClassSubPath(query.GetSchemaName(), classes)), "");
+            request = m_configuration->GetHttpClient().CreatePostRequest(url);
+            request.SetRequestBody(HttpStringBody::Create(query.ToQueryString()));
+            request.GetHeaders().SetContentType(VALUE_ContentType_Json);
+            }
+        else
+            {
+            BeAssert(true && WARNING_UrlLengthLimitations);
+            }
+        }
 
     request.GetHeaders().SetIfNoneMatch(eTag);
     request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
@@ -499,7 +535,7 @@ IWSRepositoryClient::RequestOptionsPtr options
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
         }
 
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(VALUE_ContentType_Json);
 
     request.SetRequestBody(changeset);
     request.SetCancellationToken(ct);
@@ -564,7 +600,7 @@ ICancellationTokenPtr ct
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), VALUE_ContentType_Json);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -614,7 +650,7 @@ ICancellationTokenPtr ct
     instanceJson["instanceId"] = objectId.remoteId;
     instanceJson["properties"] = propertiesJson;
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), "application/json");
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), VALUE_ContentType_Json);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));

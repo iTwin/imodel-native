@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSQuery.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,8 +83,8 @@ struct WSQuery
         //! @param[out] idsInOut - ids to create filter from. Will remove ids that were added.
         //! Will only use ids that are compatible with current query (by schema and classes).
         //! @param[out] idsAddedOut - [optional] return objects that were used for filter.
-        //! @param[in] maxIdsInFilter - maximum count of ids in filter. Defaults to 100, reasonable server/client load.
-        //! @param[in] maxFilterLength - maximum lenght of filter. Servers usually limit maximum URL length to 2K.
+        //! @param[in] maxIdsInFilter - maximum count of ids in filter. Defaults to 100, reasonable server/client load. If set to 0 - max ids count is unlimited
+        //! @param[in] maxFilterLength - maximum lenght of filter. Servers usually limit maximum URL length to 2K. If set to 0 - max length is unlimited
         WSCLIENT_EXPORT WSQuery& AddFilterIdsIn
             (
             std::deque<ObjectId>& idsInOut,

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSQueryTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSQueryTests.h"
@@ -475,4 +475,28 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForTwoIDsToInitialFilter_TheInitial
     query.AddFilterIdsIn(ids);
 
     EXPECT_STREQ("(Filter)+and+$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_SetMaxObjectCountTo0_CorrectFilterWithIds)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids, nullptr, 0);
+
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_SetMaxLenghtTo0_CorrectFilterWithIds)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids, nullptr, 100, 0);
+
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
