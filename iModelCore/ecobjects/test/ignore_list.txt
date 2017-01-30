@@ -2,6 +2,8 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
+#Navigation properties are being reworked and only support long at the moment
+NavigationECPropertyTests.InstanceWithNavProp_String
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -70,9 +72,3 @@ StandardValueToEnumConversionTest.CAConversionTest
 
 #Base64 conversion appears to have been busted for a long time
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
-
-#Navigation properties are being reworked and only support long at the moment
-NavigationECPropertyTests.InstanceWithNavProp_String
-
-# clang address sanitizer detected buffer overrun - notified Caleb Shafer
-CGBinarySerializationTests.*
