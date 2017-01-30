@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -160,8 +160,6 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNul
     CallStatus status = ConnectWebServicesClientC_FreeApi (api);
     ASSERT_TRUE (status == SUCCESS);
     }
-
-#ifdef WIP_MERGE_Vincas
 
 TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
     {
@@ -427,6 +425,9 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
     status = ConnectWebServicesClientC_FreeApi (api);
     ASSERT_TRUE (status == SUCCESS);
     }
+
+
+#ifdef WIP_MERGE_Vincas
 
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
@@ -1012,4 +1013,5 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     }
 
 #endif
+
     
