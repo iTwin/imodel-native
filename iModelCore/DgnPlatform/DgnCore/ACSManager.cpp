@@ -1291,7 +1291,7 @@ StatusInt IACSManager::Delete(Utf8CP name, DgnModelP modelRef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IACSManager::DisplayCurrent(DecorateContextR context, bool isCursorView)
     {
-    if (GetInhibitCurrentACSDisplay() || !context.GetViewport()->GetViewFlags().m_acsTriad)
+    if (GetInhibitCurrentACSDisplay() || !context.GetViewport()->GetViewFlags().ShowAcsTriad())
         return;
 
     IAuxCoordSysP acs = GetActive(*context.GetViewport());

@@ -330,7 +330,7 @@ struct TestGroup : Dgn::PhysicalElement, Dgn::IElementGroupOf<Dgn::PhysicalEleme
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+    Dgn::DgnElementCP _ToGroupElement() const override {return this;}
 
     explicit TestGroup(CreateParams const& params) : T_Super(params) {}
 

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationTextBlock.h $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -127,8 +127,8 @@ private:
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsTextRun(); }
-    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Text; }
+    AnnotationRunBasePtr _Clone() const override { return CloneAsTextRun(); }
+    AnnotationRunType _GetType() const override { return AnnotationRunType::Text; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
@@ -165,8 +165,8 @@ private:
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationFractionRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsFractionRun(); }
-    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Fraction; }
+    AnnotationRunBasePtr _Clone() const override { return CloneAsFractionRun(); }
+    AnnotationRunType _GetType() const override { return AnnotationRunType::Fraction; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
@@ -194,8 +194,8 @@ private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsLineBreakRun(); }
-    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::LineBreak; }
+    AnnotationRunBasePtr _Clone() const override { return CloneAsLineBreakRun(); }
+    AnnotationRunType _GetType() const override { return AnnotationRunType::LineBreak; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);

@@ -37,7 +37,7 @@ protected:
     int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 
 public:
-    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.bim") {}
+    ChangeSummaryTestFixture() {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromCurrentTransaction.bim");
 
     ChangeSummary changeSummary(*m_db);
 
@@ -215,7 +215,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
-    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
@@ -403,9 +403,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromSavedTransactions.bim");
 
-    DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 0, 0, 0);
 
     m_db->SaveChanges();
 
@@ -521,11 +521,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ValidateInstanceIterator.bim");
 
     PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
-    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId elementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
 
     ChangeSummary changeSummary(*m_db);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -542,223 +542,18 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     EXPECT_NE(countQuery, 0);
     }
 
-extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);
-extern bool ImportECSchema(ECSchemaR ecSchema, DgnDbR project);
-extern IECInstancePtr CreateStartupCompanyInstance(ECSchemaCR startupSchema);
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
-    {
-    SetupDgnDb();
-
-    BeFileName schemaPathname;
-    BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"DgnDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
-
-    ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
-    ASSERT_TRUE(startupSchema.IsValid());
-
-    ImportECSchema(*startupSchema, *m_db);
-
-    // Insert Employee - FirstName, LastName
-    // Insert Company - Name
-    // Insert Hardware - Make (String), Model (String)
-    // Insert EmployeeCompany - End Table relationship (Company__trg_11_id)
-    // Insert EmployeeHardware - Link Table relationship
-
-    ECSqlStatement statement;
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
-    ECInstanceKey employeeKey;
-    DbResult stepStatus = statement.Step(employeeKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
-    ECInstanceKey companyKey1;
-    stepStatus = statement.Step(companyKey1);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
-    ECInstanceKey companyKey2;
-    stepStatus = statement.Step(companyKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
-    ECInstanceKey hardwareKey1;
-    stepStatus = statement.Step(hardwareKey1);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
-    ECInstanceKey hardwareKey2;
-    stepStatus = statement.Step(hardwareKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    ChangeSummary changeSummary(*m_db);
-    GetChangeSummaryFromCurrentTransaction(changeSummary);
-
-    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
-
-    /*
-        ChangeSummary after inserting instances:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:1;StartupCompany:Employee:1099511627843;Insert;No
-                FirstName;NULL;"John"
-                LastName;NULL;"Doe"
-        0:2;StartupCompany:Company:1099511627836;Insert;No
-                Name;NULL;"AcmeWorks"
-        0:3;StartupCompany:Company:1099511627836;Insert;No
-                Name;NULL;"CmeaWorks"
-        0:4;StartupCompany:Hardware:1099511627840;Insert;No
-                Make;NULL;"Tesla"
-                Model;NULL;"Model-S"
-        0:5;StartupCompany:Hardware:1099511627840;Insert;No
-                Make;NULL;"Toyota"
-                Model;NULL;"Prius"
-    */
-    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-
-    m_db->SaveChanges();
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, companyKey1.GetECClassId());
-    statement.BindId(4, companyKey1.GetECInstanceId());
-
-    ECInstanceKey employeeCompanyKey;
-    stepStatus = statement.Step(employeeCompanyKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, hardwareKey1.GetECClassId());
-    statement.BindId(4, hardwareKey1.GetECInstanceId());
-
-    ECInstanceKey employeeHardwareKey;
-    stepStatus = statement.Step(employeeHardwareKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    changeSummary.Free();
-    GetChangeSummaryFromCurrentTransaction(changeSummary);
-
-    DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
-
-    /*
-        ChangeSummary after inserting relationships:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:1;StartupCompany:EmployeeCompany:1099511627845;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Company:1099511627836
-                TargetECInstanceId;NULL;0:2
-        0:6;StartupCompany:EmployeeHardware:1099511627847;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
-                TargetECInstanceId;NULL;0:4
-    */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
-
-    m_db->SaveChanges();
-
-    /* 
-    * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
-    */
-    statement.Finalize();
-    statement.Prepare(*m_db, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
-    statement.BindId(1, employeeHardwareKey.GetECInstanceId());
-    stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
-    statement.BindId(1, employeeCompanyKey.GetECInstanceId());
-    stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, hardwareKey2.GetECClassId());
-    statement.BindId(4, hardwareKey2.GetECInstanceId());
-
-    ECInstanceKey employeeHardwareKey2;
-    stepStatus = statement.Step(employeeHardwareKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(*m_db, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, companyKey2.GetECClassId());
-    statement.BindId(4, companyKey2.GetECInstanceId());
-
-    ECInstanceKey employeeCompanyKey2;
-    stepStatus = statement.Step(employeeCompanyKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    changeSummary.Free();
-    GetChangeSummaryFromCurrentTransaction(changeSummary);
-
-    DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
-
-    /*
-        ChangeSummary after updating (deleting and inserting different) relationships:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:6;StartupCompany:EmployeeHardware:1099511627847;Delete;No
-                SourceECClassId;StartupCompany:Employee:1099511627843;NULL
-                SourceECInstanceId;0:1;NULL
-                TargetECClassId;StartupCompany:Hardware:1099511627840;NULL
-                TargetECInstanceId;0:4;NULL
-        0:7;StartupCompany:EmployeeHardware:1099511627847;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
-                TargetECInstanceId;NULL;0:5
-        0:1;StartupCompany:EmployeeCompany:1099511627845;Update;No
-                SourceECClassId;StartupCompany:Employee:1099511627843;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;0:1;0:1
-                TargetECClassId;StartupCompany:Company:1099511627836;StartupCompany:Company:1099511627836
-                TargetECInstanceId;0:2;0:3
-    */
-    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChildRelationshipChanges.bim");
 
     PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
-    DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
-    DgnElementId childElementId = InsertPhysicalElement(*csModel, csCategoryId, 1, 1, 1);
+    DgnElementId parentElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
+    DgnElementId childElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 1, 1, 1);
     DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     m_db->SaveChanges();
@@ -843,7 +638,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryChangedElements.bim");
     m_db->SaveChanges();
 
     ChangeSummary changeSummary(*m_db);
@@ -851,7 +646,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, ii, 0, 0);
+        DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, ii, 0, 0);
         insertedElements.insert(elementId);
         }
 
@@ -893,24 +688,25 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
-    SetupDgnDb();
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryMultipleSessions.bim");
     
     int nSessions = 5;
     int nTransactionsPerSession = 5;
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     for (int ii = 0; ii < nSessions; ii++)
         {
-        OpenDgnDb();
+        OpenDgnDb(fileName);
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {
-            InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, ii, jj, 0);
+            InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, ii, jj, 0);
             m_db->SaveChanges();
             }
 
         CloseDgnDb();
         }
 
-    OpenDgnDb();
+    OpenDgnDb(fileName);
 
     TxnManager::TxnId startTxnId(TxnManager::SessionId(1), 0); // First session, First transaction
     ChangeSummary changeSummary(*m_db);

@@ -423,6 +423,7 @@
     <NMakeReBuildCommandLine>bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL -c
 bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL -c</NMakeCleanCommandLine>
+    <OutDir>$(LOCALAPPDATA)\temp\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnPlatform.exe</NMakeOutput>

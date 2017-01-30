@@ -704,6 +704,9 @@
     <ClInclude Include="PublicAPI\DgnPlatform\AutoRestore.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="DgnCore\ElementECInstanceAdapter.h">
+      <Filter>PublicAPI\Annotations</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">

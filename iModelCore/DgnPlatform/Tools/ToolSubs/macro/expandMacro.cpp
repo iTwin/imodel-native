@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/expandMacro.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -37,87 +37,87 @@ static bool     isDirSeparator (WChar c)
 +===============+===============+===============+===============+===============+======*/
 struct      PossibleMacroOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      MustBeMacroOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      BaseNameOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      BuildOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      ConcatenateOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      DeviceDirectoryOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      DeviceOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      DirectoryOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      ExtensionOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      FileNameOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      FirstOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      FirstDirectoryPartOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      LastDirectoryPartOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      NoExtensionOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      ParentDirectoryAndDeviceOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      ParentDirectoryOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 struct      RegistryReadOperator : ExpandOperator
 {
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
+ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
 };
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/FunctionalDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : RoleModel
     friend struct func_ModelHandler::Functional;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit FunctionalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -129,7 +129,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalElement : RoleElement
     DEFINE_T_SUPER(RoleElement);
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
 
 public:

@@ -44,7 +44,7 @@ static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primi
     virtual JsDgnRuledSweepP AsDgnRuledSweepDgn () {return nullptr;}
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
-    virtual ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
+    ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
 
     JsDRange3dP RangeAfterTransform (JsTransformP jsTransform) override
         {

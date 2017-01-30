@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ScanCriteria.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,7 +35,7 @@ private:
     DgnCategoryIdSet const* m_categories = nullptr;
 
     ScanCriteria::Reject CheckElementRange(RangeIndex::EntryCR ) const;
-    DGNPLATFORM_EXPORT virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR) override;
+    DGNPLATFORM_EXPORT Stop _VisitRangeTreeEntry(RangeIndex::EntryCR) override;
     virtual Stop _OnRangeElementFound(DgnElementId) = 0;
 
 public:

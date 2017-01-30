@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/Tag_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -24,7 +24,7 @@ public:
     TagTest ()
         {}
     
-    virtual void    SetUp () override;
+    void    SetUp () override;
     DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, GetDgnDb());}
     BentleyStatus   GetTagDef (DgnTagDefinitionR tagDef);
     BentleyStatus   CreateTagWithTextStyle (EditElementHandleR element, DgnTextStyleCR style);

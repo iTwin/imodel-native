@@ -26,7 +26,7 @@ struct GraphicBuilderPtr;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-enum class RenderMode
+enum class RenderMode : int32_t
 {
     Wireframe      = 0,
     HiddenLine     = 3,
@@ -41,9 +41,7 @@ enum class RenderMode
 struct ViewFlags
 {
 private:
-    RenderMode m_renderMode;
-
-public:
+    RenderMode m_renderMode = RenderMode::Wireframe;
     uint32_t m_text:1;             //!< Shows or hides text.
     uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
     uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
@@ -66,9 +64,9 @@ public:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
+public:
     ViewFlags()
         {
-        m_renderMode = RenderMode::Wireframe;
         m_text = 1;
         m_dimensions = 1;
         m_patterns = 1;
@@ -541,6 +539,7 @@ struct LineStyleParams
     //! Compare two LineStyleParams.
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
     void SetScale(double inScale) {modifiers |= 0x01; scale = inScale;}
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
 };
 
 //=======================================================================================
@@ -598,13 +597,12 @@ private:
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
     RotMatrix   m_planeByRows;
-    TexturePtr  m_texture;
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnDbR db);
 
-    void Clear() {m_lStyle = nullptr; m_texture = nullptr; }
+    void Clear() {m_lStyle = nullptr;}
     void Init(ILineStyleCP);
 
     DGNPLATFORM_EXPORT bool operator==(LineStyleSymbCR rhs) const; //!< Compare two LineStyleSymb.
@@ -625,7 +623,6 @@ public:
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
-    Texture* GetTexture() const {return m_texture.get();}
 
     bool IsScaled() const {return m_options.scale;}
     bool IsAutoPhase() const {return m_options.autoPhase;}
@@ -701,10 +698,11 @@ public:
 
     DgnStyleId GetStyleId() const {return m_styleId;}
     LineStyleParamsCP GetStyleParams() const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
+    LineStyleParamsR GetStyleParamsR() {return m_styleParams;}
     LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
     LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
 
-    DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
+    DGNPLATFORM_EXPORT void Resolve(DgnDbR); // Resolve effective values using the supplied DgnDb...
  };
 
 struct ISprite;
@@ -780,7 +778,7 @@ protected:
     double m_tint = 0.0;
     double m_shift = 0.0;
     ColorDef m_colors[MAX_GRADIENT_KEYS];
-    double   m_values[MAX_GRADIENT_KEYS];
+    double m_values[MAX_GRADIENT_KEYS];
 
 public:
     GradientSymb() {}
@@ -826,29 +824,30 @@ private:
         AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
-    AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
-    bool                m_resolved;                     //!< whether Resolve has established SubCategory::Appearance/effective values.
-    DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
-    DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearance of subsequent geometry.
-    DgnMaterialId       m_materialId;                   //!< render material ID.
-    int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
-    int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
-    uint32_t            m_weight;
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;                    //!< fill color (applicable only if filled)
-    FillDisplay         m_fillDisplay;                  //!< whether or not the element should be displayed filled
-    double              m_elmTransparency;              //!< transparency, 1.0 == completely transparent.
-    double              m_netElmTransparency;           //!< net transparency for element/category.
-    double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
-    double              m_netFillTransparency;          //!< net transparency for fill/category.
-    DgnGeometryClass    m_geometryClass;                //!< geometry class
-    LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
-    GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
-    PatternParamsPtr    m_pattern;                      //!< area pattern settings.
+    AppearanceOverrides m_appearanceOverrides; //!< flags for parameters that override SubCategory::Appearance.
+    bool m_resolved = false;  //!< whether Resolve has established SubCategory::Appearance/effective values.
+    DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
+    DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
+    DgnMaterialId m_materialId; //!< render material Id.
+    int32_t m_elmPriority = 0; //!< display priority (applies to 2d only)
+    int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
+    uint32_t m_weight = 0;
+    ColorDef m_lineColor;
+    ColorDef m_fillColor;  //!< fill color (applicable only if filled)
+    FillDisplay m_fillDisplay = FillDisplay::Never; //!< whether or not the element should be displayed filled
+    double m_elmTransparency = 0; //!< transparency, 1.0 == completely transparent.
+    double m_netElmTransparency = 0; //!< net transparency for element/category.
+    double m_fillTransparency = 0;  //!< fill transparency, 1.0 == completely transparent.
+    double m_netFillTransparency = 0; //!< net transparency for fill/category.
+    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary;   //!< geometry class
+    LineStyleInfoPtr m_styleInfo; //!< line style id plus modifiers.
+    GradientSymbPtr m_gradient; //!< gradient fill settings.
+    PatternParamsPtr m_pattern; //!< area pattern settings.
 
 public:
-    DGNPLATFORM_EXPORT GeometryParams();
-    DGNPLATFORM_EXPORT GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId());
+    GeometryParams() {}
+    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId) {}
+
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
@@ -857,7 +856,7 @@ public:
     void SetCategoryId(DgnCategoryId categoryId, bool clearAppearanceOverrides = true) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId, bool clearAppearanceOverrides = true) {m_subCategoryId = subCategoryId; if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
     void SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
-    void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
+    void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo; if (styleInfo) m_resolved = false;}
     void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
     void SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
     void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_appearanceOverrides.m_bgFill = false; m_fillColor = color;}
@@ -874,7 +873,7 @@ public:
     double GetNetTransparency() const {BeAssert(m_resolved); return m_netElmTransparency;}
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
-    int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
+    int32_t GetNetDisplayPriority() const {return m_netPriority;} // Get net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
     void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
@@ -943,10 +942,10 @@ public:
     bool HasStrokedLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return (m_styleInfo.IsValid() ? (nullptr != m_styleInfo->GetLineStyleSymb().GetILineStyle() && m_styleInfo->GetLineStyleSymb().GetUseStroker()) : false);}
 
     //! Get whether this GeometryParams contains information that needs to be transformed (ex. to apply local to world).
-    bool IsTransformable() const {return m_pattern.IsValid();} // NEEDSWORK: LineStyleInfo???
+    bool IsTransformable() const {return m_pattern.IsValid() || m_styleInfo.IsValid();}
 
     //! Transform GeometryParams data like PatternParams and LineStyleInfo.
-    void ApplyTransform(TransformCR transform) {if (m_pattern.IsValid()) m_pattern->ApplyTransform(transform);} // NEEDSWORK: LineStyleInfo???
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
 };
 
 //=======================================================================================
@@ -956,17 +955,17 @@ public:
 struct GraphicParams
 {
 private:
-    bool                m_isFilled;
-    bool                m_isBlankingRegion;
-    uint32_t            m_linePixels;
-    uint32_t            m_rasterWidth;
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;
-    double              m_trueWidthStart;
-    double              m_trueWidthEnd;
-    TexturePtr          m_lineTexture;
-    MaterialPtr         m_material;
-    GradientSymbPtr     m_gradient;
+    bool m_isFilled = false;
+    bool m_isBlankingRegion = false;
+    uint32_t m_linePixels = (uint32_t) LinePixels::Solid;
+    uint32_t m_rasterWidth = 1;
+    ColorDef m_lineColor;
+    ColorDef m_fillColor;
+    double m_trueWidthStart = 0;
+    double m_trueWidthEnd = 0;
+    TexturePtr m_lineTexture;
+    MaterialPtr m_material;
+    GradientSymbPtr m_gradient;
 
 public:
 
@@ -986,9 +985,9 @@ public:
 
     void Cook(GeometryParamsCR, ViewContextR);
 
-    GraphicParams() {Init();}
+    void Init() {*this = GraphicParams();}
+    GraphicParams() {}
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
-    DGNPLATFORM_EXPORT void Init();
 
     //! @name Query Methods
     //@{
@@ -1155,9 +1154,9 @@ protected:
     Transform     m_localToWorldTransform;
 
     virtual ~Graphic() {}
-    virtual bool _IsForDisplay() const {return false;}
+    virtual bool _IsSimplifyGraphic() const {return false;}
     virtual StatusInt _EnsureClosed() = 0;
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
@@ -1189,7 +1188,7 @@ public:
         }
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
-    bool IsForDisplay() const {return _IsForDisplay();}
+    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
     StatusInt EnsureClosed() {return _EnsureClosed();} //!< Called when this Graphic is added to a display list, to ensure it is fully constructed and ready for display
 };
 
@@ -1289,7 +1288,7 @@ public:
     void GetPixelSizeRange(double& min, double& max) const {m_graphic->GetPixelSizeRange(min, max);}
     void SetPixelSizeRange(double min, double max) {m_graphic->SetPixelSizeRange(min, max);}
     void UpdatePixelSizeRange(double newMin, double newMax) {m_graphic->UpdatePixelSizeRange(newMin, newMax);}
-    bool IsForDisplay() const {return m_graphic->IsForDisplay();}
+    bool IsSimplifyGraphic() const {return m_graphic->IsSimplifyGraphic();}
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
     bool IsOpen() const {return m_builder->_IsOpen();}
@@ -1589,7 +1588,7 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-    ClipPrimitiveCPtr m_activeVolume;
+    ClipVectorPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -1754,7 +1753,7 @@ protected:
     int  m_id; // for debugging
     System& m_system;
     DevicePtr m_device;
-    ClipPrimitiveCPtr m_activeVolume;
+    ClipVectorCPtr m_activeVolume;
     GraphicListPtr m_currentScene;
     GraphicListPtr m_terrain;
     GraphicListPtr m_dynamics;
@@ -1784,7 +1783,7 @@ public:
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1803,7 +1802,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetViewRect(BSIRect rect) {}
-    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}

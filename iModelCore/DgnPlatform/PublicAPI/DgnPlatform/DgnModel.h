@@ -29,7 +29,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler { struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; }
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -54,8 +54,8 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
-                virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
+    protected:  Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+                Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 /**
 * @addtogroup GROUP_DgnModel DgnModel Module
@@ -804,6 +804,8 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
     virtual void _AddTerrainGraphics(TerrainContextR) const {}
 
+    virtual void _PickTerrainGraphics(PickContextR) const {}
+
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
@@ -867,7 +869,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
 
@@ -988,13 +990,17 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
+    friend struct dgn_ModelHandler::Definition;
+
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-public:
-    explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
 
-    static DefinitionModelPtr Create(CreateParams const& params) {return new DefinitionModel(params);}
+    explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
+    static DefinitionModelPtr Create(CreateParams const& params) { return new DefinitionModel(params); }
+public:
+    DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionPartitionCR modeledElement);
 };
 
 //=======================================================================================
@@ -1077,7 +1083,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
 protected:
     DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
     explicit SessionModel(CreateParams const& params) : T_Super(params) {}
@@ -1126,15 +1132,15 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SectionDrawingModel, DrawingModel);
 protected:
     SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
 };
 
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
-        private: virtual Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
-        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name);}\
+        private: Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        protected: uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name);}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
@@ -1159,12 +1165,12 @@ namespace dgn_ModelHandler
         ModelHandlerP _ToModelHandler() override final {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         DGNPLATFORM_EXPORT virtual DgnModelPtr _CreateNewModel(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR);
-        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return DgnModel::RestrictedAction::Parse(name);}
-        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+        uint64_t _ParseRestrictedAction(Utf8CP name) const override {return DgnModel::RestrictedAction::Parse(name);}
+        DGNPLATFORM_EXPORT DgnDbStatus _VerifySchema(DgnDomains&) override;
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
+        DGNPLATFORM_EXPORT void _GetClassParams(ECSqlClassParamsR params) override;
 
     public:
         //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
