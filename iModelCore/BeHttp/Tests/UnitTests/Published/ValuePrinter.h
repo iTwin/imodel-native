@@ -19,9 +19,9 @@
 USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_HTTP
 
-// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) in active
+// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define BEHTTP_ENABLE_DUPLICATING_SYMBOLS) in active
 
-#ifndef BUILD_FOR_AGGREGATE_TESTS
+#ifdef BUILD_FOR_AGGREGATE_TESTS
 #define BEHTTP_ENABLE_DUPLICATING_SYMBOLS
 #endif
 
