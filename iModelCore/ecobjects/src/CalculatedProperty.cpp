@@ -11,6 +11,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+const static Utf8CP NestedCaptureGroup = "NestedCaptureGroup";
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -111,12 +113,18 @@ bool ParserRegex::ProcessRegex (Utf8StringR converted, Utf8CP& in, Utf8CP end, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::ProcessCaptureGroup (Utf8StringR converted, Utf8CP& in, Utf8CP end, int32_t& depth)
     {
-    if (in >= end || *in++ != '?')
-        return false;
-    else if (in >= end)
+    if (in >= end)
         return false;
 
-    Utf8Char c = *in++;
+    Utf8Char c = *in;
+    if (*in++ != '?')
+        {
+        in--;
+        m_capturedPropertyNames.push_back(NestedCaptureGroup);
+        return ProcessRegex(converted, in, end, depth);
+        }
+
+    c = *in++;
     if (c == ':')
         {
         // unnamed capture group e.g. "(?:nonCapturingRegex)"
@@ -161,6 +169,9 @@ bool ParserRegex::Apply (IECInstanceR instance, Utf8CP calculatedValue) const
 
     for (size_t i = 0; i < m_capturedPropertyNames.size(); i++)
         {
+        if (m_capturedPropertyNames[i].Equals(NestedCaptureGroup))
+            continue;
+
         // ###TODO: we may want to create this stuff once and cache it with the captured property names
         ECValueAccessor accessor;
         if (ECObjectsStatus::Success != ECValueAccessor::PopulateValueAccessor (accessor, instance, m_capturedPropertyNames[i].c_str()))
