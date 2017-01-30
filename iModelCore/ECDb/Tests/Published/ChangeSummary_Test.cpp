@@ -21,6 +21,8 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
     {
     protected:
         BentleyStatus ImportSchemas(ECDbR ecdb, SchemaItem const& schemaItem);
+        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
+        bool ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
     };
 
 //=======================================================================================
@@ -69,6 +71,37 @@ BentleyStatus ChangeSummaryTestFixture::ImportSchemas(ECDbR ecdb, SchemaItem con
         return ERROR;
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/17
+//---------------------------------------------------------------------------------------
+void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
+    {
+#ifdef DUMP_CHANGE_SUMMARY
+    printf("\t%s:\n", label);
+    changeSummary.Dump();
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    072015
+//---------------------------------------------------------------------------------------
+bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
+    {
+    Utf8String tableName = changeSummary.GetInstancesTableName();
+    ECClassId classId = ecdb.Schemas().GetECClassId(schemaName, className);
+
+    Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
+    CachedStatementPtr statement = ecdb.GetCachedStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+
+    statement->BindId(1, classId);
+    statement->BindId(2, instanceId);
+    statement->BindInt(3, (int) dbOpcode);
+
+    DbResult result = statement->Step();
+    return (result == BE_SQLITE_ROW);
     }
 
 //---------------------------------------------------------------------------------------
@@ -181,9 +214,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     L;NULL;12345
     S;NULL;"Str"
     */
-#ifdef DUMP_CHANGE_SUMMARY
-    changeSummary.Dump();
-#endif
+    DumpChangeSummary(changeSummary, "Overflow_PrimitiveProperties");
 
     ChangeSummary::InstanceIterator instIter = changeSummary.MakeInstanceIterator();
     EXPECT_EQ(1, instIter.QueryCount());
@@ -705,6 +736,220 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(19, valIter.QueryCount());
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
+    {
+    ECDb& ecdb = SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+
+    TestChangeTracker tracker(ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert Employee - FirstName, LastName
+    // Insert Company - Name
+    // Insert Hardware - Make (String), Model (String)
+    // Insert EmployeeCompany - End Table relationship (Company__trg_11_id)
+    // Insert EmployeeHardware - Link Table relationship
+
+    ECSqlStatement statement;
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
+    ECInstanceKey employeeKey;
+    DbResult stepStatus = statement.Step(employeeKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
+    ECInstanceKey companyKey1;
+    stepStatus = statement.Step(companyKey1);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
+    ECInstanceKey companyKey2;
+    stepStatus = statement.Step(companyKey2);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
+    ECInstanceKey hardwareKey1;
+    stepStatus = statement.Step(hardwareKey1);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
+    ECInstanceKey hardwareKey2;
+    stepStatus = statement.Step(hardwareKey2);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    TestChangeSet changeSet;
+    DbResult result = changeSet.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
+
+    ChangeSummary changeSummary(ecdb);
+    BentleyStatus status = changeSummary.FromChangeSet(changeSet);
+    ASSERT_TRUE(SUCCESS == status);
+
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
+
+    /*
+        ChangeSummary after inserting instances:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:1;StartupCompany:Employee:1099511627843;Insert;No
+                FirstName;NULL;"John"
+                LastName;NULL;"Doe"
+        0:2;StartupCompany:Company:1099511627836;Insert;No
+                Name;NULL;"AcmeWorks"
+        0:3;StartupCompany:Company:1099511627836;Insert;No
+                Name;NULL;"CmeaWorks"
+        0:4;StartupCompany:Hardware:1099511627840;Insert;No
+                Make;NULL;"Tesla"
+                Model;NULL;"Model-S"
+        0:5;StartupCompany:Hardware:1099511627840;Insert;No
+                Make;NULL;"Toyota"
+                Model;NULL;"Prius"
+    */
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+
+    ecdb.SaveChanges();
+    tracker.Restart();
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.BindId(1, employeeKey.GetECClassId());
+    statement.BindId(2, employeeKey.GetECInstanceId());
+    statement.BindId(3, companyKey1.GetECClassId());
+    statement.BindId(4, companyKey1.GetECInstanceId());
+
+    ECInstanceKey employeeCompanyKey;
+    stepStatus = statement.Step(employeeCompanyKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.BindId(1, employeeKey.GetECClassId());
+    statement.BindId(2, employeeKey.GetECInstanceId());
+    statement.BindId(3, hardwareKey1.GetECClassId());
+    statement.BindId(4, hardwareKey1.GetECInstanceId());
+
+    ECInstanceKey employeeHardwareKey;
+    stepStatus = statement.Step(employeeHardwareKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    changeSummary.Free();
+    changeSet.Free();
+
+    result = changeSet.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
+    
+    status = changeSummary.FromChangeSet(changeSet);
+    ASSERT_TRUE(SUCCESS == status);
+
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
+
+    /*
+        ChangeSummary after inserting relationships:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:1;StartupCompany:EmployeeCompany:1099511627845;Insert;No
+                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;StartupCompany:Company:1099511627836
+                TargetECInstanceId;NULL;0:2
+        0:6;StartupCompany:EmployeeHardware:1099511627847;Insert;No
+                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
+                TargetECInstanceId;NULL;0:4
+    */
+    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+
+    ecdb.SaveChanges();
+    tracker.Restart();
+
+    /* 
+    * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
+    */
+    statement.Finalize();
+    statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
+    statement.BindId(1, employeeHardwareKey.GetECInstanceId());
+    stepStatus = statement.Step();
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
+    statement.BindId(1, employeeCompanyKey.GetECInstanceId());
+    stepStatus = statement.Step();
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.BindId(1, employeeKey.GetECClassId());
+    statement.BindId(2, employeeKey.GetECInstanceId());
+    statement.BindId(3, hardwareKey2.GetECClassId());
+    statement.BindId(4, hardwareKey2.GetECInstanceId());
+
+    ECInstanceKey employeeHardwareKey2;
+    stepStatus = statement.Step(employeeHardwareKey2);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    statement.Finalize();
+    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.BindId(1, employeeKey.GetECClassId());
+    statement.BindId(2, employeeKey.GetECInstanceId());
+    statement.BindId(3, companyKey2.GetECClassId());
+    statement.BindId(4, companyKey2.GetECInstanceId());
+
+    ECInstanceKey employeeCompanyKey2;
+    stepStatus = statement.Step(employeeCompanyKey2);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    changeSummary.Free();
+    changeSet.Free();
+
+    result = changeSet.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
+
+    status = changeSummary.FromChangeSet(changeSet);
+    ASSERT_TRUE(SUCCESS == status);
+
+    DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
+
+    /*
+        ChangeSummary after updating (deleting and inserting different) relationships:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:6;StartupCompany:EmployeeHardware:1099511627847;Delete;No
+                SourceECClassId;StartupCompany:Employee:1099511627843;NULL
+                SourceECInstanceId;0:1;NULL
+                TargetECClassId;StartupCompany:Hardware:1099511627840;NULL
+                TargetECInstanceId;0:4;NULL
+        0:7;StartupCompany:EmployeeHardware:1099511627847;Insert;No
+                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
+                TargetECInstanceId;NULL;0:5
+        0:1;StartupCompany:EmployeeCompany:1099511627845;Update;No
+                SourceECClassId;StartupCompany:Employee:1099511627843;StartupCompany:Employee:1099511627843
+                SourceECInstanceId;0:1;0:1
+                TargetECClassId;StartupCompany:Company:1099511627836;StartupCompany:Company:1099511627836
+                TargetECInstanceId;0:2;0:3
+    */
+    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
