@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/ChangeManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -127,8 +127,8 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 
-        WSCACHE_EXPORT BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
-        WSCACHE_EXPORT BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        WSCACHE_EXPORT BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) override;
 
         // -- Getting changes --
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,9 @@ struct ServerInfoProvider
         mutable WSInfo m_serverInfo;
         mutable uint64_t m_serverInfoUpdated;
 
+        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
+        bool m_enableWsgServerHeader;
+
     private:
         bool CanUseCachedInfo() const;
         void UpdateInfo(WSInfoCR info) const;
@@ -42,6 +45,9 @@ struct ServerInfoProvider
     public:
         ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration);
         ~ServerInfoProvider();
+
+        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
+        void EnableWsgServerHeader(bool enable);
 
         void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);

@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -154,7 +154,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
     "qa-xmppcollab-eus.cloudapp.net",
-    "xmppcollab-eus.cloudapp.net",
+    "connect-xmppcollab.bentley.com",
     &s_urlRegistry
     );
 
