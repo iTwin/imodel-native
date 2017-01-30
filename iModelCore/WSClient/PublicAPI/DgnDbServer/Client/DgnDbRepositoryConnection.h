@@ -42,6 +42,8 @@ typedef std::shared_ptr<struct DgnDbServerEventManagerContext> DgnDbServerEventM
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerEventManager);
 typedef std::shared_ptr<struct DgnDbServerEventManager> DgnDbServerEventManagerPtr;
 typedef std::shared_ptr<struct DgnDbServerPreDownloadManager> DgnDbServerPreDownloadManagerPtr;
+typedef std::shared_ptr<struct DgnDbCodeLockSetResultInfo> DgnDbCodeLockSetResultInfoPtr;
+typedef std::function<void(const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfoPtr codesLocksResult)> DgnDbCodeLocksSetAddFunction;
 
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
@@ -65,7 +67,6 @@ struct DgnDbCodeLockSetResultInfo
         DgnCodeInfoSet  m_codeStates;
         DgnLockSet      m_locks;
         DgnLockInfoSet  m_lockStates;
-
     public:
         DgnDbCodeLockSetResultInfo() {};
         void AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
@@ -257,11 +258,57 @@ private:
     //Returns birefcases information for given query. Query should have its filter already set.
     DgnDbServerBriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;
 
+    //Returns all codes by code id
+    DgnDbServerStatusTaskPtr QueryCodesInternal
+        (
+        const DgnCodeSet& codes, 
+        const BeSQLite::BeBriefcaseId* briefcaseId, 
+        DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+        ICancellationTokenPtr cancellationToken
+        ) const;
+
+    //Returns all codes by briefcase id
+    DgnDbServerStatusTaskPtr QueryCodesInternal
+    (
+        const BeSQLite::BeBriefcaseId*  briefcaseId,
+        DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+        ICancellationTokenPtr cancellationToken
+    ) const;
+
+    //Returns all locks by lock id
+    DgnDbServerStatusTaskPtr QueryLocksInternal
+        (
+        const LockableIdSet& locks,
+        const BeSQLite::BeBriefcaseId*  briefcaseId,
+        DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+        ICancellationTokenPtr cancellationToken
+        ) const;
+
+    //Returns all locks by briefcase id
+    DgnDbServerStatusTaskPtr QueryLocksInternal
+        (
+        const BeSQLite::BeBriefcaseId*  briefcaseId,
+        DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+        ICancellationTokenPtr cancellationToken
+        ) const;
+
     //! Returns all available codes and locks for given briefcase id.
-    DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(DgnCodeSet const* codes, LockableIdSet const* locks, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal
+        (
+        DgnCodeSet const* codes,
+        LockableIdSet const* locks, 
+        const BeSQLite::BeBriefcaseId* briefcaseId, 
+        ICancellationTokenPtr cancellationToken
+        ) const;
 
     //! Returns all available codes and locks by executing given query.
-    DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(WSQuery query, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerStatusTaskPtr QueryCodesLocksInternal
+        (
+        WSQuery query,
+        DgnDbCodeLockSetResultInfoPtr codesLocksOut,
+        DgnDbCodeLocksSetAddFunction addFunction,
+        ICancellationTokenPtr cancellationToken
+        ) const;
 
     //! Sends a request from changeset.
     DgnDbServerStatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,

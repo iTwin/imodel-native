@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,10 +29,12 @@ struct WebApiV2 : public WebApi
         Utf8String GetWebApiUrl(BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
+        Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
 
         Utf8String CreateObjectSubPath(ObjectIdCR objectId) const;
         Utf8String CreateFileSubPath(ObjectIdCR objectId) const;
         Utf8String CreateClassSubPath(Utf8StringCR schemaName, Utf8StringCR className) const;
+        Utf8String CreatePostQueryPath(Utf8StringCR classSubPath) const;
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
