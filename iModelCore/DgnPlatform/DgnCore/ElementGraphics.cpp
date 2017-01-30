@@ -586,7 +586,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
                 }
 
-            if (!includeFaceIso || nullptr == graphic.GetViewport() || graphic.IsForDisplay())
+            if (!includeFaceIso || nullptr == graphic.GetViewport() || !graphic.IsSimplifyGraphic())
                 return; // QVis handles cone silhouette display...
 
             Transform   worldToLocalTrans;
