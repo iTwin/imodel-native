@@ -1144,7 +1144,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
         ElementHandle original = element;
 
         DTMDrawingInfo info;
-        bool forceTriangleDraw = purpose == DrawPurpose::CutXGraphicsCreate || purpose == DrawPurpose::Measure || purpose == DrawPurpose::VisibilityCalculation || purpose == DrawPurpose::ComputeModelRefRange;
+        bool forceTriangleDraw = purpose == DrawPurpose::CutXGraphicsCreate || purpose == DrawPurpose::Measure || purpose == DrawPurpose::ModelFacet || purpose == DrawPurpose::VisibilityCalculation || purpose == DrawPurpose::ComputeModelRefRange;
 
         GetDTMDrawingInfo (info, element, DTMDataRef.get(), &context);
 

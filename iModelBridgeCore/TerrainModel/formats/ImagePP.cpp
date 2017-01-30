@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -2387,7 +2387,8 @@ WCharCP    projectionKeyP
 
         //  Get  Pointer To Raster Coordinate System Instance
 
-        BaseGCSP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS();
+        auto rasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP();
+        BaseGCSP pRasterCoordSys = rasterCoordSys == nullptr ? nullptr : rasterCoordSys->GetBaseGCS();
         if (pRasterCoordSys != NULL) geoCordSysSet = 1;
         if (dbg)
             {
