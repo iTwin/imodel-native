@@ -115,6 +115,7 @@ namespace ServerSchema
         static Utf8CP Initialized = "Initialized";
         static Utf8CP FileInitialized = "FileInitialized";
         static Utf8CP RepositoryInitialized = "RepositoryInitialized";
+        static Utf8CP ContainingChanges = "ContainingChanges";
         }
     namespace ExtendedParameters
         {
