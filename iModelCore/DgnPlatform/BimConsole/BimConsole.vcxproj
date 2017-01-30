@@ -79,6 +79,7 @@
     <IncludePath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</IncludePath>
     <NMakeIncludeSearchPath>$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeOutput>$(OutRoot)Winx64\product\BimConsole\BimConsole.exe</NMakeOutput>
+    <OutDir>$(LOCALAPPDATA)\temp\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

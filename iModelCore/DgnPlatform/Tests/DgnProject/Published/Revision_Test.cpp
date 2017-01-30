@@ -37,8 +37,6 @@ protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionTestCopy.ibim";
 
-    virtual void _SetupDgnDb() override;
-
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
 
@@ -102,19 +100,55 @@ protected:
         return cpEl;
         }
 public:
-    RevisionTestFixture(WCharCP filename = L"RevisionTest.ibim", bool wantTestDomain=false) : T_Super(filename, wantTestDomain) {}
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
+    static void SetUpTestCase();
+
+    RevisionTestFixture() {}
 };
 
+DgnPlatformSeedManager::SeedDbInfo RevisionTestFixture::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::_SetupDgnDb()
+void RevisionTestFixture::SetUpTestCase()
     {
-    T_Super::_SetupDgnDb();
+    //Start from parent fixture's seed Db
+    ScopedDgnHost tempHost;
 
-    InsertFloor(1, 1);
-    CreateDefaultView(m_defaultModel->GetModelId());
-    UpdateDgnDbExtents();
+    //  Request a root seed file.
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(false, true));
+
+    //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
+    //  Note that we must put our group seed file in a group-specific sub-directory
+    RevisionTestFixture::s_seedFileInfo = rootSeedInfo;
+    RevisionTestFixture::s_seedFileInfo.fileName.SetName(L"RevisionTestFixture/RevisionTestFixture.bim");
+
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, RevisionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
+    TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+
+    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
+    ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
+
+    db->SaveChanges();
+    // Create a dummy revision to purge transaction table for the test
+    DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
+    BeAssert(rev.IsValid());
+    db->Revisions().FinishCreateRevision();
+
+    db->SaveChanges();
+
+    PhysicalModelPtr model = db->Models().Get<PhysicalModel>(DgnDbTestUtils::QueryFirstGeometricModelId(*db));
+    ASSERT_TRUE(model.IsValid());
+    int z = 1;
+    for (int x = 0; x < 1; x++)
+        for (int y = 0; y < 1; y++)
+            InsertPhysicalElement(*db, *model, DgnDbTestUtils::GetFirstSpatialCategoryId(*db) , x, y, z);
+
+    CreateDefaultView(*db);
+    DgnDbTestUtils::UpdateProjectExtents(*db);
+    db->SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,10 +156,10 @@ void RevisionTestFixture::_SetupDgnDb()
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::InsertFloor(int xmax, int ymax)
     {
-    int z = m_z++;
+    int z = 1;
     for (int x = 0; x < xmax; x++)
         for (int y = 0; y < ymax; y++)
-            InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, x, y, z);
+            RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, x, y, z);
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,15 +218,16 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::BackupTestFile()
     {
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
-    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName originalFile = fileName;
     BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
     copyFile.AppendToPath(m_copyTestFileName);
     //BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb();
+    OpenDgnDb(fileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -200,14 +235,15 @@ void RevisionTestFixture::BackupTestFile()
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::RestoreTestFile()
     {
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
-    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName originalFile = fileName;
     BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
     copyFile.AppendToPath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb();
+    OpenDgnDb(fileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -216,7 +252,7 @@ void RevisionTestFixture::RestoreTestFile()
 TEST_F(RevisionTestFixture, Workflow)
     {
     // Setup a model with a few elements
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Workflow.bim");
     m_db->SaveChanges("Created Initial Model");
 
     // Create an initial revision
@@ -270,14 +306,14 @@ TEST_F(RevisionTestFixture, Workflow)
 TEST_F(RevisionTestFixture, MoreWorkflow)
     {
     // Setup baseline
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MoreWorkflow.bim");
     m_db->SaveChanges("Created Initial Model");
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     // Create Revision 1 inserting an element into the test model
     BackupTestFile();
-    DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, 2, 2, 2);
+    DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 2, 2, 2);
     ASSERT_TRUE(elementId.IsValid());
     m_db->SaveChanges("Inserted an element");
 
@@ -363,7 +399,7 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCode
 TEST_F(RevisionTestFixture, Codes)
     {
     // Creating the DgnDb allocates some codes (category, model, view...)
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Codes.bim");
 
     DgnDbR db = *m_db;
 
@@ -473,8 +509,8 @@ struct TestElementDependency : TestElementDrivesElementHandler::Callback
     int32_t GetMostRecentValue() const { return m_mostRecentValue; }
     uint32_t GetInvocationCount() const { return m_invocationCount; }
 
-    virtual void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
-    virtual void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
+    void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
+    void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
 
     TestElementDependency() { TestElementDrivesElementHandler::SetCallback(this); }
     ~TestElementDependency() { TestElementDrivesElementHandler::SetCallback(nullptr); }
@@ -554,7 +590,7 @@ struct DependencyRevisionTest : RevisionTestFixture
     void VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value);
     void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
 
-    DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.ibim", true) { }
+    DependencyRevisionTest() { }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,7 +669,7 @@ void DependencyRevisionTest::VerifyDependentProperties(DgnElementId eId, std::ar
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, TestDependency)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"TestDependency.bim");
     auto& db = *m_db;
     db.SaveChanges("Create initial model");
 
@@ -692,7 +728,7 @@ TEST_F(DependencyRevisionTest, TestDependency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, SingleRevision)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SingleRevision.bim");
 
     DgnElementId aId, bId, cId;
 
@@ -738,7 +774,7 @@ TEST_F(DependencyRevisionTest, SingleRevision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, Merge)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Merge.bim");
 
     DgnElementId aId, bId, cId;
 
@@ -840,7 +876,7 @@ TEST_F(DependencyRevisionTest, Merge)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, Conflict)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Conflict.bim");
     DgnElementId aId = InsertElement(123)->GetElementId(),
                  bId = InsertElement(456)->GetElementId(),
                  cId = InsertElement(789)->GetElementId();
@@ -884,7 +920,7 @@ TEST_F(DependencyRevisionTest, Conflict)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DirectAndIndirectChangesToSameElement.bim");
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();
@@ -927,7 +963,7 @@ TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, UpdateCache)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"UpdateCache.bim");
     
     // Initial state: create two elements
     DgnElementId aId = InsertElement(123)->GetElementId();
@@ -975,7 +1011,7 @@ TEST_F(DependencyRevisionTest, UpdateCache)
 //---------------------------------------------------------------------------------------
 TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     {
-    SetupDgnDb();
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergeDependencyPermutations.bim");
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnTexture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -138,4 +138,47 @@ DgnTextureId DgnImportContext::_RemapTextureId(DgnTextureId source)
 
     DgnTextureId dest = FindTextureId(source);
     return dest.IsValid() ? dest : DgnTexture::ImportTexture(*this, source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Texture::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    
+    params.RegisterPropertyAccessors(layout, PROP_Descr,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (DgnTexture&) elIn;
+            value.SetUtf8CP(el.GetDescription().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (DgnTexture&) elIn;
+            el.SetDescription(value.ToString());
+            return DgnDbStatus::Success;
+            });
+
+#define NOT_AVAILABLE_VIA_PROPERTY_API(PROPNAME)\
+    params.RegisterPropertyAccessors(layout, PROPNAME,\
+        [] (ECValueR value, DgnElementCR elIn)\
+            {\
+            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
+            },\
+        [] (DgnElementR elIn, ECValueCR value)\
+            {\
+            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
+            });
+
+    NOT_AVAILABLE_VIA_PROPERTY_API(PROP_Data)                      // *** WIP_TEXTURE
+    NOT_AVAILABLE_VIA_PROPERTY_API(PROP_Format)                    // *** WIP_TEXTURE
+    NOT_AVAILABLE_VIA_PROPERTY_API(PROP_Width)                     // *** WIP_TEXTURE
+    NOT_AVAILABLE_VIA_PROPERTY_API(PROP_Height)                    // *** WIP_TEXTURE
+    NOT_AVAILABLE_VIA_PROPERTY_API(PROP_Flags)                     // *** WIP_TEXTURE
+
+#undef NOT_AVAILABLE_VIA_PROPERTY_API
     }

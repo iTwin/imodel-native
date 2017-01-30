@@ -49,12 +49,12 @@ struct ClipPlanesPrimitive : ClipPrimitive
     Json::Value ToJsonPlane(ClipPlaneCR) const;
     Json::Value ToJsonConvexPlaneSet(ConvexClipPlaneSetCR) const;
     Json::Value ToJsonPlaneSet(ClipPlaneSetCR) const;
-    ClipPlane FromJsonPlane(JsonValueCR );
-    ConvexClipPlaneSet FromJsonConvexPlaneSet(JsonValueCR);
-    ClipPlaneSetP FromJsonPlaneSet(JsonValueCR);
-
-    void FromJson(JsonValueCR);
-    Json::Value ToJson() const;
+    static ClipPlane FromJsonPlane(JsonValueCR );
+    static ConvexClipPlaneSet FromJsonConvexPlaneSet(JsonValueCR);
+    static ClipPlaneSetP FromJsonPlaneSet(JsonValueCR);
+    
+    static ClipPrimitivePtr FromJson(JsonValueCR val);
+    Json::Value _ToJson() const override;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -78,7 +78,7 @@ ClipPlanesPrimitive(ClipPlanesPrimitive const& donor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _TransformInPlace(TransformCR transform) override 
+BentleyStatus _TransformInPlace(TransformCR transform) override 
     {
     if (NULL != m_clipPlanes)
         m_clipPlanes->TransformInPlace(transform);  
@@ -92,7 +92,7 @@ virtual BentleyStatus _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (NULL != m_clipPlanes)
         m_clipPlanes->MultiplyPlanesTimesMatrix(matrix);  
@@ -106,7 +106,7 @@ virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
+bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     return (NULL == m_clipPlanes) ? false : m_clipPlanes->GetRange(range, pTransform); 
     }
@@ -116,16 +116,20 @@ virtual bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskR
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void setPlaneInvisible(ClipPlaneSetCP planeSet, bool invisible)
     {
-    if (NULL != planeSet)
-        for (ConvexClipPlaneSet& convexSet: const_cast <ClipPlaneSetR> (*planeSet))
-            for (ClipPlane& plane: convexSet)
-                plane.SetInvisible(invisible);
-    }
+    if (NULL == planeSet)
+        return;
 
+    for (ConvexClipPlaneSet& convexSet: const_cast <ClipPlaneSetR> (*planeSet))
+        {
+        for (ClipPlane& plane: convexSet)
+            plane.SetInvisible(invisible);
+        }
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetInvisible(bool invisible) override 
+void _SetInvisible(bool invisible) override 
     {
     if (invisible)
         m_flags |= Mask_Invisible;
@@ -144,7 +148,7 @@ Json::Value ClipPlanesPrimitive::ToJsonPlane(ClipPlaneCR clipPlane) const
     {
     Json::Value val;
 
-    JsonUtils::DVec3dToJson(val["normal"], clipPlane.m_normal);
+    JsonUtils::DVec3dToJson(val["normal"], clipPlane.m_normal);                             
     val["dist"] = clipPlane.m_distance;
     if (clipPlane.GetIsInterior())
         val["interior"] = true;
@@ -220,37 +224,26 @@ ClipPlaneSetP ClipPlanesPrimitive::FromJsonPlaneSet(JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value ClipPlanesPrimitive::ToJson() const 
+Json::Value ClipPlanesPrimitive::_ToJson() const 
     {
-    Json::Value planes;
+    Json::Value out;
+    JsonValueR planes = out["planes"];
+
     if (m_clipPlanes)
         planes["clips"] = ToJsonPlaneSet(*m_clipPlanes);
-
-    if (m_maskPlanes)
-        planes["masks"] = ToJsonPlaneSet(*m_maskPlanes);
 
     if (_GetInvisible())
         planes["invisible"] = true;
 
-    return planes;
+    return out;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClipPlanesPrimitive::FromJson(JsonValueCR planes) 
+ClipPrimitivePtr ClipPlanesPrimitive::FromJson(JsonValueCR val)
     {
-    if (planes.isMember("clips"))
-        m_clipPlanes = FromJsonPlaneSet(planes["clips"]);
-    if (planes.isMember("masks"))
-        m_maskPlanes = FromJsonPlaneSet(planes["masks"]);
-
-    if (planes.isMember("invisible"))
-        {
-        m_flags |= Mask_Invisible;
-        setPlaneInvisible(m_clipPlanes, true);
-        setPlaneInvisible(m_maskPlanes, true);
-        }
+    return new ClipPlanesPrimitive(*FromJsonPlaneSet(val["clips"]), val["invisible"].asBool());
     }
 
 /*=================================================================================**//**
@@ -813,15 +806,16 @@ static ClipPrimitivePtr FromJson(JsonValueCR val)
         zHigh = val["zhigh"].asDouble();
         }
 
-    return new ClipShapePrimitive(points.data(), points.size(), val.isMember("outside"), zlowP, zhighP, transP, val.isMember("invisible"));
+    return new ClipShapePrimitive(points.data(), points.size(), val["mask"].asBool(), zlowP, zhighP, transP, val["invisible"].asBool());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value ToJson() const
+Json::Value _ToJson() const override
     {
-    Json::Value val;
+    Json::Value out;
+    JsonValueR val = out["shape"];
 
     JsonValueR ptsVal = val["points"];
     for (size_t i=0; i<m_points.size(); ++i)
@@ -830,19 +824,22 @@ Json::Value ToJson() const
     if (!m_transformFromClip.IsIdentity())
         JsonUtils::TransformToJson(val["trans"], m_transformFromClip);
 
+    if (m_isMask)
+        val["mask"] = true;
+
     if (m_zLow != -HUGE_VALUE)
         val["zlow"] = m_zLow;
 
     if (m_zHigh != HUGE_VALUE)
         val["zhigh"] = m_zHigh;
 
-    return val;
+    return out;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Init(bool outside, double const* zLow, double const* zHigh, TransformCP transform)
+void Init(bool outside, double const* zLow, double const* zHigh, TransformCP transform)
     {
     m_isMask = outside;
 
@@ -871,7 +868,7 @@ void    Init(bool outside, double const* zLow, double const* zHigh, TransformCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
+bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     double          zHigh = 1.0e20, zLow = -1.0e20;
     ClipPolygonCP   clipPolygon;
@@ -907,7 +904,7 @@ virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ClipPlaneSetCP           _GetClipPlanes() const override  
+ClipPlaneSetCP _GetClipPlanes() const override 
     {
     if (NULL != m_clipPlanes)
         return  m_clipPlanes;
@@ -925,7 +922,7 @@ virtual ClipPlaneSetCP           _GetClipPlanes() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ClipPlaneSetP           _GetMaskPlanes() const override  
+ClipPlaneSetP _GetMaskPlanes() const override 
     {
     if (!m_isMask)
         return NULL;
@@ -946,7 +943,7 @@ virtual ClipPlaneSetP           _GetMaskPlanes() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineCurveCP    _GetBCurve() const override
+MSBsplineCurveCP _GetBCurve() const override
     {
     if (!m_bCurve.IsValid())
         {
@@ -955,7 +952,6 @@ MSBsplineCurveCP    _GetBCurve() const override
         }
     return m_bCurve.get();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -985,7 +981,7 @@ virtual bool _PointInside(DPoint3dCR point, double onTolerance, bool applyTransf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _TransformInPlace(TransformCR transform) override
+BentleyStatus _TransformInPlace(TransformCR transform) override
     {
     if (transform.IsIdentity())
         return SUCCESS;
@@ -1007,7 +1003,7 @@ virtual BentleyStatus _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (m_isMask)
         return ERROR;
@@ -1040,14 +1036,18 @@ bool ClipPrimitive::GetTransforms(TransformP fromClip, TransformP toClip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipPrimitive::ContainsZClip() const
     {
-    ClipPlaneSetCP       clipPlanes = GetClipPlanes();
+    ClipPlaneSetCP clipPlanes = GetClipPlanes();
 
     if (NULL != clipPlanes)
         {
         for (ConvexClipPlaneSetCR convexSet: *clipPlanes)
+            {
             for (ClipPlaneCR plane: convexSet)
+                {
                 if (fabs(plane.GetNormal().z) > 1.0E-6)
                     return true;
+                }
+            }
         }
 
     return false;
@@ -1143,9 +1143,7 @@ bool ClipPrimitive::IsXYPolygon() const
     if (NULL == GetTransformFromClip())
         return true;
 
-
-    DPoint3d        testPoint = {0.0, 0.0, 1.0};
-
+    DPoint3d testPoint = {0.0, 0.0, 1.0};
     GetTransformFromClip()->MultiplyMatrixOnly(testPoint);
 
     return testPoint.MagnitudeXY() < 1.0E-8;
@@ -1192,9 +1190,8 @@ ClipPlaneContainment ClipPrimitive::ClassifyPointContainment(DPoint3dCP points, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPrimitive::TransformToClip(DPoint3dR point) const
     {
-    TransformCP     transform;
-
-    if (NULL != (transform = GetTransformToClip()))
+    TransformCP transform = GetTransformToClip();
+    if (nullptr != transform)
         transform->Multiply(point);
     }
 
@@ -1203,26 +1200,9 @@ void ClipPrimitive::TransformToClip(DPoint3dR point) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPrimitive::TransformFromClip(DPoint3dR point) const
     {
-    TransformCP     transform;
-
-    if (NULL != (transform = GetTransformFromClip()))
+    TransformCP transform = GetTransformFromClip();
+    if (nullptr != transform)
         transform->Multiply(point);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value ClipPrimitive::ToJson() const
-    {
-    Json::Value val;
-
-    auto shape = dynamic_cast<ClipShapePrimitive const*>(this);
-    if (nullptr != shape)
-        val["shape"] = shape->ToJson();
-    else
-        val["planes"] = ToJson();
-
-    return val;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1233,5 +1213,5 @@ ClipPrimitivePtr ClipPrimitive::FromJson(JsonValueCR val)
     if (val.isMember("shape"))
         return ClipShapePrimitive::FromJson(val["shape"]);
 
-    return FromJson(val["planes"]);
+    return ClipPlanesPrimitive::FromJson(val["planes"]);
     }

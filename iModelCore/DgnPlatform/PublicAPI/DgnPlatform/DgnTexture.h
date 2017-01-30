@@ -65,12 +65,12 @@ private:
     Utf8String m_descr;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
-    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
-    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     
 public:
     static DgnTextureId ImportTexture(DgnImportContext& context, DgnTextureId source);
@@ -118,6 +118,7 @@ namespace dgn_ElementHandler
     struct Texture : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

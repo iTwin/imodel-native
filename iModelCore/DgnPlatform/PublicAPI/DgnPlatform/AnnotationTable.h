@@ -543,9 +543,9 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Merge; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
 public:
     static PropertyNames            GetPropertyNames();
@@ -680,9 +680,9 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Symbology; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
 public:
     static PropertyNames            GetPropertyNames();
@@ -779,9 +779,9 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::EdgeRun; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -808,7 +808,7 @@ public:
     AnnotationTableEdgeRunR         operator= (AnnotationTableEdgeRunCR other);
 
     //! @private
-    virtual void                    _DiscloseSymbologyKeys (bset<uint32_t>& keys) override;
+    void                    _DiscloseSymbologyKeys (bset<uint32_t>& keys) override;
 
     EdgeRunHostType      GetHostType     ()   const { return m_hostType;     };
     uint32_t             GetHostIndex    ()   const { return m_host;         };
@@ -927,20 +927,20 @@ public:
     AnnotationTextBlockLayoutCP GetTextBlockLayout () const;
 
     // CellContentHolder
-    virtual bool                    _IsEmpty () const override;
-    virtual DVec2d                  _GetSize () const override;
-    virtual double                  _GetFullyCompressedWidth () const override;
-    virtual double                  _GetFullyExpandedWidth () const override;
-    virtual double                  _GetFullyCompressedHeight () const override;
-    virtual double                  _GetFullyExpandedHeight () const override;
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const override;
+    bool                    _IsEmpty () const override;
+    DVec2d                  _GetSize () const override;
+    double                  _GetFullyCompressedWidth () const override;
+    double                  _GetFullyExpandedWidth () const override;
+    double                  _GetFullyCompressedHeight () const override;
+    double                  _GetFullyExpandedHeight () const override;
+    void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const override;
 
-    virtual void                    _SetAlignment (TableCellAlignment) override;
-    virtual void                    _SetOrientation (TableCellOrientation) override;
-    virtual void                    _FitContentToHeight (double height) override;
-    virtual void                    _FitContentToWidth (double width) override;
-    virtual TextBlockHolder*        _AsTextBlockHolder () override { return this; }
-    virtual void                    _FlushChangesToProperties () override;
+    void                    _SetAlignment (TableCellAlignment) override;
+    void                    _SetOrientation (TableCellOrientation) override;
+    void                    _FitContentToHeight (double height) override;
+    void                    _FitContentToWidth (double width) override;
+    TextBlockHolder*        _AsTextBlockHolder () override { return this; }
+    void                    _FlushChangesToProperties () override;
 
 static  double          ComputeDescenderAdjustment (AnnotationTextStyleCR);
 static  double          ComputeDescenderAdjustment (AnnotationTextBlockLayoutCR);
@@ -990,11 +990,11 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Cell; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual void                        _FlushChangesToProperties() override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
-    virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>&) override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    void                        _FlushChangesToProperties() override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _DiscloseSymbologyKeys (bset<uint32_t>&) override;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -1159,10 +1159,10 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Row; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual void                        _FlushChangesToProperties() override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    void                        _FlushChangesToProperties() override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
 public:
 //__PUBLISH_SECTION_END__
@@ -1258,10 +1258,10 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Column; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
-    virtual void                        _FlushChangesToProperties() override;
-    virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    void                        _FlushChangesToProperties() override;
+    bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -1444,12 +1444,12 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Header; }
-    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
-    virtual void                        _AssignValue (int propIndex, BeSQLite::EC::IECSqlValue const&) override;
-    virtual bool                        _IsUniqueAspect () const override { return true; }
-    virtual void                        _FlushChangesToProperties() override;
-    virtual bool                        _IsRequiredOnElement () const override { return true; }
-    virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>& keys) override;
+    void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
+    void                        _AssignValue (int propIndex, BeSQLite::EC::IECSqlValue const&) override;
+    bool                        _IsUniqueAspect () const override { return true; }
+    void                        _FlushChangesToProperties() override;
+    bool                        _IsRequiredOnElement () const override { return true; }
+    void                        _DiscloseSymbologyKeys (bset<uint32_t>& keys) override;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -1558,13 +1558,13 @@ private:
 protected:
     DGNPLATFORM_EXPORT  void                                BootStrap(uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight);
 
-    DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnInsert() override;
-    DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnUpdate(DgnElementCR original) override;
+    DGNPLATFORM_EXPORT  DgnDbStatus                 _OnInsert() override;
+    DGNPLATFORM_EXPORT  DgnDbStatus                 _OnUpdate(DgnElementCR original) override;
 
-    DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _InsertInDb() override;
-    DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _UpdateInDb() override;
-    DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _LoadFromDb() override;
-    DGNPLATFORM_EXPORT  virtual void                        _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT  DgnDbStatus                 _InsertInDb() override;
+    DGNPLATFORM_EXPORT  DgnDbStatus                 _UpdateInDb() override;
+    DGNPLATFORM_EXPORT  DgnDbStatus                 _LoadFromDb() override;
+    DGNPLATFORM_EXPORT  void                        _CopyFrom(DgnElementCR) override;
 
 //__PUBLISH_SECTION_END__
 public:

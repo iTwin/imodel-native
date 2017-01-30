@@ -6,30 +6,25 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <BeSQLite/RTreeMatch.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
+DgnGeoLocation::DgnGeoLocation(DgnDbR project) : m_dgndb(project)
     {
     m_globalOrigin.Zero();
-    m_extent = AxisAlignedBox3d();
-    m_hasCheckedForGCS = false;
-    m_geoServices = NULL;
-    m_gcs = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGCS* DgnUnits::GetDgnGCS() const
+DgnGCS* DgnGeoLocation::GetDgnGCS() const
     {
     if (!m_hasCheckedForGCS)
         {
         m_geoServices = T_HOST.GetGeoCoordinationAdmin()._GetServices();
-        m_gcs = m_geoServices? m_geoServices->GetGCSFromProject(m_dgndb): NULL;
+        m_gcs = m_geoServices ? m_geoServices->GetGCSFromProject(m_dgndb) : nullptr;
         m_hasCheckedForGCS = true;
         }
     return m_gcs;
@@ -38,7 +33,7 @@ DgnGCS* DgnUnits::GetDgnGCS() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::SetGlobalOrigin(DPoint3dCR origin)
+void DgnGeoLocation::SetGlobalOrigin(DPoint3dCR origin)
     {
     m_globalOrigin=origin;
     if (m_gcs)
@@ -48,9 +43,9 @@ void DgnUnits::SetGlobalOrigin(DPoint3dCR origin)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
+BentleyStatus DgnGeoLocation::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
     {
-    if (NULL == GetDgnGCS())
+    if (nullptr == GetDgnGCS())
         return BSIERROR;
 
     return m_geoServices->UorsFromLatLong(outUors, inLatLong, *m_gcs);
@@ -59,24 +54,24 @@ BentleyStatus DgnUnits::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) const
+BentleyStatus DgnGeoLocation::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) const
     {
-    if (NULL == GetDgnGCS())
+    if (nullptr == GetDgnGCS())
         return BSIERROR;
     return m_geoServices->LatLongFromUors(outLatLong, inUors, *m_gcs);
     }
 
-static Utf8CP DGNPROPERTYJSON_GlobalOrigin    = "globalOrigin";
+static Utf8CP DGNPROPERTYJSON_GlobalOrigin = "globalOrigin";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnUnits::Load()
+DgnDbStatus DgnGeoLocation::Load()
     {
-    Json::Value  jsonObj;
     Utf8String value;
+    DbResult result = m_dgndb.QueryProperty(value, DgnProjectProperty::Units());
 
-    DbResult  result = m_dgndb.QueryProperty(value, DgnProjectProperty::Units());
+    Json::Value jsonObj;
     if (BE_SQLITE_ROW != result || !Json::Reader::Parse(value, jsonObj))
         {
         BeAssert(false);
@@ -84,28 +79,31 @@ DgnDbStatus DgnUnits::Load()
         }
 
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[DGNPROPERTYJSON_GlobalOrigin]);
-
     LoadProjectExtents();
-    return  DgnDbStatus::Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::Save()
+void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
-
     JsonUtils::DPoint3dToJson(jsonObj[DGNPROPERTYJSON_GlobalOrigin], m_globalOrigin);
-
     m_dgndb.SavePropertyString(DgnProjectProperty::Units(), Json::FastWriter::ToString(jsonObj));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::SetProjectExtents(AxisAlignedBox3dCR newExtents)
+void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     {
+    if (newExtents.IsEmpty())
+        {
+        BeAssert(false);
+        return;
+        }
+
     m_extent = newExtents;
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
@@ -115,10 +113,13 @@ void DgnUnits::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::InitializeProjectExtents() 
+void DgnGeoLocation::InitializeProjectExtents() 
     {
     auto& models = GetDgnDb().Models();
 
+    // Set the project extents to the union of the ranges of all of the spatial models.
+    // We can't just use the range index for this since some models (e.g. reality models) have volumes of interest
+    // that don't have any elements. This is slower, but it should only be called after an "import from external source" operation
     AxisAlignedBox3d extent;
     for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
         {
@@ -127,16 +128,16 @@ void DgnUnits::InitializeProjectExtents()
             extent.Extend(model->QueryModelRange());
         }
 
-    if (extent.IsEmpty())
+    if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a resonable default
         extent = GetDefaultProjectExtents();
 
-    SetProjectExtents(extent);
+    SetProjectExtents(extent); // store the result
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::LoadProjectExtents() const
+void DgnGeoLocation::LoadProjectExtents() const
     {
     Json::Value  jsonObj;
     Utf8String value;
@@ -152,7 +153,7 @@ void DgnUnits::LoadProjectExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnUnits::GetProjectExtents() const
+AxisAlignedBox3d DgnGeoLocation::GetProjectExtents() const
     {
     if (m_extent.IsEmpty())
         LoadProjectExtents();

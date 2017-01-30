@@ -446,12 +446,12 @@ private:
     Utf8String                  m_modelNameList;
     StopWatch                   m_timer;
 
-    virtual TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
+    TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
+    WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
-    virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;
-    virtual TileGeneratorStatus _EndProcessModel(DgnModelCR, TileNodeP, TileGeneratorStatus) override;
+    TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;
+    TileGeneratorStatus _EndProcessModel(DgnModelCR, TileNodeP, TileGeneratorStatus) override;
 
     Status  GetViewsJson (Json::Value& value, DPoint3dCR groundPoint);
 
@@ -470,10 +470,10 @@ private:
         TilesetPublisher&   m_publisher;
         uint32_t            m_lastPercentCompleted = 0xffffffff;
         
-        virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
+        bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
+        void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
     TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool publishIncremental, bool verbose, TextureMode textureMode)
@@ -680,7 +680,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
         {
-        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().Units().GetGlobalOrigin());
+        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().GeoLocation().GetGlobalOrigin());
         }
     else
         {
@@ -788,9 +788,9 @@ static void printStatus(PublisherContext::Status status)
 struct Host : DgnPlatformLib::Host
 {
 private:
-    virtual void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
-    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
-    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+    void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+    BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
         sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");

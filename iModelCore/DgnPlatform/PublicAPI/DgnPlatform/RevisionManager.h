@@ -115,9 +115,9 @@ private:
     BentleyStatus StartInput();
     void FinishInput();
 
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    DGNPLATFORM_EXPORT virtual void _Reset() override;
-    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    DGNPLATFORM_EXPORT void _Reset() override;
+    DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
 
 public:
     RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}

@@ -148,7 +148,7 @@ struct ModelIterator;
 //=======================================================================================
 //! A DgnCode is a structure that holds the "name" of an element in a DgnDb.
 //! The DgnCode is stored as a three-part identifier: CodeSpecId, scope, and value.
-//! The combination of the three must be unique across all elements within a DgnDb. 
+//! The combination of the three must be unique across all elements within a DgnDb.
 //! The meaning of a DgnCode is determined by the CodeSpec.
 //!
 //! The CodeSpecId must be non-null and identify a valid CodeSpec.
@@ -159,7 +159,7 @@ struct ModelIterator;
 // @bsiclass                                                     Paul.Connelly  09/15
 //=======================================================================================
 struct DgnCode
-{               
+{
 private:
     CodeSpecId m_codeSpecId;
     Utf8String m_value;
@@ -329,7 +329,7 @@ public:
 
 public:
     //! Create a new, non-persistent model from the supplied ECInstance.
-    //! Ths supplied instance must contain the model's Code.
+    //! The supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
     //! @param properties The instance that contains all of the model's business properties
     //! @return a new, non-persistent model if successful, or an invalid ptr if not.
@@ -604,27 +604,26 @@ public:
 };
 
 //=======================================================================================
-//! @see DgnDb::Units
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
-struct DgnUnits : NonCopyableClass
+struct DgnGeoLocation : NonCopyableClass
 {
 private:
     friend struct DgnDb;
-    DgnDbR          m_dgndb;
+    DgnDbR  m_dgndb;
     mutable AxisAlignedBox3d m_extent;
-    DPoint3d        m_globalOrigin;      //!< in meters
-    mutable bool    m_hasCheckedForGCS;
-    mutable DgnGCS* m_gcs;
-    mutable IGeoCoordinateServicesP m_geoServices;
+    DPoint3d m_globalOrigin;
+    mutable bool m_hasCheckedForGCS = false;
+    mutable DgnGCS* m_gcs = nullptr;
+    mutable IGeoCoordinateServicesP m_geoServices = nullptr;
 
-    DgnUnits(DgnDbR db);
+    DgnGeoLocation(DgnDbR db);
     void LoadProjectExtents() const;
 
 public:
     //! @private
-    //! Return a reasonable value that can be used if the project extents have never been established for this BIM. 
-    //! This is an arbitrary volume intended to represent a cube of a resonable size, if we have no idea what is being modeled by
+    //! Return a reasonable value that can be used if the project extents have never been established for this BIM.
+    //! This is an arbitrary volume intended to represent a cube of a reasonable size, if we have no idea what is being modeled by
     //! this BIM. The default is (in meters) : [{-50,-50,-10},{50,50,30}]
     AxisAlignedBox3d GetDefaultProjectExtents() const {return AxisAlignedBox3d(DRange3d::From(-50,-50,-10, 50,50,30));}
 
@@ -640,20 +639,20 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus Load();
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
-    
+
     //! Get the BIM's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
     //! Update the project extents for this BIM
     DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
-    //! Get the "spatial area of interest" for this project. This volume is used for many purposes where the software needs to 
+    //! Get the "spatial area of interest" for this project. This volume is used for many purposes where the software needs to
     //! include space "in the project", and exclude space outside it. For example, viewing volumes are automatically adjusted to set
     //! the depth (front and back planes) to this volume. Also, there are times when tools adjust the volume of searches or view operations
-    //! to include only space inside the project extents. 
+    //! to include only space inside the project extents.
     //! There are tools to visualize and adjust the project extents. Note that if the project extent is too small (does not
     //! include space occupied by elements or other artifacts of interest), they may disappear under some operations since they're not considered
-    //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space". 
+    //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space".
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
 
     //! Convert a GeoPoint to an XYZ point
@@ -671,7 +670,13 @@ public:
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
+};
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/13
+//=======================================================================================
+struct DgnUnits 
+{
     static double const OneMeter() {return 1.0;}
     static double const OneKilometer() {return 1000.0 * OneMeter();}
     static double const OneMillimeter() {return OneMeter() / 1000.0;}

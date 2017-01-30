@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SectionClip.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -238,7 +238,7 @@ struct SectionClipObjectLegacyData
 struct SectionClipObjectFactory : IViewClipObject::Factory
 {
 protected:
-    DGNPLATFORM_EXPORT virtual IViewClipObjectPtr _FromJson(JsonValueCR) override;
+    DGNPLATFORM_EXPORT IViewClipObjectPtr _FromJson(JsonValueCR) override;
 
 public:
     static Utf8String GetFactoryId() {return "SectionClip";}

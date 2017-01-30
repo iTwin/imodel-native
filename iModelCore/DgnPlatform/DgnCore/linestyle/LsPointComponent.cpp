@@ -16,7 +16,7 @@
 * every place along the input line where a symbol should appear. Afterwards, process the symbols that appear at vertices.
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
     if (NULL == m_strokeComponent.get ())
         return  SUCCESS;
@@ -31,23 +31,23 @@ StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3d
     LsSymbolReferenceCP   sym;
     DPoint3d     dir, dir1, dir2;
 
-    if (!modifiers->ContinuationXElems() && NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_LineOrigin)))
+    if (!modifiers.ContinuationXElems() && NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_LineOrigin)))
         {
         dir.NormalizedDifference (org[1], *org);
 
-        if (SUCCESS != sym->Output (context, modifiers, org, &dir))
+        if (SUCCESS != sym->Output (context, &modifiers, org, &dir))
             return  ERROR;
         }
 
     if (NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_LineEnd)))
         {
         dir.NormalizedDifference (*end, *(end-1));
-        if (SUCCESS != sym->Output (context, modifiers, end, &dir))
+        if (SUCCESS != sym->Output (context, &modifiers, end, &dir))
             return  ERROR;
         }
 
     // If treat as single segment is set we are on a curve or arc - in which case we can't support vertex symbols either
-    if (modifiers->IsTreatAsSingleSegment())
+    if (modifiers.IsTreatAsSingleSegment())
         return  SUCCESS;
 
     if (NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_Each)))
@@ -60,33 +60,13 @@ StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3d
             dir.Interpolate (dir1, 0.5, dir2);
             dir.Normalize ();
 
-            if (SUCCESS != sym->Output (context, modifiers, org, &dir))
+            if (SUCCESS != sym->Output (context, &modifiers, org, &dir))
                 return  ERROR;
             }
         }
 
     return  SUCCESS;
     }
-
-#if defined (NOT_NOW)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void LsPointComponent::_QuerySymbology(SymbologyQueryResults& results) const
-    {
-    for (LsSymbolReference const& symref : m_symbols)
-        {
-        LsSymbolComponentCP comp = symref.GetSymbolComponentCP();
-        if (nullptr == comp)
-            continue;
-        if (!symref.GetUseElementWeight())
-            results.SetWeight(comp->GetLineWeight());
-
-        if (!symref.GetUseElementColor())
-            results.SetColors(comp->IsColorByLevel(), comp->GetLineColor(), comp->GetFillColor());
-        }
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/03

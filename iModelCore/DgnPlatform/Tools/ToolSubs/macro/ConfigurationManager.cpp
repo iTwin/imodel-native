@@ -21,12 +21,12 @@ BentleyStatus IConfigurationAdmin::GetConfigVariable(WStringR cfgValue, WCharCP 
 +===============+===============+===============+===============+===============+======*/
 struct          EnvAdmin : IConfigurationAdmin
 {
-virtual void          _OnHostTermination (bool isProcessShutdown) override {;}
+void          _OnHostTermination (bool isProcessShutdown) override {;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _GetConfigVariable (WStringR envStr, WCharCP envVar, ConfigurationVariableLevel level) override
+BentleyStatus _GetConfigVariable (WStringR envStr, WCharCP envVar, ConfigurationVariableLevel level) override
     {
     BentleyStatus status = util_getSysEnv (&envStr, envVar);
 
@@ -39,7 +39,7 @@ virtual BentleyStatus _GetConfigVariable (WStringR envStr, WCharCP envVar, Confi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool          _IsConfigVariableDefined (WCharCP cfgVarName, ConfigurationVariableLevel level) override
+bool          _IsConfigVariableDefined (WCharCP cfgVarName, ConfigurationVariableLevel level) override
     {
     return (SUCCESS == util_getSysEnv (nullptr, cfgVarName));
     }
@@ -47,7 +47,7 @@ virtual bool          _IsConfigVariableDefined (WCharCP cfgVarName, Configuratio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool          _IsConfigVariableDefinedAndTrue (WCharCP cfgVarName, ConfigurationVariableLevel level) override
+bool          _IsConfigVariableDefinedAndTrue (WCharCP cfgVarName, ConfigurationVariableLevel level) override
     {
     WString     value;
     if (SUCCESS != util_getSysEnv (&value, cfgVarName))
@@ -64,7 +64,7 @@ virtual bool          _IsConfigVariableDefinedAndTrue (WCharCP cfgVarName, Confi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _DefineConfigVariable (WCharCP cfgVarName, WCharCP cfgValue, ConfigurationVariableLevel level) override
+BentleyStatus _DefineConfigVariable (WCharCP cfgVarName, WCharCP cfgValue, ConfigurationVariableLevel level) override
     {
     BeAssert (level == ConfigurationVariableLevel::User);
 
@@ -77,7 +77,7 @@ virtual BentleyStatus _DefineConfigVariable (WCharCP cfgVarName, WCharCP cfgValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _UndefineConfigVariable (WCharCP cfgVarName) override
+BentleyStatus _UndefineConfigVariable (WCharCP cfgVarName) override
     {
     return util_putenv (cfgVarName, nullptr);
     }
@@ -85,7 +85,7 @@ virtual BentleyStatus _UndefineConfigVariable (WCharCP cfgVarName) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BeFileNameCR  _GetLocalTempDirectoryBaseName () override
+BeFileNameCR  _GetLocalTempDirectoryBaseName () override
     {
     static  bool        s_checked;
     static  BeFileName  s_tempPath; // MT: This default implementation not used by DgnPlatform
@@ -102,7 +102,7 @@ virtual BeFileNameCR  _GetLocalTempDirectoryBaseName () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    DanEast         11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override
+BentleyStatus _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override
     {
     return BSIERROR;
     }
@@ -110,7 +110,7 @@ virtual BentleyStatus _IterateThroughVariables (IConfigVariableIteratorDelegate 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override
+BentleyStatus _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override
     {
     WString cfgValue;
     _GetConfigVariable (cfgValue, cfgVarName, ConfigurationVariableLevel::User);
@@ -124,7 +124,7 @@ virtual BentleyStatus _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override
+void    _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override
     {
     // not monitoring.
     }

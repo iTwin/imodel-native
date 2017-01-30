@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnCore/DgnRscFontData.cpp $
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnFontData.h>
@@ -23,15 +23,15 @@ private:
 public:
     DgnRscDbFontData(DgnFonts::DbFaceDataDirect& dbFaceData, Utf8CP familyName) : m_dbFaceData(dbFaceData), m_familyName(familyName), m_openCount(0) {}
 
-    virtual IDgnFontData* _CloneWithoutData() override { return new DgnRscDbFontData(m_dbFaceData, m_familyName.c_str()); }
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual BentleyStatus _ReadFontHeader(bvector<Byte>&) override;
-    virtual BentleyStatus _ReadFractionMap(bvector<Byte>&) override;
-    virtual BentleyStatus _ReadGlyphData(bvector<Byte>&, size_t offset, size_t size) override;
-    virtual BentleyStatus _ReadGlyphDataOffsets(bvector<Byte>&) override;
-    virtual BentleyStatus _ReadGlyphHeaders(bvector<Byte>&) override;
+    IDgnFontData* _CloneWithoutData() override { return new DgnRscDbFontData(m_dbFaceData, m_familyName.c_str()); }
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    BentleyStatus _ReadFontHeader(bvector<Byte>&) override;
+    BentleyStatus _ReadFractionMap(bvector<Byte>&) override;
+    BentleyStatus _ReadGlyphData(bvector<Byte>&, size_t offset, size_t size) override;
+    BentleyStatus _ReadGlyphDataOffsets(bvector<Byte>&) override;
+    BentleyStatus _ReadGlyphHeaders(bvector<Byte>&) override;
 
     FB::DgnRscFont const* GetFB() const { PRECONDITION(m_openCount > 0, nullptr); return GetRoot<FB::DgnRscFont>(&m_fontData[0]); }
 };

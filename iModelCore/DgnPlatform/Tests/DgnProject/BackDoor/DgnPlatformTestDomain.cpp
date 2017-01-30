@@ -143,61 +143,33 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+void TestElementHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto propName = accessor.GetAccessString();
+    T_Super::_RegisterPropertyAccessors(params, layout);
 
-#define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
-#define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
-#define SETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetDouble(); return DgnDbStatus::Success;}
-#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3d(); return DgnDbStatus::Success;}
+#define GETPROPSTR(MEMVAR) [](ECN::ECValueR value, DgnElementCR elIn){auto& el = (TestElement&)elIn; value = ECN::ECValue(el.MEMVAR.c_str()); return DgnDbStatus::Success;}
+#define SETPROPSTR(MEMVAR) [](DgnElement& elIn, ECN::ECValueCR value){auto& el = (TestElement&)elIn; el.MEMVAR = value.ToString(); return DgnDbStatus::Success;}
+#define GETPROP(MEMVAR) [](ECN::ECValueR value, DgnElementCR elIn){auto& el = (TestElement&)elIn; value = ECN::ECValue(el.MEMVAR); return DgnDbStatus::Success;}
+#define SETPROP(MEMVAR,TYPE) [](DgnElement& elIn, ECN::ECValueCR value){auto& el = (TestElement&)elIn; el.MEMVAR = value.Get ## TYPE(); return DgnDbStatus::Success;}
 
-    SETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
-    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
-    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty2, m_intProps[1])
-    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty3, m_intProps[2])
-    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty4, m_intProps[3])
-    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty1, m_doubleProps[0])
-    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty2, m_doubleProps[1])
-    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty3, m_doubleProps[2])
-    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty4, m_doubleProps[3])
-    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty1, m_pointProps[0])
-    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty2, m_pointProps[1])
-    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
-    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
+#define GETSETPROPSTR(MEMVAR) GETPROPSTR(MEMVAR), SETPROPSTR(MEMVAR)
+#define GETSETPROPDBL(MEMVAR) GETPROP(MEMVAR), SETPROP(MEMVAR,Double)
+#define GETSETPROPINT(MEMVAR) GETPROP(MEMVAR), SETPROP(MEMVAR,Integer)
+#define GETSETPROPP3(MEMVAR) GETPROP(MEMVAR), SETPROP(MEMVAR,Point3d)
 
-    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto propName = accessor.GetAccessString();
-
-#define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
-#define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
-#define GETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
-#define GETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
-
-    GETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
-    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
-    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty2, m_intProps[1])
-    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty3, m_intProps[2])
-    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty4, m_intProps[3])
-    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty1, m_doubleProps[0])
-    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty2, m_doubleProps[1])
-    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty3, m_doubleProps[2])
-    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty4, m_doubleProps[3])
-    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty1, m_pointProps[0])
-    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty2, m_pointProps[1])
-    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
-    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
-
-    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_TestElementProperty, GETSETPROPSTR(m_testElemProperty));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_IntegerProperty1,    GETSETPROPINT(m_intProps[0]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_IntegerProperty2,    GETSETPROPINT(m_intProps[1]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_IntegerProperty3,    GETSETPROPINT(m_intProps[2]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_IntegerProperty4,    GETSETPROPINT(m_intProps[3]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_DoubleProperty1,     GETSETPROPDBL(m_doubleProps[0]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_DoubleProperty2,     GETSETPROPDBL(m_doubleProps[1]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_DoubleProperty3,     GETSETPROPDBL(m_doubleProps[2]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_DoubleProperty4,     GETSETPROPDBL(m_doubleProps[3]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_PointProperty1,      GETSETPROPP3(m_pointProps[0]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_PointProperty2,      GETSETPROPP3(m_pointProps[1]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_PointProperty3,      GETSETPROPP3(m_pointProps[2]));
+    params.RegisterPropertyAccessors(layout, DPTEST_TEST_ELEMENT_PointProperty4,      GETSETPROPP3(m_pointProps[3]));
     }
 
 /*---------------------------------------------------------------------------------**//**

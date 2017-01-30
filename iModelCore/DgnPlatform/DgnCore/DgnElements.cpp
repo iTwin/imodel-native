@@ -117,13 +117,13 @@ private:
 
     void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
 
-    virtual ElemIdLeafNode const* _GetFirstNode() const override {return this;}
-    virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
-    virtual void _Add(DgnElementCR entry, uint64_t counter) override;
-    virtual ElemPurge _Purge(uint64_t) override;
-    virtual ElemPurge _Drop(uint64_t key) override;
-    virtual void _Empty() override;
-    virtual void _Visit(T_VisitElemFunc) const override;
+    ElemIdLeafNode const* _GetFirstNode() const override {return this;}
+    void _CalculateNodeRange() const override {CalculateLeafRange();}
+    void _Add(DgnElementCR entry, uint64_t counter) override;
+    ElemPurge _Purge(uint64_t) override;
+    ElemPurge _Drop(uint64_t key) override;
+    void _Empty() override;
+    void _Visit(T_VisitElemFunc) const override;
 
 public:
     DgnElementCP GetEntry(int index) const {return m_elems[index];}
@@ -144,19 +144,19 @@ struct ElemIdInternalNode : public ElemIdRangeNode, ElemIdParent
 protected:
     ElemIdRangeNodeP m_children[NUM_INTERNALENTRIES];
 
-    virtual void _Add(DgnElementCR entry, uint64_t counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry.GetElementId().GetValue())->_Add(entry, counter);}
-    virtual void _IncreaseRange(ElemIdRange const&) override;
-    virtual void _CalculateNodeRange() const override;
-    virtual ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
-    virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP from) const override;
-    virtual ElemPurge _Purge(uint64_t) override;
-    virtual ElemPurge _Drop(uint64_t key) override;
-    virtual void _Empty() override;
-    virtual void _Visit(T_VisitElemFunc) const override;
+    void _Add(DgnElementCR entry, uint64_t counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry.GetElementId().GetValue())->_Add(entry, counter);}
+    void _IncreaseRange(ElemIdRange const&) override;
+    void _CalculateNodeRange() const override;
+    ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
+    ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP from) const override;
+    ElemPurge _Purge(uint64_t) override;
+    ElemPurge _Drop(uint64_t key) override;
+    void _Empty() override;
+    void _Visit(T_VisitElemFunc) const override;
     void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
 
 public:
-    virtual void _AddChildNode(ElemIdRangeNodeP newNode) override;
+    void _AddChildNode(ElemIdRangeNodeP newNode) override;
 
     ElemIdInternalNode(ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode(root, parent, false) {}
 
@@ -201,9 +201,9 @@ struct ElemIdTree : ElemIdParent
     MyStats            m_stats;
     DgnElements::Totals m_totals;
 
-    virtual void _IncreaseRange(ElemIdRange const&) override {}
-    virtual void _AddChildNode(ElemIdRangeNodeP newNode) override;
-    virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP curr) const override {return nullptr;}
+    void _IncreaseRange(ElemIdRange const&) override {}
+    void _AddChildNode(ElemIdRangeNodeP newNode) override;
+    ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP curr) const override {return nullptr;}
 
     ElemIdInternalNode* NewInternalNode(ElemIdParent* parent) {return new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, parent);}
     ElemIdLeafNode* NewLeafNode(ElemIdParent* parent)         {return new((ElemIdLeafNode*) m_leafPool.malloc()) ElemIdLeafNode(*this, parent);}

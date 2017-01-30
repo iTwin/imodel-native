@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnRscFont.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -47,11 +47,11 @@ private:
 public:
     DgnRscGlyph(T_Id, double ascender, bool isFilled, RscGlyphHeader const&, RscGlyphDataOffset const&, IDgnRscFontData&);
 
-    virtual T_Id _GetId() const override { return m_glyphId; }
-    virtual DRange2d _GetRange() const override { return m_range; }
-    virtual DRange2d _GetExactRange() const override { return m_exactRange; }
-    virtual BentleyStatus _FillGpa(GPArrayR) const override;
-    virtual bool _IsBlank() const override { return m_isBlank; }
+    T_Id _GetId() const override { return m_glyphId; }
+    DRange2d _GetRange() const override { return m_range; }
+    DRange2d _GetExactRange() const override { return m_exactRange; }
+    BentleyStatus _FillGpa(GPArrayR) const override;
+    bool _IsBlank() const override { return m_isBlank; }
     static DgnRscGlyph* CreateUnitSpaceGlyph();
     void SetWidthDirect(double width, double exactWidth) { m_range.high.x = width; m_exactRange.high.x = exactWidth; }
     DoFixup _DoFixup () const override { return DoFixup::IfHoles; }

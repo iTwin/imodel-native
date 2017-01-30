@@ -33,7 +33,6 @@ WCharCP DgnDb::GetThreadIdName()
         case ThreadId::Scene:       return L"SceneThread";
         case ThreadId::IoPool:      return L"IoPool";
         case ThreadId::CpuPool:     return L"CpuPool";
-        case ThreadId::SheetTile:   return L"SheetTile";
         default:                    return L"UnknownThread";
         }
     }

@@ -59,7 +59,7 @@ ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const 
+ECObjectsStatus ElementECInstanceAdapter::_GetValue(ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const 
     {
     PropertyArrayIndex ai(useArrayIndex, arrayIndex);
     auto stat = m_element.GetPropertyValue(v, propertyIndex, ai);
@@ -69,7 +69,7 @@ ECObjectsStatus ElementECInstanceAdapter::_GetValue (ECValueR v, uint32_t proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex)
+ECObjectsStatus ElementECInstanceAdapter::_SetValue(uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex)
     {
     if (m_readOnly)
         {
@@ -84,7 +84,7 @@ ECObjectsStatus ElementECInstanceAdapter::_SetValue (uint32_t propertyIndex, ECV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_InsertArrayElements (uint32_t propertyIndex, uint32_t index, uint32_t size)
+ECObjectsStatus ElementECInstanceAdapter::_InsertArrayElements(uint32_t propertyIndex, uint32_t index, uint32_t size)
     {
     if (m_readOnly)
         {
@@ -99,7 +99,7 @@ ECObjectsStatus ElementECInstanceAdapter::_InsertArrayElements (uint32_t propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_AddArrayElements (uint32_t propertyIndex, uint32_t size)
+ECObjectsStatus ElementECInstanceAdapter::_AddArrayElements(uint32_t propertyIndex, uint32_t size)
     {
     if (m_readOnly)
         {
@@ -114,7 +114,7 @@ ECObjectsStatus ElementECInstanceAdapter::_AddArrayElements (uint32_t propertyIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_RemoveArrayElement (uint32_t propertyIndex, uint32_t index)
+ECObjectsStatus ElementECInstanceAdapter::_RemoveArrayElement(uint32_t propertyIndex, uint32_t index)
     {
     if (m_readOnly)
         {
@@ -129,7 +129,7 @@ ECObjectsStatus ElementECInstanceAdapter::_RemoveArrayElement (uint32_t property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::_ClearArray (uint32_t propIdx)
+ECObjectsStatus ElementECInstanceAdapter::_ClearArray(uint32_t propIdx)
     {
     if (m_readOnly)
         {
@@ -268,7 +268,7 @@ DgnDbStatus ElementECInstanceAdapter::CopyPropertiesFrom(ECValuesCollectionCR so
         else 
             {
             ECObjectsStatus ecStatus;
-            if (ECObjectsStatus::Success != (ecStatus = SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (ECObjectsStatus::Success != (ecStatus = SetInternalValueUsingAccessor(prop.GetValueAccessor(), prop.GetValue())))
                 {
                 if (!filter._IgnoreErrors() && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
                     {
@@ -758,7 +758,7 @@ void DgnElements::ClearUpdaterCache()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP      ElementAutoHandledPropertiesECInstanceAdapter::_GetAsIECInstance () const
+IECInstanceP ElementAutoHandledPropertiesECInstanceAdapter::_GetAsIECInstance() const
     {
     return const_cast<ElementAutoHandledPropertiesECInstanceAdapter*>(this);
     }
@@ -800,7 +800,7 @@ DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_CopyFromBuffer (ECDBufferCR src)
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_CopyFromBuffer(ECDBufferCR src)
     {
     //DgnElement const* fromMemoryInstance = dynamic_cast<DgnElement const*> (&src);
     //if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
@@ -809,31 +809,31 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_CopyFromBuffer (
     //    memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(uint32_t));
     //    }
 
-    return CopyPropertiesFromBuffer (src);
+    return CopyPropertiesFromBuffer(src);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ElementAutoHandledPropertiesECInstanceAdapter::GetBytesUsed () const
+uint32_t ElementAutoHandledPropertiesECInstanceAdapter::GetBytesUsed() const
     {
     if (NULL == m_element.m_ecPropertyData)
         return 0;
 
-    return CalculateBytesUsed ();
+    return CalculateBytesUsed();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/        
-void ElementAutoHandledPropertiesECInstanceAdapter::_ClearValues ()
+void ElementAutoHandledPropertiesECInstanceAdapter::_ClearValues()
     {
     //if (m_structInstances)
     //    m_structInstances->clear ();
 
-    InitializeMemory (GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize);
+    InitializeMemory(GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize);
 
     //ClearAllPerPropertyFlags ();
     }
@@ -842,13 +842,13 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_ClearValues ()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ModifyData(uint32_t offset, void const * newData, uint32_t dataLength)
     {
     PRECONDITION (NULL != m_element.m_ecPropertyData, ECObjectsStatus::PreconditionViolated);
     PRECONDITION (offset + dataLength <= m_element.m_ecPropertyDataSize, ECObjectsStatus::MemoryBoundsOverrun);
 
     Byte * dest = m_element.m_ecPropertyData + offset;
-    memcpy (dest, newData, dataLength);
+    memcpy(dest, newData, dataLength);
 
     SetDirty();
     
@@ -859,13 +859,13 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ModifyData (uint
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_MoveData(uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
     {
     PRECONDITION (NULL != m_element.m_ecPropertyData, ECObjectsStatus::PreconditionViolated);
     PRECONDITION (toOffset + dataLength <= m_element.m_ecPropertyDataSize, ECObjectsStatus::MemoryBoundsOverrun);
 
     Byte* data = m_element.m_ecPropertyData;
-    memmove (data+toOffset, data+fromOffset, dataLength);
+    memmove(data+toOffset, data+fromOffset, dataLength);
 
     SetDirty();
 
@@ -876,7 +876,7 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_MoveData (uint32
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation ()
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation()
     {
     uint32_t newAllocation = GetBytesUsed();
     if (0 == newAllocation)
@@ -886,7 +886,7 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation
         Byte* reallocedData = (Byte*)bentleyAllocator_realloc(m_element.m_ecPropertyData, newAllocation);
         if (NULL == reallocedData)
             {
-            BeAssert (false);
+            BeAssert(false);
             return ECObjectsStatus::UnableToAllocateMemory;
             }
 
@@ -904,7 +904,7 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
+void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation()
     {
     //if (!m_usingSharedMemory)
     //    {
@@ -942,7 +942,7 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (uint32_t bytesNeeded)
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation(uint32_t bytesNeeded)
     {
     uint32_t newSize = 2 * (m_element.m_ecPropertyDataSize + bytesNeeded); // Assume the growing trend will continue.
 
@@ -964,17 +964,17 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ClearArray (uint32_t propIdx)
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ClearArray(uint32_t propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
+    ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex(pPropertyLayout, propIdx);
     if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
         return ECObjectsStatus::PropertyNotFound;
 
-    uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);
+    uint32_t arrayCount = GetReservedArrayCount(*pPropertyLayout);
     if (arrayCount > 0)
         {
-        RemoveArrayElements (*pPropertyLayout, 0, arrayCount);
+        RemoveArrayElements(*pPropertyLayout, 0, arrayCount);
         }
 
     SetDirty(); 
@@ -1322,9 +1322,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value, Prop
 YawPitchRollAngles DgnElement::GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const
     {
     YawPitchRollAngles angles;
-    angles.SetYaw  (AngleInDegrees::FromDegrees(GetPropertyValueDouble(yawName)));
+    angles.SetYaw(AngleInDegrees::FromDegrees(GetPropertyValueDouble(yawName)));
     angles.SetPitch(AngleInDegrees::FromDegrees(GetPropertyValueDouble(pitchName)));
-    angles.SetRoll (AngleInDegrees::FromDegrees(GetPropertyValueDouble(rollName)));
+    angles.SetRoll(AngleInDegrees::FromDegrees(GetPropertyValueDouble(rollName)));
     return angles;
     }
 
@@ -1346,7 +1346,7 @@ DgnDbStatus DgnElement::SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_InsertPropertyArrayItems (uint32_t propertyIndex, uint32_t index, uint32_t size)
+DgnDbStatus DgnElement::_InsertPropertyArrayItems(uint32_t propertyIndex, uint32_t index, uint32_t size)
     {
     // Only auto-handled properties can be arrays
     ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
@@ -1358,7 +1358,7 @@ DgnDbStatus DgnElement::_InsertPropertyArrayItems (uint32_t propertyIndex, uint3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size)
+DgnDbStatus DgnElement::_AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size)
     {
     // Only auto-handled properties can be arrays
     ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
@@ -1370,7 +1370,7 @@ DgnDbStatus DgnElement::_AddPropertyArrayItems (uint32_t propertyIndex, uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index)
+DgnDbStatus DgnElement::_RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index)
     {
     // Only auto-handled properties can be arrays
     ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
@@ -1382,7 +1382,7 @@ DgnDbStatus DgnElement::_RemovePropertyArrayItem (uint32_t propertyIndex, uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_ClearPropertyArray (uint32_t propertyIndex)
+DgnDbStatus DgnElement::_ClearPropertyArray(uint32_t propertyIndex)
     {
     // Only auto-handled properties can be arrays
     ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);

@@ -243,3 +243,37 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
 
     return m_remap.Add(source, dest);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::GeometryPart::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+#define GETBBOXPROP(EXPR) [](ECValueR value, DgnElementCR elIn)      {auto& el = (DgnGeometryPart&)elIn; ElementAlignedBox3dCR bbox = el.GetBoundingBox(); EXPR; return DgnDbStatus::Success;}
+#define SETBBOXPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value) {auto& el = (DgnGeometryPart&)elIn; ElementAlignedBox3d   bbox = el.GetBoundingBox(); EXPR; el.SetBoundingBox(bbox); return DgnDbStatus::Success;}
+
+    params.RegisterPropertyAccessors(layout, PARAM_BBoxLow, 
+        GETBBOXPROP(value.SetPoint3d(bbox.low)),
+        SETBBOXPROP(bbox.low = value.GetPoint3d()));
+
+    params.RegisterPropertyAccessors(layout, PARAM_BBoxHigh, 
+        GETBBOXPROP(value.SetPoint3d(bbox.high)),
+        SETBBOXPROP(bbox.high = value.GetPoint3d()));
+
+#undef GETBBOXPROP
+#undef SETBBOXPROP
+
+    params.RegisterPropertyAccessors(layout, PARAM_GeometryStream, 
+        [](ECValueR, DgnElementCR)
+            {
+            return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
+            },
+
+        [](DgnElementR, ECValueCR)
+            {
+            return DgnDbStatus::BadRequest;//  => Use GeometryBuilder
+            });
+
+    }

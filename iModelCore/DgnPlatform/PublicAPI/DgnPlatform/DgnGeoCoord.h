@@ -2,20 +2,20 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
 
-#include    <GeoCoord/BaseGeoCoord.h>
-#include    <DgnPlatform/DgnPlatform.h>
-#include    <DgnPlatform/DgnDb.h>
-#include    <DgnPlatform/UnitDefinition.h>
-#include    <DgnPlatform/ScanCriteria.h>
-#include    <Bentley/bvector.h>
-#include    <DgnPlatform/DgnPlatformLib.h>
+#include <GeoCoord/BaseGeoCoord.h>
+#include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/UnitDefinition.h>
+#include <DgnPlatform/ScanCriteria.h>
+#include <Bentley/bvector.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 typedef struct GeoCoordType66 const*    GeoCoordType66CP;
 typedef struct GeoCoordType66 *         GeoCoordType66P;
@@ -55,7 +55,7 @@ scaling and global origin needed to go from coordinate system units to design co
 struct DgnGCS : GeoCoordinates::BaseGCS
 {
 private:
-    friend struct DgnUnits;
+    friend struct DgnGeoLocation;
 
     double   m_uorsPerBaseUnit;
     DPoint3d m_globalOrigin;
@@ -330,8 +330,8 @@ private:
 
     DgnGeoCoordinationAdmin(BeFileNameCR dataDirectory);
 
-    virtual IGeoCoordinateServicesP _GetServices() const override;
-    virtual BeFileName _GetDataDirectory() override {return m_dataDirectory;}
+    IGeoCoordinateServicesP _GetServices() const override;
+    BeFileName _GetDataDirectory() override {return m_dataDirectory;}
 
 public:
     DGNPLATFORM_EXPORT static DgnGeoCoordinationAdmin* Create(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/);

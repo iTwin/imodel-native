@@ -102,8 +102,6 @@ protected:
     Dgn::DgnDbStatus _InsertInDb() override;
     Dgn::DgnDbStatus _UpdateInDb() override;
     Dgn::DgnDbStatus _DeleteInDb() const override;
-    Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
-    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _CopyFrom(Dgn::DgnElementCR el) override;
@@ -152,6 +150,7 @@ typedef TestElement const& TestElementCR;
 struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    void _RegisterPropertyAccessors(Dgn::ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
 
 struct PerfElement;
@@ -331,7 +330,7 @@ struct TestGroup : Dgn::PhysicalElement, Dgn::IElementGroupOf<Dgn::PhysicalEleme
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+    Dgn::DgnElementCP _ToGroupElement() const override {return this;}
 
     explicit TestGroup(CreateParams const& params) : T_Super(params) {}
 

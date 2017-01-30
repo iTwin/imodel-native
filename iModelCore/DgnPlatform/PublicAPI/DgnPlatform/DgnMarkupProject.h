@@ -200,7 +200,7 @@ struct RedlineViewController : ViewController2d
     friend struct DgnMarkupProject;
 
 protected:
-    virtual void _DrawView(ViewContextR) override;
+    void _DrawView(ViewContextR) override;
 
 public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinitionR rdlViewDef);
@@ -449,9 +449,9 @@ private:
     DgnElementId m_linkedElementId;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
     //! Constructor
@@ -500,8 +500,8 @@ public:
         };
 
 private:
-    virtual DgnElementCP _ToGroupElement() const override { return this; }
-    virtual Dgn::IElementGroupCP _ToIElementGroup() const override { return this; }
+    DgnElementCP _ToGroupElement() const override { return this; }
+    Dgn::IElementGroupCP _ToIElementGroup() const override { return this; }
 
 public:
     explicit MarkupExternalLinkGroup(CreateParams const& params) : T_Super(params) {}
@@ -526,7 +526,9 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : InformationContent
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
+
 
 //! The handler for MarkupExternalLinkGroup elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationContent

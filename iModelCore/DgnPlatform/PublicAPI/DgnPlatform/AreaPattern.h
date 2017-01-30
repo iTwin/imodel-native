@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/AreaPattern.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -254,7 +254,7 @@ public:
     void SetWeight(uint32_t value) {m_weight = value; m_useWeight = true;}
 
     //! Modify this PatternParams by the supplied transform.
-    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform);
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
 
 }; // PatternParams
 
