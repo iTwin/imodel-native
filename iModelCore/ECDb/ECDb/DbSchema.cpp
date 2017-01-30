@@ -1352,7 +1352,7 @@ DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType)
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
 
-    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::InOverflow, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+    return CreateColumn(generatedName, DbColumn::Type::Any, Enum::Or(DbColumn::Kind::InOverflow, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
     }
 
 //---------------------------------------------------------------------------------------

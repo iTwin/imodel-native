@@ -96,10 +96,16 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 			{
 			private:
 				RelationshipClassEndTableMap const& m_relMap;
+				RelationshipMappingInfo const& m_relInfo;
+				bmap<DbTable const*, ClassMapCP> m_constraintClassMaps;
+				void Initialize();
+
 			public:
-				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap) : m_relMap(relMap) {}
-				DbColumn* AllocateForeignKeyECInstanceId(DbTable&, Utf8StringCR colName, PersistenceType, int position);
-				DbColumn* AllocateForeignKeyRelECClassId(DbTable&, Utf8StringCR colName, PersistenceType);
+				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);				
+				~ColumnFactory(){}
+				DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
+				DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
+		
 			};
 
 		struct ColumnLists final : NonCopyableClass
@@ -126,7 +132,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 					}
 
 			public:
-                explicit ColumnLists(RelationshipClassEndTableMap const& relMap) : m_columnFactory(relMap) {}
+                explicit ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo) : m_columnFactory(relMap, relInfo) {}
 
 				void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
 				void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
@@ -212,6 +218,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
         ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
+		Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
+			{
+			Utf8String temp = GetRelationshipClass().GetFullName();
+			temp.append(".").append(accessString);
+			return temp;
+			}
     };
 
 /*==========================================================================
