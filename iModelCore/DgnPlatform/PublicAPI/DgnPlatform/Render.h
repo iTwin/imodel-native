@@ -1155,6 +1155,7 @@ protected:
 
     virtual ~Graphic() {}
     virtual bool _IsForDisplay() const {return false;}
+    virtual bool _IsSimplifyGraphic() const {return false;}
     virtual StatusInt _EnsureClosed() = 0;
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
@@ -1189,6 +1190,7 @@ public:
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsForDisplay() const {return _IsForDisplay();}
+    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
     StatusInt EnsureClosed() {return _EnsureClosed();} //!< Called when this Graphic is added to a display list, to ensure it is fully constructed and ready for display
 };
 
@@ -1289,6 +1291,7 @@ public:
     void SetPixelSizeRange(double min, double max) {m_graphic->SetPixelSizeRange(min, max);}
     void UpdatePixelSizeRange(double newMin, double newMax) {m_graphic->UpdatePixelSizeRange(newMin, newMax);}
     bool IsForDisplay() const {return m_graphic->IsForDisplay();}
+    bool IsSimplifyGraphic() const {return m_graphic->IsSimplifyGraphic();}
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
     bool IsOpen() const {return m_builder->_IsOpen();}

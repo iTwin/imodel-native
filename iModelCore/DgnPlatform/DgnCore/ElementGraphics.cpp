@@ -1364,10 +1364,19 @@ bool ViewContext::_WantLineStyles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const
+static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions)
     {
     if (!lsSymb.GetUseStroker())
         return false;
+
+    if (builder.IsSimplifyGraphic())
+        {
+        Graphic& graphic = builder;
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
+
+        BeAssert(nullptr != sGraphic);
+        return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
+        }
 
     double pixelSize = builder.GetPixelSize();
 
@@ -1385,10 +1394,6 @@ bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyl
 
         builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
         }
-
-    // NOTE: Need a fairly small angle for QVis since we're not always re-stroking to a view tolerance...
-    facetOptions = IFacetOptions::CreateForCurves();
-    facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
 
     return true; // Width discernable...
     }
@@ -1409,7 +1414,7 @@ void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveV
         {
         IFacetOptionsPtr facetOptions;
         LineStyleSymbCR  lsSymb = lsInfo->GetLineStyleSymb();
-        ILineStyleCP     currLStyle = (_UseLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
+        ILineStyleCP     currLStyle = (useLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
 
         if (nullptr != currLStyle)
             {
