@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,8 @@ struct MockWSClient : public IWSClient
         MOCK_METHOD1(RegisterServerInfoListener, void(std::weak_ptr<IServerInfoListener> listener));
 
         MOCK_METHOD1(UnregisterServerInfoListener, void(std::weak_ptr<IServerInfoListener> listener));
+
+        MOCK_METHOD1(EnableWsgServerHeader, void(bool enable));
 
         MOCK_CONST_METHOD1(GetServerInfo, AsyncTaskPtr<WSInfoResult>
             (

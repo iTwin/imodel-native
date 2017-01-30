@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConnection.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,6 +37,9 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
 
         const ClientConfiguration& GetConfiguration() const;
         ClientConfiguration& GetConfiguration();
+
+        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
+        void EnableWsgServerHeader(bool enable);
 
         void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
