@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeJsonCpp/BeJsonUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,6 +71,16 @@ public:
     //! @param[in] value the source Json::Value
     //! @param[in] defaultOnError the Int64 value to return if it is not possible to convert the source value to Int64.
     static int64_t Int64FromValue(JsonValueCR value, int64_t defaultOnError = 0);
+
+    //! Returns a UInt32 value from a Json::Value that may be integral or string.
+    //! @param[in] value the source Json::Value
+    //! @param[in] defaultOnError the UInt32 value to return if it is not possible to convert the source value to UInt32.
+    static uint32_t UInt32FromValue(JsonValueCR value, uint32_t defaultOnError = 0);
+
+    //! Returns an Int32 value from a Json::Value that may be integral or string.
+    //! @param[in] value the source Json::Value
+    //! @param[in] defaultOnError the Int32 value to return if it is not possible to convert the source value to Int32.
+    static int32_t Int32FromValue(JsonValueCR value, int32_t defaultOnError = 0);
 
     //! Parse standard ISO8601 date from string value
     //! @param[in] value containing ISO8601 date string

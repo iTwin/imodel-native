@@ -2,7 +2,7 @@
 |
 |     $Source: BeJsonUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -220,6 +220,50 @@ int64_t BeJsonUtilities::Int64FromValue(JsonValueCR value, int64_t defaultOnErro
         int64_t returnValueInt64 = defaultOnError;
         sscanf(value.asCString(), "%" PRId64, &returnValueInt64);
         return returnValueInt64;
+        }
+
+    return defaultOnError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t BeJsonUtilities::UInt32FromValue(JsonValueCR value, uint32_t defaultOnError)
+    {
+    if (value.isNull())
+        return defaultOnError;
+
+    if (value.isIntegral())
+        return value.asUInt();
+
+    // elementIds are usually strings in JavaScript because of UInt32 issues
+    if (value.isString())
+        {
+        uint32_t returnValueInt32 = defaultOnError;
+        sscanf(value.asCString(), "%" PRIu32, &returnValueInt32);
+        return returnValueInt32;
+        }
+
+    return defaultOnError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t BeJsonUtilities::Int32FromValue(JsonValueCR value, int32_t defaultOnError)
+    {
+    if (value.isNull())
+        return defaultOnError;
+
+    if (value.isIntegral())
+        return value.asInt();
+
+    // elementIds are usually strings in JavaScript because of UInt32 issues
+    if (value.isString())
+        {
+        int32_t returnValueInt32 = defaultOnError;
+        sscanf(value.asCString(), "%" PRId32, &returnValueInt32);
+        return returnValueInt32;
         }
 
     return defaultOnError;
