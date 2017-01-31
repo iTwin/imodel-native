@@ -52,14 +52,14 @@
     BeFileName frameworkSqlang;
     BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
     // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
-    #ifdef TEST_FRAMEWORK_SQLANG_DEF
+    #ifdef TEST_FRAMEWORK_SQLANG
     if(frameworkSqlang.DoesPathExist())
         BeSQLite::L10N::Initialize(frameworkSqlang);
     #endif
 }
 
 + (void) begtest_uninitialize {
-    #ifdef TEST_FRAMEWORK_SQLANG_DEF
+    #ifdef TEST_FRAMEWORK_SQLANG
     BeSQLite::L10N::Shutdown();
     #endif
     BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider ();

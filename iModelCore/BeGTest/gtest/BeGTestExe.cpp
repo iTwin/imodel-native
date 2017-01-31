@@ -2,7 +2,7 @@
 |
 |     $Source: gtest/BeGTestExe.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -182,6 +182,16 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
         BeFileName dirName;
         BeTest::GetHost().GetTempDir(dirName);
         recreateDir(dirName);
+        }
+
+    virtual void OnTestEnd (const ::testing::TestInfo& test_info) override
+        {
+        // In case a test disabled asserts and forget to re-enable them!
+        if (!BeTest::GetFailOnAssert())
+            {
+            FAIL() << "This test called BeTest::SetFailOnAssert(false) and failed to call it again with true.";
+            }
+        BeTest::SetFailOnAssert(true);
         }
 
     // Called after a failed assertion or a SUCCEED() invocation.

@@ -39,7 +39,7 @@ always:
     !~@mkdir ${ANDROIDJUNIT_OUTPUT_DIR}
 
 %if !defined (BENTLEY_RUN_ANDROIDJUNITTEST)
-    %warn To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
+    %message To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
     always:
         >$(logFile)
         Android JUnit tests were not run

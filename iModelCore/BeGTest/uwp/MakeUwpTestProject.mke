@@ -201,7 +201,7 @@ always:
 #--------------------------------------------------------------------------------------
 MSBuildExe = msbuild.exe
 MSBuildArgs = \
-    \/verbosity:Normal \
+    \/verbosity:Minimal \
     $[@addprefix \/property:, $(MSBuildProperties)]
 
 MSBuildProperties = Platform=x86
@@ -215,8 +215,9 @@ MSBuildProperties = Platform=x86
     MSBuildProperties + Configuration=Release
 %endif
     
-always:
-    $(MSBuildExe) \/target:Build $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+MSBUILD_COMMAND = $(MSBuildExe) \/target:Build $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+MSBUILD_COMMAND_LOG = $(o)msbuild_output.txt
+%include $(SrcRoot)bsicommon/sharedmki/RunMsbuildAndStripUwpWarnings.mki
 
 #--------------------------------------------------------------------------------------
 # Clean

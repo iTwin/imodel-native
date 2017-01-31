@@ -85,7 +85,7 @@ always:
         >$(ResultsCapture)
         $(exeName)
         <
-        -$(exeName) > $(ResultsCapture)
+        -$(exeName) >> $(ResultsCapture) 2>&1
 
 %endif
 

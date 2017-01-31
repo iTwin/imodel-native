@@ -2,7 +2,7 @@
 |
 |     $Source: uwp/VisualStudioProject/BeTestTest1/BeTestHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include "BeTestHost.h"
@@ -37,6 +37,8 @@ void ExecuteOnUiThread (DispatchedHandler^ action)
     ::WaitForSingleObjectEx (syncEvent, INFINITE, FALSE);
     ::CloseHandle (syncEvent);
     }
+
+Utf8String BeTestHost::s_currentTestClassName;
 
 BeTestHost::BeTestHost (wchar_t const* home)
     {

@@ -17,6 +17,9 @@ def checkLogFileForFailures(logfilename):
     xctestproj = ''
     lastLine = ''
     failed = False
+    foundCrash = False
+    foundTerminator = False
+    foundAddressSanitizerErrors = False
     failedTests = ''
     comma = ''
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
@@ -37,17 +40,37 @@ def checkLogFileForFailures(logfilename):
 
             lline = line.lower()
 
+            if -1 != lline.find('summary: addresssanitizer'):
+                foundAddressSanitizerErrors = True
+		failed = True
+
             # We get ** test failed ** if the build or the prep or the tests failed
             if -1 != lline.find('** test failed **'):
                 failed = True
+                foundTerminator = True
+
+            # xcodebuild prints ** test succeeded ** if all tests succeeded
+            if -1 != lline.find('** test succeeded **'):
+                foundTerminator = True
 
             err = errpat.search(line, re.IGNORECASE)
             if err != None:
                 failedTests = failedTests + comma + err.group(1) + "." + err.group(2)
                 comma = ', '
                 failed = True
+       
+            crashmsg = 'unexpected exit or crash in '
+            icrashmsg = lline.find(crashmsg)
+	    if icrashmsg != -1:
+                failed = True
+                foundCrash = True
+                itnamestart = icrashmsg + len(crashmsg)
+                itnameend = lline.find(';')
+                failedTests = failedTests + comma + line[itnamestart:itnameend] + '(*)'
+                comma = ', '
+                
      
-    if lastLine.find('Executed') == -1:
+    if foundTerminator  == False:
         failed = True
 
     if failed:
@@ -57,11 +80,16 @@ def checkLogFileForFailures(logfilename):
             report = report + "    " + xctestproj
             report = report + "and re-run the following tests:\n"
             report = report + failedTests + "\n"
+            if foundCrash:
+                report = report + "(*) crashed.\n"
+            if foundAddressSanitizerErrors:
+                report = report + '*** ADDRESS SANITIZER ERRORS DETECTED ***\nSee log for details.\n'
         else:
             report = report + "*** BUILD FAILURE OR CRASH ***\n"
             report = report + "See " + logfilename + " for details\n"
     else:
         report = report + lastLine
+
 
     return failed, report
 
@@ -88,6 +116,7 @@ if __name__ == '__main__':
             path = os.path.join(root, file)
             failures, reportThisLog = checkLogFileForFailures(path)
             report = report + reportThisLog
+            report = report + '-'*100 + '\n'
             if failures != 0:
                 failureCount = failureCount + failures
                 failedProductCount = failedProductCount + 1

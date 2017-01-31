@@ -55,15 +55,22 @@ always:
 # Note we often get an error when copying resources to the device the first time we try to run a given set of tests. 
 # The solution is simply to re-try the command.
 
+BETEST_SCHEME='BeTestiOS'
+%ifdef CLANG_SANITIZE
+	%if $(CLANG_SANITIZE) == "address"
+		BETEST_SCHEME='BeTestiOS Sanitize Address'
+	%endif
+%endif
+
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
     echo $(XCODEPROJ)>$(logfile)
-    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
+    -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
-        |Retrying...
+        |Test launch failed. Retrying...
         echo $(XCODEPROJ)>$(logfile)
-        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
+        -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     %endif
 
 BreakOnFailure = 0

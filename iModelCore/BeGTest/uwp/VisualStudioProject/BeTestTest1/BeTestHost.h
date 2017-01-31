@@ -2,7 +2,7 @@
 |
 |     $Source: uwp/VisualStudioProject/BeTestTest1/BeTestHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <SDKDDKVer.h>
@@ -15,6 +15,8 @@ void ExecuteOnUiThread (Windows::UI::Core::DispatchedHandler^ action);
 
 struct BeTestHost : RefCounted<BeTest::Host>
     {
+    static Utf8String s_currentTestClassName;
+
     BeFileName m_home;
     BeFileName m_docs;
     BeFileName m_temp;

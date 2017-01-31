@@ -42,7 +42,7 @@ always:
 DGNCLIENT_APP_ProjectRoot = ${outputDir}/project/
 GRADLE_TASKS = build assembleAndroidTest
 
-%warn BuildContext = $(BuildContext)
+%message BuildContext = $(BuildContext)
 %include $(BuildContext)SubParts\AndroidTools\gradleBuild.mki
 
 

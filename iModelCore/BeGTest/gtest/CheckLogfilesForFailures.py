@@ -79,7 +79,7 @@ def checkLogFileForFailures(logfilename):
         advicestr = advicestr + "\n"
         advicestr = advicestr + "\n*** CRASH ***"
         advicestr = advicestr + "\n"
-        advicestr = advicestr + "\n" + lastTestRun
+        advicestr = advicestr + "\nERROR: Test crashed in " + exename + " - " + lastTestRun
         advicestr = advicestr + "\n"
         advicestr = advicestr + "\nTo run just the crashing test, run the following command in your debugger:"
         advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + lastTestRun
@@ -87,6 +87,8 @@ def checkLogFileForFailures(logfilename):
 
     # Report all failures that we saw in the log
     if len(failedTestsList) != 0:
+        advicestr = advicestr + "\n"
+        advicestr = advicestr + "\nERROR: Test(s) failed in " + exename + " - " + failedTestsList
         advicestr = advicestr + "\n"
         advicestr = advicestr + "\nTo re-run failing tests, run the following command in your debugger:"
         advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + failedTestsList
