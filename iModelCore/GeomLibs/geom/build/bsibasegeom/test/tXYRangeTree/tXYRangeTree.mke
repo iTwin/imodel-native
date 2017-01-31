@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/tXYRangeTree/tXYRangeTree.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=tXYRangeTree
+
+#dependencies + XYPointSearch.cpp XYPointSearch.h
+
+%include    $(_MakeFilePath)/../testapp.mki

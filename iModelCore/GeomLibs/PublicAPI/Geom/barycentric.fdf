@@ -1,0 +1,484 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/barycentric.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Sets this instance to the barycentric coordinates of pPoint
+//! relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
+//! in the xy-plane.
+//!
+//! @param pInstance   OUT     barycentric coordinates of pPoint relative to T
+//! @param pPoint         IN      point in plane
+//! @param pOrigin        IN      vertex of triangle T (may be null for origin)
+//! @param pVector1       IN      side vector of T (emanating from pOrigin)
+//! @param pVector2       IN      side vector of T (emanating from pOrigin)
+//! 
+//! 
+//! @group "DPoint3d Barycentric"
+//! @return true if and only if the area of T is sufficiently large.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+(
+DPoint3dP pInstance,
+DPoint2dCP pPoint,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Sets this instance to the barycentric coordinates of pPoint
+//! relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
+//!
+//! @param pInstance   OUT     barycentric coordinates of pPoint relative to T
+//! @param pPoint         IN      point in plane
+//! @param pVertex0       IN      vertex 0 of triangle T
+//! @param pVertex1       IN      vertex 1 of triangle T
+//! @param pVertex2       IN      vertex 2 of triangle T
+//! 
+//! 
+//! @group "DPoint3d Barycentric"
+//! @return true if and only if the area of T is sufficiently large.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+(
+DPoint3dP pInstance,
+DPoint2dCP pPoint,
+DPoint2dCP pVertex0,
+DPoint2dCP pVertex1,
+DPoint2dCP pVertex2
+);
+
+//!
+//! @description Sets this instance to the barycentric coordinates of pPoint
+//! relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
+//!
+//! @param uvw       OUT barycentric coordinates of pPoint relative to T
+//! @param dUVWdX    OUT derivatives of pUVW with respect to point.x
+//! @param dUVWdY    OUT derivatives of pUVW with respect to point.y
+//! @param area     out area of triangle
+//! @param point     IN  point in plane
+//! @param vertex0  IN      vertex 0 of triangle T
+//! @param vertex1  IN      vertex 1 of triangle T
+//! @param vertex2  IN      vertex 2 of triangle T
+//! 
+//! 
+//! @group "DPoint3d Barycentric"
+//! @return true if and only if the area of T is sufficiently large.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+(
+DPoint3dR uvw,
+DPoint3dR dUVWdX,
+DPoint3dR dUVWdY,
+double   &area,
+DPoint2dCR point,
+DPoint2dCR vertex0,
+DPoint2dCR vertex1,
+DPoint2dCR vertex2
+);
+
+//!
+//! @description Sets this instance to the barycentric coordinates of pPoint
+//! relative to the triangle (pVertex0, pVertex1, pVertex2) in space.
+//! Points p and r in space have the same barycentric coordinates relative to
+//! T if and only if they project to the same point q in the plane of T;
+//! then their barycentric coordinates relative to T are those of q.
+//!
+//! @param pInstance   OUT     barycentric coordinates of pPoint relative to T
+//! @param pPoint         IN      point in space
+//! @param pVertex0       IN      vertex of triangle T
+//! @param pVertex1       IN      vertex of triangle T
+//! @param pVertex2       IN      vertex of triangle T
+//! 
+//! 
+//! @return true if and only if the area of T is sufficiently large.
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
+(
+DPoint3dP pInstance,
+DPoint3dCP pPoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2
+);
+
+//!
+//! @description Sets this instance to the barycentric coordinates of pPoint
+//! relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
+//! in space.
+//!
+//! @param pInstance   OUT     barycentric coordinates of pPoint relative to T
+//! @param pPoint         IN      point in space
+//! @param pOrigin        IN      vertex of triangle T (may be null for origin)
+//! @param pVector1       IN      side vector of T (emanating from pOrigin)
+//! @param pVector2       IN      side vector of T (emanating from pOrigin)
+//! 
+//! 
+//! @return true if and only if the area of T is sufficiently large.
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangleVectors
+(
+DPoint3dP pInstance,
+DPoint3dCP pPoint,
+DPoint3dCP pOrigin,
+DPoint3dCP pVector1,
+DPoint3dCP pVector2
+);
+
+//!
+//! @description Sets this instance to the point in the plane of triangle T
+//! (pVertex0, pVertex1, pVertex2) with the given barycentric coordinates
+//! relative to T.
+//!
+//! @param pInstance   OUT     point in plane of T with given barycoords
+//! @param pBaryCoords    IN      barycentric coordinates relative to T
+//! @param pVertex0       IN      vertex of triangle T
+//! @param pVertex1       IN      vertex of triangle T
+//! @param pVertex2       IN      vertex of triangle T
+//! 
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint3d_fromBarycentricAndDPoint3dTriangle
+(
+DPoint3dP pInstance,
+DPoint3dCP pBaryCoords,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2
+);
+
+//!
+//! @description Sets this instance to the point in the plane of triangle T
+//! (pOrigin, pVector1-pOrigin, pVector2-pOrigin) with the given barycentric
+//! coordinates relative to T.
+//!
+//! @param pInstance   OUT     point in plane of T with given barycoords
+//! @param pBaryCoords    IN      barycentric coordinates relative to T
+//! @param pOrigin        IN      vertex of triangle T (may be null for origin)
+//! @param pVector1       IN      side vector of T (emanating from pOrigin)
+//! @param pVector2       IN      side vector of T (emanating from pOrigin)
+//! 
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint3d_fromBarycentricAndDPoint3dTriangleVectors
+(
+DPoint3dP pInstance,
+DPoint3dCP pBaryCoords,
+DPoint3dCP pOrigin,
+DPoint3dCP pVector1,
+DPoint3dCP pVector2
+);
+
+//!
+//! @description Returns true if this instance is on or inside the unbounded right prism
+//! (orthogonally projected indefinitely in both directions) whose base is
+//! the triangle T with vertices pVertex0, pVertex1, pVertex2.  Also optionally
+//! returns the barycentric coordinates of the orthogonal projection of this
+//! instance (if inside T) and the signed volume of the tetrahedron spanned by T
+//! and this instance.  This volume is nonnegative if T, viewed from this
+//! instance, has vertices 0,1,2 in counterclockwise order.
+//!
+//! @param pInstance   OUT     point in space
+//! @param pVertex0       IN      vertex of T
+//! @param pVertex1       IN      vertex of T
+//! @param pVertex2       IN      vertex of T
+//! @param pBCoords       OUT     barycentric coordinates of projection of pInstance if inside T (or null)
+//! @param pVolume        OUT     signed volume of tetrahedron (or null)
+//! 
+//! @return true if and only if T is sufficiently large
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_inDPoint3dTrianglePrism
+(
+DPoint3dCP pInstance,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2,
+DPoint3dP pBCoords,
+double                  *pVolume
+);
+
+//!
+//! @description Compute the minimum distance from a point to a triangle.
+//! @param pSpacePoint   OUT     point in space
+//! @param pVertex0       IN      vertex of T
+//! @param pVertex1       IN      vertex of T
+//! @param pVertex2       IN      vertex of T
+//! @param pClosePoint    OUT     projection of space point onto plane of triangle
+//! @param pBoundedUVW       OUT     barycentric coordinates of closest point
+//! @param pUnboundedUVW       OUT     barycentric coordinates of projection to triangle plane.
+//! @return minimum distance
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
+
+(
+DPoint3dCP pSpacePoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2,
+DPoint3dP pClosePoint,
+DPoint3dP pBoundedUVW,
+DPoint3dP pUnboundedUVW
+);
+
+Public GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
+(
+DPoint3dCP pSpacePoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2,
+DPoint3dP pClosePoint,
+DPoint3dP pBoundedUVW
+);
+
+
+//!
+//! @description Returns true if this instance is on or inside the unbounded right prism
+//! (orthogonally projected indefinitely in both directions) whose base is
+//! the triangle T with vertices pOrigin, pVector1-pOrigin, pVector2-pOrigin.
+//! Also optionally returns the barycentric coordinates of the orthogonal
+//! projection of this instance (if inside T) and the signed volume of the
+//! tetrahedron spanned by T and this instance.  This volume is nonnegative
+//! if T, viewed from this instance, has vertices 0,1,2 in counterclockwise order.
+//!
+//! @param pInstance   OUT     point in space
+//! @param pOrigin        IN      vertex of T (may be null for origin)
+//! @param pVector1       IN      side of T (emanating from pOrigin)
+//! @param pVector2       IN      side of T (emanating from pOrigin)
+//! @param pBCoords       OUT     barycentric coordinates of projection of pInstance if inside T (or null)
+//! @param pVolume        OUT     signed volume of tetrahedron (or null)
+//! @return Whether pInstance is on/inside the prism.
+//! 
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_inDPoint3dTrianglePrismVectors
+(
+DPoint3dCP pInstance,
+DPoint3dCP pOrigin,
+DPoint3dCP pVector1,
+DPoint3dCP pVector2,
+DPoint3dP pBCoords,
+double                  *pVolume
+);
+
+//!
+//! @description Returns true if this instance is in the same plane as the triangle with vertex
+//! at pOrigin and spanned by vectors pVector1 and pVector2.
+//!
+//! @param pInstance   OUT     point in space
+//! @param pOrigin        IN      vertex of triangle (may be null for origin)
+//! @param pVector1       IN      side of triangle (emanating from pOrigin)
+//! @param pVector2       IN      side of triangle (emanating from pOrigin)
+//! 
+//! @return Whether pInstance is in the plane of the triangle.
+//! @group "DPoint3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_isCoplanarVectors
+(
+DPoint3dCP pInstance,
+DPoint3dCP pOrigin,
+DPoint3dCP pVector1,
+DPoint3dCP pVector2
+);
+
+//!
+//! @description Returns true if this instance is in the same plane as the triangle with
+//! vertices pVertex0, pVertex1, pVertex2.
+//!
+//! @param pInstance   OUT     point in space
+//! @param pVertex0       IN      vertex of triangle
+//! @param pVertex1       IN      vertex of triangle
+//! @param pVertex2       IN      vertex of triangle
+//! 
+//! @return Whether pInstance is in the plane of the triangle.
+//! @group "DPoint3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_isCoplanar
+(
+DPoint3dCP pInstance,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2
+);
+
+//!
+//! @description Sets this instance to the point in the plane with the given barycentric
+//! coordinates relative to triangle T (pVertex0, pVertex1, pVertex2).
+//!
+//! @param pInstance   OUT     point with given barycoords relative to T
+//! @param pBaryCoords    IN      barycentric coordinates relative to T
+//! @param pVertex0       IN      vertex 0 of triangle T
+//! @param pVertex1       IN      vertex 1 of triangle T
+//! @param pVertex2       IN      vertex 2 of triangle T
+//! 
+//! @group "DPoint2d Barycentric"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
+(
+DPoint2dP pInstance,
+DPoint3dCP pBaryCoords,
+DPoint2dCP pVertex0,
+DPoint2dCP pVertex1,
+DPoint2dCP pVertex2
+);
+
+//!
+//! @description Sets this instance to the point in the plane of triangle T
+//! (pOrigin, pVector1-pOrigin, pVector2-pOrigin) with the given barycentric
+//! coordinates relative to T.
+//!
+//! @param pInstance   OUT     point in plane of T with given barycoords
+//! @param pBaryCoords    IN      barycentric coordinates relative to T
+//! @param pOrigin        IN      vertex of triangle T (may be null for origin)
+//! @param pVector1       IN      side vector of T (emanating from pOrigin)
+//! @param pVector2       IN      side vector of T (emanating from pOrigin)
+//! 
+//! @group "DPoint2d Barycentric"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangleVectors
+(
+DPoint2dP pInstance,
+DPoint3dCP pBaryCoords,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Returns true if this instance is on or inside the triangle T spanned by
+//! vectors pVector1 and pVector2.  Also optionally returns the barycentric
+//! coordinates of this instance (if inside T) and the signed area of T, which
+//! is nonnegative if the given points are ordered counterclockwise.
+//!
+//! @param pInstance   IN      point in the xy-plane
+//! @param pOrigin        IN      vertex of T (can be null for origin)
+//! @param pVector1       IN      side of T (emanating from pOrigin)
+//! @param pVector2       IN      side of T (emanating from pOrigin)
+//! @param pBCoords       OUT     barycentric coordinates of pInstance if inside T (or null)
+//! @param pArea          OUT     signed area of T (or null)
+//! 
+//! @group "DPoint2d Barycentric"
+//! @return true if and only if T is sufficiently large
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_inDPoint2dTriangleVectors
+(
+DPoint2dCP pInstance,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+DPoint2dCP pVector2,
+DPoint3dP pBCoords,
+double                  *pArea
+);
+
+//!
+//! @description Returns true if this instance is on or inside the triangle T with vertices
+//! pVertex0, pVertex1, pVertex2.  Also optionally returns the barycentric
+//! coordinates of this instance (if inside T) and twice the signed area
+//! of T, which is nonnegative if the ordering (pVertex0, pVertex1, pVertex2) is
+//! counter-clockwise.
+//!
+//! @param pInstance   IN      point in the xy-plane
+//! @param pVertex0       IN      vertex 0 of T
+//! @param pVertex1       IN      vertex 1 of T
+//! @param pVertex2       IN      vertex 2 of T
+//! @param pBCoords       OUT     barycentric coordinates of pInstance if inside T (or null)
+//! @param pArea          OUT     twice the signed area of T (or null)
+//! 
+//! @group "DPoint2d Barycentric"
+//! @return true if pInstance is on/inside T.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_inDPoint2dTriangle
+(
+DPoint2dCP pInstance,
+DPoint2dCP pVertex0,
+DPoint2dCP pVertex1,
+DPoint2dCP pVertex2,
+DPoint3dP pBCoords,
+double                  *pArea
+);
+
+//!
+//! @description Compute the barycentric coordinates of a point in the plane relative to a convex polygon.
+//!
+//! @remarks The points in the input array are assumed to bound a convex planar region.
+//! @remarks The returned barycentric coordinates reproduce the given point (e.g., in ~mbsiDPoint2dArray_linearCombination).
+//!
+//! @param pBaryCoords    OUT     barycentric coordinates of pPoint relative to P (allocated by caller with space for numVertices doubles)
+//! @param pPoint         IN      point in space
+//! @param pVertices      IN      vertices of polygon P (first, last vertices distinct)
+//! @param numVertices    IN      number of vertices of P
+//! @return true if and only if valid inputs, sufficient memory, and the area of P is sufficiently large.
+//! @group "DPoint2d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint2d_barycentricFromDPoint2dConvexPolygon
+(
+double*     pBaryCoords,
+DPoint2dCP    pPoint,
+DPoint2dCP    pVertices,
+int         numVertices
+);
+
+//!
+//! @description Compute the barycentric coordinates of a point relative to a convex polygon.
+//!
+//! @remarks The points in the input array will be flattened to an approximating plane.  The
+//!       barycentric coordinates returned are for the projection of the given point into this plane.
+//!       Thus the returned barycentric coordinates only reproduce the given point (e.g., in
+//!       ~mbsiDPoint3dArray_linearCombination) if the given polygon is planar and the given point
+//!       is in this plane.
+//! @param pBaryCoords    OUT     barycentric coordinates of pPoint relative to P (allocated by caller with space for numVertices doubles)
+//! @param pPoint         IN      point in space
+//! @param pVertices      IN      vertices of polygon P (first, last vertices distinct)
+//! @param numVertices    IN      number of vertices of P
+//! @return true if and only if valid inputs, sufficient memory, and the area of P is sufficiently large.
+//! @group "DPoint3d Barycentric"
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint3d_barycentricFromDPoint3dConvexPolygon
+(
+double*     pBaryCoords,
+DPoint3dCP    pPoint,
+DPoint3dCP    pVertices,
+int         numVertices
+);
+
+//!
+//! @description Compute 1, 2, or 3 triangles to be used for integrating from a space point to
+//! a triangle, splitting the triangle so that the closest point of the original triangle
+//! (whether or not it is a vertex) is vertex 0 of each subdivision triangle, and is the closest
+//! point of that triangle.
+//! @param pOutputTriangleBuffer  OUT     Array of (3 * numTriangleOut) points of the three triangles.  Up to 9 points may be returned.
+//! @param pNumTriangleOut        OUT     number of split triangles.
+//! @param pSpacePoint            IN      point to project to plane of triangle
+//! @param pVertex0               IN      vertex of original triangle.
+//! @param pVertex1               IN      vertex of original triangle.
+//! @param pVertex2               IN      vertex of original triangle.
+//! @return true if triangle is nondegenerate
+//! @group Polygons
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint3d_splitDPoint3dTriangleForIntegration
+(
+DPoint3dP pOutputTriangleBuffer,
+int *pNumTriangleOut,
+DPoint3dCP pSpacePoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

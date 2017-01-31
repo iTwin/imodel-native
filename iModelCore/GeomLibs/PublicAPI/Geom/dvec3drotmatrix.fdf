@@ -1,0 +1,144 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dvec3drotmatrix.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Returns the product of a matrix times a vector.
+//! @param pResult OUT     result of the multiplication.
+//! @param pMatrix IN      The matrix.
+//! @param pVector IN      The known vector.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixDVec3d
+(
+DVec3dP pResult,
+RotMatrixCP pMatrix,
+DVec3dCP pVector
+);
+
+//!
+//! @description Returns the product of a matrix transpose times a vector.
+//! @param pResult OUT     result of the multiplication.
+//! @param pMatrix IN      The the matrix.
+//! @param pVector IN      The known vector.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixTransposeDVec3d
+(
+DVec3dP pResult,
+RotMatrixCP pMatrix,
+DVec3dCP pVector
+);
+
+//!
+//! @description Returns the product of a matrix times a vector,
+//!           with the vector given as separate components.
+//!
+//! @param pResult OUT     result of multiplication
+//! @param pMatrix IN      The matrix to apply
+//! @param x IN      The x component of input vector
+//! @param y IN      The y component of input vector
+//! @param z IN      The z component of input vector
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixXYZ
+(
+DVec3dP pResult,
+RotMatrixCP pMatrix,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! @description Returns the product P = [x,y,z]*M where M is the input matrix and P is
+//!           the product vector.
+//! @param pVector OUT     product vector
+//! @param pMatrix IN      The matrix to apply
+//! @param x IN      The x component
+//! @param y IN      The y component
+//! @param z IN      The z component
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixTransposeXYZ
+(
+DVec3dP pResult,
+RotMatrixCP pMatrix,
+double      x,
+double      y,
+double      z
+);
+
+//!
+//! @description Returns the product of a matrix times an array of vectors.
+//! @param pResultArray OUT     array of n multiplication results.
+//! @param pMatrix IN      The matrix.
+//! @param pResultArray IN      The array of vactors
+//! @param count IN      number of vectors
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixDVec3dArray
+(
+DVec3dP pResultArray,
+RotMatrixCP pMatrix,
+DVec3dCP pVectorArray,
+int          count
+);
+
+//!
+//! @description Returns the product of a matrix times an array of vectors.
+//! @param pResultArray OUT     array of n multiplication results.
+//! @param pMatrix IN      The matrix.
+//! @param pResultArray IN      The array of vactors
+//! @param count IN      number of vectors
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyRotMatrixTransposeDVec3dArray
+(
+DVec3dP pResultArray,
+RotMatrixCP pMatrix,
+DVec3dCP pVectorArray,
+int          count
+);
+
+//!
+//! @description Extracts a column of a matrix.
+//! @param pVector OUT     the vector
+//! @param pMatrix IN      The matrix.
+//! @param col IN      column index. Columns are numbered 0,1,2.  Others
+//!        indices are reduced cyclically.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_fromRotMatrixColumn
+(
+DVec3dP pVector,
+RotMatrixCP pMatrix,
+int         col
+);
+
+//!
+//! @description Extracts a row of a matrix.
+//! @param pVector OUT     the vector
+//! @param pMatrix IN      The matrix.
+//! @param row IN      row index. Rows are numbered 0,1,2.  Others
+//!        indices are reduced cyclically.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_fromRotMatrixRow
+(
+DVec3dP pVector,
+RotMatrixCP pMatrix,
+int            row
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

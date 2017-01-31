@@ -1,0 +1,29 @@
+#----------------------------------------------------------------------
+#
+#     $Source: serialization/testPrototype/GraphiteAssembliesPrewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%include GraphiteSDK.mki
+
+.dll.dll : 
+    $(LinkFirstDepToFirstTarget)
+
+Delivery=$(BuildContext)Delivery/
+
+GraphiteDlls = $(DgnClientFxLibDir)
+
+$(Delivery)BentleyG06.dll : $(GraphiteDlls)BentleyG06.dll
+
+$(Delivery)BentleyGeomG06.dll : $(GraphiteDlls)BentleyGeomG06.dll
+
+$(Delivery)BentleyGeomSerializationG06.dll : $(GraphiteDlls)BentleyGeomSerializationG06.dll
+
+$(Delivery)BeXmlG06.dll : $(GraphiteDlls)BeXmlG06.dll
+
+$(Delivery)BeLibxml2G06.dll : $(GraphiteDlls)BeLibxml2.dll
+
+$(Delivery)BeIcu4c.dll : $(GraphiteDLLs)BeIcu4c.dll

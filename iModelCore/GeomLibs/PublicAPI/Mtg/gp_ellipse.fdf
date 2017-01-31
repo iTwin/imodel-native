@@ -1,0 +1,65 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_ellipse.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/**
+* Strokes a fixed number of points from an ellipse into a GraphicsPointArray
+* header.
+* @param pHeader IN OUT  header to receive points
+* @param pCenter IN      ellipse center
+* @param pVectorU IN      0 degree vector
+* @param pVectorV IN      90 degree vector
+* @param theta0 IN      start angle
+* @param delta IN      sweep angle
+* @param n IN      number of points
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void            jmdlEllipse_strokeToGraphicsPoints
+(
+        GraphicsPointArray  *pHeader,
+const   DPoint4d                *pCenter,
+const   DPoint4d                *pVectorU,
+const   DPoint4d                *pVectorV,
+        double                  theta0,
+        double                  delta,
+        int                     n
+);
+
+/**
+*
+* Add a stroked version of each ellipse sector to the GraphicsPoints
+* If a positive tolerance is given, it takes precedence over the point
+* count.
+*
+* @param pHeader IN OUT  Header to receive points
+* @param pEllipse IN      ellipse to be stroked
+* @param n IN      max number of points on full ellipse
+* @param tol IN      stroke tolerance
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlDEllipse4d_strokeToGraphicsPoints
+(
+        GraphicsPointArray  *pHeader,
+const   DEllipse4d              *pEllipse,
+        int                     n,
+        double                  tol
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

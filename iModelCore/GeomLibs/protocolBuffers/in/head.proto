@@ -1,0 +1,171 @@
+//===============================================================================
+// google protocol buffer mapping for Bentley Common Geometry
+
+package Bentley.Geometry.Proto;
+//===============================================================================
+// section 1 --- simple hand crafted types
+message DPoint3d
+    {
+    required double x = 1;
+    required double y = 2;
+    required double z = 3;
+    }
+
+message DPoint2d
+    {
+    required double x = 1;
+    required double y = 2;
+    }
+
+message DVector3d
+    {
+    required double x = 1;
+    required double y = 2;
+    required double z = 3;
+    }
+message IPlacement
+    {
+    required DPoint3d   orgin   = 1;
+    required DVector3d  vectorZ = 2;
+    required DVector3d  vectorX = 3;
+    }
+
+message Angle
+    {
+    required double degrees = 1;
+    }
+
+message DEllipse3d
+    {
+    required double centerX = 1;
+    required double centerY = 2;
+    required double centerZ = 3;
+    required double vector0X = 4;
+    required double vector0Y = 5;
+    required double vector0Z = 6;
+    required double vector90X = 7;
+    required double vector90Y = 8;
+    required double vector90Z = 9;
+
+    required double startRadians = 10;
+    required double sweepRadians = 11;
+    }
+
+message DTransform3d
+    {
+    required double axx = 1;
+    required double axy = 2;
+    required double axz = 3;
+    required double axw = 4;
+
+    required double ayx = 5;
+    required double ayy = 6;
+    required double ayz = 7;
+    required double ayw = 8;
+
+    required double azx = 9;
+    required double azy = 10;
+    required double azz = 11;
+    required double azw = 12;
+    }
+    
+message LoopType
+    {
+      enum LoopTypeEnum
+        {
+        Parity = 1;
+        InteriorToLeft = 2;
+        }
+    
+    required LoopTypeEnum loopType = 1;
+    }    
+
+//===============================================================================
+// section 2 -- interface types -- each IXXX is an enumeration of all its possible subtypes.
+//   This is a guess at how to handle subclassing.  Surely there's a better way?
+//   (Only one should ever be present in an instance -- can we specify that?)
+
+message ISinglePoint
+    {
+    optional Coordinate coordinate = 1;
+    optional SharedGroupInstance sharedGruopInstance = 2;
+    optional SingleLineText singleLineText = 3;
+    optional TransformedGeometry transformedGeometry = 4;
+    optional Vector vector = 5;
+    }
+// Hmm.  what is IPoint versus ISinglePoint?
+message IPoint
+    {
+    optional ISinglePoint singlePoint = 1;
+    }    
+message IPrimitiveCurve
+    {
+    optional LineSegment    lineSegment = 1;
+    optional LineString     lineString = 2;
+    optional CircularArc    circularArc = 3;
+    optional EllipticArc    ellipticArc = 4;
+    optional BsplineCurve   bsplineCurve = 5;
+    optional TransitionSpiral transitionSpiral = 6;
+    }
+message ICurve
+    {
+    optional IPrimitiveCurve primtiveCurve = 1;
+    optional CurveChain curveChain = 2;
+    }    
+
+message ICurveChain
+    {
+    optional CurveChain curveChain = 1;
+    }
+message ISolid
+    {
+    optional IAnalyticSolid analyticSolid = 1;
+    optional SolidBySweptSurface solidBySweptSurface = 102;
+    }
+
+message IAnalyticSolid
+    {
+    optional Block block = 1;
+    optional CircularCone circularCone = 2;
+    optional SkewedCone skewedCone = 3;
+    optional Sphere sphere = 4;
+    optional TorusPipe torusPipe = 5;
+    }    
+
+message ISurface
+    {
+    optional Polygon                polygon         = 1;
+    optional CircularDisk           circularDisk    = 2;
+    optional EllipticDisk           ellipticDisk    = 3;
+    optional BsplineSurface         bsplineSuface   = 100;
+    optional IndexedMesh            indexedMesh     = 101;
+    optional ParametricSurfacePatch parametricSurfacePatch = 102;
+    optional SurfaceBySweptCurve    surfaceBySweptCurve= 103;
+    optional SurfaceGroup           surfaceGroup = 104;
+    optional SurfacePatch           surfacePatch = 105;
+    }    
+
+message ISurfacePatch
+    {
+    optional ParametricSurfacePatch parametricSurfacePatch = 1;
+    }    
+
+message IParametricSurface
+    {
+    optional BsplineSurface bsplineSuface = 1;
+    }
+message IGeometry
+    {
+    optional IPoint point = 1;
+    optional ICurve curve = 2;
+    optional ISurface surface = 3;
+    optional ISolid solid = 4;
+    }
+    
+//===============================================================================    
+// section 3 -- main body of CG types
+   
+    
+    
+
+

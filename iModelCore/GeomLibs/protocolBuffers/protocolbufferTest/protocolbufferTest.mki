@@ -1,0 +1,47 @@
+#----------------------------------------------------------------------------------------
+#  $Source: protocolBuffers/protocolbufferTest/protocolbufferTest.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+
+appName             = protocolBufferTest
+# baseDir is the top of the test tree --- a level above the makefile for this particular test.
+baseDir             = $(_MakefilePath)/../
+
+srcGeomLibs=$(SrcRoot)Geomlibs/
+
+PUBLIC_API_HEADERS              = $(SrcRoot)geomlibs/PublicAPI/
+HEADER_ROOTS = $(PUBLIC_API_HEADERS)
+
+TEST_LOCATION = $(baseDir)
+GOOGLE_SRC=$(SrcRoot)../../googleTop/src/
+GOOGLE_PROTOBUF=$(GOOGLE_SRC)/google/protobuf/
+
+#----------------------------------------------------------------------------------------
+#  Includes
+#----------------------------------------------------------------------------------------
+%include    $(SrcRoot)geomlibs/common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+dirToSearch = $(PUBLIC_API_HEADERS)
+%include cincapnd.mki
+
+dirToSearch = $(baseDir)src/
+%include cincapnd.mki
+
+dirToSearch = $(_MakefilePath)tests/
+%include cincapnd.mki
+
+#dirToSearch = $(SrcRoot)libsrc/protobuf/VendorAPI/
+#%include cincapnd.mki
+
+dirToSearch = $(SrcRoot)geomlibs/protocolBuffers/cpp/
+%include cincapnd.mki
+
+#----------------------------------------------------------------------------------------
+#       Source, include and resource paths
+#----------------------------------------------------------------------------------------
+GUnitTestDir = $(UTILROOT)gtest/
+dirToSearch = $(GUnitTestDir)include/
+%include cincapnd.mki
+

@@ -1,0 +1,223 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_developable.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+#ifdef __cplusplus
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+struct GraphicsPointArray;
+/*---------------------------------------------------------------------------------**//**
+* Examine pairs of geometry items in two arrays.
+* Construct a "ruled" surface between corresponding primitives, triangulating as
+* needed to generate a planar approximation.
+* @param pSpaceMesh OUT     receives 3d mesh on the ruled surface
+* @param pFlatMesh OUT     receives flattened mesh.
+* @param pBoundary0 IN      first boundary
+* @param pBoundary1 IN      second boundary
+* @param curveChordTol IN      tol for chordal approxmation of curves.
+* @param curveAngleTol IN      tol for angular turn between successive chords on curve approximation.
+*                                   (radians)
+* @param quadrilateralRefinementTol IN      accept a quadrilateral element when twist is
+*               smaller than this angle.  (radians)
+* @param quadrilateralTriangulationTol IN      when an accepted quad has twist larger than this
+*               angle, triangulate for output.  This number should typically be
+*               1000X smaller than the quadrilateral refinement tol.
+* @param minParameterStep IN      smallest parameter step for a chord on a primitive.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_ruledPattern
+(
+        GraphicsPointArray  *pSpaceMesh,
+        GraphicsPointArray  *pFlatMesh,
+        GraphicsPointArray  *pBoundary0,
+        GraphicsPointArray  *pBoundary1,
+        double curveChordTol,
+        double curveAngleTol,
+        double quadrilateralRefinementTol,
+        double quadrilateralTriangulationTol,
+        double minParameterStep
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_ruledPatternDPoint3dArrayBoundaries
+(
+        GraphicsPointArray  *pSpaceMesh,
+        GraphicsPointArray  *pFlatMesh,
+        DPoint3d    *pPointBuffer0,
+        int         num0,
+        DPoint3d    *pPointBuffer1,
+        int         num1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries
+(
+    MTGFacets *pFacets,
+    DPoint3d    *pPointBuffer0,
+    int         num0,
+    DPoint3d    *pPointBuffer1,
+    int         num1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_ruledPatternFromGPABoundaries
+(
+        GraphicsPointArray  *pSpaceMesh,
+        GraphicsPointArray  *pFlatMesh,
+        GraphicsPointArray  *pBoundary0,
+        GraphicsPointArray  *pBoundary1
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Sample pCurvesA at specified density per bezier.
+For each sampled point on curve A, search curve B for points such that the two tangents and
+    the line between the points are coplanar.
+Return all computed line segments in pRuleLines, with point from A always first.
+Each graphics point is labeled with (read index, bezier parameter).
+Any non-bezier in either curve is skipped.  The calculation continues using whatever bezier curves
+are present, but the function return value is false.
+@return false if any non-beziers are encountered.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_developableRuleLines
+(
+MSBsplineCurve &curveA,
+MSBsplineCurve &curveB,
+GraphicsPointArray *pRuleLines,
+int numSamplePerPrimitive0
+);
+
+/*
+
+@description Compute local orientation, tangent, and second derivative of developable surface.
+   The curve and segment input arrays are as computed by jmdlGraphicsPointArray_developableRuleLines.
+
+@param pAxes OUT Coordinate directions (unit)
+        Column X is along rule line.
+        Column Y is tangent to surface in direction of unroll
+        Column Z is surface normal
+
+@param pXYZA OUT global coordiantes on curve A
+@param pLocalTangentA OUT local coordinate tangent vector on curve A.
+@param pLocalKA OUT local coordinate second derivative vector on curve B
+
+@param pXYZA OUT global coordiantes on curve A
+@param pLocalTangentA OUT local coordinate tangent vector on curve A.
+@param pLocalKA OUT local coordinate second derivative vector on curve B
+
+@param pSegments IN paired segment endpoints with primtive and fraction reference to curves.
+@param readIndex IN read index in segment array.
+@param pCurvesA IN curves on A side
+@param pCurvesB IN curves on B side
+
+*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_localDevelopableFrame
+(
+RotMatrix *pAxes,
+DPoint3d *pXYZA,
+DVec3d *pLocalTangentA,
+DVec3d *pLocalKA,
+DPoint3d *pXYZB,
+DVec3d *pLocalTangentB,
+DVec3d *pLocalKB,
+GraphicsPointArray *pSegments,
+int readIndex,
+MSBsplineCurve &curveA,
+MSBsplineCurve &curveB
+);
+
+/*
+
+@description Compute the two axis centers for a cone touching a developable line.
+
+@param pCenterA OUT cone center at curve A
+double pRadiusA OUT cone radius at curve A
+@param pCenterB OUT cone center at curve B
+@param pRadiusB OUT cone radius at curve B
+@param pTheta   OUT angle between cone axis and rule line
+
+@param pSegments IN paired segment endpoints with primtive and fraction reference to curves.
+@param readIndex IN read index in segment array.
+@param pCurvesA IN curves on A side
+@param pCurvesB IN curves on B side
+
+*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_developableCone
+(
+DPoint3d *pCenterA,
+double   *pRadiusA,
+DPoint3d *pCenterB,
+double   *pRadiusB,
+double   *pTheta,
+GraphicsPointArray *pSegments,
+int readIndex,
+MSBsplineCurve &curveA,
+MSBsplineCurve &curveB
+);
+
+/**
+@description Create a flat pattern which approximately represents a strip of quad faces.
+In both the space and pattern faces, the strip is represented by pairs of points.
+Each point pair is a single rule line.
+Nonplanar effects are projected out to local planes.
+@param pXY0Array OUT array of rule lines at constant z.
+@param pXYZArray IN array of space rule lines
+@param pXYZOrigin IN putdown point for first pattern rule edge.
+*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedDPoint3dArray_unfoldQuadStrip
+(
+EmbeddedDPoint3dArray *pXY0Array,
+EmbeddedDPoint3dArray *pXYZArray,
+DPoint3d const *pXYZOrigin
+);
+
+/*
+@descriptions Compute rule lines of a developable surface.
+Rules lines are returned as start-end pairs in the various arrays.
+@param pSpaceGPA OUT (REQUIRED) start and end point pairs for each rule line.  In each graphics point,
+    the "userData" and "a" fields are the primitive id and fractional parameter.
+@param pSpaceRuleLines OUT (REQUIRED) xyz start and end points of rule lines in space.
+@param pSpaceConeCenters OUT (OPTIONAL) array of axis points for spatial tangent cones
+@param pConeRadiusArray OUT (OPTIONAL) array of cone radii.
+@param pPatternRuleLines OUT (OPTIONAL) array of rule lines of the pattern, parallel to xy plane.
+@param PatternConeCenters OUT (OPTIONAL) array of axis points for cones tangent to the pattern.
+@param pMeshIndexArray OUT (OPTIONAL) mesh indices.  The same indices are applicable to the space and pattern rule lines.
+@param curveA IN first reference curve
+@param curveB IN second reference curve
+@param pXYZPatternOrigin IN origin point for the pattern.  The first rule line of the pattern is placed along the x axis.
+@param numPerprimitive IN number of sample points to be placed on each primitive of curve A.
+*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_developableRulingsFromCurves
+(
+GraphicsPointArray *pSpaceGPA,
+EmbeddedDPoint3dArray *pSpaceRuleLines,
+EmbeddedDPoint3dArray *pSpaceConeCenters,
+EmbeddedDoubleArray   *pConeRadiusArray,
+EmbeddedDPoint3dArray *pPatternRuleLines,
+EmbeddedDPoint3dArray *pPatternConeCenters,
+EmbeddedIntArray      *pMeshIndexArray,
+MSBsplineCurve &curveA,
+MSBsplineCurve &curveB,
+DPoint3d const *pXYZPatternOrigin,
+int numPerPrimitive
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+#endif

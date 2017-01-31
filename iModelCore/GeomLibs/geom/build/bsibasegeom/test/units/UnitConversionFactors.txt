@@ -1,0 +1,1091 @@
+
+
+------    AREA
+
+Unit:                       ACRE
+Conversion Factor:          0.000247105381
+Inverted Conversion Factor: 4046.85643005079
+
+Unit:                       CENTIMETRE_SQUARED
+Conversion Factor:          10000
+Inverted Conversion Factor: 0.0001
+
+Unit:                       FOOT_SQUARED
+Conversion Factor:          10.7639104
+Inverted Conversion Factor: 0.0929030401442212
+
+Unit:                       HECTARE
+Conversion Factor:          0.0001
+Inverted Conversion Factor: 10000
+
+Unit:                       INCH_SQUARED
+Conversion Factor:          1550.0031
+Inverted Conversion Factor: 0.000645160000002581
+
+Unit:                       KILOMETRE_SQUARED
+Conversion Factor:          1E-06
+Inverted Conversion Factor: 1000000
+
+Unit:                       METRE_SQUARED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MILE_SQUARED
+Conversion Factor:          3.86102159E-07
+Inverted Conversion Factor: 2589988.10726671
+
+Unit:                       MILLIMETRE_SQUARED
+Conversion Factor:          1000000
+Inverted Conversion Factor: 1E-06
+
+Unit:                       THOUSAND_SQUARE_FEET
+Conversion Factor:          0.01076391
+Inverted Conversion Factor: 92.9030435966113
+
+Unit:                       YARD_SQUARED
+Conversion Factor:          1.19599005
+Inverted Conversion Factor: 0.836127357414052
+
+------    FLOW
+
+Unit:                       ACRE_FEET_PER_DAY
+Conversion Factor:          70.04561962
+Inverted Conversion Factor: 0.0142764102227239
+
+Unit:                       ACRE_FEET_PER_HOUR
+Conversion Factor:          2.918567484
+Inverted Conversion Factor: 0.342633845364941
+
+Unit:                       ACRE_FEET_PER_MINUTE
+Conversion Factor:          0.0486427914
+Inverted Conversion Factor: 20.5580307218964
+
+Unit:                       ACRE_INCH_PER_HOUR
+Conversion Factor:          35.022809808
+Inverted Conversion Factor: 0.0285528204470784
+
+Unit:                       ACRE_INCH_PER_MINUTE
+Conversion Factor:          0.5837134968
+Inverted Conversion Factor: 1.7131692268247
+
+Unit:                       CFM
+Conversion Factor:          2118.88002
+Inverted Conversion Factor: 0.000471947439477956
+
+Unit:                       CFS
+Conversion Factor:          35.314667
+Inverted Conversion Factor: 0.0283168463686774
+
+Unit:                       CUBIC_FOOT_PER_DAY
+Conversion Factor:          3051187.229
+Inverted Conversion Factor: 3.27741277393764E-07
+
+Unit:                       CUBIC_FOOT_PER_MINUTE
+Conversion Factor:          2118.88002
+Inverted Conversion Factor: 0.000471947439477956
+
+Unit:                       CUBIC_FOOT_PER_SECOND
+Conversion Factor:          35.314667
+Inverted Conversion Factor: 0.0283168463686774
+
+Unit:                       GALLON_IMPERIAL_PER_DAY
+Conversion Factor:          19005356.16
+Inverted Conversion Factor: 5.26167461204789E-08
+
+Unit:                       GALLON_IMPERIAL_PER_MINUTE
+Conversion Factor:          13198.164
+Inverted Conversion Factor: 7.57681144134896E-05
+
+Unit:                       GALLON_IMPERIAL_PER_SECOND
+Conversion Factor:          219.9694
+Inverted Conversion Factor: 0.00454608686480938
+
+Unit:                       GALLON_PER_DAY
+Conversion Factor:          22824465.12
+Inverted Conversion Factor: 4.38126367799851E-08
+
+Unit:                       GALLON_PER_MINUTE
+Conversion Factor:          15850.323
+Inverted Conversion Factor: 6.30901969631786E-05
+
+Unit:                       GALLON_PER_SECOND
+Conversion Factor:          264.17205
+Inverted Conversion Factor: 0.00378541181779072
+
+Unit:                       GPM
+Conversion Factor:          15850.323
+Inverted Conversion Factor: 6.30901969631786E-05
+
+Unit:                       LITRE_PER_DAY
+Conversion Factor:          86400000
+Inverted Conversion Factor: 1.15740740740741E-08
+
+Unit:                       LITRE_PER_MINUTE
+Conversion Factor:          60000
+Inverted Conversion Factor: 1.66666666666667E-05
+
+Unit:                       LITRE_PER_SECOND
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       MEGA_LITRE_PER_DAY
+Conversion Factor:          86.4
+Inverted Conversion Factor: 0.0115740740740741
+
+Unit:                       METRE_CUBED_PER_DAY
+Conversion Factor:          86400
+Inverted Conversion Factor: 1.15740740740741E-05
+
+Unit:                       METRE_CUBED_PER_MINUTE
+Conversion Factor:          60
+Inverted Conversion Factor: 0.0166666666666667
+
+Unit:                       METRE_CUBED_PER_SECOND
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MGD
+Conversion Factor:          22.82446512
+Inverted Conversion Factor: 0.0438126367799851
+
+Unit:                       MGD_IMPERIAL
+Conversion Factor:          19.00535616
+Inverted Conversion Factor: 0.0526167461204789
+
+Unit:                       MILLION_LITRE_PER_DAY
+Conversion Factor:          86.4
+Inverted Conversion Factor: 0.0115740740740741
+
+------    VOLUME
+
+Unit:                       ACRE_FOOT
+Conversion Factor:          0.00081071319
+Inverted Conversion Factor: 1233.48184331379
+
+Unit:                       ACRE_INCHES
+Conversion Factor:          0.009728558
+Inverted Conversion Factor: 102.790156567911
+
+Unit:                       CENTIMETRE_CUBED
+Conversion Factor:          1000000
+Inverted Conversion Factor: 1E-06
+
+Unit:                       CUBIC_FOOT
+Conversion Factor:          35.314667
+Inverted Conversion Factor: 0.0283168463686774
+
+Unit:                       CUBIC_INCH
+Conversion Factor:          61023.74
+Inverted Conversion Factor: 1.63870650995826E-05
+
+Unit:                       CUBIC_YARD
+Conversion Factor:          1.3079506
+Inverted Conversion Factor: 0.764554869274115
+
+Unit:                       GALLON
+Conversion Factor:          264.17205
+Inverted Conversion Factor: 0.00378541181779072
+
+Unit:                       GALLON_IMPERIAL
+Conversion Factor:          219.9694
+Inverted Conversion Factor: 0.00454608686480938
+
+Unit:                       LITRE
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       METRE_CUBED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MILLION_GALLON
+Conversion Factor:          0.00026417205
+Inverted Conversion Factor: 3785.41181779072
+
+Unit:                       MILLION_LITRE
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       THOUSAND_GALLON
+Conversion Factor:          0.26417205
+Inverted Conversion Factor: 3.78541181779072
+
+Unit:                       THOUSAND_LITRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    ANGLE
+
+Unit:                       ANGLE_MINUTES
+Conversion Factor:          3437.7468
+Inverted Conversion Factor: 0.000290888206193662
+
+Unit:                       ANGLE_QUADRANTS
+Conversion Factor:          0.63661977
+Inverted Conversion Factor: 1.57079633263667
+
+Unit:                       ANGLE_SECONDS
+Conversion Factor:          206264.81
+Inverted Conversion Factor: 4.8481367228855E-06
+
+Unit:                       DEGREE
+Conversion Factor:          57.295779
+Inverted Conversion Factor: 0.0174532926762371
+
+Unit:                       RADIAN
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       REVOLUTION
+Conversion Factor:          0.15915494
+Inverted Conversion Factor: 6.28318542924272
+
+------    PRESSURE
+
+Unit:                       ATMOSPHERE
+Conversion Factor:          0.00986923267
+Inverted Conversion Factor: 101.324999970844
+
+Unit:                       BAR
+Conversion Factor:          0.01
+Inverted Conversion Factor: 100
+
+Unit:                       FOOT_OF_H2O
+Conversion Factor:          0.33455255
+Inverted Conversion Factor: 2.989067038945
+
+Unit:                       KILOGRAM_PER_CENTIMETE_SQUARED
+Conversion Factor:          0.01019716
+Inverted Conversion Factor: 98.0665204821735
+
+Unit:                       KILOGRAM_PER_METRE_SQUARED
+Conversion Factor:          101.971621
+Inverted Conversion Factor: 0.00980665002863885
+
+Unit:                       KILOPASCAL
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       METER_OF_H2O
+Conversion Factor:          0.101972
+Inverted Conversion Factor: 9.80661358019849
+
+Unit:                       MILLIMETER_OF_H2O
+Conversion Factor:          101.972
+Inverted Conversion Factor: 0.00980661358019849
+
+Unit:                       NEWTON_PER_METRE_SQUARED
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       POUND_PER_SQUARE_FOOT
+Conversion Factor:          20.8854
+Inverted Conversion Factor: 0.0478803374606184
+
+Unit:                       POUND_PER_SQUARE_INCH
+Conversion Factor:          0.145037738
+Inverted Conversion Factor: 6.89475728034313
+
+Unit:                       PSI
+Conversion Factor:          0.145037738
+Inverted Conversion Factor: 6.89475728034313
+
+------    POPULATION
+
+Unit:                       CAPITA
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       CUSTOMER
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       EMPLOYEE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       GUEST
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       HUNDRED_CAPITA
+Conversion Factor:          0.01
+Inverted Conversion Factor: 100
+
+Unit:                       PASSENGER
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       PERSON
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       RESIDENT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       STUDENT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       THOUSAND_CAPITA
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+------    VELOCITY
+
+Unit:                       CENTIMETER_PER_HOUR
+Conversion Factor:          360000
+Inverted Conversion Factor: 2.77777777777778E-06
+
+Unit:                       CENTIMETER_PER_MINUTE
+Conversion Factor:          6000
+Inverted Conversion Factor: 0.000166666666666667
+
+Unit:                       CENTIMETER_PER_SECOND
+Conversion Factor:          100
+Inverted Conversion Factor: 0.01
+
+Unit:                       FOOT_PER_HOUR
+Conversion Factor:          11811.0234
+Inverted Conversion Factor: 8.46666682584E-05
+
+Unit:                       FOOT_PER_MINUTE
+Conversion Factor:          196.85039
+Inverted Conversion Factor: 0.005080000095504
+
+Unit:                       FOOT_PER_SECOND
+Conversion Factor:          3.2808399
+Inverted Conversion Factor: 0.304799999536704
+
+Unit:                       INCH_PER_HOUR
+Conversion Factor:          141732.3
+Inverted Conversion Factor: 7.0555547324075E-06
+
+Unit:                       INCH_PER_MINUTE
+Conversion Factor:          2362.20474
+Inverted Conversion Factor: 0.000423333330539333
+
+Unit:                       INCH_PER_SECOND
+Conversion Factor:          39.370079
+Inverted Conversion Factor: 0.02539999983236
+
+Unit:                       KILOMETER_PER_HOUR
+Conversion Factor:          3.6
+Inverted Conversion Factor: 0.277777777777778
+
+Unit:                       KNOT
+Conversion Factor:          1.942606763
+Inverted Conversion Factor: 0.514772222071174
+
+Unit:                       KNOT_INTERNATIONAL
+Conversion Factor:          1.94384448
+Inverted Conversion Factor: 0.514444447736889
+
+Unit:                       METRE_PER_HOUR
+Conversion Factor:          3600
+Inverted Conversion Factor: 0.000277777777777778
+
+Unit:                       METRE_PER_MINUTE
+Conversion Factor:          60
+Inverted Conversion Factor: 0.0166666666666667
+
+Unit:                       METRE_PER_SECOND
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MILE_PER_HOUR
+Conversion Factor:          2.2369363
+Inverted Conversion Factor: 0.447039998412114
+
+------    SLOPE
+
+Unit:                       CENTIMETER_PER_METER
+Conversion Factor:          100
+Inverted Conversion Factor: 0.01
+
+Unit:                       FOOT_PER_1000_FEET
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       FOOT_PER_MILE
+Conversion Factor:          5280
+Inverted Conversion Factor: 0.000189393939393939
+
+Unit:                       INCH_PER_FOOT
+Conversion Factor:          12
+Inverted Conversion Factor: 0.0833333333333333
+
+Unit:                       METER_PER_KILOMETER
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       MILLIMETER_HORIZONTAL_PER_METER_VERTICAL
+Conversion Factor:          100000
+Inverted Conversion Factor: 1E-05
+
+Unit:                       MILLIMETER_PER_METER
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       MILLIMETER_VERTICAL_PER_METER_HORIZONTAL
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       ONE_OVER_SLOPE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       PERCENT_SLOPE
+Conversion Factor:          100
+Inverted Conversion Factor: 0.01
+
+------    LENGTH
+
+Unit:                       CENTIMETRE
+Conversion Factor:          100
+Inverted Conversion Factor: 0.01
+
+Unit:                       DECIMETRE
+Conversion Factor:          10
+Inverted Conversion Factor: 0.1
+
+Unit:                       FOOT
+Conversion Factor:          3.280839895
+Inverted Conversion Factor: 0.304800000001219
+
+Unit:                       INCH
+Conversion Factor:          39.37007874
+Inverted Conversion Factor: 0.0254000000001016
+
+Unit:                       KILOMETRE
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       METRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MFEET
+Conversion Factor:          3280.839895
+Inverted Conversion Factor: 0.000304800000001219
+
+Unit:                       MILE
+Conversion Factor:          0.0006213711922
+Inverted Conversion Factor: 1609.34400009669
+
+Unit:                       MILLIFEET
+Conversion Factor:          3280.839895
+Inverted Conversion Factor: 0.000304800000001219
+
+Unit:                       MILLIMETRE
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       YARD
+Conversion Factor:          1.0936133
+Inverted Conversion Factor: 0.914399998610112
+
+------    DIFFUSIVITY
+
+Unit:                       CENTISTOKE
+Conversion Factor:          1000000
+Inverted Conversion Factor: 1E-06
+
+Unit:                       FOOT_SQUARED_PER_SECOND
+Conversion Factor:          10.76391
+Inverted Conversion Factor: 0.0929030435966113
+
+Unit:                       METRE_SQUARED_PER_SECOND
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       STOKES
+Conversion Factor:          10000
+Inverted Conversion Factor: 0.0001
+
+------    FLOW_DENSITY_PER_AREA
+
+Unit:                       CFS_PER_ACRES
+Conversion Factor:          0.0016540967
+Inverted Conversion Factor: 604.559576232756
+
+Unit:                       CFS_PER_SQUARE_FOOT
+Conversion Factor:          3.797265E-08
+Inverted Conversion Factor: 26334743.5588509
+
+Unit:                       CFS_PER_SQUARE_MILES
+Conversion Factor:          1.05861767
+Inverted Conversion Factor: 0.944628101663937
+
+Unit:                       CUBIC_METERS_PER_HECTARES_PER_DAY
+Conversion Factor:          10
+Inverted Conversion Factor: 0.1
+
+Unit:                       CUBIC_METERS_PER_SQUARE_METER_PER_DAY
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       GPD_PER_ACRE
+Conversion Factor:          1069.070643
+Inverted Conversion Factor: 0.000935391881301524
+
+Unit:                       GPD_PER_SQUARE_FEET
+Conversion Factor:          0.0245423867
+Inverted Conversion Factor: 40.7458334115484
+
+Unit:                       GPD_PER_SQUARE_MILE
+Conversion Factor:          684202.474691
+Inverted Conversion Factor: 1.46155566077369E-06
+
+Unit:                       GPM_PER_ACRE
+Conversion Factor:          0.742410169
+Inverted Conversion Factor: 1.34696430862062
+
+Unit:                       GPM_PER_FOOT_SQUARED
+Conversion Factor:          1.7043324E-05
+Inverted Conversion Factor: 58674.0004473306
+
+Unit:                       GPM_PER_MILE_SQUARED
+Conversion Factor:          475.1406074
+Inverted Conversion Factor: 0.00210464015162178
+
+Unit:                       LITRE_PER_HECTARE_PER_DAY
+Conversion Factor:          10000
+Inverted Conversion Factor: 0.0001
+
+Unit:                       LITRE_PER_KILOMETER_SQUARED_PER_DAY
+Conversion Factor:          1000000
+Inverted Conversion Factor: 1E-06
+
+Unit:                       LITRE_PER_METER_SQUARED_PER_DAY
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       METERS_CUBED_PER_KILOMETER_SQUARED_PER_DAY
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+------    DISCHARGE_PER_PRESSURE_DROP
+
+Unit:                       CFS_PER_SQURE_ROOT_FOOT_H20
+Conversion Factor:          19.5
+Inverted Conversion Factor: 0.0512820512820513
+
+Unit:                       CMS_PER_SQUARE_ROOT_METER_H20
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       GPM_PER_SQUARE_ROOT_PSI
+Conversion Factor:          13290.37762
+Inverted Conversion Factor: 7.52424068444189E-05
+
+Unit:                       lPER_SEC_PER_SQUARE_ROOT_KPA
+Conversion Factor:          319.3305497
+Inverted Conversion Factor: 0.00313155130612923
+
+------    FLOW_RATE
+
+Unit:                       CUBIC_METRE_PER_HOUR
+Conversion Factor:          3600
+Inverted Conversion Factor: 0.000277777777777778
+
+------    TIME
+
+Unit:                       DAY
+Conversion Factor:          0.0416666666666667
+Inverted Conversion Factor: 24
+
+Unit:                       HOUR
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MILLISECOND
+Conversion Factor:          3600000
+Inverted Conversion Factor: 2.77777777777778E-07
+
+Unit:                       MINUTE
+Conversion Factor:          60
+Inverted Conversion Factor: 0.0166666666666667
+
+Unit:                       SECOND
+Conversion Factor:          3600
+Inverted Conversion Factor: 0.000277777777777778
+
+Unit:                       YEAR
+Conversion Factor:          0.000114155251141553
+Inverted Conversion Factor: 8759.99999999996
+
+------    COST_PER_UNIT_VOLUME
+
+Unit:                       DOLLAR_PER_ACRE_FOOT
+Conversion Factor:          1233.50191192796
+Inverted Conversion Factor: 0.000810700000000002
+
+Unit:                       DOLLAR_PER_ACRE_INCH
+Conversion Factor:          102.789712805542
+Inverted Conversion Factor: 0.00972860000000004
+
+Unit:                       DOLLAR_PER_CENTIMETER_CUBED
+Conversion Factor:          1E-06
+Inverted Conversion Factor: 1000000
+
+Unit:                       DOLLAR_PER_FOOT_CUBED
+Conversion Factor:          0.0283168463686774
+Inverted Conversion Factor: 35.3146669999999
+
+Unit:                       DOLLAR_PER_GALLON
+Conversion Factor:          0.00378541181779072
+Inverted Conversion Factor: 264.17205
+
+Unit:                       DOLLAR_PER_IMPERIAL_GALLON
+Conversion Factor:          0.00454608686480938
+Inverted Conversion Factor: 219.9694
+
+Unit:                       DOLLAR_PER_INCH_CUBED
+Conversion Factor:          1.63870650995826E-05
+Inverted Conversion Factor: 61023.7399999998
+
+Unit:                       DOLLAR_PER_LITRE
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       DOLLAR_PER_METER_CUBED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       DOLLAR_PER_MILLION_GALLON
+Conversion Factor:          3785.01135503406
+Inverted Conversion Factor: 0.0002642
+
+Unit:                       DOLLAR_PER_MILLION_LITRE
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       DOLLAR_PER_THOUSAND_GALLON
+Conversion Factor:          3.78541110132372
+Inverted Conversion Factor: 0.2641721
+
+Unit:                       DOLLAR_PER_THOUSAND_LITRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       DOLLAR_PER_YARD_CUBED
+Conversion Factor:          0.764554869274115
+Inverted Conversion Factor: 1.3079506
+
+------    CURRENCY_PER_LENGTH
+
+Unit:                       DOLLAR_PER_FOOT
+Conversion Factor:          0.3048
+Inverted Conversion Factor: 3.28083989501312
+
+Unit:                       DOLLAR_PER_METER
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    CURRENCY_PER_POWER
+
+Unit:                       DOLLAR_PER_HORSEPOWER
+Conversion Factor:          0.745699872
+Inverted Conversion Factor: 1.34102208884381
+
+Unit:                       DOLLAR_PER_KILOWATT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    CURRENCY_PER_ENERGY
+
+Unit:                       DOLLAR_PER_KILOWATT_HOUR
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    CURRENCY
+
+Unit:                       DOLLARS
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    SCALE_DIMENSION
+
+Unit:                       FEET_PER_INCH
+Conversion Factor:          8.333333333
+Inverted Conversion Factor: 0.1200000000048
+
+Unit:                       METER_PER_CENTIMETER
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    DIAMETER_LENGTH
+
+Unit:                       FOOT_FEET
+Conversion Factor:          440
+Inverted Conversion Factor: 0.00227272727272727
+
+Unit:                       FOOT_MILE
+Conversion Factor:          0.0833333333333333
+Inverted Conversion Factor: 12
+
+Unit:                       INCH_FEET
+Conversion Factor:          5280
+Inverted Conversion Factor: 0.000189393939393939
+
+Unit:                       INCH_METER
+Conversion Factor:          1609.344
+Inverted Conversion Factor: 0.000621371192237334
+
+Unit:                       INCH_MILE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       METER_KILOMETER
+Conversion Factor:          0.040877338
+Inverted Conversion Factor: 24.4634325258656
+
+Unit:                       METER_METERS
+Conversion Factor:          40.8773376
+Inverted Conversion Factor: 0.0244634327652494
+
+Unit:                       MILLIMETER_KILOMETER
+Conversion Factor:          40.8773376
+Inverted Conversion Factor: 0.0244634327652494
+
+Unit:                       MILLIMETER_METER
+Conversion Factor:          40877.3376
+Inverted Conversion Factor: 2.44634327652494E-05
+
+Unit:                       MILLIMETER_MILE
+Conversion Factor:          25.4
+Inverted Conversion Factor: 0.0393700787401575
+
+------    ENERGY
+
+Unit:                       FOOT_POUNDAL
+Conversion Factor:          23.73
+Inverted Conversion Factor: 0.0421407501053519
+
+Unit:                       JOULE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       KILOJOULE
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       KILOWATT_HOUR
+Conversion Factor:          2.77777777777778E-07
+Inverted Conversion Factor: 3600000
+
+------    FLOW_DENSITY_PER_CAPITA
+
+Unit:                       GPD_PER_CAPITA
+Conversion Factor:          0.264172
+Inverted Conversion Factor: 3.78541253425798
+
+Unit:                       LITRE_PER_CAPITA_PER_DAY
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    MASS
+
+Unit:                       GRAM
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       KILOGRAM
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       MILLIGRAM
+Conversion Factor:          1E-06
+Inverted Conversion Factor: 1000000
+
+Unit:                       POUND
+Conversion Factor:          2.2046226
+Inverted Conversion Factor: 0.453592374495299
+
+------    MASS_RATE
+
+Unit:                       GRAM_PER_DAY
+Conversion Factor:          86.4
+Inverted Conversion Factor: 0.0115740740740741
+
+Unit:                       GRAM_PER_HOUR
+Conversion Factor:          3.6
+Inverted Conversion Factor: 0.277777777777778
+
+Unit:                       GRAM_PER_MINUTE
+Conversion Factor:          0.06
+Inverted Conversion Factor: 16.6666666666667
+
+Unit:                       GRAM_PER_SECOND
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       KILOGRAM_PER_DAY
+Conversion Factor:          0.0864
+Inverted Conversion Factor: 11.5740740740741
+
+Unit:                       KILOGRAM_PER_HOUR
+Conversion Factor:          0.0036
+Inverted Conversion Factor: 277.777777777778
+
+Unit:                       KILOGRAM_PER_MINUTE
+Conversion Factor:          6E-05
+Inverted Conversion Factor: 16666.6666666667
+
+Unit:                       KILOGRAM_PER_SECOND
+Conversion Factor:          1E-06
+Inverted Conversion Factor: 1000000
+
+Unit:                       MICROGRAM_PER_DAY
+Conversion Factor:          86400000
+Inverted Conversion Factor: 1.15740740740741E-08
+
+Unit:                       MICROGRAM_PER_HOUR
+Conversion Factor:          3600000
+Inverted Conversion Factor: 2.77777777777778E-07
+
+Unit:                       MICROGRAM_PER_MINUTE
+Conversion Factor:          60000
+Inverted Conversion Factor: 1.66666666666667E-05
+
+Unit:                       MICROGRAM_PER_SECOND
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       MILLIGRAM_PER_DAY
+Conversion Factor:          86400
+Inverted Conversion Factor: 1.15740740740741E-05
+
+Unit:                       MILLIGRAM_PER_HOUR
+Conversion Factor:          3600
+Inverted Conversion Factor: 0.000277777777777778
+
+Unit:                       MILLIGRAM_PER_MINUTE
+Conversion Factor:          60
+Inverted Conversion Factor: 0.0166666666666667
+
+Unit:                       MILLIGRAM_PER_SECOND
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       POUND_PER_DAY
+Conversion Factor:          0.1904793926
+Inverted Conversion Factor: 5.2499117429462
+
+Unit:                       POUND_PER_HOUR
+Conversion Factor:          0.00793664136
+Inverted Conversion Factor: 125.99788180425
+
+Unit:                       POUND_PER_MINUTE
+Conversion Factor:          0.000132277356
+Inverted Conversion Factor: 7559.87290825499
+
+Unit:                       POUND_PER_SECOND
+Conversion Factor:          2.2046226E-06
+Inverted Conversion Factor: 453592.374495299
+
+------    ELECTRICAL_FREQUENCY
+
+Unit:                       HERTZ
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    POWER
+
+Unit:                       HORSEPOWER
+Conversion Factor:          1.34124
+Inverted Conversion Factor: 0.745578718201068
+
+Unit:                       KILOWATT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       WATT
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+------    MASS_PER_AREA
+
+Unit:                       KILOGRAM_PER_HECTARE
+Conversion Factor:          1.12085116518377
+Inverted Conversion Factor: 0.892179114464358
+
+Unit:                       POUND_PER_ACRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    DENSITY
+
+Unit:                       KILOGRAM_PER_METRE_CUBED
+Conversion Factor:          515.3788
+Inverted Conversion Factor: 0.00194032040122721
+
+Unit:                       POUND_PER_CUBIC_FOOT
+Conversion Factor:          32.174054
+Inverted Conversion Factor: 0.0310809449129413
+
+Unit:                       SLUG_PER_CUBIC_FOOT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    FORCE
+
+Unit:                       KILONEWTON
+Conversion Factor:          0.0044488222
+Inverted Conversion Factor: 224.778594208597
+
+Unit:                       KILOPOUND_FORCE
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       NEWTON
+Conversion Factor:          4.4488222
+Inverted Conversion Factor: 0.224778594208597
+
+Unit:                       POUND_FORCE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    ENERGY_PER_UNIT_VOLUME
+
+Unit:                       KILONEWTON_PER_FOOT_CUBED
+Conversion Factor:          0.0283168463686774
+Inverted Conversion Factor: 35.3146669999999
+
+Unit:                       KILOWATT_HOUR_PER_METRE_CUBED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       KILOWATT_HOUR_PER_MILLION_GALLON
+Conversion Factor:          3785.01135503406
+Inverted Conversion Factor: 0.0002642
+
+Unit:                       KILOWATT_HOUR_PER_MILLION_LITRE
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+------    SPECIFIC_WEIGHT
+
+Unit:                       KILONEWTON_PER_METER_CUBED
+Conversion Factor:          0.001
+Inverted Conversion Factor: 1000
+
+Unit:                       NEWTON_PER_METRE_CUBED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       POUND_FORCE_PER_CUBIC_FOOT
+Conversion Factor:          0.006365882
+Inverted Conversion Factor: 157.087423235303
+
+------    CONCENTRATION
+
+Unit:                       MICROGRAM_PER_LITRE
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       MILLIGRAM_PER_LITRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       PARTS_PER_BILLION
+Conversion Factor:          1000
+Inverted Conversion Factor: 0.001
+
+Unit:                       PARTS_PER_MILLION
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       POUND_PER_FOOT_CUBED
+Conversion Factor:          6.242621E-05
+Inverted Conversion Factor: 16018.9125689354
+
+Unit:                       POUND_PER_MILLION_GALLON
+Conversion Factor:          8.3452
+Inverted Conversion Factor: 0.119829362987106
+
+------    INERTIA
+
+Unit:                       NEWTON_METER_SQUARED
+Conversion Factor:          0.41325322
+Inverted Conversion Factor: 2.419823855214
+
+Unit:                       POUND_SQUARE_FEET
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    TORQUE
+
+Unit:                       NEWTON_METRE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       POUND_FOOT
+Conversion Factor:          0.737562
+Inverted Conversion Factor: 1.35581822273924
+
+------    SPRING_CONSTANT
+
+Unit:                       NEWTON_PER_MILLIMETER
+Conversion Factor:          0.175126797
+Inverted Conversion Factor: 5.71014840178913
+
+Unit:                       POUND_PER_INCH
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    NONE
+
+Unit:                       NONE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    PERCENT
+
+Unit:                       PERCENT_PERCENT
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       UNITLESS_PERCENT
+Conversion Factor:          0.01
+Inverted Conversion Factor: 100
+
+------    POPULATION_DENSITY_PER_AREA
+
+Unit:                       PERSON_PER_ACRE
+Conversion Factor:          4046.8564464278
+Inverted Conversion Factor: 0.000247105380000002
+
+Unit:                       PERSON_PER_FOOT_SQUARED
+Conversion Factor:          0.09290304
+Inverted Conversion Factor: 10.7639104167097
+
+Unit:                       PERSON_PER_HECTARE
+Conversion Factor:          10000
+Inverted Conversion Factor: 0.0001
+
+Unit:                       PERSON_PER_KILOMETER_SQUARED
+Conversion Factor:          1000000
+Inverted Conversion Factor: 1E-06
+
+Unit:                       PERSON_PER_METER_SQUARED
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+Unit:                       PERSON_PER_MILE_SQUARED
+Conversion Factor:          2589988.10055867
+Inverted Conversion Factor: 3.8610216E-07
+
+------    ROTATIONAL_FREQUENCY
+
+Unit:                       REVOLUTION_PER_MINUTE
+Conversion Factor:          1
+Inverted Conversion Factor: 1
+
+------    UNITLESS
+
+Unit:                       UNITLESS_UNIT
+Conversion Factor:          1
+Inverted Conversion Factor: 1

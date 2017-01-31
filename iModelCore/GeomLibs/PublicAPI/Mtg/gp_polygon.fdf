@@ -1,0 +1,101 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_polygon.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Complete the clipping process for a single plane.
+* Caller is responsible for computing altitude-above-plane as the "a" value in each GraphicsPoint.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_clipToOnePlane
+(
+        GraphicsPointArray  *pInstance,     /* IN OUT  Polyline or polygon. */
+        bool                    *pClipped,      /* IN OUT  set true if clipped */
+const   DPoint4d                *pPlane         /* IN      the clipping plane */
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Complete the clipping process for a single plane, treating the geometry as filled figures.
+* Caller is responsible for computing altitude-above-plane as the "a" value in each GraphicsPoint.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_clipFilledToOnePlane
+(
+        GraphicsPointArray  *pInstance, /* IN OUT  Polyline or polygon. */
+        bool                    *pClipped,  /* IN OUT  set true if clipped */
+const   DPoint4d                *pPlane     /*  IN      the clipping plane */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Intersect a planar halfspace, assuming (a) convex faces and (b) no curves.
+* Replace instance arrays by clipped.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_intersectOnePlane
+(
+      GraphicsPointArray    *pInstance,
+const DPoint4d                  *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Clip hpoints to a region bounded by planes.
+* @param pInstance IN OUT  polyline or polyline data to be clipped.
+* @param pClipped IN OUT  set true if any clipping occurs.  NOT CHANGED if no clipping, i.e.
+*                   can be used as ongoing summary for multiple steps.
+* @param pPlane IN      array of homogeneous plane coordinates.
+*               Each plane defines a halfspace, with the sign convention that the
+*               positive halfspace is OUT, negative IN.
+* @param nPlane IN      number of planes.
+* clipType IN      0 for intersection of halfspaces (negative parts), 1 for outside.
+* @bsimethod                                                    BentleySystems  09/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_clipToPlanes
+(
+      GraphicsPointArray    *pInstance,
+      bool                      *pClipped,
+const DPoint4d                  *pPlane,
+      int                       nPlane,
+      int                       clipType
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Clip hpoints to the frustum obtained by sweeping a polygon in the z direction.
+* @param   **ppHeader  IN OUT  Polyline data.  This procedure has the authority to clip
+*                           in place or into a new header.  In the latter case the given
+*                           header is returned to jmdlGraphicsPointArray_drop(.)
+* @param    *pClipped  IN OUT  set true the data is altered in any way.  Left unchanged
+*                           otherwise.
+* @param    pPointArray IN      array of points treated as a closed polygon.
+* @param    numPoint    IN      number of points.
+* @param    clipType    IN      0 for clip to inside of polygon, with xor rules.
+*                           1 for clip to outisde, with xor rules.
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_clipToXYPolygon
+(
+      GraphicsPointArray    *pInstance,
+      bool                      *pClipped,
+const DPoint3d                  *pPolygonPoint,
+      int                       numPolygonPoint,
+      int                       clipType
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

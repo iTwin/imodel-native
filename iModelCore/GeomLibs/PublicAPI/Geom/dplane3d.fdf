@@ -1,0 +1,238 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dplane3d.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Store origin and unnormalized vector.
+//! @param pPlane OUT     initialized plane
+//! @param x0 IN      x-coordinate of origin point
+//! @param y0 IN      y-coordinate of origin point
+//! @param z0 IN      z-coordinate of origin point
+//! @param ux IN      x-coordinate of normal vector
+//! @param uy IN      y-coordinate of normal vector
+//! @param uz IN      z-coordinate of normal vector
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPlane3d_initFromOriginAndNormalXYZXYZ
+(
+DPlane3dP pPlane,
+double      x0,
+double      y0,
+double      z0,
+double      ux,
+double      uy,
+double      uz
+);
+
+//!
+//! @description Store origin and unnormalized vector.
+//! @param pPlane OUT     initialized plane.
+//! @param pOrigin IN      origin point
+//! @param pNormal IN      normal vector
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPlane3d_initFromOriginAndNormal
+(
+DPlane3dP pPlane,
+DPoint3dCP pOrigin,
+DVec3dCP pNormal
+);
+
+//!
+//! @description Normalize the plane vector.
+//! @param pPlane IN OUT  plane to normalize
+//! @return true if normal vector has nonzero length.
+//! @group "DPlane3d Modification"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPlane3d_normalize (DPlane3dP pPlane);
+
+//!
+//! @description Initialize with first point as origin, normal as unnormalized cross product of vectors
+//!   to 2nd and 3rd points.
+//! @param pPlane OUT     initialized plane
+//! @param pOrigin IN      origin point
+//! @param pXPoint IN      first point in plane (e.g., x-axis point)
+//! @param pYPoint IN      second point in plane (e.g., y-axis point)
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPlane3d_initFrom3DPoint3d
+(
+DPlane3dP pPlane,
+DPoint3dCP pOrigin,
+DPoint3dCP pXPoint,
+DPoint3dCP pYPoint
+);
+
+//!
+//! @description Extract origin and normal from 4D plane coefficients.
+//! @param pPlane OUT     plane structure with origin, normal
+//! @param pHPlane IN      4D plane coefficients
+//! @return true if plane has a nonzero normal
+//! 
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPlane3d_initFromDPoint4d
+(
+DPlane3dP pPlane,
+DPoint4dCP pHPlane
+);
+
+//!
+//! @description Return the plane as a DPoint4d.
+//! @param pPlane IN      plane structure with origin, normal
+//! @param pHPlane OUT     4D plane coefficients
+//! 
+//! @group "DPlane3d Queries"
+//!
+Public GEOMDLLIMPEXP void      bsiDPlane3d_getDPoint4d
+(
+DPlane3dCP pPlane,
+DPoint4dP pHPlane
+);
+
+//!
+//! @description Convert the implicit plane ax+by+cz=d to origin-normal form, with a unit normal vector.
+//! @remarks WARNING: Check your usage.  It is about equally common to write the plane equation with
+//!       negated d, i.e. ax+by+cz+d=0.  If so, pass in (a,b,c,-d).
+//! @param pPlane OUT     plane structure with origin, normal
+//! @param a IN      4D plane x-coefficient
+//! @param b IN      4D plane y-coefficient
+//! @param c IN      4D plane z-coefficient
+//! @param d IN      4D plane constant coefficient
+//! @return true if plane has a nonzero normal
+//! 
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPlane3d_initFromImplicitPlaneCoefficients
+(
+DPlane3dP pPlane,
+double      a,
+double      b,
+double      c,
+double      d
+);
+
+//!
+//! @description Convert the plane to implicit coeffcients ax+by+cz=d.
+//! @remarks WARNING: Check your usage.  It is about equally common to write the plane equation with
+//!       negated d, i.e. ax+by+cz+d=0.  If so, pass in (a,b,c,-d).
+//! @param pPlane IN      plane structure with origin, normal
+//! @param pA OUT     4D plane x-coefficient
+//! @param pB OUT     4D plane y-coefficient
+//! @param pC OUT     4D plane z-coefficient
+//! @param pD OUT     4D plane constant coefficient
+//! 
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPlane3d_getImplicitPlaneCoefficients
+(
+DPlane3dCP pPlane,
+double      *pA,
+double      *pB,
+double      *pC,
+double      *pD
+);
+
+//!
+//! @description Apply a transformation to the source plane.
+//! @param pDest OUT     transformed plane
+//! @param pTransform IN      transformation to apply
+//! @param pSource IN      source plane
+//! @group "DPlane3d Transform"
+//! @return false if the matrix part of the transform is singular.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPlane3d_transform
+(
+DPlane3dP pDest,
+DTransform3dCP pTransform,
+DPlane3dCP pSource
+);
+
+//!
+//! @description Apply a transformation to the source plane.
+//! @param pDest OUT     transformed plane
+//! @param pTransform IN      transformation to apply
+//! @param pSource IN      source plane
+//! @group "DPlane3d Transform"
+//! @return false if the matrix part of the transform is singular.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPlane3d_multiplyTransformDPlane3d
+(
+DPlane3dP pDest,
+TransformCP pTransform,
+DPlane3dCP pSource
+);
+
+//!
+//! @description Fill the plane data with zeros.
+//! @param pDest OUT     initialized plane
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPlane3d_zero (DPlane3dP pDest);
+
+//!
+//! @description Test if the numeric entries in the plane are all absolutely zero (no tolerances).
+//! @param pPlane IN      plane to query
+//! @return true if the plane contains only zero coordinates.
+//! @group "DPlane3d Queries"
+//!
+Public GEOMDLLIMPEXP bool     bsiDPlane3d_isZero (DPlane3dCP pPlane);
+
+//!
+//! @description Project a (generally off-plane) point onto the plane.
+//! @param pPlane IN      plane to query
+//! @param pProjection OUT     projection of pPoint onto the plane
+//! @param pPoint IN      point to project to plane
+//! @return true if the plane has a well defined normal.
+//! @group "DPlane3d Projection"
+//!
+Public GEOMDLLIMPEXP bool     bsiDPlane3d_projectPoint
+(
+DPlane3dCP pPlane,
+DPoint3dP pProjection,
+DPoint3dCP pPoint
+);
+
+//!
+//! @description Dot the plane normal with the vector from the plane origin to the point.
+//! @remarks If the plane normal is a unit vector, this is the true distance from the
+//!       plane to the point.  If not, it is a scaled distance.
+//! @param pPlane IN      plane to evaluate
+//! @param pPoint IN      point for evaluation
+//! @return dot product
+//! @group "DPlane3d Projection"
+//!
+Public GEOMDLLIMPEXP double  bsiDPlane3d_evaluate
+(
+DPlane3dCP pPlane,
+DPoint3dCP pPoint
+);
+
+//!
+//! @description Compute the origin and normal so the plane passes (approximiately) through the array of points.
+//! @param pPlane OUT     approximating plane
+//! @param pPointArray IN      array of points defining the plane
+//! @param numPoint IN      number of points in the array
+//! @return true if the points define a clear plane; false if every point lies on the line joining the two extremal points.
+//! @group "DPlane3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool     bsiDPlane3d_initFromDPoint3dArray
+(
+DPlane3dP pPlane,
+DPoint3dCP pPointArray,
+int             numPoint
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

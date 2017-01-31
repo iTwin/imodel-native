@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+# General.GFormat exercises sprintf and compares to tabulated values.
+# April 19, 2016: This works fine on developer x86, x64.  don't know about other compilers.
+General.GFormat 
+
+MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negative number for i=893; notified Earlin
+
+CurvePrimitive.SizeSampler # Fails after merge - notified Earlir
+
+#DVec3d.RotateVectorAroundAxis

@@ -1,0 +1,9 @@
+message BsplineCurve
+{
+required int32 Order = 1;
+required bool Closed = 2;
+repeated DPoint3d ControlPoint = 3;
+repeated double Weight = 4;
+repeated double Knot = 5;
+}
+

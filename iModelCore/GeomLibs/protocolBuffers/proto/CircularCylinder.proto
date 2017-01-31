@@ -1,0 +1,8 @@
+message CircularCylinder
+{
+required IPlacement placement = 1;
+required double height = 2;
+required double radius = 3;
+required bool bSolidFlag = 4;
+}
+

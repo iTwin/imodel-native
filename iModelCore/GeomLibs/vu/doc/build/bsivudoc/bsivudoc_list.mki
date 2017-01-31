@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: vu/doc/build/bsivudoc/bsivudoc_list.mki $
+#
+#  $Copyright: (c) 2006 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+#   Define list of files to document
+#----------------------------------------------------------------------------------------
+
+%if !defined (MDLDOC_StampDir)
+    %error MDLDOC_StampDir must be defined.
+%endif
+
+$(MDLDOC_StampDir)vu.hp1 : $(MDLDOC_GensrcDir)vu.h
+
+$(MDLDOC_StampDir)summary.hp1 : $(MDLDOC_BaseDir)include/$(MDLDOC_ProjectName)_summary.h

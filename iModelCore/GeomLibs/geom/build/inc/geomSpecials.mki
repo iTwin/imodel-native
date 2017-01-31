@@ -1,0 +1,413 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: geom/build/inc/geomSpecials.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+%if defined (mutations)
+# regenerate rotmatrix/transform.c from newer dmatrix3d/dtransform3d.c
+
+$(geomSrcStructs)rotmatrix.c: $(geomSrcStructs)dmatrix3d.c
+    attrib -r $(geomSrcStructs)rotmatrix.c
+    copy $(geomSrcStructs)dmatrix3d.c $(geomSrcStructs)rotmatrix.c
+    call $(GEMADIR)gemageom transform $(geomSrcStructs)rotmatrix.c
+
+$(geomSrcStructs)transform.c: $(geomSrcStructs)dtransform3d.c
+    attrib -r $(geomSrcStructs)transform.c
+    copy $(geomSrcStructs)dtransform3d.c $(geomSrcStructs)transform.c
+    call $(GEMADIR)gemageom transform $(geomSrcStructs)transform.c
+
+$(geomSrcInterfac)rotmatrix_dep.c: $(geomSrcInterfac)dmatrix3d_dep.c
+    attrib -r $(geomSrcInterfac)rotmatrix_dep.c
+    copy $(geomSrcInterfac)dmatrix3d_dep.c $(geomSrcInterfac)rotmatrix_dep.c
+    call $(GEMADIR)gemageom transform $(geomSrcInterfac)rotmatrix_dep.c
+
+.c.fdf:
+    call $(GEMADIR)fdf $%$*.c $@
+
+.cpp.fdf:
+    call $(GEMADIR)fdf $%$*.cpp $@
+
+$(geomSrcPubincGeom)rotmatrix.fdf : $(geomSrcStructs)rotmatrix.c
+
+$(geomSrcPubincGeom)dmatrix3d.fdf : $(geomSrcStructs)dmatrix3d.c
+
+$(geomSrcPubincGeom)transform.fdf : $(geomSrcStructs)transform.c
+
+$(geomSrcPubincGeom)dtransform3d.fdf : $(geomSrcStructs)dtransform3d.c
+
+$(geomSrcPubincGeom)rotmatrix_dep.fdf : $(geomSrcInterfac)rotmatrix_dep.c
+
+$(geomSrcPubincGeom)dmatrix3d_dep.fdf : $(geomSrcInterfac)dmatrix3d_dep.c
+
+%endif
+
+%if defined (fdf)
+# regenerate .fdf files from newer sources
+
+OUT_EXT = .fdf
+OTHER_DEPENDENCIES = $(GEMADIR)fdf.cmd $(GEMADIR)fdfSearcher.cmd $(GEMADIR)g\fdf.g $(GEMADIR)data\copyright.txt $(GEMADIR)g\domains.g $(GEMADIR)g\needswork.g $(GEMADIR)g\fdfoutput.g
+
+.c.fdf:
+    call $(GEMADIR)fdf $%$*.c $@
+
+.cpp.fdf:
+    call $(GEMADIR)fdf $%$*.cpp $@
+
+OUT_DIR = $(geomSrcPubincGeom)
+
+%include interfac_sources_pubinc.mki
+%include structs_sources_pubinc.mki
+%include funcs_sources_pubinc.mki
+%include bezier_sources.mki
+
+OUT_DIR = $(geomSrcBsiincGeom)
+
+%include interfac_sources_bsiinc.mki
+%include structs_sources_bsiinc.mki
+%include funcs_sources_bsiinc.mki
+
+%endif
+
+%if defined (dls)
+# regenerate bsibasegeom.dls from sources
+
+%include interfac_dls.mki
+%include structs_dls.mki
+%include funcs_dls.mki
+%include bezier_dls.mki
+
+always:
+    attrib -r bsibasegeom.dli
+    copy interfac.dli+structs.dli+funcs.dli+bezier.dli  bsibasegeom.dli
+    del interfac.dli
+    del structs.dli
+    del funcs.dli
+    del bezier.dli
+
+%endif
+
+#--------------------------------------------------------------------------------------+
+#
+# The rest of this file contains geom src transformations triggered by bmake options:
+#
+#   -dtojava
+#   -dgen
+#   -dcppmethods
+#   -dcswrappers
+#   -dcsmethods
+#   -dmethods
+#   -dnewAuto
+#   -dauto
+#
+# These are no longer applicable or need to be updated....
+#
+#--------------------------------------------------------------------------------------+
+%if defined (OBSOLETE_GEOM_TRANSFORMATIONS)
+
+#------------------------------------------------------------------------
+# Propagate changes in dtransform3d.c, dmatrix3d.c and dpoint3d.c to Java
+#------------------------------------------------------------------------
+%if defined (tojava)
+always:
+    structs2java
+%endif
+
+
+%if defined (gen)
+fdf=fdf
+methods=methods
+%endif
+
+
+%if defined (cppmethods)
+# Tricky tricky.  Read from original sources, not cpp.
+OUT_EXT     = .cppimethods
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/cppimethods.g $(GEMADIR)g/domains.g
+
+.c.cppimethods:
+    gema -f $(GEMADIR)g\cppimethods.g $%$*.c $@
+
+.cpp.cppimethods:
+    gema -f $(GEMADIR)g\cppimethods.g $%$*.cpp $@
+
+%include structs/sources.mki
+%include interfac/sources.mki
+
+OUT_EXT     = .cppibody
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/cppibody.g $(GEMADIR)g/domains.g
+
+.c.cppibody:
+    gema -f $(GEMADIR)g\cppibody.g $%$*.c $@
+
+.cpp.cppibody:
+    gema -f $(GEMADIR)g\cppibody.g $%$*.cpp $@
+
+%include structs/sources.mki
+%include interfac/sources.mki
+
+%endif
+
+
+%if defined (cswrappers)
+# csharp Instance methods
+
+OUT_EXT     = .csimethods
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/domains.g $(GEMADIR)g/convertbody.g $(GEMADIR)g/csiwrappers.g
+
+.c.csiwrappers:
+    gema -f $(GEMADIR)g\csiwrappers.g $%$*.c $@
+
+always:
+    echo hello
+
+structs/rotmatrix.c: structs/dmatrix3d.c
+    copy structs\dmatrix3d.c structs\rotmatrix.c
+    call gemageom transform rotmatrix
+
+structs/transform.c: structs/dtransform3d.c
+    copy structs\dtransform3d.c structs\transform.c
+    call gemageom transform transform
+
+methods/dpoint3d.csiwrappers: structs/dpoint3d.c $(OTHER_DEPENDENCIES)
+
+csharp/wrappers/DPoint3d.cs: methods/DPoint3d.csiwrappers
+    call csharp\wrappers\updatemethods DPoint3d.cs
+
+methods/dmatrix3d.csiwrappers: structs/rotmatrix.c $(OTHER_DEPENDENCIES)
+    gema -f $(GEMADIR)g\csiwrappers.g structs/rotmatrix.c methods/dmatrix3d.csiwrappers
+
+csharp/wrappers/DMatrix3d.cs: methods/dmatrix3d.csiwrappers
+    call csharp\wrappers\updatemethods DMatrix3d.cs
+
+# WARNING -- take DTransform3d code from Transform --- name switch.
+methods/dtransform3d.csiwrappers: structs/transform.c $(OTHER_DEPENDENCIES)
+    gema -f $(GEMADIR)g\csiwrappers.g structs/transform.c methods/dtransform3d.csiwrappers
+
+csharp/wrappers/DTransform3d.cs: methods/dtransform3d.csiwrappers
+    call csharp\wrappers\updatemethods DTransform3d.cs
+
+
+methods/dplane3d.csiwrappers: structs/dplane3d.c $(OTHER_DEPENDENCIES)
+
+csharp/wrappers/DPlane3d.cs: methods/dplane3d.csiwrappers
+    call csharp\wrappers\updatemethods DPlane3d.cs
+
+methods/dray3d.csiwrappers: structs/dray3d.c $(OTHER_DEPENDENCIES)
+
+csharp/wrappers/DPlane3d.cs: methods/dray3d.csiwrappers
+    call csharp\wrappers\updatemethods DRay3d.cs
+%endif
+
+
+%if defined(csmethods)
+# csharp Instance methods
+
+OUT_EXT     = .csimethods
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/csimethods.g $(GEMADIR)g/domains.g $(GEMADIR)g/convertbody.g
+
+.c.csimethods:
+    gema -f $(GEMADIR)g\csimethods.g $%$*.c $@
+
+.cxx.csimethods:
+    gema -f $(GEMADIR)g\csimethods.g $%$*.cxx $@
+
+# This is REALLY confusing.
+# In native C, the "primary" code for both DTransform3d and Transform
+# is in DTransform3d -- Transform is a macro-processed image.
+# Likewise, RotMatix is a macro-processed image of DMatrix3d.
+#
+# In C-sharp, there is only one, and that is the form3d variant, i.e. the line-by-line
+#       addressing looks like C-ish Transform and RotMatrix.  However, the
+# naming convention there is to call them DMatrix3d and DTransform3d.
+# So .... dmatrix3d.c is macro processed to rotmatrix.c, which is then
+#   macro-processed to dmatrix3d.cs.
+#
+# Would you like blow this away?  Since mscore and VBA have both settled back into
+# form3d storage mode, C-ish DTransform3d and C-ish DMatrix3d are not necessary. All
+# that needs to be done to get rid of DTransform3d is convert all callers to use
+# Transform.   The biggest (hardest) are probably rotconic and all the things in
+# utils\mtg.
+#
+structs/rotmatrix.c: structs/dmatrix3d.c
+    copy structs\dmatrix3d.c structs\rotmatrix.c
+    call gemageom transform rotmatrix
+
+structs/transform.c: structs/dtransform3d.c
+    copy structs\dtransform3d.c structs\transform.c
+    call gemageom transform transform
+
+methods/dpoint3d.csimethods: structs/dpoint3d.c $(OTHER_DEPENDENCIES)
+
+methods/dmatrix3d.csimethods: structs/rotmatrix.c $(OTHER_DEPENDENCIES)
+    gema -f $(GEMADIR)g\csimethods.g structs\rotmatrix.c methods\dmatrix3d.csimethods
+
+methods/dtransform3d.csimethods: structs/transform.c $(OTHER_DEPENDENCIES)
+    gema -f $(GEMADIR)g\csimethods.g structs\transform.c methods\dtransform3d.csimethods
+
+methods/dplane3d.csimethods: structs/dplane3d.c $(OTHER_DEPENDENCIES)
+    gema -f $(GEMADIR)g\csimethods.g structs\dplane3d.c methods\dplane3d.csimethods
+
+
+csharp/dmatrix3d.cs: methods/dmatrix3d.csimethods
+    call csharp\updatemethods dmatrix3d.cs
+
+csharp/dtransform3d.cs: methods/dtransform3d.csimethods
+    call csharp\updatemethods dtransform3d.cs
+
+csharp/dplane3d.cs: methods/dplane3d.csimethods
+    call csharp\updatemethods dplane3d.cs
+%endif
+
+
+%if defined(methods)
+# Delegated instance methods
+
+OUT_EXT     = .dimethods
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/imethods.g $(GEMADIR)g/domains.g  $(GEMADIR)g/dimethods.g
+
+.c.dimethods:
+    gema -f $(GEMADIR)g\dimethods.g $%$*.c $@
+    mc2mj $@
+
+.cxx.dimethods:
+    gema -f $(GEMADIR)g\dimethods.g $%$*.cxx $@
+    mc2mj $@
+
+%include sources.mki
+
+# Class methods
+OUT_EXT     = .cmethods
+OUT_DIR     = methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/cmethods.g $(GEMADIR)g/domains.g
+
+.c.cmethods:
+    gema -f $(GEMADIR)g\cmethods.g $%$*.c $@
+    mc2mj $@
+
+.cxx.cmethods:
+    gema -f $(GEMADIR)g\cmethods.g $%$*.cxx $@
+    mc2mj $@
+
+%include sources.mki
+
+# mjava Instance methods
+OUT_EXT     = .imethods
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/imethods.g $(GEMADIR)g/domains.g
+
+.c.imethods:
+    gema -f $(GEMADIR)g\imethods.g $%$*.c $@
+    mc2mj $@
+
+.cxx.imethods:
+    gema -f $(GEMADIR)g\imethods.g $%$*.cxx $@
+    mc2mj $@
+
+%include sources.mki
+
+# Full implementations
+OUT_EXT     = .j
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/c2java.g $(GEMADIR)g/domains.g $(GEMADIR)g/funcnames.g
+
+.c.j:
+    gema -f $(GEMADIR)g\c2java.g $%$*.c $@
+
+.cxx.j:
+    gema -f $(GEMADIR)g\c2java.g $%$*.cxx $@
+
+%include sources.mki
+
+# Full implementations -- native java
+OUT_EXT     = .java
+OUT_DIR     =  methods/
+OTHER_DEPENDENCIES = $(GEMADIR)g/c2realjava.g $(GEMADIR)g/domains.g $(GEMADIR)g/funcnames.g
+
+.c.java:
+    gema -f $(GEMADIR)g\c2realjava.g $%$*.c $@
+
+.cxx.java:
+    gema -f $(GEMADIR)g\c2realjava.g $%$*.cxx $@
+
+%include sources.mki
+
+JNID_G=$(GEMADIR)g\jnid.g
+JNIF_G=$(GEMADIR)g\jnif.g
+INCLUDES_G=$(GEMADIR)g\funcnames.g $(GEMADIR)g\domains.g
+
+methods\dmatrix3d.jnid: structs\dmatrix3d.c $(JNID_G) $(INCLUDES_G)
+    gema -f $(JNID_G) structs\dmatrix3d.c methods\dmatrix3d.jnid
+
+methods\dmatrix3d.jnif: structs\dmatrix3d.c $(JNIF_G) $(INCLUDES_G)
+    gema -f $(JNIF_G) structs\dmatrix3d.c methods\dmatrix3d.jnif
+
+methods\dtransform3d.jnid: structs\dtransform3d.c $(JNID_G) $(INCLUDES_G)
+    gema -f $(JNID_G) structs\dtransform3d.c methods\dtransform3d.jnid
+
+methods\dtransform3d.jnif: structs\dtransform3d.c $(JNIF_G) $(INCLUDES_G)
+    gema -f $(JNIF_G) structs\dtransform3d.c methods\dtransform3d.jnif
+%endif
+
+
+%if defined (newAuto)
+# Design Automation Files test branch
+
+DAFUNC_G=$(GEMADIR)g\dafunc.g
+always:
+    gema -f $(DAFUNC_G) structs/dvec3d.c \tmp\dvec3dAutomation.h
+    gema -f $(DAFUNC_G) structs/dvec3drotmatrix.c \tmp\dvec3drotmatrixAutomation.h
+    gema -f $(DAFUNC_G) structs/dpoint3ddvec3d.c \tmp\dpoint3ddvec3dAutomation.h
+%endif
+
+
+%if defined (auto)
+# Design Automation Files ...
+
+DAFUNC_G=$(GEMADIR)g\dafunc.g
+LIVEAUTOMATIONDIR=$(MSJ)mstn/mscore/nonport/win32/AutomationDGN/
+AUTOMATIONDIR=methods/
+
+INCLUDES_G=$(GEMADIR)g\funcnames.g $(GEMADIR)g\domains.g
+
+$(AUTOMATIONDIR)dpoint3dAutomation.h: structs\dpoint3d.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+
+$(AUTOMATIONDIR)dpoint2dAutomation.h: structs\dpoint2d.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+
+structs/rotmatrix.c: structs/dmatrix3d.c
+    call transform
+
+structs/transform.c: structs/dtransform3d.c
+    call transform
+
+$(AUTOMATIONDIR)rotmatrixAutomation.h: structs\rotmatrix.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+
+$(AUTOMATIONDIR)transformAutomation.h: structs\transform.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+
+$(AUTOMATIONDIR)dsegment3dAutomation.h: structs\dsegment3d.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+
+$(LIVEAUTOMATIONDIR)drange3dAutomation8003.h: structs\drange3d.c $(DAFUNC_G) $(INCLUDES_G)
+    attrib -r $@
+    gema -f $(DAFUNC_G) $< $@
+%endif
+
+%endif
+# end OBSOLETE_GEOM_TRANSFORMATIONS
+

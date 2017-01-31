@@ -1,0 +1,26 @@
+
+/*================================================================================**//**
+* @bsiclass                                                     KevinNyman      03/10
++===============+===============+===============+===============+===============+======*/
+class BSIBaseGeomExaminer : public ::testing::EmptyTestEventListener
+{
+protected:
+    int64_t baseAllocationCount;
+
+public:
+    BSIBaseGeomExaminer()
+        {}
+    virtual void OnTestStart (const ::testing::TestInfo& test_info) override
+        {
+        baseAllocationCount = BSIBaseGeom::GetAllocationDifference ();
+        }
+    virtual void OnTestEnd (const ::testing::TestInfo& test_info) override
+        {
+        int64_t finalAllocationCount = BSIBaseGeom::GetAllocationDifference ();
+        if (finalAllocationCount != baseAllocationCount)
+            printf ("BSIBaseGeom Allocation Difference %ld\n", finalAllocationCount - baseAllocationCount);
+        }        
+};
+
+#include "StackExaminer.h"
+#include "StackExaminerGtestHelper.h"

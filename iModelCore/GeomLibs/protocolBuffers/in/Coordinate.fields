@@ -1,0 +1,10 @@
+PRIMITIVE Coordinate
+<def name=SUMMARY>3D point.
+</def>
+<def name=Interface_BaseList>IGeometry, ISinglePoint</def>
+
+
+<def name=MEMBERS><field ItemType=DPoint3d ItemParamName=xyz ItemMemberName=mXYZ ItemDescription="Point coordinates." ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE

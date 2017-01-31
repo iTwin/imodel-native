@@ -1,0 +1,17 @@
+PRIMITIVE IndexedMesh
+<def name=SUMMARY>Facets with "1 based, zero-terminated" indices.
+</def>
+<def name=Interface_BaseList>ISurface</def>
+
+
+<def name=MEMBERS><list ItemType=DPoint3d ItemTagName=xyz ItemSemanticName=Coord ItemParamName=xyz ListName=mCoord ItemDescription="Mesh vertex coordinates" ScaleMode=Length/>
+<list ItemType=int ItemTagName=id ItemSemanticName=CoordIndex ItemParamName=id ListName=mPointIndex ItemDescription="Signed, one-based indices into coordinates." ScaleMode=None/>
+<list ItemType=DPoint2d ItemTagName=uv ItemSemanticName=Param ItemParamName=uv ListName=mParam ItemDescription="Parametric coordinates" ScaleMode=None/>
+<list ItemType=int ItemTagName=id ItemSemanticName=ParamIndex ItemParamName=id ListName=mParamIndex ItemDescription="Parameter indices." ScaleMode=None/>
+<list ItemType=DVector3d ItemTagName=normal ItemSemanticName=Normal ItemParamName=normal ListName=mNormal ItemDescription="Vertex normals" ScaleMode=None/>
+<list ItemType=int ItemTagName=id ItemSemanticName=NormalIndex ItemParamName=id ListName=mNormalIndex ItemDescription="Normal indices." ScaleMode=None/>
+<list ItemType=DVector3d ItemTagName=color ItemSemanticName=Color ItemParamName=color ListName=mColor ItemDescription="Vertex colors" ScaleMode=None/>
+<list ItemType=int ItemTagName=id ItemSemanticName=ColorIndex ItemParamName=id ListName=mColorIndex ItemDescription="Color indices." ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

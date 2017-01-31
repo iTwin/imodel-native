@@ -1,0 +1,809 @@
+#include "testHarness.h"
+
+#include <BezierTriangle.h>
+#include <Geom/Polynomials.h>
+
+void TimeComp (GenericBezierTriangleDPoint3d &triangle1, int *t, DPoint3dR xyz, DVec3dR dXdu, DVec3dR dXdv)
+	{
+	int ti[7];
+
+	for(int q=0; q<7; q++)
+		{
+		ti[q]=0;
+		}
+
+	double pi = 3.1415926;
+
+	GenericBezierTriangleDPoint3d triangle = triangle1;
+
+	DRay3d yax, zax;
+
+	yax = DRay3d::FromOriginAndTarget (DPoint3d::From (0,0,0), DPoint3d::From (0,1,0));
+	zax = DRay3d::FromOriginAndTarget (DPoint3d::From (0,0,0), DPoint3d::From (0,0,1));
+
+	for (int i=0; i<21; i++)
+		{
+		for (int j=0; j<21; j++)
+			{
+			Transform transformi = Transform::FromAxisAndRotationAngle (zax, i*0.1*pi);
+			Transform transformj = Transform::FromAxisAndRotationAngle (yax, j*0.1*pi);
+			Transform transformz = Transform::FromProduct (transformj, transformi);		
+			GenericBezierTriangleDPoint3d trianglenew = triangle.FromMultiply (transformz, triangle);
+
+			clock_t clock00 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.NoOp (u,v);
+									}
+								}
+							}
+						}
+
+					clock_t clock0 = clock ();
+					ti[0] += (clock0 - clock00);
+					clock_t clock01 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.EvaluateDirect (u, v);
+									}
+								}
+							}
+						}
+
+					clock_t clock1 = clock ();
+					ti[1] += (clock1 - clock01);
+					clock_t clock02 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.EvaluateDirectCompact (u, v);
+									}
+								}
+							}
+						}
+			
+					clock_t clock2 = clock ();
+					ti[2] += (clock2 - clock02);
+					clock_t clock03 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.LayerTrianglesEvaluate (u, v);
+									}
+								}
+							}
+						}
+
+					clock_t clock3 = clock ();
+					ti[3] += (clock3 - clock03);
+					clock_t clock04 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.EvaluateDirect (u, v, xyz, dXdu, dXdv);
+									}
+								}
+							}
+						}
+
+					clock_t clock4 = clock ();
+					ti[4] += (clock4 - clock04);
+					clock_t clock05 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.EvaluateDirectCompact (u, v, xyz, dXdu, dXdv);
+									}
+								}
+							}
+						}
+			
+					clock_t clock5 = clock ();
+					ti[5] += (clock5 - clock05);
+					clock_t clock06 = clock ();
+
+					for (int i = 0; i < 10; i++)
+						{
+						for (double u = 0.0; u < 1.0; u+= 0.1)
+							{
+							for (double r = 0.0; r < 1.0 - u; r+= 0.1)
+								{
+								for (double v = 0.0; v < 1.0 - u - r; v+= 0.1)
+									{
+									trianglenew.LayerTrianglesEvaluate (u, v, xyz, dXdu, dXdv);
+									}
+								}
+							}
+						}
+
+					clock_t clock6 = clock ();
+					ti[6] += (clock6 - clock06);	
+			
+			}
+		}
+	
+	t[0] = ti[0];
+
+	for (int i=1; i<7; i++)
+	{
+	t[i] = ti[i] - ti[0];
+	}
+
+	}
+
+static DPoint3d s_testPoints0 [] = 
+    {
+		{0,0,0},
+    };
+
+static DPoint3d s_testPoints1 [] = 
+    {
+		{0,0,0},
+		{1,0,0},
+		{0,3,0}
+    };
+
+static DPoint3d s_testPoints2 [] = 
+    {
+		{0,0,0},
+		{0.5,0,0},
+		{1,0,0},
+		{0,1.5,0},
+		{0.5,1.5,0},
+		{0,3,0}
+    };
+
+static DPoint3d s_testPoints3 [] = 
+    {
+		{0,0,0},
+		{1/3.0,0,0},
+		{2/3.0,0,0},
+		{1,0,0},
+		{0,1,0},
+		{1/3.0,1,0},
+		{2/3.0,1,0},
+		{0,2,0},
+		{1/3.0,2,0},
+		{0,3,0}
+    };
+
+static DPoint3d s_testPoints4 [] = 
+    {
+		{0,0,0},
+		{1/4.0,0,0},
+		{1/2.0,0,0},
+		{3.0/4.0,0,0},
+		{1,0,0},
+		{0,3.0/4.0,0},
+		{1/4.0,3.0/4.0,0},
+		{1/2.0,3.0/4.0,0},
+		{3.0/4.0,3.0/4.0,0},
+		{0,3.0/2.0,0},
+		{1/4.0,3.0/2.0,0},
+		{1/2.0,3.0/2.0,0},
+		{0,9.0/4.0,0},
+		{1/4.0,9.0/4.0,0},
+		{0,3.0,0}
+    };
+
+static DPoint3d s_testPoints2nonlin [] =
+   {
+		{0,0,0},
+		{1,0,1},
+		{2,0,0},
+		{0,1, 2},
+		{1,1,3},
+		{0,2,0}
+    };
+
+//static DPoint3d s_testPoints3deg [] = 
+//    {
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0},
+//		{0,0,0}
+//    };
+//
+
+#define runTest0_not
+#define runTest1_not
+#define PrintComparison
+#define SplitComparisonTest
+#ifdef runTest0
+TEST(BezierTriangle, TimesComp)
+    {
+	int tg[5][7];
+	DPoint3d xyz;
+	DVec3d dXdu, dXdv;
+
+	GenericBezierTriangleDPoint3d triangle0g = GenericBezierTriangleDPoint3d::GenericBezierTriangleDPoint3d (s_testPoints0, 1); 
+	GenericBezierTriangleDPoint3d triangle1g = GenericBezierTriangleDPoint3d::GenericBezierTriangleDPoint3d (s_testPoints1, 3);
+	GenericBezierTriangleDPoint3d triangle2g = GenericBezierTriangleDPoint3d::GenericBezierTriangleDPoint3d (s_testPoints2, 6); 
+	GenericBezierTriangleDPoint3d triangle3g = GenericBezierTriangleDPoint3d::GenericBezierTriangleDPoint3d (s_testPoints3, 10);
+	GenericBezierTriangleDPoint3d triangle4g = GenericBezierTriangleDPoint3d::GenericBezierTriangleDPoint3d (s_testPoints4, 15);
+	
+	TimeComp (triangle0g, tg[0], xyz, dXdu, dXdv);
+	TimeComp (triangle1g, tg[1], xyz, dXdu, dXdv);
+	TimeComp (triangle2g, tg[2], xyz, dXdu, dXdv);
+	TimeComp (triangle3g, tg[3], xyz, dXdu, dXdv);
+	TimeComp (triangle4g, tg[4], xyz, dXdu, dXdv);
+
+	for(int i=0; i<5; i++)
+		{
+		printf("\nOrder %d triangle\n",i+1);
+		printf("\nBase time\n");      
+		printf(" %d\n", tg[i][0]);
+		printf("\nEvaluateDirect elapsed time\n");      
+		printf(" %d\n", tg[i][1]);
+		printf("\nEvaluateDirect (with derivatives) elapsed time\n");     
+		printf(" %d\n", tg[i][4]);
+		printf("\nEvaluateDirectCompact elapsed time\n");      
+		printf(" %d\n", tg[i][2]);
+		printf("\nEvaluateDirectCompact (with derivatives) elapsed time\n");       
+		printf(" %d\n", tg[i][5]);
+		printf("\nDeCasteljau elapsed time\n");        
+		printf(" %d\n", tg[i][3]);
+		printf("\nDeCasteljau (with derivatives) elapsed time\n");     
+		printf(" %d\n", tg[i][6]);
+
+
+		/*printf ("\nEvaluateDirect elapsed time                         %d          %d\n", t[i][1], tg[i][1]);
+		printf ("EvaluateDirect (with derivatives) elapsed time        %d          %d\n", t[i][4], tg[i][4]);
+		printf ("\nEvaluateDirectCompact elapsed time                  %d          %d\n", t[i][2], tg[i][2]);
+		printf ("EvaluateDirectCompact (with derivatives) elapsed time %d          %d\n", t[i][5], tg[i][5]);
+		printf ("\nDeCasteljau elapsed time                            %d          %d\n", t[i][3], tg[i][3]);
+		printf ("DeCasteljau elapsed (with derivatives) time           %d          %d\n\n", t[i][6], tg[i][6]);*/
+		}
+    }
+#endif
+
+static double s_trigident1 [3][3] = 
+    {
+		{1,0,0},
+		{0,1,0},
+		{0,0,1}
+    };
+
+static double s_trigident2 [6][6] = 
+    {
+		{1,0,0,0,0,0},
+		{0,1,0,0,0,0},
+		{0,0,1,0,0,0},
+		{0,0,0,1,0,0},
+		{0,0,0,0,1,0},
+		{0,0,0,0,0,1}
+    };
+
+static double s_trigident3 [10][10] = 
+    {
+		{1,0,0,0,0,0,0,0,0,0},
+		{0,1,0,0,0,0,0,0,0,0},
+		{0,0,1,0,0,0,0,0,0,0},
+		{0,0,0,1,0,0,0,0,0,0},
+		{0,0,0,0,1,0,0,0,0,0},
+		{0,0,0,0,0,1,0,0,0,0},
+		{0,0,0,0,0,0,1,0,0,0},
+		{0,0,0,0,0,0,0,1,0,0},
+		{0,0,0,0,0,0,0,0,1,0},
+		{0,0,0,0,0,0,0,0,0,1},
+    };
+
+static double s_trigident4 [15][15] = 
+    {
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,1,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,1,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,1,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,1,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}
+    };
+
+
+
+static int s_rottrig [4][2][15] =
+	{
+	  //order 2
+	  {
+		{2,0,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+		{1,2,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}
+	  },
+	  //order 3
+	  {
+		{5,3,0,4,1,2,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+		{2,4,5,1,3,0,-1,-1,-1,-1,-1,-1,-1,-1,-1}
+	  },
+	  //order 4
+	  {
+		{9,7,4,0,8,5,1,6,2,3,-1,-1,-1,-1,-1},
+		{3,6,8,9,2,5,7,1,4,0,-1,-1,-1,-1,-1}
+	  },
+	  //order 5
+	  {
+		{14,12,9,5,0,13,10,6,1,11,7,2,8,3,4},
+		{4,8,11,13,14,3,7,10,12,2,6,9,1,5,0}
+	  },
+	};
+
+
+
+
+
+
+
+
+
+
+
+static double s_trigDset2 [6][6] = 
+    {
+		{0.5,0,0.3,0,0.2,0},
+		{0,0.7,0,0.1,0.1,0.1},
+		{0,0,0.4,0.6,0,0},
+		{0,0.7,0,0.2,0,0.1},
+		{0.9,0,0.1,0,0,0},
+		{0,0.3,0.3,0.3,0.1,0}
+    };
+
+static double s_trigDset3 [10][10] = 
+    {
+		{0,0.45,0,0.1,0.3,0,0.1,0,0,0.05},
+		{0,0.7,0,0,0,0,0.1,0.1,0,0.1},
+		{0.4,0,0,0,0,0.5,0,0,0.1,0},
+		{0.1,0,0.6,0,0,0.3,0,0,0,0},
+		{0,0,0,0,0.9,0,0.1,0,0,0},
+		{0,0.1,0,0.2,0.3,0.1,0.2,0,0.1,0},
+		{0,0,0,0,0,0,1.0,0,0,0},
+		{0.2,0,0,0.3,0.5,0,0,0,0,0},
+		{0.3,0.6,0,0,0,0,0,0,0,0.1},
+		{0,0,0,0,0,0.4,0,0,0,0.6}
+    };
+
+static DPoint3d s_o3points3D [] = 
+    {
+		{0,0,0},
+		{0.5,0,0},
+		{1,0,0},
+		{0,1.5,0},
+		{0.5,1.5,0},
+		{0,3.0,0},
+    };
+
+static DPoint3d s_o4points3D [] = 
+    {
+		{0,0,0},
+		{0.5,0,0},
+		{1,0,0},
+		{0,1.5,0},
+		{0.5,1.5,0},
+		{0,3.0,0},
+		{0,0,0},
+		{1.0,0,7.0},
+		{2.0,0,0},
+		{0,3.0,0}
+    };
+
+static double s_o3pointsD [] = 
+    {
+	0, 0.7, 0, 0.1, 0.2, 0
+    };
+
+static double s_o4pointsD [] = 
+    {
+	0, 0, 0, 0.1, 0.2, 0, 0.4, 0.3, 0, 0
+    };
+
+#ifdef runTest1
+TEST(GenericBezierTriangle, HelloWorld)
+	{
+	int np = 10;
+	GenericBezierTriangleD arr[10];
+
+	for (int i=0; i<np; i++)
+		{
+		arr[i] = GenericBezierTriangleD (s_trigDset3[i], np);
+		}
+
+	GenericBezierTriangleD triangled = GenericBezierTriangleD (s_o4pointsD, np);
+	GenericBezierTriangleDPoint3d triangle3d = GenericBezierTriangleDPoint3d (s_o4points3D, np);
+	GenericBezierTriangleOfTriangles triangleo = GenericBezierTriangleOfTriangles (arr, np);
+
+	GenericBezierTriangleD splitd[8];
+	GenericBezierTriangleDPoint3d split3d[8];
+	GenericBezierTriangleOfTriangles splito[8];
+
+	double arind [32];
+	
+	/*double xyz0 = 0;
+	DPoint3d xyz1 = DPoint3d::From (0,0,0);
+	GenericBezierTriangleD xyz2 = GenericBezierTriangleD (s_o3pointsD, 6);*/
+	
+	double points [6];
+	double scales [6];
+
+	for (int i=0; i<6; i++)
+		{
+		points[i] = (double)i;
+		scales[i] = (double)i;
+		}
+
+	double xyzd, dXdud, dXdvd;
+	xyzd = dXdud = dXdvd = 0.0;
+	DPoint3d xyz3d, dXdu3d, dXdv3d;
+	xyz3d.Zero();
+	dXdu3d.Zero ();
+	dXdv3d.Zero ();
+	GenericBezierTriangleD xyzo, dXduo, dXdvo;
+	xyzo.ZeroSafe (3);
+	dXduo.ZeroSafe (3);
+	dXdvo.ZeroSafe (3);
+
+	triangled.SymmetricSplit (splitd[0], splitd[1], splitd[2], splitd[3]);
+	triangled.SymmetricSplitDirect (splitd[4], splitd[5], splitd[6], splitd[7]);
+	triangle3d.SymmetricSplit (split3d[0], split3d[1], split3d[2], split3d[3]);
+	triangle3d.SymmetricSplitDirect (split3d[4], split3d[5], split3d[6], split3d[7]);
+	triangleo.SymmetricSplit (splito[0], splito[1], splito[2], splito[3]);
+	triangleo.SymmetricSplitDirect (splito[4], splito[5], splito[6], splito[7]);
+
+	for (int i=0; i<8; i++)
+		{
+		arind[i] = splitd[i].ControlPolygonArea ();
+		arind[8+i] = split3d[i].ControlPolygonArea ();
+		arind[16+i] = splito[i].ControlPolygonArea ();
+		}
+
+	for (int i=0; i<4; i++)
+		{
+		Check::Near (arind[i], arind[4+i], "TriangleD");
+		Check::Near (arind[8+i], arind[12+i], "Triangle3d");
+		Check::Near (arind[16+i], arind[20+i], "TriangleOfTriangles");
+		}
+
+	/*DRay3d yax, zax;
+	double pi = 3.1415926;
+
+	yax = DRay3d::FromOriginAndTarget (DPoint3d::From (0,0,0), DPoint3d::From (0,1,0));
+	zax = DRay3d::FromOriginAndTarget (DPoint3d::From (0,0,0), DPoint3d::From (0,0,1));
+	Transform transformi = Transform::FromAxisAndRotationAngle (zax, 0.3*pi);
+	Transform transformj = Transform::FromAxisAndRotationAngle (yax, 0.7*pi);
+
+	Transform transformz = Transform::FromProduct (transformj, transformi);
+
+	GenericBezierTriangleDPoint3d newTriangle1 = triangle3d.FromMultiply (transformz, triangle3d);
+
+	GenericBezierTriangleDPoint3d newt3d = triangle3d.RaiseOrder ();
+	BezierTriangleDPoint3d newt3dcheck = triangle3dcheck.RaiseOrder ();
+	GenericBezierTriangleD newtd = triangled.RaiseOrderTo (5);
+	GenericBezierTriangleOfTriangles newto = triangleo.RaiseOrder ();
+	
+	triangle3d.EvaluateDirect (0.3, 0.4, xyz3d, dXdu3d, dXdv3d);
+	triangled.EvaluateDirect (0.3, 0.4, xyzd, dXdud, dXdvd);
+	triangleo.EvaluateDirect (0.3, 0.4, xyzo, dXduo, dXdvo);*/
+
+	#define PrintComparison
+	#ifdef PrintComparison
+	printf("\n\n\n");
+	printf("-------------------------------------------------\n");
+	printf("TriangleD split: \n");
+	for (int i=0; i<4; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n");
+	printf("TriangleD split direct: \n");
+	for (int i=4; i<8; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n\n\n");
+	printf("-------------------------------------------------\n");
+	printf("TriangleDPoint3d split: \n");
+	for (int i=8; i<12; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n");
+	printf("TriangleDPoint3d split direct: \n");
+	for (int i=12; i<16; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n\n\n");
+	printf("-------------------------------------------------\n");
+	printf("TriangleOfTriangles split: \n");
+	for (int i=16; i<20; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n");
+	printf("TriangleOfTriangles split direct: \n");
+	for (int i=20; i<24; i++)
+		{
+		printf("%f  ",arind[i]);
+		}
+	printf("\n\n\n");
+	#endif
+
+	//#define SplitComparisonTest
+	#ifdef SplitComparisonTest
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+
+	np = 10;
+	GenericBezierTriangleD arrn[10];
+
+	for (int i=0; i<np; i++)
+		{
+		arrn[i] = GenericBezierTriangleD (s_trigident3[i], np);
+		}
+
+	GenericBezierTriangleOfTriangles triangle = GenericBezierTriangleOfTriangles (arrn, np);
+	GenericBezierTriangleOfTriangles triangle00, triangle10, triangle01, trianglecenter;
+
+	int ord = triangle.GetOrder ();
+
+	triangle.SymmetricSplit ( triangle00, triangle10, triangle01, trianglecenter);
+
+	int c00, c10, c01, cc;
+	c00 =
+		c10 =
+			c01 =
+				cc = 0;
+	   
+
+	printf("\n\n");
+	printf("static IndexedWeights order%dLeftWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	printf("\n");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle00.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle00.GetPole (i).GetPole (j));
+				c00++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dRightWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle10.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle10.GetPole (i).GetPole (j));
+				c10++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dTopWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle01.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle01.GetPole (i).GetPole (j));
+				c01++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dCenterWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (trianglecenter.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,trianglecenter.GetPole (i).GetPole (j));
+				cc++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("Tr00: %d points",c00);
+	printf("\n");
+	printf("Tr10: %d points",c10);
+	printf("\n");
+	printf("Tr01: %d points",c01);
+	printf("\n");
+	printf("Trce: %d points",cc);
+	printf("\n");
+
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+
+	triangle00.Zero ();
+	triangle10.Zero ();
+	triangle01.Zero ();
+	trianglecenter.Zero ();
+
+	triangle.SymmetricSplitDirect ( triangle00, triangle10, triangle01, trianglecenter);
+
+	c00 =
+		c10 =
+			c01 =
+				cc = 0;
+	   
+
+	printf("\n\n");
+	printf("static IndexedWeights order%dLeftWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	printf("\n");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle00.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle00.GetPole (i).GetPole (j));
+				c00++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dRightWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle10.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle10.GetPole (i).GetPole (j));
+				c10++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dTopWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (triangle01.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,triangle01.GetPole (i).GetPole (j));
+				c01++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("static IndexedWeights order%dCenterWeights [] =",ord);
+	printf("\n");
+	printf("    {");
+	for (int i=0; i<np; i++)
+		{
+		for (int j=0; j<np; j++)
+			{
+			if (trianglecenter.GetPole (i).GetPole (j) != 0.0)
+				{
+				printf("\n");
+				printf("        {%d,%d,%f},",i,j,trianglecenter.GetPole (i).GetPole (j));
+				cc++;
+				}
+			}
+		}
+	printf("\b \b");
+	printf("\n");
+	printf("    };");
+	printf("\n\n");
+	printf("Tr00: %d points",c00);
+	printf("\n");
+	printf("Tr10: %d points",c10);
+	printf("\n");
+	printf("Tr01: %d points",c01);
+	printf("\n");
+	printf("Trce: %d points",cc);
+	printf("\n");
+
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	printf("\n\n\n");
+	#endif
+	} 
+#endif

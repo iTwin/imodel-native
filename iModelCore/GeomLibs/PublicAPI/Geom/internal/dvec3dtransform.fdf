@@ -1,0 +1,148 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/internal/dvec3dtransform.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Returns the product of a (matrix part of a) transform times a vector.
+//! @param pResult OUT result of the multiplication.
+//! @param pTransform IN The transform
+//! @param pVector IN The known vector.
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformDVec3d
+(
+DVec3dP pResult,
+TransformCP pTransform,
+DVec3dCP pVector
+);
+
+//!
+//! @description Returns the product of a  (matrix part of a) transform transpose times a vector.
+//! @param pResult OUT result of the multiplication.
+//! @param pTransform IN The transform
+//! @param pVector IN The known vector.
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformTransposeDVec3d
+(
+DVec3dP pResult,
+TransformCP pTransform,
+DVec3dCP pVector
+);
+
+//!
+//! @description Returns the product of a  (matrix part of a) transform times a vector,
+//!           with the vector given as separate components.
+//!
+//! @param pResult OUT result of multiplication
+//! @param pTransform IN The transform
+//! @param x IN The x component of input vector
+//! @param y IN The y component of input vector
+//! @param z IN The z component of input vector
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformXYZ
+(
+DVec3dP pResult,
+TransformCP pTransform,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! @description Returns the product of a  (matrix part of a) transform transposed times a vector,
+//!           with the vector given as separate components.
+//! @param pVector OUT product vector
+//! @param pTransform IN The transform
+//! @param x IN The x component
+//! @param y IN The y component
+//! @param z IN The z component
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformTransposeXYZ
+(
+DVec3dP pResult,
+TransformCP pTransform,
+double      x,
+double      y,
+double      z
+);
+
+//!
+//! @description Returns the product of a (matrix part of a) transform times an array of vectors.
+//! @param pResultArray OUT array of n multiplication results.
+//! @param pTransform IN The transform
+//! @param pResultArray IN The array of vactors
+//! @param count IN number of vectors
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformDVec3dArray
+(
+DVec3dP pResultArray,
+TransformCP pTransform,
+DVec3dCP pVectorArray,
+int          count
+);
+
+//!
+//! @description Returns the product of a (matrix part of a) transform times an array of vectors.
+//! @param pResultArray OUT array of n multiplication results.
+//! @param pTransform IN The transform
+//! @param pResultArray IN The array of vactors
+//! @param count IN number of vectors
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_multiplyTransformTransposeDVec3dArray
+(
+DVec3dP pResultArray,
+TransformCP pTransform,
+DVec3dCP pVectorArray,
+int          count
+);
+
+//!
+//! @description Extracts a column of the matrix part of a transform
+//!   Note that this addresses only the matrix part.
+//! @param pVector OUT the vector
+//! @param pTransform IN The transform
+//! @param col IN column index. Columns are numbered 0,1,2.  Others
+//!        indices are reduced cyclically.
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_fromTransformColumn
+(
+DVec3dP pVector,
+TransformCP pTransform,
+int         col
+);
+
+//!
+//! @description Extracts the translation part of the transform as a vector
+//! @param pVector OUT the vector
+//! @param pTransform IN The transform
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_fromTransformTranslation
+(
+DVec3dP pVector,
+TransformCP pTransform
+);
+
+//!
+//! @description Extracts a row of the matrix part of a transform.
+//! @param pVector OUT the vector
+//! @param pTransform IN The transform
+//! @param row IN row index. Rows are numbered 0,1,2.  Others
+//!        indices are reduced cyclically.
+//!
+Public GEOMDLLIMPEXP void bsiDVec3d_fromTransformRow
+(
+DVec3dP pVector,
+TransformCP pTransform,
+int            row
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

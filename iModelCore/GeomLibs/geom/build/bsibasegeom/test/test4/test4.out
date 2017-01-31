@@ -1,0 +1,391 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest4.exe
+// MS1ABC
+    DPoint3d pointA = {155768.88699999999, 387582.03800000000,      0.00000000000};
+    DPoint3d pointB = {156068.11300000001, 387713.59399999998,      0.00000000000};
+    DPoint3d pointC = {155967.51100000000, 387889.00300000003,      0.00000000000};
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.91038304567337e-011
+    double bestDist =  2.91038304567337e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.83852563232356e-003
+    int maxTest = 101
+    int numTest = 0
+
+ 001     double centerShift =  7.99023905063601e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  3.03431721438851e-004
+    double bestDist =  3.03431721438851e-004
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 101
+    int numTest = 0
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.91038304567337e-011
+    double bestDist =  2.91038304567337e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.83852563232356e-003
+    int maxTest = 1001
+    int numTest = 0
+
+ 001     double centerShift =  7.99023905063601e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  3.03431721438851e-004
+    double bestDist =  3.03431721438851e-004
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 1001
+    int numTest = 0
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.91038304567337e-011
+    double bestDist =  2.91038304567337e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.83852563232356e-003
+    int maxTest = 10001
+    int numTest = 0
+
+ 001     double centerShift =  7.99023905063601e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  3.03431721438851e-004
+    double bestDist =  3.03431721438851e-004
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 10001
+    int numTest = 0
+    DPoint3d centerABC = {155884.60855549388, 387724.90257433942,      0.00000000000};
+// MS1AB1C
+    DPoint3d pointB1 = {156038.96577533722, 387625.02458032005,      0.00000000000};
+    DPoint3d centerAB1C = {155884.60855549385, 387724.90257433942,      0.00000000000};
+// MS1ADC
+    DPoint3d pointD = {156038.96599999999, 387625.02500000002,      0.00000000000};
+    DPoint3d centerADC = {155884.60852561588, 387724.90259367216,      0.00000000000};
+    double Radius_ABC           =  1.83852563232356e+002
+    double distance_ABCCenter_B =     183.85252386186477, -0.00003937049124
+    double Radius_AB1C          =     183.85256323233767, -0.00000000001833
+    double distance_ABCCenter_D =     183.85252386186477, -0.00003937049124
+    double distance_ADCCenter_B =     183.85259424288122, 0.00003101052522
+    double Radius_ADC           =     183.85255944909088, -0.00000378326513
+    double  Sweep_ABC  =  3.35461311088656e+000
+    double  dRadius_dMidCoord =  8.07813253351373e-001
+// MS2ABC
+    DPoint3d pointA = {155562.52499999999, 387685.21999999997,      0.00000000000};
+    DPoint3d pointB = {155964.93200000000, 387961.22999999998,      0.00000000000};
+    DPoint3d pointC = {156284.79399999999, 388167.59200000000,      0.00000000000};
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  9.65082535221805e-008
+    double bestDist =  9.65082535221805e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53833091203042e-001
+    int maxTest = 101
+    int numTest = 0
+
+ 001     double centerShift =  6.97504793316081e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  1.30672206370071e-001
+    double bestDist =  5.73114149653935e-003
+    double ratio =  4.38589173301966e-002
+    double bestFraction =  5.02000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 101
+    int numTest = 61
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  9.65082535221805e-008
+    double bestDist =  9.65082535221805e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53833091203042e-001
+    int maxTest = 1001
+    int numTest = 0
+
+ 001     double centerShift =  6.97504793316081e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  1.30672206370071e-001
+    double bestDist =  3.59116718901680e-003
+    double ratio =  2.74822572356849e-002
+    double bestFraction =  4.90100000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 1001
+    int numTest = 6
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  9.65082535221805e-008
+    double bestDist =  9.65082535221805e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53833091203042e-001
+    int maxTest = 10001
+    int numTest = 0
+
+ 001     double centerShift =  6.97504793316081e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  1.30672206370071e-001
+    double bestDist =  3.59116718901680e-003
+    double ratio =  2.74822572356849e-002
+    double bestFraction =  4.90100000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 10001
+    int numTest = 51
+    DPoint3d centerABC = {164463.91333512671, 375138.84661172138,      0.00000000000};
+// MS2AB1C
+    DPoint3d pointB1 = {155920.25450210951, 387931.50439796125,      0.00000000000};
+    DPoint3d centerAB1C = {164463.91333507313, 375138.84661180165,      0.00000000000};
+// MS2ADC
+    DPoint3d pointD = {155920.25399999999, 387931.50400000002,      0.00000000000};
+    DPoint3d centerADC = {164463.98590850749, 375138.73794558167,      0.00000000000};
+    double Radius_ABC           =  1.53833091203042e+004
+    double distance_ABCCenter_B =   15383.30906822644100, -0.00005207778122
+    double Radius_AB1C          =   15383.30912020775400, -0.00000009646828
+    double distance_ABCCenter_D =   15383.30906822644100, -0.00005207778122
+    double distance_ADCCenter_B =   15383.43979171554200, 0.13067141131978
+    double Radius_ADC           =   15383.43974043281200, 0.13062012858973
+    double  Sweep_ABC  =  5.64671531613337e-002
+    double  dRadius_dMidCoord =  5.01730491991129e+003
+// MS3ABC
+    DPoint3d pointA = {156186.77100000001, 387899.32100000000,      0.00000000000};
+    DPoint3d pointB = {156393.13399999999, 388064.41100000002,      0.00000000000};
+    DPoint3d pointC = {156692.35999999999, 388131.47899999999,      0.00000000000};
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  6.50781433068853e-011
+    double bestDist =  6.50781433068853e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  6.33959158852640e-003
+    int maxTest = 101
+    int numTest = 0
+
+ 001     double centerShift =  1.28959102375890e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.39734600825543e-003
+    double bestDist =  2.39734600825543e-003
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 101
+    int numTest = 0
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  6.50781433068853e-011
+    double bestDist =  6.50781433068853e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  6.33959158852640e-003
+    int maxTest = 1001
+    int numTest = 0
+
+ 001     double centerShift =  1.28959102375890e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.39734600825543e-003
+    double bestDist =  2.39734600825543e-003
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 1001
+    int numTest = 0
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  6.50781433068853e-011
+    double bestDist =  6.50781433068853e-011
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  6.33959158852640e-003
+    int maxTest = 10001
+    int numTest = 0
+
+ 001     double centerShift =  1.28959102375890e-004
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  2.39734600825543e-003
+    double bestDist =  2.39734600825543e-003
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 10001
+    int numTest = 0
+    DPoint3d centerABC = {156677.28508170543, 387497.69909977313,      0.00000000000};
+// MS3AB1C
+    DPoint3d pointB1 = {156412.73842463488, 388073.82346249872,      0.00000000000};
+    DPoint3d centerAB1C = {156677.28508170540, 387497.69909977319,      0.00000000000};
+// MS3ADC
+    DPoint3d pointD = {156412.73800000001, 388073.82299999997,      0.00000000000};
+    DPoint3d centerADC = {156677.28608210091, 387497.69692113210,      0.00000000000};
+    double Radius_ABC           =  6.33959158852640e+002
+    double distance_ABCCenter_B =     633.95891574410336, -0.00024310853701
+    double Radius_AB1C          =     633.95915885258091, -0.00000000005946
+    double distance_ABCCenter_D =     633.95891574410336, -0.00024310853701
+    double distance_ADCCenter_B =     633.96155478814876, 0.00239593550839
+    double Radius_ADC           =     633.96131309011423, 0.00215423747386
+    double  Sweep_ABC  =  9.08491339528323e-001
+    double  dRadius_dMidCoord =  1.87223628345641e+001
+// MS2ABC
+    DPoint3d pointA = {155562.52527255387, 387685.22032018349,      0.00000000000};
+    DPoint3d pointB = {155964.93252854430, 387961.23729812907,      0.00000000000};
+    DPoint3d pointC = {156284.79445825436, 388167.59283234261,      0.00000000000};
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  8.23501252846323e-008
+    double bestDist =  8.23501252846323e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53693472621955e-001
+    int maxTest = 101
+    int numTest = 0
+
+ 001     double centerShift =  6.03468448272777e-004
+    double startShift =  4.20479612211658e-004
+    double endShift =  9.50153285533091e-004
+    double baseDist =  5.01646343387973e-001
+    double bestDist =  7.49428580579487e-003
+    double ratio =  1.49393809096278e-002
+    double bestFraction =  5.07800000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 101
+    int numTest = 90
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  8.23501252846323e-008
+    double bestDist =  8.23501252846323e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53693472621955e-001
+    int maxTest = 1001
+    int numTest = 0
+
+ 001     double centerShift =  6.03468448272777e-004
+    double startShift =  4.20479612211658e-004
+    double endShift =  9.50153285533091e-004
+    double baseDist =  5.01646343387973e-001
+    double bestDist =  8.20591823569351e-003
+    double ratio =  1.63579747841340e-002
+    double bestFraction =  4.94380000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 1001
+    int numTest = 220
+
+ FLOAT     double centerShift =  0.00000000000000e+000
+    double startShift =  0.00000000000000e+000
+    double endShift =  0.00000000000000e+000
+    double baseDist =  8.23501252846323e-008
+    double bestDist =  8.23501252846323e-008
+    double ratio =  1.00000000000000e+000
+    double bestFraction =  5.00000000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.53693472621955e-001
+    int maxTest = 10001
+    int numTest = 0
+
+ 001     double centerShift =  6.03468448272777e-004
+    double startShift =  4.20479612211658e-004
+    double endShift =  9.50153285533091e-004
+    double baseDist =  5.01646343387973e-001
+    double bestDist =  6.38827298263923e-003
+    double ratio =  1.27346148673081e-002
+    double bestFraction =  4.90082000000000e-001
+    double f0 =  5.10000000000000e-001
+    double f1 =  4.90000000000000e-001
+    double centerTol =  1.00000000000000e-002
+    int maxTest = 10001
+    int numTest = 42
+    DPoint3d centerABC = {164456.16114428596, 375150.46558596566,      0.00000000000};
+// MS2AB1C
+    DPoint3d pointB1 = {155920.25176776128, 387931.50961146347,      0.00000000000};
+    DPoint3d centerAB1C = {164456.16114433174, 375150.46558589721,      0.00000000000};
+// MS2ADC
+    DPoint3d pointD = {155920.25399999999, 387931.50400000002,      0.00000000000};
+    DPoint3d centerADC = {164464.38468656514, 375138.15225749876,      0.00000000000};
+    double Radius_ABC           =  1.53693472621955e+004
+    double distance_ABCCenter_B =   15369.34135598835700, -0.00590620713228
+    double Radius_AB1C          =   15369.34726227780800, 0.00000008231837
+    double distance_ABCCenter_D =   15369.34135598835700, -0.00590620713228
+    double distance_ADCCenter_B =   15384.15408612777400, 14.80682393228381
+    double Radius_ADC           =   15384.14827010141200, 14.80100790592223
+    double  Sweep_ABC  =  5.65184914030227e-002
+    double  dRadius_dMidCoord =  5.00819296984574e+003
+Exit with 0 errors, 0 OK

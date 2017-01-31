@@ -1,0 +1,11 @@
+PRIMITIVE SolidBySweptSurface
+<def name=SUMMARY>A sweep operation involving base surface and a trace curve.
+</def>
+<def name=Interface_BaseList>IGeometry, ISolid</def>
+
+
+<def name=MEMBERS><child ItemType=ISurface ItemTagName=BaseGeometry ItemSemanticName=BaseGeometry ItemParamName=baseGeometry ItemMemberName=mBaseGeometry ItemDescription="Surface being swept." ScaleMode=Container/>
+<child ItemType=ICurve ItemTagName=RailCurve ItemSemanticName=RailCurve ItemParamName=railCurve ItemMemberName=mRailCurve ItemDescription="Curve definining sweep path." ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

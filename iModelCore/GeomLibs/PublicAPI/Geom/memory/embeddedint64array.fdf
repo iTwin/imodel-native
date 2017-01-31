@@ -1,0 +1,330 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/memory/embeddedint64array.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/**
+* Allocate a new header from the system heap.
+* @return pointer to the header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedInt64Array *jmdlEmbeddedInt64Array_new
+(
+void
+);
+
+/**
+* Initialize a given EmbeddedInt64Array header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlEmbeddedInt64Array_init
+(
+EmbeddedInt64Array     *pHeader
+);
+
+/**
+* Free both the header and is associated memory.
+* @return always null.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedInt64Array *jmdlEmbeddedInt64Array_free
+(
+EmbeddedInt64Array *pHeader
+);
+
+/**
+* @param pHeader
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlEmbeddedInt64Array_empty
+(
+EmbeddedInt64Array *pHeader
+);
+
+/**
+* Release all memory attached to the header, and reinitialize the header
+* as an empty array with no buffer.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlEmbeddedInt64Array_releaseMem
+(
+EmbeddedInt64Array *pHeader
+);
+
+/**
+* Grab (borrow) an array from the cache.
+* @return pointer to the borrowed header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedInt64Array *jmdlEmbeddedInt64Array_grab
+(
+void
+);
+
+/**
+* Drop (return) an array to the cache.
+* @return always returns null.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedInt64Array *jmdlEmbeddedInt64Array_drop
+(
+EmbeddedInt64Array     *pHeader
+);
+
+/**
+* Swap the contents (counts and associated memory) of two headers.
+* @param pHeader0 IN OUT  first array header
+* @param pHeader1 IN OUT  second array header
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlEmbeddedInt64Array_swapContents
+(
+EmbeddedInt64Array     *pHeader0,
+EmbeddedInt64Array     *pHeader1
+);
+
+/**
+* Ensure the buffer is at least a specified minimum size.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_ensureCapacity
+(
+EmbeddedInt64Array     *pHeader,
+int                 n
+);
+
+/**
+* Reallocate the buffer to accommodate exactly n values.
+* NOTE: this will truncate the contents of this instance if its count is
+* greater than n.
+*
+* @param    n       Number of values to accommodate, no more, no less.
+* @return false if unable to reallocate the buffer.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_setExactBufferSize
+(
+EmbeddedInt64Array     *pHeader,
+int                 n
+);
+
+/**
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlEmbeddedInt64Array_getCount
+(
+const EmbeddedInt64Array *pHeader
+);
+
+/**
+* Add an Int64 to the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_addInt64
+(
+EmbeddedInt64Array     *pHeader,
+const int64_t           value
+);
+
+/**
+* Insert at specified position, shifting others to higher positions as needed.
+* @param pIn IN      data to insert.
+* @param index IN      index at which the value is to appear in the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_insertInt64
+(
+        EmbeddedInt64Array         *pHeader,
+const   int64_t                 value,
+        int                     index
+);
+
+/**
+* @param pHeader IN OUT  header of array receiveing values
+* @param pIn IN      array of data to add
+* @param n IN      number of values to add
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlEmbeddedInt64Array_addInt64Array
+(
+      EmbeddedInt64Array   *pHeader,
+const int64_t              *pIn,
+      int                   n
+);
+
+/**
+* @param pHeader IN OUT  header of array receiveing data
+* @param pIn IN      array of values to add
+* @param index IN      index location for adding the array
+* @param n IN      number of valuess to add
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_insertInt64Array
+(
+      EmbeddedInt64Array       *pHeader,
+const int64_t            *pIn,
+      int                   index,
+      int                   n
+);
+
+/**
+* Copy up to nreq values out of the array into a buffer.
+* @param pBuffer OUT     buffer of values.
+* @nGot   nGot OUT     number of values placed in buffer.
+* @i0 IN      index of first value to access.
+* @nreq IN      number of values requested.
+* @return true if at least one value was returned.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlEmbeddedInt64Array_getInt64Array
+(
+const EmbeddedInt64Array   *pHeader,
+int64_t              *pBuffer,
+int                     *nGot,
+int                     i0,
+int                     nreq
+);
+
+/**
+* Get a value from a specified index.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlEmbeddedInt64Array_getInt64
+(
+const EmbeddedInt64Array   *pHeader,
+int64_t                 *pValue,
+int                     index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Drop a contiguous block of int64_t.  Copy higher indices back down.
+*
+* @param pHeader    IN OUT  array to modify.
+* @param index      IN      position of first dropped int64_t.
+* @param nDrop      IN      number of int64_t to drop.
+* @return true if operation is successful
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedInt64Array_dropRange
+(
+EmbeddedInt64Array   *pHeader,
+int                     index,
+int                     nDrop
+);
+
+/**
+* Store a value at specified index.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlEmbeddedInt64Array_setInt64
+(
+EmbeddedInt64Array     *pHeader,
+int64_t                 value,
+int                     index
+);
+
+/**
+* Add n uninitialized int64s to the array.
+* @param pHeader IN OUT  array from which to get block
+* @param n IN      number of entries requested
+* @return Temporary pointer to block.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int64_t *jmdlEmbeddedInt64Array_getBlock
+(
+EmbeddedInt64Array *pHeader,
+int             n
+);
+
+/**
+* @param pHeader source array
+* @param pOut Packed output data
+* @param maxOut output array limit
+* @param pIndex index array
+* @param int            nIndex               number of vertices
+* @return number of succesful dereferences.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlEmbeddedInt64Array_getIndexedInt64Array
+(
+const   EmbeddedInt64Array *pHeader,
+        int64_t             *pOut,
+        int                 maxOut,
+        int                 *pIndex,
+        int                 nIndex
+);
+
+/**
+* Get a pointer to a position in the array.  This pointer may become invalid
+* due to modifications of the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int64_t* jmdlEmbeddedInt64Array_getPtr
+(
+EmbeddedInt64Array *pHeader,
+      int        index
+);
+
+/**
+* Get a pointer to a position in the array.  This pointer may become invalid
+* due to modifications of the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP const int64_t* jmdlEmbeddedInt64Array_getConstPtr
+(
+const EmbeddedInt64Array *pHeader,
+      int        index
+);
+
+/**
+* @param pHeader
+* @param index1
+* @param index2
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlEmbeddedInt64Array_swapValues
+(
+EmbeddedInt64Array *pHeader,
+int             index1,
+int             index2
+);
+
+/**
+* @param pDestHeader
+* @param pSourceHeader
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlEmbeddedInt64Array_copy
+(
+EmbeddedInt64Array *pDestHeader,
+const EmbeddedInt64Array *pSourceHeader
+);
+
+/**
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlEmbeddedInt64Array_sort
+(
+EmbeddedInt64Array *pDestHeader
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE

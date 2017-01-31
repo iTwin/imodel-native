@@ -1,0 +1,734 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_properties.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Get a plane which contains the geometry.  If geometry is non-planar, plane
+* is arbitrary but may be close.
+* @param pTransform OUT     transformation whose xy plane is the plane of the geometry.
+* @param pMaxDist OUT     maximum distance to plane.
+* @param pDefaultNormal IN      reference direction to use if data is colinear.
+*               The computed normal in this case is
+*                   (lineDirection cross defaultNormal) cross defaultNormal
+*               i.e the default normal is strictly a default vector in the plane of the
+*               line and the normal.
+* @param pRange OUT     optional range of points considered.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPlaneAsDTransform3dExt2
+(
+GraphicsPointArrayCP pSource,
+      DTransform3d              *pTransform,
+      double                    *pMaxDist,
+      DPoint3dCP                 pDefaultNormal,
+      DRange3dP                 pRange
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get a plane which contains the geometry.  If geometry is non-planar, plane
+* is arbitrary but may be close.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPlaneAsDTransform3d
+(
+GraphicsPointArrayCP pSource,
+      DTransform3d              *pTransform
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get a transform whose xy plane contains the geometry.
+If geometry is non-planar, plane is arbitrary but may be close.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPlaneAsTransformExt2
+(
+GraphicsPointArrayCP pSource,
+      TransformP                pTransform,
+      double                    *pMaxDist,
+      DPoint3dCP                 pDefaultNormal,
+      DRange3dP                 pRange
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get a plane which contains the geometry.  If geometry is non-planar, plane
+* is arbitrary but may be close.
+* @param pTransform OUT     transformation whose xy plane is the plane of the geometry.
+* @param pMaxDist OUT     maximum distance to plane.
+* @param pDefaultNormal IN      reference direction to use if data is colinear.
+*               The computed normal in this case is
+*                   (lineDirection cross defaultNormal) cross defaultNormal
+* i.e the default normal is strictly a default vector in the plane of the
+*               line and the normal.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPlaneAsDTransform3dExt
+(
+GraphicsPointArrayCP pSource,
+      DTransform3d              *pTransform,
+      double                    *pMaxDist,
+      DPoint3d                  *pDefaultNormal
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Compute tangent, outward normal, and upward normal vectors at GraphicsPoint.
+@param point OUT point on curve
+@param xDir OUT forward unit vector on curve
+@param yDir OUT perpendicular unit vector
+@param zDir OUT normal to plane of curve (see note below ....)
+@param i0 IN primitive index.
+@param fraction IN fractional parameter within primitive
+@param defaultZ IN z vector to apply when primitive is a line and GPA is non planar
+@returns true if the curve has a good tangent.
+@bsimethod                                                    BentleySystems  03/2006
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_primitiveFractionToFrenetFrame
+(
+GraphicsPointArrayCP    pGPA,
+DPoint3d*                pXYZ, /* OUT     point on curve */
+DVec3d*                  pUnitX,  /* OUT     tangent */
+DVec3d*                  pUnitY,  /* OUT     in-plane */
+DVec3d*                  pUnitZ,  /* OUT     outward normal */
+double*                  pTangentMagnitude,
+int                     i0,     /* IN      primitive index */
+double                  fraction,   /* IN      fraction within primitive */
+DVec3d const*          pDefaultZ    /* Z to use for nonplanar GPA */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get a plane which contains the geometry.  If geometry is non-planar, plane
+* is arbitrary but may be close.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getDPlane3d
+(
+GraphicsPointArrayCP pSource,
+      DPlane3d                  *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Return the highest order required for curves in the array.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_getHighestBezierOrder
+(
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Return the minimum and maximum component value (any xyz) and the minimum and maximum weight.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getComponentRanges
+(
+GraphicsPointArrayCP pSource,
+      double *pxyzMin,
+      double *pxyzMax,
+      double *pwMin,
+      double *pwMax
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute tolerances for xyz and w parts of the graphics point array.
+* The xyz tolerance is absTol + relTol * (fabs(xyzmax) + fabs (xyzmin))
+* The w tolerance is absTol + relTol * (fabs(wmax) + fabs (wmin))
+*  where the min and max values are obtained by scanning the array.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getTolerances
+(
+GraphicsPointArrayCP pSource,
+      double *pxyzTol,
+      double *pwTol,
+      double xyzAbsTol,
+      double xyzRelTol,
+      double wAbsTol,
+      double wRelTol
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute the total length of the curves in the array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double   jmdlGraphicsPointArray_getLength
+(
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute a quick approximation to the total length of the curves in the array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double   jmdlGraphicsPointArray_getQuickLength
+(
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get the centroid of the path in the array.  This is defined only in terms of the paths,
+* so it is a computable property even if the array has dangling paths.
+* If the path is a closed path and is symmetric about a point, that point will be
+* the centroid, and this result will look like the area centroid.  If the path
+* is closed but has no symmetry, the result will be centrally located, but may
+* be different from the area centroid.  For instance, imagine a rectangle with one
+* edge replaced by a curved path which wiggles very rapidly within a small distance
+* of the original edge.  The area centroid will be changed very little, but the
+* path centroid is shifted more strongly towards the added arc length in oscillating portion.
+*
+* @param bFixedZ IN If true, compute with fixed z. This affects the apparent length.
+* @param zFix IN z coordinate for optional fixed-z mode.
+* @param bFixedZ IN If true, compute with projection of the geoemtry onto this z plane.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPathCentroidExt
+(
+GraphicsPointArrayCP pSource,
+      DPoint3d                  *pCentroid,
+      double                    *pArcLength,
+      bool                      bFixedZ,
+      double                    fixedZ
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get the products of x,y,z, xx, xy, xz, yy, yz of the path in the array,
+*       measured relative to specified origin.
+* @param pXMoments OUT integrals of x,y,z dr
+* @param pXXMoments OUT integrals of r^2-xx,xy,xz etc. (symmetric)
+* @param pOrigin IN origin for moment calculations.  This is NOT an optional argument.
+* @param bFixedZ IN If true, compute with projection of geometry onto z plane of the origin.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPathProducts
+(
+GraphicsPointArrayCP pSource,
+      double                    *pArcLength,
+      DPoint3d                  *pXMoments,
+      RotMatrix                 *pXXMoments,
+const DPoint3d                  *pOrigin,
+      bool                      bFixedZ
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute centroid of a path, treated strictly as a wire -- not an area boundary.
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getPathCentroid
+(
+GraphicsPointArrayCP pSource,
+      DPoint3d                  *pCentroid,
+      double                    *pArcLength
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute the centroid of the xy projection of the curves
+* @param pCx        IN      x coordinate of centroid.
+* @param pCy        IN      y coordinate of centroid.
+* @param pArea      IN      area.
+* The calculation is specifically defined as
+*    (mx,my) = integral ( x (x dy - y dx), y (x dy - y dx) )
+*    area    = integral ( x dy - y dx)
+*    (cx,cy) = (mx,my) / area
+*
+* There is no test for whether the gpa is closed, planar, or nonintersecting,
+* Interpretation of results is therefore at callers' risk.
+*
+* @bsimethod                                                    BentleySystems  05/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getXYCentroid
+(
+GraphicsPointArrayCP pSource,
+      double                    *pCx,
+      double                    *pCy,
+      double                    *pArea
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute the best plane containing the geometry.   Compute centroid and area of projection
+*       into that plane.
+* @param pLocalToWorld  OUT     transformation from plane to world.
+* @param pWorldToLocal  OUT     transformation from world to plane
+* @param pCentroid      OUT     (world) centroid
+* @param pArea          OUT     area as projected in the plane.
+* @bsimethod                                                    BentleySystems  05/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getCentroid
+(
+GraphicsPointArrayCP pSource,
+      DTransform3d              *pLocalToWorld,
+      DTransform3d              *pWorldToLocal,
+      double                    *pMaxDeviation,
+      DPoint3d                  *pCentroid,
+      double                    *pArea
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute the best plane containing the geometry.   Compute centroid and area of projection
+*       into that plane.
+* @param pLocalToWorld  <= transformation from plane to world.
+* @param pWorldToLocal  <= transformation from world to plane
+* @param pCentroid      <= (world) centroid
+* @param pArea          <= area as projected in the plane.
+* @remarks This is the Transform equivalent of _getCentroid (which has DTransform3d parameters)
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getCentroidAndTransforms
+(
+GraphicsPointArrayCP pSource,
+      TransformP                pLocalToWorld,
+      TransformP                pWorldToLocal,
+      double                    *pMaxDeviation,
+      DPoint3d                  *pCentroid,
+      double                    *pArea
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* Compute the centroid of the xy projection of the curves
+* @param pCx        IN      x coordinate of centroid.
+* @param pCy        IN      y coordinate of centroid.
+* @param pArea      IN      area.
+* The calculation is specifically defined as
+*    (mx,my) = integral ( x (x dy - y dx), y (x dy - y dx) )
+*    area    = integral ( x dy - y dx)
+*    (cx,cy) = (mx,my) / area
+*
+* @param readIndex  IN      start with primitive "after" this index.
+*
+* There is no test for whether the gpa is closed, planar, or nonintersecting,
+* Interpretation of results is therefore at callers' risk.
+*
+* @bsimethod                                                    BentleySystems  05/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_getXYCentroidToMajorBreak
+(
+GraphicsPointArrayCP pSource,
+      double                    *pCx,
+      double                    *pCy,
+      double                    *pArea,
+      int                       readIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Computes the solid angle subtended by the (presumably closed
+* non-selfintersecting)* shape in the GPA.
+* There is no test for whether the gpa is closed and nonintersecting,
+* Interpretation of results is therefore at callers' risk.
+*
+* @bsimethod                                                    BentleySystems  05/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_solidAngle
+(
+GraphicsPointArrayCP pSource,
+      double                    *pTheta,
+      DPoint3d                  *pEyePoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Integrate under known functions to test integration logic.
+* @param
+* @return
+* @bsimethod                                                    BentleySystems  05/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlMath_testIntegrals
+(
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute points at indicated spacings along the path and add them to the destination array.
+*
+*
+* @param pDest OUT     array to receive points
+* @param pSource IN      array of path geoemtry.
+* @param pDistanceArray IN      array of distances between successive points.  All must be
+*                       positive.    The start point of the curve is NOT output unless
+*                       pDistanceArray[0] is zero.
+* @param numDist IN      number of distances
+* @param tolerance IN      relative tolerance.   If 0 is entered, a fairly crude tolerance
+*                       is used.
+* @param maxTangentChange IN      NOT USED.
+* @param storeTangent   IN      if true, each point is followed by the curve tangent.
+* @param
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addSpacedPoints
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   double                  *pDistanceArray,
+        int                     numDist,
+        double                  tolerance,
+        double                  maxTangentChange,
+        bool                    storeTangent
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute a single point at specified distance from start.
+* @param
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_pointAtDistance
+(
+GraphicsPointArray  *pSource,
+DPoint3d                *pPoint,
+double                  distance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute a single point at specified distance from start.
+* @param
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_primitiveFractionAtDistance
+(
+GraphicsPointArray  *pSource,
+int                     *pPrimitiveIndex,
+double                  *pFraction,
+DPoint3d                *pPoint,
+double                  distance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Scan the GPA and assign parameter ("a") values to start and end points of each
+*  primitive.
+*           Linestrings are 0 at first vertex, 1 at last, uniformly spaced
+*                   in between.
+*           Arcs are ALWAYS 0 to 1.
+*           Contiguous bezier chunks with exactly matching end/start points
+*                   are 0 to 1 over the entire range with uniform space per bezier.
+*                   Beware that if the beziers came from a general NURBS curve
+*                   these might NOT correspond to the original knots.
+* @param pGPA IN OUT  array to update.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_setApplicationParameters
+(
+GraphicsPointArray  *pGPA
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop perpendiculars to all curves in the array.
+* @param pDest OUT     array to receive perpendicular points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPoint IN      space point to be projected.  Note that a point with weight 0 is valid --
+*           the points computed are the extrema of the geometry projected onto the direction
+*           in the xyz part of the point.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addPerpendicularsFromDPoint4d
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint4d                *pPoint,
+        int                     workDimension
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop perpendiculars to all curves in the array.  Search for the closest.
+* @param pSource IN      array of path geoemtry.
+* @param pProx OUT     proximity data for closest point.
+*               Contains point, primitive index, and paramter of closest point.
+* @param pPoint IN      space point to be projected.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @param extend IN      true to test on unbounded geometry
+* @param testEndPoints IN      true to also test at endpoints.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_closestPointExt
+(
+GraphicsPointArrayCP pSource,
+        ProximityData           *pProx,
+        ProximityData           *pEndPointProx,
+const   DPoint3d                *pPoint,
+        int                     workDimension,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop perpendiculars to all curves in the array.  Search for the closest.
+* @param pSource IN      array of path geoemtry.
+* @param pProx OUT     proximity data for closest point.
+*               Contains point, primitive index, and paramter of closest point.
+* @param pPoint IN      space point to be projected.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @param extend IN      true to test on unbounded geometry
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_closestPoint
+(
+GraphicsPointArrayCP pSource,
+        ProximityData           *pProx,
+const   DPoint3d                *pPoint,
+        int                     workDimension,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop tangents to all curves in the array.
+* @param pDest OUT     array to receive perpendicular points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPoint IN      space point to be projected.  Note that a point with weight 0 is valid --
+*           the points computed are the extrema of the geometry projected onto the direction
+*           in the xyz part of the point.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addTangentsFromDPoint4d
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint4d                *pPoint,
+        int                     workDimension
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop perpendiculars to all curves in the array.
+* @param pDest OUT     array to receive perpendicular points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPoint IN      space point to be projected.  Note that a point with weight 0 is valid --
+*           the points computed are the extrema of the geometry projected onto the direction
+*           in the xyz part of the point.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @param extend IN      true to use unbounded (extended) geometry when possible.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addPerpendicularsFromDPoint4dExt
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint4d                *pPoint,
+        int                     workDimension,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute points of simple intersection with a plane.  Accumulate points
+* in destination.
+* @param pDest OUT     array to receive intersection points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPlaneCoffs IN      homogeneous coefficients of plane.
+* @param extend IN      true to use unbounded (extended) geometry when possible.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPlane4dIntersectionPoints
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint4d                *pPlaneCoffs,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute points of simple intersection with a plane.  Accumulate points
+* in destination.
+* @param pDest OUT     array to receive intersection points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPlane IN      point-origin form of plane.
+* @param extend IN      true to use unbounded (extended) geometry when possible.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPlane3dIntersectionPoints
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPlane3d                *pPlane,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop tangents to all curves in the array.
+* @param pDest OUT     array to receive perpendicular points (with primitive and parameter in
+*                       source array).
+* @param pSource IN      array of path geoemtry.
+* @param pPoint IN      space point to be projected.  Note that a point with weight 0 is valid --
+*           the points computed are the extrema of the geometry projected onto the direction
+*           in the xyz part of the point.
+* @param workDimension IN      2 for xyw parts only, 3 for xyzw.
+* @param extend IN      true to use unbounded (extended) geometry when possible.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addTangentsFromDPoint4dExt
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint4d                *pPoint,
+        int                     workDimension,
+        bool                    extend
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search pSource for points of specified discontinuity.
+* Optionally ignore points too distant from a given point.
+* @param pDest IN      write data to here.
+* @param pSource IN      read data from here.
+* @param pRefPoint IN      optional reference point for distance calculations.   If
+*           null, all discontinuity points are appended to the destination.
+* @param hitRadius IN      radius to use with pRefPoint.  Ignored if pRefPoint is null or
+*               hitRadius is negative.
+* @param workDimension IN      2 for xy only, 3 for xyz.
+* @param pointTolerance IN      tolerance to consider two consecutive endpoints identical.
+*           Tolerance -2 means copy all primitive start and end points (including
+*           intermediate points of linestrings) without computed distance test.
+*           Tolerance -1 < e < 0 means compute the tolerance as e times the
+*           range of the points in the array.
+* @param angleTolerance IN      tolerance (radians) to consider incoming and outgoing tangents
+*           at a common point different.  Negative means no tangent test.
+* @bsimethod                                                    BentleySystems  05/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDiscontinuityPoints
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint3d                *pRefPoint,
+        double                  hitRadius,
+        int                     workDimension,
+        double                  pointTolerance,
+        double                  angleTolerance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find the vertex which is closest to a given point.  All points in the GPA
+* are considered as isolated vertices, not parts of curve definitions.
+* This function is intended to be used as a post-process to search
+* arrays of points returned by other functions.
+* @param pGP OUT     complete point record.
+* @param pPoint IN      base point for distance computations.
+* @param workDimension IN      2 or 3.
+* @return index of closest point; -1 if empty array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int             jmdlGraphicsPointArray_closestVertexExt
+(
+GraphicsPointArrayCP pSource,
+      GraphicsPoint                 *pGP,
+const DPoint3d                      *pPoint,
+      int                           workDimension
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find the vertex which is closest to a given point.  All points in the GPA
+* are considered as isolated vertices, not parts of curve definitions.
+* This function is intended to be used as a post-process to search
+* arrays of points returned by other functions.
+* @param pGP OUT     complete point record.
+* @param pPoint IN      base point for distance computations.
+* @return index of closest point; -1 if empty array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int             jmdlGraphicsPointArray_closestVertex
+(
+GraphicsPointArrayCP pSource,
+      GraphicsPoint                 *pGP,
+const DPoint3d                      *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find the discontinuities "before" and "after" a specified primitive.
+* @param pIndex0 OUT     index of start primitive.
+* @param pIndex1 OUT     index of end primitive.
+* @param *pClosed OUT     true if start of pIndex0 matches end of pIndex1.
+* @param index IN      index for start of search.
+* @param workDimension IN      2 for xy only, 3 for xyz.
+* @param pointTolerance IN      tolerance to consider two consecutive endpoints identical.
+*           Tolerance -2 means copy all primitive start and end points (including
+*           intermediate points of linestrings) without computed distance test.
+*           Tolerance -1 < e < 0 means compute the tolerance as e times the
+*           range of the points in the array.
+* @param angleTolerance IN      tolerance (radians) to consider incoming and outgoing tangents
+*           at a common point different.  Negative means no tangent test.
+* @return true if indx is the index of a primitive on a path which starts at
+*               primitive pIndex0 at parameter 0.0 and ends at pIndex1 at parameter 1.0.
+*
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool            jmdlGraphicsPointArray_findPathLimits
+(
+GraphicsPointArrayCP pSource,
+      int                           *pIndex0,
+      int                           *pIndex1,
+      bool                          *pClosed,
+      int                           index,
+      int                           workDimension,
+      double                        pointTolerance,
+      double                        angleTolerance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGPA_printCoordinate
+
+(
+char const *pString0,
+double x,
+char const *pString1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_print
+
+(
+GraphicsPointArrayCP pGPA,
+bool        parse
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Test if two graphics point arrays have the same geometry, using point by point
+*       testing.
+* If both tolerances are zero, a near-machine-precision relative tolerance is used.
+* @param pGPA0 IN      first array.
+* @param pGAP1 IN      second array.
+* @param xyzAbsTol IN      absolute distance tolerance for xyz parts.
+* @param relTol IN      relative tolerance.
+* @return true if the two arrays have the same number and type of geometry and coordinates
+*               are within tolerance.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_sameGeometryPointByPoint
+(
+GraphicsPointArrayCP pGPA0,
+GraphicsPointArrayCP pGPA1,
+double xyzAbsTol,
+double relTol
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Test if the gpa is closed.
+    Tolerance for point comparison is sum of abstol with reltol times largest coordinate
+        in the gpa.
+@param pSource IN GPA to examine
+@param abstol IN absolute tol for distinct points
+@param reltol IN relative tol for distinct pounts.
+                The reltol used will be the larger of the parameter and bsiTrig_smallAngle ().
+@return true if the two arrays have the same number and type of geometry and coordinates
+               are within tolerance.
+@bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_isClosed
+(
+GraphicsPointArrayCP pSource,
+double abstol,
+double reltol
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

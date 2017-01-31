@@ -1,0 +1,5 @@
+message Group
+{
+repeated IGeometry Member = 1;
+}
+

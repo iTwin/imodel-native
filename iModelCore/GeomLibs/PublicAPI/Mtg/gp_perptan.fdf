@@ -1,0 +1,319 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_perptan.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+struct DRange3dInt
+{
+DRange3d range;
+int index;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Collect per-primitive ranges in a vector
+* @param pSource IN source GPA
+* @param ranges OUT vector of ranges.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void jmdlGraphicsPointArray_collectPrimitiveRanges
+(
+GraphicsPointArrayCP pSource,
+bvector<DRange3dInt> &ranges
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular and tangent joining segments.
+* @param pCurves OUT     array of joining segments.
+* @param pSource0 IN      first candidate source.
+* @param bPerpEnable0 IN      true to search for perpendiculars from geometry 0.
+* @param bTanEnable0  IN      true to search for tangents from geometry 0.
+* @param pSource1 IN      second geometry source.
+* @param bPerpEnable1 IN      true to search for perpendiculars from geometry 1.
+* @param bTanEnable1  IN      true to search for tangents from geometry 1.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYPerpTanSegments
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+        bool                    bPerpEnable0,
+        bool                    bTanEnable0,
+GraphicsPointArrayCP pSource1,
+        bool                    bPerpEnable1,
+        bool                    bTanEnable1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular joining segments. (Full 3d)
+* @param pCurves <= array of joining segments.
+* @param pSource0 => first candidate source.
+* @param pSource1 => second geometry source.
+* @param extendLines => true to extend lines
+* @param extendConics => true to extend conics
+* @param workdim => 2 or 3
+* @param bRemoveIntersections => true to remove exact intersection points.
+* @param maxDistance => if nonzero, longer segments are ignored.
+* @bsimethod                                                    EarlinLutz      07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addPerpSegmentsExt4
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+        bool                    extendLines,
+        bool                    extendConics,
+        int                     workdim,
+        bool                    bRemoveIntersections,
+        double                  maxLength
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular joining segments. (Full 3d)
+* @param pCurves OUT     array of joining segments.
+* @param pSource0 IN      first candidate source.
+* @param pSource1 IN      second geometry source.
+* @param extendLines IN      true to extend lines
+* @param extendConics IN      true to extend conics
+* @param workdim IN      2 or 3
+* @param bRemoveIntersections IN      true to remove exact intersection points.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addPerpSegmentsExt3
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+        bool                    extendLines,
+        bool                    extendConics,
+        int                     workdim,
+        bool                    bRemoveIntersections
+);
+#ifdef deprecatedPerp
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular joining segments. (Full 3d)
+* @param pCurves OUT     array of joining segments.
+* @param pSource0 IN      first candidate source.
+* @param pSource1 IN      second geometry source.
+* @param extendLines IN      true to extend lines
+* @param extendConics IN      true to extend conics
+* @param workdim IN      2 or 3
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addPerpSegmentsExt2
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+        bool                    extendLines,
+        bool                    extendConics,
+        int                     workdim
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular joining segments. (Full 3d)
+* @param pCurves OUT     array of joining segments.
+* @param pSource0 IN      first candidate source.
+* @param pSource1 IN      second geometry source.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addPerpSegmentsExt
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+        bool                    extendLines,
+        bool                    extendConics
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular joining segments. (Full 3d)
+* @param pCurves OUT     array of joining segments.
+* @param pSource0 IN      first candidate source.
+* @param pSource1 IN      second geometry source.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addPerpSegments
+(
+        GraphicsPointArray  *pCurves,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1
+);
+#endif
+/*---------------------------------------------------------------------------------**//**
+* Examine primitives in pairs; compute all perpendicular and tangent joining segments.
+* Return points as (point, index, parameter) values in respective output arrays.
+* @param pPointCollector0 IN      array to receive points from source0.
+* @param pPointCollector1 IN      array to receive points from source1.
+* @param pSource0 IN      first candidate source.
+* @param bPerpEnable0 IN      true to search for perpendiculars from geometry 0.
+* @param bTanEnable0  IN      true to search for tangents from geometry 0.
+* @param pSource1 IN      second geometry source.
+* @param bPerpEnable1 IN      true to search for perpendiculars from geometry 1.
+* @param bTanEnable1  IN      true to search for tangents from geometry 1.
+*
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYPerpTanPoints
+(
+        GraphicsPointArray  *pPointCollector0,
+        GraphicsPointArray  *pPointCollector1,
+GraphicsPointArrayCP pSource0,
+        bool                    bPerpEnable0,
+        bool                    bTanEnable0,
+GraphicsPointArrayCP pSource1,
+        bool                    bPerpEnable1,
+        bool                    bTanEnable1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct xy circles passing through two given points and tangent to
+* geometry in the GPA.   Return tangency points and/or full circles as requested.
+*
+* @param pTangentPointCollector IN      array to receive tangency points, with parameters
+*               on primitives in pSource.
+* @param pFullCircleCollector IN      array to receive full circles constructed through the
+*               2 points and tangency.
+* @param pSource IN      array of source geometry.
+* @param pPoint0 IN      first fixed point
+* @param pPoint1 IN      second fixed point
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYCirclesFromPointPointTangent
+(
+        GraphicsPointArray  *pTangentPointCollector,
+        GraphicsPointArray  *pFullCircleCollector,
+GraphicsPointArrayCP pSource,
+const   DPoint3d                *pPoint0,
+const   DPoint3d                *pPoint1,
+        bool                    extendLines,
+        bool                    extendArcs
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct xy circles passing through given point and tangent to two curves.
+*
+* @param pTangentPointCollector0 IN      array to receive tangency points, with parameters
+*               on primitives in pSource0
+* @param pTangentPointCollector1 IN      array to receive tangency points, with parameters
+*               on primitives in pSource1
+* @param pFullCircleCollector IN      array to receive full circles constructed through the
+*               2 points and tangency.
+* @param pSource0 IN      array of source geometry.
+* @param pSource1 IN      array of source geometry.
+* @param pPoint   IN      fixed point
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYCirclesFromPointTangentTangent
+(
+        GraphicsPointArray  *pTangentPointCollector0,
+        GraphicsPointArray  *pTangentPointCollector1,
+        GraphicsPointArray  *pFullCircleCollector,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+const   DPoint3d                *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct xy circles tangent to 3 curves.
+*
+* @param pTangentPointCollector0 IN      array to receive tangency points, with parameters on primitives in pSource0
+* @param pTangentPointCollector1 IN      array to receive tangency points, with parameters on primitives in pSource1
+* @param pTangentPointCollector2 IN      array to receive tangency points, with parameters on primitives in pSource2
+* @param pFullCircleCollector IN      array to receive full circles constructed through the 3 tangency points.
+* @param pSource0 IN      array of source geometry.
+* @param pSource1 IN      array of source geometry.
+* @param pSource2 IN      array of source geometry.
+* @param numSamples IN      how many parameter space samples to use in computing initial root approximations
+* @bsimethod                                                    BentleySystems  07/03
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYCirclesFromTangentTangentTangentExt
+(
+        GraphicsPointArray  *pTangentPointCollector0,
+        GraphicsPointArray  *pTangentPointCollector1,
+        GraphicsPointArray  *pTangentPointCollector2,
+        GraphicsPointArray  *pFullCircleCollector,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GraphicsPointArrayCP pSource2,
+        int                     numSamples
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct xy circles tangent to 3 curves.
+*
+* @param pTangentPointCollector0 IN      array to receive tangency points, with parameters
+*               on primitives in pSource0
+* @param pTangentPointCollector1 IN      array to receive tangency points, with parameters
+*               on primitives in pSource1
+* @param pTangentPointCollector2 IN      array to receive tangency points, with parameters
+*               on primitives in pSource2
+* @param pFullCircleCollector IN      array to receive full circles constructed through the
+*               3 tangency points.
+* @param pSource0 IN      array of source geometry.
+* @param pSource1 IN      array of source geometry.
+* @param pSource2 IN      array of source geometry.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addXYCirclesFromTangentTangentTangent
+(
+        GraphicsPointArray  *pTangentPointCollector0,
+        GraphicsPointArray  *pTangentPointCollector1,
+        GraphicsPointArray  *pTangentPointCollector2,
+        GraphicsPointArray  *pFullCircleCollector,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GraphicsPointArrayCP pSource2
+);
+
+/*----------------------------------------------------------------------+
+* Find (multiple) points at which two elements approach within
+*   a tolerance.  This considers all combinations of interior-interior, interior-endpoint,
+*   and endpoint-endpoint.  For workdim==2 it also considers xy intersections.
+* @remarks Originally minDistance_collectProjectedApproachPoints; moved here
+*       so it can be called from msbspline.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_collectProjectedApproachPoints
+(
+GraphicsPointArrayP pSegmentGPA1,
+GraphicsPointArrayP pSegmentGPA2,
+GraphicsPointArrayP pGPA1,
+GraphicsPointArrayP pGPA2,
+bool            extend,
+double          maxDist,
+int             workdim
+);
+
+/*----------------------------------------------------------------------+
+* Find (multiple) points at which two elements approach within
+*   a tolerance.  This considers all combinations of interior-interior, interior-endpoint,
+*   and endpoint-endpoint.  For workdim==2 it also considers xy intersections.
+* @remarks Originally minDistance_collectProjectedApproachPoints; moved here
+*       so it can be called from msbspline.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_collectProjectedApproachPointsExt
+(
+GraphicsPointArrayP pSegmentGPA1,
+GraphicsPointArrayP pSegmentGPA2,
+GraphicsPointArrayP pGPA1,
+GraphicsPointArrayP pGPA2,
+bool            extend,
+double          maxDist,
+int             workdim,
+double          dupliatePointTol
+);
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,86 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_offset.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate an offset of the lines and curves.
+* @param arcAngle IN      If the turning angle at a vertex exceeds this angle (radians),
+*                       an arc is created.   Passing a negative angle                   means no arcs.
+* @param chamferAngle IN      If the turning angle at a vertex is smaller than
+*                       arc angle but larger than chamfer angle, a chamfer is
+*                       created.   This angle is always forced to .99pi or less.
+* @param offsetDistance IN      the offset distance (uniform).  Positive is to
+*                           left of curve relative to the normal.
+* @param pNormal        IN      projection direction.
+* @bsimethod                                                    BentleySystems  12/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_collectOffset
+(
+        GraphicsPointArray      *pCollector,
+GraphicsPointArrayCP pSource,
+        double                      arcAngle,
+        double                      chamferAngle,
+        double                      offsetDistance,
+        DVec3dCP                    pNormal
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate an offset of the lines and curves.
+* @param arcAngle IN      If the turning angle at a vertex exceeds this angle (radians),
+*                       an arc is created.   Passing a negative angle                   means no arcs.
+* @param chamferAngle IN      If the turning angle at a vertex is smaller than
+*                       arc angle but larger than chamfer angle, a chamfer is
+*                       created.   This angle is always forced to .99pi or less.
+* @param offsetDistance IN      the offset distance (uniform).  Positive is to
+*                           left of curve relative to the normal.
+* @bsimethod                                                    BentleySystems  12/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_collectOffsetXY
+(
+        GraphicsPointArray      *pCollector,
+GraphicsPointArrayCP pSource,
+        double                      arcAngle,
+        double                      chamferAngle,
+        double                      offsetDistance,
+        bool                        enforceClosure
+);
+
+/*---------------------------------------------------------------------------------**//**
+* For each primitive in the array, generate a closed area by perpendicular
+*   offset.   Add these to the collector.
+* The "strips" of offset area are created one-by-one for the primitives -- incidence
+*   with the following primitive is not considered.
+* @param pCollector OUT     destination array.  This will contain one closed
+*       area for each primitive.   The collector is NOT emptied.
+* @param pSource IN      midline geoemtry.
+* @param offsetDistance =>distance to offset.
+* @param createCircles IN      if true, create a circle at each start and end point.
+* @bsimethod                                                    BentleySystems  12/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_collectOffsetPrimitiveAreasXY
+(
+        GraphicsPointArray      *pCollector,
+GraphicsPointArrayCP pSource,
+        double                      offsetDistance,
+        bool                        createCircles
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

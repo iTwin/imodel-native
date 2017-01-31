@@ -1,0 +1,83 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: vu/build/inc/vuSources.mki $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+# Include this file in your .mke file to get the complete list
+# of input/output dependencies, with the output names bracketed by
+# macroed names so you can vary the directory and type of dependency
+# each time you include the file.
+
+$(OUT_DIR)vu$(OUT_EXT)                  : $(vuSrc)vu.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vucoord$(OUT_EXT)             : $(vuSrc)vucoord.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumem$(OUT_EXT)               : $(vuSrc)vumem.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vusubset$(OUT_EXT)            : $(vuSrc)vusubset.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuarray$(OUT_EXT)             : $(vuSrc)vuarray.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuaddedges$(OUT_EXT)          : $(vuSrc)vuaddedges.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuunion$(OUT_EXT)             : $(vuSrc)vuunion.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuprint$(OUT_EXT)             : $(vuSrc)vuprint.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumerge$(OUT_EXT)             : $(vuSrc)vumerge.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumerge2$(OUT_EXT)            : $(vuSrc)vumerge2.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vufilter$(OUT_EXT)            : $(vuSrc)vufilter.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vutriang$(OUT_EXT)            : $(vuSrc)vutriang.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vureg$(OUT_EXT)               : $(vuSrc)vureg.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vustack$(OUT_EXT)             : $(vuSrc)vustack.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuexcise$(OUT_EXT)            : $(vuSrc)vuexcise.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vucluster$(OUT_EXT)           : $(vuSrc)vucluster.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vuperiodicconnect$(OUT_EXT)   : $(vuSrc)vuperiodicconnect.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vugrid$(OUT_EXT)              : $(vuSrc)vugrid.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)pbfvu$(OUT_EXT)               : $(vuSrc)pbfvu.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumemfuncs$(OUT_EXT)          : $(vuSrc)vumemfuncs.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vudangler$(OUT_EXT)           : $(vuSrc)vudangler.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumulticlip$(OUT_EXT)         : $(vuSrc)vumulticlip.cpp $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)vumaskops$(OUT_EXT)           : $(vuSrc)vumaskops.cpp $(OTHER_DEPENDENCIES)
+
+
+# grab/drop vuSetP -- (uses omdlPtrCache internally)
+#$(OUT_DIR)vumeshsv$(OUT_EXT)            : $(vuSrc)vumeshsv.cpp $(OTHER_DEPENDENCIES)
+
+# vu_crossHatch, vu_horizontalHatch -- (exposes GPA)
+#$(OUT_DIR)vumod3$(OUT_EXT)              : $(vuSrc)vumod3.cpp $(OTHER_DEPENDENCIES)
+
+# loop offsets -- (exposes GPA)
+#$(OUT_DIR)vuoffset$(OUT_EXT)            : $(vuSrc)vuoffset.cpp $(OTHER_DEPENDENCIES)
+
+# polygon manipulation, boolean, triangulation -- useful stuff here!!! (exposes embeddedarrays, BsurfBoundary)
+#$(OUT_DIR)vupoly$(OUT_EXT)              : $(vuSrc)vupoly.cpp $(OTHER_DEPENDENCIES)
+
+# Set all the macros to warning values
+OUT_DIR = BAD_OUT_DIR_VALUE_INHERITED_FROM_SOURCES.MKI
+OUT_EXT = BAD_OUT_EXT_VALUE_INHERITED_FROM_SOURCES.MKI
+OTHER_DEPENDENCIES = BAD_OTHER_DEPENDENCIES_VALUE_INHERITED_FROM_SOURCES.MKI
+

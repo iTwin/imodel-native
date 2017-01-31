@@ -1,0 +1,618 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/drange2d.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//!
+//! Initializes a range cube with (inverted) large positive and negative
+//! values.
+//!
+//! @param
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_init
+(
+DRange2dP pRange        /* OUT     range to be initialized */
+);
+
+//!
+//!
+//! Initializes a range cube with (inverted) large positive and negative
+//! values.
+//!
+//! @param pFRange OUT     "float" range.
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromFRange2d
+(
+DRange2dP pRange,
+FRange2dCP pFRange
+);
+
+//!
+//!
+//! Check if the range is exactly the same as the null ranges returned
+//! by bsiDRange2d_init.  (Note that ranges with other values with low > high
+//! are not necessarily null by this condition.)
+//!
+//! 
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isNull (DRange2dCP pRange);
+
+//!
+//! @return 0 if null range (as decided by ~mbsiDRange2d_isNull), otherwise
+//!       sum of squared axis extents.
+//! 
+//! 
+//!
+Public GEOMDLLIMPEXP double   bsiDRange2d_extentSquared (DRange2dCP pRange);
+
+//!
+//!
+//! Test if high component is (strictly) less than low in any direction.
+//! Note that equal components do not indicate empty.
+//!
+//! returns true if any low component is less than the corresponding high component
+//! 
+//!
+Public GEOMDLLIMPEXP bool        bsiDRange2d_isEmpty (DRange2dCP pRange);
+
+//!
+//!
+//! @return true if high is less than or equal to low in every direction.
+//! 
+//!
+Public GEOMDLLIMPEXP bool        bsiDRange2d_isPoint (DRange2dCP pRange);
+
+//!
+//! returns product of axis extents.  No test for zero or negative axes.
+//! 
+//!
+Public GEOMDLLIMPEXP double     bsiDRange2d_area (DRange2dCP pRange);
+
+//!
+//!
+//! Initializes the range to contain the single given point.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromPoint
+(
+DRange2dP pRange,
+DPoint2dCP pPoint
+);
+
+//!
+//! Initializes the range to contain the two given points.
+//! @param pPoint0 IN      first point
+//! @param pPoint1 IN      second point
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFrom2Points
+(
+DRange2dP pRange,
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1
+);
+
+//!
+//! Initializes the range to contain two points given as components.
+//! Minmax logic is applied to the given points.
+//! @param x0 IN      first x
+//! @param y0 IN      first y
+//! @param x1 IN      second x
+//! @param y1 IN      second y
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFrom2Components
+(
+DRange2dP pRange,
+double          x0,
+double          y0,
+double          x1,
+double          y1
+);
+
+//!
+//! Initialize the range from a single point given by components
+//! @param x0 IN      x coordinate
+//! @param y0 IN      y coordinate
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromComponents
+(
+DRange2dP pRange,
+double          x,
+double          y
+);
+
+//!
+//! Initialize the range from given min and max in all directions.
+//! @param v0 IN      min (or max) for all directions
+//! @param v1 IN      max (or min) for all directions
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromCubeLimits
+(
+DRange2dP pRange,
+double          v0,
+double          v1
+);
+
+//!
+//! Initialize the range from an arc of the unit circle
+//! @param theta0 IN      start angle
+//! @param sweep  IN      angular sweep
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromUnitArcSweep
+(
+DRange2dP pRange,
+double          theta0,
+double          sweep
+);
+
+//!
+//! Initialize the range to contain the three given points.
+//! @param pPoint0 IN      first point
+//! @param pPoint1 IN      second point
+//! @param pPoint2 IN      third point
+//! @param
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFrom3DPoint2d
+(
+DRange2dP pRange,
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2
+);
+
+//!
+//!
+//! Initizlizes the range to contain the range of the given array of points.
+//! If there are no points in the array, the range is initialized by
+//! DRange2d.init()
+//!
+//! @param pPoint IN      array of points to search
+//! @param n IN      number of points in array
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromArray
+(
+DRange2dP pRange,
+DPoint2dCP pPoint,
+int             n
+);
+
+//!
+//!
+//! Initializes the range to contain the range of the xy parts of
+//! the array of 3D points.
+//!
+//! @param pPoint IN      array of points to search
+//! @param n IN      number of points in array
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromArray3d
+(
+DRange2dP pRange,
+DPoint3dCP pPoint,
+int              n
+);
+
+//!
+//!
+//! Extend each axis by the given distance on both ends of the range.
+//!
+//! @param extend IN      distance to extend
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDRange2d_extendByDistance
+(
+DRange2dP pRange,
+double           extend
+);
+
+//!
+//!
+//! Extends the coordinates of the range cube points in pRange so as
+//! to include the single additional point pPoint.
+//!
+//! @param pPoint IN      new point to be included in the range.
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_extendByDPoint3d
+(
+DRange2dP pRange,
+DPoint2dCP pPoint
+);
+
+//!
+//!
+//! extends the coordinates of the range cube points in pRange so as
+//! to include the single additional point at x,y.
+//!
+//! @param pRange IN OUT  range to be extended
+//! @param x IN      extended range coordinate
+//! @param y IN      extended range coordinate
+//! @param
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_extendByComponents
+(
+DRange2dP pRange,
+double      x,
+double      y
+);
+
+//!
+//!
+//! extends the coordinates of the range cube points in pRange so as
+//! to include the (normalized image of) the xy projection of the 4D point.
+//!
+//! @param pPoint4d IN      new point to be included in minmax ranges
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_extendByDPoint4d
+(
+DRange2dP pRange,
+DPoint4dCP pPoint4d
+);
+
+//!
+//!
+//! extends the coordinates of the range cube points in pRange so as
+//! to include range of an array of points.
+//!
+//! @param pArray IN      new points to be included in minmax ranges
+//! @param n IN      number of points
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_extendByDPoint2dArray
+(
+DRange2dP pRange,
+DPoint2dCP pArray,
+int             n
+);
+
+//!
+//!
+//! extends the coordinates of the range cube points to
+//! include the range cube range1P.
+//!
+//! @param pRange1 IN      second range
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_extendByRange
+(
+DRange2dP pRange0,
+DRange2dCP pRange1
+);
+
+//!
+//! Compute the intersection of two ranges and test if it is nonempty.
+//! If empty (non overlap), result range is not set!!!!
+//!
+//! @param pRange1 IN      first range
+//! @param pRange2 IN      second range
+//! @return same result as checkOverlap(pRange1,pRange2).
+//! 
+//!
+Public GEOMDLLIMPEXP bool       bsiDRange2d_intersect
+(
+DRange2dP pOutRange,
+DRange2dP pRange1,
+DRange2dP pRange2
+);
+
+//!
+//!
+//! Form the union of two ranges.
+//!
+//! @param pRange1 IN      first range.
+//! @param pRange2 IN      second range.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDRange2d_combineRange
+(
+DRange2dP pCombRange,
+DRange2dCP pRange1,
+DRange2dCP pRange2
+);
+
+//!
+//!
+//! Test if the given range is a (possible improper) subset of pOuterRange.
+//!
+//! @param pOuterRange IN      outer range
+//! @return true if the given range is a (possibly improper) subset of
+//!   pOuterRange.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isContained
+(
+DRange2dCP pInnerRange,
+DRange2dCP pOuterRange
+);
+
+//!
+//!
+//! test if any min or max of the given range touches a limit (min or max)
+//! of a non-trivial direction of pOuterRange.
+//!
+//! @param pOuterRange IN      outer range
+//! 
+//!
+Public GEOMDLLIMPEXP bool        bsiDRange2d_touchesEdge
+(
+DRange2dCP pInnerRange,
+DRange2dCP pOuterRange
+);
+
+//!
+//!
+//! Returns a range which is the intersection of two ranges.  The first
+//! range is treated as a signed range, i.e. decreasing values from low
+//! to high are a nonempty range, and the output will maintain the
+//! direction.
+//! In a direction where there is no overlap, pRange high and low values
+//! are identical and are at the limit of pRange1 that is nearer to the
+//! values in pRange0.
+//! (Intended use: pRange0 is the 'actual' stroking range of a surface
+//!   i.e. may go 'backwards'.  pRange1 is the nominal full surface range,
+//!   i.e. is known a priori to be 'forwards'.  The clipping restricts
+//!   unreliable pRange0 to the nominal surface range pRange1.
+//! pRange0 and pRange may be the same address.  pMinMax must be different.
+//!
+//! @param pRange0 IN      range to be restricted
+//! @param pMinMax IN      allowable minmax range.  Assumed to have low < high
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_restrictToMinMax
+(
+DRange2dP pRange,
+DRange2dCP pRange0,
+DRange2dCP pMinMax
+);
+
+
+//!
+//!
+//! Scale pRangeIn about its center point
+//!
+//! @param pRangeIn IN      original range
+//! @param scale IN      scale factor
+//! 
+//!
+Public GEOMDLLIMPEXP void            bsiDRange2d_scaleAboutCenter
+(
+DRange2dP pRange,
+DRange2dCP pRangeIn,
+double          scale
+);
+
+//!
+//!
+//! Extract the 4 bounding lines for a range rectangle, in origin normal form
+//!
+//! @param pOriginArray OUT     array of line origins
+//! @param pNormalArray OUT     array of plane normals. Directions down, left, right, up.
+//! 
+//!
+Public GEOMDLLIMPEXP void            bsiDRange2d_extractPlanes
+(
+DRange2dCP pRange,
+DPoint2dP pOriginArray,
+DPoint2dP pNormalArray
+);
+
+//!
+//!
+//! Return the index of the axis with largest absolute range.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP int      bsiDRange2d_indexOfMaximalAxis (DRange2dCP pRange);
+
+//!
+//!
+//! Compute the intersection of a range cube and a ray.
+//!
+//! If there is not a finite intersection, both params are set to 0 and
+//! and both points to pPoint0.
+//!
+//! @param pParam0 OUT     ray parameter where cube is entered
+//! @param pParam1 OUT     ray parameter where cube is left
+//! @param pPoint0 OUT     entry point
+//! @param pPoint1 OUT     exit point
+//! @param pStart IN      start point of ray
+//! @param pDirection IN      direction of ray
+//! @return true if non-empty intersection.
+//! 
+//!
+Public GEOMDLLIMPEXP bool        bsiDRange2d_intersectRay
+(
+DRange2dCP pRange,
+double      *pParam0,
+double      *pParam1,
+DPoint2dP pPoint0,
+DPoint2dP pPoint1,
+DPoint2dCP pStart,
+DPoint2dCP pDirection
+);
+
+//!
+//!
+//! @return the largest individual coordinate value among (a) range min point,
+//! (b) range max point, and (c) range diagonal vector.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDRange2d_getLargestCoordinate (DRange2dCP pRange);
+
+//!
+//!
+//! Generates an 8point box around around a range cube.  Point ordering is by
+//! "x varies fastest" --- 00, 10, 01, 11 for the unit range.
+//! @param pBox OUT     array of 4 points of the box
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDRange2d_box2Points
+(
+DRange2dCP pRange,
+DPoint2dP pBox
+);
+
+//!
+//!
+//! Starting at the beginning of the array, test if points from pPointArray are "in" the range.
+//!
+//! @param pPointArray IN      points
+//! @param numPoint IN      number of points
+//! @param pRange IN      range cube
+//! @param mask   IN      selects faces to consider. Valid values are the constants
+//!       RangePlane_XMin
+//! @return number of points that were "in" before the first "out" or end of array.
+//! 
+//!
+Public GEOMDLLIMPEXP int      bsiDRange2d_numLeadingPointsInRange
+(
+DRange2dCP pRange,
+DPoint2dCP pPointArray,
+int         numPoint,
+RangePlaneMask mask
+);
+
+//!
+//!
+//! Compute the intersection of given range with another range and return the
+//! extentSquared of the intersection range.
+//!
+//! @param pRange2 IN      second range
+//! @return extentSquared() for the intersection range.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDRange2d_getOverlap
+(
+DRange2dCP pRange1,
+DRange2dCP pRange2
+);
+
+//!
+//!
+//! Test if two ranges have strictly non-null overlap (intersection)
+//!
+//! @param pRange1 IN      first range
+//! @param pRange2 IN      second range
+//! @return true if ranges overlap, false if not.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_checkOverlap
+(
+DRange2dCP pRange1,
+DRange2dCP pRange2
+);
+
+//!
+//!
+//! Test if a modification of the given (instance) range would have a different
+//! touching relationship with pOuterRange.
+//!
+//! @remark This may only be meaningful in context of range tree tests where
+//!   some prior relationship among ranges is known to apply.
+//!
+//! @param pNewRange IN      candidate for modified range relationship.
+//! @param pOuterRnage IN      containing range
+//! @return true if touching condition occurs.
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDRange2d_moveChangesRange
+(
+DRange2dCP pOldRange,
+DRange2dCP pNewRange,
+DRange2dCP pOuterRange
+);
+
+//!
+//! @description Test if a point is contained in a range.
+//! @param pRange IN candidate containing range.
+//! @param pPoint IN point to test. (z is ignored)
+//! @return true if the point is in (or on boundary of)
+//! @group "DRange2d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isDPoint3dContained
+(
+DRange2dCP pRange,
+DPoint3dCP pPoint
+);
+
+//!
+//! @description Test if a point is contained in a range.
+//! @param pRange IN candidate containing range.
+//! @param pPoint IN point to test. (z is ignored)
+//! @return true if the point is in (or on boundary of)
+//! @group "DRange2d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isDPoint2dContained
+(
+DRange2dCP pRange,
+DPoint2dCP pPoint
+);
+
+//!
+//! @description Test if a point given as x,y,z is contained in a range.
+//! @param pRange IN candidate containing range.
+//! @param x IN x coordinate
+//! @param y IN y coordinate
+//! @param z IN z coordinate
+//! @return true if the point is in (or on boundary of)
+//! @group "DRange2d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isXYContained
+(
+DRange2dCP pRange,
+double    x,
+double    y
+);
+
+//!
+//! @description Test if two ranges are exactly equal.
+//! @param pRange0 IN first range
+//! @param pRange1 IN second range
+//! @param tolerance IN toleranc to be applied to each component
+//! @return true if ranges are identical in all components.
+//! @group "DRange2d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isEqual
+(
+DRange2dCP pRange0,
+DRange2dCP pRange1
+);
+
+//!
+//! @description Test if two ranges are equal within a tolerance applied componentwise.
+//! @param pRange0 IN first range
+//! @param pRange1 IN second range
+//! @param tolerance IN toleranc to be applied to each component
+//! @return true if ranges are within tolerance in all components.
+//! @group "DRange2d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDRange2d_isEqualTolerance
+(
+DRange2dCP pRange0,
+DRange2dCP pRange1,
+double tolerance
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

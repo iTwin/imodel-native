@@ -1,0 +1,43 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_bool.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Treat geometry in pSource as wireframe (curve) data.
+* Clip the data to the boundary given pBoundary.  Inside and outside of pBoundary
+*   are defined by parity rules.  This is only valid if the boundary array contains
+*   closed loops!!
+* All calculations are done in xy plane.
+* @param pInside IN      GPA to receive geometry classified as "inside".  May be NULL.
+* @param pOutside IN      GPA to receive geometry classified as "outside". May be NULL.
+* @param pSource IN      source geometry (curves to be clipped)
+* @param pBoundary IN      boundary geometry (clipper)
+*
+*
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_splitXYWireframe
+(
+        GraphicsPointArray      *pInside,
+        GraphicsPointArray      *pOutside,
+        GraphicsPointArray      *pSource,
+        GraphicsPointArray      *pBoundary
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

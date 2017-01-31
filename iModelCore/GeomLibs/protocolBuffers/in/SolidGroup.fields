@@ -1,0 +1,10 @@
+PRIMITIVE SolidGroup
+<def name=SUMMARY>A collection of ISolid objects.
+</def>
+<def name=Interface_BaseList>IAggregate, ISolid</def>
+
+
+<def name=MEMBERS><list ItemType=ISolid ItemTagName=Solid ItemSemanticName=Solid ItemParamName=solid ListName=mSolid ItemDescription="Member solid" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

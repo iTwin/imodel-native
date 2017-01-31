@@ -1,0 +1,80 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/polygon2d.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! Test if a point is within a convex region.
+//!
+//! @param    pPoint      IN      point to test
+//! @param    pPointArray IN      boundary points
+//! @param    numPoint    IN      number of points
+//! @param    sense       IN      0 if sense not known, should be determined internally
+//!                                   by area calculation.
+//!                            1 if known to be counterclockwise
+//!                           -1 if known to be clockwise
+//! @return true if the point is in the region
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_isPointInConvexPolygon
+(
+DPoint2dCP pPoint,
+DPoint2dCP pPointArray,
+int             numPoint,
+int             sense
+);
+
+//!
+//!
+//! @param    pPoint      IN      point to test
+//! @param    pPointArray IN      boundary points
+//! @param    numPoint    IN      number of points
+//! @param    sense       IN      0 if sense not known
+//!                            1 if known to be counterclockwise
+//!                           -1 if known to be clockwise
+//! @return true if the point is in the region
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_getPolygonArea
+(
+DPoint2dCP pPointArray,
+int             numPoint
+);
+
+//!
+//! Classify a point with respect to a polygon.
+//! @param pPoint IN      point to test
+//! @param pPointArray IN      polygon points.  Last point does not need to be duplicated.
+//! @param numPoint IN      number of points.
+//! @param tol IN      tolerance for "on" detection. May be zero.
+//! @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
+//!
+Public GEOMDLLIMPEXP int bsiDPoint2d_PolygonParity
+(
+DPoint2dCP pPoint,
+DPoint2dCP pPointArray,
+int       numPoint,
+double      tol
+);
+
+//!
+//! Find any point interior to the polygon.
+//! @param pPoint OUT     computed point
+//! @param pPointArray IN      polygon points.  Last point does not need to be duplicated.
+//! @param numPoint IN      number of points.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_findAnyInteriorPoint
+(
+DPoint2dP pPoint,
+DPoint2dCP pPointArray,
+int       numPoint
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

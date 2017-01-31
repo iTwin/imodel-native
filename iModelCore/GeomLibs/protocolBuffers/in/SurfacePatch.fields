@@ -1,0 +1,11 @@
+PRIMITIVE SurfacePatch
+<def name=SUMMARY>A region with outer boundary (required) and optional inner boundaries (holes)
+</def>
+<def name=Interface_BaseList>IGeometry, ISurface</def>
+
+
+<def name=MEMBERS><child ItemType=ICurveChain ItemTagName=CurveChain ItemSemanticName=ExteriorLoop ItemParamName=exteriorLoop ItemMemberName=mExteriorLoop ItemDescription="Outer boundary loop" ScaleMode=Container/>
+<list ItemType=ICurveChain ItemTagName=CurveChain ItemSemanticName=HoleLoop ItemParamName=holeLoop ListName=mHoleLoops ItemDescription="Hole boundary loop" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

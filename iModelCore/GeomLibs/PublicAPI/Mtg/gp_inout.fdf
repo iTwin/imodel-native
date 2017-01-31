@@ -1,0 +1,83 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_inout.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Compute an in/out classification for each point of the graphics point array, using
+* scanline parity rules in the xy plane after applying the forward part of the given map.
+* Return the classifications as the in/out mask bits of each point, and adjust
+* each point to the apparent depth of intersection, where depth is determined by
+* linear interpolation between boundary points encountered by a scan plane.
+*
+* The direction of the scan line is entirely arbitrary -- random, unpredictable,
+* not for you to choose, chosen for geometric rather than aesthetic reasons.  If the
+* geometry is truly planar, the z values of the returned point is not affected by
+* the scan direction.  If the geometry is non-planar, since the boundary endpoints
+* used for interpolation are unspecified externally, so also the interpolated point
+* depth is unpredictable.
+*
+* @param pPoints IN OUT  array of points to be classified. The points are modified as
+*           follows:
+*           1) inout bits of the mask are set.
+*           2) test points which are "in" are replaced by interpolation between
+*                   two boundary points.
+* @param pBoundary IN      boundary data.
+* @param pMatrix IN      transformation to apply.
+*
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_testInOutMapped
+(
+        GraphicsPointArray      *pPoints,
+        GraphicsPointArray      *pBoundary,
+        DMatrix4d                   *pMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute an in/out classification a single point, using only xy coordinates
+* @param pBoundary IN      boundary data.
+* @param pOutPoint OUT     test point with depth adjusted by interpolating
+*           between boundary points.  If the boundary is planar this will
+*           be the point on the plane of the "face" formed by the geometry.
+* @param pPoint IN      point to test
+* @return true if the point is on or inside the region (by parity rules)
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_isDPoint4dXYInOrOnExt
+(
+GraphicsPointArray      *pBoundary,
+      DPoint4d              *pOutPoint,
+const DPoint4d              *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute an in/out classification a single point, using only xy coordinates
+* @param pBoundary IN      boundary data.
+* @param pPoint IN      point to test
+* @return true if the point is on or inside the region (by parity rules)
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_isDPoint3dXYInOrOn
+(
+GraphicsPointArray      *pBoundary,
+const DPoint3d              *pPoint
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

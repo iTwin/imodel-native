@@ -1,0 +1,73 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/jmdl_mtgstitch.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/**
+* Construct parallel arrays of node and vertex ids for matching vertices.
+* @param    pFacetHeader IN      facets to examine.
+* @param pNodeIdArray OUT     array of nodeId's grouped by vertex cluster.
+* @param pVertexIdArray OUT     parallel array of vertex ids.
+* @param absTol IN      absolute tolerance for coordinate comparison.
+* @param relTol IN      relative tolerance for coordinate comparison.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlMTGFacets_createVertexClusterArrays
+(
+MTGFacets           *pFacetHeader,
+EmbeddedIntArray    *pNodeIdArray,
+EmbeddedIntArray    *pVertexIdArray,
+double              absTol,
+double              relTol
+);
+
+/*----------------------------------------------------------------------+
+|FUNC           jmdlMTGChain_collapseVertices                           |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void jmdlMTGFacets_relableVertexClustersFromArrays
+(
+MTGFacets *     pFacetHeader,
+EmbeddedIntArray      *pNodeIdArray,
+EmbeddedIntArray      *pVertexIdArray
+);
+
+/**
+* @param    pFacetHeader OUT     facet set to be stithed.
+* @param absTol IN      absolute tolerance for vertex consolidation.
+* @param relTol IN      relative tolerance for vertex consolidation.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlMTGFacets_stitchFacets
+(
+MTGFacets * pFacetHeader,
+double      absTol,
+double      relTol
+);
+
+
+/**
+* 2015 update of jmdlMTGFacets_stitchFacets
+* @param    pFacetHeader <= facet set to be stithed.
+* @param absTol => absolute tolerance for vertex consolidation.
+* @param relTol => relative tolerance for vertex consolidation.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlMTGFacets_stitchFacetsForMultiVolume
+(
+MTGFacets * pFacetHeader,
+double      absTol,
+double      relTol
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

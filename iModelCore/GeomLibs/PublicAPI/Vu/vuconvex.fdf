@@ -1,0 +1,36 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Vu/vuconvex.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @description Split a polygon into smaller convex polygons.
+* @remarks Polygon may have disconnects (points with coordinate values = DISCONNECT) to separate multiple loops (e.g., holes).
+* @param pLoopPoints    IN  polygon points, with optional disconnects
+* @param numLoopPoints  IN  number of polygon points
+* @param userDataP      IN  user data pointer passed into callback
+* @param polygonFunc    IN  callback function to announce convex polygons
+* @return SUCCESS unless graph allocation failed
+* @group "VU Meshing"
+* @bsimethod                                                    BentleySystems  02/06
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt vu_splitToConvexParts
+(
+DPoint3d                            *pLoopPoints,
+int                                 numLoopPoints,
+void                                *userDataP,
+VuTaggedDPoint3dArrayFunction       polygonFunc
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

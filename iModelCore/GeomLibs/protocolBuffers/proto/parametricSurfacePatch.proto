@@ -1,0 +1,7 @@
+message ParametricSurfacePatch
+{
+required IParametricSurface Surface = 1;
+repeated ICurveChain CurveChain = 2;
+required LoopType LoopType = 3;
+}
+

@@ -1,0 +1,22 @@
+PRIMITIVE Vector
+<def name=SUMMARY>3D vector (with reference point, e.g. to be used as point of application)
+</def>
+<def name=Interface_BaseList>IGeometry, ISinglePoint</def>
+<def name=MEMBERS>
+
+<field  ItemType=DPoint3d
+        ItemParamName=xyz
+        ItemMemberName=mXYZ
+        ItemDescription="Reference point"
+        ScaleMode=Length />
+
+<field  ItemType=DVector3d
+        ItemParamName=vector
+        ItemMemberName=mVector
+        ItemDescription="Vector data"
+        ScaleMode=Length
+ />
+
+</def>
+
+END_PRIMITIVE

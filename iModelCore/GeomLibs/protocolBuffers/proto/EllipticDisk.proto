@@ -1,0 +1,7 @@
+message EllipticDisk
+{
+required IPlacement placement = 1;
+required double radiusA = 2;
+required double radiusB = 3;
+}
+

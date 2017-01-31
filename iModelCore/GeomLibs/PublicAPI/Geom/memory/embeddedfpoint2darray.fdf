@@ -1,0 +1,685 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/memory/embeddedfpoint2darray.fdf $
+|
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+
+/**
+* Allocate a new header from the system heap.
+* @return pointer to the header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public EmbeddedFPoint2dArray *jmdlEmbeddedFPoint2dArray_new
+(
+void
+);
+
+/**
+* Initialize a given EmbeddedFPoint2dArray header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_init
+(
+EmbeddedFPoint2dArray     *pHeader
+);
+
+/**
+* Free both the header and is associated memory.
+* @return always null.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public EmbeddedFPoint2dArray *jmdlEmbeddedFPoint2dArray_free
+(
+EmbeddedFPoint2dArray *pHeader
+);
+
+/**
+* @param pHeader
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_empty
+(
+EmbeddedFPoint2dArray *pHeader
+);
+
+/**
+* Release all memory attached to the header, and reinitialize the header
+* as an empty array with no buffer.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_releaseMem
+(
+EmbeddedFPoint2dArray *pHeader
+);
+
+/**
+* Grab (borrow) an array from the cache.
+* @return pointer to the borrowed header.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public EmbeddedFPoint2dArray *jmdlEmbeddedFPoint2dArray_grab
+(
+void
+);
+
+/**
+* Drop (return) an array to the cache.
+* @return always returns null.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public EmbeddedFPoint2dArray *jmdlEmbeddedFPoint2dArray_drop
+(
+EmbeddedFPoint2dArray     *pHeader
+);
+
+/**
+* Swap the contents (counts and associated memory) of two headers.
+* @param pHeader0 IN OUT first array header
+* @param pHeader1 IN OUT second array header
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void     jmdlEmbeddedFPoint2dArray_swapContents
+(
+EmbeddedFPoint2dArray     *pHeader0,
+EmbeddedFPoint2dArray     *pHeader1
+);
+
+/**
+* Ensure the buffer is at least a specified minimum size.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_ensureCapacity
+(
+EmbeddedFPoint2dArray     *pHeader,
+int                 n
+);
+
+/**
+* Reallocate the buffer to accommodate exactly n points.
+* NOTE: this will truncate the contents of this instance if its count is
+* greater than n.
+*
+* @param    n       Number of points to accommodate, no more, no less.
+* @return false if unable to reallocate the buffer.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_setExactBufferSize
+(
+EmbeddedFPoint2dArray     *pHeader,
+int                 n
+);
+
+/**
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public int jmdlEmbeddedFPoint2dArray_getCount
+(
+const EmbeddedFPoint2dArray *pHeader
+);
+
+/**
+* Add an FPoint2d to the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_addFPoint2d
+(
+EmbeddedFPoint2dArray       *pHeader,
+const FPoint2d              *pPoint
+);
+
+/**
+* Insert at specified position, shifting others to higher positions as needed.
+* @param pPoint IN point to insert.
+* @param index IN index at which the point is to appear in the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_insertFPoint2d
+(
+        EmbeddedFPoint2dArray         *pHeader,
+const   FPoint2d                *pPoint,
+        int                     index
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_addFPoint2dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const FPoint2d              *pPoint,
+      int                   n
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param index IN index location for adding the array
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_insertFPoint2dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const FPoint2d              *pPoint,
+      int                   index,
+      int                   n
+);
+
+/**
+* Copy up to nreq points out of the array into a buffer.
+* @param pBuffer OUT buffer of points.
+* @nGot   nGot OUT number of points placed in buffer.
+* @i0 IN index of first point to access.
+* @nreq IN number of points requested.
+* @return true if at least one point was returned.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_getFPoint2dArray
+(
+const EmbeddedFPoint2dArray   *pHeader,
+FPoint2d                *pBuffer,
+int                     *nGot,
+int                     i0,
+int                     nreq
+);
+
+/**
+* Get a point from a specified index.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getFPoint2d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DPoint3d                *pFPoint,
+int                     index
+);
+
+/**
+* Drop a contiguous block of entries.  Copy higher indices back down.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_dropRange
+(
+EmbeddedFPoint2dArray   *pHeader,
+int                     index,
+int                                         nDrop
+);
+
+/**
+* Store a point at specified index.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_setFPoint2d
+(
+EmbeddedFPoint2dArray   *pHeader,
+FPoint2d          *pFPoint,
+int               index
+);
+
+/**
+* Add n uninitialized points to the array.
+* @param pHeader IN OUT array from which to get block
+* @param n IN number of entries requested
+* @return Temporary pointer to block.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public FPoint2d *jmdlEmbeddedFPoint2dArray_getBlock
+(
+EmbeddedFPoint2dArray *pHeader,
+int             n
+);
+
+/**
+* @param pVertex Packed vertex array
+* @param int            maxVertex vertex array limit
+* @param pHeader master vertex array
+* @param pIndex index array
+* @param int            nIndex               number of vertices
+* @return number of succesful dereferences.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public int jmdlEmbeddedFPoint2dArray_getIndexedFPoint2dArray
+(
+const   EmbeddedFPoint2dArray *pHeader,
+        FPoint2d        *pVertex,
+        int             maxVertex,
+        int             *pIndex,
+        int             nIndex
+);
+
+/**
+* Get a pointer to a position in the array.  This pointer may become invalid
+* due to modifications of the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public FPoint2d* jmdlEmbeddedFPoint2dArray_getPtr
+(
+EmbeddedFPoint2dArray *pHeader,
+      int        index
+);
+
+/**
+* Get a pointer to a position in the array.  This pointer may become invalid
+* due to modifications of the array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public const FPoint2d* jmdlEmbeddedFPoint2dArray_getConstPtr
+(
+const EmbeddedFPoint2dArray *pHeader,
+      int        index
+);
+
+/**
+* @param pHeader
+* @param index1
+* @param index2
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_swapValues
+(
+EmbeddedFPoint2dArray *pHeader,
+int             index1,
+int             index2
+);
+
+/**
+* @param pDestHeader
+* @param pSourceHeader
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_copy
+(
+EmbeddedFPoint2dArray *pDestHeader,
+const EmbeddedFPoint2dArray *pSourceHeader
+);
+
+/**
+* @param pDestHeader
+* @param VBArray_SortFunction pFunction
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_sort
+(
+EmbeddedFPoint2dArray *pDestHeader,
+VBArray_SortFunction pFunction
+);
+
+/**
+* @param pPoint IN homogenous point to normalize and add to the array.
+* @return true if the point had non-zero weight.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_addDPoint4d
+(
+EmbeddedFPoint2dArray         *pHeader,
+const DPoint4d          *pInPoint
+);
+
+/**
+* Compute the cross product of the vectors from point 0 to point 1 and
+* point 0 to point 2.
+* @param pProduct OUT cross product vector
+* @param pHeader IN array of points
+* @param index0 IN reference point index
+* @param index1 IN target point of vector 1
+* @param index2 IN target point of vector 2
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_crossProduct3Points
+(
+const EmbeddedFPoint2dArray   *pHeader,   /* IN array of points */
+DPoint3d                *pProduct,  /* OUT cross product vector */
+int                     index0,     /* IN reference point index */
+int                     index1,     /* IN target point of vector 1 */
+int                     index2      /* IN target point of vector 2 */
+);
+
+/**
+* Add a point to the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_addDPoint2d
+(
+EmbeddedFPoint2dArray         *pHeader,
+const DPoint2d          *pInPoint
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_addDPoint2dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const DPoint2d              *pPointArray,
+      int                   n
+);
+
+/**
+* Insert at specified position, shifting others to higher positions as needed.
+* @param pDPoint IN point to insert.
+* @param index IN index at which the point is to appear in the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_insertDPoint2d
+(
+        EmbeddedFPoint2dArray         *pHeader,
+const   DPoint2d                *pInPoint,
+        int                     index
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param index IN index location for adding the array
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_insertDPoint2dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const DPoint2d              *pPointArray,
+      int                   index,
+      int                   n
+);
+
+/**
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getDPoint2d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DPoint2d                *pPoint,
+int                     index
+);
+
+/**
+* Copy up to nreq points out of the array into a buffer.
+* @param pBuffer OUT buffer of points.
+* @nGot   pCount OUT number of points placed in buffer.
+* @i0 IN index of first point to access.
+* @nreq IN number of points requested.
+* @return true if at least one point was returned.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_getDPoint2dArray
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DPoint2d                *pBuffer,
+int                     *pCount,
+int                     i0,
+int                     nreq
+);
+
+/**
+* Store a point at specified index.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_setDPoint2d
+(
+EmbeddedFPoint2dArray   *pHeader,
+DPoint2d          *pInPoint,
+int               index
+);
+
+/**
+* Add a point to the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_addDPoint3d
+(
+EmbeddedFPoint2dArray         *pHeader,
+const DPoint3d          *pInPoint
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_addDPoint3dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const DPoint3d              *pPointArray,
+      int                   n
+);
+
+/**
+* Insert at specified position, shifting others to higher positions as needed.
+* @param pDPoint IN point to insert.
+* @param index IN index at which the point is to appear in the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_insertDPoint3d
+(
+        EmbeddedFPoint2dArray         *pHeader,
+const   DPoint3d                *pInPoint,
+        int                     index
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param index IN index location for adding the array
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_insertDPoint3dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const DPoint3d              *pPointArray,
+      int                   index,
+      int                   n
+);
+
+/**
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getDPoint3d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DPoint3d                *pPoint,
+int                     index
+);
+
+/**
+* Copy up to nreq points out of the array into a buffer.
+* @param pBuffer OUT buffer of points.
+* @nGot   pCount OUT number of points placed in buffer.
+* @i0 IN index of first point to access.
+* @nreq IN number of points requested.
+* @return true if at least one point was returned.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_getDPoint3dArray
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DPoint3d                *pBuffer,
+int                     *pCount,
+int                     i0,
+int                     nreq
+);
+
+/**
+* Store a point at specified index.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_setDPoint3d
+(
+EmbeddedFPoint2dArray   *pHeader,
+DPoint3d          *pInPoint,
+int               index
+);
+
+/**
+* Add a point to the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_addFPoint3d
+(
+EmbeddedFPoint2dArray         *pHeader,
+const FPoint3d          *pInPoint
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_addFPoint3dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const FPoint3d              *pPointArray,
+      int                   n
+);
+
+/**
+* Insert at specified position, shifting others to higher positions as needed.
+* @param pDPoint IN point to insert.
+* @param index IN index at which the point is to appear in the array.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_insertFPoint3d
+(
+        EmbeddedFPoint2dArray         *pHeader,
+const   FPoint3d                *pInPoint,
+        int                     index
+);
+
+/**
+* @param pHeader IN OUT header of array receiveing points
+* @param pPoint IN array of points to add
+* @param index IN index location for adding the array
+* @param n IN number of points to add
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_insertFPoint3dArray
+(
+      EmbeddedFPoint2dArray       *pHeader,
+const FPoint3d              *pPointArray,
+      int                   index,
+      int                   n
+);
+
+/**
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getFPoint3d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+FPoint3d                *pPoint,
+int                     index
+);
+
+/**
+* Copy up to nreq points out of the array into a buffer.
+* @param pBuffer OUT buffer of points.
+* @nGot   pCount OUT number of points placed in buffer.
+* @i0 IN index of first point to access.
+* @nreq IN number of points requested.
+* @return true if at least one point was returned.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlEmbeddedFPoint2dArray_getFPoint3dArray
+(
+const EmbeddedFPoint2dArray   *pHeader,
+FPoint3d                *pBuffer,
+int                     *pCount,
+int                     i0,
+int                     nreq
+);
+
+/**
+* Store a point at specified index.
+* @bsimethod                                                    BentleySystems  01/00
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_setFPoint3d
+(
+EmbeddedFPoint2dArray   *pHeader,
+FPoint3d          *pInPoint,
+int               index
+);
+
+/**
+* @param pHeader IN point array header
+* @param pRange OUT computed range. Initialized as null range if no points.
+* @return ERROR if no points in array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getDRange3d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+DRange3d                *pRange
+);
+
+/**
+* @param pHeader IN point array header
+* @param pRange OUT computed range. Initialized as null range if no points.
+* @return ERROR if no points in array.
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public bool     jmdlEmbeddedFPoint2dArray_getFRange3d
+(
+const EmbeddedFPoint2dArray   *pHeader,
+FRange3d                *pRange
+);
+
+/**
+* @param pHeader IN OUT array to transform
+* @param pTransform IN transform to apply
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_multiplyByDTransform3dInPlace
+(
+EmbeddedFPoint2dArray     *pHeader,
+const DTransform3d  *pTransform
+);
+
+/**
+* @param pDest IN destination array
+* @param pSource IN OUT array to transform
+* @param pTransform IN transform to apply
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_multiplyByDTransform3d
+(
+EmbeddedFPoint2dArray   *pDestHeader,
+const EmbeddedFPoint2dArray   *pSourceHeader,
+const DTransform3d  *pTransform
+);
+
+/**
+* @param pHeader IN OUT array to transform
+* @param pMatrix IN transform to apply
+* @see
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void jmdlEmbeddedFPoint2dArray_multiplyByDMatrix3dInPlace
+(
+EmbeddedFPoint2dArray     *pHeader,
+const DMatrix3d     *pMatrix
+);
+

@@ -1,0 +1,6 @@
+message LineSegment
+{
+required DPoint3d startPoint = 1;
+required DPoint3d endPoint = 2;
+}
+

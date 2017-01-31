@@ -1,0 +1,10 @@
+PRIMITIVE CurveChain
+<def name=SUMMARY>A sequence of primitive curves joined end-to-end.
+</def>
+<def name=Interface_BaseList>IGeometry, ICurve</def>
+
+
+<def name=MEMBERS><list ItemType=IPrimitiveCurve ItemTagName=Curve ItemSemanticName=Curve ItemParamName=curve ListName=mCurve ItemDescription="Curve component" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

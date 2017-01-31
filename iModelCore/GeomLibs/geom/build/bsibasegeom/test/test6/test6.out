@@ -1,0 +1,902 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest6.exe
+
+ CCC 0 1 0
+<OK name="Tangency Radii 0"><double>1</double></OK>
+<OK name="Tangency Radii 0"><double>1</double></OK>
+<OK name="Tangency Radii 0"><double>1</double></OK>
+
+ CCC 0 0.5 0
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+
+ CCC 0 2 0
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 0"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+<OK name="Tangency Radii 1"><double>1.25</double></OK>
+
+ CCC 0.2 0 0
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+
+ CCC 0 0.2 0.1
+<OK name="Tangency Radii 0"><double>3.45</double></OK>
+<OK name="Tangency Radii 0"><double>3.45</double></OK>
+<OK name="Tangency Radii 0"><double>3.45</double></OK>
+<OK name="Tangency Radii 1"><double>3.45</double></OK>
+<OK name="Tangency Radii 1"><double>3.45</double></OK>
+<OK name="Tangency Radii 1"><double>3.45</double></OK>
+<OK name="Tangency Radii 2"><double>2.07</double></OK>
+<OK name="Tangency Radii 2"><double>2.07</double></OK>
+<OK name="Tangency Radii 2"><double>2.07</double></OK>
+<OK name="Tangency Radii 3"><double>2.07</double></OK>
+<OK name="Tangency Radii 3"><double>2.07</double></OK>
+<OK name="Tangency Radii 3"><double>2.07</double></OK>
+
+ CCC 0 0 0.2
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 0"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+<OK name="Tangency Radii 1"><double>4.9</double></OK>
+
+ CCC 0.1 0.2 0.1
+<OK name="Tangency Radii 0"><double>5.15</double></OK>
+<OK name="Tangency Radii 0"><double>5.15</double></OK>
+<OK name="Tangency Radii 0"><double>5.15</double></OK>
+<OK name="Tangency Radii 1"><double>5.15</double></OK>
+<OK name="Tangency Radii 1"><double>5.15</double></OK>
+<OK name="Tangency Radii 1"><double>5.15</double></OK>
+<OK name="Tangency Radii 2"><double>1.71667</double></OK>
+<OK name="Tangency Radii 2"><double>1.71667</double></OK>
+<OK name="Tangency Radii 2"><double>1.71667</double></OK>
+<OK name="Tangency Radii 3"><double>1.71667</double></OK>
+<OK name="Tangency Radii 3"><double>1.71667</double></OK>
+<OK name="Tangency Radii 3"><double>1.71667</double></OK>
+<OK name="Tangency Radii 4"><double>2.575</double></OK>
+<OK name="Tangency Radii 4"><double>2.575</double></OK>
+<OK name="Tangency Radii 4"><double>2.575</double></OK>
+<OK name="Tangency Radii 5"><double>2.575</double></OK>
+<OK name="Tangency Radii 5"><double>2.575</double></OK>
+<OK name="Tangency Radii 5"><double>2.575</double></OK>
+<OK name="Tangency Radii 6"><double>2.575</double></OK>
+<OK name="Tangency Radii 6"><double>2.575</double></OK>
+<OK name="Tangency Radii 6"><double>2.575</double></OK>
+<OK name="Tangency Radii 7"><double>2.575</double></OK>
+<OK name="Tangency Radii 7"><double>2.575</double></OK>
+<OK name="Tangency Radii 7"><double>2.575</double></OK>
+
+ CCC 0.05 0.2 0.1
+<OK name="Tangency Radii 0"><double>4.135</double></OK>
+<OK name="Tangency Radii 0"><double>4.135</double></OK>
+<OK name="Tangency Radii 0"><double>4.135</double></OK>
+<OK name="Tangency Radii 1"><double>4.135</double></OK>
+<OK name="Tangency Radii 1"><double>4.135</double></OK>
+<OK name="Tangency Radii 1"><double>4.135</double></OK>
+<OK name="Tangency Radii 2"><double>1.87955</double></OK>
+<OK name="Tangency Radii 2"><double>1.87955</double></OK>
+<OK name="Tangency Radii 2"><double>1.87955</double></OK>
+<OK name="Tangency Radii 3"><double>1.87955</double></OK>
+<OK name="Tangency Radii 3"><double>1.87955</double></OK>
+<OK name="Tangency Radii 3"><double>1.87955</double></OK>
+<OK name="Tangency Radii 4"><double>2.29722</double></OK>
+<OK name="Tangency Radii 4"><double>2.29722</double></OK>
+<OK name="Tangency Radii 4"><double>2.29722</double></OK>
+<OK name="Tangency Radii 5"><double>2.29722</double></OK>
+<OK name="Tangency Radii 5"><double>2.29722</double></OK>
+<OK name="Tangency Radii 5"><double>2.29722</double></OK>
+<OK name="Tangency Radii 6"><double>2.95357</double></OK>
+<OK name="Tangency Radii 6"><double>2.95357</double></OK>
+<OK name="Tangency Radii 6"><double>2.95357</double></OK>
+<OK name="Tangency Radii 7"><double>2.95357</double></OK>
+<OK name="Tangency Radii 7"><double>2.95357</double></OK>
+<OK name="Tangency Radii 7"><double>2.95357</double></OK>
+
+ CCC 0.05 0.2 0.1
+<OK name="Tangency Radii 0"><double>410.303</double></OK>
+<OK name="Tangency Radii 0"><double>410.303</double></OK>
+<OK name="Tangency Radii 0"><double>410.303</double></OK>
+<OK name="Tangency Radii 1"><double>410.303</double></OK>
+<OK name="Tangency Radii 1"><double>410.303</double></OK>
+<OK name="Tangency Radii 1"><double>410.303</double></OK>
+<OK name="Tangency Radii 2"><double>13.875</double></OK>
+<OK name="Tangency Radii 2"><double>13.875</double></OK>
+<OK name="Tangency Radii 2"><double>13.875</double></OK>
+<OK name="Tangency Radii 3"><double>13.875</double></OK>
+<OK name="Tangency Radii 3"><double>13.875</double></OK>
+<OK name="Tangency Radii 3"><double>13.875</double></OK>
+<OK name="Tangency Radii 4"><double>52.2204</double></OK>
+<OK name="Tangency Radii 4"><double>52.2204</double></OK>
+<OK name="Tangency Radii 4"><double>52.2204</double></OK>
+<OK name="Tangency Radii 5"><double>52.2204</double></OK>
+<OK name="Tangency Radii 5"><double>52.2204</double></OK>
+<OK name="Tangency Radii 5"><double>52.2204</double></OK>
+<OK name="Tangency Radii 6"><double>19.8077</double></OK>
+<OK name="Tangency Radii 6"><double>19.8077</double></OK>
+<OK name="Tangency Radii 6"><double>19.8077</double></OK>
+<OK name="Tangency Radii 7"><double>19.8077</double></OK>
+<OK name="Tangency Radii 7"><double>19.8077</double></OK>
+<OK name="Tangency Radii 7"><double>19.8077</double></OK>
+
+(a      104.234) (b        1.253)
+(b*b/a =   0.01506235) (a*a/b    8670.9711)
+(q            0) (rho    0.0150624) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q      0.19635) (rho      64.7366) (mu   0.19634954) (diff -2.77555756e-017)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho      486.559) (mu   0.39269908) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho      1487.63) (mu   0.58904862) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho      3066.32) (mu   0.78539816) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho      4984.81) (mu    0.9817477) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho      6838.01) (mu    1.1780972) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho      8180.75) (mu    1.3744468) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho      8670.97) (mu    1.5707963) (diff -2.24128811e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a        1.253) (b      104.234)
+(b*b/a =    8670.9711) (a*a/b   0.01506235)
+(q            0) (rho      8670.97) (mu 2.2412881e-008) (diff 2.24128811e-008)
+<OK name="inverse ellipse radius"><double>2.24129e-008</double></OK>
+(q      0.19635) (rho      8180.75) (mu   0.19634954) (diff 1.55431223e-015)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho      6838.01) (mu   0.39269908) (diff 6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho      4984.81) (mu   0.58904862) (diff 4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho      3066.32) (mu   0.78539816) (diff 2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho      1487.63) (mu    0.9817477) (diff 1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho      486.559) (mu    1.1780972) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho      64.7366) (mu    1.3744468) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho    0.0150624) (mu    1.5707963) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a        1.253) (b       10.234)
+(b*b/a =    83.587196) (a*a/b   0.15341108)
+(q            0) (rho      83.5872) (mu 2.0328488e-008) (diff 2.03284876e-008)
+<OK name="inverse ellipse radius"><double>2.03285e-008</double></OK>
+(q      0.19635) (rho       78.931) (mu   0.19634954) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho      66.1697) (mu   0.39269908) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho      48.5316) (mu   0.58904862) (diff 5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho      30.2195) (mu   0.78539816) (diff 1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho      15.0616) (mu    0.9817477) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho      5.31159) (mu    1.1780972) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho      1.00492) (mu    1.3744468) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho     0.153411) (mu    1.5707963) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a        0.001) (b       0.0023)
+(b*b/a =      0.00529) (a*a/b 0.00043478261)
+(q            0) (rho      0.00529) (mu 2.8102924e-008) (diff 2.81029235e-008)
+<OK name="inverse ellipse radius"><double>2.81029e-008</double></OK>
+(q      0.19635) (rho   0.00504698) (mu   0.19634954) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho   0.00437618) (mu   0.39269908) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho   0.00343382) (mu   0.58904862) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho   0.00242495) (mu   0.78539816) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho   0.00154052) (mu    0.9817477) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho   0.00090335) (mu    1.1780972) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho  0.000545504) (mu    1.3744468) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho  0.000434783) (mu    1.5707963) (diff -1.57100117e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a       0.0023) (b     -0.00253)
+(b*b/a =     0.002783) (a*a/b 0.0020909091)
+(q            0) (rho    -0.002783) (mu 6.1744414e-008) (diff 6.17444136e-008)
+<OK name="inverse ellipse radius"><double>6.17444e-008</double></OK>
+(q      0.19635) (rho  -0.00275547) (mu   0.19634954) (diff -6.43929354e-015)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho  -0.00267758) (mu   0.39269908) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho   -0.0025624) (mu   0.58904862) (diff -1.44328993e-015)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho  -0.00242873) (mu   0.78539816) (diff -4.21884749e-015)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho  -0.00229746) (mu    0.9817477) (diff -4.44089210e-015)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho   -0.0021881) (mu    1.1780972) (diff -3.99680289e-015)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho  -0.00211603) (mu    1.3744468) (diff -9.54791801e-015)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho  -0.00209091) (mu    1.5707963) (diff -5.52258825e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a      1042.23) (b        1.253)
+(b*b/a = 0.0015063882) (a*a/b    866920.76)
+(q            0) (rho   0.00150639) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q    0.0490874) (rho      102.508) (mu  0.049087385) (diff -6.93889390e-018)
+<OK name="inverse ellipse radius"><double>0.0490874</double></OK>
+(q    0.0981748) (rho       816.55) (mu   0.09817477) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.0981748</double></OK>
+(q     0.147262) (rho      2738.94) (mu   0.14726216) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.147262</double></OK>
+(q      0.19635) (rho       6437.4) (mu   0.19634954) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.245437) (rho      12436.8) (mu   0.24543693) (diff -1.38777878e-016)
+<OK name="inverse ellipse radius"><double>0.245437</double></OK>
+(q     0.294524) (rho      21206.2) (mu   0.29452431) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.294524</double></OK>
+(q     0.343612) (rho      33147.5) (mu    0.3436117) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.343612</double></OK>
+(q     0.392699) (rho      48585.2) (mu   0.39269908) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.441786) (rho      67757.9) (mu   0.44178647) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.441786</double></OK>
+(q     0.490874) (rho      90811.8) (mu   0.49087385) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.490874</double></OK>
+(q     0.539961) (rho       117796) (mu   0.53996124) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.539961</double></OK>
+(q     0.589049) (rho       148661) (mu   0.58904862) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.638136) (rho       183258) (mu   0.63813601) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.638136</double></OK>
+(q     0.687223) (rho       221338) (mu   0.68722339) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.687223</double></OK>
+(q     0.736311) (rho       262563) (mu   0.73631078) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.736311</double></OK>
+(q     0.785398) (rho       306503) (mu   0.78539816) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.834486) (rho       352654) (mu   0.83448555) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.834486</double></OK>
+(q     0.883573) (rho       400439) (mu   0.88357293) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.883573</double></OK>
+(q      0.93266) (rho       449224) (mu   0.93266032) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.93266</double></OK>
+(q     0.981748) (rho       498332) (mu    0.9817477) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q      1.03084) (rho       547053) (mu    1.0308351) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>1.03084</double></OK>
+(q      1.07992) (rho       594661) (mu    1.0799225) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.07992</double></OK>
+(q      1.12901) (rho       640427) (mu    1.1290099) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>1.12901</double></OK>
+(q       1.1781) (rho       683637) (mu    1.1780972) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.22718) (rho       723605) (mu    1.2271846) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.22718</double></OK>
+(q      1.27627) (rho       759686) (mu     1.276272) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.27627</double></OK>
+(q      1.32536) (rho       791292) (mu    1.3253594) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.32536</double></OK>
+(q      1.37445) (rho       817902) (mu    1.3744468) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q      1.42353) (rho       839075) (mu    1.4235342) (diff -2.44249065e-015)
+<OK name="inverse ellipse radius"><double>1.42353</double></OK>
+(q      1.47262) (rho       854458) (mu    1.4726216) (diff -5.55111512e-015)
+<OK name="inverse ellipse radius"><double>1.47262</double></OK>
+(q      1.52171) (rho       863792) (mu    1.5217089) (diff -7.54951657e-015)
+<OK name="inverse ellipse radius"><double>1.52171</double></OK>
+(q       1.5708) (rho       866921) (mu    1.5707963) (diff -2.92809486e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a      10421.2) (b        1.253)
+(b*b/a = 0.00015065481) (a*a/b     86673678)
+(q            0) (rho  0.000150655) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q    0.0245437) (rho      1281.13) (mu  0.024543693) (diff -1.04083409e-017)
+<OK name="inverse ellipse radius"><double>0.0245437</double></OK>
+(q    0.0490874) (rho      10239.5) (mu  0.049087385) (diff -1.38777878e-017)
+<OK name="inverse ellipse radius"><double>0.0490874</double></OK>
+(q    0.0736311) (rho        34506) (mu  0.073631078) (diff -2.77555756e-017)
+<OK name="inverse ellipse radius"><double>0.0736311</double></OK>
+(q    0.0981748) (rho      81619.6) (mu   0.09817477) (diff -2.77555756e-017)
+<OK name="inverse ellipse radius"><double>0.0981748</double></OK>
+(q     0.122718) (rho       158981) (mu   0.12271846) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.122718</double></OK>
+(q     0.147262) (rho       273810) (mu   0.14726216) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.147262</double></OK>
+(q     0.171806) (rho       433097) (mu   0.17180585) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.171806</double></OK>
+(q      0.19635) (rho       643568) (mu   0.19634954) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.220893) (rho       911637) (mu   0.22089323) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.220893</double></OK>
+(q     0.245437) (rho 1.24337e+006) (mu   0.24543693) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.245437</double></OK>
+(q     0.269981) (rho 1.64444e+006) (mu   0.26998062) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.269981</double></OK>
+(q     0.294524) (rho 2.12012e+006) (mu   0.29452431) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.294524</double></OK>
+(q     0.319068) (rho 2.67519e+006) (mu     0.319068) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.319068</double></OK>
+(q     0.343612) (rho 3.31399e+006) (mu    0.3436117) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.343612</double></OK>
+(q     0.368155) (rho 4.04031e+006) (mu   0.36815539) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.368155</double></OK>
+(q     0.392699) (rho 4.85743e+006) (mu   0.39269908) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.417243) (rho 5.76804e+006) (mu   0.41724277) (diff -2.77555756e-016)
+<OK name="inverse ellipse radius"><double>0.417243</double></OK>
+(q     0.441786) (rho 6.77429e+006) (mu   0.44178647) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.441786</double></OK>
+(q      0.46633) (rho 7.87769e+006) (mu   0.46633016) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.46633</double></OK>
+(q     0.490874) (rho 9.07919e+006) (mu   0.49087385) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.490874</double></OK>
+(q     0.515418) (rho 1.03791e+007) (mu   0.51541754) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.515418</double></OK>
+(q     0.539961) (rho 1.17771e+007) (mu   0.53996124) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.539961</double></OK>
+(q     0.564505) (rho 1.32722e+007) (mu   0.56450493) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.564505</double></OK>
+(q     0.589049) (rho 1.48629e+007) (mu   0.58904862) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.613592) (rho 1.65471e+007) (mu   0.61359232) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.613592</double></OK>
+(q     0.638136) (rho 1.83218e+007) (mu   0.63813601) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.638136</double></OK>
+(q      0.66268) (rho 2.01838e+007) (mu    0.6626797) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.66268</double></OK>
+(q     0.687223) (rho 2.21291e+007) (mu   0.68722339) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.687223</double></OK>
+(q     0.711767) (rho  2.4153e+007) (mu   0.71176709) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.711767</double></OK>
+(q     0.736311) (rho 2.62506e+007) (mu   0.73631078) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.736311</double></OK>
+(q     0.760854) (rho 2.84162e+007) (mu   0.76085447) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.760854</double></OK>
+(q     0.785398) (rho 3.06438e+007) (mu   0.78539816) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.809942) (rho 3.29266e+007) (mu   0.80994186) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.809942</double></OK>
+(q     0.834486) (rho 3.52579e+007) (mu   0.83448555) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.834486</double></OK>
+(q     0.859029) (rho   3.763e+007) (mu   0.85902924) (diff -7.77156117e-016)
+<OK name="inverse ellipse radius"><double>0.859029</double></OK>
+(q     0.883573) (rho 4.00353e+007) (mu   0.88357293) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.883573</double></OK>
+(q     0.908117) (rho 4.24657e+007) (mu   0.90811663) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.908117</double></OK>
+(q      0.93266) (rho 4.49128e+007) (mu   0.93266032) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.93266</double></OK>
+(q     0.957204) (rho 4.73681e+007) (mu   0.95720401) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.957204</double></OK>
+(q     0.981748) (rho 4.98226e+007) (mu    0.9817477) (diff -7.77156117e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q      1.00629) (rho 5.22675e+007) (mu    1.0062914) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>1.00629</double></OK>
+(q      1.03084) (rho 5.46937e+007) (mu    1.0308351) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.03084</double></OK>
+(q      1.05538) (rho  5.7092e+007) (mu    1.0553788) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.05538</double></OK>
+(q      1.07992) (rho 5.94534e+007) (mu    1.0799225) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.07992</double></OK>
+(q      1.10447) (rho 6.17688e+007) (mu    1.1044662) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.10447</double></OK>
+(q      1.12901) (rho 6.40291e+007) (mu    1.1290099) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>1.12901</double></OK>
+(q      1.15355) (rho 6.62254e+007) (mu    1.1535536) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.15355</double></OK>
+(q       1.1781) (rho 6.83492e+007) (mu    1.1780972) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.20264) (rho 7.03918e+007) (mu    1.2026409) (diff -1.77635684e-015)
+<OK name="inverse ellipse radius"><double>1.20264</double></OK>
+(q      1.22718) (rho 7.23451e+007) (mu    1.2271846) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.22718</double></OK>
+(q      1.25173) (rho 7.42012e+007) (mu    1.2517283) (diff -1.77635684e-015)
+<OK name="inverse ellipse radius"><double>1.25173</double></OK>
+(q      1.27627) (rho 7.59525e+007) (mu     1.276272) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.27627</double></OK>
+(q      1.30082) (rho 7.75918e+007) (mu    1.3008157) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.30082</double></OK>
+(q      1.32536) (rho 7.91124e+007) (mu    1.3253594) (diff -2.44249065e-015)
+<OK name="inverse ellipse radius"><double>1.32536</double></OK>
+(q       1.3499) (rho  8.0508e+007) (mu    1.3499031) (diff -2.44249065e-015)
+<OK name="inverse ellipse radius"><double>1.3499</double></OK>
+(q      1.37445) (rho 8.17728e+007) (mu    1.3744468) (diff -2.88657986e-015)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q      1.39899) (rho 8.29016e+007) (mu    1.3989905) (diff -3.10862447e-015)
+<OK name="inverse ellipse radius"><double>1.39899</double></OK>
+(q      1.42353) (rho 8.38897e+007) (mu    1.4235342) (diff -3.77475828e-015)
+<OK name="inverse ellipse radius"><double>1.42353</double></OK>
+(q      1.44808) (rho 8.47329e+007) (mu    1.4480779) (diff -3.99680289e-015)
+<OK name="inverse ellipse radius"><double>1.44808</double></OK>
+(q      1.47262) (rho 8.54276e+007) (mu    1.4726216) (diff -4.88498131e-015)
+<OK name="inverse ellipse radius"><double>1.47262</double></OK>
+(q      1.49717) (rho  8.5971e+007) (mu    1.4971652) (diff -6.66133815e-015)
+<OK name="inverse ellipse radius"><double>1.49717</double></OK>
+(q      1.52171) (rho 8.63608e+007) (mu    1.5217089) (diff -1.24344979e-014)
+<OK name="inverse ellipse radius"><double>1.52171</double></OK>
+(q      1.54625) (rho 8.65954e+007) (mu    1.5462526) (diff -2.13162821e-014)
+<OK name="inverse ellipse radius"><double>1.54625</double></OK>
+(q       1.5708) (rho 8.66737e+007) (mu    1.5707963) (diff -3.31311039e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a       104210) (b        1.253)
+(b*b/a = 1.5065785e-005) (a*a/b 8.6670175e+009)
+(q            0) (rho 1.50658e-005) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q    0.0122718) (rho      16016.5) (mu  0.012271846) (diff -3.46944695e-018)
+<OK name="inverse ellipse radius"><double>0.0122718</double></OK>
+(q    0.0245437) (rho       128103) (mu  0.024543693) (diff -3.46944695e-018)
+<OK name="inverse ellipse radius"><double>0.0245437</double></OK>
+(q    0.0368155) (rho       432184) (mu  0.036815539) (diff -2.08166817e-017)
+<OK name="inverse ellipse radius"><double>0.0368155</double></OK>
+(q    0.0490874) (rho  1.0239e+006) (mu  0.049087385) (diff -2.08166817e-017)
+<OK name="inverse ellipse radius"><double>0.0490874</double></OK>
+(q    0.0613592) (rho 1.99844e+006) (mu  0.061359232) (diff -3.46944695e-017)
+<OK name="inverse ellipse radius"><double>0.0613592</double></OK>
+(q    0.0736311) (rho 3.45045e+006) (mu  0.073631078) (diff -4.16333634e-017)
+<OK name="inverse ellipse radius"><double>0.0736311</double></OK>
+(q    0.0859029) (rho 5.47382e+006) (mu  0.085902924) (diff -4.16333634e-017)
+<OK name="inverse ellipse radius"><double>0.0859029</double></OK>
+(q    0.0981748) (rho 8.16161e+006) (mu   0.09817477) (diff -4.16333634e-017)
+<OK name="inverse ellipse radius"><double>0.0981748</double></OK>
+(q     0.110447) (rho 1.16059e+007) (mu   0.11044662) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.110447</double></OK>
+(q     0.122718) (rho 1.58975e+007) (mu   0.12271846) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.122718</double></OK>
+(q      0.13499) (rho  2.1126e+007) (mu   0.13499031) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.13499</double></OK>
+(q     0.147262) (rho 2.73798e+007) (mu   0.14726216) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.147262</double></OK>
+(q     0.159534) (rho 3.47455e+007) (mu     0.159534) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.159534</double></OK>
+(q     0.171806) (rho 4.33079e+007) (mu   0.17180585) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.171806</double></OK>
+(q     0.184078) (rho 5.31504e+007) (mu   0.18407769) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.184078</double></OK>
+(q      0.19635) (rho 6.43542e+007) (mu   0.19634954) (diff -1.38777878e-016)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.208621) (rho 7.69984e+007) (mu   0.20862139) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.208621</double></OK>
+(q     0.220893) (rho   9.116e+007) (mu   0.22089323) (diff -8.32667268e-017)
+<OK name="inverse ellipse radius"><double>0.220893</double></OK>
+(q     0.233165) (rho 1.06914e+008) (mu   0.23316508) (diff -1.38777878e-016)
+<OK name="inverse ellipse radius"><double>0.233165</double></OK>
+(q     0.245437) (rho 1.24332e+008) (mu   0.24543693) (diff -1.94289029e-016)
+<OK name="inverse ellipse radius"><double>0.245437</double></OK>
+(q     0.257709) (rho 1.43484e+008) (mu   0.25770877) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.257709</double></OK>
+(q     0.269981) (rho 1.64438e+008) (mu   0.26998062) (diff -1.66533454e-016)
+<OK name="inverse ellipse radius"><double>0.269981</double></OK>
+(q     0.282252) (rho 1.87257e+008) (mu   0.28225246) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.282252</double></OK>
+(q     0.294524) (rho 2.12003e+008) (mu   0.29452431) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.294524</double></OK>
+(q     0.306796) (rho 2.38735e+008) (mu   0.30679616) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.306796</double></OK>
+(q     0.319068) (rho 2.67508e+008) (mu     0.319068) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.319068</double></OK>
+(q      0.33134) (rho 2.98375e+008) (mu   0.33133985) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.33134</double></OK>
+(q     0.343612) (rho 3.31385e+008) (mu    0.3436117) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.343612</double></OK>
+(q     0.355884) (rho 3.66584e+008) (mu   0.35588354) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.355884</double></OK>
+(q     0.368155) (rho 4.04015e+008) (mu   0.36815539) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.368155</double></OK>
+(q     0.380427) (rho 4.43716e+008) (mu   0.38042724) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.380427</double></OK>
+(q     0.392699) (rho 4.85723e+008) (mu   0.39269908) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.404971) (rho 5.30069e+008) (mu   0.40497093) (diff -2.77555756e-016)
+<OK name="inverse ellipse radius"><double>0.404971</double></OK>
+(q     0.417243) (rho 5.76781e+008) (mu   0.41724277) (diff -3.88578059e-016)
+<OK name="inverse ellipse radius"><double>0.417243</double></OK>
+(q     0.429515) (rho 6.25885e+008) (mu   0.42951462) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.429515</double></OK>
+(q     0.441786) (rho 6.77401e+008) (mu   0.44178647) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.441786</double></OK>
+(q     0.454058) (rho 7.31348e+008) (mu   0.45405831) (diff -2.77555756e-016)
+<OK name="inverse ellipse radius"><double>0.454058</double></OK>
+(q      0.46633) (rho 7.87737e+008) (mu   0.46633016) (diff -3.88578059e-016)
+<OK name="inverse ellipse radius"><double>0.46633</double></OK>
+(q     0.478602) (rho  8.4658e+008) (mu   0.47860201) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.478602</double></OK>
+(q     0.490874) (rho 9.07882e+008) (mu   0.49087385) (diff -3.88578059e-016)
+<OK name="inverse ellipse radius"><double>0.490874</double></OK>
+(q     0.503146) (rho 9.71645e+008) (mu    0.5031457) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.503146</double></OK>
+(q     0.515418) (rho 1.03787e+009) (mu   0.51541754) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.515418</double></OK>
+(q     0.527689) (rho 1.10654e+009) (mu   0.52768939) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.527689</double></OK>
+(q     0.539961) (rho 1.17766e+009) (mu   0.53996124) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.539961</double></OK>
+(q     0.552233) (rho 1.25121e+009) (mu   0.55223308) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.552233</double></OK>
+(q     0.564505) (rho 1.32717e+009) (mu   0.56450493) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.564505</double></OK>
+(q     0.576777) (rho 1.40552e+009) (mu   0.57677678) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.576777</double></OK>
+(q     0.589049) (rho 1.48623e+009) (mu   0.58904862) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q      0.60132) (rho 1.56928e+009) (mu   0.60132047) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.60132</double></OK>
+(q     0.613592) (rho 1.65464e+009) (mu   0.61359232) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.613592</double></OK>
+(q     0.625864) (rho 1.74226e+009) (mu   0.62586416) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.625864</double></OK>
+(q     0.638136) (rho 1.83211e+009) (mu   0.63813601) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>0.638136</double></OK>
+(q     0.650408) (rho 1.92414e+009) (mu   0.65040785) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.650408</double></OK>
+(q      0.66268) (rho  2.0183e+009) (mu    0.6626797) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.66268</double></OK>
+(q     0.674952) (rho 2.11454e+009) (mu   0.67495155) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.674952</double></OK>
+(q     0.687223) (rho 2.21282e+009) (mu   0.68722339) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.687223</double></OK>
+(q     0.699495) (rho 2.31306e+009) (mu   0.69949524) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.699495</double></OK>
+(q     0.711767) (rho 2.41521e+009) (mu   0.71176709) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.711767</double></OK>
+(q     0.724039) (rho 2.51919e+009) (mu   0.72403893) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.724039</double></OK>
+(q     0.736311) (rho 2.62496e+009) (mu   0.73631078) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.736311</double></OK>
+(q     0.748583) (rho 2.73242e+009) (mu   0.74858262) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.748583</double></OK>
+(q     0.760854) (rho 2.84151e+009) (mu   0.76085447) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.760854</double></OK>
+(q     0.773126) (rho 2.95215e+009) (mu   0.77312632) (diff -3.33066907e-016)
+<OK name="inverse ellipse radius"><double>0.773126</double></OK>
+(q     0.785398) (rho 3.06425e+009) (mu   0.78539816) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q      0.79767) (rho 3.17774e+009) (mu   0.79767001) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.79767</double></OK>
+(q     0.809942) (rho 3.29253e+009) (mu   0.80994186) (diff -6.66133815e-016)
+<OK name="inverse ellipse radius"><double>0.809942</double></OK>
+(q     0.822214) (rho 3.40853e+009) (mu    0.8222137) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.822214</double></OK>
+(q     0.834486) (rho 3.52564e+009) (mu   0.83448555) (diff -7.77156117e-016)
+<OK name="inverse ellipse radius"><double>0.834486</double></OK>
+(q     0.846757) (rho 3.64378e+009) (mu   0.84675739) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.846757</double></OK>
+(q     0.859029) (rho 3.76285e+009) (mu   0.85902924) (diff -5.55111512e-016)
+<OK name="inverse ellipse radius"><double>0.859029</double></OK>
+(q     0.871301) (rho 3.88274e+009) (mu   0.87130109) (diff -7.77156117e-016)
+<OK name="inverse ellipse radius"><double>0.871301</double></OK>
+(q     0.883573) (rho 4.00337e+009) (mu   0.88357293) (diff -7.77156117e-016)
+<OK name="inverse ellipse radius"><double>0.883573</double></OK>
+(q     0.895845) (rho 4.12462e+009) (mu   0.89584478) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>0.895845</double></OK>
+(q     0.908117) (rho  4.2464e+009) (mu   0.90811663) (diff -9.99200722e-016)
+<OK name="inverse ellipse radius"><double>0.908117</double></OK>
+(q     0.920388) (rho  4.3686e+009) (mu   0.92038847) (diff -1.22124533e-015)
+<OK name="inverse ellipse radius"><double>0.920388</double></OK>
+(q      0.93266) (rho  4.4911e+009) (mu   0.93266032) (diff -9.99200722e-016)
+<OK name="inverse ellipse radius"><double>0.93266</double></OK>
+(q     0.944932) (rho 4.61381e+009) (mu   0.94493217) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>0.944932</double></OK>
+(q     0.957204) (rho 4.73662e+009) (mu   0.95720401) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>0.957204</double></OK>
+(q     0.969476) (rho  4.8594e+009) (mu   0.96947586) (diff -9.99200722e-016)
+<OK name="inverse ellipse radius"><double>0.969476</double></OK>
+(q     0.981748) (rho 4.98206e+009) (mu    0.9817477) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q      0.99402) (rho 5.10447e+009) (mu   0.99401955) (diff -9.99200722e-016)
+<OK name="inverse ellipse radius"><double>0.99402</double></OK>
+(q      1.00629) (rho 5.22654e+009) (mu    1.0062914) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.00629</double></OK>
+(q      1.01856) (rho 5.34813e+009) (mu    1.0185632) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.01856</double></OK>
+(q      1.03084) (rho 5.46914e+009) (mu    1.0308351) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.03084</double></OK>
+(q      1.04311) (rho 5.58946e+009) (mu    1.0431069) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.04311</double></OK>
+(q      1.05538) (rho 5.70897e+009) (mu    1.0553788) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.05538</double></OK>
+(q      1.06765) (rho 5.82755e+009) (mu    1.0676506) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>1.06765</double></OK>
+(q      1.07992) (rho  5.9451e+009) (mu    1.0799225) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>1.07992</double></OK>
+(q      1.09219) (rho 6.06149e+009) (mu    1.0921943) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.09219</double></OK>
+(q      1.10447) (rho 6.17663e+009) (mu    1.1044662) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>1.10447</double></OK>
+(q      1.11674) (rho 6.29038e+009) (mu     1.116738) (diff -8.88178420e-016)
+<OK name="inverse ellipse radius"><double>1.11674</double></OK>
+(q      1.12901) (rho 6.40265e+009) (mu    1.1290099) (diff -1.11022302e-015)
+<OK name="inverse ellipse radius"><double>1.12901</double></OK>
+(q      1.14128) (rho 6.51331e+009) (mu    1.1412817) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.14128</double></OK>
+(q      1.15355) (rho 6.62228e+009) (mu    1.1535536) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>1.15355</double></OK>
+(q      1.16583) (rho 6.72942e+009) (mu    1.1658254) (diff -1.77635684e-015)
+<OK name="inverse ellipse radius"><double>1.16583</double></OK>
+(q       1.1781) (rho 6.83464e+009) (mu    1.1780972) (diff -1.33226763e-015)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.19037) (rho 6.93783e+009) (mu    1.1903691) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.19037</double></OK>
+(q      1.20264) (rho  7.0389e+009) (mu    1.2026409) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.20264</double></OK>
+(q      1.21491) (rho 7.13772e+009) (mu    1.2149128) (diff -1.77635684e-015)
+<OK name="inverse ellipse radius"><double>1.21491</double></OK>
+(q      1.22718) (rho 7.23422e+009) (mu    1.2271846) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.22718</double></OK>
+(q      1.23946) (rho 7.32828e+009) (mu    1.2394565) (diff -1.77635684e-015)
+<OK name="inverse ellipse radius"><double>1.23946</double></OK>
+(q      1.25173) (rho 7.41982e+009) (mu    1.2517283) (diff -1.55431223e-015)
+<OK name="inverse ellipse radius"><double>1.25173</double></OK>
+(q        1.264) (rho 7.50873e+009) (mu    1.2640002) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.264</double></OK>
+(q      1.27627) (rho 7.59494e+009) (mu     1.276272) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.27627</double></OK>
+(q      1.28854) (rho 7.67834e+009) (mu    1.2885439) (diff -1.99840144e-015)
+<OK name="inverse ellipse radius"><double>1.28854</double></OK>
+(q      1.30082) (rho 7.75886e+009) (mu    1.3008157) (diff -2.88657986e-015)
+<OK name="inverse ellipse radius"><double>1.30082</double></OK>
+(q      1.31309) (rho 7.83641e+009) (mu    1.3130876) (diff -2.88657986e-015)
+<OK name="inverse ellipse radius"><double>1.31309</double></OK>
+(q      1.32536) (rho 7.91092e+009) (mu    1.3253594) (diff -3.10862447e-015)
+<OK name="inverse ellipse radius"><double>1.32536</double></OK>
+(q      1.33763) (rho  7.9823e+009) (mu    1.3376312) (diff -2.88657986e-015)
+<OK name="inverse ellipse radius"><double>1.33763</double></OK>
+(q       1.3499) (rho 8.05047e+009) (mu    1.3499031) (diff -3.10862447e-015)
+<OK name="inverse ellipse radius"><double>1.3499</double></OK>
+(q      1.36217) (rho 8.11538e+009) (mu    1.3621749) (diff -2.88657986e-015)
+<OK name="inverse ellipse radius"><double>1.36217</double></OK>
+(q      1.37445) (rho 8.17695e+009) (mu    1.3744468) (diff -3.33066907e-015)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q      1.38672) (rho 8.23512e+009) (mu    1.3867186) (diff -4.21884749e-015)
+<OK name="inverse ellipse radius"><double>1.38672</double></OK>
+(q      1.39899) (rho 8.28983e+009) (mu    1.3989905) (diff -3.99680289e-015)
+<OK name="inverse ellipse radius"><double>1.39899</double></OK>
+(q      1.41126) (rho 8.34102e+009) (mu    1.4112623) (diff -2.44249065e-015)
+<OK name="inverse ellipse radius"><double>1.41126</double></OK>
+(q      1.42353) (rho 8.38863e+009) (mu    1.4235342) (diff -3.99680289e-015)
+<OK name="inverse ellipse radius"><double>1.42353</double></OK>
+(q      1.43581) (rho 8.43262e+009) (mu     1.435806) (diff -4.88498131e-015)
+<OK name="inverse ellipse radius"><double>1.43581</double></OK>
+(q      1.44808) (rho 8.47294e+009) (mu    1.4480779) (diff -5.32907052e-015)
+<OK name="inverse ellipse radius"><double>1.44808</double></OK>
+(q      1.46035) (rho 8.50956e+009) (mu    1.4603497) (diff -5.99520433e-015)
+<OK name="inverse ellipse radius"><double>1.46035</double></OK>
+(q      1.47262) (rho 8.54242e+009) (mu    1.4726216) (diff -8.43769499e-015)
+<OK name="inverse ellipse radius"><double>1.47262</double></OK>
+(q      1.48489) (rho 8.57149e+009) (mu    1.4848934) (diff -8.43769499e-015)
+<OK name="inverse ellipse radius"><double>1.48489</double></OK>
+(q      1.49717) (rho 8.59676e+009) (mu    1.4971652) (diff -1.06581410e-014)
+<OK name="inverse ellipse radius"><double>1.49717</double></OK>
+(q      1.50944) (rho 8.61818e+009) (mu    1.5094371) (diff -1.08801856e-014)
+<OK name="inverse ellipse radius"><double>1.50944</double></OK>
+(q      1.52171) (rho 8.63574e+009) (mu    1.5217089) (diff -9.54791801e-015)
+<OK name="inverse ellipse radius"><double>1.52171</double></OK>
+(q      1.53398) (rho 8.64941e+009) (mu    1.5339808) (diff -1.53210777e-014)
+<OK name="inverse ellipse radius"><double>1.53398</double></OK>
+(q      1.54625) (rho 8.65919e+009) (mu    1.5462526) (diff -2.55351296e-014)
+<OK name="inverse ellipse radius"><double>1.54625</double></OK>
+(q      1.55852) (rho 8.66506e+009) (mu    1.5585245) (diff -4.24105195e-014)
+<OK name="inverse ellipse radius"><double>1.55852</double></OK>
+(q       1.5708) (rho 8.66702e+009) (mu    1.5707963) (diff -3.74843223e-008)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a            2) (b            1)
+(b*b/a =          0.5) (a*a/b            4)
+(q            0) (rho          0.5) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q      0.19635) (rho     0.588035) (mu   0.19634954) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho     0.863406) (mu   0.39269908) (diff -5.55111512e-017)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho      1.33643) (mu   0.58904862) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho      1.97642) (mu   0.78539816) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho      2.69483) (mu    0.9817477) (diff 1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho      3.35943) (mu    1.1780972) (diff 2.22044605e-016)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho      3.82996) (mu    1.3744468) (diff -4.44089210e-016)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho            4) (mu    1.5707963) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+
+(a        1.253) (b        4.234)
+(b*b/a =    14.307068) (a*a/b   0.37080987)
+(q            0) (rho      14.3071) (mu            0) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0</double></OK>
+(q      0.19635) (rho      13.5683) (mu   0.19634954) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.19635</double></OK>
+(q     0.392699) (rho      11.5375) (mu   0.39269908) (diff -2.22044605e-016)
+<OK name="inverse ellipse radius"><double>0.392699</double></OK>
+(q     0.589049) (rho      8.71117) (mu   0.58904862) (diff -1.11022302e-016)
+<OK name="inverse ellipse radius"><double>0.589049</double></OK>
+(q     0.785398) (rho      5.73716) (mu   0.78539816) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.785398</double></OK>
+(q     0.981748) (rho      3.20961) (mu    0.9817477) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>0.981748</double></OK>
+(q       1.1781) (rho      1.48843) (mu    1.1780972) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.1781</double></OK>
+(q      1.37445) (rho     0.611959) (mu    1.3744468) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.37445</double></OK>
+(q       1.5708) (rho      0.37081) (mu    1.5707963) (diff 0.00000000e+000)
+<OK name="inverse ellipse radius"><double>1.5708</double></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>1</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+<OK name="Inverse ROC - expect out of range"><int>0</int></OK>
+Exit with 0 errors, 561 OK

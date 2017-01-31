@@ -1,0 +1,336 @@
+#include "testHarness.h"
+#define _MXSTUFF_
+
+
+#include "GenericNewtonSolver.h"
+
+TDofControls::TDofControls
+      (
+      double tolerance,
+      double minValue,
+      double maxValue,
+      double maxStep,
+      double approximateDerivativeStep
+      )
+  : mTolerance (tolerance),
+    mMinValue (minValue),
+    mMaxValue (maxValue),
+    mMaxStep (maxStep),
+    mApproximateDerivativeStep (approximateDerivativeStep)
+  {
+  }
+
+TDofControls::TDofControls ()
+  : mTolerance (1.0e-10),
+    mMinValue (-DBL_MAX),
+    mMaxValue (DBL_MAX),
+    mMaxStep (DBL_MAX),
+    mApproximateDerivativeStep (1.0e-5)
+  {
+  }
+// return 1.0 if maxStep is zero or negative.
+// return 1.0 if step is less than maxStep
+// otherwise return step/maxStep
+double TDofControls::ComputeStepsizeRestraintFactor (double step, double maxStep)
+  {
+  step = fabs (step);
+  if (maxStep <= 0.0)
+    return 1.0;
+  maxStep = fabs (maxStep);
+  if (step <= maxStep)
+    return 1.0;
+  return maxStep / step;
+  }
+
+// return smaller of restraint factors for minX, maxX
+double TDofControls::ComptueIntervalRestraintFactor (double x, double step, double minX, double maxX)
+  {
+  double factor = 1.0;
+  if (x < maxX)
+    factor = DoubleOps::Min (factor, ComputeStepsizeRestraintFactor (step, maxX - x));
+  if (x > minX)
+    factor = DoubleOps::Min (factor, ComputeStepsizeRestraintFactor (step, x - minX));
+  return factor;
+  }
+
+double TDofControls::ComputeRestraintFactor (double x, double step, bool applyStepLimits, bool applyRangeLimits) const
+  {
+  double stepFactor = ComputeStepsizeRestraintFactor (step, mMaxStep);
+  double rangeFactor = ComptueIntervalRestraintFactor (x, step, mMinValue, mMaxValue);
+  return DoubleOps::Min (stepFactor, rangeFactor);
+  }
+
+bool TDofControls::IsConverged (double step) const
+  {
+  return mTolerance <= 0.0 || fabs (step) < mTolerance;
+  }
+
+
+bool TGenericNewtonSolver::RunIterations (INewtonSolverEvents &evaluator)
+  {
+  bool converged = false;
+  for (ClearIterationCounters ();CanStartIteration ();)
+    {
+    if (!evaluator.EvaluateNewtonFunctionWithDerivatives (*this))
+        return false;
+    if (!ComputeUnConstrainedStep ())
+        return false;
+    if (CanAccept (IsStepConverged ()))
+        return true;
+    double factor = ComputeConstraintFactor (true, true);
+    ApplyNegatedStep (factor);
+    }
+  return converged;
+  }
+
+bool TGenericNewtonSolver::EvaluateAllApproximateDerivatives (INewtonSolverEvents &evaluator)
+  {
+  bool stat = true;
+  // Put reference derivatives in X ..
+  if (!evaluator.EvaluateNewtonFunction (*this))
+    return false;
+  // individually shift and reevaluate for differences ...
+  for (INDEX_TYPE i = FIRST_INDEX; stat && TEST_INDEX (i, mNumDofs); i++)
+    {
+    SaveXF ();
+    double delta = mTDofControls[i].mApproximateDerivativeStep;
+    mX [i] += delta;
+    stat = evaluator.EvaluateNewtonFunction (*this);
+    if (stat)
+      ComputeApproximateDerivative (i, delta);
+    RestoreXF ();
+    }
+  return stat;
+  }
+bool TGenericNewtonSolver::RunIterationsWithApproximateDerivatives (INewtonSolverEvents &evaluator)
+  {
+  bool converged = false;
+  for (ClearIterationCounters ();CanStartIteration ();)
+    {
+    if (!evaluator.StartIteration (*this))
+        return false;
+    if (!EvaluateAllApproximateDerivatives (evaluator))
+        return false;
+    if (!ComputeUnConstrainedStep ())
+        return false;
+    if (CanAccept (IsStepConverged ()))
+        return true;
+    double factor = ComputeConstraintFactor (true, true);
+    ApplyNegatedStep (factor);
+    }
+  return converged;
+  }
+
+
+
+TGenericNewtonSolver::TGenericNewtonSolver (
+INDEX_TYPE numDofs,
+INDEX_TYPE maxIterations,
+INDEX_TYPE defaultSuccessiveConvergencesRequired
+) : mNumDofs (numDofs),
+  mJ(numDofs, numDofs)
+  {
+  mMaxIterations = maxIterations;
+  mSuccessiveConvegencesRequired = defaultSuccessiveConvergencesRequired;
+  mTDofControls.resize (mNumDofs);
+  mX.resize (mNumDofs);
+  mDX.resize (mNumDofs);
+  mF.resize (mNumDofs);
+  mF0.resize (mNumDofs);
+  mX0.resize (mNumDofs);
+
+
+  SetAllTDofControls  (TDofControls ());
+
+  mSolveDX.resize (numDofs);
+  mSolveF.resize (numDofs);
+  }
+
+// Reset all counters to zero ..
+void TGenericNewtonSolver::ClearIterationCounters ()
+  {
+  mNumIterations = 0;
+  mNumSuccessiveConvergences = 0;
+  }
+// Test if another iteration is permitted (i.e. check iteration counters)
+bool TGenericNewtonSolver::CanStartIteration ()
+  {
+  return mNumIterations++ < mMaxIterations;
+  }
+
+// Ask if ready to accept after a step ...
+bool TGenericNewtonSolver::CanAccept (bool thisStepConvrged)
+  {
+  if (!thisStepConvrged)
+    mNumSuccessiveConvergences = 0;
+  else
+    mNumSuccessiveConvergences++;
+
+  return mNumSuccessiveConvergences >= mSuccessiveConvegencesRequired;
+  }
+
+
+void TGenericNewtonSolver::SaveXF ()
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    {
+    mF0[i] = mF[i];
+    mX0[i] = mX[i];
+    }
+  }
+
+void TGenericNewtonSolver::RestoreXF ()
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    {
+    mF[i] = mF0[i];
+    mX[i] = mX0[i];
+    }
+  }
+
+
+bool TGenericNewtonSolver::ValidIndex (INDEX_TYPE i) const
+  {
+  return FIRST_INDEX <= i && TEST_INDEX(i, mNumDofs);
+  }
+
+
+double TGenericNewtonSolver::GetX (INDEX_TYPE i) const
+  {
+  if (ValidIndex (i))
+    return mX[i];
+  return 0.0;
+  }
+
+void TGenericNewtonSolver::SetF(INDEX_TYPE i, double value)
+  {
+  if (ValidIndex (i))
+    mF[i] = value;
+  }
+
+void TGenericNewtonSolver::SetX (INDEX_TYPE i, double value)
+  {
+  if (ValidIndex (i))
+    mX[i] = value;
+  }
+
+void TGenericNewtonSolver::SetDerivative (INDEX_TYPE i, INDEX_TYPE j, double value)
+  {
+  if (ValidIndex (i) && ValidIndex (j))
+      mJ.At (i,j) = value;
+  }
+
+
+
+void TGenericNewtonSolver::SetAllX (double value)
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    mX[i] = value;
+  }
+
+void TGenericNewtonSolver::SetAllTDofControls (TDofControls const &data)
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    mTDofControls[i] = data;
+  }
+
+void TGenericNewtonSolver::SetTDofControls (INDEX_TYPE i, TDofControls const &controls)
+  {
+  if (ValidIndex (i))
+    mTDofControls[i] = controls;
+  }
+
+bool TGenericNewtonSolver::GetTDofControls (INDEX_TYPE i, TDofControls &controls) const
+  {
+  if (ValidIndex (i))
+    {
+    controls = mTDofControls[i];
+    return true;
+    }
+  return false;
+  }
+
+double TGenericNewtonSolver::GetLastChange (INDEX_TYPE i, double value) const
+  {
+  if (ValidIndex (i))
+    return mDX[i];
+  return 0.0;
+  }
+
+double TGenericNewtonSolver::GetFunction (INDEX_TYPE i, double value) const
+  {
+  if (ValidIndex (i))
+    return mF[i];
+  return 0.0;
+  }
+
+bool TGenericNewtonSolver::ComputeUnConstrainedStep ()
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    mSolveF[i] = mF[i];
+  bool solved = LinearAlgebra::SolveInplaceGaussPartialPivot (mJ, mSolveF);
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    mDX[i] = mSolveF[i];
+  return solved;
+  }
+
+
+double TGenericNewtonSolver::ComputeConstraintFactor (bool applyStepLimits, bool applyMinMaxLimits)
+  {
+  double factor = 1.0;
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    factor = DoubleOps::Min (factor, mTDofControls[i].ComputeRestraintFactor (mX[i], mDX[i], applyStepLimits, applyMinMaxLimits));
+  return factor;
+  }
+
+
+// Compute the dofIndex column of the jacobian as the mF-mF0 divided by delta ...
+void TGenericNewtonSolver::ComputeApproximateDerivative (INDEX_TYPE dofIndex, double delta)
+  {
+  if (ValidIndex (dofIndex) && delta != 0.0)
+    {
+    double a = 1.0 / delta;
+    for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+      {
+      double derivative = (mF[i] - mF0[i]) * a;
+      mJ.At (i, dofIndex) = derivative;
+      }
+    }
+  }
+
+double TGenericNewtonSolver::MaxStep ()
+  {
+  double a = 0.0;
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    a = DoubleOps::Max (a, fabs (mDX[i]));
+  return a;
+  }
+
+void TGenericNewtonSolver::ApplyNegatedStep (double factor)
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    mX[i] -= factor * mDX[i];
+  }
+
+// Return true if all steps are within their individual tolerance.
+bool TGenericNewtonSolver::IsStepConverged ()
+  {
+  for (INDEX_TYPE i = FIRST_INDEX; TEST_INDEX (i, mNumDofs); i++)
+    if (!mTDofControls[i].IsConverged (mDX[i]))
+      return false;
+  return true;
+  }
+
+// Default newton event implementations
+// Ask permission to start an iteration.
+// The callee may adjust variable values arbitrarily.
+// Default implementation returns true.
+bool INewtonSolverEvents::StartIteration (TGenericNewtonSolver &solver) {return true;}
+// Request newton evaluation with derivatives.
+// The default implementaton returns false.
+bool INewtonSolverEvents::EvaluateNewtonFunctionWithDerivatives (TGenericNewtonSolver &solver) {return false;}
+// Request newton evaluation.
+// The default implementation returns false.
+bool INewtonSolverEvents::EvaluateNewtonFunction (TGenericNewtonSolver &solver) {return false;}
+// Annouce an accepted solution.  Default returns true.
+bool INewtonSolverEvents::IsAcceptedSolution (TGenericNewtonSolver &solver){return true;}

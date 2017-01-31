@@ -1,0 +1,130 @@
+/*----------------------------------------------------------------------+
+|
+|     $Source: geom/src/polyface/pfBoundary.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++----------------------------------------------------------------------*/
+#include <bsibasegeomPCH.h>
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+
+struct ExtractBoundaryContext
+{
+MTGFacetsP facets;
+MTGGraphP  graph;
+MTGMask barrierEdgeMask;
+int     readIndexLabel;
+PolyfaceHeaderR mesh;
+CurveVectorPtr allBoundaries;
+bvector<DPoint3d> points;
+
+ExtractBoundaryContext (PolyfaceHeaderR mesh1)
+    : mesh (mesh1)
+    {
+    facets = jmdlMTGFacets_new ();
+    graph = jmdlMTGFacets_getGraph (facets);
+    readIndexLabel = -1;
+    allBoundaries = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    }
+    
+~ExtractBoundaryContext ()
+    {
+    jmdlMTGFacets_free (facets);    
+    }
+
+bool IsVisibleEdge (MTGNodeId node)
+    {
+    return (graph->GetMaskAt (node, MTG_PRIMARY_EDGE_MASK) || graph->GetMaskAt (graph->EdgeMate (node), MTG_PRIMARY_EDGE_MASK))
+        && !graph->GetMaskAt (node, MTG_EXTERIOR_MASK);
+    }
+    
+MTGNodeId GetVisibleSuccessor (MTGNodeId nodeA)
+    {
+    if (IsVisibleEdge (nodeA))
+        {
+        // Walk the vertex loop clockwise (vpred!!) expecting to find an outbound visible edge
+        //  (but NOT an inbound visible edge!!!)
+        MTGNodeId nodeB = graph->FSucc (nodeA);
+        while (nodeB != nodeA)
+            {
+            if (IsVisibleEdge (nodeB))
+                return nodeB;
+            nodeB = graph->VPred (nodeB);                                
+            }
+        }
+    return MTG_NULL_NODEID;
+    }
+ 
+void EmitAndMark (MTGNodeId node, MTGMask visitMask)
+    {
+    graph->SetMaskAt (node, visitMask);
+    DPoint3d xyz;
+    jmdlMTGFacets_getNodeCoordinates (facets, &xyz, node);
+    points.push_back (xyz);
+    } 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+CurveVectorPtr go (size_t &numOpen, size_t &numClosed)
+    {    
+    if (!PolyfaceToMTG_FromPolyfaceConnectivity (facets, mesh))
+        return NULL;
+    if (!graph->TrySearchLabelTag (MTG_LABEL_TAG_POLYFACE_READINDEX, readIndexLabel))
+        return NULL;
+    
+    bvector<MTGNodeId> vertexLoops;
+    MTGMask visitMask = graph->GrabMask ();
+    graph->ClearMask (visitMask);
+    MTGARRAY_SET_LOOP (seedNodeId, graph)
+        {
+        if (!graph->GetMaskAt (seedNodeId, visitMask) && IsVisibleEdge (seedNodeId))
+            {
+            // nodeA walks around the superface
+            MTGNodeId nodeA = seedNodeId;
+            points.clear ();
+            EmitAndMark (nodeA, visitMask);
+            bool closed = false;
+            for (;;)
+                {
+                nodeA = GetVisibleSuccessor (nodeA);
+                if (!graph->IsValidNodeId (nodeA))
+                    {
+                    EmitAndMark (graph->FSucc (nodeA), visitMask);
+                    break;
+                    }
+                EmitAndMark (nodeA, visitMask);
+                if (nodeA == seedNodeId)
+                    {
+                    closed = true;
+                    break;
+                    }
+                if (graph->GetMaskAt (nodeA, visitMask), visitMask)
+                    break;  // shouldn't happen if visibilities are right.
+                }
+            ICurvePrimitivePtr boundary = ICurvePrimitive::CreateLineString (points);
+            allBoundaries->push_back (boundary);
+            if (closed)
+                numClosed++;
+            else
+                numOpen++;
+            }
+        }
+    MTGARRAY_END_SET_LOOP (seedNodeId, graph)
+    graph->DropMask (visitMask);
+    return allBoundaries;
+    }
+};
+
+
+
+GEOMDLLIMPEXP CurveVectorPtr PolyfaceHeader::ExtractBoundaryStrings (size_t &numOpen, size_t &numClosed)
+    {
+    ExtractBoundaryContext context (*this);
+    return context.go (numOpen,  numClosed);
+    }
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

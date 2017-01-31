@@ -1,0 +1,31 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/MstnOnly/triquad.fdf $
+|
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+/*---------------------------------------------------------*//**
+* @description Compute the form factor for a specular triangle reflecting to a differential receiver,
+* @remark The triangle is evaluated to reorient towards the receiver and split at the
+*           reciever horizon.   Any receiver on the plane of the triangle returns 0.
+* @param pXYZTri IN triangle vertices, in CCW order.
+* @param pXYZReceiver IN receiver point
+* @param pReceiverNormal IN surface normal at receiver
+* @param exponent IN specular exponent to be applied to the cosine term of the integrand.
+* @param relTol IN relative tolerance for result.
+*---------------------------------------------------------*/
+Public GEOMDLLIMPEXP double bsiFormFactor_specularDPoint3dTriangle
+
+(
+DPoint3dP pXYZTri,
+DPoint3dP pXYZReceiver,
+DPoint3dP pReceiverNormal,
+double   exponent,
+double reltol
+);
+

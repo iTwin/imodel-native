@@ -1,0 +1,333 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_hatch.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double jmdlGPA_computeDashPeriod
+(
+const   double                  *pDashLengths,
+        int                     numDashLength
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGPA_expandSingleLineDashPattern
+(
+        GraphicsPointArray      *pHatchCollector,
+        GraphicsPoint           *pGP0,
+        GraphicsPoint           *pGP1,
+const   double                  *pDashLengths,
+        int                     numDashLength,
+        double                  dashPeriod,
+        int                     maxCollectorPoints
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy lines from one array to another, applying dash logic to replace each
+*   line by a dash pattern.
+*
+* @param pSource IN      array of line segments.  Each point is assumed to be
+*   marked with a dash-space coordinate as its "a" value.
+* @param pDashLengths IN      array of dash lengths.  Negative lengths are "off".
+*   (Remark: It seems obvious that alternate entries will have alternate signs.
+*   If not, we just do as we're told.)
+* @param numDashLength IN      number of dash lengths in pattern.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_expandDashPattern
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pSource,
+const   double                      *pDashLengths,
+        int                         numDashLength
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return a scale factor to be applied to the z-axis of the hatch transform so that
+* at most maxLines scan planes are defined within the combined range of two GPAs.
+* @param pTransform IN      proposed hatch transform.  xy plane is hatch plane.  z direction
+*       is advance vector between successive planes.
+* @param pGPA0 IN      first geometry source.  May be NULL. For instance, send boundary geometry here.
+* @param pGPA1 IN      second geometry source.  May be NULL, for instance, send corners of clip planes.
+* @param maxLines IN      max number of lines allowed in specified ranges. If 0 or negative, a default
+*               is applied.
+* @return scale factor to apply to z vector. Any error condition returns 1.0.  Example error
+*       conditions are (a) no geometry to determine range, and (b) singular transform.
+*
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double jmdlGPA_hatchDensityScale
+(
+const   Transform                    *pTransform,
+GraphicsPointArrayCP pGPA0,
+GraphicsPointArrayCP pGPA1,
+        int                             maxLines
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate crosshatch in the loops of the boundary array.  Add the crosshatch to the
+* instance array.
+*
+* On return the cross hatch is a sequence of alternating start/stop graphics points.
+* On each graphics point of the hatch, the user int is the hatch line index and the
+* double value is the sort coordinate along the hatch line.
+*
+* @param pTranfsorm         IN      transform to hatch plane space.
+*                               Hatch is created on every plane parallel to xy and through
+*                               integer z.   In/out is determined by parity rules
+*                               after x-direction sort.
+* @param pClipRangePoints   IN      any number of points which are vertices of the clip box.
+*                                   Hatch planes which fall outside the range of these points
+*                                   in hatch space (after transformation) are not considered.
+* @param pClipPlanes        IN      any number of clip planes, expressed as DPoint4d plane coefficients.
+*                                   Negative points of each halfspace are IN.  The convex
+*                                   clip region is accepted.
+* @param selectRule         IN      selects inside/outside rule.  On each scan line,
+*
+*                               0 -- simple parity -- alternating in out
+*                               1 -- maximal stroke -- only first and last crossings matter
+*                               2 -- outer -- if 4 or more crossings, only first and last
+*                                       pairs matter.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedCrossHatchClipped
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pBoundary,
+const   Transform                *pTransform,
+GraphicsPointArrayCP pClipRangePoints,
+GraphicsPointArrayCP pClipPlanes,
+int     selectRule
+);
+
+/*---------------------------------------------------------------------------------**//**
+Generate the intersection (sticks) of a plane with the area bounded by loops in the boundary GPA.
+On return the intersection is a sequence of alternating start/stop graphics points.
+
+@param pPlane   IN plane to intersect.
+@param selectRule           IN      selects inside/outside rule.  On each scan line,
+@bsimethod                                                    BentleySystems  03/07
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_intersectDPlane3d
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pBoundary,
+DPlane3dCP                          pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Inspect the ranges of multiple arrays.   Determine an appropriate scale factor
+    to apply to the transform to limit line counts.
+@param pBoundaryArray1 IN array of boundaries
+@param numBoundary1 IN number of boundareis in pBoundaryArray1
+@param pBoundaryArray2 IN array of boundaries
+@param numBoundary2 IN number of boundaries in pBoundaryArray2
+@param pTransformIn IN nominal transform (from hatch space to world.  integer z is a hatch plane index)
+@param pClipRangePoints IN range of points in clippers.
+@param pTransformOut OUT transform with z scale applied to limit lines.
+@param pScael OUT applied scale factor.
+@returns false if data just looks horrible.
+@param
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_applyLineLimitsToTransform
+(
+GraphicsPointArrayP      *pBoundaryArray1,
+int                      numBoundary1,
+GraphicsPointArrayP      *pBoundaryArray2,
+int                      numBoundary2,
+const   Transform     *pTransformIn,
+GraphicsPointArrayP      pClipRangePoints,
+int                      maxHatchLines,
+Transform             *pTransformOut,
+double                   *pScale
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate crosshatch in the loops of the boundary array.  Add the crosshatch to the
+* instance array.
+*
+* On return the cross hatch is a sequence of alternating start/stop graphics points.
+* On each graphics point of the hatch, the user int is the hatch line index and the
+* double value is the sort coordinate along the hatch line.
+*
+* @param pTranfsorm         IN      transform to hatch plane space.
+*                               Hatch is created on every plane parallel to xy and through
+*                               integer z.   In/out is determined by parity rules
+*                               after x-direction sort.
+* @param selectRule         IN      selects inside/outside rule.  On each scan line,
+*
+*                               0 -- simple parity -- alternating in out
+*                               1 -- maximal stroke -- only first and last crossings matter
+*                               2 -- outer -- if 4 or more crossings, only first and last
+*                                       pairs matter.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedCrossHatchExt
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pBoundary,
+const   Transform                *pTransform,
+int     selectRule
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate crosshatch in the loops of the boundary array.  Add the crosshatch to the
+* instance array.
+*
+* On return the cross hatch is a sequence of alternating start/stop graphics points.
+* On each graphics point of the hatch, the user int is the hatch line index and the
+* double value is the sort coordinate along the hatch line.
+*
+* @param pTranfsorm         IN      transform to hatch plane space.
+*                               Hatch is created on every plane parallel to xy and through
+*                               integer z.   In/out is determined by parity rules
+*                               after x-direction sort.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedCrossHatch
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pBoundary,
+const   Transform                *pTransform
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate all points that might be endpoints of crosshatch in a certain direction.
+*
+* The returned hatch contains every point where the boundary geometry cuts a plane
+* in the transformed coordinate system parallel to the xy plane and with integer z.
+* In each candidate graphics point, the "point" field contains global coordinates, the
+* "a" field contains the distance along the x direction, and the "userData" field contains the
+* z (height) index.
+*
+* The cut points are sorted by userData and a.
+*
+* @param pTransformm        IN      transform to hatch plane space.
+*                               Hatch is created on every plane parallel to xy and through
+*                               integer z.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedCrossHatchCutPoints
+(
+        GraphicsPointArray      *pHatchCollector,
+GraphicsPointArrayCP pBoundary,
+const   Transform                *pTransform
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute point set difference (GPA0)-(GPA1)
+* where each cross hatch set has
+*<ul>
+*<li>userData = scanline number</li>
+*<li>a = horizontal position on scanline</li>
+*</ul>
+* and each is lexically sorted by to cluster by scan line, and sorted by a within
+*   common scan line.
+* @param pGPAOut OUT     result cross hatch.
+* @param pGPA0 IN      outer boundary cross hatch
+* @param pGPA1 IN      inner boundary cross hatch
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_crossHatchDifference
+(
+        GraphicsPointArray  *pGPAOut,
+GraphicsPointArrayCP pGPA0,
+GraphicsPointArrayCP pGPA1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute point set union (GPA0) + (GPA1)
+* where each cross hatch set has
+*<ul>
+*<li>userData = scanline number</li>
+*<li>a = horizontal position on scanline</li>
+*</ul>
+* and each is lexically sorted by to cluster by scan line, and sorted by a within
+*   common scan line.
+* @param pGPAOut OUT     result cross hatch.
+* @param pGPA0 IN      outer boundary cross hatch
+* @param pGPA1 IN      inner boundary cross hatch
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_crossHatchUnion
+(
+        GraphicsPointArray  *pGPAOut,
+GraphicsPointArrayCP pGPA0,
+GraphicsPointArrayCP pGPA1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute point set intersection (GPA0) + (GPA1)
+* where each cross hatch set has
+*<ul>
+*<li>userData = scanline number</li>
+*<li>a = horizontal position on scanline</li>
+*</ul>
+* and each is lexically sorted by to cluster by scan line, and sorted by a within
+*   common scan line.
+* @param pGPAOut OUT     result cross hatch.
+* @param pGPA0 IN      outer boundary cross hatch
+* @param pGPA1 IN      inner boundary cross hatch
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_crossHatchIntersection
+(
+        GraphicsPointArray  *pGPAOut,
+GraphicsPointArrayCP pGPA0,
+GraphicsPointArrayCP pGPA1
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate cross hatch by using a seed point and discrete grid-jumping search.
+*
+* The "X" lines of the hatch are intersections of whole-number-z planes with the boundaries.
+* The "Y" lines of the hatch are intersections of whole-number-x planes with the boundaries.
+*
+* The output sticks are those reachable from the origin of the transformed system
+*   by following paths in the two directions of cross hatch, but not crossing
+*   boundary lines.
+*
+* Both outputs (X and Y) may be collected into the same array.
+*
+* @param pXCollector        IN      array of hatch in the x direction of the transform.  May be NULL.
+* @param pZCollector        IN      array of hatch in the z direction of the transform.  May be NULL.
+* @param pTransform         IN      transform to hatch plane space.
+*                               Hatch is created on every plane parallel to xy and through
+*                               integer z.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedCrossHatchFromSeed
+(
+        GraphicsPointArray      *pXCollector,
+        GraphicsPointArray      *pYCollector,
+GraphicsPointArrayCP pBoundary,
+const   Transform                *pTransform
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,26 @@
+PRIMITIVE Operation
+<def name=SUMMARY>An operation on parameters.</def>
+<def name=Interface_BaseList>IGeometry</def>
+
+<def name=MEMBERS>
+
+<value
+    ItemType=String
+    ItemTagName=Name
+    ItemSemanticName=Name
+    ItemParamName=name
+    ItemMemberName=mName
+    ItemDescription="Name of operation"
+    ScaleMode=None/>
+
+<list
+    ItemType=IGeometry
+    ItemTagName=Member
+    ItemSemanticName=Member
+    ItemParamName=member
+    ListName=mMembers
+    ItemDescription="member for operation"
+    ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

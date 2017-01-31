@@ -1,0 +1,261 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dpoint2darray.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! Copies n DPoint2d structures from the pSource array to the pDest
+//! array.
+//!
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param n IN      number of points
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2dArray_copy
+(
+DPoint2dP pDest,
+DPoint2dCP pSource,
+int          n
+);
+
+//!
+//! Copies x and y parts from DPoint3d array.
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param n IN      number of points
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_copyDPoint3dArray
+(
+DPoint2dP pDest,
+DPoint3dCP pSource,
+int          n
+);
+
+//!
+//! Copies n DPoint2d structures from the pSource array to the pDest
+//! using an index array to rearrange (not necessarily 1to1) the order.
+//! The indexing assigns pDest[i] = pSource[indexP[i]].
+//! Does not do in-place rearrangement.
+//!
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param pIndex IN      array of indices into source array
+//! @param nIndex IN      number of points
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2dArray_copyIndexed
+(
+DPoint2dP pDest,
+DPoint2dCP pSource,
+int         *pIndex,
+int          nIndex
+);
+
+//!
+//! Adds the (single) point pPoint to each of the numPoints points
+//!  of pArray.
+//!
+//! @param pArray IN OUT  Array whose points are to be incremented
+//! @param pDelta IN      increment to add to each point
+//! @param numPoints IN      number of points
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2dArray_addDPoint2d
+(
+DPoint2dP pArray,
+DPoint2dCP pDelta,
+int              numPoints
+);
+
+//!
+//! Subtracts the (single) point pDelta from each of the numVerts points
+//! of pArray.
+//!
+//! @param pArray IN OUT  Array whose points are to be incremented
+//! @param pDelta IN      increment to subtract from each point
+//! @param numVerts IN      number of points
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2dArray_subtractDPoint2d
+(
+DPoint2dP pArray,
+DPoint2dCP pDelta,
+int              numVerts
+);
+
+//!
+//! Normalize an array of vectors (inplace).  Return the count of the
+//! number of zerolength vectors encountered.
+//!
+//! @param pArray IN OUT  array of vectors to be normalized
+//! @param numVector IN      number of vectors
+//! @return number of zero length vectors.
+//!
+Public GEOMDLLIMPEXP int bsiDPoint2dArray_normalize
+(
+DPoint2dP pArray,
+int         numVector
+);
+
+//!
+//! Returns an upper bound for both the largest absolute value x,y or z
+//! coordinate and the greatest distance between any two x,y or z coordinates
+//! in an array of points.
+//!
+//! @param pPointArray IN      array of points to test
+//! @param numPoint IN      number of points > 0
+//! @return double
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2dArray_getLargestCoordinate
+(
+DPoint2dCP pPointArray,
+int         numPoint
+);
+
+//!
+//! @description Returns an upper bound for the greatest distance between any two x or y
+//! coordinates in an array of points.
+//!
+//! @param pPointArray IN      array of points to test
+//! @param numPoint IN      number of points > 0
+//! @return double
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_getLargestCoordinateDifference
+(
+DPoint2dCP    pPointArray,
+int         numPoint
+);
+
+//!
+//! Find two points (and their indices) in the given array of points that are
+//! relatively far from each other.  The returned points are not guaranteed to be
+//! the points with farthest separation.
+//!
+//! @param pMinPoint  OUT     first of the two widely separated pts (or null)
+//! @param  pMinIndex  OUT     index of first pt (or null)
+//! @param pMaxPoint  OUT     second of the two widely separated pts (or null)
+//! @param pMaxIndex  OUT     index of second pt (or null)
+//! @param pPoints    IN      array of points
+//! @param numPts     IN      number of points
+//! @return false if numPts < 2
+//!
+Public GEOMDLLIMPEXP bool        bsiDPoint2dArray_findWidelySeparatedPoints
+(
+DPoint2dP pMinPoint,
+int                 *pMinIndex,
+DPoint2dP pMaxPoint,
+int                 *pMaxIndex,
+DPoint2dCP pPoints,
+int                 numPts
+);
+
+//!
+//! Comnpute an approximate line through (many) points.
+//! Return the two points that are the endpoints of the approximate line segment,
+//! and the length of the segment and max distance of any point from the segment.
+//! This is useful for testing if the points are collinear.  A typical followup test
+//! would be to test of maxDist is less than a tolerance and dist01 is larger than
+//! (say) 1000 times the tolerance.
+//!
+//! The returned start and endpoints are selected from the given points -- they
+//! are not points on some least sqaures approximation that might have a smaller
+//! maxDist but not pass through any points.
+//!
+//! @param pPoint0 OUT     suggested starting point of the line segment.
+//! @param pPoint1 OUT     suggested end point.
+//! @param pDist01 OUT     distance from pPoint0 to pPoint1
+//! @param pMaxDist OUT     largest distance of any point to the line.
+//! @param pPoints IN      array of points
+//! @param number IN      number of points
+//!
+//! @return
+//!
+Public GEOMDLLIMPEXP void        bsiDPoint2dArray_approximateLineThroughPoints
+(
+DPoint2dP pPoint0,
+DPoint2dP pPoint1,
+double      *pDist01,
+double      *pMaxDist,
+DPoint2dCP pPointArray,
+int         numPoint
+);
+
+//!
+//! Test if an array of points is effectively a straight line from the first to the last.
+//!
+//! @param pOnLine OUT     true if the points are all within tolerance of the (bounded)
+//!   line segment from the first point to the last point.
+//! @param pPoints IN      array of points
+//! @param number IN      number of points
+//! @return same as pOnLine
+//!
+Public GEOMDLLIMPEXP bool        bsiDPoint2dArray_arePointsColinear
+(
+bool        *pOnLine,
+DPoint2dCP pPointArray,
+int         numPoint,
+double      tolerance
+);
+
+//!
+//! Computes the squared distance between two points, using only the
+//! x and y components.  Useful for screenproximity
+//! tests between points at different depths.
+//!
+//! @param pPoint IN      fixed point for tests
+//! @param pArray IN      array of test points
+//! @param nPoint IN      number of points
+//! @return index of closest point
+//!
+Public GEOMDLLIMPEXP int bsiDPoint2dArray_closestPoint
+(
+DPoint2dCP pPoint,
+DPoint2dCP pArray,
+int             nPoint
+);
+
+//!
+//! @description Generate a compressed linestring, with points removed if they are within
+//! tolerance of the output linestring.
+//! @param pOut OUT output point buffer.
+//! @param *pNumOut OUT number of output points.  (At most numIn)
+//! @param pIn IN input point buffer.
+//! @param numIn IN number of input points.
+//! @param tol IN distance tolerance from input point to output segment.
+//! @remarks For closed polygon, caller must double the first/last point, and this
+//!       point will also be the first/last of the output.
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2dArray_compressLinestring
+(
+DPoint2dP pOut,
+int     *pNumOut,
+DPoint2dCP pIn,
+int     numIn,
+double tol
+);
+
+//!
+//! @description Compute the linear combination of the given points and scalars.
+//!
+//! @param pPoint         OUT     linear combination of points
+//! @param pPoints        IN      array of points
+//! @param pScalars       IN      array of scalars to multiply each point
+//! @param numVertices    IN      number of points = number of scalars
+//!
+Public GEOMDLLIMPEXP void     bsiDPoint2dArray_linearCombination
+(
+DPoint2dP        pPoint,
+DPoint2dCP        pPoints,
+const   double*         pScalars,
+int             numPoints
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

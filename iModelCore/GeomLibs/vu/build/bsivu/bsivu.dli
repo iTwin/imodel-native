@@ -1,0 +1,363 @@
+/* BEGIN_NONEDITABLE_CODE */
+        vu_ntwist
+        vu_panicPair
+        vu_checkPredecessors
+        vu_checkNextInSet
+        vu_panic
+        vu_newVuP
+        vu_setCMessageFunction
+        vu_setPeriods
+        vu_getPeriods
+        vu_setTol
+        vu_getTol
+        vu_vertexTwist
+        vu_getDebugGraph
+        vu_freeVuSet
+        vu_copyVuSet
+        vu_emptyGraph
+        vu_newVuSet
+        vu_setDefaultUserDataPAsInt
+        vu_setUserDataPIsVertexProperty
+        vu_setGraphTrapFunc
+        vu_postGraphToTrapFunc
+        vu_reinitializeVuSet
+        vu_countNodeAllocations
+        vu_firstNodeInGraph
+        vu_nextNodeInGraph
+        vu_freeMarkedEdges
+        vu_freeNonMarkedEdges
+        vu_freeEdgesByMaskCount
+        vu_healEdge
+        vu_getHeapMemorySize
+        vu_getErrorMask
+        vu_setErrorBit
+        vu_makePair
+        vu_makeSling
+        vu_splitEdge
+        vu_copyMaskAroundVertex
+        vu_copyConditionalVertexData
+        vu_join
+        vu_detachEdge
+        vu_grabMask
+        vu_returnMask
+        vu_grabArray
+        vu_grabLargestArray
+        vu_returnArray
+        vu_clearMaskInSet
+        vu_setMaskInSet
+        vu_setMaskAroundVertex
+        vu_setMaskAroundFace
+        vu_assignCanonicalEdgeIndices
+        vu_getIndex
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_setX
+        vu_setY
+        vu_setXY
+        vu_setXYZ
+        vu_setDPoint2d
+        vu_setXYAroundVertex
+        vu_setXYZAroundVertex
+        vu_setDPoint2dAroundVertex
+        vu_copyCoordinates
+        vu_getX
+        vu_getY
+        vu_getXY
+        vu_getDPoint2d
+        getDX
+        vu_getDX
+        getDY
+        vu_getDY
+        vu_getIndexedXYZ
+        vu_setIndexedXYZ
+        vu_setIndexedXYZAroundVertex
+        vu_setIndexedXYZAroundFace
+        vu_findIndexedMinAroundFace
+        vu_findIndexedMaxAroundFace
+        vu_setPeriodicCoordinatesAroundFaceLoop
+        vu_getDXY
+        vu_getDPoint2dDXY
+        vu_below
+        vu_leftOf
+        vu_sameUV
+        vu_compareLexicalUV0
+        vu_compareLexicalUV
+        vu_setDPoint3d
+        vu_setDPoint3dAroundVertex
+        vu_getZ
+        vu_getXYZ
+        vu_getDPoint3d
+        vu_getDXYZ
+        vu_getDPoint3dDXY
+        vu_getPeriodicDPoint3dDXYZ
+        vu_getXYDistanceSquared
+        vu_distanceSquared
+        vu_vector
+        vu_periodicVector
+        vu_cross
+        vu_isStrictLeftTurn
+        vu_crossPoint
+        vu_nodeInSector
+        vu_pointInSector
+        vu_horizontalNeighborhood
+        vu_intersectXYEdges
+        vu_projectToUnboundedXYEdge
+        vu_projectToBoundedXYEdge
+        vu_fractionParameterToDPoint3d
+        vu_interpolateZFromFaceNeighbors
+        vu_maxAbsXYInGraph
+        vu_toleranceFromGraphXY
+        vu_collectLocalExtrema
+        vu_collectVExtrema
+        vu_findExtremaInGraph
+        vu_findExtrema
+        vu_rotate180
+        vu_transform3d
+        vu_transform2d
+        vu_rotate90CCW
+        vu_rotate90CW
+        vu_rotateGraph
+        vu_sumIndexedPeriodicStepsAroundLoop
+        vu_setPeriodicCoordinatesWithinFaces
+        vu_setPeriodicCoordinatesAroundReferencePoint
+        vu_countPolarLoops
+        vu_area
+        vu_markFaceAndComputeArea
+        vu_centroid
+        vu_centroidFromOrigin
+        vu_isEdgeInBand
+        vu_markEdgesInBand
+        vu_setIsoCoordinateMask
+        vu_augmentMasks
+        vu_periodicCross
+        vu_graphCoordinateRange
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_allocateVuNode
+        vu_initNodePool
+        vu_freeNodePool
+        vu_recycleNodeLoop
+        vu_freeSetHeader
+        vu_allocateSetHeader
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_fsucc
+        vu_vsucc
+        vu_fpred
+        vu_vpred
+        vu_edgeMate
+        vu_getCompleteMask
+        vu_getMask
+        vu_setMask
+        vu_setMaskAroundEdge
+        vu_clrMask
+        vu_writeMask
+        vu_getUserDataP
+        vu_setUserDataP
+        vu_getUserDataPAsInt
+        vu_setUserDataPAsInt
+        vu_getInternalDataPAsInt
+        vu_setInternalDataPAsInt
+        vu_setInternalDataPAsIntAroundVertex
+        vu_setInternalDataPAsIntAroundFace
+        vu_vertexLoopSize
+        vu_faceLoopSize
+        vu_clearUserDataPInGraph
+        vu_getExtraDataPointer
+        vu_getExtraDataSize
+        vu_markFace
+        vu_markVertex
+        vu_countEdgesAroundVertex
+        vu_countEdgesAroundFace
+        vu_countMaskAroundVertex
+        vu_countMaskAroundFace
+        vu_countMateMaskAroundVertex
+        vu_countMateMaskAroundFace
+        vu_collectAllNodes
+        vu_collectMaskedNodes
+        vu_collectUnMaskedNodes
+        vu_collectExteriorFaceLoops
+        vu_searchMaskedFSuccVPred
+        vu_SearchMaskedFSuccVPred
+        vu_findMaskAroundFace
+        vu_findMaskAroundVertex
+        vu_findUnMaskedAroundVertex
+        vu_findUnMaskedAroundFace
+        vu_collectInteriorFaceLoops
+        vu_collectMaskedFaceLoops
+        vu_findNodeAroundVertex
+        vu_findNodeAroundFace
+        vu_collectVertexLoops
+        vu_markedEdgeSetNew
+        vu_markedEdgeSetFree
+        vu_markedEdgeSetTestAndAdd
+        vu_markedEdgeSetChooseAny
+        vu_edgeMateInNonNullFace
+        vu_markMarkedFaces
+        vu_eulerCharacteristic
+        vu_EulerCharacteristic
+        vu_markParity
+        vu_collectConnectedComponents
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_arrayNew
+        vu_arrayFree
+        vu_arrayGetHeapMemorySize
+        vu_arrayCapacity
+        vu_arrayClear
+        vu_arraySize
+        vu_arrayGetVuP
+        vu_arrayGetCyclicVuP
+        vu_arrayReplaceVuP
+        vu_arrayReplaceMatched
+        vu_arrayOpen
+        vu_arrayRead
+        vu_arrayRemoveCurrent
+        vu_arrayReplaceCurrent
+        vu_arrayDeleteBlock
+        vu_arrayReplaceBlock
+        vu_arrayReadBlock
+        vu_arrayAddBlock
+        vu_arrayAddNull
+        vu_arrayAdd
+        vu_arrayRemoveLast
+        vu_arrayReverse
+        vu_arraySort0
+        vu_sortBuckets
+        vu_heapRemoveMin
+        vu_heapInsert
+        vu_sortArrayToHeap
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_horizontalSplit
+        vu_joinLineSplitPoints
+        vu_splitFacesOnLine
+        vu_splitInteriorFacesOnLine
+        vu_joinSortedPairs
+        vu_splitOnSortedHorizontalLines
+        vu_splitMonotoneFaceOnSortedHorizontalLines
+        vu_setMaskByArea
+        vu_setVAroundFace
+        vu_makeIndexedChain
+        vu_joinIndexedChains
+        vu_mapCoordinates
+        vu_removeAllButSingleMarkedEdges
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_triangulateByVerticalSweep
+        vu_sliceAndTriangulate
+        vu_removeEdgesToExpandConvexInteriorFaces
+        vu_triangulateMonotoneInteriorFaces
+        vu_splitMonotoneFacesToEdgeLimit
+        vu_splitEdgeAtPoint
+        vu_splitEdgeAtDPoint3d
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_splitToConvexParts
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_loopFromDPoint3dArrayXYTol
+        vu_makeLoopFromArray
+        vu_makeLoopFromArray3d
+        vu_makeEdgesFromArray3d
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vuunion_stableInterpolate
+        vu_consolidateY
+        vu_mergeOrUnionLoops
+        vu_unionLoops
+        vu_getNegativeAreaFace
+        vu_markWindingNumber
+        vu_markExteriorBoundariesFromWindingNumberAndRule
+        vu_markComponent
+        vu_connectGraph
+        vu_orLoops
+        vu_xorLoops
+        vu_andLoops
+        vu_andComplementLoops
+        vu_notLoops
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_printFaceLabelsOneFace
+        vu_printMaskedNodes
+        vu_printFaceLabels
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_mergeLoops
+        vu_markExteriorFacesByArea
+        vu_markAlternatingExteriorBoundaries
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_merge2002
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_markAndExciseSliverEdges
+        vu_markAndExciseSmallEdges
+        vu_splitSliverTriangles
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_flipTrianglesToImproveQuadraticAspectRatio
+        vu_flipTrianglesToImproveScaledQuadraticAspectRatio
+        vu_flipTrianglesToImproveScaledPeriodicQuadraticAspectRatio
+        vu_flipTrianglesToImproveUAspectRatio
+        vu_flipTrianglesToImproveVAspectRatio
+        vu_triangulateFromFixedPoint
+        vu_flipOneEdge
+        vu_subdivideAndRetriangulate
+        vu_regularizeGraph
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vureg_halfRegularizeGraphMultipleAttempts
+        vureg_regularizeGraph
+        vureg_regularizeConnectedInteriorFaces
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_stackClearAll
+        vu_stackPush
+        vu_stackPushCopy
+        vu_stackPop
+        vu_stackPopWithOperation
+        vu_stackPopNEntries
+        vu_stackPopAll
+        vu_stackExchange
+        vu_stackSize
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_testAndExciseSmallEdges
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_collectClusters
+        vu_consolidateClusterCoordinates
+        vu_consolidateClusterCoordinatesAndSortByAngle
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_spreadMask
+        vu_periodicRotateAndConnect
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_buildNonInterferingGrid
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_refine
+        pbfvu_triangulateyBetweenCyclesByZ
+        vu_triangulateBetweenCyclesByZ
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vumemfuncs_setFuncs
+        vumemfuncs_malloc
+        vumemfuncs_calloc
+        vumemfuncs_free
+        vumemfuncs_realloc
+/* END_NONEDITABLE_CODE */
+/* BEGIN_NONEDITABLE_CODE */
+        vu_markDanglingEdges
+        vu_markSmallFaces
+        vu_deleteDanglingEdges
+/* END_NONEDITABLE_CODE */
+
+/* BEGIN_NONEDITABLE_CODE */
+        vu_spreadMaskAroundFaces
+        vu_floodFromNegativeAreaFaces
+        vu_expandFacesToBarrier
+        vu_markExteriorByParity
+/* END_NONEDITABLE_CODE */

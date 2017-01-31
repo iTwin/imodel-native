@@ -1,0 +1,197 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_pairs.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* Process a single pair.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool jmdlGraphicsPointArray_processPrimitivePair
+(
+void			*pContext,
+GraphicsPointArrayCP pSource0,
+int index0,
+GraphicsPointArrayCP pSource1,
+int index1,
+GPAPairFunc_DSegment4dDSegment4d	    cbDSegment4dDSegment4d,
+GPAPairFunc_DSegment4dDConic4d		    cbDSegment4dDConic4d,
+GPAPairFunc_DSegment4dBezierDPoint4dTagged	    cbDSegment4dBezierDPoint4d,
+GPAPairFunc_DConic4dDConic4d		    cbDConic4dDConic4d,
+GPAPairFunc_DConic4dBezierDPoint4dTagged	    cbDConic4dBezierDPoint4d,
+GPAPairFunc_BezierDPoint4dBezierDPoint4dTagged    cbBezierDPoint4dBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive from two GPA's pairwise -- every primitive from pSource0 with
+*   every primitive from pSource1.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_processPairsWithRangeIntersection
+(
+void			*pContext,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+int workdim,
+double rangeExpansion,
+GPAPairFunc_DSegment4dDSegment4d	    cbDSegment4dDSegment4d,
+GPAPairFunc_DSegment4dDConic4d		    cbDSegment4dDConic4d,
+GPAPairFunc_DSegment4dBezierDPoint4dTagged	    cbDSegment4dBezierDPoint4d,
+GPAPairFunc_DConic4dDConic4d		    cbDConic4dDConic4d,
+GPAPairFunc_DConic4dBezierDPoint4dTagged	    cbDConic4dBezierDPoint4d,
+GPAPairFunc_BezierDPoint4dBezierDPoint4dTagged    cbBezierDPoint4dBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive pairs with intersecting ranges from a single gpa
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP void jmdlGraphicsPointArray_processPairsWithRangeIntersectionSingleSource
+(
+void			*pContext,
+GraphicsPointArrayCP pSource,
+bool includeSelfIntersect,
+int workdim,
+double rangeExpansion,
+GPAPairFunc_DSegment4dDSegment4d	    cbDSegment4dDSegment4d,
+GPAPairFunc_DSegment4dDConic4d		    cbDSegment4dDConic4d,
+GPAPairFunc_DSegment4dBezierDPoint4dTagged	    cbDSegment4dBezierDPoint4d,
+GPAPairFunc_DConic4dDConic4d		    cbDConic4dDConic4d,
+GPAPairFunc_DConic4dBezierDPoint4dTagged	    cbDConic4dBezierDPoint4d,
+GPAPairFunc_BezierDPoint4dBezierDPoint4dTagged    cbBezierDPoint4dBezierDPoint4d
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive from two GPA's pairwise -- every primitive from pSource0 with
+*   every primitive from pSource1.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processAllPairs
+(
+void                    *pContext,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GPAPairFunc_DSegment4dDSegment4d            cbDSegment4dDSegment4d,
+GPAPairFunc_DSegment4dDConic4d              cbDSegment4dDConic4d,
+GPAPairFunc_DSegment4dBezierDPoint4dTagged        cbDSegment4dBezierDPoint4d,
+GPAPairFunc_DConic4dDConic4d                cbDConic4dDConic4d,
+GPAPairFunc_DConic4dBezierDPoint4dTagged    cbDConic4dBezierDPoint4d,
+GPAPairFunc_BezierDPoint4dBezierDPoint4dTagged    cbBezierDPoint4dBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive from two GPA's pairwise, proceeding in lockstep through both arrays.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processCorrespondingIndexPairs
+(
+void                    *pContext,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GPAPairFunc_IndexIndex  cbIndexIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive from two GPA's pairwise -- every primitive from pSource0 with
+*   every primitive from pSource1.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processAllIndexedPairs
+(
+void                    *pContext,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GPAPairFunc_IndexIndex  cbIndexIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitive from two GPA's pairwise -- every primitive from pSource0 with
+*   every primitive from pSource1.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processAllIndexedTriples
+(
+void                    *pContext,
+GraphicsPointArrayCP pSource0,
+GraphicsPointArrayCP pSource1,
+GraphicsPointArrayCP pSource2,
+GPATripleFunc_IndexIndexIndex  cbIndexIndexIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitives from one GPA.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processPrimitives
+(
+void                    *pContext,
+GraphicsPointArrayCP pSource,
+GPAFunc_DSegment4d              cbDSegment4dD,
+GPAFunc_DConic4d                cbDConic4d,
+GPAFunc_BezierDPoint4dTagged    cbBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitives from one GPA.  Start at the primitive "after" readIndex, stop
+* at primitive with major break.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processPrimitivesToMajorBreakExt
+(
+void                            *pContext,
+GraphicsPointArrayCP            pSource,
+int                             *pNextReadIndex,
+int                             firstReadIndex,
+GPAFunc_DSegment4d              cbDSegment4dD,
+GPAFunc_DConic4d                cbDConic4d,
+GPAFunc_BezierDPoint4dTagged    cbBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Process primitives from one GPA.  Start at the primitive "after" readIndex, stop
+* at primitive with major break.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_processPrimitivesToMajorBreak
+(
+void                            *pContext,
+GraphicsPointArrayCP            pSource,
+int                             firstReadIndex,
+GPAFunc_DSegment4d              cbDSegment4d,
+GPAFunc_DConic4d                cbDConic4d,
+GPAFunc_BezierDPoint4dTagged    cbBezierDPoint4d
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Computes integrals primitive-by-primitive through a major break.
+* @bsimethod                                                    BentleySystems  03/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_integratePrimitivesToMajorBreak
+(
+GraphicsPointArrayCP pSource,
+int                             *pNextReadIndex,
+double                          *pIntegral,
+int                             numIntegral,
+int                             firstReadIndex,
+GPAFunc_TangentialIntegrand     cbTangentialIntegrand,
+void                            *pContext
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,12 @@
+message Spiral
+{
+required string SpiralType = 1;
+required DPoint3d StartPoint = 2;
+required Angle StartBearing = 3;
+required double StartCurvature = 4;
+required DPoint3d EndPoint = 5;
+required Angle EndBearing = 6;
+required double EndCurvature = 7;
+required IGeometry Geometry = 8;
+}
+

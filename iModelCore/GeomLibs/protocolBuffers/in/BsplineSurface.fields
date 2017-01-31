@@ -1,0 +1,34 @@
+PRIMITIVE BsplineSurface
+<def name=SUMMARY>Poles, knots, and weights for a bspline tensor surface.
+</def>
+<def name=Interface_BaseList>IGeometry, IParametricSurface</def>
+
+
+<def name=MEMBERS>
+<value ItemType=int ItemTagName=OrderU ItemSemanticName=OrderU ItemParamName=orderU ItemMemberName=mOrderU ItemDescription="Spline order in u direction (one more than degree)" ScaleMode=None/>
+<value ItemType=bool ItemTagName=ClosedU ItemSemanticName=ClosedU ItemParamName=closedU ItemMemberName=mClosedU ItemDescription="U direction closure flag." ScaleMode=None/>
+
+<value ItemType=int ItemTagName=NumUControlPoint
+        ItemSemanticName=NumUControlPoint
+        ItemParamName=numUControlPoint
+        ItemMemberName=mNumUControlPoint
+        ItemDescription="U direction control point count."
+        ScaleMode=None/>
+
+<value ItemType=int ItemTagName=OrderV ItemSemanticName=OrderV ItemParamName=orderV ItemMemberName=mOrderV ItemDescription="Spline order in u direction (one more than degree)" ScaleMode=None/>
+<value ItemType=bool ItemTagName=ClosedV ItemSemanticName=ClosedV ItemParamName=closedV ItemMemberName=mClosedV ItemDescription="V direction closure flag." ScaleMode=None/>
+
+<value ItemType=int ItemTagName=NumVControlPoint
+        ItemSemanticName=NumVControlPoint
+        ItemParamName=numVControlPoint
+        ItemMemberName=mNumVControlPoint
+        ItemDescription="V direction control point count."
+        ScaleMode=None/>
+
+<list ItemType=DPoint3d ItemTagName=xyz ItemSemanticName=ControlPoint ItemParamName=controlPoint ListName=mControlPoint ItemDescription="Control point xyz" ScaleMode=Length/>
+<list ItemType=double ItemTagName=Weight ItemSemanticName=Weight ItemParamName=weight ListName=mWeight ItemDescription="Control point weight" ScaleMode=None/>
+<list ItemType=double ItemTagName=KnotU ItemSemanticName=KnotU ItemParamName=knotU ListName=mKnotU ItemDescription="U direction knot" ScaleMode=None/>
+<list ItemType=double ItemTagName=KnotV ItemSemanticName=KnotV ItemParamName=knotV ListName=mKnotV ItemDescription="V direction knot" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

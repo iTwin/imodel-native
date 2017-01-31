@@ -1,0 +1,14 @@
+PRIMITIVE Block
+<def name=SUMMARY>Concrete <b>CG</b> class for a block defined by diagonally opposite corners
+    in a local coordinate system.
+</def>
+<def name=Interface_BaseList>IGeometry, IAnalyticSolid</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Origin and orientation" ScaleMode=Length/>
+<field ItemType=DPoint3d ItemParamName=cornerA ItemMemberName=mCornerA ItemDescription="Corner points in local coordinates" ScaleMode=Length/>
+<field ItemType=DPoint3d ItemParamName=cornerB ItemMemberName=mCornerB ItemDescription="Opposite corner point in local coordinates" ScaleMode=Length/>
+<field ItemType=bool ItemParamName=bSolidFlag ItemMemberName=mbSolidFlag ItemDescription="true for closed ends" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

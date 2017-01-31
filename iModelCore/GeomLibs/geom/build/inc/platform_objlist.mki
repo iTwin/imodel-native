@@ -1,0 +1,11 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: geom/build/inc/platform_objlist.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+geomObjects + $(geomObj)VirtualCurve$(oExt)
+geomObjects + $(geomObj)CurveCurve$(oExt)
+geomObjects + $(geomObj)templatizedVector$(oExt)

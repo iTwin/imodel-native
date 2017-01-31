@@ -1,0 +1,842 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dvec2d.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_NAMESPACE
+
+//!
+//! @description Returns the (vector) cross product of two vectors.
+//! @param pCrossProduct OUT     cross product of vector1 and vector2
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_crossProduct
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Returns the (vector) cross product of two vectors.
+//! @param pCrossProduct OUT     cross product of vector1 and vector2
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_crossProductSquared
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Returns the (scalar) dot product of two vectors.
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector, given as point.
+//!        The point's xyz are understood to be a vector from the origin.
+//! @return dot product of the two vectors.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_dotProductDVec2dDPoint2d
+(
+DVec2dCP pVector1,
+DPoint2dCP pPoint2
+);
+
+//!
+//! @description Returns the (scalar) dot product of two vectors.
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return The dot product of the two vectors
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_dotProduct
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Computes the dot product of one vector given as a vector structure and another given as
+//! xyz components.
+//! @param pVector IN      The first vector.
+//! @param ax IN      The x component of second vector.
+//! @param ay IN      The y component of second vector.
+//! @param az IN      The z component of second vector.
+//! @return The dot product of the vector with a vector with the given components
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_dotXY
+(
+DVec2dCP pVector,
+double    ax,
+double    ay
+);
+
+//!
+//! @description Apply a Givens to the two vectors, as if they are columns of a matrix to be postmultiplied
+//! by the Givens matrx.
+//! The Givens matrix is
+//!       R(0,0)=R(1,1)=c
+//!       R(0,1)=-s
+//!       R(1,0)=s
+//!
+//! @param    pOut0   OUT     rotation of pIn0
+//! @param    pOut1   OUT     rotation of pIn1
+//! @param    pIn0    IN      first vector
+//! @param    pIn1    IN      second vector
+//! @param    c   IN      cosine of givens rotation.
+//! @param    s   IN      sine of givens rotation.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_applyGivensRotation
+(
+DVec2dP pOut0,
+DVec2dP pOut1,
+DVec2dCP pIn0,
+DVec2dCP pIn1,
+double          c,
+double          s
+);
+
+//!
+//! @description Apply a hyperbolic rotation to the two vectors, as if they are columns of a matrix to be postmultiplied
+//! by the hyperbolic matrix
+//! The hyperbolic matrix is
+//!       R(0,0)=R(1,1)=secant
+//!       R(0,1)=R(1,0)= tangent
+//!
+//! @param    pOut0   OUT     rotation of pIn0
+//! @param    pOut1   OUT     rotation of pIn1
+//! @param    pIn0    IN      first vector
+//! @param    pIn1    IN      second vector
+//! @param    secant  IN      secant (diagonal) part of the hyperbolic transformation
+//! @param    tangent IN      tangent (offdiagonal) part of the hyperbolic transformation
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_applyHyperbolicReflection
+(
+DVec2dP pOut0,
+DVec2dP pOut1,
+DVec2dCP pIn0,
+DVec2dCP pIn1,
+double          secant,
+double          tangent
+);
+
+//!
+//! @description Computes a unit vector  in the direction of the difference of the vectors
+//! or vectors (Second parameter vector is subtracted from the first parameter vector,
+//! exactly as in the subtract function.)
+//!
+//! @param pVector OUT     The normalized vector in direction (pTarget - pOrigin)
+//! @param pTarget IN      The target point.
+//! @param pOrigin IN      The origin point.
+//! @return The length of original difference vector.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_computeNormal
+(
+DVec2dP pVector,
+DPoint2dCP pTarget,
+DPoint2dCP pOrigin
+);
+
+//!
+//! @description Returns the angle between two vectors.  This angle is between 0 and
+//! pi.  Rotating the first vector by this angle around the cross product
+//! between the vectors aligns it with the second vector.
+//!
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return The angle between the vectors.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_angleBetweenVectors
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Returns the angle between two vectors, choosing the smaller
+//!   of the two possible angles when both the vectors and their negations are considered.
+//!    This angle is between 0 and pi/2.
+//!
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return The angle between the vectors.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_smallerAngleBetweenUnorientedVectors
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Test a vector is "between" vector0 and vector1.
+//! If the vectors are coplanar and vector0 is neither parallel nor antiparallel
+//! to vector1, betweenness has the expected meaning: there are two angles between
+//! vector0 and vector1; one is less than 180; the test vector is tested to
+//! see if it is in the smaller angle.
+//! If the vectors are not coplanar, the test is based on the projection of
+//! the test vector into the plane of the other two vectors.
+//!
+//! Zero testing is untoleranced, and is biased to all parallel conditions "false".
+//! That is, if any pair of the input vectors is parallel or antiparallel,
+//! the mathematical answer is false.  Floating point tolerances
+//! will cause "nearby" cases to be unpredictable.  It is assumed that if
+//! the caller considers the "parallel" cases important they will be
+//! checked explicitly.
+//!
+//! @param pTestVector IN      The vector to test
+//! @param pVector0 IN      The first boundary vector.
+//! @param pVector1 IN      The second boundary vector.
+//! @return true if the test vector is within the angle.
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_isVectorInSmallerSector
+(
+DVec2dCP pTestVector,
+DVec2dCP pVector0,
+DVec2dCP pVector1
+);
+
+/* METHOD(DVec2d,none,isVectorInCCWSector) */
+Public GEOMDLLIMPEXP bool    bsiDVec2d_isVectorInCCWSector
+(
+DVec2dCP pTestVector,
+DVec2dCP pVector0,
+DVec2dCP pVector1
+);
+
+//!
+//! @description Rotate a vector around the z axis.
+//! @param pRotatedVector OUT     rotated vector
+//! @param theta   IN      The rotation angle.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_rotate
+(
+DVec2dP pRotatedVector,
+DVec2dCP pVector,
+double      theta
+);
+
+//!
+//! @description Rotate a vector around the z axis.
+//! @param pVector IN OUT  rotated vector
+//! @param theta   IN      The rotation angle.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_rotateInPlace
+(
+DVec2dP pVector,
+double      theta
+);
+
+//!
+//! @description Computes the squared magnitude of a vector.
+//!
+//! @param pVector IN      The vector whose magnitude is computed.
+//! @return The squared magnitude of the vector.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_magnitudeSquared (DVec2dCP pVector);
+
+//!
+//! @description Compute a unit vector perpendicular given vector.
+//!
+//! @remarks Input may equal output.
+//!
+//! @param pRotatedVector OUT     The rotated and scaled vector.  Z-coordinate is zero.
+//! @param pVector        IN      The source vector
+//! @return true if the input vector has nonzero length
+//!
+Public GEOMDLLIMPEXP bool     bsiDVec2d_unitPerpendicular
+(
+DVec2dP      pRotatedVector,
+DVec2dCP      pVector
+);
+
+//!
+//! @description Compute the unit vector perpendicular to the xy parts of the given vector with the given handedness.
+//!
+//! @remarks Input may equal output.
+//!
+//! @param pRotatedVector OUT     The rotated and scaled vector.  Z-coordinate is zero.
+//! @param pVector        IN      The source vector
+//! @param bRightHanded   IN      Whether the returned vector points to the right of the projection of the given vector
+//! @return true if the input vector has nonzero length
+//!
+Public GEOMDLLIMPEXP bool     bsiDVec2d_unitPerpendicularWithHandedness
+(
+DVec2dP      pRotatedVector,
+DVec2dCP      pVector,
+bool        bRightHanded
+);
+
+//!
+//! @description Computes the magnitude of a vector.
+//! @param pVector IN      The vector
+//! @return The length of the vector
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_magnitude (DVec2dCP pVector);
+
+//!
+//! Determines within angular tolerance if normals are parallel and pointing
+//! in same direction.  Input -1 for dot0, dot1 to compute them in this function.
+//!
+//! @param pNormal0   IN      first normal
+//! @param dot0       IN      squared magnitude of first normal (or -1)
+//! @param pNormal1   IN      second normal
+//! @param dot1       IN      squared magnitude of second normal (or -1)
+//! @param eps2       IN      max sin^2(angle) for parallel normals
+//! @return true if normals are same within tolerance
+//!
+Public GEOMDLLIMPEXP bool     bsiDVec2d_normalEqualTolerance
+(
+DVec2dCP pNormal0,
+double          dot0,
+DVec2dCP pNormal1,
+double          dot1,
+double          eps2
+);
+
+//!
+//! @description Multiplies a vector by a scale factor.
+//! @param pScaledVector OUT     The scaled vector.
+//! @param pVector IN      The vector to be scaled.
+//! @param scale IN      The scale factor.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_scale
+(
+DVec2dP pScaledVector,
+DVec2dCP pVector,
+double       scale
+);
+
+//!
+//! @description Multiplies a vector (in place) by a scale factor.
+//! @param pVector IN OUT  scaled vector
+//! @param scale IN      The scale
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_scaleInPlace
+(
+DVec2dP pVector,
+double       scale
+);
+
+//!
+//! @description Computes a negated (opposite) vector.
+//!
+//! @param pNegated OUT     The negated vector.
+//! @param pVector IN      The vector to be negated.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_negate
+(
+DVec2dP pNegatedVector,
+DVec2dCP pVector
+);
+
+//!
+//! @description Negate a vector in place.
+//!
+//! @param pVector IN OUT  negated vector
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_negateInPlace (DVec2dP pVector);
+
+//!
+//! @description Normalizes (scales) a vector to length 1.
+//! If the input vector length is 0, the output vector is a zero vector
+//! and the returned length is 0.
+//!
+//! @param pUnitVector OUT     The normalized vector.
+//! @param pVector IN      The vector to be normalized.
+//! @return The length prior to normalization
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_normalize
+(
+DVec2dP pUnitVector,
+DVec2dCP pVector
+);
+
+//!
+//! @description Scales a vector to specified length.
+//! If the input vector length is 0, the output vector is a zero vector
+//! and the returned length is 0.
+//!
+//! @param pScaledVector OUT     The scaled vector.
+//! @param    pVector IN      The original vector.
+//! @param    length IN      The requested length.
+//! @return The length prior to scaling.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_scaleToLength
+(
+DVec2dP pScaledVector,
+DVec2dCP pVector,
+double    length
+);
+
+//!
+//! @description Scales a vector to a specified length, and returns
+//! the prior length.
+//! If the input vector length is 0, the output vector is a zero vector
+//! and the returned length is 0.
+//!
+//! @param pScaledVector OUT     scaled
+//! @param    length IN      The requested length
+//! @return The length prior to scaling.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_scaleToLengthInPlace
+(
+DVec2dP pScaledVector,
+double    length
+);
+
+//!
+//! @description Replaces a vector by a unit vector in the same direction, and returns
+//! the original length.
+//! If the input vector length is 0, the output vector is a zero vector
+//! and the returned length is 0.
+//!
+//! @param pVector IN OUT  vector to be normalized
+//! @return The length prior to normalization
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_normalizeInPlace (DVec2dP pVector);
+
+//!
+//! @description Computes a unit vector in the direction of a given vector.
+//! If the input vector length is 0, the output vector is a zero vector.
+//!
+//! @param pUnitVector OUT     The normalized vector.
+//! @param pVector IN      The vector to normalize.
+//!
+Public GEOMDLLIMPEXP void     bsiDVec2d_unitVector
+(
+DVec2dP pUnitVector,
+DVec2dCP pVector
+);
+
+//!
+//! @description Tests if two vectors are parallel.
+//!
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return true if the vectors are parallel within tolerance
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_areParallel
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Tests if two vectors are perpendicular.
+//!
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return true if vectors are perpendicular within tolerance
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_arePerpendicular
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Tests if two vectors are parallel.
+//! @remarks Use bsiTrig_smallAngle() for tolerance corresponding to bsiDVec2d_areParallel.
+//!
+//! @param pVector1   IN      the first vector
+//! @param pVector2   IN      the second vector
+//! @param tolerance  IN      radian tolerance for angle between vectors
+//! @return true if the vectors are parallel within tolerance
+//!
+Public GEOMDLLIMPEXP bool     bsiDVec2d_areParallelTolerance
+(
+DVec2dCP    pVector1,
+DVec2dCP    pVector2,
+double          tolerance
+);
+
+//!
+//! @description Tests if two vectors are perpendicular.
+//! @remarks Use bsiTrig_smallAngle() for tolerance corresponding to bsiDVec2d_arePerpendicular.
+//!
+//! @param pVector1   IN      the first vector
+//! @param pVector2   IN      the second vector
+//! @param tolerance  IN      radian tolerance for angle between vectors
+//! @return true if the vectors are perpendicular within tolerance
+//!
+Public GEOMDLLIMPEXP bool     bsiDVec2d_arePerpendicularTolerance
+(
+DVec2dCP    pVector1,
+DVec2dCP    pVector2,
+double          tolerance
+);
+
+//!
+//! @description Try to divide each component of a vector by a scalar.  If the denominator
+//! near zero compared to any numerator component, return the original
+//! vector.
+//! @param pScaledVector OUT     The vector after scaling.
+//! @param pVector IN      The initial vector.
+//! @param denominator IN      The divisor.
+//! @return true if division is numerically safe.
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_safeDivide
+(
+DVec2dP pScaledVector,
+DVec2dCP pVector,
+double  denominator
+);
+
+//!
+//! @description Return the angle component of the polar coordinates
+//!           form of a vector.  Z part of the vector is ignored.
+//! @param pVector IN      vector in xyz form.
+//! @return angle from x axis to this vector, using only xy parts.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_polarAngle (DVec2dCP pVector);
+
+//!
+//! @description Sets all components of a vector to zero.
+//! @param pVector OUT     The zeroed vector.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_zero (DVec2dP pVector);
+
+//!
+//! @description Returns a vector with all components 1.0.
+//! @param pVector OUT     The initialized vector.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_one (DVec2dP pVector);
+
+//!
+//! @description Copies doubles from a 3 component array to the x,y, and z components
+//! of a DVec2d
+//!
+//! @param pVector OUT     vector whose components are set
+//! @param pXyz IN      x, y, z components
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_fromArray
+(
+DVec2dP pVector,
+const   double      *pXyz
+);
+
+//!
+//! @description Initialize a vector from a point (treating the point
+//!            as a vector from its origin).
+//! @param pVector OUT     vector whose componts are set.
+//! @param pPoint IN      the point.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_fromDPoint2d
+(
+DVec2dP pVector,
+DPoint2dCP pPoint
+);
+
+//!
+//! @description Sets the x, and y components of a vector. Sets z to zero.
+//!
+//! @param pVector OUT     vector whose componts are set.
+//! @param ax IN      The x component.
+//! @param ax IN      The x component.
+//! @param ay IN      The y component
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_setXY
+(
+DVec2dP pVector,
+double       ax,
+double       ay
+);
+
+//!
+//! @description Sets a vector from given angle and distance in xy plane.
+//!
+//! @param pVector OUT     vector whose componts are set.
+//! @param theta IN      Angle from X axis to the vector
+//! @param magnitude IN      Vector magitude
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_fromAngleAndMagnitude
+(
+DVec2dP pVector,
+double       theta,
+double       magnitude
+);
+
+//!
+//! @description Sets the x,y, and z components of a DVec2d structure from the
+//! corresponding parts of a DPoint4d.  Weight part of DPoint4d is not used.
+//!
+//! @param pVector OUT     vector whose components are set
+//! @param pHPoint IN      The homogeneous point
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_getXY
+(
+DVec2dP pVector,
+DPoint4dCP pHPoint
+);
+
+//!
+//! @description Set one of three components (x,y) of the vector.
+//!
+//! @param pVector OUT     vector whose component is set.
+//! @param a IN      The component value.
+//! @param index IN      Selects the the axis: 0=x, 1=y
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_setComponent
+(
+DVec2dP pVector,
+double       a,
+int         index
+);
+
+//!
+//! @description Gets a single component of a vector.  If the index is out of
+//! range 0,1 it is interpretted cyclically.
+//!
+//! @param pVector IN      vector whose component is accessed.
+//! @param index IN      Indicates which component is accessed.  The values
+//!                       are 0=x, 1=y  Other values are treated cyclically.
+//! @return The specified component of the vector.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_getComponent
+(
+DVec2dCP pVector,
+int         index
+);
+
+//!
+//! @description Copies x,y components from a vector to individual variables.
+//!
+//! @param pVector IN      source vector
+//! @param pXCoord OUT     x component
+//! @param pYCoord OUT     y component
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_getComponents
+(
+DVec2dCP pVector,
+double      *pXCoord,
+double      *pYCoord
+);
+
+//!
+//! @description Compute the sum of two vectors or vectors.
+//!
+//! @param pSum OUT     The computed sum.
+//! @param pVector1 IN      The the first vector
+//! @param pVector2 IN      The second vector
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_add
+(
+DVec2dP pSum,
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Adds a vector to a pointer or vector, returns the result in place.
+//!
+//! @param pSum IN OUT  The vector to be modified.
+//! @param pVector IN      The vector to add.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_addInPlace
+(
+DVec2dP pSum,
+DVec2dCP pVector
+);
+
+//!
+//! @description Subtract two vectors, and return the result in
+//!           place of the first.
+//!
+//! @param pVector2 IN OUT  The vector to be modified.
+//! @param pVector2 IN      The vector to subtract.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_subtractInPlace
+(
+DVec2dP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Adds an origin and a scaled vector.
+//!
+//! @param pSum OUT     The sum
+//! @param pOrigin IN      Origin for the sum.
+//! @param pVector IN      The vector to be added.
+//! @param scale IN      The scale factor.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_addScaled
+(
+DVec2dP pSum,
+DVec2dCP pOrigin,
+DVec2dCP pVector,
+double           scale
+);
+
+//!
+//! @description Computes a vector whose position is given by a fractional
+//! argument and two vectors.
+//!
+//! @param pSum OUT     The interpolated vector.
+//! @param pVector0 IN      The vector corresponding to fractionParameter of 0.
+//! @param fractionParameter IN      The fractional parametric coordinate.
+//!               0.0 is the start of the segment, 1.0 is the end, 0.5 is middle
+//! @param pVector1 IN      The vector corresponding to fractionParameter of 1.
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_interpolate
+(
+DVec2dP pSum,
+DVec2dCP pVector0,
+double       fractionParameter,
+DVec2dCP pVector1
+);
+
+//!
+//! @description Adds an origin and two scaled vectors.
+//!
+//! @param pSum OUT     sum
+//! @param pOrigin IN      The origin.  May be null.
+//! @param pVector1 IN      The first direction vector
+//! @param scale1 IN      The first scale factor
+//! @param pVector2 IN      The second direction vector
+//! @param scale2 IN      The second scale factor
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_add2ScaledDVec2d
+(
+DVec2dP pSum,
+DVec2dCP pOrigin,
+DVec2dCP pVector1,
+double           scale1,
+DVec2dCP pVector2,
+double           scale2
+);
+
+//!
+//! @description Adds an origin and three scaled vectors.
+//!
+//! @param pSum OUT     The sum.
+//! @param pOrigin IN      The origin. May be null
+//! @param pVector1 IN      The first direction vector
+//! @param scale1 IN      The first scale factor
+//! @param pVector2 IN      The second direction vector
+//! @param scale2 IN      The second scale factor
+//! @param pVector3 IN      The third direction vector
+//! @param scale3 IN      The third scale factor
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_add3ScaledDVec2d
+(
+DVec2dP pSum,
+DVec2dCP pOrigin,
+DVec2dCP pVector1,
+double          scale1,
+DVec2dCP pVector2,
+double          scale2,
+DVec2dCP pVector3,
+double          scale3
+);
+
+//!
+//! @description Subtract coordinates of two vectors. (Compute Vector1 - Vector2)
+//!
+//! @param pVector OUT     The difference vector
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second (subtracted) vector
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_subtract
+(
+DVec2dP pVector,
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Subtract coordinates of two points. (Compute Point1 - Point2)
+//!
+//! @param pVector OUT     The difference vector
+//! @param pTarget IN      The target point
+//! @param pBase IN      The base point
+//!
+Public GEOMDLLIMPEXP void bsiDVec2d_subtractDPoint2dDPoint2d
+(
+DVec2dP pVector,
+DPoint2dCP pTarget,
+DPoint2dCP pBase
+);
+
+//!
+//! @description Computes the (cartesian) distance between two vectors
+//!
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return The distance between vector.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_distance
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Computes the squared distance between two vectors.
+//!
+//! @param pVector1 IN      The first vector.
+//! @param pVector2 IN      The second vector.
+//! @return The squared distance between the vectors.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_distanceSquared
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Finds the largest absolute value among the components of a vector.
+//! @param pVector IN      The vector
+//! @return The largest absolute value among vector coordinates.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_maxAbs (DVec2dCP pVector);
+
+//!
+//! @description Finds the largest absolute value among the components of a
+//! difference of vectors.
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return The largest absolute value among vector coordinates.
+//!
+Public GEOMDLLIMPEXP double bsiDVec2d_maxAbsDifference
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Test for exact equality between all components of two vectors.
+//! @param pVector1 IN      The first vector
+//! @param pVector2 IN      The second vector
+//! @return true if the vectors are identical.
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_equal
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2
+);
+
+//!
+//! @description Test if the x, y, and z components of two vectors are
+//!   equal within tolerance.
+//! Tests are done independently using the absolute value of each component differences
+//! (i.e. not the magnitude or sum of squared differences)
+//!
+//! @param pVector1 IN      The first vector.
+//! @param pVector2 IN      The second vector.
+//! @param tolerance IN      The tolerance.
+//! @return true if all components are within given tolerance of each other.
+//!
+Public GEOMDLLIMPEXP bool    bsiDVec2d_equalTolerance
+(
+DVec2dCP pVector1,
+DVec2dCP pVector2,
+double                  tolerance
+);
+
+END_BENTLEY_NAMESPACE
+

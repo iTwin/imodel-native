@@ -1,0 +1,163 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_stroke.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy all lines and curves from the source to the destination, stroking to given tolerance.
+* @param        pDest IN OUT  desination header.
+* @param        pSource IN      source header.
+* @param        toleranceXY IN      stroke tolerance, to be applied only to the xy values.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addStrokes
+(
+GraphicsPointArray     *pDest,
+GraphicsPointArray     *pSource,
+double      toleranceXY
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy all lines and curves from the source to the destination, stroking to given tolerance.
+* @param        pDest IN OUT  desination header.
+* @param        pSource IN      source header.
+* @param        chordTolerance IN      allowed deviation between chord and curve.
+* @param        angleTolerance IN      allowed turn between successive chords
+* @param        movePolesToCurves IN      If true, all output points are required to be
+*                       exactly on curves.  If false, bezier curve approximations may
+*                       include poles that are within tolerance of the curve but
+*                       are not "on" the curve.  Allowing poles-not-on-curve is
+*                       faster and will not be visible if the tolerance is a screen
+*                       pixel size.
+* @param        xyOnly  IN      only use xy variation for tolerance.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addStrokesExt
+(
+GraphicsPointArrayP pDest,
+GraphicsPointArrayCP pSource,
+double      chordTolerance,
+double      angleTolerance,
+double      maxEdgeLength,
+bool        movePolesToCurves,
+bool        xyOnly
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search ahead of i0 for an explicit major break or end of array.
+*
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_findMajorBreakAfter
+(
+GraphicsPointArrayCP pSource,
+int                             i0
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy all lines and curves from the source to the destination, modified by...
+*<ul>
+*<li>Stroke to tolerance</li>
+*<li>normalize to unit weight</li>
+*<li>compute loop areas</li>
+*<li>insert disconnect points between successive parent and child loops</li>
+*</ul>
+* A loop is a child if its area has sign opposite the sign of the very first loops.
+* @param        pDest IN OUT  desination header.
+* @param        pSource IN      source header.
+* @param        disconnectCoordinate IN      special coordinate value to use for disconnect points.
+*                   If 0, loops are left in original sequence without area analysis.
+* @param        toleranceXY IN      stroke tolerance, to be applied only to the xy values.
+* @return       numLoop = number of loops
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlGraphicsPointArray_addSimpleStrokesAndDisconnects
+(
+GraphicsPointArray     *pDest,
+GraphicsPointArray     *pSource,
+double                     disconnectCoordinate,
+double                     toleranceXY
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Replace the (possibly curved) contents of an GraphicsPointArray array by strokes with weight 1.
+*
+* @param        ppHeader    IN OUT  pointer to pointer to header.   If necessary, this routine may
+*                       replace the header by another one.  In this case the original header will
+*                       be "dropped" to the cache, and the original allocator may drop the returned
+*                       header.
+* @param        toleranceXY IN      stroke tolerance, to be applied only to the xy values.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_dropToStrokes
+(
+GraphicsPointArray     *pInstance,
+double      toleranceXY
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy primitives from pSource to pDest, converting to bezier curves of the
+* highest order found in the source.
+* @return the order used for the copied geometry.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_appendAsHighestOrderBezier
+(
+GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Convert all geometry to bezier curves of the highest order found in the
+* input.  Append to the output as linestrings tracing the bezier control
+* polygons.  Optionally eliminate duplicate endpoints.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_appendAsHighestOrderBezierPolygons
+(
+GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+bool    eliminateDuplicateEndpoints
+);
+
+/*---------------------------------------------------------------------------------**//**
+Copy primitives from pSource to pDest, converting arcs to bezier form.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void      jmdlGraphicsPointArray_appendWithArcsAsBezier
+(
+GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+Close small gaps between adjacent endpoints.  Only ends of non-conics are moved.
+Gaps LARGER THAN maxGapTol are NOT closed.
+(Expected to be used after elimininating conics.)
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void      jmdlGraphicsPointArray_forceBezierAndLinestringEndsToNeighbors
+(
+GraphicsPointArray  *pSource,
+double maxGapTol
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

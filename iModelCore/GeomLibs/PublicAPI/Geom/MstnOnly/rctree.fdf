@@ -1,0 +1,68 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/MstnOnly/rctree.fdf $
+|
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiRCTree_getPlane
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRCTree_getPlane
+
+(
+DPoint4dP                 pPlane,   /* OUT     plane from tree data */
+const RotatedConic_Tree  *pTree,    /* IN      tree with containing plane */
+int                       index     /* IN      plane index to retrieve */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiRCTree_classifyPoint                         |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRCTree_classifyPoint    /* SUCCESS if point is IN the tree volume */
+
+(
+bool                        *pPointIsIn,    /* OUT     classification */
+const RotatedConic_Tree     *pTree,         /* IN      tree to evaluate */
+DPoint4dCP                  pPoint          /* IN      point to classify */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiRCTree_initPatchClip                         |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRCTree_initPatchClip
+
+(
+RotatedConic_Tree   *pTree,     /* OUT     Tree which clips IN SURFACE points to the patch */
+const RotatedConic        *pSurface,  /* IN      surface to clip around */
+bool              xLimits,    /* IN      true to include planes for limits on the first parameter */
+bool              yLimits     /* IN      true to include planes for limits on the second parameter */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiRCTree_transform                                     |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRCTree_transform
+
+(
+RotatedConic_Tree   *pTree,     /* OUT     Tree which clips IN SURFACE points to the patch */
+DMap4dCP pMap       /* IN      Map that takes POINTS from their native space into the space where the tree was defined */
+);
+

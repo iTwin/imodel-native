@@ -1,0 +1,263 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/internal/complex.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Add two complex numbers.
+//! @param c OUT     complex sum (a+b)
+//! @param a IN      complex factor
+//! @param b IN      complex factor
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_add
+(
+DPoint2d        *c,     /* OUT     complex value a + b */
+const DPoint2d  *a,     /* IN      complex value a */
+const DPoint2d  *b      /* IN      complex value b */
+);
+
+//!
+//! @description Subtract two complex numbers.
+//! @param c OUT     complex difference (a-b)
+//! @param a IN      complex factor
+//! @param b IN      complex factor
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_subtract
+(
+DPoint2d        *c,
+const DPoint2d  *a,
+const DPoint2d  *b
+);
+
+//!
+//! @description Multiply two complex numbers.
+//! @param c OUT     complex product (a*b)
+//! @param a IN      complex factor
+//! @param b IN      complex factor
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_multiply
+(
+DPoint2d        *c,
+const DPoint2d  *a,
+const DPoint2d  *b
+);
+
+//!
+//! @description Divide two complex numbers.
+//! @param c OUT     complex value a/b
+//! @param a IN      complex numerator
+//! @param b IN      complex denominator
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_divide
+(
+DPoint2d        *c,
+const DPoint2d  *a,
+const DPoint2d  *b
+);
+
+//!
+//! @description Compute the modulus of a complex number.
+//! @param z IN      complex number
+//! @return (real) magnitude of z
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP double   bsiComplex_abs
+(
+const DPoint2d    *z
+);
+
+//!
+//! @description Compute the square root of a complex number.
+//! @param c OUT     complex square root
+//! @param z IN      complex number
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_sqrt
+(
+DPoint2d        *c,
+const DPoint2d  *z
+);
+
+//!
+//! @description Scale a complex number.
+//! @param c OUT     complex product
+//! @param x IN      real factor
+//! @param a IN      complex factor a
+//! @group "Complex Arithmetic"
+//!
+Public GEOMDLLIMPEXP void     bsiComplex_realMultiplyComplex
+(
+DPoint2d        *c,
+double           x,
+const DPoint2d  *a
+);
+
+
+//! static methods for complex arithmetic on DPoint2d data, (x+iy)
+struct Complex
+{
+
+//! sum {A0 + A1}
+//! @param [in] A0 complex
+//! @param [in] A1 complex
+static GEOMDLLIMPEXP DPoint2d Add
+(
+DPoint2dCR A0,
+DPoint2dCR A1
+);
+
+//! difference {A0 - A1}
+//! @param [in] A0 complex
+//! @param [in] A1 complex
+static GEOMDLLIMPEXP DPoint2d Subtract
+(
+DPoint2dCR A0,
+DPoint2dCR A1
+);
+
+//! distance {Magnitude(A0 - A1)}
+//! @param [in] A0 complex
+//! @param [in] A1 complex
+static GEOMDLLIMPEXP double Distance
+(
+DPoint2dCR A0,
+DPoint2dCR A1
+);
+//! sum {A0 + A1 + A2}
+//! @param [in] A0 complex
+//! @param [in] A1 complex
+//! @param [in] A2 complex
+static GEOMDLLIMPEXP DPoint2d Add
+(
+DPoint2dCR A0,
+DPoint2dCR A1,
+DPoint2dCR A2
+);
+
+//! complex magnitude
+//! @param [in] A complex vector
+static GEOMDLLIMPEXP double Magnitude (DPoint2dCR A);
+
+
+//! sum {scale0 * A0 + scale1 * A1}
+//! @param [in] scale0 real factor
+//! @param [in] A0 complex factor
+//! @param [in] scale1 real factor
+//! @param [in] A1 complex factor
+static GEOMDLLIMPEXP DPoint2d Add
+(
+double scale0,
+DPoint2dCR A0,
+double scale1,
+DPoint2dCR A1
+);
+
+//! complex product {scale * A }
+//! @param [in] scale real factor
+//! @param [in] A complex factor
+static GEOMDLLIMPEXP DPoint2d Multiply
+(
+double scale,
+DPoint2dCR A
+);
+
+//! sum {A0 * A1 * A2}
+//! @param [in] A0 complex
+//! @param [in] A1 complex
+//! @param [in] A2 complex
+static GEOMDLLIMPEXP DPoint2d Multiply
+(
+DPoint2dCR A0,
+DPoint2dCR A1,
+DPoint2dCR A2
+);
+
+//! complex product {scale * A * B }
+//! @param [in] scale real factor
+//! @param [in] A complex factor
+//! @param [in] B complex factor
+static GEOMDLLIMPEXP DPoint2d Multiply
+(
+double scale,
+DPoint2dCR A,
+DPoint2dCR B
+);
+
+//! complex product {A * B }
+//! @param [in] A complex factor
+//! @param [in] B complex factor
+static GEOMDLLIMPEXP DPoint2d Multiply
+(
+DPoint2dCR A,
+DPoint2dCR B
+);
+//! sum {scale0 * A0 * B0 + scale1 * A1 * B1}
+//! @param [in] scale0 real factor
+//! @param [in] A0 complex factor
+//! @param [in] B0 complex factor
+//! @param [in] scale1 real factor
+//! @param [in] A1 complex factor
+//! @param [in] B1 complex factor
+static GEOMDLLIMPEXP DPoint2d Add
+(
+double scale0,
+DPoint2dCR A0,
+DPoint2dCR B0,
+double scale1,
+DPoint2dCR A1,
+DPoint2dCR B1
+);
+
+//! sum {scale0 * A0 + scale1 * A1 * B1}
+//! @param [in] scale0 real factor
+//! @param [in] A0 complex factor
+//! @param [in] scale1 real factor
+//! @param [in] A1 complex factor
+//! @param [in] B1 complex factor
+static GEOMDLLIMPEXP DPoint2d Add
+(
+double scale0,
+DPoint2dCR A0,
+double scale1,
+DPoint2dCR A1,
+DPoint2dCR B1
+);
+
+//! Solve quadratic equation {ax^2 + bx + c = 0}, with all coefficients complex.
+//! @param [in] coffA quadratic coefficient
+//! @param [in] coffB linear coefficient
+//! @param [in] coffC constant coefficient
+//! @return false if a coefficient is zero.
+static GEOMDLLIMPEXP bool SolveQuadratic
+(
+DPoint2dCR coffA,
+DPoint2dCR coffB,
+DPoint2dCR coffC,
+DPoint2dR root0,
+DPoint2dR root1
+);
+
+//! Return the (half angle) square root of z.
+static GEOMDLLIMPEXP  DPoint2d Sqrt (DPoint2dCR z);
+
+//! Return complex ratio {A/B}
+static GEOMDLLIMPEXP DPoint2d Divide (DPoint2dCR A, DPoint2dCR B);
+};
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,95 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/doc/build/bsibasegeomdoc/bsibasegeomdoc.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#%if !defined (MSJ)
+#    %error Since bsibasegeomdoc is built with mdldoc, it must be compiled from within a MicroStation shell, not a Geomlibs shell.
+#%endif
+
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+#---------------------------------------------
+#   Set mdldoc project
+#---------------------------------------------
+MDLDOC_ProjectName          = bsibasegeomdoc
+
+#---------------------------------------------
+#   Define input directories
+#---------------------------------------------
+MDLDOC_BaseDir              = $(_MakeFilePath)
+MDLDOC_SourceDir            = $(baseGeom_include)
+
+#---------------------------------------------
+#   Define input files
+#---------------------------------------------
+MDLDOC_ContentFile          = $(MDLDOC_BaseDir)$(MDLDOC_ProjectName).cnt
+MDLDOC_HeaderFile           = $(MDLDOC_BaseDir)includehtml/$(MDLDOC_ProjectName)_head.txt
+MDLDOC_FooterFile           = $(MDLDOC_BaseDir)includehtml/$(MDLDOC_ProjectName)_foot.txt
+MDLDOC_ListFile             = $(MDLDOC_BaseDir)$(MDLDOC_ProjectName)_list.mki
+
+#---------------------------------------------
+#   Define output directories
+#---------------------------------------------
+MDLDOC_OutDir               = $(baseGeom_buildDoc)
+MDLDOC_GensrcDir            = $(MDLDOC_OutDir)gensrc/
+MDLDOC_StampDir             = $(MDLDOC_OutDir)maketmp/
+MDLDOC_SpellDir             = $(MDLDOC_OutDir)spell/
+
+#---------------------------------------------
+#   Define output files
+#
+#   MDLDOC_OutputFile must be same as the
+#   Compiled file in $(MDLDOC_ProjectName).hhp!
+#---------------------------------------------
+MDLDOC_RequiredLibraryList  = $(MDLDOC_OutDir)requiredLibrary.lst
+MDLDOC_OutputFile           = $(baseGeom_doc)$(MDLDOC_ProjectName).chm
+#GEOMLIBS_OutputFile         = $(MDLDOC_BaseDir)../../$(MDLDOC_ProjectName).chm
+
+#---------------------------------------------
+#   Look for headers in Geomlibs output tree.
+#   Avoid pulling in std headers with -d macro.
+#   Don't bother with function version #s.
+#---------------------------------------------
+MDLDOC_Options              = -p$(MDLDOC_ProjectName) \
+                              -o$(MDLDOC_OutDir) \
+                              -c$(MDLDOC_ContentFile) \
+                              -h$(MDLDOC_HeaderFile) \
+                              -f$(MDLDOC_FooterFile) \
+                              -i$(SrcRoot)bsicommon/PublicAPI \
+                              -i$(geomSrcPublicAPI) \
+                              -i$(geomSrcPubGeom) \
+                              -L$(MDLDOC_RequiredLibraryList) \
+                              -dINCLUDE_FROM_MDLDOC     \
+                              -dtype_resource_generator \
+                              -e0.0.0
+
+#----------------------------------------------
+#   Create output directories
+#----------------------------------------------
+always:
+    ~mkdir $(MDLDOC_Outdir)
+    ~mkdir $(MDLDOC_GensrcDir)
+    ~mkdir $(MDLDOC_OutDir)html
+
+#----------------------------------------------
+#   Build list of functions & their library
+#----------------------------------------------
+# Run the command and generate the list of functions to dlls.
+$(MDLDOC_RequiredLibraryList)   : $(baseGeom_bin)bsibasegeom.dll
+    $(DumpExportsCmd) -FilenameAndDemangledFunction -NoAdornments -BaseFileName $(baseGeom_bin)bsibasegeom.dll >> $(MDLDOC_RequiredLibraryList)
+    ~time
+
+#-----------------------------------------------
+#   Build docs
+#-----------------------------------------------
+
+# preprocess headers
+%include $(_MakeFilePath)include/$(MDLDOC_ProjectName).mki
+
+%include    $(SrcGeomLibs)common/inc/builddocs.mki
+
+

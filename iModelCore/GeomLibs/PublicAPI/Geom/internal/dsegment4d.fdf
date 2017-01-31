@@ -1,0 +1,460 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/internal/dsegment4d.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromStartEndXYZXYZ
+(
+DSegment4dP pInstance,
+double          x0,
+double          y0,
+double          z0,
+double          x1,
+double          y1,
+double          z1
+);
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromStartEndXYZWXYZW
+(
+DSegment4dP pInstance,
+double          x0,
+double          y0,
+double          z0,
+double          w0,
+double          x1,
+double          y1,
+double          z1,
+double          w1
+);
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromDPoint3d
+(
+DSegment4dP pInstance,
+DPoint3dCP pPoint0,
+DPoint3dCP pPoint1
+);
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromDPoint4d
+(
+DSegment4dP pInstance,
+DPoint4dCP pPoint0,
+DPoint4dCP pPoint1
+);
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromDPoint2d
+(
+DSegment4dP pInstance,
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1
+);
+
+//!
+//! Initialize a segment from endpoints.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromDPoint3dTangent
+(
+DSegment4dP pInstance,
+DPoint3dCP pPoint0,
+DPoint3dCP pTangent
+);
+
+//!
+//! Initialize a segment from a ray.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromDRay3d
+(
+DSegment4dP pInstance,
+DRay3dCP pRay
+);
+
+//!
+//! Initialize a segment from DPoint3d and weight values.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void               bsiDSegment4d_initFromWeightedDPoint3d
+(
+DSegment4dP pInstance,
+DPoint3dCP pPoint0,
+double          weight0,
+DPoint3dCP pPoint1,
+double          weight1
+);
+
+//!
+//! Return the endpoints of the segment, normalized to 3d.  This conversions does NOT
+//! preserve parameterization, and can fail if there is a zero weight in the 4D definition.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_getDSegment3d
+(
+DSegment4dCP pInstance,
+DSegment3dP pSegment
+);
+
+//!
+//! Move the xyw endpoints to xyz of a DSegment3d.  This captures perspective effects for xy viewing,
+//! and preserves parameterization.
+//! preserve parameterization.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void    bsiDSegment4d_getDSegment3dXYW
+(
+DSegment4dCP pInstance,
+DSegment3dP pSegment
+);
+
+//!
+//! Project a point onto the extended line in true 4D.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_projectDPoint4d
+(
+DSegment4dCP pInstance,
+DPoint4dP pClosestPoint,
+double          *pClosestParam,
+DPoint4dCP pPoint
+);
+
+//!
+//! Project a point onto the extended, cartesian line using only xyw parts of the line.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_projectDPoint4dCartesianXYW
+(
+DSegment4dCP pInstance,
+DPoint4dP pClosestPoint,
+double          *pClosestParam,
+DPoint4dCP pPointP
+);
+
+//!
+//! Project a point onto the bounded line in 4D.  If nearest point of extended line
+//! is outside the 0..1 parameter range, returned values are for nearest endpoint.
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_projectDPoint4dBounded
+(
+DSegment4dCP pInstance,
+DPoint4dP pClosestPoint,
+double          *pClosestParam,
+DPoint4dCP pPoint
+);
+
+//!
+//! Return the (unnormalized) intersection of the (unbounded) segment with a plane.
+//! If the line is parallel to the plane, returns the weighted difference of the
+//!   endpoints (i.e. a vector along the line) as the intersection point.
+//! @param pIntPoint IN      intersection point. May be NULL.
+//! @param pIntParam IN      parameter along the line.  May be NULL.
+//! @param pPlane IN      plane as homogeneous coefficients.
+//! @return false if line, plane are parallel.
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_intersectDPoint4dPlane
+(
+DSegment4dCP pInstance,
+DPoint4dP pIntPoint,
+double          *pIntParam,
+DPoint4dCP pPlaneCoffs
+);
+
+//!
+//!
+//! Apply a transformation to the source segment.
+//! @param pTransform IN      transformation to apply.
+//! @param pSource IN      source segment
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDSegment4d_transform
+(
+DSegment4dP pDest,
+DTransform3dCP pTransform,
+DSegment4dCP pSource
+);
+
+Public GEOMDLLIMPEXP bool    bsiDSegment4d_multiplyTransformDSegment4d
+(
+DSegment4dP pDest,
+TransformCP pTransform,
+DSegment4dCP pSource
+);
+
+//!
+//!
+//! Apply a transformation to the source segment.
+//! @param pTransform IN      transformation to apply.
+//! @param pSource IN      source segment
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDSegment4d_transformDMatrix4d
+(
+DSegment4dP pDest,
+DMatrix4dCP pTransform,
+DSegment4dCP pSource
+);
+
+//!
+//! Compute the parameters and points where the xy projections of two rays intersect.
+//!
+//! @param pPoint0 OUT     intersection point on line 0.
+//! @param s0P OUT     parametric coordinate on segment 0
+//! @param pPoint1 OUT     intesection point on line 1.
+//! @param s1P OUT     parametric coordinate on segment 1
+//! @param pStart0 IN      start of first line segment
+//! @param pEnd0 IN      end of first line
+//! @param pStart1 IN      start of second segment
+//! @param pEnd1 IN      end of second segment
+//! @return true unless lines are parallel
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDSegment4d_intersectXYDSegment4dDSegment4d
+(
+DPoint4dP pPoint01,
+double      *pParam01,
+DPoint4dP pPoint23,
+double      *pParam23,
+DSegment4dCP pSegment01,
+DSegment4dCP pSegment23
+);
+
+//!
+//! Compute the parameters and points where the xy projections of two rays intersect.
+//! Only return points in 0..1 parameter range.  Output parameters are
+//! untouched (undefined) if no intersections occur in range.
+//!
+//! @param pPoint0 OUT     intersection point on line 0.
+//! @param s0P OUT     parametric coordinate on segment 0
+//! @param pPoint1 OUT     intesection point on line 1.
+//! @param s1P OUT     parametric coordinate on segment 1
+//! @param pStart0 IN      start of first line segment
+//! @param pEnd0 IN      end of first line
+//! @param pStart1 IN      start of second segment
+//! @param pEnd1 IN      end of second segment
+//! @return true unless lines are parallel
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDSegment4d_intersectXYDSegment4dDSegment4dBounded
+(
+DPoint4dP pPoint01,
+double      *pParam01,
+DPoint4dP pPoint23,
+double      *pParam23,
+DSegment4dCP pSegment01,
+DSegment4dCP pSegment23
+);
+
+//!
+//! Get DPoint4d plane coefficients which represent the (perspsective, i.e. normalized weight)
+//! view of the line as a plane.  This vector has z=0 so that z parts of other geometry
+//! are irrelevant to intersection calculations
+//! @param        start point of object.
+//! 
+//!
+Public GEOMDLLIMPEXP void       bsiDSegment4d_getXYWImplicitDPoint4dPlane
+(
+DSegment4dCP pInstance,
+DPoint4dP pPlaneCoffs
+);
+
+//!
+//! Get start point for a linear object. Only valid if isLinear is true.
+//! @param        start point of object.
+//! 
+//!
+Public GEOMDLLIMPEXP void       bsiDSegment4d_getStartDPoint4d
+(
+DSegment4dCP pInstance,
+DPoint4dP pPt
+);
+
+//!
+//! Get end point for a linear object. Only valid if isLinear is true.
+//! @param        end point of object.
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDSegment4d_getEndDPoint4d
+(
+DSegment4dCP pInstance,
+DPoint4dP pPt
+);
+
+//!
+//! Set the "start" point.
+//! @param        pPoint          new start point.
+//! 
+//!
+Public GEOMDLLIMPEXP void       bsiDSegment4d_setStartDPoint4d
+(
+DSegment4dP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//! Set the "end" point.
+//! @param        pPoint          new end point.
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDSegment4d_setEndDPoint4d
+(
+DSegment4dP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//! @param pPointOut  OUT     coordinates at fractional parameter.
+//! @param param      IN      fractional parameter
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDSegment4d_fractionParameterToDPoint4d
+(
+DSegment4dCP pInstance,
+DPoint4dP pPoint,
+double  param
+);
+
+//!
+//! @param pPointOut  OUT     coordinates at fractional parameter.
+//! @param param      IN      fractional parameter
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDSegment4d_fractionParameterToDPoint3d
+(
+DSegment4dCP pInstance,
+DPoint3dP pPoint,
+double  param
+);
+
+//!
+//! @param pParamOut  OUT     where pPoint projects to the line.
+//! @param pPoint     IN      point to project to the line.
+//! 
+//!
+Public GEOMDLLIMPEXP bool        bsiDSegment4d_dPoint4dToFractionParameter
+(
+DSegment4dCP pInstance,
+double      *pParamOut,
+DPoint4dCP pPoint
+);
+
+//!
+//! @param pPointOut      OUT     point on line at fractional parameter.
+//! @param pTangentOut    OUT     tangent vector at fractional parameter.
+//! @param param          IN      fractional parameter.
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDSegment4d_fractionParameterToDPoint4dTangent
+(
+DSegment4dCP pInstance,
+DPoint4dP pPoint,
+DPoint4dP pTangent,
+double      param
+);
+
+//!
+//! @param pTangent   OUT     A cartesian vector in the direction of the cartesian
+//!       line.  Informally, its length is arbitrary.  Formally, the vector is the
+//!       weighted difference of the endpoints, w1*P0 - w0*P1, if that helps make
+//!       sense out of the length.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDSegment4d_pseudoTangent
+(
+DSegment4dCP pSegment,
+DPoint3dP pTangent
+);
+
+//!
+//! @param pPt OUT     returned point.
+//! @param index IN      index of point to return.
+//! 
+//!
+Public GEOMDLLIMPEXP bool       bsiDSegment4d_getIndexedDPoint4d
+(
+DSegment4dCP pInstance,
+DPoint4dP pPt,
+int             index
+);
+
+//!
+//! @param pPt OUT     returned point.
+//! @param index IN      index of point to return.
+//! 
+//!
+Public GEOMDLLIMPEXP bool       bsiDSegment4d_setIndexedDPoint4d
+(
+DSegment4dP pInstance,
+DPoint4dCP pPt,
+int             index
+);
+
+//!
+//! Find the closest approach of two (unbounded) lines.
+//!
+//! @param pParam0 OUT     parameter on first segment
+//! @param pParam1 OUT     parameter on second segment
+//! @param pPoint0 OUT     point on first segment.
+//! @param pPoint1 OUT     point on second segment.
+//! @param pSegment0   OUT     first segment
+//! @param pSegment1   OUT     second segment
+//! 
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_closestApproach
+(
+double          *pParamA,
+double          *pParamB,
+DPoint4dP pPointA,
+DPoint4dP pPointB,
+DSegment4dCP pSegmentA,
+DSegment4dCP pSegmentB
+);
+
+//!
+//! Test if the segment has unit weights at both ends.
+//!
+Public GEOMDLLIMPEXP bool               bsiDSegment4d_isUnitWeighted (DSegment4dCP pSegment);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,135 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_fragments.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+#ifdef __cplusplus
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGPFragments_gripe
+(
+GPFragments_hdr *pInstance,
+const char              *pMessage
+);
+
+Public GEOMDLLIMPEXP GPFragments_hdr * jmdlGPFragments_grab
+(
+void
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Drop a fragment graph back to the cache.
+* @param pHeader IN      header to return to cache.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GPFragments_hdr *jmdlGPFragments_drop
+(
+GPFragments_hdr     *pHeader
+);
+
+Public GEOMDLLIMPEXP GPFragments_hdr * jmdlGPFragments_alloc
+(
+void
+);
+
+Public GEOMDLLIMPEXP void jmdlGPFragments_init
+(
+GPFragments_hdr *pInstance
+);
+
+Public GEOMDLLIMPEXP void jmdlGPFragments_empty
+(
+GPFragments_hdr *pInstance
+);
+
+Public GEOMDLLIMPEXP MTGFacets * jmdlGPFragments_free
+(
+GPFragments_hdr *     pInstance
+);
+
+Public GEOMDLLIMPEXP void jmdlGPFragments_releaseMem
+(
+GPFragments_hdr *     pInstance     /* IN      header for facets to free. */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find cut points for a plane wrt fragments in an array.
+* Copy fragments to output array, and record their boundary indices in a fragment array.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGPFragments_createPlaneClipFragments
+(
+GPFragments_hdr   *pFragmentGraph,
+int             *piReadPos,
+GraphicsPointArray              *pSourceHeader,
+const DPoint4d      *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGPFragments_sortAndJoinAlongMaximalAxis
+(
+GPFragments_hdr   *pFragmentGraph
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Access the fragment referenced by a given node of the fragment graph.  Copy the fragment
+* to a destination GraphicsPointArray.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGPFragments_copyFragment
+(
+GPFragments_hdr   *pFragmentGraph,
+GraphicsPointArray              *pDest,
+MTGNodeId           baseNodeId
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search a graphics point array for a point that matches x,y,z (unweighted) of test point.
+* If none found, add it.  If found, return its label data and copy the final point into its place.
+* @param pScratch IN OUT  scratch header for point searches.
+* @return MTG_NULL_NODEID if no match found; userData label if found.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP MTGNodeId   jmdlGPFragments_stashOrMatch
+(
+GraphicsPointArray              *pSearchHeader,
+GraphicsPointArray              *pGeometryHeader,
+MTGNodeId           currNodeId,
+int                 currIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find and join dangling edges in a fragment graph.
+* @param pScratch IN OUT  scratch header for point searches.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGPFragments_joinDanglers
+(
+GPFragments_hdr   *pFragmentGraph,
+GraphicsPointArray              *pSearchHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/98
+*
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGPFragments_extractEdgesToGraphicsPointArray
+(
+GPFragments_hdr   *pFragmentGraph,
+GraphicsPointArray              *pDest
+);
+#endif
+END_BENTLEY_GEOMETRY_NAMESPACE
+

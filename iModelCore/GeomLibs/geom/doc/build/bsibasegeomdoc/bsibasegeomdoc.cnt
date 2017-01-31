@@ -1,0 +1,206 @@
+"Overview of the Bentley Base Geometry Library" ::
+    "Preferred Geometry Types" :
+    "Other Geometry Types" :
+    "Miscellaneous Functionality" :
+    ;
+
+"Preferred Geometry Types" ::
+    DEllipse3d :
+    DPlane3d :
+    DPoint3d :
+    DRange3d :
+    DSegment3d :
+    DVec3d :
+    RotMatrix :
+    Transform :
+    ;
+
+"Other Geometry Types" ::
+    "2D Types" :
+    "4D Types" :
+    "Analytic Surfaces" :
+    DMatrix3d :
+    DRay3d :
+    DTransform3d :
+    GraphicsPoint :
+    Quaternions :
+    "Single Precision Float Types" :
+    ;
+
+"Miscellaneous Functionality" ::
+    "Complex Arithmetic" :
+    "Elliptic Integrals" :
+    Deprecated :
+    "Linear Geometry" :
+    "Quadratic Geometry" :
+    "Tangent Circles" :
+    Trigonometry :
+    Polygons :
+    Polylines :
+    ;
+
+"2D Types" ::
+    DPoint2d :
+    DRange2d :
+    ;
+
+"4D Types" ::
+    DConic4d   :
+    DMatrix4d  :
+    DPoint4d   :
+    DSegment4d :
+    ;
+
+"Analytic Surfaces" ::
+    DCone3d       :
+    DDisk3d       :
+    DEllipsoid3d  :
+    DToroid3d     :
+    ;
+
+"Single Precision Float Types" ::
+    FPoint2d :
+    FPoint3d :
+    FRange2d :
+    FRange3d :
+    ;
+
+DPoint3d ::
+    "DPoint3d Addition" :
+    "DPoint3d Barycentric" :
+    "DPoint3d Copy" :
+    "DPoint3d Distance" :
+    "DPoint3d Dot and Cross" :
+    "DPoint3d Initialization" :
+    "DPoint3d Modification" :
+    "DPoint3d Normalize" :
+    "DPoint3d Queries" :
+    "DPoint3d Sorting" :
+    ;
+
+DPoint2d ::
+    "DPoint2d Addition" :
+    "DPoint2d Angles" :
+    "DPoint2d Barycentric" :
+    "DPoint2d Copy" :
+    "DPoint2d Distance" :
+    "DPoint2d Dot and Cross" :
+    "DPoint2d Equal" :
+    "DPoint2d Initialization" :
+    "DPoint2d Modification" :
+    "DPoint2d Normalize" :
+    "DPoint2d Queries" :
+    "DPoint2d Scale" :
+    ;
+
+DSegment3d ::
+    "DSegment3d Closest Point" :
+    "DSegment3d Evaluate" :
+    "DSegment3d Initialization" :
+    "DSegment3d Intersection" :
+    "DSegment3d Queries" :
+    ;
+
+
+DMatrix3d ::
+    "DMatrix3d Addition" :
+    "DMatrix3d Modification" :
+    "DMatrix3d Initialization" :
+    "DMatrix3d Multiplication" :
+    "DMatrix3d Queries" :
+    "DMatrix3d Rotations" :
+    ;
+
+RotMatrix ::
+    "RotMatrix Addition" :
+    "RotMatrix Modification" :
+    "RotMatrix Initialization" :
+    "RotMatrix Multiplication" :
+    "RotMatrix Queries" :
+    "RotMatrix Rotations" :
+    ;
+
+DTransform3d ::
+    "DTransform3d Addition" :
+    "DTransform3d Modification" :
+    "DTransform3d Initialization" :
+    "DTransform3d Inverse" :
+    "DTransform3d Multiplication" :
+    "DTransform3d Queries" :
+    ;
+
+Transform ::
+    "Transform Addition" :
+    "Transform Modification" :
+    "Transform Initialization" :
+    "Transform Inverse" :
+    "Transform Multiplication" :
+    "Transform Queries" :
+    ;
+
+DEllipse3d ::
+    "DEllipse3d Angles" :
+    "DEllipse3d Closest Point" :
+    "DEllipse3d Evaluation" :
+    "DEllipse3d Initialization" :
+    "DEllipse3d Intersection" :
+    "DEllipse3d Queries" :
+    "DEllipse3d Transform" :
+    "DEllipse3d DGN Elements" :
+    ;
+
+DRange3d ::
+    "DRange3d Extend" :
+    "DRange3d Initialization" :
+    "DRange3d Queries" :
+    ;
+
+DCone3d ::
+    "DCone3d Implicit" :
+    "DCone3d Initialization" :
+    "DCone3d Intersection" :
+    "DCone3d Local Coordinates" :
+    "DCone3d Parameter Range" :
+    "DCone3d Parameterization" :
+    "DCone3d Projection" :
+    "DCone3d Queries" :
+    "DCone3d Rule Lines" :
+    "DCone3d Silhouette" :
+    ;
+
+DConic4d ::
+    "DConic4d Arc Length" :
+    "DConic4d Asymptotes" :
+    "DConic4d Bezier" :
+    "DConic4d Circular" :
+    "DConic4d Eye Point" :
+    "DConic4d Implicit" :
+    "DConic4d Initialization" :
+    "DConic4d Intersection" :
+    "DConic4d Local Coordinates" :
+    "DConic4d Major Minor Axes" :
+    "DConic4d Modification" :
+    "DConic4d Parameter Range" :
+    "DConic4d Parameterization" :
+    "DConic4d Projection" :
+    "DConic4d Queries" :
+    "DConic4d Range" :
+    "DConic4d Transform" :
+    "DConic4d Weights" :
+    ;
+
+DPlane3d ::
+    "DPlane3d Initialization" :
+    "DPlane3d Modification" :
+    "DPlane3d Queries" :
+    "DPlane3d Transform" :
+    "DPlane3d Projection" :
+    ;
+
+Trigonometry ::
+    "Trigonometric Rotations" :
+    ;
+
+"Linear Geometry" ::
+    "Singular Value Decomposition" :
+    ;

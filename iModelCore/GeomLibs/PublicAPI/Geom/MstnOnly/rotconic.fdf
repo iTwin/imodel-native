@@ -1,0 +1,1230 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/MstnOnly/rotconic.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+
+/*------------------------------------------------------------------*//**
+* Zero out a rotated conic.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiRotatedConic_clear
+
+(
+RotatedConic        *pSurface
+);
+
+/*------------------------------------------------------------------*//**
+* Set the sweep angle. Used only in pre-coordinate system mode.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiRotatedConic_setSweep
+
+(
+RotatedConic        *pSurface,
+double              sweep
+);
+
+/*------------------------------------------------------------------*//**
+* Set the hoop radius.  Used only for torus type.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiRotatedConic_setHoopRadius
+
+(
+RotatedConic        *pSurface,
+double              radius
+);
+
+/*------------------------------------------------------------------*//**
+* (Pre)multiply the conic's coordinates by a 4x4 matrix.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void       bsiHConic_multiplyHMatrix
+
+(
+HConic  *pOutConic,       /* OUT     transformed conic */
+const HConic  *pInConic,        /* IN      original conic */
+DMatrix4dCP pMatrix             /* IN      matrix */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize an untyped conic.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initNull
+
+(
+HConic          *pHConic       /* OUT     conic to initialize */
+);
+
+/*------------------------------------------------------------------*//**
+* Compute the range of the conic.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiHConic_getRange
+
+(
+DRange3dP pRange,           /* OUT     range to fill */
+const HConic        *pHConic       /* IN      conic to evaluate */
+);
+
+/*------------------------------------------------------------------*//**
+* Compute the range of the surface.
+* @param pPoint OUT     8 corners of bounding volume. (Some may be coincident)
+* @param pPlane OUT     6 planes of bounding volume.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_getBoundingVolume
+
+(
+DPoint3dP pPoint,
+DPoint4dP pPlane,
+const RotatedConic  *pSurface
+);
+
+/*------------------------------------------------------------------*//**
+* Extend a range by the ranges of an array of conics.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiDRange3d_extendByHConicArray
+
+(
+DRange3dP pRange,       /* OUT     range to extend */
+const HConic    *pHConic,       /* IN      array of conics for range */
+int     numConic        /* IN      number of conics */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic degenerated as a line. (3d coordinates
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initLine
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint3dCP pStart,      /* IN      start point */
+DPoint3dCP pEnd         /* IN      end point */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic degenerated as a line. (4d coordinates)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initLine4d
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint4dCP pStart,      /* IN      start point */
+DPoint4dCP pEnd         /* IN      end point */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic degenerated as a pair of lines. (4d coordinates)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initLinePair4d
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint4dCP pIntersection,       /* IN      common start point */
+DPoint4dCP pPoint0,       /* IN      first branch target */
+DPoint4dCP pPoint1      /* IN      second branch target */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic degenerated as a point.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initPoint
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint3dCP pPoint       /* IN      point */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic as an ellipse (homogeneous, possilbly mapped to
+*   parabola or hyperbola)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initHEllipse
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DEllipse4dCP pHEllipse  /* IN      ellipse */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic as an ellipse (homogeneous, possilbly mapped to
+*   parabola or hyperbola)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_init4dEllipseVectors
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint4dCP pOrigin,       /* IN      origin vector */
+DPoint4dCP pVector0,      /* IN      0 degree vector */
+DPoint4dCP pVector90,     /* IN      90 degree vector */
+double    theta0,               /* start angle */
+double    sweep         /* end angle  */
+);
+
+/*------------------------------------------------------------------*//**
+* Initialize a conic as an ellipse.
+*   parabola or hyperbola)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_init3dEllipsePoints
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+DPoint3dCP pOrigin,       /* IN      origin vector */
+DPoint3dCP pPoint0,      /* IN      0 degree vector */
+DPoint3dCP pPoint90,     /* IN      90 degree vector */
+double    theta0,               /* start angle */
+double    sweep         /* end angle  */
+);
+
+/*---------------------------------------------------------------------------------**//**
+Combine adjacent intervals of ellipses.
+* @bsimethod                                                    BentleySystems  +---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiHConic_consolidateSectors
+(
+HConic *pConic
+);
+
+/*------------------------------------------------------------------*//**
+* Compute 0, 1, or 2 conic parts of the intersection of unit cone patch
+* and a plane.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void omdHConic_initUnitConePlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+const DPoint4d  *pPlane,        /* OUT     plane coefficients */
+const DRange3d  *pRange         /* OUT     parameter range to apply */
+);
+
+/*------------------------------------------------------------------*//**
+* Compute a conic which is the intersection of a unit sphere and a plane.
+*
+* Various tolerance tests are applied assuming working range 0..1
+* (Because the sphere is unit sized..)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void omdHConic_initUnitSpherePlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+const DPoint4d  *pPlane,        /* IN      plane coefficients */
+const DRange3d  *pRange         /* IN      parameter range to apply */
+);
+
+/*------------------------------------------------------------------*//**
+* If possible, init conics which are the intersection of a torus and
+* a plane.  Return ERROR if intersection is non-conic.
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt omdHConic_initTorusPlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+      double    b,              /* IN      hoop radius of torus */
+const DPoint4d  *pPlane,        /* IN      plane coefficients */
+const DRange3d  *pRange         /* IN      parameter range to apply */
+);
+
+/*------------------------------------------------------------------*//**
+*  Compute a conic which is the intersection of a unit cone and
+*  a plane.
+*
+*  Various tolerance tests are applied assuming working range 0..1
+*  (Because the cone is unit sized..)
+* @bsimethod                                                    BentleySystems  08/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void omdHConic_initUnitCylinderPlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+const DPoint4d  *pPlane,        /* OUT     plane coefficients */
+const DRange3d  *pRange         /* OUT     parameter range to apply */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute a conic which is the intersection of a unit disk and
+*  a plane.
+*
+*  Various tolerance tests are applied assuming working range 0..1
+*  (Because the disk is unit sized ... )
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void omdHConic_initUnitDiskPlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+const DPoint4d  *pPlane,        /* OUT     plane coefficients */
+const DRange3d  *pRange         /* OUT     parameter range to apply */
+);
+
+/*----------------------------------------------------------------*//**
+*  Compute a conic which is the intersection of a unit cone and
+*  a plane.
+*
+*  Various tolerance tests are applied assuming working range 0..1
+*  (Because the cone is unit sized..)
+* @bsimethod                                                    BentleySystems  07/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initUnitSquarePlaneIntersection
+
+(
+HConic    *pHConic,       /* OUT     0, 1, or 2 intersection conics */
+int       *pNumConic,     /* OUT     number of conics (0, 1, or 2) */
+const DPoint4d  *pPlane,        /* OUT     plane coefficients */
+const DRange3d  *pRange         /* OUT     parameter range to apply */
+);
+
+/*----------------------------------------------------------------*//**
+* Initialize a conic as a circular arc of given radius around the z axis.
+* @bsimethod                                                    BentleySystems  07/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initZEllipse
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+double          theta0,         /* IN      start angle */
+double          theta1,         /* IN      end angle */
+double          radius,         /* IN      circle radius */
+double          z               /* IN      altitude */
+);
+
+/*----------------------------------------------------------------*//**
+* Initialize a meridian of longitude.
+* @bsimethod                                                    BentleySystems  07/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiHConic_initMeridian
+
+(
+HConic          *pHConic,       /* OUT     conic to initialize */
+double          phi0,           /* IN      start angle (latitude) */
+double          phi1,           /* IN      end angle (latitude) */
+double          theta,          /* IN      meridian angle */
+double          radius,         /* IN      meridian radius */
+double          offset          /* IN      offset of center from z axis in theta direction */
+);
+
+/*----------------------------------------------------------------*//**
+* Extract start and end parameters of a specified segment of a conic.
+* @bsimethod                                                    BentleySystems  07/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiHConic_getSegment
+
+(
+double    *pStart,      /* OUT     segement start parameter */
+double    *pEnd,                /* OUT     segment end parameter */
+const HConic    *pHConic,       /* IN      conic to initialize */
+int       i             /* IN      segment index */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiDEllipse4d_getSegment
+
+(
+double    *pStart,      /* OUT     segement start parameter */
+double    *pEnd,                /* OUT     segment end parameter */
+DEllipse4dCP pHEllipse,     /* IN      conic to query */
+int       i             /* IN      segment index */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiRotatedConic_setParameterRange
+
+(
+RotatedConic        *pSurface,
+double              theta0,
+double              deltaTheta,
+double              phi0,
+double              deltaPhi
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiRotatedConic_setTolerance
+
+(
+RotatedConic        *pSurface,
+double              tolerance
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Trace solution contours of the commonly occurring equation
+*    (c s 1)[ acC acS ac1 ] (C) = 0
+*           [ asC asS as1 ] (S)
+*           [ a1C a1S a11 ] (1)
+*  for c=cos(phi), s=sin(phi), C=cos(theta), S=sin(theta)
+*  within the limits of the surface.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_toroidalForm
+
+(
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+RotMatrixCP pMatrix,       /* IN      coefficient matrix */
+SilhouetteArrayHandler handlerFunc, /* IN      callback for points */
+double              tolerance,      /* IN      distance from surface */
+void                *pUserData      /* IN      arbitrary pointer */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute general silhouette curve of a torus.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_torusGeneralSilhouette
+
+(
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pEyePoint,     /* IN      eyepoint (nonzero weight) or view vector (zero weight) */
+SilhouetteArrayHandler handlerFunc, /* IN      callback for points */
+double              tolerance,      /* IN      distance from surface */
+void                *pUserData      /* IN      arbitrary pointer */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute general plane intersection with a torus.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_torusGeneralIntersectPlane
+
+(
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pPlane,        /* IN      plane coordinates */
+SilhouetteArrayHandler handlerFunc, /* IN      callback for points */
+double              tolerance,      /* IN      distance from surface */
+void                *pUserData      /* IN      arbitrary pointer */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_extendRangeByPoints
+
+(
+HConic              *pConic,
+DPoint3dP pPointArray,
+int                 numPoint,
+unsigned int        curveMask,
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DRange3dP pRange            /* OUT     surface range */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_getRange
+
+(
+DRange3dP pRange,           /* OUT     surface range */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute products of the form
+*           XT*A*Y
+*  where X,Y are homogeneous vectors
+*  and A is the homogeneous matrix of the surface.
+*  Return ERROR if the surface is not (pre)classified as a quadrtic
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_quadraticProducts
+
+(
+double              *pXTAX,         /* OUT     */
+double              *pXTAY,         /* OUT     */
+double              *pYTAY,         /* OUT     */
+DPoint4dP pBinvX,           /* OUT     X transformed to local system */
+DPoint4dP pBinvY,           /* OUT     Y transformed to local system */
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pX,      /* IN      X point */
+DPoint4dCP pY               /* IN      Y point */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+|
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool       bsiRotatedConic_isQuadric   /* false for non-quadric */
+
+(
+DPoint4dP pSigma,           /* OUT     vector of 0,1,-1 values on diagonal of characteristic matrix. */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  7/96
+*
+*  Copy data from a matrix row to a DPoint4d structure.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_getRowDPoint4d
+
+(
+DPoint4dP pVec,      /* OUT     point copied from column */
+DMatrix4dCP pMatrix,   /* IN      matrix whose column is retrieved */
+int i                       /* IN      index of column (0 OUT     i < 4 ) whose values are to be set */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool       bsiRotatedConic_isPlanar   /* false for non-planar */
+
+(
+DPoint4dP           pPlaneCoffs,    /* IN      coefficients of plane normal vector */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+|
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_mappedBasis
+
+(
+DMap4dP pHMap,      /* OUT     Mapping from pSurface0 local coordinates to
+pSurface1 local coordinates */
+const RotatedConic  *pSurface0,     /* IN      foreign surface */
+const RotatedConic  *pSurface1      /* IN      rotated conic whose local system is being used
+for calculations */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int bsiRotatedConic_uFlags  /* bitwise OR of bits for curvature properties */
+
+(
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int bsiRotatedConic_vFlags  /* bitwise OR of bits for curvature properties */
+
+(
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Return boundary components in local coordinates.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_localBoundaryComponents
+
+(
+HConic      *pBottom,               /* OUT     bottom conic.  NULL if not required */
+HConic      *pTop,                  /* OUT     top conic      NULL if not required */
+HConic      *pLeft,                 /* OUT     left conic     NULL if not required */
+HConic      *pRight,                /* OUT     right conic    NULL if not required */
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+bool        orientForSweep          /* IN      if true, orient opposite sides with parameterizations for sweeping.
+If false, orient parameterizations for a CCW boundary traversal */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_boundaryComponents
+
+(
+HConic      *pBottom,               /* OUT     bottom conic.  NULL if not required */
+HConic      *pTop,                  /* OUT     top conic      NULL if not required */
+HConic      *pLeft,                 /* OUT     left conic     NULL if not required */
+HConic      *pRight,                /* OUT     right conic    NULL if not required */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Evaluate 4D tangent (partial derivative) vectors.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt   bsiRotatedConic_tangents
+
+(
+DPoint4dP pTangent0,    /* OUT     partial wrt x of (4d) parametric coordinates */
+      DPoint4d      *pTangent1, /* OUT     partial wrt y of (4d) parametric coordinates */
+      DPoint4d      *pTangent2, /* OUT     partial wrt z of (4d) parametric coordinates */
+      DPoint4d      *pTangent3, /* OUT     partial wrt w of (4d) parametric coordinates */
+const RotatedConic  *pSurface,  /* IN      surface to evaluate */
+const DPoint4d      *pParam,    /* IN      parameter space coordinates.  (E.g. as returned by
+                                        bsiRotatedConic_transformPointArray) */
+      int           coordSys    /* IN      coordinates in which tangents are computed. May be
+                                        RC_COORDSYS_world
+                                        RC_COORDSYS_local
+                                */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt   bsiRotatedConic_transformDPoint4dArray
+
+(
+DPoint4dP pOut,      /* OUT     returned points */
+DPoint4dCP pIn,       /* IN      input points */
+int         numPoint,   /* IN      number of points */
+const RotatedConic  *pSurface,  /* IN      surface */
+int         inSys,      /* IN      input coordinate system */
+int         outSys      /* IN      output coordinate system */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  06/00
+*
+*  Pull a (world) point back to the surface.  For natural quadrics,
+*  this is finding the closest point.  For others, it finds the
+*  intersection of a line back to the center.
+*  The retraction is NOT restricted to the bounded surface.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt   bsiRotatedConic_retractDPoint3dToSurface
+
+(
+const RotatedConic  *pSurface,  /* IN      surface */
+DPoint3dP pOut,
+DPoint3dCP pIn,
+int         inSys,
+int         outSys,
+bool        retractParameterXY,
+bool        retractParameterZ
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  06/00
+*
+*  Pull a (world) point back to the surface.  For natural quadrics,
+*  this is finding the closest point.  For others, it finds the
+*  intersection of a line back to the center.
+*  The retraction is NOT restricted to the bounded surface.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt   bsiRotatedConic_retractDPoint4dToSurface
+(
+const RotatedConic  *pSurface,  /* IN      surface */
+DPoint4dP pOut,
+DPoint4dCP pIn,
+int         inSys,
+int         outSys,
+bool          retractParameterXY,
+bool          retractParameterZ
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute general silhouette curves.
+*  Returns SUCCESS (but no output!!!) if exact conics can be computed
+*  from bsiRotatedConic_interiorConicSilhouette
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_generalSilhouette
+
+(
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pEyePoint,     /* IN      eyepoint (nonzero weight) or view vector (zero weight) */
+SilhouetteArrayHandler handlerFunc, /* IN      callback for points */
+double              tolerance,      /* IN      distance from surface */
+void                *pUserData      /* IN      arbitrary pointer */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute (if possible!!!) silhouette curves as exact conics.
+*  Note special status return if silhouette is non-conic (e.g. for
+*  torus).
+*  Return values are:
+*  SUCCESS - pNumSilhouette indicates number of conics returned.
+*           (pNumSilhouette==0 is a valid return with SUCCESS.)
+*  ERROR   - no support for silhouettes.
+*  STATUS_ROTATEDCONIC_NONCONIC_SILHOUETTE - Silhouettes must be
+*           computed as non-conic curves.
+*
+*  Returned curves are strictly 'interior' -- no overlap with
+*  boundaries.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_interiorConicSilhouette
+
+(
+HConic      *pSilhouette,   /* OUT     0, 1, or 2 sihouette conics.  Note for HConic_Ellipse, the ellipse
+may have multiple arc sectors. */
+int         *pNumSilhouette,
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pEyePoint      /* IN      eyepoint (nonzero weight) or view vector (zero weight) */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Test if point is within the surface box.  Only 2D surface parts
+*  of point are examined.    (i.e. radial and weight parts are ignored)
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool        bsiRotatedConic_isPointOnSurfacePatch
+
+(
+DPoint4dCP pPoint,          /* OUT     coordinates of point to test */
+int         inSys,          /* IN      coordinate system in which point is given.
+RC_COORDSYS_world, RC_COORDSYS_local, RC_COORDSYS_parameter, RC_COORDSYS_parameter01
+*/
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Find the intersection of line
+*   X=L0*alpha0 + L1*alpha1
+*  with the analytic surface.
+*
+*  All intersections are returned (i.e. both line and surface are
+*  unbounded)
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_intersectLine
+
+(
+DPoint3dP pWorldPoint,      /* OUT     0 to 4 cartesian world coordinates */
+DPoint4dP pLocalPoint,           /* OUT     0 to 4 homogeneous local coordinates of surface */
+DPoint3dP pLineParameters,       /* OUT     0 to 4 line parameters (x,y components weight point 0, point 1 */
+int         *pNumIntersection,      /* OUT     number of intersections */
+const RotatedConic    *pSurface,            /* IN      the rotated conic surface */
+DPoint3dCP pLinePoints      /* IN      two points on the line */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  04/99
+*
+*  Find the intersections of a rational polynomial curve with the
+*  surface.
+*
+*  All intersections are returned (i.e. both line and surface are
+*  unbounded)
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_intersectRationalCurveUnbounded
+
+(
+DPoint4dP pWorldPoint,    /* OUT     0 to 4n cartesian world coordinates, where n is the
+polynomial degree. */
+DPoint4dP pLocalPoint,   /* OUT     0 to 4n homogeneous local coordinates of surface */
+double      *pRootParam,    /* OUT     0 to 4n polynomial parameters of the intersections */
+int           *pNumIntersection,   /* OUT     number of intersections */
+int         maxIntersection,    /* IN      max intersections permitted */
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+const PolyCoffs     *pXPoly,        /* IN      x polynomial */
+const PolyCoffs     *pYPoly,        /* IN      y polynomial */
+const PolyCoffs     *pZPoly,        /* IN      z polynomial */
+const PolyCoffs     *pWPoly         /* IN      w polynomial */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  04/99
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void     bsiRotatedConic_assembleConicCoefficients
+
+(
+PolyCoffs     *pX,
+PolyCoffs     *pY,
+PolyCoffs     *pZ,
+PolyCoffs     *pW,
+DConic4dCP pConic,        /* IN      the conic */
+double      phaseAngle      /* IN      rotate axes by this angle to set origin of
+polynomial */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  04/99
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_intersectDConic4d
+
+(
+const RotatedConic  *pSurface,              /* IN      the rotated conic surface */
+DPoint3dP pPointArray,      /* OUT     array of intersection points */
+DPoint4dP pSurfaceParamArray,    /* array of intersection points in surface parameter
+space */
+double      *pThetaArray,           /* OUT     array of intersection angles in the conic parameterization */
+int         *pNumIntersection,      /* OUT     number of intersections */
+int         maxIntersection,        /* IN      size of output arrays */
+DConic4dCP pConic,                  /* IN      the conic */
+bool        boundEllipse,           /* IN      true to check bounds on ellipse */
+bool        boundSurface            /* IN      true to check bounds on surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  04/99
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_intersectDEllipse3d
+
+(
+const RotatedConic  *pSurface,          /* IN      the rotated conic surface */
+DPoint3dP pPointArray,       /* OUT     array of intersection points */
+DPoint4dP pSurfaceParamArray, /* array of intersection points in surface parameter
+space */
+double      *pThetaArray,       /* OUT     array of intersection angles in the conic parameterization */
+int         *pNumIntersection,  /* OUT     number of intersections */
+int         maxIntersection,    /* IN      size of output arrays */
+DEllipse3dCP pEllipse,           /* IN      the ellipse */
+bool        boundEllipse,       /* IN      true to check bounds on ellipse */
+bool        boundSurface        /* IN      true to check bounds on surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Compute worse-than-conic parts of intersection with plane.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_generalIntersectPlane
+
+(
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pPlane,        /* IN      eyepoint (nonzero weight) or view vector (zero weight) */
+SilhouetteArrayHandler handlerFunc, /* IN      callback for points */
+double              tolerance,      /* IN      distance from surface */
+void                *pUserData      /* IN      arbitrary pointer */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt   bsiHConic_evaluateDPoint4d /* ERROR if parameterization of this quadric type is not supported */
+
+(
+DPoint4dP pPoint,           /* OUT     point on the conic */
+const HConic        *pConic,        /* IN      unclipped (but possibly multi-sector) conic */
+      double        param           /* IN      parameter for evaluation */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Find parameters where an HConic intersects the surface's
+*  transverse half spaces.   If the HConic is in the surface, these are
+*  candidate points for clipping the HConic to the surface patch.
+*
+*  If the HConic is significantly out of the surface, result is
+*  unpredictable.
+*  Transverse spaces are constructed so that slightly out-of-surface
+*  clips make sense.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_intersectUnboundedHConicWithTransverseSpaces /* ERROR if intersection with conic is not supported */
+
+(
+double      *pParam,        /* OUT     array of parameter values */
+int         *pNumParam,     /* OUT     number of parameters */
+int         maxParam,       /* IN      max params allowed */
+const HConic        *pConic,        /*  IN      unclipped (but possibly multi-sector) conic */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Clip an HConic to a set of half spaces which define the boundary of
+*  this surface.   If the HConic is in the surface, this clips the
+*  the HConic to the surface patch.   If the HConic is significantly
+*  out of the surface, result is unpredictable.
+*  Transverse spaces are constructed so that slightly out-of-surface
+*  clips make sense.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_clipHConicToTransverseSpaces /* ERROR if intersection with conic is not supported */
+
+(
+HConic      *pClipped,      /* OUT     clipped conic. */
+const HConic        *pUnclipped,    /*  IN      unclipped (but possibly multi-sector) conic */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Find the intersection of a plane with the surface.
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt       bsiRotatedConic_intersectPlane /* ERROR if intersection is not conic */
+
+(
+HConic      *pHConic,       /* OUT     array of 0, 1, or 2 conics */
+int         *pNumConic,     /* OUT     number of conics */
+const RotatedConic  *pSurface,      /* IN      the rotated conic surface */
+DPoint4dCP pPlane,          /* IN      homogeneous vector of plane */
+bool          bounded       /* IN      true to bound by parameter range */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void       bsiRotatedConic_getHMap
+
+(
+DMap4dP pHMap,      /* OUT     the surface's local coordinates */
+const RotatedConic  *pSurface       /* IN      the rotated conic surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void       bsiRotatedConic_setHMap
+
+(
+RotatedConic  *pSurface,            /* OUT     the rotated conic surface */
+DMap4dCP pHMap      /* IN      map to use for the surface's local coordinates */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  A rotated conic is defined as some reference surface transformed by
+*  an DMap4d B.   Replace the DMap4d by PreMap * B * PostMap.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void       bsiRotatedConic_transform
+
+(
+RotatedConic  *pSurface,            /* OUT     the rotated conic surface */
+DMap4dCP pPreMap,           /* IN      map to premultiply local frame */
+DMap4dCP pPostMap       /* OUT     map to postmultiply local frame */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initAxis
+
+(
+RotatedConic        *pSurface,
+DPoint3dCP pCenter,
+DVec3dCP pAxis,
+DPoint3dCP pTargetPoints,
+int                 numTargetPoint
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initRotatedLine
+
+(
+RotatedConic        *pSurface,
+DPoint3dCP pStart,
+DPoint3dCP pEnd,
+DPoint3dCP pCenter,
+DVec3dCP pAxis,
+double              sweep
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initRotatedEllipse
+
+(
+RotatedConic        *pSurface,
+DEllipse4dP pHEllipse,
+DPoint3dCP pCenter,
+DVec3dCP pAxis,
+double              sweep
+);
+
+/*----------------------------------------------------------------*//**
+@description Initialize a rotated DEllispe3d.
+@param pSurface OUT initialized struture.
+@param pEllipse IN base ellipse.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initRotatedDEllipse3d
+(
+RotatedConic        *pSurface,
+DEllipse3dCP        pEllipse,
+DPoint3dCP          pCenter,
+DVec3dCP            pAxis,
+double              sweep
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initUnitCylinder
+
+(
+RotatedConic        *pSurface,
+DMap4dCP pFrame,
+double      theta0,
+double      sweep
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Initialize with specified surface type and parameter range.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initFrameAndSweep
+
+(
+RotatedConic        *pSurface,      /* OUT     intitialized surface */
+RotatedConicType    type,           /* IN      Surface type. */
+DMap4dCP pFrame,    /* IN      Placement frame.  If NULL, identity frame is used */
+double      theta0,
+double      dTheta,
+double      alpha0,
+double      dAlpha
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initUnitSquare
+
+(
+RotatedConic        *pSurface,
+DMap4dCP pFrame
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initParallelogram
+
+(
+RotatedConic        *pSurface,
+DPoint3dCP pOrigin,
+DPoint3dCP pXPoint,
+DPoint3dCP pYPoint
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int bsiRotatedConic_surfaceDegree    /* 1 for planar, 2 quadric, 4 toroid */
+
+(
+const RotatedConic    *pSurface
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int bsiRotatedConic_functionMask
+
+(
+const RotatedConic    *pSurface
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+|
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRotatedConic_getLocalRuleLimits
+
+(
+HConic          *pBaseConic,
+HConic          *pEndConic,
+const   RotatedConic    *pSurface
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Return the conic which is swept about the z axis in the natural
+*  coordinates.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRotatedConic_getLocalRotationGenerator
+
+(
+HConic          *pHConic,
+double          *pSweep,
+const   RotatedConic    *pSurface
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Return true if the surface patch can possibly hide points on the
+*  surface's own silhouette.  For instance, a torus silhouette can
+*  disappear when it goes into the donut hole, but the silhouette ruling
+*  of a cone cannot disappear behind any part of the cone.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool       bsiRotatedConic_canHideSilhouettePoints
+
+(
+const RotatedConic    *pSurface
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP StatusInt  bsiRotatedConic_normalizeConic
+        /* SUCCESS if the surface's conic was converted to a purely cartesian form */
+
+(
+RotatedConic *pDest,   /* IN OUT  surface */
+const RotatedConic *pSource     /* IN      original surface */
+);
+
+/*----------------------------------------------------------------*//**
+*
+* @bsimethod                                                    BentleySystems  07/97
+*
+*  Make a copy of pSurface, attempting to reclassifying if to the
+*  simplest form possible.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool    bsiRotatedConic_copyClassified    /* true if the surface was reclassified in the copy */
+
+(
+RotatedConic    *pDest,   /* OUT     copied surface */
+const RotatedConic *pSource     /* IN      original surface */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Convert to rotated conic form.
+* @indexVerb rotatedConic
+* @bsimethod                                                    BentleySystems  04/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_getRotatedConic
+
+(
+DEllipsoid3dCP pInstance,
+RotatedConic      *pConic
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Convert to rotated conic form.
+* @indexVerb rotatedConic
+* @bsimethod                                                    BentleySystems  04/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool           bsiDCone3d_getRotatedConic
+
+(
+DCone3dCP pInstance,
+RotatedConic  *pConic
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Convert to rotated conic form.
+* @indexVerb rotatedConic
+* @bsimethod                                                    BentleySystems  10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool               bsiDToroid3d_getRotatedConic
+
+(
+DToroid3dCP pInstance,
+RotatedConic      *pConic
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Convert to rotated conic form.
+* @indexVerb rotatedConic
+* @bsimethod                                                    BentleySystems  04/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool           bsiDDisk3d_getRotatedConic
+
+(
+DDisk3dCP pInstance,
+RotatedConic  *pConic
+);
+

@@ -1,0 +1,349 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: geom/test/PolyfaceTest/t_rangeTree.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "testHarness.h"
+#include <stdio.h>
+#include <Bentley/BeConsole.h>
+
+// replicated a single polygon numX * numY * numZ times at unit spacing.
+PolyfaceHeaderPtr CreateSpaceBlockMesh
+(
+bvector<DPoint3d> &polygon,
+size_t numX,
+size_t numY,
+size_t numZ,
+DVec3d originShift,
+double step
+)
+    {
+    PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    bvector<DPoint3d> &meshPoints = mesh->Point ();
+    bvector<int> &meshIndices = mesh->PointIndex ();
+    DPoint3d xyz1;
+    for (size_t k = 0; k < numZ; k++)
+        {
+        for (size_t j = 0; j < numY; j++)
+            {
+            for (size_t i = 0; i < numX; i++)
+                {
+                for (DPoint3d xyz : polygon)
+                    {
+                    xyz1.SumOf (xyz, originShift);
+                    xyz1.x += i * step;
+                    xyz1.y += j * step;
+                    xyz1.z += k * step;
+                    size_t index = meshPoints.size ();
+                    meshPoints.push_back (xyz1);
+                    meshIndices.push_back ((int)index + 1);    // 1 based indexing !!!
+                    }
+                meshIndices.push_back (0);
+                }
+            }
+        }
+    return mesh;
+    }
+
+
+struct HitCounter : DRange3dPairRecursionHandler
+{
+BoolCounter m_II;
+BoolCounter m_IL;
+BoolCounter m_LI;
+BoolCounter m_LL;
+double m_distance;
+
+HitCounter (double distance) : m_II (), m_IL (), m_LL (), m_LI () , m_distance (distance) {}
+
+bool TestOverlap (DRange3dCR rangeA, DRange3dCR rangeB)
+    {
+    return rangeA.IntersectsWith (rangeB, m_distance, 3);
+    }
+
+virtual bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override 
+  {
+  return m_II.Count (TestOverlap (rangeA, rangeB));
+  }
+
+virtual bool TestInteriorLeafPair (DRange3dCR rangeA, DRange3dCR rangeB, size_t indexB) override
+  {
+  return m_IL.Count (TestOverlap (rangeA, rangeB));
+  }
+
+virtual bool TestLeafInteriorPair (DRange3dCR rangeA, size_t indexA, DRange3dCR rangeB) override
+  {
+  return m_IL.Count (TestOverlap (rangeA, rangeB));
+  }
+
+virtual void TestLeafLeafPair (DRange3dCR rangeA, size_t indexA, DRange3dCR rangeB, size_t indexB) override
+    {
+    m_LL.Count (rangeA.IntersectsWith (rangeB, m_distance, 3));
+    }
+
+virtual bool StillSearching () override
+    {
+    return true;
+    }
+};
+
+#ifdef DOES_NOT_LINK
+void TestRangeTree (size_t numX, size_t numY, size_t numZ)
+    {
+    bvector<DPoint3d> points;
+    double a = 0.9;
+    double b = 0.8;
+    double c = 0.5;
+    points.push_back (DPoint3d::From (0,0,0));
+    points.push_back (DPoint3d::From (a,0,0));
+    points.push_back (DPoint3d::From (a,b,c));
+    points.push_back (DPoint3d::From (0,b,c));
+    PolyfaceHeaderPtr mesh1 = CreateSpaceBlockMesh (points, numX, numY, numZ, DVec3d::From (0,0,0), 1.0);
+    // singleton completely outside
+    PolyfaceHeaderPtr mesh2 = CreateSpaceBlockMesh (points, 1, 1, 1, DVec3d::From ((double)numX, (double)numY, (double)numZ), 1.0);
+    // singleton with one hit.
+    PolyfaceHeaderPtr mesh3 = CreateSpaceBlockMesh (points, 1, 1, 1, DVec3d::From ((double)numX - 2.0, (double)numY - 2.0, (double)numZ - 2.0), 1.0);
+
+    PolyfaceHeaderPtr mesh4 = CreateSpaceBlockMesh (points, 2,2,2, DVec3d::From (0.3, 0.4, 0.2), 2.7);
+
+    PolyfaceRangeTreePtr rangeTree1 = PolyfaceRangeTree::CreateForPolyface (*mesh1);
+    PolyfaceRangeTreePtr rangeTree2 = PolyfaceRangeTree::CreateForPolyface (*mesh2);
+    PolyfaceRangeTreePtr rangeTree3 = PolyfaceRangeTree::CreateForPolyface (*mesh3);
+    PolyfaceRangeTreePtr rangeTree4 = PolyfaceRangeTree::CreateForPolyface (*mesh4);
+
+
+    double tol = 1.0e-8;
+    HitCounter counter12 (tol);
+    HitCounter counter13 (tol);
+    HitCounter counter23 (tol);
+
+    HitCounter counter11 (tol);
+    HitCounter counter22 (tol);
+    HitCounter counter33 (tol);
+
+    HitCounter counter44 (tol);
+
+    XYZRangeTreeMultiSearch searcher;
+    searcher.RunSearch (rangeTree2.get ()->GetXYZRangeTree (), rangeTree3.get ()->GetXYZRangeTree (), counter23);
+
+    searcher.RunSearch (rangeTree2.get ()->GetXYZRangeTree (), rangeTree2.get ()->GetXYZRangeTree (), counter22);
+    searcher.RunSearch (rangeTree3.get ()->GetXYZRangeTree (), rangeTree3.get ()->GetXYZRangeTree (), counter33);
+
+    searcher.RunSearch (rangeTree1.get ()->GetXYZRangeTree (), rangeTree2.get ()->GetXYZRangeTree (), counter12);
+    searcher.RunSearch (rangeTree1.get ()->GetXYZRangeTree (), rangeTree3.get ()->GetXYZRangeTree (), counter13);
+
+    searcher.RunSearch (rangeTree1.get ()->GetXYZRangeTree (), rangeTree1.get ()->GetXYZRangeTree (), counter11);
+
+    searcher.RunSearch (rangeTree1.get ()->GetXYZRangeTree (), rangeTree4.get ()->GetXYZRangeTree (), counter44);
+
+    }
+
+TEST(PFRangeTree,CountRangeHits)
+    {
+    TestRangeTree (4,4,4);
+    TestRangeTree (8,8,8);
+    }
+
+TEST(PFRangeTree,CollectClash)
+    {
+    bvector<DPoint3d> small;
+    double a = 0.9;
+    //double b = 0.8;
+    double c = 0.5;
+    // small rectangles parallel to xz plane
+    small.push_back (DPoint3d::From (0,0,0));
+    small.push_back (DPoint3d::From (a,0,0));
+    small.push_back (DPoint3d::From (a,0,c));
+    small.push_back (DPoint3d::From (0,0,c));
+    // big lattice of these.
+    size_t numX = 3;
+    size_t numY = 2;
+    size_t numZ = 8;
+    PolyfaceHeaderPtr mesh1 = CreateSpaceBlockMesh (small, numX, numY, numZ, DVec3d::From (0,0,0), 1.0);
+
+    // Big rectangle parallel to xz
+    bvector<DPoint3d> large;
+    double d = 100.0;
+    double e = 100.0;
+    double f = 3.1;     // place it so an entire layer has hits.
+    // small rectangles parallel to xz plane
+    large.push_back (DPoint3d::From (0,0,f));
+    large.push_back (DPoint3d::From (d,0,f));
+    large.push_back (DPoint3d::From (d,e,f));
+    large.push_back (DPoint3d::From (0,e,f));
+    PolyfaceHeaderPtr mesh2 = CreateSpaceBlockMesh (large, 1,1,1, DVec3d::From (0,0,0), 1.0);
+
+
+    PolyfaceRangeTreePtr rangeTree1 = PolyfaceRangeTree::CreateForPolyface (*mesh1);
+    PolyfaceRangeTreePtr rangeTree2 = PolyfaceRangeTree::CreateForPolyface (*mesh2);
+    bvector<std::pair<size_t, size_t>> hits;
+    XYZRangeTreeMultiSearch searcher;
+    PolyfaceRangeTree::CollectClashPairs (*mesh1, *rangeTree1, *mesh2, *rangeTree2, 0.0, hits, 10000, searcher);
+    Check::Size (numX * numY, hits.size (), "hits");    
+    }
+#ifdef COMPILE_bvRangeTree
+
+void TestPolyfaceRangeTree01 (size_t numX, size_t numY, size_t numZ)
+    {
+    bvector<DPoint3d> small;
+    double a = 0.9;
+    //double b = 0.8;
+    double c = 0.5;
+    // small rectangles parallel to xz plane
+    small.push_back (DPoint3d::From (0,0,0));
+    small.push_back (DPoint3d::From (a,0,0));
+    small.push_back (DPoint3d::From (a,0,c));
+    small.push_back (DPoint3d::From (0,0,c));
+
+    PolyfaceHeaderPtr mesh1 = CreateSpaceBlockMesh (small, numX, numY, numZ, DVec3d::From (0,0,0), 1.0);
+
+    PolyfaceRangeTreePtr rangeTree0 = PolyfaceRangeTree::CreateForPolyface (*mesh1);
+    PolyfaceRangeTree01Ptr rangeTree1 = PolyfaceRangeTree01::CreateForPolyface (*mesh1);
+    PolyfaceIndexedHeapRangeTreePtr rangeTree2 = PolyfaceIndexedHeapRangeTree::CreateForPolyface (*mesh1);
+    bvector<size_t> hit0, hit1, hit2;
+    DRange3d range = DRange3d::From (DPoint3d::From (1,1,1));
+    
+    for (double expansion = 0.001; expansion < 3.0; expansion *= 50)
+        {
+        rangeTree0->CollectInRange (hit0, range, expansion);
+        rangeTree1->CollectInRange (hit1, range, expansion);
+        rangeTree2->CollectInRange (hit2, range, expansion);
+        BeConsole::Printf ("(expansion %lg) (hit0 %d) (hit1 %d) (hit2 %d)\n", expansion,
+                        hit0.size (), hit1.size (), hit2.size ());
+        std::sort (hit0.begin (), hit0.end ());
+        std::sort (hit1.begin (), hit1.end ());
+        std::sort (hit2.begin (), hit2.end ());
+        if (Check::Size (hit0.size (), hit1.size (), "tree hit counts")
+           && Check::Size (hit0.size (), hit2.size (), "tree hit counts"))
+            {
+            for (size_t i = 0; i <hit0.size (); i+= 17)
+                Check::Size (hit0[i], hit1[i], "tree search");
+            }
+
+        if (Check::Size (hit0.size (), hit2.size (), "tree hit2 counts")
+           && Check::Size (hit0.size (), hit2.size (), "tree hit2 counts"))
+            {
+            for (size_t i = 0; i <hit0.size (); i+= 17)
+                Check::Size (hit0[i], hit2[i], "tree search 2");
+            }
+
+
+        }
+    }
+
+TEST(PolyfaceRangeTree01,CollectInRange)
+    {
+    TestPolyfaceRangeTree01 (3,2,8);
+    TestPolyfaceRangeTree01 (13,21,82);
+
+    }    
+#endif
+#endif
+
+TEST(Polyface,SimpleCreate)
+    {
+    //     4  3  6
+    //     1  2  5
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (2,0,0),
+        DPoint3d::From (2,1,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (3,0,1),
+        DPoint3d::From (3,1,1)
+        };
+    // Cover the two unit squares with various index structures.
+    bvector<int> index0 {1,2,3,4,0, 6,3,2,5, 0};
+
+    bvector<int> index1 {1,2,3,4,0,    6,3,2,0,     2,5,6,0};
+
+    bvector<int> index3 {1,2,3,   3,4,1,  2,5,6,  2,6,3};
+
+    bvector<int> index4 {1,2,3,4,    2,5,6,3};
+
+    bvector<PolyfaceHeaderPtr> meshes;
+    meshes.push_back (PolyfaceHeader::CreateIndexedMesh (0, points, index0));
+    meshes.push_back (PolyfaceHeader::CreateIndexedMesh (0, points, index1));
+    meshes.push_back (PolyfaceHeader::CreateIndexedMesh (3, points, index3));
+    meshes.push_back (PolyfaceHeader::CreateIndexedMesh (4, points, index4));
+    DPoint3d origin = DPoint3d::From (0,0,0);
+    bvector<DMatrix4d> moments;
+    for (auto & mesh : meshes)
+        {
+        DMatrix4d matrix;
+        mesh->SumFacetSecondAreaMomentProducts (origin, matrix);
+        moments.push_back (matrix);
+        double area = mesh->SumFacetAreas ();
+        Check::Near (area, matrix.coff[3][3], "Area via direct or moment call.");
+        }
+    for (size_t i = 1; i < moments.size (); i++)
+        {
+        double d0, d1, d2, d3;
+        moments[0].MaxAbsDiff (moments[1], d0, d1, d2, d3);
+        double d = d0 + d1 + d2 + d3;
+        Check::Near (1.0, 1.0 + d, "AreaMoment match");
+        }
+    }
+void TestGridCutFill (DPoint3dDVec3dDVec3d frameA, DPoint3dDVec3dDVec3d frameB, char const * title)
+    {
+    auto dtm = UnitGridPolyface (frameA, 7,5, false);
+    Check::PrintIndent (0);
+    Check::Print ("TestGridCutFill");
+    Check::Print (title);
+    PrintPolyfaceSummary (*dtm, "DTM", stdout);
+    for (int ny = 1; ny < 4; ny++)
+        {
+        Check::PrintIndent (0);
+        Check::PrintIndent (1);
+        Check::Print ((int)(ny+1), "NX");
+        Check::Print ((int)(ny), "NY");
+        auto road = UnitGridPolyface (frameB, ny + 1, ny, false);
+        PrintPolyfaceSummary (*road, "road", stdout);
+        bvector<PolyfaceHeaderPtr> cut, fill;
+        PolyfaceQuery::ComputeCutAndFill (*dtm, *road, cut, fill);
+        for (auto &c : cut)
+            PrintPolyfaceSummary (*c, "cut", stdout);
+        for (auto &f : fill)
+            PrintPolyfaceSummary (*f, "fill", stdout);
+        }
+    }
+
+
+ TEST(Polyface,CutFill0)
+    {
+    DPoint3dDVec3dDVec3d frameA (0,0,0,   4,0,0,   0,4,0);
+    DPoint3dDVec3dDVec3d frameB (1,2,1,   1,0,0,   0,1,0);
+    auto dtm = UnitGridPolyface (frameA, 1,1, false);
+    auto road = UnitGridPolyface (frameB, 1, 1, false);
+    PrintPolyfaceSummary (*dtm, "dtm", stdout);
+    PrintPolyfaceSummary (*road, "road", stdout);
+    bvector<PolyfaceHeaderPtr> cut, fill;
+    PolyfaceQuery::ComputeCutAndFill (*dtm, *road, cut, fill);
+    for (auto &c : cut)
+        {
+        PrintPolyfaceSummary (*c, "cut", stdout);
+        PrintPolyface (*c, "cut", stdout, 30);
+        }
+    for (auto &f : fill)
+        {
+        PrintPolyfaceSummary (*f, "fill", stdout);
+        PrintPolyface (*f, "fill", stdout, 30);
+        }
+    }
+
+ TEST(Polyface,CutFillA)
+    {
+    DPoint3dDVec3dDVec3d frameA (0,0,0,   2,0,0,   0,2,0);
+    DPoint3dDVec3dDVec3d frameBpos (1,1,1,   2,0,0,   0,2,0);
+    DPoint3dDVec3dDVec3d frameBneg (1,1,-1,   2,0,0,   0,2,0);
+    DPoint3dDVec3dDVec3d frameB1(1,1,1,   2,0,0,   0,2,1);
+    DPoint3dDVec3dDVec3d frameB2(1,1,1,   2,0,0,   0,2,-1);
+    TestGridCutFill (frameA, frameBpos, "Flat0*Flat1");
+    TestGridCutFill (frameA, frameBneg, "Flat0*Flatneg1");
+    TestGridCutFill (frameA, frameB1, "Flat0*Slope1UP");
+    TestGridCutFill (frameA, frameB2, "Flat0*Slope1DOWN");
+
+    }

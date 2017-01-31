@@ -1,0 +1,10 @@
+PRIMITIVE AdjacentSurfacePatches
+<def name=SUMMARY>A collection of adjacent (connected) surface patches.
+</def>
+<def name=Interface_BaseList>IGeometry, ISurface</def>
+
+
+<def name=MEMBERS><list ItemType=ISurfacePatch ItemTagName=Patch ItemSemanticName=Patch ItemParamName=patch ListName=Patch ItemDescription="One patch of the surface" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

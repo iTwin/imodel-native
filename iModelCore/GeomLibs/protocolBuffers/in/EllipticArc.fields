@@ -1,0 +1,16 @@
+PRIMITIVE EllipticArc
+<def name=SUMMARY>Elliptic arc primitive.
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+<def name=Class_BaseList>IEllipticArc</def>
+<def name=Class_BaseList>IEllipticArc, IBoundedParametricCurve</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusA ItemMemberName=mRadiusA ItemDescription="radius on X axis of local system." ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusB ItemMemberName=mRadiusB ItemDescription="radius on Y axis of local system." ScaleMode=Length/>
+<field ItemType=Angle ItemParamName=startAngle ItemMemberName=mStartAngle ItemDescription="Parametric angle of start point." ScaleMode=None/>
+<field ItemType=Angle ItemParamName=sweepAngle ItemMemberName=mSweepAngle ItemDescription="Parametric angle of end point." ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

@@ -1,0 +1,708 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: geom/src/bspline/experimental/bspSmoothPolyface.cpp.DiagonalRemovalAndKnotBreaks $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <bsibasegeomPCH.h>
+#include <Geom/MstnOnly/BspPrivateApi.h>
+#include <Geom/IntegerTypes/Point.h>
+#include "msbsplinemaster.h"
+#include <Vu/vupoly.fdf>
+
+BEGIN_BENTLEY_NAMESPACE
+
+static double s_qMax = 1.0;
+static double s_rMax = 1.0;
+static double s_minWeightFactor = 1.0;
+static double s_maxWeightfactor = 2.0;
+struct VuMSBsplineSurfaceWeightFunction : public VuScalarFunction, VuCoordinateMappingFunction
+{
+MSBsplineSurfaceCR m_surface;
+double m_factor;
+double m_power;
+VuMSBsplineSurfaceWeightFunction (MSBsplineSurfaceCR surface, double hFactor, double hPower) 
+    : m_surface(surface)
+    {
+    m_factor = hFactor;
+    m_power  = hPower;
+    }
+
+bool TryMapCoordinates (VuSetP graph, VuP node, DPoint2dCR uv, DPoint3dR xyz) override
+    {
+    m_surface.EvaluatePoint (xyz, uv.x, uv.y);
+    return true;
+    }
+
+double Evaluate (VuSetP graph, VuP node0) override
+    {
+    if (m_power == 0.0)
+        return 1.0;
+    DPoint3d uv0, uv1, uv2, uvC;
+    DPoint3d xyz0, xyz1, xyz2, xyzC;
+    VuP node1 = vu_fsucc (node0);
+    VuP node2 = vu_fsucc (node1);
+    vu_getDPoint3d (&uv0, node0);
+    vu_getDPoint3d (&uv1, node1);
+    vu_getDPoint3d (&uv2, node2);
+    double a = 1.0 / 3.0;
+    uvC.SumOf (uv0, a, uv1, a, uv2, a);
+    m_surface.EvaluatePoint (xyz0, uv0.x, uv0.y);
+    m_surface.EvaluatePoint (xyz1, uv1.x, uv1.y);
+    m_surface.EvaluatePoint (xyz2, uv2.x, uv2.y);
+    m_surface.EvaluatePoint (xyzC, uvC.x, uvC.y);
+    DVec3d cross01C, cross12C, cross20C, cross012;
+    cross01C.CrossProductToPoints (xyz0, xyz1, xyzC);
+    cross12C.CrossProductToPoints (xyz1, xyz2, xyzC);
+    cross20C.CrossProductToPoints (xyz2, xyz0, xyzC);
+    cross012.CrossProductToPoints (xyz0, xyz1, xyz2);
+    double magBase = cross012.Magnitude ();
+    double magSides = cross01C.Magnitude () + cross12C.Magnitude () + cross20C.Magnitude ();
+    double q = 1.0;
+    if (magBase > 0.0 && magSides >= magBase)
+        q = magSides / magBase;
+    s_qMax = DoubleOps::Max (q, s_qMax);
+    double r = 1.0 + m_factor * (q - 1.0);
+    s_rMax = DoubleOps::Max (r, s_rMax);
+    double f = pow (r, m_power);
+    if (f < s_minWeightFactor)
+        f = s_minWeightFactor;
+    if (f > s_maxWeightfactor)
+        f = s_maxWeightfactor;
+    return f;
+    }
+};
+
+
+double VuEdgeSubdivisionTestFunction::ComputeNumEdgesRequired (DPoint2dCR uvA, DPoint2dCR uvB)
+    {
+    return 1.0;
+    }
+
+struct MSBsplineSurfaceRefinementFunction : VuEdgeSubdivisionTestFunction
+{
+MSBsplineSurfaceCR m_surface;
+double m_maxEdgeLength;
+double m_angleTol;
+double m_chordTol;
+public:
+MSBsplineSurfaceRefinementFunction (MSBsplineSurfaceCR surface, double chordTol, double angleTol, double maxEdgeLength)
+    : m_surface(surface),
+    m_chordTol (chordTol),
+    m_angleTol (angleTol),
+    m_maxEdgeLength (maxEdgeLength)
+    {
+    }
+
+virtual double ComputeNumEdgesRequired (DPoint2dCR uvA, DPoint2dCR uvB) override
+    {
+    DRay3d rayA, rayB;
+    if (m_surface.EvaluatePointAndUnitNormal (rayA, uvA.x, uvA.y)
+      && m_surface.EvaluatePointAndUnitNormal (rayB, uvB.x, uvB.y))
+        {
+        double num = 0.0;
+        if (m_maxEdgeLength > 0.0)
+            {
+            double d = rayA.origin.Distance (rayB.origin);
+            if (d > m_maxEdgeLength)
+                num = DoubleOps::Max (num, d / m_maxEdgeLength);
+            }
+        if (m_chordTol > 0.0)
+            {
+            DPoint3d xyzS, xyzM = DPoint3d::FromInterpolate (rayA.origin, 0.5, rayB.origin);
+            DPoint2d uvM = DPoint2d::FromInterpolate (uvA, 0.5, uvB);
+            m_surface.EvaluatePoint (xyzS, uvM.x, uvM.y);
+            double d = xyzM.Distance (xyzS);
+            if (d > m_chordTol)
+                num = DoubleOps::Max (num, sqrt (d / m_chordTol));
+            }
+        if (m_angleTol > 0.0)
+            {
+            double a = rayA.direction.AngleTo (rayB.direction);
+            if (a > m_angleTol)
+                num = DoubleOps::Max (num, a / m_angleTol);
+            }
+        return num;
+        }
+    return 0.0;
+    }
+};
+
+
+
+static bool IsSliverFace (VuP node)
+    {
+    return vu_fsucc( vu_fsucc (node)) == node;
+    }
+
+static size_t AddInteriorBreaks (VuSetP graph, DRange3dCR range, bvector<double> breaks, int uv, VuMask mask)
+    {
+    size_t numAdded = 0;
+    double b0, b1;
+    if (uv == 0)
+        {
+        b0 = range.low.x;
+        b1 = range.high.x;
+        }
+    else
+        {
+        b0 = range.low.y;
+        b1 = range.high.y;
+        }
+    for (size_t i = 0; i < breaks.size (); i++)
+        {
+        double b = breaks[i];
+        DPoint3d xyz0, xyz1;
+        if (b > b0 && b < b1)
+            {
+            numAdded++;
+            if (uv == 0)
+                {
+                xyz0.init (b, range.low.y, 0.0);
+                xyz1.init (b, range.high.y, 0.0);
+                }
+            else
+                {
+                xyz0.init (range.low.x,  b, 0.0);
+                xyz1.init (range.high.x, b, 0.0);
+                }
+            VuP node0, node1;
+            vu_makePair (graph, &node0, &node1);
+            vu_setMask (node0, mask);
+            vu_setMask (node1, mask);
+            vu_setDPoint3d (node0, &xyz0);
+            vu_setDPoint3d (node1, &xyz1);
+            }
+        }
+    return numAdded;
+    }
+// Mark BOTH sides of numEdges following seed in vertex loop;
+static void MarkVSuccEdges (VuP seed, int numEdges, VuMask mask)
+    {
+    VuP edgeBaseNode = seed;
+    for (int i = 0; i < numEdges; i++)
+        {
+        edgeBaseNode = vu_vsucc (edgeBaseNode);
+        vu_setMask (edgeBaseNode, mask);
+        VuP edgeMateNode = vu_edgeMate (edgeBaseNode);
+        vu_setMask (edgeMateNode, mask);
+        }
+    }
+
+static void vu_deletePairedEdges (VuSetP graph, VuMask mask)
+    {
+    VuMask deleteMask = vu_grabMask (graph);
+    vu_clearMaskInSet (graph, deleteMask);
+    int numVu = 0;
+    int numA = 0;
+    VU_SET_LOOP (sectorSeed, graph)
+        {
+        numVu++;
+        if (!IsSliverFace (sectorSeed))
+            {
+            numA++;
+            // walk around the vertex loop counting null and deleted faces ....
+            int numNullFace = 0;
+            int numDeleted = 0;
+            for (VuP next = vu_vsucc (sectorSeed);
+                  next != sectorSeed && IsSliverFace (next);
+                  next = vu_vsucc (next))
+                {
+                numNullFace++;
+                if (vu_getMask (next, deleteMask))
+                    numDeleted++;
+                }
+            if (numNullFace > 0 && numDeleted == 0)
+                {
+                int numEdges= numNullFace + 1;
+                numEdges -= (numEdges & 0x01);    // only delete an even number of edges.
+                MarkVSuccEdges (sectorSeed, numEdges, deleteMask);
+                }
+            }
+        }
+    END_VU_SET_LOOP (sectorSeed, graph)
+    vu_freeMarkedEdges (graph, deleteMask);
+    vu_returnMask (graph, deleteMask);
+    }
+static VuSetP vu_createTriangulated
+(
+bvector< bvector<DPoint2d> > &boundaries,
+bvector <double>    &uBreaks,
+bvector <double>    &vBreaks,
+double              maxEdgeXLength,
+double              maxEdgeYLength,
+double              meshXLength,
+double              meshYLength,
+bool                isometricGrid,
+bool                flipTriangles
+)
+    {
+    static int s_maxEdge = 400;
+    static int s_maxSubEdge = 100;
+    static double s_defaultCount = 10.0;
+    //static double s_graphRelTol = 1.0e-10;
+    VuSetP      graph = vu_newVuSet (0);
+    StatusInt status = SUCCESS;
+    int    maxPerFace = 3;
+
+    static double s_shortEdgeToleranceFactor = 1.0e-8;
+    static double s_skewAngle = 0.0;
+    double skewAngle = s_skewAngle;
+    if (isometricGrid)
+        skewAngle = msGeomConst_pi / 6.0;
+    DRange3d range = DRange3d::From (boundaries, 0.0);
+
+    double xyTolerance = s_shortEdgeToleranceFactor * range.low.distance (&range.high);
+
+    VuMask newNodeMask = VU_BOUNDARY_EDGE;
+    bvector<DPoint3d> loop;
+    for (size_t i = 0; i < boundaries.size (); i++)
+        {
+        loop.clear ();
+        loop.reserve (boundaries[i].size ());
+        for (size_t k = 0; k < boundaries[i].size (); k++)
+            loop.push_back (DPoint3d::From (boundaries[i][k]));
+        vu_makeIndexedLoopFromArray (graph, 
+                const_cast <DPoint3d*> (&loop[0]),
+                (int)loop.size (),
+                newNodeMask, newNodeMask, xyTolerance);
+        }
+    double dx = range.high.x - range.low.x;
+    double dy = range.high.y - range.low.y;
+    if (meshXLength <= 0.0)
+        meshXLength = dy / s_defaultCount;
+    if (meshYLength <= 0.0)
+        meshYLength = dy / s_defaultCount;
+
+    if (s_maxEdge * meshXLength < dx)
+        {
+        status = ERROR;
+        meshXLength = dx / s_maxEdge;
+        }
+    if (s_maxEdge * meshYLength < dy)
+        {
+        status = ERROR;
+        meshYLength = dy / s_maxEdge;
+        }
+    
+    DPoint3d origin = range.low;
+    double ax0, ay0, ax1, ay1;
+    bsiTrig_safeDivide (&ax0, range.low.x - origin.x, meshXLength, 0.0);
+    bsiTrig_safeDivide (&ay0, range.low.y - origin.y, meshYLength, 0.0);
+    int ix0 = (int) floor (ax0);
+    int iy0 = (int) floor (ay0);
+
+    bsiTrig_safeDivide (&ax1, range.high.x - origin.x, meshXLength, 0.0);
+    bsiTrig_safeDivide (&ay1, range.high.y - origin.y, meshYLength, 0.0);
+    int ix1 = (int)ceil (ax1);
+    int iy1 = (int)ceil (ay1);
+
+#ifdef DIRECT_GRID
+    DSegment3d lineA, lineB;
+    lineA.point[0].init (range.low.x + ix0 * meshXLength, range.low.y + iy0 * meshYLength, range.low.z);
+    lineA.point[1].init (range.low.x + ix1 * meshXLength, range.low.y + iy0 * meshYLength, range.low.z);
+    lineB.point[0].init (range.low.x + ix0 * meshXLength, range.low.y + iy1 * meshYLength, range.low.z);
+    lineB.point[1].init (range.low.x + ix1 * meshXLength, range.low.y + iy1 * meshYLength, range.low.z);
+
+    // Build non-boundary vertical linework of grid.
+    for (int ix = ix0; ix <= ix1; ix++)
+        {
+        DPoint3d xyzA, xyzB;
+        double fx = (double)(ix-ix0) / (double)(ix1- ix0);
+        xyzA.interpolate (&lineA.point[0], fx, &lineA.point[1]);
+        xyzB.interpolate (&lineB.point[0], fx, &lineB.point[1]);
+        VuP nodeA, nodeB;
+        vu_makePair (graph, &nodeA, &nodeB);
+        vu_setDPoint3d (nodeA, &xyzA);
+        vu_setDPoint3d (nodeB, &xyzB);
+        for (int iy = iy0 + 1; iy < iy1; iy++)
+            {
+            double fy = (double)(iy - iy0) / (double)(iy1 - iy0);
+            DPoint3d xyz;
+            xyz.interpolate (&xyzA, fy, &xyzB);
+            VuP nodeC, nodeD;
+            vu_splitEdge (graph, nodeB, &nodeC, &nodeD);
+            vu_setDPoint3d (nodeC, &xyz);
+            vu_setDPoint3d (nodeD, &xyz);
+            }
+        }
+    vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+
+    vu_splitLongEdges (graph, 0.0, maxEdgeXLength, maxEdgeYLength, s_maxSubEdge);
+
+    vu_regularizeGraph (graph);
+    vu_markAlternatingExteriorBoundaries(graph,true);
+    vu_splitMonotoneFacesToEdgeLimit (graph, maxPerFace);
+#else
+    vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+    vu_deletePairedEdges (graph, VU_BOUNDARY_EDGE);
+    if (0 != AddInteriorBreaks (graph, range, uBreaks, 0, VU_RULE_EDGE)
+        || 0 != AddInteriorBreaks (graph, range, vBreaks, 1, VU_RULE_EDGE))
+        {
+        // remerge with new edges ....
+        vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+        }
+    vu_splitLongEdges (graph, VU_BOUNDARY_EDGE | VU_RULE_EDGE, 0.0, maxEdgeXLength, maxEdgeYLength, s_maxSubEdge);
+    vu_regularizeGraph (graph);
+    vu_markAlternatingExteriorBoundaries(graph,true);
+    vu_freeNonMarkedEdges (graph, VU_BOUNDARY_EDGE | VU_RULE_EDGE);
+
+    if (skewAngle != 0.0)
+        {
+        Transform worldToLocal, localToWorld;
+        double s = sin(skewAngle);
+        double c = cos (skewAngle);
+        localToWorld.InitFromRowValues (
+                    1, s, 0, 0,
+                    0, c, 0, 0,
+                    0, 0, 1, 0);
+        bsiTransform_setFixedPoint (&localToWorld, &range.low);
+        bsiTransform_invertTransform (&worldToLocal, &localToWorld);
+        vu_transform (graph, &worldToLocal);
+        int numX = ix1 - ix0;
+        int numY = iy1 - iy0;
+        numX = (int)ceil ((1.0 + s) * (double)numX);
+        numY = (int)ceil((double)numY / c);
+        vu_buildNonInterferingGrid (graph, numX, numY, 0, 0);
+        vu_transform (graph, &localToWorld);
+        }
+    else
+        {
+        vu_buildNonInterferingGrid (graph, ix1-ix0, iy1-iy0, 0, 0);
+        }
+    vu_setZInGraph (graph, range.low.z);
+
+    vu_regularizeGraph (graph);
+    vu_markAlternatingExteriorBoundaries(graph,true);
+    vu_splitMonotoneFacesToEdgeLimit (graph, maxPerFace);
+#endif
+    if (maxPerFace == 3 && flipTriangles)
+        vu_flipTrianglesToImproveScaledQuadraticAspectRatio (graph, meshYLength, meshXLength);
+
+    return graph;
+    }
+
+struct IndexDetail
+  {
+  size_t m_xyzIndex;
+  size_t m_normalIndex;
+  size_t m_paramIndex;
+  IndexDetail (size_t xyzIndex, size_t paramIndex, size_t normalIndex)
+      : m_xyzIndex(xyzIndex), m_normalIndex (normalIndex), m_paramIndex (paramIndex)
+      {
+      }
+  };
+
+void AddEvaluatedVuToPolyface (VuSetP graph, IPolyfaceConstructionR builder, MSBsplineSurfaceCR surface)
+    {
+    VuArrayP    faceArrayP = vu_grabArray (graph);
+    VuP         faceP;
+
+    bool needNormals = builder.GetFacetOptionsR ().GetNormalsRequired ();
+    bool needParams = builder.GetFacetOptionsR ().GetParamsRequired ();
+
+    VuMask visitMask = vu_grabMask (graph);
+    vu_clearMaskInSet (graph, visitMask);
+    VU_SET_LOOP (currNode, graph)
+        {
+        vu_setUserDataPAsInt (currNode, -1);
+        }
+    END_VU_SET_LOOP (currNode, graph)
+    size_t defaultIndex = SIZE_MAX;
+    // Assign vertex numbers.
+    bvector<IndexDetail> data;
+    VU_SET_LOOP (currNode, graph)
+        {
+        if (!vu_getMask (currNode, VU_EXTERIOR_EDGE)
+            && !vu_getMask (currNode, visitMask))
+            {
+            vu_setMaskAroundVertex (currNode, visitMask);
+            DPoint3d uvw;
+            DPoint2d uv;
+            vu_getDPoint3d (&uvw, currNode);
+            uv.x = uvw.x;
+            uv.y = uvw.y;
+            DRay3d ray;
+            surface.EvaluatePointAndUnitNormal (ray, uv.x, uv.y);
+            int dataIndex = (int)data.size ();
+
+            data.push_back (
+              IndexDetail (
+                  builder.FindOrAddPoint (ray.origin),
+                  needParams  ? builder.FindOrAddParam (uv) : defaultIndex,
+                  needNormals ? builder.FindOrAddNormal (ray.direction) : defaultIndex
+                  ));
+
+            VU_VERTEX_LOOP (vertexNode, currNode)
+                {
+                vu_setUserDataPAsInt (vertexNode, dataIndex);
+                }
+            END_VU_VERTEX_LOOP (vertexNode, currNode)
+
+            }
+        }
+    END_VU_SET_LOOP (currNode, graph)
+    vu_collectInteriorFaceLoops (faceArrayP, graph);
+    vu_arrayOpen (faceArrayP);
+    static int s_skipStrangeFaces = 0;
+    for (int i = 0; vu_arrayRead (faceArrayP, &faceP); i++)
+        {
+        // We triangulated.  So of course there are 3 nodes per face.
+        // Really?  If the input polygon retraces itself, there will be
+        // sliver faces with only 2 edges.  
+        if (s_skipStrangeFaces != 0 && vu_faceLoopSize (faceP) > 4)
+            continue;
+            
+        VU_FACE_LOOP (currP, faceP)
+            {
+            int dataIndex = vu_getUserDataPAsInt (currP);
+            bool visible = 0 != vu_getMask (vu_edgeMate (currP), VU_EXTERIOR_EDGE | VU_RULE_EDGE);
+
+            builder.AddPointIndex (data[dataIndex].m_xyzIndex, visible);
+            if (needNormals)
+              builder.AddNormalIndex (data[dataIndex].m_normalIndex);
+            if (needParams)
+              builder.AddParamIndex (data[dataIndex].m_paramIndex);
+
+            }
+        END_VU_FACE_LOOP (currP, faceP)
+        builder.AddPointIndexTerminator ();
+        if (needNormals)
+            builder.AddNormalIndexTerminator ();
+        if (needParams)
+            builder.AddParamIndexTerminator ();
+        }
+
+    vu_returnMask (graph, visitMask);
+    vu_returnArray (graph, faceArrayP);
+    }
+
+static size_t s_minOnEdge = 4;
+static size_t s_maxOnEdge = 100;
+static double s_smallDistanceFraction = 1.0e-6;
+void SetParameterStep (
+    MSBsplineSurfaceCR surface,
+    IFacetOptionsR options,
+    bvector<double> length,
+    bvector<double> turn,
+    size_t &numEdge,
+    double &averageDistance
+    )
+    {
+    double totalDistance = 0.0;
+    numEdge = s_minOnEdge;
+    for (size_t i = 0; i < length.size (); i++)
+        totalDistance += length[i];
+    double smallDistance = s_smallDistanceFraction * totalDistance;
+    for (size_t i = 0; i < length.size (); i++)
+        {
+        double myTurn = turn[i];
+        // At singular point, angles are bogus -- suppress angle effect
+        if (length[i] < smallDistance)
+            myTurn = 0.0;
+        size_t num1 = options.DistanceAndTurnStrokeCount (length[i], myTurn);
+        if (num1 > numEdge)
+            numEdge = num1;
+        }
+
+    if (numEdge > s_maxOnEdge)
+        numEdge = s_maxOnEdge;
+    averageDistance = totalDistance / length.size ();
+    }
+ 
+VuP vu_longestEdgeAroundFace (VuP seed)
+    {
+    double dMax = 0.0;
+    VuP candidate = seed;
+    VU_FACE_LOOP (node, seed)
+        {
+        double d = vu_edgeLengthXY (node);
+        if (d > dMax)
+            {
+            candidate = node;
+            dMax = d;
+            }
+        }
+    END_VU_FACE_LOOP (node, seed)
+    return candidate;
+    }
+
+bool CloseEdgeLengths (VuP node0, VuP node1, double deviationFactor)
+    {
+    double d0 = vu_edgeLengthXY (node0);
+    double d1 = vu_edgeLengthXY (node1);
+    double e = deviationFactor * (d0 + d1) * 0.5;
+    return fabs (d1 - d0) < e;
+    }
+ void vu_removeQuadDiagonals (VuSetP graph, double quadDeviation)
+    {
+    VuMask longestEdgeMask = vu_grabMask (graph);
+    VuMask visited = vu_grabMask (graph);
+    vu_clearMaskInSet (graph, visited | longestEdgeMask);
+    // Set longestEdgeMask on each interior triangle hypotenuse
+    VU_SET_LOOP (faceSeed, graph)
+        {
+        if (!vu_getMask (faceSeed, visited))
+            {
+            vu_setMaskAroundFace (faceSeed, visited);
+            if (!vu_getMask (faceSeed, VU_EXTERIOR_EDGE)
+                && vu_faceLoopSize (faceSeed) == 3)
+                {
+                VuP longestEdge = vu_longestEdgeAroundFace (faceSeed);
+                vu_setMask (longestEdge, longestEdgeMask);
+                }
+            }
+        }
+    END_VU_SET_LOOP (faceSeed, graph)
+
+    // Now use visited as DELETE mask
+    vu_clearMaskInSet (graph, visited);
+    VU_SET_LOOP (nodeA0, graph)
+        {
+        VuP nodeB0 = vu_edgeMate (nodeA0);
+        if (vu_getMask (nodeA0, longestEdgeMask) && vu_getMask (nodeB0, longestEdgeMask))
+            {
+            VuP nodeA1 = vu_fsucc (nodeA0);
+            VuP nodeA2 = vu_fsucc (nodeA1);
+            VuP nodeB1 = vu_fsucc (nodeB0);
+            VuP nodeB2 = vu_fsucc (nodeB1);
+            if (CloseEdgeLengths (nodeA1, nodeB1, quadDeviation)
+              && CloseEdgeLengths (nodeA2, nodeB2, quadDeviation))
+                {
+                vu_setMask (nodeA0, visited);
+                vu_setMask (nodeB0, visited);
+                vu_clrMask (nodeA0, longestEdgeMask);
+                vu_clrMask (nodeB0, longestEdgeMask);
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeA0, graph)
+
+    vu_freeMarkedEdges (graph, visited);
+
+    vu_returnMask (graph, visited);
+    vu_returnMask (graph, longestEdgeMask);
+    }
+// Extract the high multiplicity knots from knotData.
+static void CollectHighMultiplicityKnots
+(
+KnotData &knotData,
+bvector<double> &breaks,
+size_t excessMultiplicity,   // When multiplicity + excessMultiplicity >= order force an edge
+bool   observeDegree = true // true to reduce breakMultiplicity to match degree
+)
+    {
+    breaks.clear ();
+    double value;
+    size_t multiplicity;
+    for (size_t activeIndex = 0; knotData.GetKnotByActiveIndex (activeIndex, value, multiplicity); activeIndex++)
+        {
+        if (multiplicity + excessMultiplicity >= knotData.order)
+            breaks.push_back (value);
+        }
+    }
+static double s_xySize = 0.04;
+static double s_edgeXSizeFactor = 0.95;
+static double s_edgeYSizeFactor = 0.95;
+static double s_meshXSizeFactor = 0.95;
+//static double s_meshYSizeFactor = 0.95;
+static double s_baseFactor = 1.0;
+static double s_power = 0.0;
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void IPolyfaceConstruction::AddSmoothed (MSBsplineSurfaceCR surface)
+    {
+    bvector <bvector<DPoint2d> > uvBoundaries;
+    surface.GetUVBoundaryLoops (uvBoundaries, true);
+    KnotData uKnots, vKnots;
+    uKnots.LoadSurfaceUKnots (surface);
+    vKnots.LoadSurfaceVKnots (surface);
+    bvector <double> uBreaks, vBreaks;
+    static bool s_smoothed = false;
+    bool skewedGrid = false;
+    bool refined = false;
+    bool removeDiagonals = true;
+    static double s_rectangleFactor = 0.01; // allow slightly nonrectangular quads.
+    int excessMultiplicity = 100;
+    if (s_smoothed)
+        {
+        skewedGrid = true;
+        refined = true;
+        excessMultiplicity = 1;
+        removeDiagonals = false;
+        }
+    CollectHighMultiplicityKnots (uKnots, uBreaks, excessMultiplicity, true);
+    CollectHighMultiplicityKnots (vKnots, vBreaks, excessMultiplicity, true);
+    bvector<double> uLength;
+    bvector<double> vLength;
+    bvector<double> uTurn;
+    bvector<double> vTurn;
+    bspmesh_calculateControlPolygonLengthsAndTurn (surface,
+                uLength, uTurn,
+                vLength, vTurn);
+    double xSize, ySize;    // parametric chord size
+    double xLength, yLength;    // physical total length
+    size_t numXStep, numYStep;
+    SetParameterStep (surface, GetFacetOptionsR (), uLength, uTurn, numXStep, xLength);
+    SetParameterStep (surface, GetFacetOptionsR (), vLength, vTurn, numYStep, yLength);
+    // ASSUME count and length are both nonzero ...
+    // Adjust for approximate overall length to get simliar step in each direction ...
+    double hx = xLength / numXStep;         // Apparent physical sizes in each direction.
+    double hy = yLength / numYStep;
+    xSize = 1.0 / numXStep;
+    ySize = 1.0 / numYStep;
+    if (hx > hy)                            // need more x steps
+        xSize *= hy / hx;
+    else
+        ySize *= hx / hy;
+    
+    VuSetP parametricMesh =  vu_createTriangulated (uvBoundaries, 
+                uBreaks, vBreaks,
+                xSize * s_edgeXSizeFactor, ySize * s_edgeYSizeFactor,
+                xSize * s_meshXSizeFactor, ySize * s_meshXSizeFactor,
+                skewedGrid, true);
+
+    if (removeDiagonals)
+        vu_removeQuadDiagonals (parametricMesh, s_rectangleFactor);
+    //static double s_symmetryFactor = 0.75;
+    static double s_smoothTol = 0.001;
+    static int s_maxSmoothPass = 100;
+    static int s_flipInterval = 4;
+    static int s_maxFlipsPerEdgePerPass = 5;
+    double shiftFraction;
+    int numSweep;
+    static int s_defaultRefinementSweeps  = 1;
+    static int s_doParametricFlip = 0;
+    static int s_flipTriangles = 1;
+    static double s_edgeLengthFactor = 1.0;
+    int numRefinementSweep = s_defaultRefinementSweeps;// GetFacetOptionsR ().GetNumRefinementSweeps ()
+    if (refined && numRefinementSweep > 0)
+      {
+      for (int sweep = 0; sweep < numRefinementSweep; sweep++)
+          {
+          MSBsplineSurfaceRefinementFunction refinementObject (surface,
+                  GetFacetOptionsR ().GetChordTolerance (),
+                  GetFacetOptionsR ().GetAngleTolerance (),
+                  GetFacetOptionsR ().GetMaxEdgeLength () * s_edgeLengthFactor
+                  );
+          if (vu_refineSurface (parametricMesh, refinementObject) == 0)
+              break;
+
+          if (GetFacetOptionsR ().GetDoSpatialLaplaceSmoothing ())
+              {
+              s_qMax = s_rMax = 0.0;
+              VuMSBsplineSurfaceWeightFunction weightObject (surface, s_baseFactor / (s_xySize * s_xySize), s_power);
+              vu_smoothInteriorVertices (parametricMesh, &weightObject, &weightObject, s_smoothTol, s_maxSmoothPass,s_flipInterval, s_maxFlipsPerEdgePerPass, &shiftFraction, &numSweep);
+              }
+          else if (s_doParametricFlip)
+            vu_flipTrianglesToImproveScaledQuadraticAspectRatio (parametricMesh, 1.0/ xLength, 1.0/ yLength);  
+          }
+      }        
+    AddEvaluatedVuToPolyface (parametricMesh, *this, surface);
+    vu_freeVuSet (parametricMesh);
+
+    }
+
+END_BENTLEY_NAMESPACE

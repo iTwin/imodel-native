@@ -1,0 +1,6 @@
+message Operation
+{
+required string Name = 1;
+repeated IGeometry Member = 2;
+}
+

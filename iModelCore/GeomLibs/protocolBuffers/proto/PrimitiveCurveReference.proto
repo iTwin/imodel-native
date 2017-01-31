@@ -1,0 +1,6 @@
+message PrimitiveCurveReference
+{
+required IPrimitiveCurve ParentCurve = 1;
+required bool Reversed = 2;
+}
+

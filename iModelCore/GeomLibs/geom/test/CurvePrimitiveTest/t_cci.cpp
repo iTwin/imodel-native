@@ -1,0 +1,137 @@
+//
+//
+#include "testHarness.h"
+#include <Geom/BinaryRangeHeap.h>
+
+USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+
+
+static int s_noisy = 0;    
+// Support data for fast search of curve vectors.
+// This has two levels:
+// 1) range tree with ranges of primitives.
+// 2) For (large) linestring primitives, an additional range tree for the linestring segments.
+struct CurveVectorRangeData :  IndexedRangeHeap::IndexedRangeSource
+{
+private:
+CurveVectorPtr m_curveVector;
+// The master curve vector is a Ptr.  So are all its internals.
+// So the raw pointers in this index are safe . . .
+bvector<ICurvePrimitive*> m_leafPrimitives;
+BENTLEY_GEOMETRY_INTERNAL_NAMESPACE_NAME::IndexedRangeHeap m_heap;
+bvector<size_t>  m_heapIndexToReadIndex;
+public:
+CurveVectorRangeData (){}
+
+void AppendPrimitives (CurveVectorCR parent)
+    {
+    for (ICurvePrimitivePtr const &primitive : parent)
+        {
+        CurveVectorPtr child = primitive->GetChildCurveVectorP ();
+        if (child.IsValid ())
+            AppendPrimitives (*child);
+        else
+            m_leafPrimitives.push_back (primitive.get ());
+        }
+    }
+
+virtual bool GetRange (size_t i0, size_t i1, DRange3d &range) const override
+    {
+    range.Init ();
+    if (m_leafPrimitives.size () < i1)
+        i1 = m_leafPrimitives.size ();
+     
+    for (size_t i = i0; i <= i1; i++)
+        {
+        DRange3d rangeI;
+        if (m_leafPrimitives[i]->GetRange (rangeI))
+            range.Extend (rangeI);
+        }
+    return !range.IsNull ();        
+    }
+// Construct a range tree for this curve vector.
+bool Install (CurveVectorPtr &curveVector)
+    {
+    m_leafPrimitives.clear ();
+    m_curveVector = curveVector;
+    AppendPrimitives (*curveVector);
+    if (m_leafPrimitives.size () == 0)
+        return false;
+    m_heap.Build (1, this, 0, m_leafPrimitives.size () - 1);
+    return true;
+    }
+};
+
+void AddSegments (CurveVectorR cv, int numSegment, DSegment3dCR segment0, DVec3dCR shift)
+    {
+    DSegment3d segment;
+    for (int i = 0; i < numSegment; i++)
+        {
+        cv.Add (ICurvePrimitive::CreateLine (segment));
+        segment.point[0].Add (shift);
+        segment.point[1].Add (shift);
+        }
+    }
+TEST(CurveVector,RangeTree)
+{
+CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+AddSegments (*cv, 5, DSegment3d::From (DPoint3d::From (0,0,0), DPoint3d::From (1,1,0)), DVec3d::From (2,0,0));
+CurveVectorRangeData cvRanges;
+cvRanges.Install (cv);
+}
+
+
+TEST (CurveCurve, TransverseIntersection)
+    {
+    for (int numB = 1; numB < 6; numB += 2)
+        {
+        auto waveA = CurveVector::CreateRectangle (0,0, numB * 8,6, 0.0);
+        auto waveB = SquareWavePolygon (numB, 1.0, 2.0, 3.0, -1.0, 2.0, true, -3.0);
+        Transform transform = Transform::FromRowValues
+            (
+            1,0,0, -1,
+            0,0,-1, 1,
+            0,1,0, -1
+            );
+        waveA->TransformInPlace (transform);
+        bvector<DSegment3d> segments;
+        if (s_noisy)
+            {
+            Check::Print (*waveA, "XZ Plane Rectangle");
+            Check::Print (*waveB, "WaveB");
+            }
+        Check::True (CurveCurve::TransverseRegionIntersectionSegments (*waveA, *waveB, segments));
+        auto cvSegments = CurveVector::Create (segments);
+        if (s_noisy)
+            Check::Print (*cvSegments, "Segments");
+        // CHECK:  All segment midpoints are IN
+        for (DSegment3d segment : segments)
+            {
+            DPoint3d midPoint = segment.FractionToPoint (0.5);
+            DPoint3d pointA, pointB;
+            Check::True
+                (
+                CurveVector::INOUT_In == waveA->ClosestCurveOrRegionPoint (midPoint, pointA),
+                "interior point of A"
+                );
+            Check::True
+                (
+                CurveVector::INOUT_In == waveB->ClosestCurveOrRegionPoint (midPoint, pointB),
+                "interior point of B"
+                );
+            }
+        // Assume segments are ordered.
+        // Check that midpoints between segments are OUT of at least 1
+        for (size_t i = 0; i + 1 < segments.size (); i++)
+            {
+            DPoint3d midPoint = DPoint3d::FromInterpolate (segments[i].point[1], 0.5, segments[i + 1].point[0]);
+            DPoint3d pointA, pointB;
+            // This classification is for the returned pointA and pointB, not for the midPoint  Hence an "outside" midpoint
+            //  gets and "On" for closest point.
+            auto inA = waveA->ClosestCurveOrRegionPoint (midPoint, pointA);
+            auto inB = waveB->ClosestCurveOrRegionPoint (midPoint, pointB);
+            Check::True
+                (inA == CurveVector::INOUT_On || inB == CurveVector::INOUT_On, "known exterior point");
+            }
+        }
+    }

@@ -1,0 +1,10 @@
+message InterpolatingCurve
+{
+required int32 EndConditionCode = 1;
+required int32 KnotCode = 2;
+required DVector3d StartVector = 3;
+required DVector3d EndVector = 4;
+repeated DPoint3d Point = 5;
+repeated double Knot = 6;
+}
+

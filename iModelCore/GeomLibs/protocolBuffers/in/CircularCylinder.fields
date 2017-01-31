@@ -1,0 +1,13 @@
+PRIMITIVE CircularCylinder
+<def name=SUMMARY>Circular cylinder primitive.
+</def>
+<def name=Interface_BaseList>IGeometry, IAnalyticSolid</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=height ItemMemberName=mHeight ItemDescription="height along z axis" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radius ItemMemberName=mRadius ItemDescription="radius in xy plane." ScaleMode=Length/>
+<field ItemType=bool ItemParamName=bSolidFlag ItemMemberName=mbSolidFlag ItemDescription="true for closed caps" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

@@ -1,0 +1,16 @@
+PRIMITIVE ShelledSolid
+<def name=SUMMARY>A solid (volume) bounded by surfaces.
+</def>
+<def name=Interface_BaseList>IGeometry, ISolid</def>
+
+<def name=MEMBERS>
+<child
+    ItemType=ISurface
+    ItemTagName=BoundingSurface
+    ItemSemanticName=BoundingSurface
+    ItemParamName=BoundingSurface
+    ItemMemberName=mBoundingSurface
+    ItemDescription="Bounding surface."
+    ScaleMode=Container/>
+</def>
+END_PRIMITIVE

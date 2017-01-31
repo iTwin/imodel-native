@@ -1,0 +1,2293 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/graphicspointarray.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* jmdlGraphicsPointArray_new allocates (from the heap) a header structure for a
+* GraphicsPointArray.  The array initially contains no points.
+* @return pointer to the allocated header.  NULL if allocation failed.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPointArrayP jmdlGraphicsPointArray_new
+
+(
+void
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Initialize a GraphicsPointArray structure.   To be called immediately after
+* the structure is obtained from heap or stack.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_init
+
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Release all memory associated with a GraphicsPointArray header (but not the header itself)
+* Reinitialize the structure.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_releaseMem
+
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* jmdlGraphicsPointArray_free frees an GraphicsPointArray header and its associated arrays.
+* @return always returns NULL.                                           *
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPointArrayP jmdlGraphicsPointArray_free
+
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* jmdlGraphicsPointArray_grab borrows an GraphicsPointArray header from the cache.
+*   The caller is responsible for returning the header via
+*   jmdlGraphicsPointArray_drop or jmdlGraphicsPointArray_free.
+* @return a pointer to the borrowed header.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPointArrayP jmdlGraphicsPointArray_grab
+
+(
+void
+);
+
+/*---------------------------------------------------------------------------------**//**
+* jmdlGraphicsPointArray_drop gives the GraphicsPointArray header and its arrays back to the
+* cache of GraphicsPointArray headers available for borrowing.
+* @return jmdlGraphicsPointArray_drop always returns NULL
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPointArrayP jmdlGraphicsPointArray_drop
+
+(
+GraphicsPointArrayP  pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+
+* jmdlGraphicsPointArray clear sets the number of points in a GraphicsPointArray
+* to zero.  The array buffers and additional header labeling are retained.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_empty
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+
+* jmdlGraphicsPointArray clear sets the number of points in a GraphicsPointArray
+* to zero, and resets header data (e.g. array mask).
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_emptyAll
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @return number of graphics points currently in the array.  Note that this
+* may be less than the allocated capacity of the array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_getCount
+(
+GraphicsPointArrayCP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Trim the array.
+* @param newCount IN      requested number of points.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_trim
+(
+GraphicsPointArrayP pInstance,
+int newCount
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @return const pointer to an element of the array.  Beware that this pointer may
+* become invalid if the array contents change.
+* @param index IN      index of array element to return. -1 for last element.
+* @return pointer to array element.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP const GraphicsPoint *jmdlGraphicsPointArray_getConstPtr
+(
+GraphicsPointArrayCP pInstance,
+int     index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Swap the content of two arrays.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_swap
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayP pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy the array and header parts of pHeader into this.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_copyContentsOf
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayCP pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Append the array from pHeader.  Major break and curve masks from pHeader are OR'ed
+* into the receiving header.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        jmdlGraphicsPointArray_appendArray
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayCP pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Ensure that the array capacity is at least n points.
+*
+* @param n IN      number of points expected to be added later.
+* @return true if the requested capacity is available.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_extend
+(
+GraphicsPointArrayP pInstance,
+int n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Ensure that the array can hold at least n more points than at present.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_extendBy
+(
+GraphicsPointArrayP pInstance,
+int n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Mark the break between disconnected line segments.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markBreak
+(
+GraphicsPointArrayP         pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Mark the break between multiple-loop polygons (e.g. between characters of text)
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markMajorBreak
+(
+GraphicsPointArrayP         pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Mark the break between multiple-loop polygons (e.g. between characters of text) at a particular index.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markMajorBreakAt
+(
+GraphicsPointArrayP         pInstance,
+int i
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Test if the specified point of the array is a major break.
+* @param index IN      index of point to test.  -1 indicates last point of array.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_isMajorBreak
+(
+GraphicsPointArrayCP         pInstance,
+int                             index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* query if the array has major breaks (i.e. if the array describes closed loops
+* to be filled.)
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_hasMajorBreaks
+(
+GraphicsPointArrayCP         pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set the userData field of the ending fragment in the array.
+* A fragment is an individual line segment, ellipse segment, or bezier fragment.
+* (When multiple line segments are concatentated as a linestring, the
+* final two points are marked.   On repetetive addition of single fragments,
+* markup of the first point of the final fragment replaces prior markup from
+* when that point was the second point of the prior fragment.)
+* For ellipse and bezier data, the markup is applied to the entire fragment.
+*
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_setFinalPrimitveFragmentUserData
+(
+GraphicsPointArrayP         pInstance,
+int                            userData
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set the userData field of all array entries beginning with a given index and
+* ending at the end of the array.
+* @param i0         IN      first index to mark.
+* @param userData   IN      data to apply.
+* @return start index for subsequent calls.
+*
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_setTailUserData
+(
+GraphicsPointArrayP         pInstance,
+int                            i0,
+int                            userData
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set the "userData" (integer) field at a given index.
+* @param index  IN      index of graphics point
+* @param value  IN      value to set
+* @return true if valid index.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_setUserData
+(
+GraphicsPointArrayP         pInstance,
+int                            index,
+int                            value
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set the "a" (parameter) field at a given index.
+* @param index  IN      index of graphics point
+* @param value  IN      value to set
+* @return true if valid index.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_setParameter
+(
+GraphicsPointArrayP         pInstance,
+int                            index,
+double                         value
+);
+
+/*---------------------------------------------------------------------------------**//**
+
+* Apply (by bitwise OR) a mask to the final point in the array.
+* @param    pInstance
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_setFinalPointMask
+(
+GraphicsPointArrayP         pInstance,
+int             mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+
+* Apply BREAK and POINT masks to the final point in the array, and BREAK mask to
+*   second last if present.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markPoint
+(
+GraphicsPointArrayP         pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set bits in the summary mask for the array.
+* @param    mask    IN      bits to OR with the array mask.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_setArrayMask
+(
+GraphicsPointArrayP pInstance,
+int             mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get bits in the summary mask for the array.
+* @param    mask    IN      bits to AND with the array mask.
+* @return   array mask ANDed with the indicated bits.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_getArrayMask
+(
+GraphicsPointArrayCP pInstance,
+int             mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get mask bits for indicated point.
+* @return   point mask ORed with the given mask bits.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_getPointMask
+(
+GraphicsPointArrayCP pInstance,
+int             index,
+int             mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Clear bits in the summary mask for the array.
+* @param    mask    IN      bits to clear in the array mask.
+* @return   array mask ANDed with the indicated bits.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_clearArrayMask
+(
+GraphicsPointArrayP pInstance,
+int             mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Clear bits in the in/out bits in the mask for each point.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_clearAllInOutBits
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Set or clear a mask on all points in the array.
+* @param mask IN      mask to write, e.g. HPOINT_MASK_USER1
+* @param value IN      zero to clear, nonzero to set.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_writeMaskAllPoints
+(
+GraphicsPointArrayP pInstance,
+int mask,
+int value
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy the array mask from one header to another.
+* @param    mask    IN      bits to clear in the array mask.
+* @return   array mask ANDed with the indicated bits.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_copyArrayMask
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added.
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint3d
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d              *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct a graphics point whose DPoint4d is the coefficients of a plane
+* with given origin and normal.  No point is inserted if the normal is zero.
+* @param pOrigin IN      any point on plane.
+* @param pNormal IN      outward normal vector.
+* @return false if the normal is zero length.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addPlaneByOriginAndNormal
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d              *pOrigin,
+const DPoint3d              *pNormal
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Construct a graphics point whose DPoint4d is the coefficients of a plane
+*  through 3 given points, with outward normal determined by the
+*   cross product of vectors from orgin to point1 and point2.
+* with given
+* @param pOrigin IN      any point on plane.
+* @param pPoint1 IN      another in-plane point.
+* @param pPoint2 IN      another in-plane point.
+* @return false if the points are colinear.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addPlaneBy3DPoint3d
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d              *pOrigin,
+const DPoint3d              *pPoint1,
+const DPoint3d              *pPoint2
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addGraphicsPoint
+(
+GraphicsPointArrayP pInstance,
+const GraphicsPoint                 *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Insert a graphics point at specified index.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added
+* @param index IN      position for point. -1 adds at end.
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_insertGraphicsPoint
+(
+GraphicsPointArrayP pInstance,
+const GraphicsPoint          *pPoint,
+      int                    index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add 2 points to the array, marking the second as a break.
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addGraphicsPointSegment
+(
+GraphicsPointArrayP pInstance,
+const GraphicsPoint                *pPoint0,
+const GraphicsPoint                *pPoint1
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being set
+* @param index IN      index to set
+* @return true unless rubber array could not be extended
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_setGraphicsPoint
+(
+GraphicsPointArrayP pInstance,
+const GraphicsPoint                 *pPoint,
+      int                           index
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added.
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint2d
+(
+GraphicsPointArrayP pInstance,
+const DPoint2d              *pPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param x IN      x coordinate
+* @param y IN      y coordinate
+* @param z IN      z coordinate
+* @param w IN      w coordinate
+* @return true unless no memory
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addComponents
+(
+GraphicsPointArrayP pInstance,
+double                  x,
+double                  y,
+double                  z,
+double                  w
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param x IN      x coordinate
+* @param y IN      y coordinate
+* @param z IN      z coordinate
+* @param w IN      w coordinate
+* @param a IN      extra data value
+* @param mask IN      mask value
+* @param userData IN      user data value
+* @return true unless no memory
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addComplete
+(
+GraphicsPointArrayP pInstance,
+double                  x,
+double                  y,
+double                  z,
+double                  w,
+double                  a,
+int                     mask,
+int                     userData
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added.
+* @param mask   IN      mask to apply to the point.
+* @return true unless no memory
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint4dWithMask
+(
+GraphicsPointArrayP pInstance,
+const   DPoint4d      *pPoint,
+            int                   mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Return the range of a single primitive in the GPA.
+* @param    pInstance => point array
+* @param    pRange <= range of primitive.
+* @return false if not a primitive index or zero weight encountered.
+* @bsihdr                                       BentleySystems      03/11
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool jmdlGraphicsPointArray_getPrimitiveRange
+(
+GraphicsPointArrayCP pInstance,
+DRange3d *pRange,
+int i0
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point with floating point data value.
+*
+* @param pPoint IN      point to be added.
+* @param dataValue IN      floating point data
+* @return true unless no memory
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint4dWithData
+(
+GraphicsPointArrayP pInstance,
+const   DPoint4d            *pPoint,
+        double              dataValue
+
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added.
+* @param mask   IN      mask to apply to the point.
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint3dWithMask
+(
+GraphicsPointArrayP pInstance,
+const   DPoint3d      *pPoint,
+            int                   mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance IN OUT  header to receive new point
+* @param pPoint IN      point being added.
+* @param mask   IN      mask to apply to the point.
+* @return true unless rubber array could not be extended.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint4d
+(
+GraphicsPointArrayP pInstance,
+const   DPoint4d      *pPoint
+);
+
+/**
+*
+* Add a point array to the array.
+*
+* @param    pInstance IN OUT  header of array receiveing points
+* @param pPoint IN      array of points to add
+* @param n IN      number of points to add
+* @return SUCCESS unless array allocation failed.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addDPoint3dArray
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d          *pPoint,
+      int               n
+);
+
+/**
+* @param    pInstance IN OUT  header of array receiveing points
+* @param pPoint IN      array of points to add
+* @param n IN      number of points to add
+* @return SUCCESS unless array allocation failed.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addDPoint2dArray
+(
+GraphicsPointArrayP pInstance,
+const DPoint2d      *pPoint,
+      int           n
+);
+
+/**
+* @param    pInstance IN OUT  header of array receiveing points
+* @param pPoint IN      array of points to add
+* @param n IN      number of points to add
+* @return true unless array allocation failed.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addDPoint4dArray
+(
+GraphicsPointArrayP pInstance,
+const   DPoint4d                *pPoint,
+            int                         n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a single sector of a DEllipse4d to the GraphicsPointArray structure.
+*
+* @param        pEllipse IN      ellipse to insert.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDEllipse4dSector
+(
+GraphicsPointArrayP pInstance,
+const   DEllipse4d  *pEllipse,
+            int             index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DConic4d to the array.
+* @param        pConic IN      ellipse to insert.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDConic4d
+(
+GraphicsPointArrayP pInstance,
+const   DConic4d                *pConic
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DConic4d to the array.
+* @param        pConic => ellipse to insert.
+* @bsimethod                                                    BentleySystems  08/09
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDConic4dWithIndices
+(
+GraphicsPointArrayP pInstance,
+const   DConic4d                *pConic,
+int *pIndex0,
+int *pIndex1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DSegment4d to the array.
+* @param        pSegment IN      segment to add.
+* @param        connectIfPossible IN      true to enable test for end/start match.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDSegment4d
+(
+GraphicsPointArrayP pInstance,
+const   DSegment4d              *pSegment,
+        bool                    connectIfPossible
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a single sector of a DEllipse4d to the GraphicsPointArray structure.
+*
+* @param        pEllipse IN      ellipse to insert.
+* @param    theta0  IN      start angle
+* @param    theta1  IN      end angle
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDEllipse4dLimits
+(
+GraphicsPointArrayP pInstance,
+const   DEllipse4d      *pEllipse,
+            double                  theta0,
+            double                  theta1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DEllipse4d to the GraphicsPointArray structure.
+*
+* @param        pEllipse IN      ellipse to insert.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDEllipse4d
+(
+GraphicsPointArrayP pInstance,
+const   DEllipse4d  *pEllipse
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DEllipse3d to the GraphicsPointArray structure.
+*
+* @param        pEllipse IN      ellipse to insert.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDEllipse3d
+(
+GraphicsPointArrayP pInstance,
+const   DEllipse3d  *pEllipse
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add an array of Bezier segments.  If "share" is set, the total number of poles is
+*       (order * numSegment - numSegment + 1.  If "share" is not set, the total number of poles
+*       is order * numSegment.
+*
+* @param        pPoleArray IN      array of poles.
+* @param        order      IN      curve order (number of poles per Bezier segment)
+* @param        numSegment IN      number of bezier segments.
+* @param        share      IN      true if common points are shared
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPoint4dBezier
+(
+GraphicsPointArrayP pInstance,
+const   DPoint4d            *pPoleArray,
+            int                     order,
+            int                     numSegment,
+            bool                    share
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add an array of Bezier segments.  If "share" is set, the total number of poles is
+*       (order * numSegment - numSegment + 1.  If "share" is not set, the total number of poles
+*       is order * numSegment.
+*
+* @param        pPoleArray IN      array of poles.
+* @param        order      IN      curve order (number of poles per Bezier segment)
+* @param        numSegment IN      number of bezier segments.
+* @param        share      IN      true if common points are shared
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_addDPoint4dBezierWithIndices
+(
+GraphicsPointArrayP pInstance,
+        int                 *pIndex0,
+        int                 *pIndex1,
+const   DPoint4d            *pPoleArray,
+        int                 order,
+        int                 numSegment,
+        bool                share
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add an array of Bezier segments.  If "share" is set, the total number of poles is
+*       (order * numSegment - numSegment + 1.  If "share" is not set, the total number of poles
+*       is order * numSegment.
+*
+* @param        pPoleArray IN      array of poles.
+* @param        order      IN      curve order (number of poles per Bezier segment)
+* @param        numSegment IN      number of bezier segments.
+* @param        share      IN      true if common points are shared
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPoint3dBezier
+(
+GraphicsPointArrayP pInstance,
+const   DPoint3d            *pPoleArray,
+            int                     order,
+            int                     numSegment,
+            bool                    share
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add an array of Bezier segments.  If "share" is set, the total number of poles is
+*       (order * numSegment - numSegment + 1.  If "share" is not set, the total number of poles
+*       is order * numSegment.
+*
+* @param        pPoleArray IN      array of poles.
+* @param        pWeightArray IN      array of weights.  May be NULL (unit weight).
+* @param        order      IN      curve order (number of poles per Bezier segment)
+* @param        numSegment IN      number of bezier segments.
+* @param        share      IN      true if common points are shared
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPoint3dWeightBezier
+(
+GraphicsPointArrayP pInstance,
+const   DPoint3d                    *pPoleArray,
+const   double                      *pWeightArray,
+            int                     order,
+            int                     numSegment,
+            bool                    share
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Add a 2D B-spline.  If pWeights is null, a non-rational B-spline is assumed.
+*   If pKnots is null, a uniform knot sequence is assumed (and numKnots is ignored).
+*
+* @remarks The B-spline knots and multiplicities spanned by each Bezier are not recorded
+*   in the GPA.  See mdlGPA_addBsplineCurve for this.
+*
+* @param        pPoles      IN      array of poles (weighted if rational).
+* @param        pWeights    IN      array of numPoles weights or null.
+* @param        numPoles    IN      number of poles.
+* @param        pKnots      IN      full knot sequence or null.
+* @param        numKnots    IN      number of knots.
+* @param        bClosed     IN      true if B-spline is periodic; false if clamped open.
+* @param        order       IN      order of B-spline (degree + 1)
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPoint2dBspline
+(
+GraphicsPointArrayP pInstance,
+const   DPoint2d        *pPoles,
+const   double          *pWeights,
+        int             numPoles,
+const   double          *pKnots,
+        int             numKnots,
+        bool            bClosed,
+        int             order
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Add a 3D B-spline.  If pWeights is null, a non-rational B-spline is assumed.
+*   If pKnots is null, a uniform knot sequence is assumed (and numKnots is ignored).
+*
+* @remarks The B-spline knots and multiplicities spanned by each Bezier are not recorded
+*   in the GPA.  See mdlGPA_addBsplineCurve for this.
+*
+* @param        pPoles      IN      array of poles (weighted if rational).
+* @param        pWeights    IN      array of numPoles weights or null.
+* @param        numPoles    IN      number of poles.
+* @param        pKnots      IN      full knot sequence or null.
+* @param        numKnots    IN      number of knots.
+* @param        bClosed     IN      true if B-spline is periodic; false if clamped open.
+* @param        order       IN      order of B-spline (degree + 1)
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDPoint3dBspline
+(
+GraphicsPointArrayP pInstance,
+const   DPoint3d        *pPoles,
+const   double          *pWeights,
+        int             numPoles,
+const   double          *pKnots,
+        int             numKnots,
+        bool            bClosed,
+        int             order
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract an ellipse from its packed GraphicsPointArray form.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of ellipse data.
+*                               On output, the first point after the ellipse data.
+* @param        pEllipse    OUT     extracted ellipse
+* @param        pTheta0     OUT     start angle
+* @param        pSweep      OUT     end angle
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getDEllipse4d
+(
+GraphicsPointArrayCP pInstance,
+                int                 *pReadIndex,
+                DEllipse4d  *pEllipse,
+            double      *pTheta0,
+            double      *pSweep,
+                DPoint4d    *pStartPoint,
+                DPoint4d    *pEndPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a conic from its packed form.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of ellipse data.
+*                               On output, the first point after the ellipse data.
+* @param        pConic    OUT     extracted ellipse, parabola, or hyperbola, parameterized
+*                                   as a unit circle with homogeneous center and axis vectors.
+* @param        pTheta0     OUT     start angle
+* @param        pSweep      OUT     end angle
+* @param        pStartPoint OUT     start point
+* @param        pEndPoint   OUT     end point
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getDConic4d
+(
+GraphicsPointArrayCP pInstance,
+                int         *pReadIndex,
+                DConic4d    *pConic,
+                double      *pTheta0,
+                double      *pSweep,
+                DPoint4d    *pStartPoint,
+                DPoint4d    *pEndPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a conic from its packed form.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of ellipse data.
+*                               On output, the first point after the segment data.
+* @param        pConic    OUT     extracted ellipse, parabola, or hyperbola, parameterized
+*                                   as a unit circle with homogeneous center and axis vectors.
+* @param        pTheta0     OUT     start angle
+* @param        pSweep      OUT     end angle
+* @param        pStartPoint OUT     start point
+* @param        pEndPoint   OUT     end point
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getDSegment4d
+(
+GraphicsPointArrayCP pInstance,
+                int         *pReadIndex,
+                DSegment4d  *pSegment
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract as DSegment3d.   Return ERROR for any failure -- no points, other type, or DSegment4d with infinite points.
+*
+* @param        pReadIndex <=> On input, index of first point of segment.
+*                               On output, the first point after the segment data.
+* @param        pSegment    <= extracted segment
+* @bsimethod                                                    BentleySystems  08/09
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt  jmdlGraphicsPointArray_getDSegment3d
+(
+GraphicsPointArrayCP pInstance,
+                int         *pReadIndex,
+                DSegment3d  *pSegment
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a DEllipse3d from the array.  If possible reduce to ellipse.
+* (Note: Use ellipse.getScaledDMatrix3d () to convert to conventional form with
+*    an orthogonal matrix and axis lengths.  Try to keep in as is though -- the DEllipse3d
+*    and DConic4d are much better for further computing.)
+*
+* @param        pReadIndex IN OUT  On input, index of first point of ellipse data.
+*                               On output, the first point after the ellipse data.
+* @param        pConic      OUT     conic form of data.  May be null.  This is the original
+*                                   parameterization -- angles may be different from pEllipse.
+* @param        pEllipse    OUT     ellipse form of data.    May be null.
+* @param        pTheta0     OUT     start angle
+* @param        pSweep      OUT     end angle
+* @param        pStartPoint OUT     start point
+* @param        pEndPoint   OUT     end point
+* @return       true if a conic was found.  Note that this can be true but pIsEllipse is false,
+*                   i.e. the conic could not be reduced to an ellipse.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getDEllipse3d
+(
+GraphicsPointArrayCP pInstance,
+                int         *pReadIndex,
+                DConic4d    *pConic,
+                DEllipse3d  *pEllipse,
+                bool        *pIsEllipse,
+                DPoint4d    *pStartPoint,
+                DPoint4d    *pEndPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a single bezier segemtn from its packed GraphicsPointArray form.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of bezier
+*                               On output, index of next readable thing.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getBezier
+(
+GraphicsPointArrayCP pInstance,
+        int         *pReadIndex,
+        DPoint4d    *pPoleArray,
+        int         *pNumPole,
+        int         maxPole
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a single bezier segemtn from its packed GraphicsPointArray form.
+* Also compute its range.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of bezier
+*                               On output, index of next readable thing.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getBezierAndDRange3d
+(
+GraphicsPointArrayCP pInstance,
+        int         *pReadIndex,
+        DPoint4d    *pPoleArray,
+        int         *pNumPole,
+        DRange3dP   pRange,
+        int         maxPole
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Extract a single bezier segemnt.  Returns data in both DPoint4d and
+* split array forms.
+*
+* @param        pReadIndex IN OUT  On input, index of first point of bezier
+*                               On output, index of next readable thing.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool       jmdlGraphicsPointArray_getBezierDPoint3dWeight
+(
+GraphicsPointArrayCP pInstance,
+        int         *pReadIndex,
+        DPoint4d    *pPoleArray,
+        DPoint3d    *pXYZArray,
+        double      *pWeightArray,
+        int         *pNumPole,
+        int         maxPole
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Pop the final point from the array.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_pop
+(
+GraphicsPointArrayP pInstance,
+GraphicsPoint           *pOut
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search forward from i0 for the corresponding end-of-fragment point.
+* @param pI1 OUT     last index of fragment.
+* @param pPoint0 OUT     fragment start point. May be null.
+* @param pPoint1 OUT     fragment end point. May be null.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @param i0 IN      first index of fragment
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parseFragment
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType,
+      int       i0
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search backward from the end of the array for the limits of a primitive fragment.
+* A primitive fragment is a single line segment, a complete ellipse sector, or a bezier.
+* @param pI0 OUT     first index of fragment.
+* @param pI1 OUT     last index of fragment.
+* @param pPoint0 OUT     fragment start point. May be null.
+* @param pPoint1 OUT     fragment end point. May be null.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parseFinalPrimitiveFragment
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI0,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType
+);
+
+/* METHOD(GraphicsPointArray,none,primitiveFractionToApplicationParameter)
+/*---------------------------------------------------------------------------------**//**
+* Find the fragment at specified index.  Interplate between the parameter values
+*   stored the start and end of the fragment.  NOTE THAT SEMANTICS OF THE STORED PARAMETERS
+*   ARE APPLICATION SPECIFIC.   CALLER IS REPSONSIBLE FOR KNOWING (ENSURING) THAT
+*   MEANINGFUL VALUES ARE PRESENT IN THE PARAMETER FIELD.
+* @param iStart IN      fragment start index.
+* @param fraction IN      fraction parameter within the fragment.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionToApplicationParameter
+(
+GraphicsPointArrayCP pInstance,
+      double *pParameter,
+      int iStart,
+      double fraction
+);
+
+/* METHOD(GraphicsPointArray,none,primitiveFractionToApplicationParameter)
+/*---------------------------------------------------------------------------------**//**
+Find the fragment at specified index.  Return the parameter values stored at the
+    start and end of the interval.
+    NOTE THAT SEMANTICS OF THE STORED PARAMETERS
+   ARE APPLICATION SPECIFIC.   CALLER IS REPSONSIBLE FOR KNOWING (ENSURING) THAT
+   MEANINGFUL VALUES ARE PRESENT IN THE PARAMETER FIELD.
+@param pParameter0 OUT start parameter
+@param pParameter1 OUT end parameter
+@param iStart IN index at start of primitive.
+@bsimethod                                                    BentleySystems  06/07
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveIndexToApplicationParameterInterval
+(
+GraphicsPointArrayCP pInstance,
+      double *pParameter0,
+      double *pParameter1,
+      int iStart
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search forward for the index range of primitive starting at iStart.
+* A primitive is a single line segment, a complete ellipse sector, or a bezier.
+* @param pI0 OUT     first index of primitive.
+* @param pI1 OUT     last index of primitive.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @param iStart IN      start index of fragment. Any out of bounds index is invalid.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parsePrimitiveAt
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI0,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType,
+      int       iStart
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search backward from a given index for the start of a primitive.
+* A primitive is a single line segment, a complete ellipse sector, or a bezier.
+* @param pI0 OUT     first index of primitive.
+* @param pI1 OUT     last index of primitive.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @param iNext IN      first index of successor primitive.
+*           Negative is NOT interpretted as reference to end of array.
+*           Enter the array count to start at end.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parsePrimitiveBefore
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI0,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType,
+      int       iNext
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search backward from a given index for the start of a primitive.
+* A primitive is a single line segment, a complete ellipse sector, or a bezier.
+* @param pI0 OUT     first index of primitive.
+* @param pI1 OUT     last index of primitive.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @param iPrev IN      Final index of prior fragment.  -1 indicates parse first primitive.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parsePrimitiveAfter
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI0,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType,
+      int       iPrev
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search forward for the index range of a linestring starting at iStart.
+* Return the number of points (including the start) in the linestring.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlGraphicsPointArray_countToEndOfLinestring
+(
+GraphicsPointArrayCP pInstance,
+      int       iStart
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search backward from the end of the array for the limits of a fragment.
+* A fragment is a polyline, a complete ellipse sector, or a bezier.
+* @param pI0 OUT     first index of fragment.
+* @param pI1 OUT     last index of fragment.
+* @param pPoint0 OUT     fragment start point. May be null.
+* @param pPoint1 OUT     fragment end point. May be null.
+* @param pCurveType OUT     fragment curve type.  May be null.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_parseFinalFragment
+(
+GraphicsPointArrayCP pInstance,
+      int       *pI0,
+      int       *pI1,
+      DPoint4d  *pPoint0,
+      DPoint4d  *pPoint1,
+      int       *pCurveType
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pPoint OUT     evaluated point.
+* @param i0 OUT     start point for the primitive.
+* @param s OUT     fractional parameter along the primitive.
+* @return true if the index is a valid primitive
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionToDPoint4d
+(
+GraphicsPointArrayCP pInstance,
+      DPoint4d                  *pPoint,
+      int                       i0,
+      double                    s
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pXArray OUT     evaluated points.
+* @param pdXArray OUT     evaluated tangents.
+* @param pddXArray OUT     evaluated second derivatives.
+* @param i0 IN      start point for the primitive.
+* @param *pFractionArray IN      array of fractional positions.
+& @param numFraction IN      number of fractions.
+* @return true if the index is a valid primitive
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionArrayToDPoint4dDerivatives
+(
+GraphicsPointArrayCP pInstance,
+      DPoint4d                  *pXArray,
+      DPoint4d                  *pdXArray,
+      DPoint4d                  *pddXArray,
+      int                       i0,
+      double                    *pFractionArray,
+      int                       numFraction
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pXArray OUT     evaluated points.
+* @param pdXArray OUT     evaluated tangents.
+* @param pddXArray OUT     evaluated second derivatives.
+* @param i0 IN      start point for the primitive.
+* @param *pFractionArray IN      array of fractional positions.
+& @param numFraction IN      number of fractions.
+* @return true if the index is a valid primitive
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionArrayToDPoint3dDerivatives
+(
+GraphicsPointArrayCP pInstance,
+      DPoint3d                  *pXArray,
+      DPoint3d                  *pdXArray,
+      DPoint3d                  *pddXArray,
+      int                       i0,
+      double                    *pFractionArray,
+      int                       numFraction
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pPoint OUT     evaluated point.
+* @param pTangent OUT     evaluated tangent.
+* @param i0 IN      start point for the primitive.
+* @param s IN      fractional parameter along the primitive.
+* @return true if the index is a valid primitive
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionToDPoint4dTangent
+(
+GraphicsPointArrayCP pInstance,
+      DPoint4d                  *pPoint,
+      DPoint4d                  *pTangent,
+      int                       i0,
+      double                    s
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pPoint OUT     evaluated point.
+* @param pTangent OUT     evaluated tangent.
+* @param i0 IN      start point for the primitive.
+* @param s IN      fractional parameter along the primitive.
+* @return true if the index is a valid primitive
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionToDPoint3dTangent
+(
+GraphicsPointArrayCP pInstance,
+      DPoint3d                  *pPoint,
+      DPoint3d                  *pTangent,
+      int                       i0,
+      double                    s
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Interpolate along a primitive.
+* The primitive is identified by an index in the array.  The parameter is
+* taken as a fraction of the local parameterization of a line segment, ellipse, or
+* bezier.   The index should be to the start of the primitive data.
+* @param pPoint OUT     evaluated, normalized point.
+* @param i0 OUT     start point for the primitive.
+* @param s OUT     fractional parameter along the primitive.
+* @return true if the index is a valid primitive and the point could be normalized.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_primitiveFractionToDPoint3d
+(
+GraphicsPointArrayCP pInstance,
+      DPoint3d                  *pPoint,
+      int                       i0,
+      double                    s
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @return the curve type bits from a point mask.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int        jmdlGraphicsPointArray_getCurveType
+(
+GraphicsPointArrayCP pInstance,
+        int                         index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy a single curve from one array to another.
+* @param        pDest IN OUT  desination header.
+* @param        pSourceIndex IN OUT  read index in source array.  Updated only if curve read successfully.
+* @param        pSource IN      source header.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_copyCurve
+(
+GraphicsPointArrayP pDest,
+        int                         *pSourceIndex,
+GraphicsPointArrayCP pSource
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy a single curve from one array to another.
+* @param        pDest IN OUT  desination header.
+* @param        pSourceIndex IN OUT  read index in source array.  Updated only if curve read successfully.
+* @param        pSource IN      source header.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_copyPartialPrimitive
+(
+GraphicsPointArrayP pDest,
+
+GraphicsPointArrayCP pSource,
+        int                         startIndex,
+        double                      param0,
+        double                      param1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add a point array to the array, placing row breaks
+*
+* @param pPoint     IN      arry of points in grid.
+* @param pWeight    IN      (optioinal)array of weights.
+* @param n                  IN      total number of points. Not required to be a multiple of pointsPerRow.
+* @param pointsPerRow   IN      number of points per row.
+* @return true unless no memory.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addDPoint3dGridByRow
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d  *pPoint,
+const double    *pWeight,
+int              n,
+int              pointsPerRow
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add linestrings from a grid, moving along columns.
+*
+* @param pPoint     IN      arry of points in grid.
+* @param pWeight    IN      (optioinal)array of weights.
+* @param n                  IN      total number of points. Not required to be a multiple of pointsPerRow.
+* @param pointsPerRow   IN      number of points per row.
+* @return true unless no memory.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addDPoint3dGridByColumn
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d  *pPoint,
+const double    *pWeight,
+int              n,
+int              pointsPerRow
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get a normalized point out of the array.  If the stored point has non-zero weight,
+*   divide through and return the weight.  If the stored point has zero weight,
+*   leave the (vector) coordinates alone and (optionially) return the weight.
+*
+* @param pPoint  OUT     normalized point.
+* @param pWeight OUT     pre-normalization weight.
+* @param index   OUT     index of accessed point.
+* @return true if the index is valid.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getNormalizedDPoint3d
+(
+GraphicsPointArrayCP pInstance,
+DPoint3d        *pPoint,
+double          *pWeight,
+int             index
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get normalized points out of the array.
+* w=0 points are set to zero
+*
+* @param    pInstance IN      source of points
+* @param pPoint OUT     buffer of returned points
+* @param nGot OUT     number of points returned
+* @param i0 IN      first index to retrieve from GraphicsPointArray.
+* @param nreq IN      number of points requested
+* @return true if all copied points had nonzero weights.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getDPoint3dArray
+(
+GraphicsPointArrayCP pInstance,
+DPoint3d        *pPoint,
+int             *pNGot,
+int              i0,
+int              nreq
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy a graphics point structure out of the array.
+*
+* @param    pInstance IN      source of points
+* @param pPoint OUT     graphics point copied from array
+* @param index  IN      index of point to copy.  -1 for last element.
+* @return true if point was returned
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getGraphicsPoint
+(
+GraphicsPointArrayCP pInstance,
+      GraphicsPoint         *pPoint,
+      int                   index
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get a pointer to an array element.   Pointers can become invalid if points are added to the array.
+*
+* @param index IN      index of array element to return. -1 for last element.
+* @return pointer to array element.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPoint    *jmdlGraphicsPointArray_getPtr
+(
+GraphicsPointArrayP pInstance,
+int                         index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get the fields of the desired array element.  Any output parameter may be null.
+*
+* @param    pPoint      OUT     the homogeneous point
+* @param    pA          OUT     the floating point label value
+* @param    pMask       OUT     the mask value
+* @param    pUserData   OUT     the user data label
+* @param    index       IN      index of array element to return. -1 for last element.
+* @return true if index is valid
+* @bsimethod                                                    BentleySystems  02/00
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getComplete
+(
+GraphicsPointArrayP pInstance,
+DPoint4d                    *pPoint,
+double                      *pA,
+int                         *pMask,
+int                         *pUserData,
+int                         index
+);
+#ifdef INT_POINT2D_DEFINED
+/*---------------------------------------------------------------------------------**//**
+*
+* Get normalized points out of the array, starting at index i0 and
+* continuing until a point with a marker (break mask) is reached.
+* w=0 points are set to zero
+*
+* @param pPoint OUT     filled point buffer
+* @param nGotP OUT     number of points copied to buffer
+* @param pStartIndex IN OUT  start index.   Initialize to 0 before
+*                                   first call; this function increments
+*                                   it as points are removed.
+* @param maxGet IN      max points to get
+* @return true if all points had nonzero weight
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getPoint2dLoop
+(
+GraphicsPointArrayCP pInstance,
+      Point2d               *pPoint,
+      int                   *pNGot,
+      int                   *pStartIndex,
+      int                   maxGet
+);
+#endif
+/*---------------------------------------------------------------------------------**//**
+* Get normalized points out of the array.
+* w=0 points are set to zero
+* @param    pInstance IN      source array
+* @param pPoint IN OUT  rubber array to receive points
+* @param i0 IN      index of first point to copy
+* @param nreq IN      number of points requested
+* @return true if all copied points had nonzero weights.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_getDPoint3dVarArray
+(
+GraphicsPointArrayCP pInstance,
+      EmbeddedDPoint3dArray     *pPointArray,
+      int                   i0,
+      int                   nreq
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get normalized points out of the array, starting at index i0 and
+* continuing until a point with a marker (break mask) is reached.
+* w=0 points are set to zero
+*
+* @param pPoint OUT     filled point buffer
+* @param nGotP OUT     number of points copied to buffer
+* @param pStartIndex IN OUT  start index.   Initialize to 0 before
+*                                   first call; this function increments
+*                                   it as points are removed.
+* @param maxGet IN      max points to get
+* @return true if all points had nonzero weight
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_getDPoint3dLoop
+(
+GraphicsPointArrayCP pInstance,
+      DPoint3d      *pPoint,
+      int           *pNGot,
+      int           *pStartIndex,
+      int           maxGet
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get normalized points out of the array, starting at index i0 and
+* continuing until a point with a marker (break mask) is reached.
+* Points are copied out as x,y,z with no normalization, i.e. this assumes
+* callers knows the points are normalized a priori.
+*
+* @param pPoint OUT     filled point buffer
+* @param nGotP OUT     number of points copied to buffer
+* @param pStartIndex IN OUT  start index.   Initialize to 0 before
+*                                   first call; this function increments
+*                                   it as points are removed.
+* @param maxGet IN      max points to get
+* @param mask IN      mask to terminate array.  Usually HPOINT_MASK_BREAK or HPOINT_MASK_MAJOR_BREAK.
+* @return true if all points had nonzero weight
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void         jmdlGraphicsPointArray_getUnnormalizedDPoint3dArrayToBreak
+(
+GraphicsPointArrayCP pInstance,
+      DPoint3d      *pPoint,
+      int           *pNGot,
+      int           *pStartIndex,
+      int           maxGet,
+      int           mask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get unnormalized points out of the array.
+*
+* @param    pPoint  OUT     filled buffer
+* @param    nGot    OUT     number of points received
+* @param    i0      IN      first point to get
+* @param    nReq    IN      number of points requested
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_getDPoint4dArray
+(
+GraphicsPointArrayCP pInstance,
+            DPoint4d        *pPoint,
+            int                     *nGot,
+            int                     i0,
+            int                     nreq
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Get an (unnormalized) point and its mask.
+*
+* @param    pInstance
+* @param    pPoint OUT     point copied from the array.
+* @param    pMask  OUT     mask copied from the array.
+* @return true if index is valid.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getDPoint4dWithMask
+(
+GraphicsPointArrayCP pInstance,
+            DPoint4d    *pPoint,
+            int             *pMask,
+            int             index
+);
+/*---------------------------------------------------------------------------------**//**
+* Get an (unnormalized) point and its mask.
+*
+* @param    pInstance
+* @param    pPoint <= point copied from the array.
+* @param    pMask  <= mask copied from the array.
+* @return true if index is valid.
+* @bsimethod                                                    BentleySystems  08/09
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_getDPoint4dWithMaskExt
+(
+GraphicsPointArrayCP pInstance,
+            DPoint4d    *pPoint,
+            int             *pMask,
+            double          *pB,
+            int             index
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Extend a range to include the (normalized) points in a GraphicsPointArray.
+* Points with zero weight are ignored for range purposes, and a count
+* of such is returned.
+*
+* @param pRange IN OUT  range to update
+* @param    pInstance IN      point array
+* @return Number of points with weight = 0
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_extendDRange3d
+(
+GraphicsPointArrayCP pInstance,
+        DRange3d *pRange
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description return a tolerance based on the ranges of the arrays.
+The returned number is (absTol + globalRelTol * A + rangeFraction * B)
+where A is largest coordinate in combined range, B is diagonal of combined range.
+@param [in] pInstanceA source data.
+@param [in] pInstanceB source data.
+@param [in] absTol absolute tolerance
+@param [in] globalRelTol fraction of global size (data range extended to origin)
+@Param [in] rangeFraction fraction of the data range itself.
+* @bsihdr                                       EarlinLutz      08/09
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double jmdlGraphicsPointArray_getTolerance
+(
+GraphicsPointArrayCP pInstanceA,
+GraphicsPointArrayCP pInstanceB,
+double absTol,
+double globalRelTol,
+double rangeFraction
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Extend a range to include the (normalized) points in a GraphicsPointArray.
+* Points with zero weight are ignored for range purposes, and a count
+* of such is returned.
+*
+* @param pRange IN OUT  range to update
+* @param    pInstance IN      point array
+* @return Number of points with weight = 0
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlDRange3d_extendByGraphicsPointArray
+(
+DRange3d *pRange,
+GraphicsPointArrayCP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find the closest approach to a given point, using only xy data parts after normalization.
+* @param pInteriorProximity OUT     closest point, only interior normal points.
+* @param pEndpointProximity OUT     closest endpoint.
+* @param pPickPoint IN      the pick point.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool            jmdlGraphicsPointArray_closestXYPoint
+(
+GraphicsPointArrayCP pInstance,
+      ProximityData *pInteriorProximity,
+      ProximityData *pEndpointProximity,
+const DPoint3d      *pPickPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Copy the contents of one array into another
+*
+* @param pDestHeader OUT     array to be expanded
+* @param pSourceHeader IN      source array
+* @return true if both arrays are well defined an memory is available.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_append
+(
+GraphicsPointArrayP pDestHeader,
+GraphicsPointArrayCP pSourceHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* @param    pInstance IN OUT  header to receive polygons
+* @param pPoint     IN      vertex array
+* @param nPoint     IN      range limit for vertex array
+* @param vertIndexP IN      array of maxPerFace*nFace vertex indices.
+*                                     Unused indices in each row are assumed filled
+*                                     with negative values
+* @param maxPerFace IN      row dimension in pIndex
+* @param nFace      IN      number of faces
+* @param isSolid    IN      If true, mesh represents a full solid boundary. (Mesh itself has no boundary)
+* @return int
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_addMeshArrays
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d  *pPoint,
+int              nPoint,
+const int       *vertIndexP,
+int              maxPerFace,
+int              nFace,
+bool             isSolid
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  header whose points are to be transformed
+* @param pTransform IN      transform to apply
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_multiplyByDTransform3d
+(
+GraphicsPointArrayP pInstance,
+const DTransform3d      *pTransform
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  header whose points are to be transformed
+* @param pTransform IN      transform to apply
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_multiplyByTransform
+(
+GraphicsPointArrayP pInstance,
+const Transform      *pTransform
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  header whose points to be unweighted
+* @bsimethod                                                    BentleySystems  12/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_normalizeWeights
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN      header whose max x,y, or z component is returned.  The
+*       components are used "as is" without normalizing by the weights.
+* @bsimethod                                                    BentleySystems  05/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double   jmdlGraphicsPointArray_getMaxXYZComponent
+(
+GraphicsPointArrayCP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN      test if there are any non-unit weights
+*       components are used "as is" without normalizing by the weights.
+* @bsimethod                                                    BentleySystems  05/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_hasNonUnitWeights
+(
+GraphicsPointArrayCP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance   IN OUT  header whose points are to be transformed
+* @param pMatrix         IN      transform to apply
+* @bsimethod                                                    BentleySystems  12/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_multiplyByDMatrix4d
+(
+GraphicsPointArrayP pInstance,
+const DMatrix4d                 *pMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  header whose points are to be transformed
+* @param pTransform IN      transform to apply
+* @param i0 IN      first index to transform
+* @param i1 IN      last index to transform
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_multiplyDTransform3dInRange
+(
+GraphicsPointArrayP pInstance,
+const DTransform3d      *pTransform,
+      int               i0,
+      int               i1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  array from which to get block
+* @param n IN      number of entries requested
+* @return pointer to contiguous block of new GraphicsPoint structures
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP GraphicsPoint * jmdlGraphicsPointArray_getBlock
+(
+GraphicsPointArrayP pInstance,
+int             n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  header of array receiveing points
+* @param pPoint IN      array of 2 points to add as a line segment if not already present.
+* @param tol IN      tolerance for comparisons.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_addLine3dUnique
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d              *pPoint,
+      double                 tol
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search for the first index at which a mask is set.
+* @param i0 = start point of search
+* @param mask = mask to search for
+* @param implyFinalMask = true if final point is implied to have the mask when no mask is found.
+*           If false, -1 is returned when no mask found.
+* @return
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlGraphicsPointArray_findMask
+(
+GraphicsPointArrayCP pInstance,
+        int             i0,
+        int             mask,
+        bool            implyFinalPoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy a fragment from pSource into the instance array.   Data is copied within the
+* given index range, reversing order if indicated by index values.  Do nothing if
+* any index is out of range.
+*
+* @param i0 = first index of fragment to copy.
+* @param i1 = last index of fragment to copy.
+* @param clearMask = mask to be cleared throughout the fragment.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_appendFragment
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayCP pSource,
+        int             i0,
+        int             i1,
+        int             clearMask
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Copy coordinates of single line segment with ends at given indices in pSource into the instance array.
+*
+* @param i0 = index of start point.
+* @param mask0 = mask to apply to start point.
+* @param i1 = index of end point.
+* @param mask1 = mask to apply to end point
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_appendSegment
+(
+GraphicsPointArrayP pInstance,
+GraphicsPointArrayCP pSource,
+        int             i0,
+        int             mask0,
+        int             i1,
+        int             mask1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pHeaderToOptimize IN OUT  header of array receiveing points
+* @return int
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_optimize
+(
+GraphicsPointArrayP pHeaderToOptimize
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a DPoint3d array to array.   For use as a callback.
+*
+* @param    pInstance IN OUT  header to receive points.
+* @param pPoint IN      PointArray
+* @param numPoint IN      number of points
+* @param pVoid IN      unused
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt jmdlGraphicsPointArray_cbAddDPoint3dArray
+(
+GraphicsPointArrayP pInstance,
+const   DPoint3d    *pPoint,
+        int         numPoint,
+        void        *pVoid
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Set the "a" field of each point as its planar halfspace "height" value.
+* @param pPlane     IN      plane coefficients
+* @return -1 i fall in (negative height), 1 if all out (positive height), 0 if mixed.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_setHeight     /* OUT     -1 if all IN, 1 if all OUT, 0 if mixed */
+(
+GraphicsPointArrayP pInstance,     /* IN OUT  Polyline or polygon. */
+const   DPoint4d                *pPlane         /* IN      homogeneous plane equations */
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Sort by the "a" field of each graphics point.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_sortByA
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Sort by the "a" field of each graphics point.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_sortByUserDataAndA
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Sort by the y fields, with x to resolve ties.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_sortByYThenX
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Sort by the y fields, with x to resolve ties.
+* @bsimethod                                                    BentleySystems  08/09
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_installSortIndex
+(
+GraphicsPointArrayP pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* On input, pSortedArray is sorted, and index field indicates original position.
+* pArrayToShuffle is to be rearranged by same sort.
+@param [in,out] pDest points to shuffle.
+@param [in] pSource sorted and tagged array.
+@return true if sort indices are valid.  Array sizes must match.  index fields in source
+ must be a permutation.
+* @bsimethod                                                    BentleySystems  08/09
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool jmdlGraphicsPointArray_shuffleBySortIndex
+(
+GraphicsPointArrayP pDest,
+GraphicsPointArrayP pSource
+);
+/*---------------------------------------------------------------------------------**//**
+* Given two references to (primitive, fractionParameter), generate a (fractionParameter)
+* return a comparison in qsort style: -1, 0, or 1 according as point 0 is before, equal
+* to or following point1.
+* @param i0 IN      primitive index for first point.
+* @param param0 IN      parameter for first point.
+* @param i1 IN      primitive index for second point.
+* @param param1 IN      parameter for second point.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlGraphicsPointArray_comparePrimitiveFraction
+(
+GraphicsPointArrayCP pSource,
+int i0,
+double  param0,
+int i1,
+double param1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Given two references to (primitive, fractionParameter), generate a (fractionParameter)
+* for an arbitrary point within the interval.
+* @param pI2 OUT     primitive index for intermediate point.
+* @param param2 OUT     parameter for intermediate point.
+* @param i0 IN      primitive index for start point.
+* @param param0 IN      parameter for start point.
+* @param i1 IN      primitive index for end point.
+* @param param1 IN      parameter for end point.
+* @return true if both positions are valid.
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_anyPrimitiveFractionInInterval
+(
+GraphicsPointArrayCP pSource,
+int *pI2,
+double *pParam2,
+int i0,
+double  param0,
+int i1,
+double param1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Append an interval of the source to the destination.  The geometry starting at
+* fraction param0 on primitive i0 and ending at fraction param1 on primitive i1 is
+* copied into the destination (instance) array.  If (i0,param1) is "after" (i1,param1),
+* the geoemtry is reversed during the copy.
+* @param pSource IN      source data for copy.
+* @param i0 IN      start index of first primitive.
+* @param param0 IN      fractional parameter on first primitive.
+* @param i1 IN      start index of second primitive.
+* @param param1 IN      fractional parameter on second primitive.
+*
+* @bsimethod                                                    BentleySystems  11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_appendInterval
+(
+GraphicsPointArrayP pDest,
+GraphicsPointArrayCP pSource,
+int i0,
+double  param0,
+int i1,
+double param1
+
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Sort both arrays, using <userdata,a> in pGPA1 as sort key.
+* The mask fields of all points in both arrays is cleared (working memory in sort)
+* @return true if arrays had same counts and were sorted.
+* @bsimethod                                                    BentleySystems  12/01
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_sortParallelGPAs
+(
+GraphicsPointArrayP pGPA1,
+GraphicsPointArrayP pGPA2
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compare two graphics points which originated in same GPA, i.e. have
+* consistent userData and parameters.
+* @param paramTol IN tolerance for parameter comparison.  Negative to suppress.  0 for bitwise equality.
+* @param closureTol2 IN squared tolerance for xyz comparison of points which are
+*               at start and end of same primitive.
+* @param xyzTol2 IN squared tolerance for normalized point comparison.  Negative to suppress. 0 for bitwise equality.
+* @bsimethod                                                    BentleySystems  03/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_sameGraphicsPoint
+(
+const GraphicsPoint *pGP1,
+const GraphicsPoint *pGP2,
+double parameterTol,
+double closureTol2,
+double xyzTol2
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Linear search (quadratic time for all points!!) to eliminate duplicate points.
+* @bsimethod                                                    BentleySystems  03/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_cullDuplicatePoints
+(
+GraphicsPointArrayP         pGPA1,
+GraphicsPointArrayP         pGPA2,
+double                      parameterTol,
+double                      xyzTol
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Test two arrays for exact equality of all data.
+@param pGPA1 IN first array
+@param pGPA2 IN second array
+@return true if (a) array pointers are the same, (b) both arrays are empty, or (c) arrays
+        are bitwise identical.
+* @bsimethod                                                    BentleySystems  03/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlGraphicsPointArray_identicalContents
+(
+GraphicsPointArrayCP  pGPA1,
+GraphicsPointArrayCP  pGPA2
+);
+
+
+//**************************************************************************************************
+/*---------------------------------------------------------------------------------**//**
+Add a bspline curve to the GPA.
+The curve may be changed to a simper form (e.g. linestring)
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP void jmdlGraphicsPointArray_addBsplineCurve (GraphicsPointArray *pGPA, MSBsplineCurveCP pCurve);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return multiple intersections between two B-spline curves.
+* @remarks While intersections are computed to machine precision, close approaches within
+*       the given tolerance are also returned (to allow for small endpoint mismatches and
+*       near-tangencies).
+* @remarks The "a" field of each graphics point stores the <EM>global B-spline parameter</EM> of
+*       the point (not the local parameter within the containing Bezier segment).  The "userData" field
+*       stores the GPA index of the start of the containing Bezier segment.
+* @param pIntersects0           OUT     intersection points with global parametrization on pCurve0 (or NULL)
+* @param pIntersects1           OUT     intersection points with global parametrization on pCurve1 (or NULL)
+* @param pCurve0                IN      first curve
+* @param pCurve1                IN      second curve
+* @param pWorldToLocalMatrix    IN      rotation by which to multiply geometry before xy-intersections are computed (or NULL for 3D intersections)
+* @param distanceTolerance      IN      maximum absolute distance from either curve to a near-intersection point
+* @param parametricTolerance    IN      maximum parametric distance between equal intersections (used in culling duplicate intersections)
+* @return The number of intersections found (and returned in arrays, if given).
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP int   jmdlGraphicsPointArray_intersectAllBetweenCurves
+(
+GraphicsPointArray* pIntersects0,
+GraphicsPointArray* pIntersects1,
+MSBsplineCurve const*       pCurve0,
+MSBsplineCurve const*       pCurve1,
+RotMatrix const*            pWorldToLocalMatrix,
+double                      distanceTolerance,
+double                      parametricTolerance
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return multiple intersections between two B-spline curves.
+* @remarks While intersections are computed to machine precision, close approaches within
+*       the given tolerance are also returned (to allow for small endpoint mismatches and
+*       near-tangencies).
+* @remarks Output buffers allocated by this function must be freed by ~mBSIBaseGeom::Free (or ~mmemutil_free or ~mdlmSystem_mdlFree).
+* @param ppIntersects0          OUT     intersection points on pCurve0 (or NULL)
+* @param ppIntersects1          OUT     intersection points on pCurve1 (or NULL)
+* @param ppParams0              OUT     intersection parameters on pCurve0 (or NULL)
+* @param ppParams1              OUT     intersection parameters on pCurve1 (or NULL)
+* @param pNumIntersects         OUT     the number of returned points/params
+* @param pCurve0                IN      first curve
+* @param pCurve1                IN      second curve
+* @param pWorldToLocalMatrix    IN      rotation by which to multiply geometry before xy-intersections are computed (or NULL for 3D intersections)
+* @param distanceTolerance      IN      maximum absolute distance from either curve to a near-intersection point
+* @param parametricTolerance    IN      maximum parametric distance between equal intersections (used in culling duplicate intersections)
+* @return SUCCESS unless invalid input or buffer allocations failed.
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP StatusInt     bspcurv_intersectAllBetweenCurves
+(
+DPoint3d**              ppIntersects0,
+DPoint3d**              ppIntersects1,
+double**                ppParams0,
+double**                ppParams1,
+int*                    pNumIntersects,
+MSBsplineCurve const*   pCurve0,
+MSBsplineCurve const*   pCurve1,
+RotMatrix const*        pWorldToLocalMatrix,
+double                  distanceTolerance,
+double                  parametricTolerance
+);
+
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

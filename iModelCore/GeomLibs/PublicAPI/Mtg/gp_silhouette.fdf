@@ -1,0 +1,318 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_silhouette.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Add a DEllipse3d to the array, optionally transforming by a DMap4d.
+* @param pMatrix    IN      additional homogeneous matrix. May be null.
+* @param pEllipse   IN      ellipse to add.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addDMap4dDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   DMap4d          *pMap,
+const   DEllipse3d      *pEllipse
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the silhouette of an ellipsoid to the GraphicsPointArray.
+* @param pEllipsoid IN      ellipsoid whose silhouette is calculated.
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @param pEyePoint  IN      homogeneous eyepoint.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDEllipsoid3dSilhouette
+(
+GraphicsPointArray  *pGPA,
+const   DEllipsoid3d    *pEllipsoid,
+const   DMap4d          *pMap,
+const   DPoint4d        *pEyePoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the silhouette of a cone to the GraphicsPointArray.
+* @param pEllipsoid IN      ellipsoid whose silhouette is calculated.
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @param pEyePoint  IN      homogeneous eyepoint.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDCone3dSilhouette
+(
+GraphicsPointArray  *pGPA,
+const   DCone3d         *pCone,
+const   DMap4d          *pMap,
+const   DPoint4d        *pEyePoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the edges of a cone to the GraphicsPointArray.
+* @param pCone IN      cone whose edges are added
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDCone3dEdges
+(
+GraphicsPointArray  *pGPA,
+const   DCone3d         *pCone,
+const   DMap4d          *pMap
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the edges of a cone to the GraphicsPointArray.
+* @param pTorus IN      torus whose edgeds are added
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDToroid3dEdges
+(
+GraphicsPointArray  *pGPA,
+const   DToroid3d       *pToroid,
+const   DMap4d          *pMap
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add rulings of a torus to the GraphicsPointArray.
+* @param pEllipsoid IN      ellipsoid whose silhouette is calculated.
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @param pEyePoint  IN      homogeneous eyepoint.
+* @param numMeridian IN      number of interior steps at constant theta.
+* @param numParallel IN      number of interior steps at constant phi.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGPA_rulingLimits
+(
+int     *pIndex0,
+int     *pIndex1,
+int     numSpan,
+bool    closed,
+bool    includeEdges
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add rulings of a torus to the GraphicsPointArray.
+* @param pEllipsoid IN      toroid whose silhouette is calculated.
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @param pEyePoint  IN      homogeneous eyepoint.
+* @param numMeridian IN      number of interior steps at constant theta.
+* @param numParallel IN      number of interior steps at constant phi.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDToroid3dRulings
+(
+GraphicsPointArray  *pGPA,
+const   DToroid3d       *pToroid,
+const   DMap4d          *pMap,
+        int             numMeridian,
+        int             numParallel,
+        bool            includeEdges
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the silhouette of a toroid to the GraphicsPointArray.
+* @param pHConic IN      general conic intersection.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addHConic
+(
+GraphicsPointArray  *pGPA,
+const   HConic          *pConic
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int    jmdlGPA_cb_silhouetteHandler
+(
+      HConic        *pConic,        /* IN      single conic */
+      DPoint3d      *pPointArray,   /* IN      polyline */
+      int           numPoint,
+      unsigned int  curveMask,      /* IN      bitmask for curve properties */
+const RotatedConic  *pSurface,
+GraphicsPointArray  *pGPA
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the silhouette of a toroid to the GraphicsPointArray.
+* @param pEllipsoid IN      ellipsoid whose silhouette is calculated.
+* @param pMap       IN      additional homogeneous mapping. May be null.
+* @param pEyePoint  IN      homogeneous eyepoint.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addDToroid3dSilhouette
+(
+GraphicsPointArray  *pGPA,
+const   DToroid3d       *pToroid,
+const   DMap4d          *pMap,
+const   DPoint4d        *pEyePoint
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the intersection of a plane and a rotated conic to the GraphicsPointArray.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionRotatedConicDPlane3d
+(
+GraphicsPointArray  *pGPA,
+const   RotatedConic    *pRotatedConic,
+const   DPlane3d        *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the intersection of a toroid and plane to the GraphicsPointArray.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDToroid3dDPlane3d
+(
+GraphicsPointArray  *pGPA,
+const   DToroid3d       *pToroid,
+const   DPlane3d        *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the intersection of a toroid and plane to the GraphicsPointArray.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDEllipsoid3dDPlane3d
+(
+GraphicsPointArray  *pGPA,
+const   DEllipsoid3d    *pEllipsoid,
+const   DPlane3d        *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add the silhouette of a cone and plane to the GraphicsPointArray.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDCone3dDPlane3d
+(
+GraphicsPointArray  *pGPA,
+const   DCone3d         *pCone,
+const   DPlane3d        *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersectin points of a rotated conic and DEllipse3d to the graphics point
+* array.  Intersections are marked as points.   Each graphics point has the ellipse
+* angle as its "a" value.
+* @bsimethod                                                    BentleySystems  04/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionRotatedConicDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   RotatedConic    *pRotatedConic,
+const   DEllipse3d      *pEllipse,
+        bool            boundEllipse,
+        bool            boundSurface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersection points of a DCone3d and DEllipse3d to the graphics point
+* array.  Intersections are marked as points.
+* @bsimethod                                                    BentleySystems  04/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDToroid3dDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   DToroid3d       *pToroid,
+const   DEllipse3d      *pEllipse,
+        bool            boundEllipse,
+        bool            boundSurface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersection points of a DEllipsoid3d and DEllipse3d to the graphics point
+* array.  Intersections are marked as points.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDEllipsoid3dDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   DEllipsoid3d    *pEllipsoid,
+const   DEllipse3d      *pEllipse,
+        bool            boundEllipse,
+        bool            boundSurface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersection points of a DCone3d and DEllipse3d to the graphics point
+* array.  Intersections are marked as points.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDCone3dDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   DCone3d         *pCone,
+const   DEllipse3d      *pEllipse,
+        bool            boundEllipse,
+        bool            boundSurface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersection points of a DCone3d and DEllipse3d to the graphics point
+* array.  Intersections are marked as points.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDDisk3dDEllipse3d
+(
+GraphicsPointArray  *pGPA,
+const   DDisk3d         *pDisk,
+const   DEllipse3d      *pEllipse,
+        bool            boundEllipse,
+        bool            boundSurface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Add simple intersection points of a plane with all curves of the array.   Add them as
+* isolated points in the destination array.
+* @param pSource IN      array whose polylines and curves are interesected with the plane.
+* @param pPlane IN      plane coordinates.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addIntersectionDPlane3d
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPlane3d                *pPlane
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find extrema of paths projected onto a direction vector.  Add them as isolated points
+* in the destination array.
+* @param pNormalArray IN      array of direction vectors.
+* @param numNormal IN      number of directions.   If pNormalArray is null and numNormal is
+*                   1, 2, or 3, the first numNormal principal directions (x, y, z) are used.
+* @param endpoints IN      true to include dangling endpoints.
+* @param interiorpoints IN      true to include interior points where curves become normal to the
+*           direction vector.
+* @param inflectionPoints IN      true to include inflection points of curves.
+* @bsimethod                                                    BentleySystems  03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    jmdlGraphicsPointArray_addExtrema
+(
+        GraphicsPointArray  *pDest,
+GraphicsPointArrayCP pSource,
+const   DPoint3d                *pNormalArray,
+        int                     numNormal,
+        bool                    endPoints,
+        bool                    interiorPoints,
+        bool                    inflectionsPoints
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,225 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/bsp/bsprcurv.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_relaxToCurve
+(
+DPoint3d        *nearPt,               /* OUT     closest point on curve */
+DPoint3d        *tangent,              /* OUT     tangent @ closest point on curve */
+double          *u,                    /* IN OUT  initial guess -> param of pt */
+DPoint3d        *testPt,               /* IN      want closest pt to this pt */
+MSBsplineCurve  *curve,
+int             iterations,            /* IN      number of iterations to try */
+double          convTol                /* IN      convergence tolerance in UV space */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_flattenCurve
+(
+MSBsplineCurve  *flattenedCurveP,           /* OUT     flattened curve */
+MSBsplineCurve  *inCurveP,                  /* IN      input curve */
+RotMatrix       *rotMatrixP                 /* IN      rotation matrix */
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  06/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_minDistToCurve
+(
+double          *distance,             /* OUT     distance to closest point */
+DPoint3d        *minPt,                /* OUT     closest point of curve */
+double          *param,                /* OUT     param of closest point */
+DPoint3dCP      inTestPt,             /* IN      point to calculate dist from */
+MSBsplineCurveCP curve,
+double          *tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_closeTanToCurve
+(
+DPoint3d        *tanPt,                /* OUT     on curve with desired tangent */
+double          *param,                /* OUT     param of tanPt on curve, or -1 */
+DPoint3d        *inFindPt,             /* IN      point to find tangent to */
+DPoint3d        *inTestPt,             /* IN      closest tan to this point */
+MSBsplineCurve  *curve,
+double          *tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_allTansToCurve
+(
+DPoint3d        **tanPts,              /* OUT     tangent point(s) on curve */
+double          **params,              /* OUT     param(s) of tangent pts */
+int             *numPoints,            /* OUT     number of tangents */
+DPoint3d        *inFindPt,             /* IN      point to find tangent to */
+MSBsplineCurve  *curve,
+double          *tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsprcurv_intersectSegment
+(
+DPoint3d        *intPt,
+double          *param,
+DSegment3d       *segment,
+MSBsplineCurve  *curve,
+RotMatrix       *rotMatrix,
+double          *tolerance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_cuspPoints
+(
+DPoint3d        **cuspPts,
+double          **params,
+int             *numPoints,
+MSBsplineCurve  *curve,
+double          tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_inflectionPoints
+(
+DPoint3d        **cuspPts,
+double          **params,
+int             *numPoints,
+MSBsplineCurve  *curve,
+double          tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* see J. Hoschek. "Spline approximation of offset curves." CAGD 5 (1988) 33-40.
+* @bsimethod                                                    BentleySystems  12/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_offset
+(
+MSBsplineCurve  *outCurve,             /* OUT     offset curve */
+MSBsplineCurveCP inCurve,              /* IN      original curve */
+double          distance,
+int             cuspTreatment,
+int             continuity,            /* IN      geometric continuity desired */
+double          tolerance,
+RotMatrix       *rotMatrix
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  06/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_extClosestBtwCurves
+(
+double          *distance,             /* OUT     closest distance between curves */
+DPoint3d        *minPt0,               /* OUT     closest point on curve0 */
+DPoint3d        *minPt1,               /* OUT     closest point on curve1 */
+double          *param0,               /* OUT     param of point on curve0 */
+double          *param1,               /* OUT     param of point on curve1 */
+MSBsplineCurveCP curve0,
+MSBsplineCurveCP curve1,
+double          *tolerance,
+double          maxDistance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  06/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_closestBtwCurves
+(
+double          *distance,             /* OUT     closest distance between curves */
+DPoint3d        *minPt0,               /* OUT     closest point on curve0 */
+DPoint3d        *minPt1,               /* OUT     closest point on curve1 */
+double          *param0,               /* OUT     param of point on curve0 */
+double          *param1,               /* OUT     param of point on curve1 */
+MSBsplineCurve  *curve0,
+MSBsplineCurve  *curve1,
+double          *tolerance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_minDistTo2Curves
+(
+double          *distance,
+DPoint3d        *minPt0,
+DPoint3d        *minPt1,
+double          *param0,
+double          *param1,
+MSBsplineCurve  *curve0,
+MSBsplineCurve  *curve1,
+double          *tolerance,
+DPoint3d        *inTestPt,
+RotMatrix       *rotMatrix
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_allParallelTangents
+(
+DPoint3d        **tanPts,              /* OUT     parallel tangent point(s) on curve */
+double          **params,              /* OUT     param(s) of tangent pts */
+int             *numPoints,            /* OUT     number of tangents */
+DPoint3d        *inDirection,          /* IN      direction to find parallel to */
+MSBsplineCurve  *curve
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/95
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprcurv_curvePlaneIntersects
+(
+double          **paramPP,              /* OUT     param(s) of intersection pts */
+int             *numPointsP,            /* OUT     number of intersectionPoints */
+DPoint3d        *planeNormalP,          /* IN      plane normal */
+double          planeDistance,          /* IN      plane distance (from origin) */
+MSBsplineCurve  *curveP,                /* IN      curve */
+double          tolerance               /* IN      tolerance */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  02/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt    bsprcurv_subdivideToZNegative
+(
+MSBsplineCurve      *curveP,
+double              zMinimum
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

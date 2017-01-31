@@ -1,0 +1,56 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/TriangleIndices.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Install user-supplied buffer pointers and size limits.
+* @bsimethod                                                    BentleySystems  02/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void jmdlTriangleIndices_init
+(
+TriangleIndices   *pMesh,
+DPoint3d        *pPointArray,
+DPoint3d        *pNormalArray,
+DPoint2d        *pUVArray,
+int             *pTriangleToVertexArray,
+int             *pTriangleToTriangleArray,
+int             maxPoint,
+int             maxTri
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* @bsimethod                                                    BentleySystems  02/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void jmdlTriangleIndices_printIndices
+(
+TriangleIndices   *pMesh
+);
+
+/*---------------------------------------------------------------------------------**//**
+*
+* @param numPoint IN number of points around convex polygon
+* @param startIndex IN index of first point of triangulation.  Triangulation
+*           sweeps away from this point.
+* @return
+* @bsimethod                                                    BentleySystems  02/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void     jmdlTriangleIndices_triangulateConvex
+(
+TriangleIndices   *pMesh,
+int             numPoint,
+int             startIndex
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

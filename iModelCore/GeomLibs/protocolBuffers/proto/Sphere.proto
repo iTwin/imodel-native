@@ -1,0 +1,6 @@
+message Sphere
+{
+required IPlacement placement = 1;
+required double radius = 2;
+}
+

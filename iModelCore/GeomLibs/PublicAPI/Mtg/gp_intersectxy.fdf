@@ -1,0 +1,81 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_intersectxy.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Compute split points where geometry from pGeomA intersects with pGeomB, using
+*   apparent intersection in XY plane.
+* Each split point is represented by a graphics point.
+* @param pSplitA OUT     array of intersection point, primitive index, and primitive parameter. May be NULL.
+* @param pSplitB OUT     array of intersection point, primitive index, and primitive parameter. May be NULL.
+* @param pGeomA IN      candidate geoemtry.
+* @param pGeomB IN      candidate geometry.
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_xyIntersectionPoints
+(
+        GraphicsPointArray  *pSplitA,
+        GraphicsPointArray  *pSplitB,
+GraphicsPointArrayCP pGeomA,
+GraphicsPointArrayCP pGeomB
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Compute split points where geometry from pGeomA intersects with pGeomB, using
+*   apparent intersection in XY plane.
+* Each split point is represented by a graphics point.
+* @param pSplitA OUT     array of intersection point, primitive index, and primitive parameter. May be NULL.
+* @param pSplitB OUT     array of intersection point, primitive index, and primitive parameter. May be NULL.
+* @param pGeomA IN      candidate geoemtry.
+* @param pGeomB IN      candidate geometry.
+* @param extendLines IN      true for unbounded lines
+* @param extendConics IN      true for unbounded conics
+* @bsimethod                                                    BentleySystems  07/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_xyIntersectionPointsExt
+(
+        GraphicsPointArray  *pSplitA,
+        GraphicsPointArray  *pSplitB,
+GraphicsPointArrayCP pGeomA,
+GraphicsPointArrayCP pGeomB,
+        bool                    extendLines,
+        bool                    extendConics
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Find tangent discontinuities (essentially, vertices) in curvesA.
+* Compute apparent (xy) distance from each to geometry in curvesB.
+* Collect those that are within tolerance.
+* @param outPointA OUT accumulating points from inCurvesA.
+* @param outPointB OUT accumulating points from inCurvesB
+* @param curvesA IN source geometry.for discontinuities.
+* @param curvesB IN source geometry
+* @param maxDist IN max distance to record.
+* @bsifunction                                                  EarlinLutz 10/03
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addDiscontinuityContacts
+(
+GraphicsPointArray          *pointsA,
+GraphicsPointArray          *pointsB,
+GraphicsPointArrayCP curvesA,
+GraphicsPointArrayCP curvesB,
+double                          maxDist
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,5 @@
+message AdjacentSurfacePatches
+{
+repeated ISurfacePatch Patch = 1;
+}
+

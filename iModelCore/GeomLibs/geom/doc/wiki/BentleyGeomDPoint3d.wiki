@@ -1,0 +1,143 @@
+:Title: struct Bentley::DPoint3d 
+
+Summary: xyz coordinates of a point
+
+
+!!Fields
+
+|| Field	|| Remarks ||
+|| x || x coordinate ||
+|| y || y coordinate ||
+|| z || z coordinate ||
+
+!!Document Conventions
+
+|| Type || name || Remarks ||
+|| DPoint3d	|| point 		||	||
+||		|| outPoint	|| "out only" instance, or assignment of "From" method ||
+||		|| origin		|| point used as base point of calculation	||
+||		|| pointA, pointB, pointC 	||	||
+|| DVector3d	|| upVector	||	||
+|| 		|| vector		||	||
+|| 		|| vectorA, vectorB, vectorC ||	||
+|| DPoint4d	|| point4d	||	||
+|| double 	|| a, b, c	||	||
+||		|| x, y, z	||	||
+|| double		|| radians	|| angle in radians ||
+|| DRange3d	|| corners	|| low, hi points of range box ||
+||		|| fraction	|| 0 is start of line segment.  1 is end of line segment. etc. ||
+|| int		|| axisIndex	|| 0,1,2 are x,y,z.  Other interpreted cyclically. ||
+
+!! Construction and Initialization
+
+|| Description	|| static method returns full structure	|| Instance method to initialize on existing structure ||
+|| by coordinates	|| point = DPoint3d::From (x, y, z)		|| point.Init (x,y,z) ||
+||		||					|| point.Init (x,y) ||
+|| copy components from vector || 	|| point.Init (vector)	||
+||		|| point = DPoint3d::FromXYZ (x,y,z) ||
+|| zero point	|| 	|| point.Zero () ||
+|| extract from DPoint4d ||					|| point.XyzOf (point4dA)	||
+|| interpolate between endpoints || 	point = DPoint3d::FromInterpolate (pointA,fraction, pointB)	|| point.Interpolate (pointA, fraction, pointB) ||
+|| interpolate in bilinear patch    || outPoint = DPoint3d::FromInterpolateBilinear (point00, point10, point01, point11, u, v) ||   ||
+|| point = origin - vector ||	|| point.Subtract (origin, vector) ||
+|| compute x,y,z as fractional positions (along respective axis) between corners of range 	||	|| point.NpcCoordinatesOf (pointA, corners)	||
+|| initialize with special disconnect values	||	|| point.InitDisconnect () ||
+|| divide each of x,y,z in pointA by a.  Return true if a nonzero.	||	|| point.SafeDivide (poiintA, a)	||
+|| Product of transform and ponit   || outPoint = DPoint3d::FromProduct (transform, x, y, z) || ||
+||                                  || outPoint = DPoint3d::FromProduct (transform, pointA) || ||
+||                                  || outPoint = DPoint3d::FromProduct (rotMatrix, x, y, z) || ||
+|| point = origin + vector	||	|| point.SumOf (origin, vector)	||
+|| point = origin + vectorA * a	|| outPoint = DPoint3d::FromSumOf (origin, vectorA, a)  || outPoint.SumOf (origin, vectorA, a) ||
+|| point = origin + vectorA * a + vectorB * b	|| outPoint = DPoint3d::FromSumOf (origin, vectorA, a, vectorB, b)  || outPoint.SumOf (origin, vectorA, a, vectorB, b) ||
+|| point = origin + vectorA * a + vectorB * b, vectorC, c	|| outPoint = DPoint3d::FromSumOf (origin, vectorA, a, vectorB, b, vectorC, c) || outPoint.SumOf (origin, vectorA, a, vectorB, b, vectorC, c) ||
+|| point = pointA * a + pointB * b || outPoint = DPoint3d::FromSumOf (pointA, a, pointB, b, pointC, c) || outPoint.SumOf (pointA, a, pointB, b, pointC, c) ||
+|| point = pointA * a + pointB * b + pointC * c || outPoint = DPoint3d::FromSumOf (pointA, a, pointB, b) || outPoint.SumOf (pointA, a, pointB, b) ||
+
+!! Inplace modification
+
+|| point -=  vector	|| point.Subtract (vector)	||
+|| point += vector	|| point.Add (vector)	||
+
+!! Simple queries
+
+|| pointA.Distance (pointB)	|| full xyz distance ||
+|| pointA.DistanceSquared (pointB) 	||		||
+|| pointA.DistanceXY (pointB) || use only xy parts ||
+|| pointA.DistanceSquaredXY (pointB) ||	||
+|| if (pointA.DistanceXY (pointB, matrix, &distance))... || Multiply both points by the (4d) matrix.  If weights (after multiplication) are nonzero, compute xy distance and return true. ||
+|| pointA.GetComponents (x, y, z)	|| return x,y,z ||
+|| a = pointA.GetComponent (axisIndex) 	|| get a single component by index ||
+|| a = point.MaxAbs () || largest absolute coordinate among xyz ||
+|| range1d = point.ComponentRange ()	|| return min/max among components ||
+|| if (pointA.IsEqual (pointB)	|| exact (bitwise) equality tests ||
+|| if (pointA.IsEqual (pointB, tolerance) || test if individual components are within tolerance ||
+|| if (pointA.AlmostEqual (pointB) || test if equal within system tolerance ||
+|| if (point.IsDisconnect ())...|| true if the point has special values that make it a disconnect point in a linestring ||
+|| radians = pointA.angleXY ()	|| signed angle (-pi < radians <= pi) from positive x axis to the xy part of pointA.||
+
+
+!! Dot and Cross products
+
+|| a = origin.CrossProductToPointsXY (pointA , pointB )	|| Form vectors from pointA to pointB and pointC.  Return (scalar) cross product of xy parts of the vectors ||
+|| a = origin.DotProductToPointsXY (pointA , pointB )	|| Form vectors from pointA to pointB and pointC.  Return (scalar) dot product of xy parts of the vectors ||
+|| a = origin.DotProductToPoints (pointA , pointB )	|| Form vectors from pointA to pointB and pointC.  Return (scalar) dot product of the vectors ||
+|| a = origin.TripeProductToPoints (pointA , pointB )	|| Form vectors from pointA to pointB, pointC, and pointD.  Return (scalar) tripe product of the vectors. ||
+
+!! Angular tests
+
+|| if (point.IsPointInSmallerSector (origin, pointA, pointB))...	|| Form vectors from origin to pointA, pointB. Test if point is within the smaller of the two sweeps from pointA towards pointB.  (i.e. the cross product of the two vectors is the up vector.) ||
+|| if (point.IsPointInCCWSector (origin, pointA, pointB, upVector) || Form vectors from origin to pointA, pointB.  Use upVector to determine a positive side of their plane.  Test if point is within the sweep from pointA towards pointB. ||
+
+!! Miscellaneous
+
+|| pointA.Swap (pointB)	|| swap contents of pointA, pointB	||
+|| static void DPoint3d::MultiplyArrayByScales (destArray, sourceArray, scales, n) ||
+|| static void DPoint3d::DivideArrayByScales (destArray, sourceArray, scales, n) ||
+
+
+!! "point as vector" methods
+
+These methods treat "points" as vectors from the origin, as commonly appears in older code.  See corresponding methods DVector2d for proper description in terms of the vectors.  Engineers think this way.  Mathematicians do not.  They can still be friends.
+
+All "SumOf" methods accept "points" in the places documented as "vector".
+
+|| outPoint.CrossProduct (pointA, pointB) ||
+|| a = pointA.DotProduct (pointB)	||
+|| a = pointA.TripleProduct(pointB, pointC)	||
+|| outPoint.CrossProductToPoints (origin, pointA) ||
+|| a = outPoint.CrossProductXY (pointB)	||
+|| a = outPoint.NormlizedCrossProduct (pointB, pointC) || return scalar is magnitude of plain cross product before normalization ||
+|| a = outPoint.SizedCrossProduct (pointB, pointC, productLength() || return scalar is magnitude of plain cross product before rescale to productLength ||
+|| a = outPoint.GeometricMeanCrossProduct (poitnB, pointC) || returned scalar is magnitude of plain cross product before rescale ||
+|| a = outPoint.NormalizedDifference (target, origin)||
+|| a = outPoint.Normalize (pointA)  ||
+
+|| if (outPoint.UnitPerpendicularXY (point) ||
+|| a = pointA.DotProduct (pointB)	||
+|| a = pointA.DotProductXY (pointB)	||
+|| a = pointA.DotProduct (x,y,z)	||
+|| radians = pointA.AngleTo (pointB) ||
+|| radians = pointA.SmallerUnorientedAngleTo (pointB) ||
+|| if (point.IsVectorInSmallerSector (pointA, pointB) ||
+|| if (point.IsVectorInCCWSector (pointA, pointB, upVector) ||
+|| if (point.IsParallelTo (pointA)) .... ||
+|| if (point.IsPerpendicularTo (pointB)) .... ||
+|| radians = pointA.AngleToXY (pointB)	||
+|| radians = pointA.SmallerUnorientedAngleTo (pointB) ||
+|| outPoint.RotateXY (pointA, radians)	|| return point as pointA rotated by given angle around Z axis ||
+|| inoutPoint.RotateXY (radians) || rotate around Z axis, replace instance ||
+|| radians = pointA.SignedAngleTo (pointB, upVector ) ||
+|| radians = pointA.PlanarAngleTo (pointB, normalVector || angle when both points are projected perpendicular to normalVector) ||
+|| outPoint.WeightedDifferenceOf (point4dA, point4dB)	|| xyz part of homegeneous formula (point4dB.w * point4dA - point4dA.w * point4dB), which always has 0 for weight. ||
+|| outPoint.WeightedDifferenceCrossProduct (origin4d, point4dA, point4dB)	|| cross product of weighted differences from origin4d to point4dA and origin4d to point4dB. ||
+|| point.Magnitude ()	||
+|| point.MagnitudeSquared () ||
+|| point.MagnitudeXY ()	||
+|| point.MagnitudeSquaredXY () ||
+
+|| inoutPoint.Scale ( a ) || outPoint.Scale (pointA, a)   ||  outPoint = DPoint3d::FromScale (pointA, a) ||
+|| inoutPoint.Negate ( a ) || outPoint.Negate (pointA)    ||
+|| a = inoutPoint.Normalize ()  || a = outPoint.Normalize (pointA) ||
+|| inoutPoint.ScaleToLength ( a ) || outPoint.ScaleToLength (pointA, a) ||
+|| inoutPoint.Subtract (pointB) || outPoint.DifferenceOf (pointA, pointB ||
+|| inoutPoint.Add (pointB)  || outPoint.SumOf (pointA, pointB) ||

@@ -1,0 +1,479 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/memory/embeddeddoublearray.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+
+/**
+@DocText
+@Group "Double Array"
+<P>See the summary for ~s"Embedded Arrays".
+*/
+
+/*---------------------------------------------------------------------------------**//**
+* @description Allocate a new EmbeddedDoubleArray header from the system heap.
+*
+* @return pointer to the header.
+* @DefaultRequiredLibrary mtg.lib
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDoubleArray   *jmdlEmbeddedDoubleArray_new
+(
+void
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Initialize an EmbeddedDoubleArray header.  Prior contents are
+*       destroyed.   Intended for use immediately following uninitialized creation
+*       operation such as (a) local variable declaration or (b) allocation from system
+*       heap.
+* @param pHeader    OUT     array to initialize.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_init
+(
+EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return both the header and its associated memory to the system heap.
+*       This should only be used for a header originally allocated via
+*       ~mjmdlEmbeddedDoubleArray_new.  Headers allocated as locals should be
+*       decommissioned via ~mjmdlEmbeddedDoubleArray_releaseMem.
+* @param pHeader    IN OUT  array to be freed.
+* @return Always returns NULL.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDoubleArray   *jmdlEmbeddedDoubleArray_free
+(
+EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Reduce the count (number of doubles) in the array to zero.
+*       Existing memory is retained so the array can be refilled to its prior
+*       size without requiring reallocation.
+* @param pHeader    IN OUT  array to modify
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_empty
+(
+EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Release all memory attached to the header, and reinitialize the header
+*       as an empty array with no buffer.
+* @param pHeader    IN OUT  array to empty
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_releaseMem
+(
+EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Grab (borrow) an array from the cache.  Caller is responsible
+*       for using ~mjmdlEmbeddedDoubleArray_drop to return the array to the cache when
+*       finished.   Controlled "grab and drop" of cache arrays is faster than using
+*       either local variables (~mjmdlEmbeddedDoubleArray_init and
+*       ~mjmdlEmbeddedDoubleArray_releaseMem) or heap allocation
+*       (~mjmdlEmbeddedDoubleArray_new and ~mjmdlEmbeddedDoubleArray_free)
+*       because the preallocated variable size parts of cached arrays are immediately
+*       available without revisiting the system cache.
+* @return An array header obtained from the cache.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDoubleArray   *jmdlEmbeddedDoubleArray_grab
+(
+void
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Drop (return) an array to the cache.  Use this to dispose of arrays
+*       borrowed with ~mjmdlEmbeddedDoubleArray_grab.
+* @param pHeader    IN      pointer to array to return to cache.
+* @return always returns NULL.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDoubleArray   *jmdlEmbeddedDoubleArray_drop
+(
+EmbeddedDoubleArray     *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Swap the contents (counts and associated memory) of two headers.
+*
+* @param pHeader0   IN OUT  first array header
+* @param pHeader1   IN OUT  second array header
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_swapContents
+(
+EmbeddedDoubleArray *pHeader0,
+EmbeddedDoubleArray *pHeader1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Ensure the buffer has capacity for n doubles without
+*       reallocation. The count of doubles in the buffer remains unchanged.
+* @param pHeader    IN OUT  array to modify.
+* @param n          IN      number of doubles in buffer.
+* @return false if unable to allocate the buffer.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_ensureCapacity
+(
+EmbeddedDoubleArray *pHeader,
+int                 n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Reallocate the buffer to accommodate exactly n doubles
+*       NOTE: this will truncate the contents of this instance if its count is
+*       greater than n.
+* @param pHeader    IN OUT  array to modify.
+* @param n          IN      number of values to accommodate, no more, no less.
+* @return false if unable to reallocate the buffer.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_setExactBufferSize
+(
+EmbeddedDoubleArray *pHeader,
+int                 n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return the number of doubles in the array.
+*
+* @param pHeader    IN      array to query.
+* @return array count
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int   jmdlEmbeddedDoubleArray_getCount
+(
+const   EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Append a double to the end of the array.  The array count is increased
+*       by one.
+* @param pHeader    IN OUT  array to modify.
+* @param value      IN      double to append to the array.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_addDouble
+(
+        EmbeddedDoubleArray *pHeader,
+const   double              value
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Insert at a specified position, shifting others to higher
+*       positions as needed.
+* @param pHeader    IN OUT  array to modify.
+* @param value      IN      data to insert.
+* @param index      IN      index at which the value is to appear in the array.
+*                           The special index -1 (negative one) indicates to
+*                           insert at the end of the array.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_insertDouble
+(
+        EmbeddedDoubleArray *pHeader,
+const   double              value,
+        int                 index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Append an array of double to the end of the array.
+*
+* @param pHeader    IN OUT  header of array receiveing values
+* @param pIn        IN      array of data to add
+* @param n          IN      number to add.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_addDoubleArray
+(
+        EmbeddedDoubleArray *pHeader,
+const   double              *pIn,
+        int                 n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Insert an array of doubles in the array, with index given for
+*       first new double.  All previous contents from that index up are moved to
+*       make room for the new data.
+* @param pHeader    IN OUT  header of array receiveing data
+* @param pIn        IN      array of values to add
+* @param index      IN      index location for adding the array
+* @param n          IN      number of values to add
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_insertDoubleArray
+(
+        EmbeddedDoubleArray *pHeader,
+const   double              *pIn,
+        int                 index,
+        int                 n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Copy up to nreq doubles out of the array into a buffer.
+*
+* @param pHeader    IN      header of array to access.
+* @param pBuffer    OUT     buffer of doubles.
+* @param nGot       OUT     number of doubles placed in buffer.
+* @param i0         IN      index of first double to access.
+* @param nreq       IN      number of doubles requested.
+* @return true if at least one double was copied.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_getDoubleArray
+(
+const   EmbeddedDoubleArray *pHeader,
+        double              *pBuffer,
+        int                 *nGot,
+        int                 i0,
+        int                 nreq
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Get a double from a specified index in the array.
+*
+* @param pHeader    IN      header of array to access.
+* @param pValue     OUT     double accessed from the array.
+* @param index      IN      index of double to access. Any negative index indicates
+*                           highest numbered element in the array.
+* @return false if the index is too large, i.e., no double was accessed.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_getDouble
+(
+const   EmbeddedDoubleArray *pHeader,
+        double              *pValue,
+        int                 index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Drop a contiguous block of doubles.  Copy higher indices back down.
+*
+* @param pHeader    IN OUT  array to modify.
+* @param index      IN      position of first dropped double.
+* @param nDrop      IN      number of double to drop.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_dropRange
+(
+EmbeddedDoubleArray   *pHeader,
+int                     index,
+int                     nDrop
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Store a double in the array at the specified index.
+*
+* @param pHeader    IN OUT  array to modify.
+* @param value      IN      double to store.
+* @param index      IN      position where the double is stored.  A negative
+*                           indicates replacement of the current final double.  If the
+*                           index is beyond the final current double, zeros are
+*                           inserted to fill to the new index.
+* @return false if the index required array expansion and the reallocation failed.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_setDouble
+(
+EmbeddedDoubleArray *pHeader,
+double              value,
+int                 index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Add n uninitialized doubles to the array.  The array count is
+*       increased by n.
+* @param pHeader    IN OUT  array where new block is allocated.
+* @param n          IN      number of entries requested.
+* @return pointer to the block of memory in the buffer.  This pointer allows fast
+*       access to the new buffer area, but becomes invalid if the buffer is reallocated.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double    *jmdlEmbeddedDoubleArray_getBlock
+(
+EmbeddedDoubleArray *pHeader,
+int                 n
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Copy multiple doubles out of the array, using an array of indices
+*       to select the doubles.  Any negative index terminates copying.
+* @param pHeader    IN      source array
+* @param pOut       OUT     packed output data
+* @param maxOut     IN      output array limit
+* @param pIndex     IN      index array
+* @param nIndex     IN      number of indices
+* @return number of succesful dereferences.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int   jmdlEmbeddedDoubleArray_getIndexedDoubleArray
+(
+const   EmbeddedDoubleArray *pHeader,
+        double              *pOut,
+        int                 maxOut,
+        int                 *pIndex,
+        int                 nIndex
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Get a pointer to the contiguous buffer at specified index.  This pointer
+*       may become invalid if array contents are altered.
+* @param pHeader    IN      array to access.
+* @param index      IN      index of array entry.  Any negative index indicates the final
+*                           double in the array.
+* @return pointer to contiguous buffer (simple C array).
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double*   jmdlEmbeddedDoubleArray_getPtr
+(
+EmbeddedDoubleArray *pHeader,
+int                 index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Get a const-qualified pointer to the contiguous buffer at specified index.
+*       This pointer may become invalid if array contents are altered.
+* @param pHeader    IN      array to access.
+* @param index      IN      index of array entry.  Any negative index indicates the final
+*                           double in the array.
+* @return pointer to contiguous buffer (simple C array).
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP const double* jmdlEmbeddedDoubleArray_getConstPtr
+(
+const   EmbeddedDoubleArray *pHeader,
+        int                 index
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Swap values at designated indices in the array.
+*
+* @param pHeader    IN OUT  array to modify.
+* @param index1     IN      index of first swap value.  Negative value indicates final
+*                           current value.
+* @param index2     IN      index of second swap value.  Negative value indicates final
+*                           current value.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_swapValues
+(
+EmbeddedDoubleArray *pHeader,
+int                 index1,
+int                 index2
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Copy entire contents of source array to dest array.  Reusues existing
+*       memory in the destination if possible.
+* @param pDestHeader    OUT     destination array.
+* @param pSourceHeader  IN      source array.
+* @return true if operation is successful
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDoubleArray_copy
+(
+        EmbeddedDoubleArray *pDestHeader,
+const   EmbeddedDoubleArray *pSourceHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Sort the doubles within the array.
+*
+* @param pHeader    IN OUT  array to sort
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_sort
+(
+EmbeddedDoubleArray *pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Trim the array to the smaller of given count or current size.
+* @param pHeader    IN OUT  array to trim
+* @param count      IN      number of doubles in the output array
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlEmbeddedDoubleArray_trim
+(
+EmbeddedDoubleArray *pHeader,
+int count
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Reverse the contents of the array in place.
+* @param pHeader    IN OUT  array to reverse
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  02/05
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_reverse
+(
+EmbeddedDoubleArray*  pHeader
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Empty the array and fill it with a constant value.
+*
+* @param pHeader    IN OUT  array to fill.
+* @param value      IN      double to store.
+* @param num        IN      number of copies of stored value.
+* @group        "Double Array"
+* @bsimethod                                                    BentleySystems  03/07
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDoubleArray_setConstant
+(
+EmbeddedDoubleArray    *pHeader,
+double              value,
+int                 num
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE

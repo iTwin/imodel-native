@@ -1,0 +1,23 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: geom/doc/build/bsibasegeomdoc/bsibasegeomdoc_list.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+#   Define list of files to document
+#----------------------------------------------------------------------------------------
+
+%if !defined (MDLDOC_StampDir)
+    %error MDLDOC_StampDir must be defined.
+%endif
+
+$(MDLDOC_StampDir)GeomApi.hp1 : $(MDLDOC_GensrcDir)GeomApi.h
+
+$(MDLDOC_StampDir)basetype.hp1 : $(utilSharedInc)basetype.h
+
+$(MDLDOC_StampDir)jgeomtypes.hp1 : $(baseGeom_include)Geom/jgeomtypes.h
+
+$(MDLDOC_StampDir)summary.hp1 : $(MDLDOC_BaseDir)include/$(MDLDOC_ProjectName)_summary.h
+

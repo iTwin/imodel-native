@@ -1,0 +1,10 @@
+message SingleLineText
+{
+required IPlacement placement = 1;
+required string textString = 2;
+required string fontName = 3;
+required double characterXSize = 4;
+required double characterYSize = 5;
+required int32 justification = 6;
+}
+

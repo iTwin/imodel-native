@@ -1,0 +1,59 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/bsp/bsprfit.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* curveFunc : User supplied function to calculate curve position & tangent at a parameter
+* @bsimethod                                                    BentleySystems  02/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int        bsprfit_approximateCurve
+(
+MSBsplineCurve*                 bspline,                /* OUT     Bspline curve */
+BSplineCallback_AskCurvePoints  curveFunc,              /* IN      curv function */
+CallbackArgP                    userDataP,              /* IN      passed through to curveFunc */
+double                          tolerance,              /* IN      accuracy of approximation */
+int                             density,                /* IN      density of approx pts for error calculation */
+int                             continuity              /* IN      degree of continuity btw spline pieces */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* surfaceFunc : User supplied function to calculate curve position & tangent at a parameter
+* @bsimethod                                                    BentleySystems  06/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int        bsprfit_approximateSurface
+(
+MSBsplineSurface*                   bspline,            /* OUT     Bspline surface */
+BSplineCallback_AskSurfacePoints    surfaceFunc,        /* IN      surface function */
+CallbackArgP                        userDataP,          /* IN      passed through to surf func */
+double                              tolerance,          /* IN      accuracy of approximation */
+int                                 density,            /* IN      density of approx pts for error calculation */
+int                                 continuity,         /* IN      degree of continuity btw spline pieces */
+int                                 isOffset            /* IN      True for offset surface */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bsprfit_catmullRomSurface
+(
+MSBsplineSurface    *surface,       /* <=  resulting surface */
+DPoint3dCP           inPts,         /*  => data points */
+int                 inNumU,         /*  => number of points in each row */
+int                 inNumV,         /*  => number of rows */
+DPoint2dCP          inValues       /*  => uv values or NULL */
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,19 @@
+[OPTIONS]
+Auto Index=Yes
+Binary Index=Yes
+Compatibility=1.1 or later
+Compiled file=..\..\..\delivery\vu\doc\bsivudoc.chm
+Contents file=bsivudoc.hhc
+Default Window=TriPane
+Default topic=includehtml\bsivudoc_intro.htm
+Display compile progress=No
+Enhanced decompilation=Yes
+Full-text search=Yes
+Index file=bsivudoc.hhk
+Language=0x409
+Title=The Bentley Vertex Use Library
+
+[WINDOWS]
+TriPane=,"bsivudoc.hhc","bsivudoc.hhk","includehtml\bsivudoc_intro.htm","includehtml\bsivudoc_intro.htm",,,,,0x63520,,0x380e,,,,,,,,0
+
+

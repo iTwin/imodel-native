@@ -1,0 +1,14 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest5.exe
+<OK name="base case -- expect singular matrix"><int>0</int></OK>
+<OK name="scaled case -- expect singular matrix"><int>0</int></OK>
+<OK name="scaled case -- expect singular matrix"><int>0</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+<OK name="scaled case -- expect invertible matrix"><int>1</int></OK>
+Exit with 0 errors, 11 OK

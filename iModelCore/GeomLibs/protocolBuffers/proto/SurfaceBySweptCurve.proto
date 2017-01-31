@@ -1,0 +1,6 @@
+message SurfaceBySweptCurve
+{
+required ICurve BaseGeometry = 1;
+required ICurve RailCurve = 2;
+}
+

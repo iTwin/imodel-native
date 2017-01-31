@@ -1,0 +1,2394 @@
+#include "testHarness.h"
+#include <Bentley/BeNumerical.h>
+
+static int s_noisy = 0;
+
+bool SolveAlignedEllipseCenter (double x0, double y0, double x1, double y1, double a, double b, bool ccw, bool largeArc, double &cx, double &cy)
+    {
+    if (a <= 0.0 || b <= 0.0)
+        return false;
+    double dx = (x1 - x0) / a;
+    double dy = (y1 - y0) / b;
+    // Now we are working in stretched coordinates where the ellipse is a unit circle.
+    double d = sqrt (dx * dx + dy * dy);
+    double ux = dx / d; // unit vector from X0 to X1
+    double uy = dy / d;
+    double vx = - uy;   // perpendicular to unit bisector
+    double vy = ux;
+    
+    double e1 = 0.5 * d;
+    if (e1 > 1.0)
+        return false;
+    // vector to bisector midpoint
+    double bx = dx * 0.5;
+    double by = dy * 0.5;
+    double e2 = sqrt (1.0 - e1 * e1);
+    double direction = 1.0;
+    if (ccw == largeArc)
+        direction = -1.0;
+    double cxLocal = bx + direction * e2 * vx;
+    double cyLocal = by + direction * e2 * vy;
+    // map back to prescale
+    cx = x0 + cxLocal * a;
+    cy = y0 + cyLocal * b;
+    return true;
+    }
+
+
+//! @param [in] x0 start point x coordinate (global)
+//! @param [in] y0 start point y coordinate (global)
+//! @param [in] x1 end point x coordinate
+//! @param [in] y1 end point y coordinate
+//! @param ]in] theta angle from global x axis to ellipse a axis
+//! @param [in] a ellipse length on local horizontal axis
+//! @param [in] b ellipse radius on local vertical axis
+//! @param [in] ccw true for elliptical arc traveling counter clockwise from start to end
+//! @param [in] largeArc true for larger part of ellipse
+//! @param [out] cx ellipse center x (global)
+//! @param [out] cy ellipse center y (global)
+bool SolveRotatedEllipseCenter (double x0, double y0, double x1, double y1, double theta, double a, double b, bool ccw, bool largeArc, double &cx, double &cy)
+    {
+    // vector from point 0 to point 1 in global coordinates ...
+    double dx = x1 - x0;
+    double dy = y1 - y0;
+    double c = cos (theta);
+    double s = sin (theta);
+    // change to local coordinates ...
+    double ex =   dx * c + dy * s;
+    double ey = - dx * s + dy * c;
+    double cxLocal, cyLocal;
+    if (!SolveAlignedEllipseCenter (0,0, ex, ey, a, b, ccw, largeArc, cxLocal, cyLocal))
+        return false;
+    cx = x0 + cxLocal * c - cyLocal * s;
+    cy = y0 + cxLocal * s + cyLocal * c;
+    return true;
+    }
+
+void CheckEllipsePoint (double x, double y, double cx, double cy, double a, double b)
+    {
+    double u = (x - cx) / a;
+    double v = (y - cy) / b;
+    double f = u * u + v * v;
+    Check::Near (f, 1.0, "Point on Ellipse");
+    }
+
+
+
+bool Check_SolveAlignedEllipseCenter (double x0, double y0, double x1, double y1, double a, double b,
+            bool ccw, bool largeArc, double &cx, double &cy)
+    {
+    if (SolveAlignedEllipseCenter (x0, y0, x1, y1, a, b, ccw, largeArc, cx, cy))
+        {
+        CheckEllipsePoint (x0, y0, cx, cy, a, b);
+        CheckEllipsePoint (x1, y1, cx, cy, a, b);
+        return true;
+        }
+    return false;
+    }
+
+void RotateAroundOrigin (double x, double y, double theta, double &xOut, double &yOut)
+    {
+    double c = cos (theta);
+    double s = sin (theta);
+    xOut = x * c - y * s;
+    yOut = x * s + y * c;
+    }
+
+bool Check_SolveRotatedEllipseCenter (double x0, double y0, double x1, double y1, double a, double b)
+    {
+    double cx0, cy0;
+    if (!SolveAlignedEllipseCenter (x0, y0, x1, y1, a, b, true, true, cx0, cy0))
+        return false;
+    for (double theta = -0.8; theta < 1.0; theta += 0.324)
+        {
+        double u0, v0, u1, v1, cx1, cy1, cx2,cy2;
+        RotateAroundOrigin (x0, y0, theta, u0, v0);
+        RotateAroundOrigin (x1, y1, theta, u1, v1);
+        if (!SolveRotatedEllipseCenter (u0, v0, u1,v1, theta, a, b, true, true, cx1, cy1))
+            return false;
+        RotateAroundOrigin (cx1, cy1, -theta, cx2, cy2);
+        Check::Near (cx2, cx0, "rotated cx");
+        Check::Near (cy2, cy0, "rotated cy");
+        }
+    return true;
+    }
+TEST(Ellipse, Microsoft)
+{
+double cx0, cy0, cx1, cy1;
+Check_SolveAlignedEllipseCenter (1,2,  4,5, 3, 4, true,  true, cx0, cy0);
+Check_SolveAlignedEllipseCenter (1,2,  4,5, 3, 4, false, true, cx1, cy1);
+
+Check_SolveRotatedEllipseCenter (1,2,  4,5, 3, 4);
+}
+
+TEST (DEllipse3d, Init)
+    {
+    DEllipse3d ellipse0, ellipse1, ellipse2, ellipse3, ellipse4, ellipse5, ellipse6, ellipse7, ellipse8;
+    DPoint3d center0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DPoint3d center1 = DPoint3d::FromXYZ (0.5, 0.0, 0.0);
+    DPoint3d vector0 = DPoint3d::FromXYZ (1.0, 1.0, 1.0);
+    DPoint3d vector90 = DPoint3d::FromXYZ (2.0, 2.0, 2.0);
+    DPoint3d vector01 = DPoint3d::FromXYZ (cos (0.4), sin (0.4), 0.0);
+    DPoint3d vector901 = DPoint3d::FromXYZ (-sin (0.4), cos (0.4), 0.0);
+    DPoint3d start0 = DPoint3d::FromXYZ (1.0, 0.0, 0.0);
+    DPoint3d middle0 = DPoint3d::FromXYZ (0.0, 1.0, 0.0);
+    DPoint3d middle1 = DPoint3d::FromXYZ (0.0, 2.0, 0.0);
+    DPoint3d end0 = DPoint3d::FromXYZ (-1.0, 0.0, 0.0);
+    DVec3d vector2 = DVec3d::From (0.0, 1.0, 0.0);
+    DVec3d vector3 = DVec3d::From (1.0, 1.0, 1.0);
+    DVec3d vector4 = DVec3d::From (2.0, 2.0, 2.0);
+    DPoint3d pointArray[3];
+    pointArray[0] = center0;
+    pointArray[1] = vector0;
+    pointArray[2] = vector90;
+    ellipse0.Init (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 0.7, 0.5);
+    ellipse1 = DEllipse3d::FromXYMajorMinor (0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.7, 0.5);
+    ellipse2.InitFromPoints (center0, vector0, vector90, 0.7, 0.5); 
+    Check::True (ellipse3.InitFromPointsOnArc (start0, middle0, end0));
+    Check::True (!(ellipse3.InitFromPointsOnArc (start0, start0, start0)));
+    Check::True (ellipse4.InitArcFromPointTangentPoint (center0, vector2, start0));
+    Check::True (!(ellipse5.InitFromArcCenterStartEnd (center0, start0, end0)));
+    Check::True (ellipse6.InitFromArcCenterStartEnd (center0, start0, middle0), "c0m");
+    Check::True (ellipse7.InitFromArcCenterStartEnd (center0, start0, middle1));
+    DEllipse3d ellipse7A = DEllipse3d::FromArcCenterStartEnd (center0, start0, middle1);
+    Check::Near (ellipse7, ellipse7A, "Init/From CenterStartEnd");
+    ellipse8.InitFromVectors (center0, vector3, vector4, 0.7, 0.5);
+    Check::Near (center0, ellipse0.center);
+    Check::Near (vector0, ellipse0.vector0);
+    Check::Near (vector90, ellipse0.vector90);
+    Check::Near (0.7, ellipse0.start);
+    Check::Near (0.5, ellipse0.sweep);
+    Check::Near (center0, ellipse1.center);
+    Check::Near (vector01, ellipse1.vector0);
+    Check::Near (vector901, ellipse1.vector90);
+    Check::Near (0.7, ellipse1.start);
+    Check::Near (0.5, ellipse1.sweep);
+    Check::Near (center0, ellipse2.center);
+    Check::Near (vector0, ellipse2.vector0);
+    Check::Near (vector90, ellipse2.vector90);
+    Check::Near (0.7, ellipse2.start);
+    Check::Near (0.5, ellipse2.sweep);
+    Check::Near (center0, ellipse3.center);
+    Check::Near (0.0, ellipse3.start);
+    Check::Near (PI, ellipse3.sweep);
+    Check::Near (center1, ellipse4.center);
+    Check::Near (0.0, ellipse4.start);
+    Check::Near (PI, ellipse4.sweep);
+    Check::Near (0.0, ellipse6.start);
+    Check::Near (PI/2, ellipse6.sweep);
+    Check::Near (middle0, ellipse7.vector90);
+    Check::Near (0.0, ellipse7.start);
+    Check::Near (PI/2, ellipse7.sweep);
+    Check::Near (center0, ellipse8.center);
+    Check::Near (vector3, ellipse8.vector0);
+    Check::Near (vector4, ellipse8.vector90);
+    Check::Near (0.7, ellipse8.start);
+    Check::Near (0.5, ellipse8.sweep);
+#ifdef DEllipse3d_has_initfromPointArray
+    DEllipse3d ellipse9;
+    ellipse9.InitFromPointArray (pointArray, 0.7, 0.5);
+    Check::Near (center0, ellipse9.center);
+    Check::Near (vector0, ellipse9.vector0);
+    Check::Near (vector90, ellipse9.vector90);
+    Check::Near (0.7, ellipse9.start);
+    Check::Near (0.5, ellipse9.sweep);
+#endif
+    }
+
+TEST (DEllipse3d, SetStartEnd)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 2*PI);
+    DPoint3d start0 = DPoint3d::FromXYZ (1.0, 0.0, 0.0);
+    DPoint3d end0 = DPoint3d::FromXYZ (0.0, 1.0, 0.0);
+    bool ccw = true;
+    Check::True (ellipse0.SetStartEnd (start0, end0, ccw));
+    Check::Near (0.0, ellipse0.start);
+    Check::Near (PI/2, ellipse0.sweep);
+    }
+
+TEST (DEllipse3d, InitFromScaledRotMatrix)
+    {
+    DEllipse3d ellipse0;
+    DEllipse3d ellipse1;
+    DPoint3d center0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DVec3d vectorU = DVec3d::From (1.0, 0.0, 0.0);
+    DVec3d vectorV = DVec3d::From (0.0, 1.0, 0.0);
+    DVec3d vector1 = DVec3d::From (2.0, 0.0, 0.0);
+    DVec3d vector2 = DVec3d::From (0.0, 2.0, 0.0);
+    RotMatrix matrix0 = RotMatrix::FromRowValues (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+    ellipse0.InitFromScaledRotMatrix (center0, matrix0, 1.0, 1.0, 0.0, PI/2);
+    ellipse1.InitFromScaledVectors (center0, vectorU, vectorV, 2.0, 2.0, 0.0, PI/2);
+    Check::Near (center0, ellipse0.center);
+    Check::Near (vectorU, ellipse0.vector0);
+    Check::Near (vectorV, ellipse0.vector90);
+    Check::Near (0.0, ellipse0.start);
+    Check::Near (PI/2, ellipse0.sweep);
+    Check::Near (center0, ellipse1.center);
+    Check::Near (vector1, ellipse1.vector0);
+    Check::Near (vector2, ellipse1.vector90);
+    Check::Near (0.0, ellipse1.start);
+    Check::Near (PI/2, ellipse1.sweep);
+    }
+
+TEST (DEllipse3d, GetScaledRotMatrix)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
+    DPoint3d center0;
+    DPoint3d center1 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    RotMatrix matrix0;
+    DVec3d vector1 = DVec3d::From (1.0, 0.0, 0.0);
+    DVec3d vector2 = DVec3d::From (0.0, 1.0, 0.0);
+    DVec3d vector3 = DVec3d::From (0.0, 0.0, 1.0);
+    DVec3d vector4;
+    DVec3d vector5;
+    DVec3d vector6;
+    double r0;
+    double r1;
+    double theta0;
+    double sweep0;
+    ellipse0.GetScaledRotMatrix (center0, matrix0, r0, r1, theta0, sweep0);
+    vector4.InitFromColumn (matrix0, 0);
+    vector5.InitFromColumn (matrix0, 1);
+    vector6.InitFromColumn (matrix0, 2);
+    Check::Near (center1, center0);
+    Check::Near (vector1, vector4);
+    Check::Near (vector2, vector5);
+    Check::Near (vector3, vector6);
+    Check::Near (1.0, r0);
+    Check::Near (1.0, r1);
+    Check::Near (0.0, theta0);
+    Check::Near (PI/2, sweep0);
+    }
+
+TEST (DEllipse3d, InitFromCenterNormalRadius)
+    {
+    DEllipse3d ellipse0;
+    DPoint3d center0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DVec3d normal0 = DVec3d::From (1.0, 0.0, 0.0);
+    DPoint3d vector1 = DPoint3d::FromXYZ (0.0, 1.0, 0.0);
+    DPoint3d vector2 = DPoint3d::FromXYZ (0.0, 0.0, 1.0);
+    double radius0 = 1;
+    ellipse0.InitFromCenterNormalRadius (center0, normal0, radius0);
+    Check::Near (center0, ellipse0.center);
+    Check::Near (vector1, ellipse0.vector0);
+    Check::Near (vector2, ellipse0.vector90);
+    Check::Near (0.0, ellipse0.start);
+    Check::Near (2*PI, ellipse0.sweep);
+    }
+
+TEST (DEllipse3d, IsFullEllipse)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
+    Check::True (!(ellipse0.IsFullEllipse ()));
+    Check::True (ellipse1.IsFullEllipse ());
+    ellipse0.MakeFullSweep ();
+    ellipse1.ComplementSweep ();
+    ellipse2.ComplementSweep ();
+    Check::Near (2*PI, ellipse0.sweep);
+    Check::Near (2*PI, ellipse1.sweep);
+    Check::Near (-(3*PI)/2, ellipse2.sweep);
+    }
+
+TEST (DEllipse3d, Evaluate)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DPoint3d point0;
+    DPoint3d point1;
+    DPoint3d point2 = DPoint3d::FromXYZ (0.0, 1.0, 0.0);
+    DPoint4d point3;
+    DPoint4d point4 = DPoint4d::From (0.0, 1.0, 0.0, 1.0);
+    DPoint3d point5;
+    DPoint3d point6;
+    DPoint3d point7 = DPoint3d::FromXYZ (1.0, 0.0, 0.0);
+    DPoint3d point8;
+    DVec3d dX;
+    DVec3d ddX;
+    DVec3d point9 = DVec3d::From (-1.0, 0.0, 0.0);
+    DVec3d point10 = DVec3d::From (0.0, -1.0, 0.0);
+    double theta = PI/2;
+    double cosTheta = cos (PI/2);
+    double sinTheta = sin (PI/2);
+    ellipse0.Evaluate (point0, theta);
+    ellipse0.Evaluate (point1, cosTheta, sinTheta);
+    ellipse0.Evaluate (point3, theta);
+    ellipse0.EvaluateEndPoints (point5, point6);
+    ellipse0.Evaluate (point8, dX, ddX, theta);
+    Check::Near (point2, point0);
+    Check::Near (point1, point2);
+    Check::Near (point3, point4);
+    Check::Near (point7, point5);
+    Check::Near (point7, point6);
+    Check::Near (point2, point8);
+    Check::Near (point9, dX);
+    Check::Near (point10, ddX);
+    }
+
+TEST (DEllipse3d, FractionParameterToPoint)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DPoint3d point0;
+    DPoint3d point1 = DPoint3d::FromXYZ (-1.0, 0.0, 0.0);
+    DPoint3d point2;
+    DVec3d point3;
+    DVec3d point4;
+    DVec3d point5 = DVec3d::From (0.0, -2*PI, 0.0);
+    DVec3d point6 = DVec3d::From (4*PI*PI, 0.0, 0.0);
+    DPoint3d point7[3];
+    DPoint3d point8 = DPoint3d::FromXYZ (0.0, -1.0, 0.0);
+    DPoint3d point9 = DPoint3d::FromXYZ (1.0, 0.0, 0.0);
+    double fraction0 = 0.5;
+    double theta = PI;
+    ellipse0.FractionParameterToPoint (point0, fraction0);
+    ellipse0.FractionParameterToDerivatives (point2, point3, point4, fraction0);
+    ellipse0.Evaluate (point7, 2, theta);
+    double theta1 = ellipse0.FractionToAngle (fraction0);
+    double determinant = ellipse0.DeterminantJXY (); 
+    Check::Near (point1, point0);
+    Check::Near (point1, point2);
+    Check::Near (point5, point3);
+    Check::Near (point6, point4);
+    Check::Near (point1, point7[0]);
+    Check::Near (point8, point7[1]);
+    Check::Near (point9, point7[2]);
+    Check::Near (theta, theta1);
+    Check::Near (1.0, determinant);
+    }
+
+TEST (DEllipse3d, GetLocalFrame)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    Transform frame0;
+    Transform frame1;
+    Transform frame2;
+    Transform inverse0;
+    Transform inverse1;
+    Transform inverse2;
+    DPoint3d center0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DVec3d xVector = DVec3d::From (1.0, 0.0, 0.0);
+    DVec3d yVector = DVec3d::From (0.0, 1.0, 0.0);
+    DVec3d zVector = DVec3d::From (0.0, 0.0, 1.0);
+    DPoint3d pointIn0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DPoint3d pointIn1 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
+    DPoint3d pointOut0;
+    DPoint3d pointOut1;
+    DPoint3d pointIn2 = DPoint3d::FromXYZ (0.0, 2.0, 0.0);
+    DPoint3d xYZNear;
+    DPoint3d pointOut3 = DPoint3d::FromXYZ (0.0, 2.0, 0.0);
+    double coff0, coff90;
+    frame1.InitFromOriginAndVectors (center0, xVector, yVector, zVector);
+    Check::True (inverse1.InverseOf (frame1));
+    Check::True (ellipse0.GetLocalFrame (frame0, inverse0));
+    Check::True (ellipse0.GetXYLocalFrame (frame2, inverse2));
+    inverse1.Multiply (&pointOut1, &pointIn1, 1);
+    Check::True (ellipse0.PointToXYLocal (pointOut0, pointIn0));
+    double theta = ellipse0.PointToAngle (pointIn2);
+    ellipse0.ProjectPointToPlane (xYZNear, coff0, coff90, pointIn2);
+    Check::Near (frame1, frame0);
+    Check::Near (inverse1, inverse0);
+    Check::Near (frame1, frame2);
+    Check::Near (inverse1, inverse2);
+    Check::Near (pointOut1, pointOut0);
+    Check::Near (PI/2, theta);
+    Check::Near (pointOut3, xYZNear);
+    Check::Near (0.0, coff0);
+    Check::Near (2.0, coff90);
+    }
+
+TEST (DEllipse3d, GetStrokeCount)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    double tol0 = 1 - cos (PI/4);
+    double tol1 = 1 - cos (PI/8);
+    int n0 = 0;
+    int max0 = 8;
+    int max1 = 16;
+    int max2 = 4;
+    int n1 = ellipse0.GetStrokeCount (n0, max0, tol0);
+    int n2 = ellipse0.GetStrokeCount (n0, max1, tol1);
+    int n3 = ellipse0.GetStrokeCount (n0, max2, tol1);
+    Check::Near (4, n1);
+    Check::Near (8, n2);
+    Check::Near (4, n3);
+    }
+
+TEST (DEllipse3d, EvaluateTrigPairs)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DPoint3d points0[3];
+    DPoint3d points1[3];
+    DPoint2d trig[3];
+    trig[0] = DPoint2d::From (cos (0.0), sin (0.0));
+    trig[1] = DPoint2d::From (cos (PI), sin (PI));
+    trig[2] = DPoint2d::From (cos ((3*PI)/2), sin ((3*PI)/2));
+    int numPoints = 3;
+    ellipse0.EvaluateTrigPairs (points0, trig, numPoints);
+    int returnedNumPoints = ellipse1.TestAndEvaluateTrigPairs (points1, trig, numPoints);
+    Check::Near (DPoint3d::FromXYZ (1.0, 0.0, 0.0), points0[0]);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, 0.0), points0[1]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), points0[2]);
+    Check::Near (2, returnedNumPoints);
+    Check::Near (DPoint3d::FromXYZ (1.0, 0.0, 0.0), points1[0]);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, 0.0), points1[1]);
+    }
+
+TEST (DEllipse3d, IsAngleInSweep)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
+    double angle0 = 0;
+    double angle1 = PI/2;
+    double angle2 = PI;
+    double angle3 = 3*PI;
+    Check::True (ellipse0.IsAngleInSweep (angle0));
+    Check::True (ellipse0.IsAngleInSweep (angle1));
+    Check::True (ellipse0.IsAngleInSweep (angle2));
+    Check::True (ellipse0.IsAngleInSweep (angle3));
+    Check::True (ellipse1.IsAngleInSweep (angle0));
+    Check::True (ellipse1.IsAngleInSweep (angle1));
+    Check::True (ellipse1.IsAngleInSweep (angle2));
+    Check::True (ellipse1.IsAngleInSweep (angle3));
+    Check::True (ellipse2.IsAngleInSweep (angle0));
+    Check::True (ellipse2.IsAngleInSweep (angle1));
+    Check::True (!(ellipse2.IsAngleInSweep (angle2)));
+    Check::True (!(ellipse2.IsAngleInSweep (angle3)));
+    double fraction0 = ellipse0.AngleToFraction (angle0);
+    double fraction1 = ellipse0.AngleToFraction (angle1);
+    double fraction2 = ellipse0.AngleToFraction (angle2);
+    double fraction3 = ellipse0.AngleToFraction (angle3);
+    Check::Near (0.0, fraction0);
+    Check::Near (0.25, fraction1);
+    Check::Near (0.5, fraction2);
+    Check::Near (0.5, fraction3);
+    }
+
+TEST (DEllipse3d, GetLimits)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, PI/4, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, PI/2, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
+    double startAngle0, startAngle1, startAngle2, startAngle3, startAngle4, endAngle0, endAngle1, endAngle2, endAngle3, endAngle4;
+    ellipse0.GetLimits (startAngle0, endAngle0);
+    ellipse1.GetLimits (startAngle1, endAngle1);
+    ellipse2.GetLimits (startAngle2, endAngle2);
+    ellipse0.GetSweep (startAngle3, endAngle3);
+    ellipse1.GetSweep (startAngle4, endAngle4);
+    Check::Near (PI/4, startAngle0);
+    Check::Near ((9*PI)/4, endAngle0);
+    Check::Near (PI/2, startAngle1);
+    Check::Near ((3*PI)/2, endAngle1);
+    Check::Near (0.0, startAngle2);
+    Check::Near (PI/2, endAngle2);
+    Check::Near (PI/4, startAngle3);
+    Check::Near (2*PI, endAngle3);
+    Check::Near (PI/2, startAngle4);
+    Check::Near (PI, endAngle4);
+    }
+
+TEST (DEllipse3d, SetLimits)
+    {
+    DEllipse3d ellipse0, ellipse1, ellipse2, ellipse3;
+    double startAngle0 = PI/4;
+    double startAngle1 = PI/2;
+    double endAngle0 = 2*PI;
+    double endAngle1 = PI;
+    ellipse0.SetLimits (startAngle0, endAngle0);
+    ellipse1.SetLimits (startAngle1, endAngle1);
+    ellipse2.SetSweep (startAngle0, endAngle0);
+    ellipse3.SetSweep (startAngle1, endAngle1);
+    Check::Near (PI/4, ellipse0.start);
+    Check::Near ((7*PI)/4, ellipse0.sweep);
+    Check::Near (PI/2, ellipse1.start);
+    Check::Near (PI/2, ellipse1.sweep);
+    Check::Near (PI/4, ellipse2.start);
+    Check::Near (2*PI, ellipse2.sweep);
+    Check::Near (PI/2, ellipse3.start);
+    Check::Near (PI, ellipse3.sweep);
+    }
+
+TEST (DEllipse3d, InitWithPerpendicularAxes)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1;
+    DVec3d crossBefore, crossAfter;
+    ellipse1.InitWithPerpendicularAxes (ellipse0);
+    crossBefore.CrossProduct (ellipse0.vector0, ellipse0.vector90);
+    crossAfter.CrossProduct (ellipse1.vector0, ellipse1.vector90);
+    Check::True (ellipse1.vector0.IsPerpendicularTo (ellipse1.vector90));
+    Check::Near (crossBefore, crossAfter);
+    }
+
+TEST (DEllipse3d, GetMajorMinorRangeMidlines)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DSegment3d longSegment, shortSegment;
+    DSegment3d longSegment1 = DSegment3d::From (-1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    DSegment3d shortSegment1 = DSegment3d::From (0.0, -1.0, 0.0, 0.0, 1.0, 0.0);
+    double length = ellipse0.GetMajorMinorRangeMidlines (longSegment, shortSegment);
+    Check::Near (longSegment1, longSegment);
+    Check::Near (shortSegment1, shortSegment);
+    Check::Near (2.0, length);
+    }
+
+TEST (DEllipse3d, InitReversed)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1;
+    ellipse1.InitReversed (ellipse0);
+    Check::Near (2*PI, ellipse1.start);
+    Check::Near (-2*PI, ellipse1.sweep);
+    }
+
+TEST (DEllipse3d, FromCopyWithPositiveSweep)
+    {
+    DPoint3d xyz0, xyz1;
+    for (double sweepFraction = -2.0; sweepFraction <= 2.0; sweepFraction += 0.25)  // sweep by this fraction of PI
+        {
+        if (sweepFraction == 0.0)
+            continue;
+        for (double startFraction = -2.0; startFraction <= 2.0; startFraction += 0.25)  // start at this fraction of PI
+            {
+            DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, startFraction * PI, sweepFraction*PI);
+            DEllipse3d ellipse1 = DEllipse3d::FromCopyWithPositiveSweep (ellipse0);
+            for (double f = 0.0; f <= 1.0; f += 1.0/8.0)
+                {
+                ellipse0.FractionParameterToPoint (xyz0, f);
+                ellipse1.FractionParameterToPoint (xyz1, f);
+                Check::Near (xyz0, xyz1, "FromCopyWithPositiveSweep preserves fractional coordinates.");
+                Check::True (ellipse1.sweep > 0.0, "FromCopyWithPositiveSweep forces positive sweep");
+                }
+            }
+        }
+    }
+
+
+
+TEST (DEllipse3d, TangentMagnitude)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    double theta = 0.0;
+    double magnitudeTangent = ellipse0.TangentMagnitude (theta);
+    Check::Near (1.0, magnitudeTangent);
+    }
+
+TEST (DEllipse3d, ArcLength)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, PI, 0.6*PI);
+    double arclength1 = 2*PI;
+    double arclength2 = -PI;
+    double arclength3 = 0.0;
+    double fraction0 = 0.5;
+    double fraction1 = 0.8;
+    double arclength = ellipse0.ArcLength ();
+    double sweepAngle0 = ellipse0.InverseArcLength (arclength1);
+    double sweepAngle1 = ellipse0.InverseArcLength (arclength2);
+    Check::True (ellipse1.FractionToLength (arclength3, fraction0, fraction1), "fraction to length");
+    double arcLength4 = ellipse2.ArcLength ();
+    Check::Near (2*PI, arclength);
+    Check::Near (2*PI, sweepAngle0);
+    Check::Near (-PI, sweepAngle1);
+    Check::Near (arcLength4, arclength3);
+    }
+
+TEST (DEllipse3d, ArcLengthVsBspline)
+    {
+    double r0 = 20.0;
+    
+    for (double f : bvector<double> {0.1, 0.2, 0.4, 0.8, 1.0, 1.2, 1.4, 1.8, 2.0})
+        {
+        Check::StartScope ("fraction", f);
+        double r90 = f * r0;
+        DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, r0, 0.0, 0.0, 0.0, r90, 0.0, 0.0, 2*PI);
+        double a = ellipse0.ArcLength ();
+        MSBsplineCurve bcurve;
+        bcurve.InitFromDEllipse3d (ellipse0);
+        double b = bcurve.Length ();
+        double e = fabs (b-a) / a;
+        if (s_noisy)
+            {
+            printf (" (r0 %lg) (r90 %lg) (arcLength %20.15lg)     ", r0, r90, a);
+            printf (" (bcurve arc length %20.15lg) (reldiff %le)\n", b, e);
+            }
+        double split = 0.35;
+        double tol = 1.0e-10;
+        if (f > split && f < 1.0 / split)
+            tol = 1.0e-13;
+        Check::LessThanOrEqual (e, tol, "ellipse arc length vs bspline arc length");
+        bcurve.ReleaseMem ();
+        Check::EndScope ();
+        }
+    }
+
+
+TEST (DEllipse3d, ArcLengthVsBsplineSubDivide)
+    {
+    double r0 = 20.0;
+    
+    for (double f : bvector<double> {0.1, 0.2, 0.4, 0.8, 1.0, 1.2, 1.4, 1.8, 2.0})
+        {
+        Check::StartScope ("fraction", f);
+        double r90 = f * r0;
+        DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, r0, 0.0, 0.0, 0.0, r90, 0.0, 0.0, 2*PI);
+        double a = ellipse0.ArcLength ();
+        MSBsplineCurve bcurve;
+        bcurve.InitFromDEllipse3d (ellipse0);
+        double delta = 1.0 / 6.0;
+        for (int i = 1; i < 6; i+= 2)
+            bspknot_addKnot (&bcurve, delta * i, 0., 1, true);
+        double b = bcurve.Length ();
+        double e = fabs (b-a) / a;
+        if (s_noisy)
+            {
+            printf (" (r0 %lg) (r90 %lg) (arcLength %20.15lg)     ", r0, r90, a);
+            printf (" (bcurve arc length %20.15lg) (reldiff %le)\n", b, e);
+            }
+        double split = 0.35;
+        double tol = 1.0e-10;
+        if (f > split && f < 1.0 / split)
+            tol = 1.0e-13;
+        Check::LessThanOrEqual (e, tol, "ellipse arc length vs bspline arc length");
+        bcurve.ReleaseMem ();
+        Check::EndScope ();
+        }
+    }
+
+TEST (DEllipse3d, GetRange)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DRange3d range0;
+    DRange3d range2;
+    DRange2d range1;
+    ellipse0.GetRange (range0);
+    ellipse1.GetRange (range2);
+    ellipse0.GetLocalRange (range1);
+    Check::Near (-1.0, range0.low.x);
+    Check::Near (-1.0, range0.low.y);
+    Check::Near (0.0, range0.low.z);
+    Check::Near (1.0, range0.high.x);
+    Check::Near (1.0, range0.high.y);
+    Check::Near (0.0, range0.high.z);
+    Check::Near (-1.0, range2.low.x);
+    Check::Near (0.0, range2.low.y);
+    Check::Near (0.0, range2.low.z);
+    Check::Near (1.0, range2.high.x);
+    Check::Near (1.0, range2.high.y);
+    Check::Near (0.0, range2.high.z);
+    Check::Near (-1.0, range1.low.x);
+    Check::Near (-1.0, range1.low.y);
+    Check::Near (1.0, range1.high.x);
+    Check::Near (1.0, range1.high.y);
+    }
+
+TEST (DEllipse3d, IntersectPlane)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DPoint3d trigPoints0[3], trigPoints1[3], trigPoints2[3];
+    DPoint4d plane0 = DPoint4d::From (0.0, 0.0, 1.0, 1.0);
+    DPoint4d plane1 = DPoint4d::From (1.0, 0.0, 0.0, 1.0);
+    DPoint4d plane2 = DPoint4d::From (1.0, 1.0, 0.0, 1.0);
+    int numPoints0 = ellipse0.IntersectPlane (trigPoints0, plane0);
+    int numPoints1 = ellipse0.IntersectPlane (trigPoints1, plane1);
+    int numPoints2 = ellipse0.IntersectPlane (trigPoints2, plane2);
+    Check::Near (0, numPoints0);
+    Check::Near (1, numPoints1);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, -PI), trigPoints1[0]);
+    Check::Near (2, numPoints2);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, PI), trigPoints2[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, -PI/2), trigPoints2[1]);
+    }
+
+TEST (DEllipse3d, IntersectXYLine)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DPoint3d cartesianPoints0[2], cartesianPoints1[2], cartesianPoints2[2], ellipseCoffs0[2], ellipseCoffs1[2], ellipseCoffs2[2];
+    double lineParams0[2], lineParams1[2], lineParams2[2], ellipseAngle0[2], ellipseAngle1[2], ellipseAngle2[2];
+    DPoint3d startPoint0 = DPoint3d::FromXYZ (-2.0, 0.0, 0.0);
+    DPoint3d endPoint0 = DPoint3d::FromXYZ (2.0, 0.0, 0.0);
+    DPoint3d startPoint1 = DPoint3d::FromXYZ (-1.0, 1.0, 0.0);
+    DPoint3d endPoint1 = DPoint3d::FromXYZ (0.0, 2.0, 0.0);
+    DPoint3d endPoint2 = DPoint3d::FromXYZ (1.0, 1.0, 0.0);
+    int numPoints0 = ellipse0.IntersectXYLine (cartesianPoints0, lineParams0, ellipseCoffs0, ellipseAngle0, startPoint0, endPoint0);
+    int numPoints1 = ellipse0.IntersectXYLine (cartesianPoints1, lineParams1, ellipseCoffs1, ellipseAngle1, startPoint0, endPoint1);
+    int numPoints2 = ellipse0.IntersectXYLine (cartesianPoints2, lineParams2, ellipseCoffs2, ellipseAngle2, startPoint1, endPoint2);
+    Check::Near (2, numPoints0);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, 0.0), cartesianPoints0[0]);
+    Check::Near (DPoint3d::FromXYZ (1.0, 0.0, 0.0), cartesianPoints0[1]);
+    Check::Near (0.25, lineParams0[0]);
+    Check::Near (0.75, lineParams0[1]);
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, 0.0), ellipseCoffs0[0]);
+    Check::Near (DPoint3d::FromXYZ (1.0, 0.0, 0.0), ellipseCoffs0[1]);
+    Check::Near (PI, ellipseAngle0[0]);
+    Check::Near (0.0, ellipseAngle0[1]);
+    Check::Near (0, numPoints1);
+    Check::Near (1, numPoints2);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), cartesianPoints2[0]);
+    Check::Near (0.5, lineParams2[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipseCoffs2[0]);
+    Check::Near (PI/2, ellipseAngle2[0]);
+    }
+
+TEST (DEllipse3d, IsCircular)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 5.0, 1.0, 0.0, 2*PI);
+    Check::True (ellipse0.IsCircular ());
+    Check::True (!(ellipse1.IsCircular ()));
+    Check::True (ellipse0.IsCircularXY ());
+    Check::True (!(ellipse1.IsCircularXY ()));
+    }
+
+TEST (DEllipse3d, IntersectXYDEllipse3d)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 5.0, 1.0, 0.0, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse3 = DEllipse3d::From (0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse4 = DEllipse3d::From (0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DPoint3d cartesianPoints0[5], cartesianPoints1[5], cartesianPoints2[5], cartesianPoints3[5], ellipse0Params0[5], ellipse0Params1[5], ellipse1Params[5], ellipse2Params0[5], ellipse2Params1[5], ellipse3Params0[5], ellipse3Params1[5], ellipse4Params0[5];
+    int numPoints0 = ellipse0.IntersectXYDEllipse3d (cartesianPoints0, ellipse0Params0, ellipse1Params, ellipse1);
+    int numPoints1 = ellipse0.IntersectXYDEllipse3d (cartesianPoints1, ellipse0Params1, ellipse2Params0, ellipse2);
+    int numPoints2 = ellipse2.IntersectXYDEllipse3d (cartesianPoints2, ellipse2Params1, ellipse3Params0, ellipse3);
+    int numPoints3 = ellipse3.IntersectXYDEllipse3d (cartesianPoints3, ellipse3Params1, ellipse4Params0, ellipse4);
+    Check::Near (0, numPoints0);
+    Check::Near (2, numPoints1);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), cartesianPoints1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), cartesianPoints1[1]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse0Params1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), ellipse0Params1[1]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse2Params0[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), ellipse2Params0[1]);
+    Check::Near (4, numPoints2);
+    Check::Near (3, numPoints3);
+    for (int i = 0; i < numPoints2; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse2.Evaluate (xyz0, ellipse2Params1[i].x, ellipse2Params1[i].y);
+        ellipse3.Evaluate (xyz1, ellipse3Params0[i].x, ellipse3Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    for (int i = 0; i < numPoints3; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse3.Evaluate (xyz0, ellipse3Params1[i].x, ellipse3Params1[i].y);
+        ellipse4.Evaluate (xyz1, ellipse4Params0[i].x, ellipse4Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    }
+
+TEST (DEllipse3d, IntersectXYDEllipse3dBounded)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 5.0, 1.0, 0.0, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse3 = DEllipse3d::From (0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse4 = DEllipse3d::From (0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DPoint3d cartesianPoints0[4], cartesianPoints1[4], cartesianPoints2[4], cartesianPoints3[4], ellipse0Params0[4], ellipse0Params1[4], ellipse1Params[4], ellipse2Params0[4], ellipse2Params1[4], ellipse3Params0[4], ellipse3Params1[4], ellipse4Params0[4];
+    double ellipse0Angle0[4], ellipse0Angle1[4], ellipse1Angle0[4], ellipse2Angle0[4], ellipse2Angle1[4], ellipse3Angle0[4], ellipse3Angle1[4], ellipse4Angle0[4];
+    int numPoints0 = ellipse0.IntersectXYDEllipse3dBounded (cartesianPoints0, ellipse0Params0, ellipse0Angle0, ellipse1Params, ellipse1Angle0, ellipse1);
+    int numPoints1 = ellipse0.IntersectXYDEllipse3dBounded (cartesianPoints1, ellipse0Params1, ellipse0Angle1, ellipse2Params0, ellipse2Angle0, ellipse2);
+    int numPoints2 = ellipse2.IntersectXYDEllipse3dBounded (cartesianPoints2, ellipse2Params1, ellipse2Angle1, ellipse3Params0, ellipse3Angle0, ellipse3);
+    int numPoints3 = ellipse3.IntersectXYDEllipse3dBounded (cartesianPoints3, ellipse3Params1, ellipse3Angle1, ellipse4Params0, ellipse4Angle0, ellipse4);
+    Check::Near (0, numPoints0);
+    Check::Near (1, numPoints1);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), cartesianPoints1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse0Params1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse2Params0[0]);
+    Check::Near (1, numPoints2);
+    Check::Near (1, numPoints3);
+    for (int i = 0; i < numPoints2; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse2.Evaluate (xyz0, ellipse2Params1[i].x, ellipse2Params1[i].y);
+        ellipse3.Evaluate (xyz1, ellipse3Params0[i].x, ellipse3Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    for (int i = 0; i < numPoints3; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse3.Evaluate (xyz0, ellipse3Params1[i].x, ellipse3Params1[i].y);
+        ellipse4.Evaluate (xyz1, ellipse4Params0[i].x, ellipse4Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    }
+
+TEST (DEllipse3d, IntersectSweptDEllipse3d)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 5.0, 1.0, 0.0, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse3 = DEllipse3d::From (0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse4 = DEllipse3d::From (0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DPoint3d cartesianPoints0[5], cartesianPoints1[5], cartesianPoints2[5], cartesianPoints3[5], ellipse0Params0[5], ellipse0Params1[5], ellipse1Params[5], ellipse2Params0[5], ellipse2Params1[5], ellipse3Params0[5], ellipse3Params1[5], ellipse4Params0[5];
+    int numPoints0 = ellipse0.IntersectSweptDEllipse3d (cartesianPoints0, ellipse0Params0, ellipse1Params, ellipse1);
+    int numPoints1 = ellipse0.IntersectSweptDEllipse3d (cartesianPoints1, ellipse0Params1, ellipse2Params0, ellipse2);
+    int numPoints2 = ellipse2.IntersectSweptDEllipse3d (cartesianPoints2, ellipse2Params1, ellipse3Params0, ellipse3);
+    int numPoints3 = ellipse3.IntersectSweptDEllipse3d (cartesianPoints3, ellipse3Params1, ellipse4Params0, ellipse4);
+    Check::Near (0, numPoints0);
+    Check::Near (2, numPoints1);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), cartesianPoints1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), cartesianPoints1[1]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse0Params1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), ellipse0Params1[1]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse2Params0[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, 0.0), ellipse2Params0[1]);
+    Check::Near (4, numPoints2);
+    Check::Near (3, numPoints3);
+    for (int i = 0; i < numPoints2; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse2.Evaluate (xyz0, ellipse2Params1[i].x, ellipse2Params1[i].y);
+        ellipse3.Evaluate (xyz1, ellipse3Params0[i].x, ellipse3Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    for (int i = 0; i < numPoints3; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse3.Evaluate (xyz0, ellipse3Params1[i].x, ellipse3Params1[i].y);
+        ellipse4.Evaluate (xyz1, ellipse4Params0[i].x, ellipse4Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    }
+
+TEST (DEllipse3d, IntersectSweptDEllipse3dBounded)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse1 = DEllipse3d::From (0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 5.0, 1.0, 0.0, PI);
+    DEllipse3d ellipse2 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse3 = DEllipse3d::From (0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, PI);
+    DEllipse3d ellipse4 = DEllipse3d::From (0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
+    DPoint3d cartesianPoints0[4], cartesianPoints1[4], cartesianPoints2[4], cartesianPoints3[4], ellipse0Params0[4], ellipse0Params1[4], ellipse1Params[4], ellipse2Params0[4], ellipse2Params1[4], ellipse3Params0[4], ellipse3Params1[4], ellipse4Params0[4];
+    double ellipse0Angle0[4], ellipse0Angle1[4], ellipse1Angle0[4], ellipse2Angle0[4], ellipse2Angle1[4], ellipse3Angle0[4], ellipse3Angle1[4], ellipse4Angle0[4];
+    int numPoints0 = ellipse0.IntersectSweptDEllipse3dBounded (cartesianPoints0, ellipse0Params0, ellipse0Angle0, ellipse1Params, ellipse1Angle0, ellipse1);
+    int numPoints1 = ellipse0.IntersectSweptDEllipse3dBounded (cartesianPoints1, ellipse0Params1, ellipse0Angle1, ellipse2Params0, ellipse2Angle0, ellipse2);
+    int numPoints2 = ellipse2.IntersectSweptDEllipse3dBounded (cartesianPoints2, ellipse2Params1, ellipse2Angle1, ellipse3Params0, ellipse3Angle0, ellipse3);
+    int numPoints3 = ellipse3.IntersectSweptDEllipse3dBounded (cartesianPoints3, ellipse3Params1, ellipse3Angle1, ellipse4Params0, ellipse4Angle0, ellipse4);
+    Check::Near (0, numPoints0);
+    Check::Near (1, numPoints1);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), cartesianPoints1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse0Params1[0]);
+    Check::Near (DPoint3d::FromXYZ (0.0, 1.0, 0.0), ellipse2Params0[0]);
+    Check::Near (1, numPoints2);
+    Check::Near (1, numPoints3);
+    for (int i = 0; i < numPoints2; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse2.Evaluate (xyz0, ellipse2Params1[i].x, ellipse2Params1[i].y);
+        ellipse3.Evaluate (xyz1, ellipse3Params0[i].x, ellipse3Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    for (int i = 0; i < numPoints3; i++)
+        {
+        DPoint3d xyz0;
+        DPoint3d xyz1;
+        ellipse3.Evaluate (xyz0, ellipse3Params1[i].x, ellipse3Params1[i].y);
+        ellipse4.Evaluate (xyz1, ellipse4Params0[i].x, ellipse4Params0[i].y);
+        xyz1.z = xyz0.z;	// They might be at different heights, force them together for comparison
+        Check::Near (xyz0, xyz1);
+        }
+    }
+
+TEST (DEllipse3d, ConstructABXPointEdgePoint)
+    {
+    bvector<DEllipse3d> ellipses;
+    double aa[] = {2.0, 2.0, 4.0, 0.0};
+    double bb[] = {2.0, 1.0, 5.0, 0.0};
+    for (int radiusSelect = 0; aa[radiusSelect] > 0.0; radiusSelect++)
+        {
+        double a = aa[radiusSelect];
+        double b = bb[radiusSelect];
+        for (double e = 0.0; e < 2.0; e += 0.25)
+            {
+            DPoint3d xPoint = DPoint3d::From (2.0 + e, 0.0, 0.0);
+            DPoint3d edgePoint = DPoint3d::From (e*e,1,0);
+            DEllipse3d::Construct_XRadius_YRadius_XPoint_EdgePoint(ellipses,
+                    a, b,
+                    xPoint, edgePoint);
+            static int s_doChecks = 1;
+            for (size_t i = 0;i < ellipses.size (); i++)
+                {
+                DEllipse3d ellipse = ellipses[i];
+                DPoint3d point0, point1;
+                ellipse.FractionParameterToPoint(point0, 0.0);
+                ellipse.FractionParameterToPoint(point1, 1.0);
+                DPoint3d point1Local;
+                ellipse.PointToXYLocal (point1Local, edgePoint);
+                double a1 = ellipse.vector0.Magnitude ();
+                double b1 = ellipse.vector90.Magnitude ();
+                if (s_doChecks)
+                    {
+                    Check::Near (xPoint, point0, "Ellipse x point");
+                    Check::Near (edgePoint, point1, "Ellipse edge point");
+                    Check::Near (a, a1, "Ellipse a");
+                    Check::Near (b, b1, "Ellipse b");
+                    Check::Near (0.0, ellipse.start, "Ellipse start angle");
+                    Check::True (ellipse.vector0.IsPerpendicularTo (ellipse.vector90), "Right ellipse");
+                    Check::True (ellipse.vector0.CrossProductXY(ellipse.vector90) > 0.0, "Right handed");
+                    }
+                }
+            }
+        }
+    }
+
+
+
+void ConstructXPointEdgePointEdgePointAngle_go (double d, double y0, double y1, double alpha)
+    {
+    static bool s_doChecks = true;
+    DPoint3d edgePoint0 = DPoint3d::From (0,y0,0);
+    DPoint3d xPoint = DPoint3d::From (d,0,0);
+    DPoint3d edgePoint1 = DPoint3d::From (-1, y1,0);
+
+    DEllipse3d ellipse;
+    if (DEllipse3d::TryConstruct_EdgePoint_XPoint_EdgePoint_XAngle
+        (
+        ellipse,
+        edgePoint0,
+        xPoint,
+        edgePoint1,
+        alpha
+        ))
+        {
+        DPoint3d point0, point1, xPointOut;
+        ellipse.FractionParameterToPoint(point0, 0.0);
+        ellipse.FractionParameterToPoint(point1, 1.0);
+        xPointOut = DPoint3d::FromSumOf (ellipse.center, ellipse.vector0, 1.0);
+        DPoint3d point1Local;
+        ellipse.PointToXYLocal (point1Local, point1);
+        //double a1 = ellipse.vector0.Magnitude ();
+        //double b1 = ellipse.vector90.Magnitude ();
+        double theta = atan2 (ellipse.vector0.y, ellipse.vector0.x);
+        if (s_doChecks)
+            {
+            Check::Near (xPoint, xPointOut, "Ellipse x point");
+            Check::Near (edgePoint0, point0, "Ellipse edge point");
+            Check::Near (edgePoint1, point1, "Ellipse edge point");
+            Check::True (
+                    Angle::NearlyEqualAllowPeriodShift (alpha, theta)
+                 || Angle::NearlyEqualAllowPeriodShift (alpha, theta + Angle::Pi ()),"Ellipse angle");
+            Check::True (ellipse.vector0.IsPerpendicularTo (ellipse.vector90), "Right ellipse");
+            Check::True (ellipse.vector0.CrossProductXY(ellipse.vector90) > 0.0, "Right handed");
+            }
+        }
+    }
+
+TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAngle)
+    {
+    for (double d = 2.0; d < 5.0; d+= 0.5)
+        {
+        for (double alpha = 0.0; alpha < 0.1; alpha += 0.03)
+            {
+            ConstructXPointEdgePointEdgePointAngle_go (d, -1.0, 1.0, alpha);
+            ConstructXPointEdgePointEdgePointAngle_go (d,  1.0, 1.0, alpha);
+            ConstructXPointEdgePointEdgePointAngle_go (-d, -1.0, 1.0, alpha);
+            ConstructXPointEdgePointEdgePointAngle_go (-d,  1.0, 1.0, alpha);
+            }
+        }
+    }
+
+
+
+TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAxis)
+    {
+    // These coordinates have (by hand construction) 3 solutions:
+    DPoint3d xPoint = DPoint3d::From (0,0,0);
+    DPoint3d edgePoint0 = DPoint3d::From (41.4739, -80.847, 0);
+    DPoint3d edgePoint1 = DPoint3d::From (2520.7458, -70.4044, 0);
+    double a = 2003.0662;
+    bvector<DEllipse3d> ellipse;
+    DEllipse3d::Construct_XPoint_EdgePoint_EdgePoint_XRadius (
+            ellipse, xPoint, edgePoint0, edgePoint1, a);
+    
+    }
+
+
+TEST (DEllipse3d, FractionInterval)
+    {
+    DEllipse3d ellipse0 = DEllipse3d::From (0,0,0, 1,0,0, 0,1,0, 1,3);
+    double a0 = 0.72;
+    double a1 = 0.301;
+    DEllipse3d ellipse1 = DEllipse3d::FromFractionInterval (ellipse0, a0, a1);
+    Check::Near (ellipse0.FractionToAngle (a0), ellipse1.FractionToAngle (0.0), "FractionEllipse start");
+    Check::Near (ellipse0.FractionToAngle (a1), ellipse1.FractionToAngle (1.0), "FractionEllipse start");
+    }
+
+
+void ExerciseEllipseConstructions (DEllipse3dCR ellipse0)
+    {
+    double theta0 = ellipse0.start;
+    double dTheta = ellipse0.sweep;
+    DPoint3d point0, point90, A0, A90;
+    DVec3d dA0, ddA0, dA90, ddA90;
+    ellipse0.Evaluate (point0, 0.0);
+    ellipse0.Evaluate (point90, Angle::PiOver2 ());
+    ellipse0.Evaluate (A0, dA0, ddA0, 0.0);
+    ellipse0.Evaluate (A90, dA90, ddA90, -Angle::PiOver2 ());  // negative 90 degrees to get tangent forward
+    DEllipse3d ellipse1 = DEllipse3d::FromVectors (ellipse0.center, dA90, dA0, theta0, dTheta);
+    Check::Near (ellipse0, ellipse1, "tangent relations");
+    DEllipse3d ellipse2 = DEllipse3d::FromPoints (ellipse0.center, point0, point90, theta0, dTheta);
+    Check::Near (ellipse0, ellipse2, "point construction");
+
+    double a0 = 1.2, a90 = 1.3;
+    DEllipse3d ellipse3 = DEllipse3d::FromScaledVectors (
+                ellipse0.center, ellipse0.vector0, ellipse0.vector90, a0, a90, theta0, dTheta);
+    DVec3d normal0 = DVec3d::FromCrossProduct (ellipse0.vector0, ellipse0.vector90);
+    DVec3d normal3 = DVec3d::FromCrossProduct (ellipse3.vector0, ellipse3.vector90);
+    Check::Near (normal0.Magnitude () * a0 * a90, normal3.Magnitude (), "scaled vectors");
+    Check::Near (ellipse0.vector0.MagnitudeSquared () * a0,
+                 ellipse3.vector0.DotProduct (ellipse0.vector0),
+                "scaled vectors");
+    }
+TEST (DEllipse3d, Init2)
+    {
+    double theta0 = 0.1;
+    double dTheta = 1.2;
+    DPoint3d center = DPoint3d::From (1,2,3);
+    DEllipse3d ellipse0 = DEllipse3d::FromScaledRotMatrix (center,
+                RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity (), 1,2,3),
+                2,3,   theta0, dTheta);
+    ExerciseEllipseConstructions (ellipse0);
+    }
+
+
+TEST (DEllipse3d, Init3)
+    {
+    
+    DEllipse3d ellipse0 = DEllipse3d::FromPointsOnArc (
+                DPoint3d::From (1,2,3),
+                DPoint3d::From (4,0.3,1),
+                DPoint3d::From (2,9,3));
+    Check::True (ellipse0.IsCircular (), "3point arc");
+    ExerciseEllipseConstructions (ellipse0);
+    }
+
+void testDEllipse3d_Construct_Point_Direction_TangentXY (
+double x0, double y0,
+double theta0,
+double x1, double y1,
+double theta1
+)
+    {
+    Check::StartScope ("Circle Pt+tangent+ray");
+    bvector<DEllipse3d> ellipse;
+    bvector<double>    rayFraction;
+    DPoint3d startA = DPoint3d::From (x0, y0, 0.0);
+    DVec3d tangentA = 
+          DVec3d::From (cos (theta0), sin(theta0), 0.0);
+    DRay3d ray = DRay3d::FromOriginAndVector (
+              DPoint3d::From (x1, y1, 0.0),
+              DVec3d::From (cos(theta1), sin(theta1), 0.0)
+              );
+    DEllipse3d::Construct_Point_Direction_TangentXY
+          (
+          ellipse, rayFraction,
+          startA,
+          tangentA,
+          ray
+          );
+    DVec3d dummy;
+    Check::True (ellipse.size () > 0, "numEllipse > 0");
+    for (size_t i = 0; i < ellipse.size (); i++)
+        {
+        DPoint3d startB, endB;
+        DVec3d tangentStartB, tangentEndB;
+        ellipse[i].FractionParameterToDerivatives (startB, tangentStartB, dummy, 0.0);
+        ellipse[i].FractionParameterToDerivatives (endB, tangentEndB, dummy, 1.0);
+        Check::Near (startB, startA, "through start");
+        DPoint3d endC = ray.FractionParameterToPoint (rayFraction[i]);
+        Check::Near (endB, endC, "ends on ray");
+        Check::Parallel (tangentStartB, tangentA, "start tangent");
+        Check::Parallel (tangentEndB, ray.direction, "end tangent");
+        }
+    Check::EndScope ();
+    }
+TEST (DEllipse3d, StartDirection_TangentToRay)
+    {
+    testDEllipse3d_Construct_Point_Direction_TangentXY (1,1, 0.0, 0,0, 0.0);
+    testDEllipse3d_Construct_Point_Direction_TangentXY (1,1, 1.0, 0,0, 0.0);
+    testDEllipse3d_Construct_Point_Direction_TangentXY (100,105, 1.0, 54, 29, 0.10);
+    }
+
+void testParallelLineLinePoint (DPoint3dCR pointA, DPoint3dCR pointB, double angle, double signDirectionB, double fraction, int selectAB)
+    {
+    int numOut;
+    Check::StartScope ("circleTTTLineAWithPointParallelLineB");
+    DVec3d directionA = DVec3d::From (cos(angle), sin(angle), 0.0);
+    DVec3d directionB = DVec3d::FromScale (directionA, signDirectionB);
+    DPoint3d pointC;
+    if (selectAB == 0)
+        pointC = DPoint3d::FromSumOf (pointA, directionA, fraction);
+    else 
+        pointC = DPoint3d::FromSumOf (pointB, directionB, fraction);
+    DPoint3d tangentA[8], tangentB[8], tangentC[8];
+    DPoint3d center[8];
+    double   radius[8];
+    DRay3d rayA = DRay3d::FromOriginAndVector (pointA, directionA);
+    DRay3d rayB = DRay3d::FromOriginAndVector (pointB, directionB);
+    bsiGeom_circleTTTLineLineCircleConstruction
+      (
+      center, radius, tangentA, tangentB, tangentC, numOut, 8,
+      pointA, directionA, pointB, directionB, pointC, 0.0);
+    if (Check::Int (1, numOut, "degenerate intersection count"))
+        {
+        DPoint3d pointA1, pointB1;
+        double fractionA1, fractionB1;
+        Check::True (rayA.ProjectPointUnbounded (pointA1, fractionA1, center[0]), "project to rayA");
+        Check::True (rayB.ProjectPointUnbounded (pointB1, fractionB1, center[0]), "project to rayA");
+        Check::Near (pointA1, tangentA[0], "tangency point on A");
+        Check::Near (pointB1, tangentB[0], "tangency point on B");
+        if (selectAB == 0)
+            Check::Near (pointA1, pointC, "known tangency point");
+        else
+            Check::Near (pointB1, pointC, "known tangency point");
+        Check::Near (center[0].Distance (pointA1), center[0].Distance (pointB1), "equal radii");
+        }
+    Check::EndScope ();
+    }
+TEST(TTT,ParallelLineLinePoint)
+    {
+    static double fMax = 1.0e7;
+    static double fFactor = 3.0 + sqrt (7.0);
+    for (int selectAB = 0; selectAB < 2; selectAB++)
+        {
+        for (int selectDir = -1; selectDir < 2; selectDir += 2)
+            {
+            double s = (double) selectDir;
+            testParallelLineLinePoint (
+                DPoint3d::From (0,0,0),
+                DPoint3d::From (0,1,0),
+                0.0, s,
+                0.0, selectAB);
+
+            for (double f = 0.0; f < fMax; f = (f + 1.0) * fFactor)
+                {
+                testParallelLineLinePoint (
+                    DPoint3d::From (110,45.233,0),
+                    DPoint3d::From (4000.1232, 32.99,0),
+                    1.529, s,
+                    f, selectAB);
+                  }
+            }
+        }
+    }
+
+
+
+#ifdef abc
+-		conic	0x001c7230 {center={...} vector0={...} vector90={...} ...}	_dConic4d *
+-		center	{x=1000000.0000000001 y=5055613.9615411852 z=-1434614.6192090772 ...}	_dPoint4d
+		x	1000000.0000000001	double
+		y	5055613.9615411852	double
+		z	-1434614.6192090772	double
+		w	1.0000000000000000	double
+-		vector0	{x=181261.55740733005 y=-84523.652348139804 z=5.3010665289492597e-012 ...}	_dPoint4d
+		x	181261.55740733005	double
+		y	-84523.652348139804	double
+		z	5.3010665289492597e-012	double
+		w	0.00000000000000000	double
+-		vector90	{x=-84523.652348139891 y=-181261.55740732988 z=2.3911565870609734e-011 ...}	_dPoint4d
+		x	-84523.652348139891	double
+		y	-181261.55740732988	double
+		z	2.3911565870609734e-011	double
+		w	0.00000000000000000	double
+		start	3.1415926535897931	double
+		sweep	3.1950068192435337	double
+#endif
+
+void CheckConicPoints (DConic4dCR conic0, DConic4dCR conic1, double fraction)
+    {
+    double angle0 = conic0.start + fraction * conic0.sweep;
+    double angle1 = conic1.start + fraction * conic1.sweep;
+    DPoint3d xyz0, xyz1;
+    DVec3d tangent0, tangent1;
+    bsiDConic4d_angleParameterToDPoint3dDerivatives (&conic0, &xyz0, &tangent0, NULL, angle0);
+    bsiDConic4d_angleParameterToDPoint3dDerivatives (&conic1, &xyz1, &tangent1, NULL, angle1);
+    CHECK_EQ (Near, xyz0, xyz1);
+    CHECK_EQ (Parallel, tangent0, tangent1);
+    double sweepSign = conic0.sweep * conic1.sweep;
+    CHECK_EXPR(True, sweepSign * tangent0.DotProduct (tangent1) > 0);
+    }
+
+TEST (DConic4d, CommonAxesFail0)
+    {
+    DConic4d conic;
+    bsiDConic4d_init (&conic,
+                      0,0,0,
+                      1,0,0,
+                      0,1,0,
+                      3.1415926535897931,
+                      3.1950068192435337);
+    DConic4d axes;
+    RotMatrix basis;
+    int curveType;
+    CHECK_EXPR (True, bsiDConic4d_getCommonAxes (&conic, &axes, &basis, &curveType));
+    CheckConicPoints (conic, axes, 0.0);
+    CheckConicPoints (conic, axes, 1.0);
+
+    for (double sweep = -6.0; sweep < 6.1; sweep += 0.9)
+        {
+        conic.sweep = sweep;
+        CHECK_EXPR (True, bsiDConic4d_getCommonAxes (&conic, &axes, &basis, &curveType));
+        CheckConicPoints (conic, axes, 0.0);
+        CheckConicPoints (conic, axes, 1.0);
+        }
+
+    for (double weight0 = 0.01; weight0 < 1.0; weight0 += 0.3)
+        {
+        conic.vector0.w = weight0;
+        CHECK_EXPR (True, bsiDConic4d_getCommonAxes (&conic, &axes, &basis, &curveType));
+        CheckConicPoints (conic, axes, 0.0);
+        CheckConicPoints (conic, axes, 1.0);
+        }
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          02/95
++---------------+---------------+---------------+---------------+---------------+------*/
+static void calcBiarcCenters
+(
+DPoint3d        *center0P,
+DPoint3d        *center1P,
+DPoint3dCP point0P,
+DPoint3dCP point1P,
+DPoint3dP dir0P,
+DPoint3dP dir1P,
+double          rad0,
+double          rad1,
+bool            isUnimodel
+)
+    {
+    int         i0, i1, i0Min = 0, i1Min = 0;
+    double      diff, dist, delta, deltaMin = DBL_MAX;
+    DPoint3d    arcCenter0[2], arcCenter1[2];
+
+    bsiDPoint3d_normalizeInPlace (dir0P);
+    bsiDPoint3d_normalizeInPlace (dir1P);
+    bsiDPoint3d_addScaledDPoint3d (arcCenter0, point0P, dir0P, rad0);
+    bsiDPoint3d_addScaledDPoint3d (arcCenter0+1, point0P, dir0P, -rad0);
+    bsiDPoint3d_addScaledDPoint3d (arcCenter1, point1P, dir1P, rad1);
+    bsiDPoint3d_addScaledDPoint3d (arcCenter1+1, point1P, dir1P, -rad1);
+
+    diff = isUnimodel ? fabs (rad0 - rad1) : fabs (rad0 + rad1);
+
+    // TR #116288: take centers whose distance is closest to radius difference/sum;
+    // previous logic tested three differences against fc_epsilon and failing that, assumed last was smallest,
+    // but this failed to find smallest differences larger than fc_epsilon.
+    for (i0 = 0; i0 < 2; i0++)
+        {
+        for (i1 = 0; i1 < 2; i1++)
+            {
+            dist = bsiDPoint3d_distance (&arcCenter0[i0], &arcCenter1[i1]);
+            delta = fabs (dist - diff);
+            if (delta < deltaMin)
+                {
+                i0Min = i0;
+                i1Min = i1;
+                deltaMin = delta;
+                }
+            }
+        }
+    *center0P = arcCenter0[i0Min];
+    *center1P = arcCenter1[i1Min];
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          02/95
++---------------+---------------+---------------+---------------+---------------+------*/
+bool calculateBiarc
+(
+DEllipse3dR ellipse0,
+DEllipse3dR ellipse1,
+DPoint3dCP point0P,
+DPoint3dCP point1P,
+DVec3dCP tangent0P,
+DVec3dCP tangent1P
+)
+    {
+    bool        isUnimodel;
+    double      radius0, radius1, magnitude, cosine0, cosine1, sine0, sine1,
+                tmp, tmp0, tmp1;
+    DPoint3d    chord, dir0, dir1, center0, center1, normal;
+
+    /* Compute the radii for arcs */
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&chord, point1P, point0P);
+    magnitude = bsiDPoint3d_magnitude (&chord);
+    bsiDPoint3d_normalizeInPlace (&chord);
+    cosine0 = bsiDPoint3d_dotProduct (&chord, tangent0P);
+    cosine1 = bsiDPoint3d_dotProduct (&chord, tangent1P);
+    sine0 = sqrt(1.0 - cosine0 * cosine0);
+    sine1 = sqrt(1.0 - cosine1 * cosine1);
+    bsiDPoint3d_crossProduct (&dir0, tangent0P, &chord);
+    bsiDPoint3d_crossProduct (&dir1, tangent1P, &chord);
+
+    static double s_normalFlipTol = 1.0e-8;
+    // TR #116288:
+    // If tangent0 is (nearly) parallel to chord, then |dir0| ~ 0.
+    // If this makes the below dot product just slightly negative, then since cosine0 ~ 1 and sine0 ~ 0,
+    //  we have the possibility that tmp can be +-INF.
+    // To rule this out, allow for some floating point slop in the negativity test below.
+    // Using isUnimodal = false for the (near) tangency case avoids the bad intermediate value in computing the arc radii.
+    // The same problem occurs (and is fixed by this change) if tangent1 is (nearly) parallel to chord.
+    isUnimodel = bsiDPoint3d_dotProduct (&dir0, &dir1) < -s_normalFlipTol;
+    if (isUnimodel)
+        {
+        tmp0 = 1.0 - cosine0;
+        tmp1 = 1.0 - cosine1;
+        tmp = magnitude / (sine0 * tmp1 + sine1 * tmp0);
+        radius0 = tmp1 * tmp;
+        radius1 = tmp0 * tmp;
+        }
+    else
+        {
+        radius0 = radius1 =  magnitude / (sine0 + sine1 + sqrt(4.0 - (cosine0 + cosine1) * (cosine0 + cosine1)));
+        }
+
+    // TR #116288: avoid colinear tangent & chord---caller ensures one tangent is not colinear
+    if (fabs (cosine0) < fabs (cosine1))
+        bsiDPoint3d_crossProduct (&normal, &chord, tangent0P);
+    else
+        bsiDPoint3d_crossProduct (&normal, &chord, tangent1P);
+
+    /* Compute the centers for the arcs */
+    bsiDPoint3d_crossProduct (&dir0, tangent0P, &normal);
+    bsiDPoint3d_crossProduct (&dir1, tangent1P, &normal);
+    calcBiarcCenters (&center0, &center1, point0P, point1P, &dir0, &dir1, radius0, radius1, isUnimodel);
+
+    DPoint3d pointC;
+    /* Create points on arc */
+    if (isUnimodel)
+        {
+        if (DoubleOps::AlmostEqual (radius0, radius1))
+            {
+            bsiDPoint3d_interpolate (&dir0,  point0P, 0.5,  point1P);
+            bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &dir0, &center0);
+            }
+        else
+            {
+            if (radius1 >= radius0)
+                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center0, &center1);
+            else
+                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center1, &center0);
+            }
+        bsiDPoint3d_normalizeInPlace (&dir0);
+        bsiDPoint3d_addScaledDPoint3d (&pointC, &center0, &dir0, radius0);
+        }
+    else
+        {
+        bsiDPoint3d_interpolate (&pointC,  &center0, 0.5,  &center1);
+        }
+    DVec3d vector0A = DVec3d::FromStartEnd (center0, *point0P);
+    DVec3d vector0C = DVec3d::FromStartEnd (center0, pointC);
+    DVec3d vector1C = DVec3d::FromStartEnd (center1, pointC);
+    DVec3d vector1B = DVec3d::FromStartEnd (center1, *point1P);
+    double theta0 = vector0A.AngleTo (vector0C);
+    double theta1 = vector1C.AngleTo (vector1B);
+    DVec3d normal0 = DVec3d::FromNormalizedCrossProduct (vector0A, vector0C);
+    DVec3d normal1 = DVec3d::FromNormalizedCrossProduct (vector1C, vector1B);
+    DVec3d perp0 = DVec3d::FromCrossProduct (normal0, vector0A);
+    DVec3d perp1 = DVec3d::FromCrossProduct (normal1, vector1C);
+    ellipse0 = DEllipse3d::FromVectors (center0, vector0A, perp0, 0.0, theta0);
+    ellipse1 = DEllipse3d::FromVectors (center1, vector1C, perp1, 0.0, theta1);
+    return true;
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          02/95
++---------------+---------------+---------------+---------------+---------------+------*/
+bool calculateBiarc
+(
+DPoint3d       arcPointsP[5],
+DPoint3dCP point0P,
+DPoint3dCP point1P,
+DVec3dCP tangent0P,
+DVec3dCP tangent1P
+)
+    {
+    bool        isUnimodel;
+    double      radius0, radius1, magnitude, cosine0, cosine1, sine0, sine1,
+                tmp, tmp0, tmp1;
+    DPoint3d    chord, dir0, dir1, mid, center0, center1, normal;
+
+    /* Compute the radii for arcs */
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&chord, point1P, point0P);
+    magnitude = bsiDPoint3d_magnitude (&chord);
+    bsiDPoint3d_normalizeInPlace (&chord);
+    cosine0 = bsiDPoint3d_dotProduct (&chord, tangent0P);
+    cosine1 = bsiDPoint3d_dotProduct (&chord, tangent1P);
+    sine0 = sqrt(1.0 - cosine0 * cosine0);
+    sine1 = sqrt(1.0 - cosine1 * cosine1);
+    bsiDPoint3d_crossProduct (&dir0, tangent0P, &chord);
+    bsiDPoint3d_crossProduct (&dir1, tangent1P, &chord);
+
+    static double s_normalFlipTol = 1.0e-8;
+    // TR #116288:
+    // If tangent0 is (nearly) parallel to chord, then |dir0| ~ 0.
+    // If this makes the below dot product just slightly negative, then since cosine0 ~ 1 and sine0 ~ 0,
+    //  we have the possibility that tmp can be +-INF.
+    // To rule this out, allow for some floating point slop in the negativity test below.
+    // Using isUnimodal = false for the (near) tangency case avoids the bad intermediate value in computing the arc radii.
+    // The same problem occurs (and is fixed by this change) if tangent1 is (nearly) parallel to chord.
+    isUnimodel = bsiDPoint3d_dotProduct (&dir0, &dir1) < -s_normalFlipTol;
+    if (isUnimodel)
+        {
+        tmp0 = 1.0 - cosine0;
+        tmp1 = 1.0 - cosine1;
+        tmp = magnitude / (sine0 * tmp1 + sine1 * tmp0);
+        radius0 = tmp1 * tmp;
+        radius1 = tmp0 * tmp;
+        }
+    else
+        {
+        radius0 = radius1 =  magnitude / (sine0 + sine1 + sqrt(4.0 - (cosine0 + cosine1) * (cosine0 + cosine1)));
+        }
+
+    // TR #116288: avoid colinear tangent & chord---caller ensures one tangent is not colinear
+    if (fabs (cosine0) < fabs (cosine1))
+        bsiDPoint3d_crossProduct (&normal, &chord, tangent0P);
+    else
+        bsiDPoint3d_crossProduct (&normal, &chord, tangent1P);
+
+    /* Compute the centers for the arcs */
+    bsiDPoint3d_crossProduct (&dir0, tangent0P, &normal);
+    bsiDPoint3d_crossProduct (&dir1, tangent1P, &normal);
+    calcBiarcCenters (&center0, &center1, point0P, point1P, &dir0, &dir1, radius0, radius1, isUnimodel);
+
+    DPoint3d pointC;
+    /* Create points on arc */
+    if (isUnimodel)
+        {
+        if (DoubleOps::AlmostEqual (radius0, radius1))
+            {
+            bsiDPoint3d_interpolate (&dir0,  point0P, 0.5,  point1P);
+            bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &dir0, &center0);
+            }
+        else
+            {
+            if (radius1 >= radius0)
+                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center0, &center1);
+            else
+                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center1, &center0);
+            }
+        bsiDPoint3d_normalizeInPlace (&dir0);
+        bsiDPoint3d_addScaledDPoint3d (&pointC, &center0, &dir0, radius0);
+        }
+    else
+        {
+        bsiDPoint3d_interpolate (&pointC,  &center0, 0.5,  &center1);
+        }
+    arcPointsP[0] = *point0P;
+    arcPointsP[2] = pointC;
+    arcPointsP[4] = *point1P;
+    bsiDPoint3d_interpolate (&mid,  point0P, 0.5,  arcPointsP+2);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &mid, &center0);
+    bsiDPoint3d_normalizeInPlace (&dir0);
+    bsiDPoint3d_addScaledDPoint3d (arcPointsP+1, &center0, &dir0, radius0);
+    bsiDPoint3d_interpolate (&mid,  point1P, 0.5,  arcPointsP+2);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &mid, &center1);
+    bsiDPoint3d_normalizeInPlace (&dir0);
+    bsiDPoint3d_addScaledDPoint3d (arcPointsP+3, &center1, &dir0, radius1);
+    return true;
+    }
+
+void CheckPointsOnArc (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2, DEllipse3dCR ellipse)
+    {
+    DPoint3d points[3] = {point0, point1, point2};
+    for (int i = 0; i < 3; i++)
+        {
+        double f = i * 0.5;
+        DPoint3d point;
+        ellipse.FractionParameterToPoint (point, f);
+        Check::Near (points[i], point, "point on ellipse");
+        }
+    }
+
+void testBiarc (DPoint3dCR pointA, DPoint3dCR pointB, Angle tangentAToChord, Angle tangentBToChord)
+    {
+    DPoint3d arcPoints[5];
+    DVec3d unitA, unitB, chord, unitChord;
+    chord = DVec3d::FromStartEnd (pointA, pointB);
+    unitChord.Normalize (chord);
+    unitA.RotateXY (unitChord, -tangentAToChord.Radians ());
+    unitB.RotateXY (unitChord, tangentBToChord.Radians ());
+    DEllipse3d ellipseA, ellipseB;
+    if (  Check::True (calculateBiarc (arcPoints, &pointA, &pointB, &unitA, &unitB), "Biarc A")
+       && Check::True (calculateBiarc (ellipseA, ellipseB, &pointA, &pointB, &unitA, &unitB), "Biarc B")
+       )
+        {
+        DPoint3d pointA0, pointA1, pointB0, pointB1;
+        DVec3d   tangentA0, tangentA1, tangentB0, tangentB1;
+        DVec3d   kurvA, kurvB;
+        CheckPointsOnArc (arcPoints[0], arcPoints[1], arcPoints[2], ellipseA);
+        CheckPointsOnArc (arcPoints[2], arcPoints[3], arcPoints[4], ellipseB);
+        ellipseA.FractionParameterToDerivatives (pointA0, tangentA0, kurvA, 0.0);
+        ellipseA.FractionParameterToDerivatives (pointA1, tangentA1, kurvA, 1.0);
+
+        ellipseB.FractionParameterToDerivatives (pointB0, tangentB0, kurvA, 0.0);
+        ellipseB.FractionParameterToDerivatives (pointB1, tangentB1, kurvB, 1.0);
+
+        Check::Near (pointA0, pointA);
+        Check::Near (pointB1, pointB);
+        Check::Near (pointA1, pointB0);
+
+        Check::True (unitA.IsParallelTo (tangentA0),     "start Tangent");
+        Check::True (tangentA1.IsParallelTo (tangentB0), "interior tangent");
+        Check::True (unitB.IsParallelTo (tangentB1),     "end Tangent");
+        if (s_noisy > 0)
+            {
+            Check::PrintIndent (0);
+            Check::Print (pointA, "pointA");  Check::Print (tangentAToChord.Degrees (), "chord angle A");
+            for (int i = 0; i < 5; i++)
+                {
+                Check::PrintIndent (1);
+                Check::Print (arcPoints[i], "arcPoints");
+                }
+            Check::PrintIndent (0);
+            Check::Print (pointA, "pointB");  Check::Print (tangentBToChord.Degrees (), "chord angle B");
+            }
+        }
+    }
+
+TEST(Biarc,TEST0)
+    {
+    testBiarc (DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), Angle::FromDegrees (10.0), Angle::FromDegrees (15.0));
+    testBiarc (DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), Angle::FromDegrees (45.0), Angle::FromDegrees (45.0));
+    testBiarc (DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), Angle::FromDegrees (-45.0), Angle::FromDegrees (45.0));
+    }
+
+double TestExactClosestPoint (DEllipse3dR ellipse, double f)
+    {
+    DPoint3d xyz;
+    ellipse.FractionParameterToPoint (xyz, f);
+    DPoint3d xyzA[5];
+    double thetaA[5];
+    int numA = ellipse.ProjectPointBounded (xyzA, thetaA, xyz);
+    Check::True (numA > 0);
+    double thetaB, d2B;
+    DPoint3d xyzB;
+    Check::True (ellipse.ClosestPointXYBounded (thetaB, d2B, xyzB, xyz));
+    Check::Near (xyz, xyzB);
+    return xyz.Distance (xyzB);
+    }
+double TestExactClosestPoint (DEllipse3dR ellipse, int numStep, int numDelta, double delta)
+    {
+    double maxDistance = 0.0;
+    for (int i = 0; i <= numStep; i++)
+        {
+        double f = i / (double)numStep;
+        maxDistance = DoubleOps::Max (maxDistance, TestExactClosestPoint (ellipse, f));
+        for (int k = 0; k < numDelta; k++)
+          {
+          maxDistance = DoubleOps::Max (maxDistance, TestExactClosestPoint (ellipse, f + k * delta));
+          maxDistance = DoubleOps::Max (maxDistance, TestExactClosestPoint (ellipse, f - k * delta));
+          }
+        }
+    return maxDistance;
+    }
+TEST(DEllipse3d,ClosestPointA)
+    {
+    DEllipse3d ellipse;
+    double a = 1.0;
+    double b = 2.0;
+    ellipse.Init (0,a,0,     0,-a,0,   b,0,0, 0.0, Angle::TwoPi ());
+    double epsilon = BeNumerical::BeNextafter (1.0, 100.0) - 1.0;
+    TestExactClosestPoint (ellipse, 16, 10, epsilon);
+    TestExactClosestPoint (ellipse, 7, 10, epsilon);
+    }
+
+TEST(DEllipse3d,ClosestPointB)
+    {
+    DEllipse3d ellipse;
+    for (double a = 1.0; a < 1000.0; a *= 2.62137129678632)
+        {
+        ellipse.Init (a * 2.4, a * 4.8, a * -2.4,     3.9, 2.1, 0.2,   -1.2, 4.2, -0.3, 0.0, Angle::TwoPi ());
+        double epsilon = BeNumerical::BeNextafter (1.0, 100.0) - 1.0;
+        TestExactClosestPoint (ellipse, 16, 10, epsilon);
+        TestExactClosestPoint (ellipse, 7, 10, epsilon);
+        }
+    }
+
+void CheckIntersectionOfTangents(DEllipse3dCR baseEllipse, double startDegrees, double sweepDegrees, bool expectSuccess)
+    {
+    DEllipse3d ellipse = baseEllipse;
+    ellipse.start = Angle::DegreesToRadians(startDegrees);
+    ellipse.sweep = Angle::DegreesToRadians(sweepDegrees);
+    DPoint3d xyzA, xyz0, xyz1;
+    DVec3d tangent0, tangent1, kurl0, kurl1, vector0A, vector1A;
+    bool stat = ellipse.IntersectionOfStartAndEndTangents(xyzA);
+    if (Check::Bool(stat, expectSuccess) && stat)
+        {
+        ellipse.FractionParameterToDerivatives(xyz0, tangent0, kurl0, 0.0);
+        ellipse.FractionParameterToDerivatives(xyz1, tangent1, kurl1, 1.0);
+        vector0A = DVec3d::FromStartEnd(xyz0, xyzA);
+        vector1A = DVec3d::FromStartEnd(xyz1, xyzA);
+        if (ellipse.IsFullEllipse())
+            {
+            Check::Near(xyzA, xyz0, "Full Ellipse IntersectionOfStartEndTangents matches start point.");
+            }
+        else
+            {
+            Check::Parallel(tangent0, vector0A);
+            Check::Parallel(tangent1, vector1A);
+            }
+      }
+    }
+
+TEST(DEllipse3d, IntersectionOfEndTangents)
+    {
+    bvector<double> sweepDegreesArray {10, 20, 30, 45, 60, 85, 100, 125, 178};
+    auto baseEllipse = DEllipse3d::From(1,2,3,
+                5,1,0.2,
+                2,8,-0.2,
+                0,0);
+    for (double startDegrees = -360; startDegrees <= 360; startDegrees += 45.0)
+        {
+        for (double sweepDegrees : sweepDegreesArray)
+            {
+            CheckIntersectionOfTangents(baseEllipse, startDegrees, sweepDegrees, true);
+            CheckIntersectionOfTangents(baseEllipse, startDegrees, -sweepDegrees, true);
+            CheckIntersectionOfTangents(baseEllipse, startDegrees, 180 + sweepDegrees, true);
+            CheckIntersectionOfTangents(baseEllipse, startDegrees, -(180 + sweepDegrees), true);
+            }
+        CheckIntersectionOfTangents(baseEllipse, startDegrees, 180, false);
+        CheckIntersectionOfTangents(baseEllipse, startDegrees, -180, false);
+        CheckIntersectionOfTangents(baseEllipse, startDegrees, 360, true);
+        CheckIntersectionOfTangents(baseEllipse, startDegrees, -360, true);
+        }
+    }
+#ifdef IsEllipseCollapsedToLine
+//! @return true if the ellipse is degenerate (i.e. vector0 and vector90 are colinear, or one is zero)
+//! @param [out] startExtremaEnd linestring from startpoint to endpoint touching any major or minor axis points contained by the properly stroked ellipse.
+//!   This may have 2 to 6 points.
+//! @param [out] strokeA single line segment that is the projection of the ellipse onto its longest axis.
+//! @param [out] strokeB single line segment that is the projection of the ellipse onto its shortest axis.
+bool IsEllipseCollapsedToLine (DEllipse3dCR ellipse, bvector<DPoint3d> &startExtremaEnd, DSegment3dR stroke)
+    {
+    DEllipse3d majorMinorEllipse = DEllipse3d::FromPerpendicularAxes (ellipse);
+    double a = vector0.Magnitude ();
+    double b = vector90.Magnitude ();
+    if (b > a)
+        majorMinorEllipse = DEllipse3d::FromRotatedAxes (majorMinorEllipse, Angle::PiOver2 ());
+    majorMinorEllipse = DEllipse3d::FromCopyWithPositiveSweep (majorMinorEllispe);
+    DRange2d localRange;
+    localRange.Init ();
+    for (int step = -2; step < 
+
+    }
+#endif
+
+TEST(DEllipse3d, ClassifyDegenerate)
+    {
+    
+    DSegment3d segment0X, segment0Y;
+    DEllipse3d ellipse0 = DEllipse3d::From (0,0,0,    1,0,0,    0,0,0, Angle::DegreesToRadians (-45), Angle::DegreesToRadians (340));
+    double d0 = ellipse0.GetMajorMinorRangeMidlines (segment0X, segment0Y);
+    Check::True (d0 < Angle::SmallAngle () * segment0X.Length ());
+
+    DSegment3d segment1X, segment1Y;
+    DEllipse3d ellipse1 = DEllipse3d::From (0,0,0,    1,1,0,    -1,-1,0,
+                Angle::DegreesToRadians (-45), Angle::DegreesToRadians (20));
+    double d1 = ellipse1.GetMajorMinorRangeMidlines (segment1X, segment1Y);
+    Check::True (d1 < Angle::SmallAngle () * segment1X.Length ());
+
+    DSegment3d segment2X, segment2Y;
+    DEllipse3d ellipse2 = DEllipse3d::From (1,1,1, 1,0.4,0, -0.2, 0.8,0, 0.0, Angle::TwoPi ());
+    double d2 = ellipse2.GetMajorMinorRangeMidlines (segment2X, segment2Y);
+    Check::True (d2 > Angle::SmallAngle () * segment2X.Length ());
+    Check::True (segment2X.Length () > segment2Y.Length ());
+    }
+
+void TestSymmetricLineLine (double totalTurnRadians, double length)
+    {
+
+    DSpiral2dBaseP spiralA = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralB = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralC = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralD = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    double a = 100.0;
+    double singleTurnRadians = totalTurnRadians * 0.5;
+    DPoint3d lineA = DPoint3d::From (-a,0,0);
+    DPoint3d lineB = DPoint3d::From (a * cos (totalTurnRadians), a * sin (totalTurnRadians), 0.0);
+    DPoint3d lineAB = DPoint3d::From (0,0,0);
+    DPoint3d lineA1, lineB1, jointAB;
+    double rAB;
+    DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (lineA, lineB, lineAB, length,
+                *spiralA, *spiralB,
+                lineA1, lineB1, jointAB, rAB);
+    double s = totalTurnRadians > 0.0 ? 1.0 : -1.0;
+    Check::True (lineA1.x < 0.0);
+    Check::Near (lineA1.y, 0.0);
+    Check::True (jointAB.y * s > 0.0);
+    Check::True (jointAB.x  < 0.0);
+    Check::True (lineB1.y * s > 0.0);
+    Check::True (lineB1.x  > 0.0);
+
+    Check::Near (lineAB.Distance (lineA1), lineAB.Distance (lineB1), "PI distance to tangency");
+    Check::Near (spiralA->mCurvature1, -spiralB->mCurvature1, "JunctionCurvatures");
+    double q = 0.2;
+    Transform placement = Transform::FromRowValues (
+                cos (q), -sin(q), 0, 2.3,
+                sin(q) , cos(q), 0, 1.5,
+                0,0,1,0
+                );
+
+    DPoint3d lineC = placement * lineA;
+    DPoint3d lineD = placement * lineB;
+    DPoint3d lineCD = placement * lineAB;
+    DPoint3d lineC1, lineD1, jointCD;
+    double rCD;
+    DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (lineC, lineD, lineCD, length,
+                *spiralC, *spiralD,
+                lineC1, lineD1, jointCD, rCD);
+    Check::Near (rAB, rCD, "transformed radius");
+    Check::Near (placement * lineA1, lineC1, "lineC1");
+    Check::Near (placement * lineB1, lineD1, "lineD1");
+    Check::Near (placement * jointAB, jointCD, "jointCD");
+    Check::Near (spiralA->mCurvature1, spiralC->mCurvature1);
+    Check::Near (spiralB->mCurvature1, spiralD->mCurvature1);
+
+    // spiral magic ....
+    Check::Near (singleTurnRadians * 2.0 * rAB, length);
+    }
+
+
+void TestLineSpiralArcSpiralLine(double totalTurnRadians, double lengthA, double lengthB, double radiusAB)
+    {
+
+    DSpiral2dBaseP spiralA = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralB = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+#ifdef abc
+    DSpiral2dBaseP spiralC = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralD = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+#endif
+    DEllipse3d arcAB;
+    double a = 100.0;
+    DPoint3d lineA = DPoint3d::From (-a,0,0);
+    DPoint3d lineB = DPoint3d::From (a * cos (totalTurnRadians), a * sin (totalTurnRadians), 0.0);
+    DPoint3d lineAB = DPoint3d::From (0,0,0);
+    DPoint3d lineA1, lineB1, spiralA1, spiralB1;
+    DSpiral2dBase::LineSpiralArcSpiralLineTransition (lineA, lineB, lineAB,
+                radiusAB, lengthA, lengthB,
+                *spiralA, *spiralB,
+                lineA1, lineB1, spiralA1, spiralB1, arcAB);
+#ifdef abc
+    double s = totalTurnRadians > 0.0 ? 1.0 : -1.0;
+    Check::True (lineA1.x < 0.0);
+    Check::Near (lineA1.y, 0.0);
+    Check::True (jointAB.y * s > 0.0);
+    Check::True (jointAB.x  < 0.0);
+    Check::True (lineB1.y * s > 0.0);
+    Check::True (lineB1.x  > 0.0);
+    Check::Near (lineAB.Distance (lineA1), lineAB.Distance (lineB1), "PI distance to tangency");
+    Check::Near (spiralA->mCurvature1, -spiralB->mCurvature1, "JunctionCurvatures");
+    double q = 0.2;
+    Transform placement = Transform::FromRowValues (
+                cos (q), -sin(q), 0, 2.3,
+                sin(q) , cos(q), 0, 1.5,
+                0,0,1,0
+                );
+
+    DPoint3d lineC = placement * lineA;
+    DPoint3d lineD = placement * lineB;
+    DPoint3d lineCD = placement * lineAB;
+    DPoint3d lineC1, lineD1, jointCD;
+    double rCD;
+    DEllipse3d arcCD;
+    DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (lineC, lineD, lineCD, length,
+                *spiralC, *spiralD,
+                lineC1, lineD1, jointCD, rCD);
+    Check::Near (rAB, rCD, "transformed radius");
+    Check::Near (placement * lineA1, lineC1, "lineC1");
+    Check::Near (placement * lineB1, lineD1, "lineD1");
+    Check::Near (placement * jointAB, jointCD, "jointCD");
+    Check::Near (spiralA->mCurvature1, spiralC->mCurvature1);
+    Check::Near (spiralB->mCurvature1, spiralD->mCurvature1);
+#endif
+    }
+
+
+
+TEST(DSpiral2D,SymmetricLineLine)
+    {
+    TestSymmetricLineLine (0.2, 10.0);
+    TestSymmetricLineLine (-0.4, 10.0);
+    }
+
+
+
+TEST(DSpiral2D,LineSpiralArcSpiralLine)
+    {
+    TestLineSpiralArcSpiralLine (0.2, 10.0, 10, 20);
+    TestLineSpiralArcSpiralLine (-0.4, 10.0, 10, 20);
+    }
+
+void TestSpiralStartShouderTargetA (DPoint2dCR start, DPoint2dCR shoulder, DPoint2dCR target)
+    {
+    DSpiral2dBase *spiralA = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBase *spiralB = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
+    DPoint2d pointP, pointQ;
+    if (Check::True (DSpiral2dBase::SymmetricPointShoulderTargetTransition (
+                    start, shoulder, target,
+                    *spiralA,
+                    *spiralB,
+                    pointP, pointQ), "DSpiral2dBase::SymmetricPointShoulderTargetTransition"))
+        {
+        DVec2d xVec = DVec2d::From (1.0, 0.0);
+
+        Transform frameA = Transform::FromOriginAndXVector (start, xVec);
+        Transform frameB = Transform::FromOriginAndXVector (pointP, xVec);
+
+        auto cpA = ICurvePrimitive::CreateSpiral (*spiralA, frameA, 0.0, 1.0);
+        auto cpB = ICurvePrimitive::CreateSpiral (*spiralB, frameB, 0.0, 1.0);
+        auto cpM0 = ICurvePrimitive::CreateLine (DSegment3d::From (start, shoulder));
+        auto cpM1 = ICurvePrimitive::CreateLine (DSegment3d::From (shoulder, target));
+        Check::SaveTransformed (*cpM0);
+        Check::SaveTransformed (*cpM1);
+        Check::SaveTransformed (*cpA);
+        Check::SaveTransformed (*cpB);
+        }
+
+    }
+
+
+TEST(DSpiral2D,StartShoulderTargetA)
+    {
+    TestSpiralStartShouderTargetA (DPoint2d::From (0,0), DPoint2d::From (10,0), DPoint2d::From (10,10));
+    Check::Shift (15.0, 0.0, 0.0);
+    TestSpiralStartShouderTargetA (DPoint2d::From (0,0), DPoint2d::From (5,-10), DPoint2d::From (10,5));
+    Check::Shift (15.0, 0.0, 0.0);
+    Check::ClearGeometry ("DSpiral2d.StartShoulderTargetA");
+    }
+
+void TestLineShift (bvector<DPoint3d> const &points)
+    {
+    auto c1 = CurveVector::CreateSpiralLineToLineShift (DSpiral2dBase::TransitionType_Clothoid, points[0], points[1], points[2], points[3]);
+    auto c2 = ICurvePrimitive::CreateLineString (points);
+    if (c1.IsValid ())
+    Check::SaveTransformed (*c1);
+    Check::SaveTransformed (*c2);
+    }
+
+TEST(DSpiral2D,LineToLineShift)
+    {
+    TestLineShift (bvector<DPoint3d>
+        {
+        DPoint3d::From (0,0, 0),
+        DPoint3d::From (1,0, 0),
+        DPoint3d::From (3,4,0),
+        DPoint3d::From (5,4,0)
+        }
+    );
+    Check::Shift (10, 0, 0);
+    TestLineShift(bvector<DPoint3d>
+        {
+        DPoint3d::From (-1,-1,0),
+        DPoint3d::From (0,-1,0),
+        DPoint3d::From (5,2,0),
+        DPoint3d::From (7,2.5,0)
+        }
+        );
+    Check::Shift (10,0,0);
+
+    TestLineShift (bvector<DPoint3d>
+        {
+        DPoint3d::From (-1, -1, 0),
+            DPoint3d::From (0,-0.85, 0),
+            DPoint3d::From (5, 2, 0),
+            DPoint3d::From (6, 1.0, 0)
+        }
+    );
+    Check::Shift (10, 0, 0);
+
+    Check::ClearGeometry("DSpiral2d.LineToLineShift");
+    }
+TEST(DSpiral2D,ScaledTransform)
+    {
+    Transform frame0 = Transform::FromRowValues
+            (
+            0,-1, 0, 5,
+            1, 0, 0, 7,
+            0, 0, 1, 0
+            );
+            
+    Transform rotate = Transform::FromLineAndRotationAngle (DPoint3d::From (1,1,0), DPoint3d::From (1,1,5), 0.4);
+    Transform rotateAndScale;
+    double s = 12.0;
+    rotateAndScale.ScaleMatrixColumns (rotate, s, s, s);
+    auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius
+            (
+            DSpiral2dBase::TransitionType_Clothoid,
+            0.1, 100.0,
+            0.2, 200.0,
+            frame0,
+            0.0, 1.0
+            );
+    auto spiral0 = spiral->Clone ();
+    bvector<DPoint3d> stroke0, stroke1;
+    auto options = IFacetOptions::CreateForCurves ();
+    spiral->AddStrokes (stroke0, *options);
+    double length0, length1;
+    spiral0->Length (length0);
+    spiral->TransformInPlace (rotateAndScale);
+    spiral->AddStrokes (stroke1, *options);
+    spiral->Length (length1);
+    Check::Near (length0 * s, length1);
+    Check::Near (rotateAndScale * stroke0.front (), stroke1.front ());
+    Check::Near (rotateAndScale * stroke0.back(), stroke1.back());
+    DSpiral2dPlacementCP placement0 = spiral0->GetSpiralPlacementCP ();
+    DSpiral2dPlacementCP placement  = spiral->GetSpiralPlacementCP ();
+    Check::Near (placement0->spiral->mLength * s, placement->spiral->mLength);
+    Check::Near (placement0->spiral->mCurvature0, s * placement->spiral->mCurvature0);
+    Check::Near (placement0->spiral->mCurvature1, s * placement->spiral->mCurvature1);
+    }
+
+
+TEST(MoveSemantics,BVectorDestructorAfterSwap)
+    {
+    bvector <double> a {1,2,3};
+    bvector<double> b{5,4,6};
+    std::swap (a,b);
+    }
+
+
+
+// Check if there is C1 continuity at end of primitive i . .
+void CheckC1 (CurveVectorCR curves, size_t i)
+    {
+    auto ray0End = curves.at(i)->FractionToPointAndUnitTangent (1.0).Value ();
+    auto ray1Start = curves.at(i+1)->FractionToPointAndUnitTangent (0.0).Value ();
+    Check::Near (ray0End.origin, ray1Start.origin, "Tangent point A");
+    Check::Parallel (ray0End.direction, ray1Start.direction, "Confirm tangency A");
+
+    }
+
+void TestMultiRadiusFillet (DPoint3dCR pointA, DPoint3dCR pointB, DPoint3dCR pointC)
+    {
+    auto options = IFacetOptions::CreateForCurves ();
+    bvector <double> radii;
+    for (size_t i = 2; i < 5; i++)
+        {
+        radii.push_back ((double)i);
+        auto vectorA = DVec3d::FromStartEnd (pointA, pointB);
+        auto vectorB = DVec3d::FromStartEnd (pointA, pointC);
+        auto curves = CurveCurve::ConstructMultiRadiusBlend (pointA, vectorA, vectorB, radii);
+        if (Check::True (curves.IsValid ()))
+            {
+            Check::Print (radii, "Radii");
+            Check::Print (*curves, "Fillets");
+            bvector<DPoint3d> strokes;
+            curves->AddStrokePoints (strokes, *options);
+            Check::Print (strokes, "strokes");
+
+            for (size_t i = 0; i + 1 < curves->size (); i++)
+                CheckC1 (*curves, i);
+            }
+        }
+    }
+
+TEST(DEllipse3d,MultiRadiusFillet)
+    {
+    DPoint3d pointA = DPoint3d::From (10, 0,0);
+    DPoint3d pointB = DPoint3d::From ( 0, 0,0);
+    DPoint3d pointC = DPoint3d::From ( 0,10,0);
+    DPoint3d pointB1 = DPoint3d::From (1,2,0);
+    TestMultiRadiusFillet (pointA, pointB, pointC);
+    TestMultiRadiusFillet (pointA, pointB1, pointC);
+
+    }
+void testSymmetricFilletWithTaper
+(
+DPoint3dCR pointBefore,
+DPoint3dCR corner,          //!< [in] corner
+DPoint3dCR pointAfter,
+double setback0,
+double distance0,
+double filletRadius,        //!< [in] fillet radius
+double setback1,        //!< [in] distance from fillet tangency to nominal curb
+double distance1,        //!< [in] length of (projection of) taper along the nominal curb
+double offset0 = 0.0,
+double offset1 = 0.0
+)
+    {
+    DVec3d vectorA = pointBefore - corner;
+    DVec3d vectorB = pointAfter - corner;
+    Check::StartScope ("TaperFilletTaper in Corner");
+
+
+    auto chain = CurveCurve::ConstructTaperFilletTaper
+                    (
+                    corner, vectorA, vectorB,
+                    setback0,
+                    distance0,
+                    filletRadius,
+                    setback1,
+                    distance1,
+                    offset0,
+                    offset1);
+    if (    Check::True (chain.IsValid (), "Chain returned")
+        &&  Check::Size (3, chain->size (), "5 primitives")
+        )
+        {
+        double length0, length2;
+        chain->at(0)->Length (length0);
+        chain->at(2)->Length (length2);
+        double h0 = hypot (setback0, distance0);
+        double h2 = hypot (setback1, distance1);
+        Check::Near (h0, length0);
+        Check::Near (h2, length2);
+        DVec3d planeNormal = DVec3d::FromCrossProduct (vectorA, vectorB);
+        auto ray0End = chain->at(0)->FractionToPointAndUnitTangent (1.0).Value ();
+        auto ray1Start = chain->at(1)->FractionToPointAndUnitTangent (0.0).Value ();
+
+        auto ray2End = chain->at(1)->FractionToPointAndUnitTangent (1.0).Value ();
+        auto ray3Start = chain->at(2)->FractionToPointAndUnitTangent (0.0).Value ();
+        Check::Near (ray0End.origin, ray1Start.origin, "Tangent point A");
+        Check::Parallel (ray0End.direction, ray1Start.direction, "Confirm tangency A");
+
+        Check::Near (ray2End.origin, ray3Start.origin, "Tangent point B");
+        Check::Parallel (ray2End.direction, ray3Start.direction, "Confirm tangency B");
+
+        DPoint3d xyzStart, xyzEnd;
+        chain->GetStartEnd (xyzStart, xyzEnd);
+        DRay3d rayA = DRay3d::FromOriginAndVector (corner, vectorA);
+        DRay3d rayB = DRay3d::FromOriginAndVector (corner, vectorB);
+        DPoint3d xyzProjectedStart, xyzProjectedEnd;
+        double fA, fB;
+        Check::True (rayA.ProjectPointUnbounded (xyzProjectedStart, fA, xyzStart));
+        Check::True (rayB.ProjectPointUnbounded (xyzProjectedEnd, fB, xyzEnd));
+        Check::Near (fabs (offset0), xyzStart.Distance (xyzProjectedStart), "start point");
+        Check::Near (fabs (offset1), xyzEnd.Distance (xyzProjectedEnd), "end point");
+        if (offset0 != 0.0)
+            Check::True (vectorA.TripleProduct (DVec3d::FromStartEnd (corner, xyzStart), planeNormal) * offset0 > 0.0, "offset direction 0");
+        if (offset1 != 0.0)
+            Check::True (vectorB.TripleProduct (DVec3d::FromStartEnd (corner, xyzEnd), planeNormal) * offset1 < 0.0, "offset direction 1");
+        if (s_noisy)
+            Check::Print (chain, "SymmetricTaper");
+        }
+    Check::EndScope ();
+    }
+
+TEST(DEllipse3d,SymmetricFilletWithTaper)
+    {
+    for (double offset : bvector<double> {0.0, 0.1})
+        {
+        testSymmetricFilletWithTaper (DPoint3d::From (5,0,0), DPoint3d::From (0,0,0), DPoint3d::From (0,10,0), 0.1, 2.0, 1.5, 0.3, 2.0, offset, offset);
+        testSymmetricFilletWithTaper (DPoint3d::From (5,0,0), DPoint3d::From (0,0,0), DPoint3d::From (0,10,0), 0.1, 2.0, 1.5, 0.3, 2.0, offset, -offset);
+        testSymmetricFilletWithTaper (DPoint3d::From (5,0,0), DPoint3d::From (0.2,0.4,0), DPoint3d::From (0,10,0), 0.1, 2.0, 1.5, 0.3, 2.0, offset, 2.0 * offset);
+        testSymmetricFilletWithTaper (DPoint3d::From (5,0,0), DPoint3d::From (0.2,0.4,0), DPoint3d::From (0,10,0), 0.1, 2.0, 1.5, 0.3, 2.0, offset, -2.0 * offset);
+        }
+    }
+
+void TestPseudoOffsetConstruction (DEllipse3dCR arc0)   // ASSUME arc0.start == 0
+    {
+    DPoint3d pointA, pointB;
+    DVec3d tangentA, tangentB, twistA, twistB;
+    arc0.FractionParameterToDerivatives (pointA, tangentA, twistA, 0.0);
+    arc0.FractionParameterToDerivatives (pointB, tangentB, twistB, 1.0);
+    auto result = DEllipse3d::FromStartTangentSweepEndTangentXY (pointA, tangentA, pointB, tangentB, arc0.sweep);
+
+    if (Check::True (result.IsValid (), "construction completed"))
+        {
+        if (!Check::Near (arc0, result.Value (), "ellipse match") || s_noisy)
+            {
+            Check::Print (arc0, "Input Arc");
+            Check::Print (result.Value (), "Matched arc");
+            }
+        }
+    }
+TEST(DEllipse3d,PseudoOffsetConstruction)
+    {
+    for (auto b : bvector<double>{1.0, 1.5, 2.0, 0.5})
+        {
+        for (auto sweepDegrees : bvector<double>{90.0, 45.0, 132.0})
+            {
+            TestPseudoOffsetConstruction (
+                DEllipse3d::From (
+                    0,0,0,
+                    1,0,0,
+                    0,b,0,
+                    0.0,
+                    Angle::DegreesToRadians (sweepDegrees)
+                    ));
+            }
+        }
+
+    // And skewed vector cases (but always start at theta = 0)
+        for (auto sweepDegrees : bvector<double>{90.0, 45.0, 132.0})
+            {
+            TestPseudoOffsetConstruction (
+                DEllipse3d::From (
+                    1,2,0,
+                    3.4, 0.6,0,
+                    -0.3, 2.0, 0,
+                    0.0,
+                    Angle::DegreesToRadians (sweepDegrees)
+                    ));
+            }
+    }
+
+TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
+    {
+    // Create short ellipses starting along x axis, with various combinations of 
+    // sign of normal, radius, sweep
+    for (double zSign: bvector<double>{1,-1})
+        {
+        DVec3d normal = DVec3d::From (0,0,zSign);
+        for (double radius : bvector<double> {2.0, -2.0})
+            {
+            for (double sweep : bvector<double> {0.4, -0.4})
+                {
+                auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (
+                        DPoint3d::From (0,0,0),
+                        DVec3d::UnitX (),
+                        normal,
+                        radius,
+                        sweep
+                        );
+                // unused - auto endPoint = arc.Value ().FractionToPoint (1.0);
+                Check::Print (normal, "normal");
+                Check::Print(radius, "radius");
+                Check::Print(sweep, "sweep");
+                Check::Print (arc.Value (), "arc");
+                Check::LessThanOrEqual (0, 
+                        radius * arc.Value ().vector0.TripleProduct (arc.Value ().vector90, normal) > 0.0,
+                        "Arc Frame is orientation follows radius, normal"
+                        );
+                Check::Near (sweep, arc.Value ().sweep, "sweep applied directly");
+                }
+            }
+        }
+    }
+
+TEST(DEllipse3d,CenterStartEnd)
+  {
+  DEllipse3d ellipse = DEllipse3d::From (0,10,0,   10,0,0, 0,10,0, 0.0, Angle::TwoPi ());
+  for (double endDegrees = -50.0; endDegrees < 60.0; endDegrees += 20.0)
+      {
+      Angle startAngle = Angle::FromDegrees (0);
+      Angle endAngle   = Angle::FromDegrees (endDegrees);
+      DPoint3d startA, endA;
+      ellipse.Evaluate (startA, startAngle.Radians ());
+      ellipse.Evaluate (endA, endAngle.Radians ());
+      DEllipse3d ellipseB =DEllipse3d::FromArcCenterStartEnd (ellipse.center, startA, endA);
+      Check::Near (ellipse.center, ellipseB.center);
+      DPoint3d startB, endB;
+      ellipse.Evaluate (startB, startAngle.Radians ());
+      ellipse.Evaluate (endB, endAngle.Radians ());
+      Check::Near (startA, startB);
+      Check::Near (endA, endB);
+      }
+  }
+
+
+TEST(DEllipse3d,Scott)
+  {
+  DPoint3d cc = DPoint3d::From (51934.74932643221, 57759.754516860063,0);
+  DPoint3d pc = DPoint3d::From (52055.976152000003, 57957.891192000003,0);
+  DPoint3d pt = DPoint3d::From (51860.118358500002, 57979.718849999997);
+  double thetaA = DVec3d::FromStartEnd (cc, pc).AngleTo (DVec3d::FromStartEnd (cc, pt));
+  double rA0 = cc.Distance (pc);
+  double rA1 = cc.Distance (pt);
+  Check::PrintIndent (2);    Check::Print (Angle::RadiansToDegrees (thetaA), "input sweep");
+  Check::PrintIndent (2);    Check::Print ((rA1-rA0) / rA0, "relative radius difference (fractional)");
+  DEllipse3d ellipseB =DEllipse3d::FromArcCenterStartEnd (cc, pc, pt);
+  Check::PrintIndent (2);    Check::Print (pc, "startA");
+  Check::PrintIndent (2);    Check::Print (pt,   "endA");
+
+
+  Check::PrintIndent (2);    Check::Print (ellipseB.center,   "center");
+  Check::PrintIndent (2);    Check::Print (ellipseB.vector0,  "vector0");
+  Check::PrintIndent (2);    Check::Print (ellipseB.vector90, "vector90");
+  Check::PrintIndent (2);    Check::Print (Angle::RadiansToDegrees (ellipseB.sweep),    "sweep degrees");
+  DPoint3d startB, endB;
+  ellipseB.EvaluateEndPoints (startB, endB);
+
+  Check::PrintIndent (2);    Check::Print (startB, "startB");
+  Check::PrintIndent (2);    Check::Print (endB,   "endB");
+  Check::PrintIndent (2);    Check::Near (pc, startB);
+//  Check::Near (pt, endB);
+  Check::PrintIndent (2);    Check::Near (thetaA, ellipseB.sweep, "Angle Sweep");
+  ICurvePrimitivePtr primitive = ICurvePrimitive::CreateArc (ellipseB);
+  DEllipse3d ellipseC;
+  primitive->TryGetArc (ellipseC);
+  Check::PrintIndent (2);    Check::Near (ellipseB, ellipseC);
+  double d = pt.Distance (endB);
+  Check::PrintIndent (2);    Check::True (d < 1.0e-7 * rA0, "Radial shift -- input is slightly off radius");
+  DPoint3d startPrim, endPrim;
+  primitive->GetStartEnd (startPrim, endPrim);
+  Check::PrintIndent (2);    Check::Near (startB, startPrim);
+  Check::PrintIndent (2);    Check::Near (endB, endPrim);
+  }
+
+
+TEST (DEllipse3d,IsCCWSweepXY)
+  {
+
+  bvector <double> yValues {-1,1};
+  bvector <double> sweepValues {-0.2, 0.2};
+  for (double y: yValues)
+      {
+      for (double sweep : sweepValues)
+          {
+          DEllipse3d ellipse = DEllipse3d::From (
+                0,0,0,
+                1,0,0,
+                0,y,0, 0.0, sweep);
+          Check::Bool (sweep * y > 0, ellipse.IsCCWSweepXY ());
+          }
+      }
+    }
+
+// Construct a circular arcfrom center, start, and end, with flag to select among two possible orientations.
+// (endpoint will not be on the arc if it is at a different radius than the start.)
+DEllipse3d ConstructCircularArcWithXYOrientation
+(
+DPoint3dCR centerPt,    // center point of circular arc.
+DPoint3dCR startPt,     // start point of circular arc
+DPoint3dCR endPt,       // nominal end point.  If at different radius, it is projected onto the circle through the start point.
+bool isCCW              // true for arc runnign CCW viewed from above.
+)
+    {
+    auto arc = DEllipse3d::FromArcCenterStartEnd (centerPt, startPt, endPt);
+    // This computes an ellispe with the SHORTER sweep from startPt to endPt.
+    auto ellipseNormal = DVec3d::FromCrossProduct (arc.vector0, arc.vector90);
+    // Force the ellipse axes to be right handed when viewed from above the xy plane
+    if (ellipseNormal.z < 0.0)
+        arc = arc.FromNegateVector90 (arc);
+    // The short sweep may be going the opposite direction around the circle . . . . 
+    // sign of sweep indicates whether the ellipse is ccw or cw
+    bool isCCW0 = arc.sweep > 0;
+    if (isCCW0 != isCCW)
+        arc.ComplementSweep ();
+    return arc;
+    }
+TEST (DEllipse3d,ConstructWithXYOrientation)
+    {
+    DPoint3d center = DPoint3d::From (1,2,3);
+    DVec3d   vector0 = DVec3d::From (1,3,0);
+    DVec3d   vector90 = DVec3d::FromCrossProduct (DVec3d::UnitZ (), vector0);
+
+    for (bool ccw : bvector<bool> { true, false})
+        {
+        for (double ccwSweep : bvector<double> { 60.0, 90.0, 170.0, 225.0, 332.0})
+            {
+            DPoint3d startA = center + vector0;
+            DPoint3d endA = center + cos (ccwSweep) * vector0 + sin (ccwSweep) * vector90;
+            DEllipse3d arc = ConstructCircularArcWithXYOrientation (center, startA, endA, ccw);
+            Check::Bool (ccw, arc.IsCCWSweepXY (), "sweep direction check");
+            DPoint3d startB, endB;
+            arc.FractionParameterToPoint (startB, 0.0);
+            arc.FractionParameterToPoint (endB, 1.0);
+            Check::Near (startA, startB);
+            Check::Near (endA, endB);
+            }
+        }
+    }
+
+bool testConstructStartPointStartTangentCircleTangency
+(
+DPoint3dCR pointA,
+DVec3dCR   tangentA,
+DPoint3dCR centerB,
+double     radiusB,
+DPoint3d   biasPoint
+)
+    {
+    bvector<DEllipse3d> ellipse;
+    static double tangentMultiplier = pointA.Distance (centerB);
+    DEllipse3d::Construct_Point_Direction_TangentToCircleXY (ellipse, pointA, tangentA, centerB, radiusB);
+    if (ellipse.empty ())
+        return false;
+    auto lineA = ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointA + tangentMultiplier * tangentA));
+    Check::SaveTransformed (*lineA);
+    auto circleB = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (centerB, radiusB));
+    Check::SaveTransformed (*circleB);
+    for (auto &e : ellipse)
+        {
+        auto arc = ICurvePrimitive::CreateArc (e);
+        Check::SaveTransformed (*arc);
+        }
+
+    // Find the arc that ends closest to the bias point.
+    // choose its smaller part.
+    // scale to make it visually different
+    auto biasCircle = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (biasPoint, 0.1 * radiusB));
+    Check::SaveTransformed (*biasCircle);
+
+    auto closestArc = DEllipse3d::ClosestEllipse (ellipse, 1.0, biasPoint).Value ();
+    closestArc.SelectSmallerSweep ();
+    // unused - double displayScale = 0.95;
+    closestArc.vector0.Scale (0.95);
+    closestArc.vector90.Scale (0.95);
+    auto displayArc = ICurvePrimitive::CreateArc (closestArc);
+    Check::SaveTransformed (*displayArc);
+    return true;
+    }
+
+TEST(DEllipse3d,ConstructStartPointStartTangentCircleTangency)
+    {
+    double shiftY = -30.0;
+    double shfitX = 60.0;
+    // unused - double b = 10.0;
+    for (auto b : bvector<double> {10.0, 5.0, 1.0, -1.0, -5.0, -10.0})
+        {
+        auto pointA = DPoint3d::From (0,0,0);
+        auto directionA = DVec3d::From (0,1,0);
+        auto centerB = DPoint3d::From (1,b,0);
+        auto directionBA = pointA - centerB;
+        auto biasPoint = pointA + DVec3d::FromCCWPerpendicularXY (directionBA);
+        auto radiusB = 2.0;
+        testConstructStartPointStartTangentCircleTangency (pointA, directionA, centerB, radiusB, biasPoint);
+        Check::Shift (0,shiftY,0);
+        testConstructStartPointStartTangentCircleTangency (pointA, -1.0 * directionA, centerB, radiusB, biasPoint);
+        Check::Shift (shfitX, -shiftY, 0);
+        }
+    Check::ClearGeometry ("DEllipse3d.ConstructStartPointStartTangentCircleTangency");
+    }
+
+void TestSweepToPlane (DEllipse3dCR spaceEllipse, DPlane3dCR plane, DVec3d sweepDirection)
+    {
+    auto targetEllipse = DEllipse3d::FromEllipseSweptToPlane (spaceEllipse, plane, sweepDirection);
+    for (double f : bvector<double>{0,0.25, 0.5, 0.78, 1.0})
+        {
+        DPoint3d pointA = spaceEllipse.FractionToPoint (f);
+        DPoint3d pointB = targetEllipse.Value ().FractionToPoint (f);
+        DVec3d pointSweep = pointB - pointA;
+        Check::Parallel (sweepDirection, pointSweep, "fractional ellipse point moves in sweep direction");
+        Check::NearZero (plane.Evaluate (pointB), "Swept ellipse point is on plane");
+        }
+    }
+TEST(DEllipse3d,SweepToPlane)
+    {
+    DVec3d unitZ = DVec3d::UnitZ ();
+    DVec3d slant = DVec3d::From (1,2,9);
+    DPlane3d targetZ1 = DPlane3d::FromOriginAndNormal (DPoint3d::From (0,0,1),  unitZ);
+    DEllipse3d baseEllipse = DEllipse3d::From (0,0,0,  1,0,0,  0,1,0, 0, 2);
+    TestSweepToPlane (baseEllipse, targetZ1, unitZ);
+    TestSweepToPlane (baseEllipse, targetZ1, slant);
+    DPlane3d skewTarget = DPlane3d::FromOriginAndNormal (1,2,3, 1,-2,1);
+    // unused - DEllipse3d skewEllipse = DEllipse3d::From (0.2,2,1,   4,5,-1, 3,8,11, 0.0, Angle::Pi ());
+    TestSweepToPlane (baseEllipse, skewTarget, slant);
+    }

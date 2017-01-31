@@ -1,0 +1,107 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/bsp/bspstrok.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspstrok_curveSilhouette
+(
+DPoint3d        **points,       /* OUT     points on curve with tangents parallel to line */
+double          **params,       /* OUT     parameters or NULL */
+double          **dists,        /* OUT     the distance to the axis line */
+int             *numPts,        /* OUT     number of points */
+MSBsplineCurve  *curve,         /* IN      curve (need to be planar?) */
+DSegment3d       *line           /* IN      axis parallel to the tangents of points */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  05/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspstrok_strokeCurveByFunction
+(
+MSBsplineCurve  *curve,                /* IN      curve to stroke */
+double          tolerance,             /* IN      chord height stroke tolerance */
+RotMatrix       *matrix,                       /* IN      of view to stroke in, or NULL */
+int             (*stopFunc)(),         /* IN      to abort stroking, or NULL */
+int             (*strokeFunc)(),       /* IN      receives MAX_CLIPBATCH vectors at a time */
+void            *argsP                 /* IN      passed through to strokeFunc */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  05/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspstrok_strokeCurveToPoints
+(
+DPoint3d        **points,              /* IN OUT  stroke points returned, or NULL */
+double          **params,              /* IN OUT  parameters of points returned, or NULL */
+int             *numPts,               /* IN OUT  number of points returned */
+MSBsplineCurve  *curve,                /* IN      curve to stroke */
+double          tolerance,             /* IN      chord height tolerance */
+RotMatrix       *matrix                /* IN      of view to stroke in, or NULL */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspstrok_displayBoundaries
+(
+MSBsplineSurface    *surf,             /* IN      surface with boundaries to stroke */
+int                 (*stopFunc)(),     /* IN      function to abort stroking */
+int                 (*strokeFunc)(),   /* IN      function to process strokes -- PFDPoint3dPIntVoidP*/
+void                *argP              /* IN      passed through to strokeFunc */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  07/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspcurv_strokeCurve
+(
+MSBsplineCurve  *curveP,
+double          tolerance,
+double          minParam,
+double          maxParam,
+int             wholeCurve,
+double          v,
+int             (*stopFunc)(),
+PFBsplineStroke  strFunc,
+void            *a1,
+void            *a2,
+void            *a3,
+void            *a4,
+void            *a5,
+void            *a6,
+void            *a7
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Four ways to use this function: 1). numPts != 0 && data != NULL -> evaluate at given parametrs #). numPts != 0 && data == NULL -> evaluate
+* at numPts evenly 2). rulesByLength == true ... spaced along arc length 3). rulesByLength == false ... spaced from 0.0 to 1.0 4). numPts == 0
+* && -> stroke curve according to data[0] = chord tol chord tolerance, set numPts to number of points returned
+* @bsimethod                                                    BentleySystems  09/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspcurv_evaluateCurve
+(
+DPoint3d        **pts,         /* OUT     evaluated points */
+double          *data,         /* IN      params to evaluate at */
+int             *numPts,       /* IN OUT  number evaluated points */
+MSBsplineCurve  *curve         /* IN      curve structure */
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,14 @@
+PRIMITIVE CurveReference
+<def name=Interface_BaseList>IGeometry, ICurve</def>
+<def name=Class_BaseList>ICurveReference</def>
+<def name=SUMMARY>Curve which defined by refernece to another curve.
+This may be used to allow the curve chains of regions on opposite sides of a curve to both reference the
+same underlying curve but with opposing directions.
+</def>
+
+
+<def name=MEMBERS><child ItemType=ICurve ItemTagName=ParentCurve ItemSemanticName=ParentCurve ItemParamName=parentCurve ItemMemberName=mParentCurve ItemDescription="Parent curve." ScaleMode=Container/>
+<value ItemType=bool ItemTagName=Reversed ItemSemanticName=Reversed ItemParamName=reversed ItemMemberName=mReversed ItemDescription="Reversal flag." ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

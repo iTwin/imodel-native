@@ -1,0 +1,25 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: geom/src/regions/privinc/rg_fixface.fdf $
+|
+| Copyright (c) 2001;  Bentley Systems, Inc., 685 Stockton Drive,
+|                      Exton PA, 19341-0678, USA.  All Rights Reserved.
+|
+| This program is confidential, proprietary and unpublished property of Bentley Systems
+| Inc. It may NOT be copied in part or in whole on any medium, either electronic or
+| printed, without the express written consent of Bentley Systems, Inc.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*------------------------------------------------------------------*//**
+* @bsimethod                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public void     jmdlRG_fixTopology
+(
+RG_Header           *pRG
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

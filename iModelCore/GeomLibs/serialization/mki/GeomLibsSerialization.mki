@@ -1,0 +1,19 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: serialization/mki/GeomLibsSerialization.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName         = BentleyGeomSerialization
+CCompPDBName    = $(appName)
+
+nameToDefine=__GEOMLIBS_SERIALIZATION_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Set to export (vs. import) symbols.
+nameToDefine = BGFB_INTERNAL
+%include cdefapnd.mki
+
+

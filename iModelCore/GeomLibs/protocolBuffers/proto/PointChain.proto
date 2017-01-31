@@ -1,0 +1,5 @@
+message PointChain
+{
+repeated ISinglePoint Point = 1;
+}
+

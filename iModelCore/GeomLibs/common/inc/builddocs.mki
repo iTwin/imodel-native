@@ -1,0 +1,110 @@
+#----------------------------------------------------------------------------------------
+#
+#       $Date$
+#     $Author$
+#
+# Copyright (c) 1997;  Bentley Systems, Inc., 690 Pennsylvania Drive,
+#                      Exton PA, 19341-1136, USA.  All Rights Reserved.
+#
+# This program is confidential, proprietary and unpublished property of Bentley Systems
+# Inc. It may NOT be copied in part or in whole on any medium, either electronic or
+# printed, without the express written consent of Bentley Systems, Inc.
+#
+#----------------------------------------------------------------------------------------
+
+%if !defined (MDLDOC_BaseDir)
+    %error MDLDOC_BaseDir must be defined.
+%endif
+
+%if !defined (MDLDOC_SourceDir)
+    %error MDLDOC_SourceDir must be defined.
+%endif
+
+%if !defined (MDLDOC_OutDir)
+    %error MDLDOC_OutDir must be defined.
+%endif
+
+%if !defined (MDLDOC_StampDir)
+    %error MDLDOC_StampDir must be defined.
+%endif
+
+%if !defined (MDLDOC_SpellDir)  && !defined (NO_MDLDOC_SPELLING)
+    %error MDLDOC_SpellDir must be defined.
+%endif
+
+%if !defined (MDLDOC_ProjectName)
+    %error MDLDOC_ProjectName must be defined.
+%endif
+
+%if !defined (MDLDOC_ContentFile)
+    %error MDLDOC_ContentFile must be defined.
+%endif
+
+%if !defined (MDLDOC_ListFile)
+    %error MDLDOC_ListFile must be defined.
+%endif
+
+%if !defined (MDLDOC_OutputFile)
+    %error MDLDOC_OutputFile must be defined.
+%endif
+
+#----------------------------------------------------------------------
+#   If necessary, create output directories
+#----------------------------------------------------------------------
+always:
+    ~!@mkdir $(MDLDOC_OutDir)
+     ~@mkdir $(MDLDOC_OutDir)html
+     ~@mkdir $(MDLDOC_OutDir)includehtml
+     ~@mkdir $(MDLDOC_StampDir)
+%if defined(MDLDOC_SpellDir)
+     ~@mkdir $(MDLDOC_SpellDir)
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Copy over our includes
+#----------------------------------------------------------------------------------------
+%iffile $(MDLDOC_BaseDir)includehtml
+    includeHtmlFileMatcher=$(MDLDOC_BaseDir)includehtml/*.*
+    always:
+        ~@task Microsoft.Build.Tasks.Copy -i:SourceFiles=@(includeHtmlFileMatcher) -i:DestinationFolder=$(MDLDOC_OutDir)includehtml -i:SkipUnchangedFiles=true
+
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Copy hhp file to output
+#----------------------------------------------------------------------------------------
+$(MDLDOC_OutDir)$(MDLDOC_ProjectName).hhp : $(MDLDOC_BaseDir)$(MDLDOC_ProjectName).hhp
+    $(CopyFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+#   First Pass
+#----------------------------------------------------------------------------------------
+MDLDOC_Pass=1
+%include $(SrcGeomLibs)common/inc/mdldoc.mki
+%include $(MDLDOC_ListFile)
+
+#----------------------------------------------------------------------------------------
+#   Second Pass
+#----------------------------------------------------------------------------------------
+MDLDOC_Pass=2
+%include $(SrcGeomLibs)common/inc/mdldoc.mki
+%include $(MDLDOC_ListFile)
+
+#----------------------------------------------------------------------------------------
+#   Create Table of Contents
+#----------------------------------------------------------------------------------------
+$(MDLDOC_OutDir)$(MDLDOC_ProjectName).hhc : $(MDLDOC_OutDir)$(MDLDOC_ProjectName).__c
+    |-----------------------------------------------------------------
+    |   Generating table of contents
+    |-----------------------------------------------------------------
+    > $(MDLDOC_OutDir)maketoc.opt
+    $(MDLDOC_Options)
+    -C
+    <
+    $(mdldocCmd) @$(MDLDOC_OutDir)maketoc.opt
+
+#----------------------------------------------------------------------------------------
+#   Create CHM file
+#----------------------------------------------------------------------------------------
+$(MDLDOC_OutputFile) :  $(MDLDOC_OutDir)$(MDLDOC_ProjectName).hhp $(MDLDOC_OutDir)$(MDLDOC_ProjectName).hhc
+

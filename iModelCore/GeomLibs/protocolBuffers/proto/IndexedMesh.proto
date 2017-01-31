@@ -1,0 +1,12 @@
+message IndexedMesh
+{
+repeated DPoint3d Coord = 1;
+repeated int32 CoordIndex = 2;
+repeated DPoint2d Param = 3;
+repeated int32 ParamIndex = 4;
+repeated DVector3d Normal = 5;
+repeated int32 NormalIndex = 6;
+repeated DVector3d Color = 7;
+repeated int32 ColorIndex = 8;
+}
+

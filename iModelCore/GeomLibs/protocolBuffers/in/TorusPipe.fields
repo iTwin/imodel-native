@@ -1,0 +1,16 @@
+PRIMITIVE TorusPipe
+<def name=Interface_BaseList>IGeometry, IAnalyticSolid</def>
+<def name=SUMMARY>A portion of an "constant radius elbow" of a pipe.  This is a partial torus
+    in the "major circle", but complete around the "minor circle".
+</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusA ItemMemberName=mRadiusA ItemDescription="Elbow radius" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusB ItemMemberName=mRadiusB ItemDescription="Pipe radius" ScaleMode=Length/>
+<field ItemType=Angle ItemParamName=startAngle ItemMemberName=mStartAngle ItemDescription="Start angle in xy plane" ScaleMode=None/>
+<field ItemType=Angle ItemParamName=sweepAngle ItemMemberName=mSweepAngle ItemDescription="Sweep angle in xy plane" ScaleMode=None/>
+<field ItemType=bool ItemParamName=bSolidFlag ItemMemberName=mbSolidFlag ItemDescription="true for closed caps" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

@@ -1,0 +1,56 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/gp_hatchblock.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+*
+* Generate cross for a range of uniformly spaced y cuts, restricted so that the entire
+* space vertically above each base line is clear of boundary geometry.
+*
+*
+* Each output graphics point describes a hatch block.  The outpoint point is of the form
+*     (x,y,z,w,a) = (x0, y0, 0,1,dx)
+* where x0,y0 is a hatch block start in local coordinates and dx is the length of
+* the hatch block base line.
+*
+* Output data is in the local coordinates of the transform -- multiply by the transform
+* to get back to world.
+*
+* @param pCollector         IN      array of hatch blocks
+* @param pMap               IN      transform from hatch space back to world.
+*                               M0 is local to world, M1 is world to local.
+* @param y0                 IN      first baseline y coordinate.
+* @param y1                 IN      last baseline y coordinates.
+* @param dy                 IN      thickness of hatch blocks.  Typically, but not
+*                               necessarily, this is smaller than (y1 - y0)/numBaseline
+* @param numBaseline        IN      number of baselines to compute.
+* @bsimethod                                                    BentleySystems  08/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     jmdlGraphicsPointArray_addTransformedHatchBlocks
+(
+        GraphicsPointArray      *pCollector,
+GraphicsPointArrayCP pBoundary,
+const   DMap4d                      *pMap,
+        double                      y0,
+        double                      y1,
+        double                      hy,
+        int                         numBaseline
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

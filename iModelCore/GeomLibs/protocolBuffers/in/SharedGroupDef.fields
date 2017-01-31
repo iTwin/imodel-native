@@ -1,0 +1,11 @@
+PRIMITIVE SharedGroupDef
+<def name=SUMMARY>A named set of geometry.
+</def>
+<def name=Interface_BaseList>IGeometry, IAggregate</def>
+
+
+<def name=MEMBERS><value ItemType=String ItemTagName=Name ItemSemanticName=Name ItemParamName=name ItemMemberName=mName ItemDescription="SharedGroup name" ScaleMode=None/>
+<child ItemType=IGeometry ItemTagName=Geometry ItemSemanticName=Geometry ItemParamName=geometry ItemMemberName=mGeometry ItemDescription="SharedGroup geometry" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

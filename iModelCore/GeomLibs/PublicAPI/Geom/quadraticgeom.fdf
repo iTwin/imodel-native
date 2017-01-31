@@ -1,0 +1,615 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/quadraticgeom.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! Given arrays of sin cos values distributed in theta and phi
+//! directions of a spherical coordinate system, construct 3d cartesian
+//! coordinates of a grid of points on the sphere.
+//!
+//! @param pPointArray OUT     Filled array of n1 * n2 points on the torus.
+//!                                     Theta varies fastest.
+//! @param pThetaArray IN      array where x,y coordinates are
+//!                                       costheta and sintheta
+//! @param n1 IN      number of point in pThetaPoint array
+//! @param pPhiArray IN      array where x,y coordinates are
+//!                                       cosphi and sinphi
+//! @param int            n2 number of points in pPhiPoint array
+//! @param double                 radius radius multiplier
+//! @param double         lambda           hoop radius multiplier
+//!
+Public GEOMDLLIMPEXP void bsiEllipse_trigToTorus
+(
+DPoint3dP pPointArray,
+DPoint3dP pThetaArray,
+int             n1,
+DPoint3dP pPhiArray,
+int             n2,
+double          radius,
+double          lambda
+);
+
+//!
+//! Given arrays of sin cos values distributed in theta, and the cone
+//! taper, construct components of a vector proportional to the normal
+//! of a unit cone.
+//!
+//! @param pPointArray OUT     Filled array of n1 * n2 points on the torus. Theta varies fastest.
+//! @param pThetaArray IN      array where x,y coordinates are costheta and sintheta
+//! @param n1 IN      number of points in pThetaPoint array
+//! @param n2 IN      number of alpha hoops
+//! @param lambda IN      taper factor
+//!
+Public GEOMDLLIMPEXP void bsiEllipse_trigToConePseudoNormal
+(
+DPoint3dP pPointArray,
+DPoint3dP pThetaArray,
+int             n1,
+int             n2,
+double          lambda
+);
+
+//!
+//! Given arrays of sin cos values distributed in theta direction, and
+//! taper in axial direction, in a conical coordiante system, construct
+//! 3d cartesian coordinates of a grid of points on the cone.
+//!
+//! @param pPointArray OUT     Filled array of n1 * n2 points on the torus.
+//!                                     Theta varies fastest.
+//! @param pThetaArray IN      array where x,y coordinates are
+//!                                       costheta and sintheta
+//! @param n1 IN      number of point in pThetaPoint array
+//! @param pAlphaArray IN      array where angular and axial multipliers
+//!                                       <alpha, radius + alpha lambda - 1>
+//! @param int            n2               number of points in pPhiPoint array
+//!
+Public GEOMDLLIMPEXP void bsiEllipse_trigToCone
+(
+DPoint3dP pPointArray,
+DPoint3dP pThetaArray,
+int             n1,
+DPoint3dP pAlphaArray,
+int             n2
+);
+
+//!
+//! Construct the axial parameter values on a cone.  The formula is
+//!   (x,y) = (alpha, rdius + alpha (lambda-1))
+//!
+//! @param pAlphaArray OUT     Filled array of numPoint points on the cone.
+//! @param alpha0 IN      lower alpha limit
+//! @param alpha1 IN      upper alpha limit
+//! @param numPoint IN      number of alpha points to compute
+//! @param radius IN      radius multiplier
+//! @param lambda IN      hoop radius multiplier
+//!
+Public GEOMDLLIMPEXP void bsiEllipse_axialStepsOnCone
+(
+DPoint3dP pAlphaArray,
+double          alpha0,
+double          alpha1,
+int             numPoint,
+double          radius,
+double          lambda
+);
+
+/*----------------------------------------------------------------------+
+|FUNC           bsiEllipse_trigToSphere                                 |
+| Given arrays of sin cos values distributed in theta and phi           |
+| directions of a spherical coordinate system, construct 3d cartesian   |
+| coordinates of a grid of points on the sphere.
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void     bsiEllipse_trigToSphere
+(
+DPoint3dP pSphereArray,  /* OUT     Filled array of n1 * n2 points on the sphere.
+theta varies fastest
+*/
+DPoint3dP pThetaArray,   /* IN      array where x,y coordinates are
+cos(theta) and sin(theta)
+
+                                */
+int             n1,             /* IN      number of point in pThetaPoint array */
+DPoint3d        *pPhiArray,     /* IN      array where x,y coordinates are
+                                        cos(phi) and sin(phi)
+                                */
+int             n2,             /* number of points in pPhiPoint array */
+double          radius          /* radius multiplier */
+);
+
+/*----------------------------------------------------------------------+
+|FUNC           bsiEllipse_componentRange       RK      06/96           |
+| Conditional update range of one component of an ellipse.              |
+|NORET                                                                  |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void    bsiEllipse_componentRange
+(
+double*         minP,           /* IN OUT  min coordiante of range box */
+double*         maxP,           /* IN OUT  max coordinate of range box */
+double          centComponent,  /* IN      center component */
+double          cosComponent,   /* IN      basis vector component multiplied by cos */
+double          sinComponent,   /* IN      basis vector component multiplied by sin */
+double          theta0,         /* IN      start angle */
+double          sweep           /* IN      sweep angle. */
+);
+
+//!
+//! Evaluate an ellipse at a given angle.
+//!
+//! @param pPoint
+//! @param pPoint0
+//! @param vector1
+//! @param vector2
+//! @param theta
+//!
+Public GEOMDLLIMPEXP void bsiEllipse_evaluate
+(
+DPoint3dP pPoint,
+DPoint3dCP pPoint0,
+DPoint3dCP vector1,
+DPoint3dCP vector2,
+double      theta
+);
+
+//!
+//! @nodoc
+//! @description Return the minmax points of the range box on an ellipse defined
+//!  by C, P0, P90 points
+//!
+//! @param minPointP OUT     min point of range box
+//! @param maxPointP OUT     max point of range box
+//! @param arrayP IN      ellipse center, P0, P90
+//! @param theta0 IN      start angle
+//! @param sweep IN      sweep angle
+//!
+Public GEOMDLLIMPEXP void bsiDEllipse4d_rangeFrom3dPoints
+(
+DPoint3dP        minPointP,
+DPoint3dP        maxPointP,
+DPoint3dCP arrayP,
+double          theta0,
+double          sweep
+);
+
+//!
+//! @nodoc
+//! @description Computes the minmax points of the range box on a full ellipsoid
+//! @param rangeP OUT     range box
+//! @param arrayP IN      ellipsoid center, P0, P90, north pole
+//!
+Public GEOMDLLIMPEXP void bsiHEllipsoid_rangeFrom3dPoints
+(
+DRange3dP        rangeP,
+DPoint3dCP arrayP
+);
+
+//!
+//! @nodoc
+//! @description Computes the minmax points of the range box on a full toroid
+//! @param rangeP OUT     range box
+//! @param arrayP IN      ellipsoid center, P0, P90, north pole
+//! @param lambda IN      radius multiplier
+//! @param pParamRange IN      parameter space range
+//!
+Public GEOMDLLIMPEXP void bsiHToroid_rangeFrom3dPoints
+(
+DRange3dP        rangeP,
+DPoint3dCP arrayP,
+double    lambda,
+DRange3dCP pParamRange
+);
+
+//!
+//! @description Find intersections of a (full) unit sphere with a plane.
+//! @param pCenter OUT     Nearest plane point to origin.
+//!                   For tangency case return value 1 this is the tangency point.
+//!                   For full intersection case this is the circle center.
+//! @param pPoint1 OUT     0 degree point end of U vector of circle
+//! @param pPoint2 OUT     90 degree point end of V vector of circle
+//! @param pPlane IN      homogeneous plane coefficients
+//! @return 0 if no intersection, 1 if tangency point, 2 if full circle
+//! @group "Quadratic Geometry"
+//!
+Public GEOMDLLIMPEXP int bsiGeom_intersectPlaneUnitSphere
+(
+DPoint3dP pCenter,
+DPoint3dP pPoint1,
+DPoint3dP pPoint2,
+DPoint4dCP pPlane
+);
+
+//!
+//! @nodoc
+//! @description Find intersections of a (full) ellipse with a plane.
+//! See quadeqn.c for description of degenerate cases.
+//! n=1 is a single tangency point returned in trigP[0]
+//! n=2 is two simple intersections returned in trigP[0..1]
+//! The three component values in trigP are:
+//! <UL>
+//! <LI>x == cosine of angle
+//! <LI>y == sine of angle
+//! <LI>z == angle in radians
+//! </UL>
+//! RETURNS The number of intersections, i.e. 0, 1, or 2
+//!
+//! @param trigP OUT     2 points: cosine, sine, theta values of plane intersection
+//! @param centerP IN      ellipse center
+//! @param vectorUP IN      0 degree vector
+//! @param vectorVP IN      90 degree vector
+//! @param planeP IN      homogeneous plane equation
+//! @return int
+//!
+Public GEOMDLLIMPEXP int bsiDEllipse4d_intersectPlane
+(
+DPoint3dP trigP,
+DPoint4dCP centerP,
+DPoint4dCP vectorUP,
+DPoint4dCP vectorVP,
+DPoint4dCP planeP
+);
+
+//!
+//!
+//! @param pTrigPoint OUT     array where x,y are cosine, sine of
+//!                      silhouette angles. z is zero -- maybe a convenient
+//!                      place for the angles if you need to stash them
+//! @param pConePoint IN      4 defining points of the cone
+//! @param lambda IN      taper fraction
+//! @param pEyePoint IN      eyepoint, in same coordinates.
+//!                     For perspective, from xyz, set w=1
+//!                     For flat view in direction xyz, set w=0
+//! @return int
+//!
+Public GEOMDLLIMPEXP bool     bsiCone_silhouetteAngles
+(
+DPoint3dP pTrigPoint,
+DPoint3dCP pConePoint,
+double            lambda,
+DPoint4dCP pEyePoint
+);
+
+//!
+//! Return the intersection of a line with a cylinder, where the cylinder
+//! is defined by its (skewed) coordinate frame.  The cylinder is the
+//! set of all points that have x^2+y^2 = 1 in the skewed frame.
+//!
+//! @param pPointArray OUT     array of 0, 1, or 2 points
+//! @param pLineParam OUT     array of 0, 1, or 2 parameters along line
+//! @param pCylParam OUT     array of 0, 1, or 2 cylindrical coordinate
+//! @param pFrame IN      coordinate frame for the cylinder
+//! @param pStartPoint IN      line start point
+//! @param pEndPoint IN      line end point
+//!
+//! @return number of intersections
+//!
+Public GEOMDLLIMPEXP int bsiCylinder_intersectLine
+(
+DPoint3dP pPointArray,
+double              *pLineParam,
+DPoint3dP pCylParam,
+
+TransformCP pFrame,
+DPoint3dCP pStartPoint,
+DPoint3dCP pEndPoint
+);
+
+//!
+//! @nodoc
+//! @description Return the intersection of homogeneous ellipse (i.e. ellipse,
+//! parabola, or hyperbola) with a cylinder, where the cylinder
+//! is defined by its (skewed) coordinate frame.  The cylinder is the
+//! set of all points that have x^2+y^2 = 1 in the skewed frame.
+//!
+//! @param pPointArray OUT     array of UP TO 4 points
+//! @param pEllipseCoord OUT     array of the cosine and sine values of the
+//! @param  solution points in the ellipse coordinates.
+//! @param pCylCoord OUT     array of the cylindrical coordinates cosine, sine, z
+//! @param  of the solution points in the cylinder system.
+//! @param pFrame IN      coordinate frame for the cylinder
+//! @param pEllipse IN      homogeneous basis points for ellipse.
+//! @return int
+//!
+Public GEOMDLLIMPEXP int bsiCylinder_intersectHEllipse
+(
+DPoint3dP pPointArray,
+DPoint2dP pEllipseCoord,
+
+DPoint3dP pCylCoord,
+
+TransformCP pFrame,
+DEllipse4dP pEllipse
+);
+
+//!
+//! @nodoc
+//! @description Extract a 3x3 matrix from 4D ellipse basis vectors.
+//! @param pMatrix OUT     extracted matrix
+//! @param pEllipse IN      homogeneous basis points for ellipse
+//! @param xIndex IN      index of coordinate x,y,z,w to be treated as X in matrix
+//! @param yIndex IN      index of coordinate x,y,z,w to be treated as Y in matrix
+//! @param wIndex IN      index of coordinate x,y,z,w to be treated as W in matrix
+//!
+Public GEOMDLLIMPEXP void bsiDEllipse4d_extract3x3
+(
+DMatrix3dP pMatrix,
+DEllipse4dCP pEllipse,
+int           xIndex,
+int           yIndex,
+int           wIndex
+);
+
+//!
+//! @nodoc
+//! @description Calculate the apparent intersection of two conic sections, where the first has a (callersupplied) inverse.
+//! @param pTrig0 OUT     0 to 4 intersection points as cos, sin, theta triples in ellipse0 space
+//! @param pTrig1 OUT     0 to 4 intersection points as cos, sin, theta triples in ellipse1 space
+//! @param pCount OUT     number of intersections.  May be 0 to 4
+//! @param pB0 IN      first ellipse matrix
+//! @param pB0inverse IN      and its inverse
+//! @param pB1 IN      second ellipse matrix
+//! @return int
+//!
+Public GEOMDLLIMPEXP int bsiDEllipse4d_intersectPrepped2d
+(
+DPoint3dP pTrig0,
+DPoint3dP pTrig1,
+int           *pCount,
+DMatrix3dCP pB0,
+DMatrix3dCP pB0inverse,
+DMatrix3dCP pB1
+);
+
+//!
+//! @nodoc
+//! @description Calculate the apparent intersection of two HEllipses, equating two
+//! indicated components and using a third as weight.
+//!
+//! @param pTrig0 OUT     0 to 4 intersection points as cos, sin, theta triples in ellipse0 space
+//! @param pTrig1 OUT     0 to 4 intersection points as cos, sin, theta triples in ellipse1 space
+//! @param pCount OUT     number of intersections.  May be 0 to 4
+//! @param pEllipse0 IN      homogeneous basis points for ellipse.
+//! @param pEllipse1 IN      homogeneous basis points for ellipse
+//! @param xIndex IN      index of coordinate x,y,z,w to be treated as X
+//! @param yIndex IN      index of coordinate x,y,z,w to be treated as Y
+//! @param wIndex IN      index of coordinate x,y,z,w to be treated as W
+//! @return int
+//!
+Public GEOMDLLIMPEXP StatusInt bsiDEllipse4d_intersectUnboundedHEllipse2d
+(
+DPoint3dP pTrig0,
+DPoint3dP pTrig1,
+int           *pCount,
+DEllipse4dCP pEllipse0,
+DEllipse4dCP pEllipse1,
+int           xIndex,
+int           yIndex,
+int           wIndex
+);
+
+//!
+//! @nodoc
+//! @description Calculate the apparent intersection of a line and ellipse, using 2
+//! indicated components and using a third as weight.
+//!
+//! @param pTrig OUT     0 to 2 intersection points as cos, sin, theta triples in ellipse space
+//! @param pLambda OUT     0 to 4 intersection points as lambda0, lambda1, 0 triples in line space
+//! @param pCount OUT     number of intersections.  May be 0 to 4
+//! @param pEllipse IN      homogeneous basis points for ellipse.
+//! @param pPoint0 IN      line start point
+//! @param pPoint1 IN      line end point
+//! @param xIndex IN      index of coordinate x,y,z,w to be treated as X
+//! @param yIndex IN      index of coordinate x,y,z,w to be treated as Y
+//! @param wIndex IN      index of coordinate x,y,z,w to be treated as W
+//! @param nearMissTol IN      fraction of radius.  A near-miss will be considered a
+//!                       hit at the nearest point of the ellipse if
+//!                       the nearest approach is within this distance
+//!                       of the ellipse.
+//! @return number of inter
+//!
+Public GEOMDLLIMPEXP StatusInt bsiDEllipse4d_intersectUnboundedLine2d
+(
+DPoint3dP pTrig,
+DPoint3dP pLambda,
+int           *pCount,
+DEllipse4dCP pEllipse,
+DPoint4dCP pPoint0,
+DPoint4dCP pPoint1,
+int           xIndex,
+int           yIndex,
+int           wIndex,
+double        nearMissTol
+);
+
+//!
+//! @description Gets parameters for a circular arc, to round a polygon's vertex.
+//!
+//! @param ellipsePts OUT     3 points which define arc (center, 0 degree point = start point, 90 degree point)
+//! @param pEndPt OUT     end point of arc
+//! @param pSweep OUT     sweep angle
+//! @param pVertexPt IN      vertex point
+//! @param pPt1 IN      preceding vertex or rounding point
+//! @param pPt2 IN      succeeding vertex or rounding point
+//! @param radius IN      arc radius
+//! @return true if lines are non-parallel and long enough to allow fillet to be constructed.
+//! @group "Quadratic Geometry"
+//!
+Public GEOMDLLIMPEXP bool    bsiGeom_filletPolygonVertex
+(
+DPoint3d* ellipsePts,
+DPoint3d* pEndPt,
+double*   pSweep,
+const  DPoint3d* pVertexPt,
+const  DPoint3d* pPt1,
+const  DPoint3d* pPt2,
+double    radius
+);
+
+/*----------------------------------------------------------------------+
+| name           bsiIntegral_gauss                              |
+| Integrate a scalar function of one variable over a finite interval,   |
+| using an nPoint gauss rule, subdividing the given interval into       |
+| subintervals of at most dxMax.                                        |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP double bsiIntegral_gauss
+(
+OmdlScalarFunction  pFunction,
+double          x0,
+double          x1,
+double          dxMax,
+int             numPoint,
+void            *pUserData
+);
+
+//!
+//! @nodoc
+//! @param pOutEllipse OUT     transformed ellipse
+//! @param pInEllipse IN      untransformed ellipse
+//! @param pMatrix IN      4x4 matrix
+//!
+Public GEOMDLLIMPEXP void bsiDEllipse4d_multiplyByHMatrix
+(
+DEllipse4dP pOutEllipse,
+DEllipse4dCP pInEllipse,
+DMatrix4dCP pMatrix
+);
+
+//!
+//! @description Define a cylinder by axial points and radius.  Define a line
+//! by two points.   Compute the line parameters at which the line pierces the cylinder
+//! @param pPointBuffer OUT 0, 1, or two points of intersection.
+//! @param pCylinderFractionBuffer OUT 0, 1, or 2 fractional parameters where the points of
+//!        intersection project to the cylinder axis.
+//! @param pLineFractionBuffer OUT 0, 1, or 2 fractional parameters with respect to the line.
+//! @param pCylinderPoint0 IN point on axis of cylinder (at parameter 0)
+//! @param pCylinderPoint1 IN point on axis of cylinder (at paramter 1)
+//! @param radius   IN cylinder radius.
+//! @param pLinePoint0 IN point on line (at parameter 0)
+//! @param pLinePoint1 IN point on line (at parameter 1)
+//! @return number of intersections.
+//!
+//! @remark If the cylinder points are identical the surface reduces to a sphere of given radius.
+//! @remark If the line points are identical the line recuces to a point.
+//!
+Public GEOMDLLIMPEXP int bsiGeom_intersectCircularCylinderLine
+(
+DPoint3dP pPointBuffer,
+double *pCylinderFractionBuffer,
+double *pLineFractionBuffer,
+DPoint3dCP pCylinderPoint0,
+DPoint3dCP pCylinderPoint1,
+double radius,
+DPoint3dCP pLinePoint0,
+DPoint3dCP pLinePoint1
+);
+
+//!
+//! @description Define a cylinder by axial points and radius.  Define a line segment
+//! by two points.   Compute the line parameters at which the bounded line segment is within the CAPPED
+//! cylinder (a solid).
+//! @param pPointBuffer OUT 0 or 2 points of intersection.
+//! @param pLineFractionBuffer OUT 0 or 2 fractional parameters with respect to the segment.
+//! @param pCylinderPoint0 IN point on axis of cylinder
+//! @param pCylinderPoint1 IN point on axis of cylinder
+//! @param radius   IN cylinder radius.
+//! @param pLinePoint0 IN point on line (at parameter 0)
+//! @param pLinePoint1 IN point on line (at parameter 1)
+//! @return true if there is an intersection.
+//!
+//!
+Public GEOMDLLIMPEXP bool    bsiGeom_intersectCappedCylinderBoundedSegment
+(
+DPoint3dP pPointBuffer,
+double *pLineFractionBuffer,
+DPoint3dCP pCylinderPoint0,
+DPoint3dCP pCylinderPoint1,
+double radius,
+DPoint3dCP pSegmentPoint0,
+DPoint3dCP pSegmentPoint1
+);
+
+//!
+//! @description Define a sphere by center and radius.  Define a line segment
+//! by two points.   Compute the line parameters at which the bounded line segment is within
+//! sphere.
+//! @param pPointBuffer OUT 0 or 2 points of intersection.
+//! @param pLineFractionBuffer OUT 0 or 2 fractional parameters with respect to the segment.
+//! @param pSphereCenter IN center of sphere
+//! @param radius   IN cylinder radius.
+//! @param pLinePoint0 IN point on line (at parameter 0)
+//! @param pLinePoint1 IN point on line (at parameter 1)
+//! @return true if there is an intersection.
+//!
+//!
+Public GEOMDLLIMPEXP bool    bsiGeom_intersectSphereBoundedSegment
+(
+DPoint3dP pPointBuffer,
+double *pLineFractionBuffer,
+DPoint3dCP pSphereCenter,
+double radius,
+DPoint3dCP pSegmentPoint0,
+DPoint3dCP pSegmentPoint1
+);
+
+//!
+//! @description Define a line segment by two points.
+//! Compute the line parameters at which the bounded line segment is within a planar halfspace
+//! Output points parameters are sorted by the parameter.
+//! @param pPointBuffer OUT 0 or 2 points of intersection.
+//! @param pLineFractionBuffer OUT 0 or 2 fractional parameters with respect to the segment.
+//! @param pPlanePoint IN point on plane
+//! @param pPlaneVector IN vector perpendicular to plane.
+//! @param bPositiveHalfspace IN true to consider positive halfspace, false for negative.
+//! @param pSegmentPoint0 IN segment start
+//! @param pSegmentPoint1 IN segment end
+//! @return true if there is an intersection.
+//!
+Public GEOMDLLIMPEXP bool    bsiGeom_intersectPlanarHalfspaceBoundedSegment
+(
+DPoint3dP pPointBuffer,
+double *pLineFractionBuffer,
+DPoint3dCP pPlanePoint,
+DPoint3dCP pPlaneVector,
+bool    bPositiveHalfspace,
+DPoint3dCP pSegmentPoint0,
+DPoint3dCP pSegmentPoint1
+);
+
+//!
+//! @description Define a cylinder by axial points and radius.  Define a line segment
+//! by two points.   Compute the line parameters at which the bounded line segment is within the CAPPED
+//! cylinder (a solid), optionally using planar or spherical caps at each end.
+//! @param pPointBuffer OUT 0 or 2 points of intersection.
+//! @param pLineFractionBuffer OUT 0 or 2 fractional parameters with respect to the segment.
+//! @param pCylinderPoint0 IN point on axis of cylinder
+//! @param bSphericalCap0 IN true for spherical (false planar) cap.at cylinder start
+//! @param pCylinderPoint1 IN point on axis of cylinder
+//! @param bSphericalCap1 IN true for spherical (false planar) cap.at cylinder end
+//! @param radius   IN cylinder radius.
+//! @param pLinePoint0 IN point on line (at parameter 0)
+//! @param pLinePoint1 IN point on line (at parameter 1)
+//! @return true if there is an intersection.
+//!
+//!
+Public GEOMDLLIMPEXP bool    bsiGeom_intersectSphericalCappedCylinderBoundedSegment
+(
+DPoint3dP pPointBuffer,
+double *pLineFractionBuffer,
+DPoint3dCP pCylinderPoint0,
+bool     bSphericalCap0,
+DPoint3dCP pCylinderPoint1,
+bool     bSphericalCap1,
+double radius,
+DPoint3dCP pSegmentPoint0,
+DPoint3dCP pSegmentPoint1
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,51 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/decimatexyz.fdf $
+|
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+
+/*---------------------------------------------------------------------------------**//**
+* One sweep of edge collapse logic.
+*<ol>
+*<li>   Generate a sorted list of <candidate,distance> pairs.</li>
+*<li>   Starting with smallest distance, examine the neighborhood of each candidate.  Reject
+*           neighborhoods that fail threshold tests for large changs.  Assign
+*           a numeric measure of change to surviving candidates.</li>
+*<li>   Sort by the numeric measure.</li>
+*<li>   Collapse edges in sort order, but preventing any collapses on overlapping
+*           patches.</li>
+*</ol>
+* @param maxDistance IN measure of largest collapse allowed.  This is applied
+*       in several ways.  No longer edge may be collapsed.  Collapses which cause
+*       area change larger than this distance squared are ruled out, as are collapses
+*       which cause volume changes in the range of this distance cubed.  If 0, no distance
+*       test is performed.
+* @param sharpAngleRadians IN measure of sharp angle. Suggested value around 30 degrees
+*       (about 0.5 radians).   Vertices incident to 2 edges with larger angles may
+*       move along those edges but not to the side.   Vertices incident to 3 or more
+*       sharp edge may not be moved at all.  If 0, no angle test is performed.
+* @param dummy0 IN reserved for future use.  Enter 0.0
+* @param dummy1 IN reserved for future use.  Enter 0.0
+* @param mask0 IN reserved for future use.  Enter MTG_NULL_MASK
+* @param mask1 IN reserved for future use.  Enter MTG_NULL_MASK
+* @return the number of collapses performed.
+* @bsimethod                                                    BentleySystems  02/99
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP int  jmdlMTGFacets_decimateDisjointPatches
+(
+MTGFacets   *pFacets,
+double      maxDistance,
+double      sharpAngleRadians,
+double      dummy0,
+double      dummy1,
+MTGMask     mask0,
+MTGMask     mask1
+);
+
+

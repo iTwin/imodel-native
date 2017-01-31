@@ -1,0 +1,29 @@
+
+//flex !! Document conventions
+//flex 
+//flex || curve vector || cv, outCv   ||  ||
+//flex || curve primitive || curvePrim, outCurvePrim ||
+//flex || Transform from local to world, world to local    || localToWorld, worldToLocal || SEE(Transform) ||
+//flex || coordinate frame type            || frameType || ||
+//flex || location information along curve || location || SEE (CurveLocationDetail) ||
+//flex || inside/onBoundary/outside classification || classification || SEE (InOutClassification) ||
+//flex 
+//flex 
+
+
+//flex 
+//flex 
+
+
+//flex 
+//flex || Convert to single-loop bspline curve || status = source.ToBsplineCurve (out curve) ||
+//flex 
+
+
+
+//flex 
+//flex 
+
+
+//flex 
+//flex 

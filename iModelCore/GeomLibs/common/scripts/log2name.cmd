@@ -1,0 +1,1 @@
+gema -f %GEMADIR%\g\log2name.g %1

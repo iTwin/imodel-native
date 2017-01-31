@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/test15/test15.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test15
+
+dependencies = $(_MakeFilePath)/TriDiagonalSolver.cpp $(_MakeFilePath)/TriDiagonalSolver.h
+%include    $(_MakeFilePath)/../testapp.mki

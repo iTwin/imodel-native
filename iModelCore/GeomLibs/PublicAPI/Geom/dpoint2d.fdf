@@ -1,0 +1,789 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dpoint2d.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_NAMESPACE
+
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_initFromFPoint2d
+(
+DPoint2dP pDPoint,
+FPoint2dCP pFPoint
+);
+
+//!
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_initFromFPoint3d
+(
+DPoint2dP pDPoint,
+FPoint3dCP pFPoint
+);
+
+//!
+//! Compute 2d cross product of two vectors given as components
+//! @param x0 IN      first vector x component.
+//! @param y0 IN      first vector y component.
+//! @param x1 IN      second vector x component
+//! @param y1 IN      second vector y component.
+//! @return (scalar) cross product of the vectors.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_crossXYXY
+(
+double  x0,
+double  y0,
+double  x1,
+double  y1
+);
+
+//!
+//! Compute 2d dot product of two vectors given as components
+//! @param x0 IN      first vector x component.
+//! @param y0 IN      first vector y component.
+//! @param x1 IN      second vector x component
+//! @param y1 IN      second vector y component.
+//! @return dot product of the two vectors
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_dotXYXY
+(
+double  x0,
+double  y0,
+double  x1,
+double  y1
+);
+
+//!
+//! @description Compute the square of the magnitude of the vector.
+//! @param pVector IN      vector whose length is to be computed
+//! @return squared magnitude of the vector
+//! @group "DPoint2d Distance"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_magnitudeSquared (DPoint2dCP pVector);
+
+//!
+//! @description Returns the (scalar) cross product of two vectors.
+//! @param pVector1 IN      first vector
+//! @param pVector2 IN      second vector
+//! @return cross product
+//! @group "DPoint2d Dot and Cross"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_crossProduct
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Returns the (scalar) cross product of two vectors.
+//! @remarks The vectors are computed from Origin to Target1 and from Origin to Target2.
+//! @param pOrigin IN      base point
+//! @param pTarget1 IN      target of first vector
+//! @param pTarget2 IN      target of second vector
+//! @return cross product
+//! @group "DPoint2d Dot and Cross"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_crossProduct3DPoint2d
+(
+DPoint2dCP pOrigin,
+DPoint2dCP pTarget1,
+DPoint2dCP pTarget2
+);
+
+//!
+//! @description Returns the (scalar) dot product of two vectors.
+//! @param pVector1 IN      first vector.
+//! @param pVector2 IN      second vector.
+//! @return dot product
+//! @group "DPoint2d Dot and Cross"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_dotProduct
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Returns the (scalar) dot product of two vectors.
+//! @remarks The vectors are computed from Origin to Target1 and from Origin to Target2.
+//! @param pOrigin IN      base point
+//! @param pTarget1 IN      target of first vector
+//! @param pTarget2 IN      target of second vector
+//! @return dot product
+//! @group "DPoint2d Dot and Cross"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_dotProduct3DPoint2d
+(
+DPoint2dCP pOrigin,
+DPoint2dCP pTarget1,
+DPoint2dCP pTarget2
+);
+
+//!
+//! @description Return the squared distance between two points or vectors.
+//! @param pPoint1 IN      start point
+//! @param pPoint2 IN      end point
+//! @return squared distance between points
+//! @group "DPoint2d Distance"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_distanceSquared
+(
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2
+);
+
+//!
+//! @description Adds an origin and a scaled vector.
+//! @param pSum OUT     pOrigin + pVector * scale
+//! @param pOrigin IN      origin.  May be null.
+//! @param pVector IN      direction vector
+//! @param scale IN      scale factor
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_addScaledDPoint2d
+(
+DPoint2dP pResult,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector,
+double    scale
+);
+
+//!
+//! @description Compute the point at an interpolated (fractional) position between a start and end point.
+//! @param pResult OUT     interpolated point
+//! @param pPoint0 IN      start point (at parameter s=0)
+//! @param s IN      interpolation parameter
+//! @param pPoint1 IN      end point (at parameter s=1)
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_interpolate
+(
+DPoint2dP pResult,
+DPoint2dCP pPoint0,
+double    s,
+DPoint2dCP pPoint1
+);
+
+//!
+//! @description Compute the sum of two points or vectors.
+//! @param pSum OUT     computed point or vector
+//! @param pPoint1 IN      First point or vector
+//! @param pPoint2 IN      Second point or vector
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_addDPoint2dDPoint2d
+(
+DPoint2dP pSum,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2
+);
+
+//!
+//! Add a vector to the instance.
+//!
+//! @param <= pResult + pVector
+//! @param pVector IN      vector to add
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_add
+(
+DPoint2dP pResult,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Subtract one vector from another in place.
+//!
+//! @param <= pResult - pVector
+//! @param pPoint IN      vector to subtract
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_subtract
+(
+DPoint2dP pResult,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Return the difference of two points or vectors.
+//! @param pResult OUT     pPoint1 - pPoint2
+//! @param pPoint1 IN      First point or vector.
+//! @param pPoint2 IN      Second (subtracted) point or vector.
+//! @group "DPoint2d Subtraction"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_subtractDPoint2dDPoint2d
+(
+DPoint2dP pResult,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2
+);
+
+//!
+//! @description Scale a vector.
+//! @param pResult OUT     scaled vector
+//! @param pPoint IN      vector to scale
+//! @param s    IN      scale factor
+//! @group "DPoint2d Scale"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_scale
+(
+DPoint2dP pResult,
+DPoint2dCP pPoint,
+double    s
+);
+
+//!
+//! @description Normalizes a given vector in place.
+//! @remarks If the input vector length is 0, the output vector is the zero vector.
+//! @param pVec IN OUT  vector to normalize
+//! @return original length
+//! @group "DPoint2d Normalize"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_normalize (DPoint2dP pVec);
+
+//!
+//! @description Computes a unit vector in the direction of a given vector.
+//! @remarks If the input vector length is 0, the output vector is the zero vector.
+//! @param pUnitVector OUT     normalized vector
+//! @param pVector IN      vector to normalize
+//! @return original length
+//! @group "DPoint2d Normalize"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_normalizeVector
+(
+DPoint2dP pUnitVector,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Computes a unit vector in the direction of a given vector.
+//! @remarks If the input vector length is 0, the output vector is the zero vector.
+//! @param pUnitVector OUT     normalized vector
+//! @param pVector IN      vector to normalize
+//! @group "DPoint2d Normalize"
+//!
+Public GEOMDLLIMPEXP void     bsiDPoint2d_unitVector
+(
+DPoint2dP pUnitVector,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Rotate a vector by 90 degrees in the counterclockwise direction.
+//! @param pRot OUT     rotated vector (may be same as pVec)
+//! @param pVec IN      original vector
+//! @group "DPoint2d Angles"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_rotate90
+(
+DPoint2dP pRot,
+DPoint2dCP pVec
+);
+
+//!
+//! @description Rotate a vector by an angle.
+//! @param pRot OUT     vector rotated by the given angle (may be same as pVec)
+//! @param pVec IN      original vector
+//! @param radians IN      radian rotation angle (positive: counterclockwise; negative: clockwise)
+//! @group "DPoint2d Angles"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_rotate
+(
+DPoint2dP pRot,
+DPoint2dCP pVec,
+double  radians
+);
+
+//!
+//! @description Returns the (scalar) dot product of two vectors.
+//! @remarks One vector is computed internally as the difference TargetPoint - Origin.
+//!   The other is given directly as a single parameter.
+//! @param pTargetPoint IN      end of computed vector
+//! @param pOrigin IN      start point of computed vector
+//! @param pVector IN      final vector
+//! @return dot product
+//! @group "DPoint2d Dot and Cross"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_dotDifference
+(
+DPoint2dCP pTargetPoint,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Sets all components of a point or vector to zero.
+//! @param pVec OUT     vector to zero
+//! @group "DPoint2d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_zero (DPoint2dP pVec);
+
+//!
+//! @description Returns a point or vector with all components 1.0.
+//! @param pPoint OUT     The initialized point or vector.
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_one (DPoint2dP pPoint);
+
+//!
+//! copy 2 components (xy) from a double array to the DPoint2d
+//! @param pPoint OUT     point whose components are set
+//! @param pXy IN      x, y components
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_initFromArray
+(
+DPoint2dP pPoint,
+const   double      *pXy
+);
+
+//!
+//! @param pSource IN      x, y components
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_initFromDPoint3d
+(
+DPoint2dP pPoint,
+DPoint3dCP pSource
+);
+
+//!
+//! @description Returns a point with specified x and y components.
+//! @param pPoint OUT     point whose components are set
+//! @param x IN      x component
+//! @param y IN      y component
+//! @group "DPoint2d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_setComponents
+(
+DPoint2dP pPoint,
+double       x,
+double       y
+);
+
+//!
+//! @description Sets a single component of a point.
+//! @remarks If the index is neither 0 nor 1, it is interpreted cyclically.
+//! @param pPoint OUT     point or vector whose component is altered.
+//! @param a IN      value of component
+//! @param index IN      index of component (0=x, 1=y, others cyclic)
+//! @group "DPoint2d Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_setComponent
+(
+DPoint2dP pPoint,
+double       a,
+int         index
+);
+
+//!
+//! @description Gets a single component of a point.  If the index is out of
+//! range 0,1, it is interpreted cyclically.
+//!
+//! @param pPoint IN      point or vector whose components are accessed.
+//! @param index IN      0=x, 1=y, others cyclic
+//! @return specified component of the point or vector.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_getComponent
+(
+DPoint2dCP pPoint,
+int         index
+);
+
+//!
+//! @description Copy the array of points.
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param n IN      number of points in arrays
+//! @group "DPoint2d Copy"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_copyArray
+(
+DPoint2dP pDest,
+DPoint2dCP pSource,
+int          n
+);
+
+//!
+//! @description Copy indexed points.
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param pIndex IN      array of 0-based indices into source array
+//! @param nIndex IN      number of array entries
+//! @group "DPoint2d Copy"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_copyIndexedArray
+(
+DPoint2dP pDest,
+DPoint2dCP pSource,
+int         *pIndex,
+int          nIndex
+);
+
+//!
+//! @description Extract the coordinates of the point.
+//! @param pPoint IN      point whose components are retrieved
+//! @param pXCoord OUT     x component
+//! @param pYCoord OUT     y component
+//! @group "DPoint2d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_getComponents
+(
+DPoint2dCP pPoint,
+double      *pXCoord,
+double      *pYCoord
+);
+
+//!
+//! @description Add two arrays of points.
+//! @param pArray IN OUT  Array whose points are to be incremented
+//! @param pDelta IN      increment to add to each point
+//! @param numPoints IN      number of points
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_addDPoint2dArray
+(
+DPoint2dP pArray,
+DPoint2dCP pDelta,
+int              numPoints
+);
+
+//!
+//! @description Subtract two arrays of points.
+//! @param pArray IN OUT  Array whose points are to be decremented
+//! @param pDelta IN      decrement to subtract from each point
+//! @param numVerts IN      number of points
+//! @group "DPoint2d Subtraction"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_subtractDPoint2dArray
+(
+DPoint2dP pArray,
+DPoint2dCP pDelta,
+int              numVerts
+);
+
+//!
+//! @description Adds an origin and two scaled vectors.
+//! @param pSum OUT     pOrigin + pVector1 * scale1 + pVector2 * scale2
+//! @param pOrigin IN      origin.  May be null.
+//! @param pVector1 IN      direction vector
+//! @param scale1 IN      scale factor
+//! @param pVector2 IN      direction vector
+//! @param scale2 IN      scale factor
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_add2ScaledDPoint2d
+(
+DPoint2dP pSum,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+double           scale1,
+DPoint2dCP pVector2,
+double           scale2
+);
+
+//!
+//! @description Adds an origin and three scaled vectors.
+//! @param pSum OUT     pOrigin + pVector1 * scale1 + pVector2 * scale2 + pVector3 * scale3
+//! @param pOrigin IN      origin.  May be null.
+//! @param pVector1 IN      direction vector
+//! @param scale1 IN      scale factor
+//! @param pVector2 IN      direction vector
+//! @param scale2 IN      scale factor
+//! @param pVector3 IN      direction vector
+//! @param scale3 IN      scale factor
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_add3ScaledDPoint2d
+(
+DPoint2dP pSum,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+double          scale1,
+DPoint2dCP pVector2,
+double          scale2,
+DPoint2dCP pVector3,
+double          scale3
+);
+
+//!
+//! @description Sets pNormal to the unit vector in the direction of pPoint1 - pPoint2.
+//! @param pNormal OUT     normalized vector from pPoint2 to pPoint1
+//! @param pPoint1 IN      point 1
+//! @param pPoint2 IN      point 2
+//! @return distance between input points
+//! @group "DPoint2d Subtraction"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_computeNormal
+(
+DPoint2dP pNormal,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2
+);
+
+//!
+//! @description Returns (signed, counterclockwise) angle between two vectors.
+//! @remarks The angle is in radians. The angle range is from -pi to +pi; positive
+//!   angles are counterclockwise, negative angles are clockwise.
+//! @param pVector1 IN      first vector
+//! @param pVector2 IN      second vector
+//! @return angle in radians
+//! @group "DPoint2d Angles"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_angleBetweenVectors
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Returns the distance between 2 points
+//! @param pPoint0 IN      first point
+//! @param pPoint1 IN      second point
+//! @return distance from point 0 to point 1
+//! @group "DPoint2d Distance"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_distance
+(
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1
+);
+
+//!
+//! @description Returns the magnitude (length) of a vector.
+//! @param pVector IN      vector
+//! @return Length of the vector.
+//! @group "DPoint2d Distance"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_magnitude (DPoint2dCP pVector);
+
+//!
+//! @description Returns the negative of a vector.
+//! @param pResult OUT     negated vector
+//! @param pVector IN      input
+//! @group "DPoint2d Scale"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_negate
+(
+DPoint2dP pResult,
+DPoint2dCP pVector
+);
+
+//!
+//! @description Test if two vectors are parallel.
+//! @param pVector1 IN      First vector
+//! @param pVector2 IN      Second vector
+//! @return true if vectors are (nearly) parallel.
+//! @group "DPoint2d Angles"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_areParallel
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Test if two vectors are perpendicular.
+//! @param pVector1 IN      First vector
+//! @param pVector2 IN      Second vector
+//! @return true if vectors are (nearly) parallel.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_arePerpendicular
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Sets pOutVec[i] to pOrigin + scale*pInVec[i], for 0 &le; i &lt; numPoint.
+//! @param pOutVec OUT     output array
+//! @param pOrigin IN      origin for points
+//! @param pInVec IN      input array
+//! @param numPoint IN      number of points in arrays
+//! @param scale IN      scale
+//! @group "DPoint2d Addition"
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_addScaledDPoint2dArray
+(
+DPoint2dP pOutVec,
+DPoint2dCP pOrigin,
+DPoint2dCP pInVec,
+int          numPoint,
+double       scale
+);
+
+//!
+//! @description Test if two points or vectors are exactly equal.
+//! @param pVector1 IN      First point or vector
+//! @param pVector2 IN      Second point or vector
+//! @return true if the points are identical.
+//! @group "DPoint2d Equal"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_pointEqual
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+//!
+//! @description Test if the x and y components of two points or vectors are equal within tolerance.
+//! @remarks Tests are done against the absolute value of <EM>each</EM> component difference
+//!   (i.e., not against the sum of these absolute differences or the square root of the sum of the squares of these differences).
+//! @param pVector1 IN      first point or vector
+//! @param pVector2 IN      second point or vector
+//! @param tolerance IN      tolerance
+//! @return true if all components are within given tolerance of each other.
+//! @group "DPoint2d Equal"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_pointEqualTolerance
+(
+DPoint2dCP pVector1,
+DPoint2dCP pVector2,
+double                  tolerance
+);
+
+//!
+//! @description Finds the largest absolute value among the components of a point or vector.
+//! @param pVector IN      point or vector
+//! @return largest absolute value among point coordinates.
+//! @group "DPoint2d Queries"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint2d_maxAbs (DPoint2dCP pVector);
+
+//!
+//! Computes a "beveled" polygon due to offseting a single edge, using
+//! 0 or 1 adjacent edges before and after to determine bevel conditions.
+//! @param pPointArray OUT     array of (typically 3, 5, 6, or 7) points of polygon, with first/last
+//!               point duplicated.
+//! @param pLabelArray OUT     (optional) parallel array of labels describing the origin of each edge.
+//!       If the main edge is envisioned as going from left to right, these labels distinguish
+//!       parts of the "lower" and "upper" offset paths and the ends as follows, with
+//!       the sequence showing counterclockwise order of the path parts:
+//!           0 -- closing point of loop (duplicates start point)
+//!           1 -- start point of a chamfer edge at the left the lower offset.
+//!           2 -- start point of the main edge of the lower offset.
+//!           3 -- start point of a chamfer edge at the right of the lower offset.
+//!           4 -- start point of a bevel cut at pPoint1.
+//!           5 -- start point of a chamfer at right of upper offset.
+//!           6 -- start point of a the main upper offset edge
+//!           7 -- start point of a chamfer edge at left of upper offset.
+//!           8 -- start point of a bevel cut at pPoint0.
+//!       (Note that codes 1,2,3 are lower offset, and 5,6,7 are upper. The return from a
+//!       single call to this function can have only 6 of the 8 codes.)
+//! @param pNumPoint OUT     number of points.
+//! @param maxPoint IN      allocated size of pPointArray
+//! @param pPoint0 IN      optional pre-edge context point.  If null, a flush (90 degree)
+//!                       bevel condition is used.
+//! @param pPoint1 IN      start of edge
+//! @param pPoint2 IN      end of edge.
+//! @param pPoint3 IN      optional post-edge context point.  If null, a flush (90 degree)
+//!                       bevel condition is used.
+//! @param offset  IN      offset distance.
+//! @param maxBevelAngle IN      maximum turn angle, in radians, for which a simple bevel is computed.
+//!                   (Try 1.6 to start)
+//! @return false if zero-length vectors prevented calculation.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_labeledBevelOffset
+(
+DPoint2dP pPointArray,
+int       *pLabelArray,
+int       *pNumPoint,
+int       maxPoint,
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2,
+DPoint2dCP pPoint3,
+double    offset,
+double    maxBevelAngle
+);
+
+//!
+//! Computes a "beveled" polygon due to offseting a single edge, using
+//! 0 or 1 adjacent edges before and after to determine bevel conditions.
+//! @param pPointArray OUT     array of (typically 3, 5, 6, or 7) points of polygon, with
+//! @param pNumPoint OUT     number of points.
+//! @param maxPoint IN      allocated size of pPointArray
+//! @param pPoint0 IN      optional pre-edge context point.  If null, a flush (90 degree)
+//!                       bevel condition is used.
+//! @param pPoint1 IN      start of edge
+//! @param pPoint2 IN      end of edge.
+//! @param pPoint3 IN      optional post-edge context point.  If null, a flush (90 degree)
+//!                       bevel condition is used.
+//! @param offset  IN      offset distance.
+//! @param maxBevelAngle IN      maximum turn angle, in radians, for which a simple bevel is computed.
+//!                   (Try 1.6 to start)
+//! @return false if zero-length vectors prevented calculation.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_bevelOffset
+(
+DPoint2dP pPointArray,
+int       *pNumPoint,
+int       maxPoint,
+DPoint2dCP pPoint0,
+DPoint2dCP pPoint1,
+DPoint2dCP pPoint2,
+DPoint2dCP pPoint3,
+double    offset,
+double    maxBevelAngle
+);
+
+//!
+//! @return true if the point has coordinates which indicate it is
+//!   a disconnect (separator) ponit.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint2d_isDisconnect (DPoint2dCP pPoint);
+
+//!
+//! Initialize a point with all coordinates as the disconnect value.
+//!
+Public GEOMDLLIMPEXP void bsiDPoint2d_initDisconnect (DPoint2dP pPoint);
+
+//!
+//! @description Compute a unit vector perpendicular to the given vector.
+//!
+//! @remarks Input may equal output.
+//!
+//! @param pRotatedVector OUT     The rotated and scaled vector.
+//! @param pVector        IN      The source vector
+//! @return true if the input vector has nonzero length
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint2d_unitPerpendicular
+(
+DPoint2dP    pRotatedVector,
+DPoint2dCP    pVector
+);
+
+//!
+//! @description Compute the unit vector perpendicular to the given vector with the given handedness.
+//!
+//! @remarks Input may equal output.
+//!
+//! @param pRotatedVector OUT     The rotated and scaled vector.
+//! @param pVector        IN      The source vector
+//! @param bRightHanded   IN      Whether the returned vector points to the right of the given vector.
+//! @return true if the input vector has nonzero length
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint2d_unitPerpendicularWithHandedness
+(
+DPoint2dP    pRotatedVector,
+DPoint2dCP    pVector,
+bool        bRightHanded
+);
+
+END_BENTLEY_NAMESPACE
+

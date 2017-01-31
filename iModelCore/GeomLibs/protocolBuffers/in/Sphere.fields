@@ -1,0 +1,11 @@
+PRIMITIVE Sphere
+<def name=SUMMARY>Sphere primitive.
+</def>
+<def name=Interface_BaseList>IGeometry, IAnalyticSolid</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radius ItemMemberName=mRadius ItemDescription="Sphere radius." ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE

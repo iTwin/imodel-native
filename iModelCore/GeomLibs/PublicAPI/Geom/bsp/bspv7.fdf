@@ -1,0 +1,115 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/bsp/bspv7.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bspcurv_openCurve_V7                                    |
+|                                                                       |
+|                                                                       |
+| Copied from bspcurv.c with V7 logic restored.                         |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_openCurve_V7
+(
+MSBsplineCurve  *outCurve,
+MSBsplineCurve  *inCurve,
+double          u
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsprsurf_openSurfaceU_V7                                |
+|                                                                       |
+|                                                                       |
+| Copied from bsprsurf.c with call to openCurve changed.                |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_openSurfaceU_V7
+(
+MSBsplineSurface    *output,
+MSBsplineSurface    *input,
+double              uValue
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsprsurf_openSurfaceV_V7                                |
+|                                                                       |
+|                                                                       |
+| Copied from bsprsurf.c with call to openCurve changed.                |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_openSurfaceV_V7
+(
+MSBsplineSurface    *output,
+MSBsplineSurface    *input,
+double              vValue
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bspcurv_closeCurve_V7                                   |
+|                                                                       |
+|                                                                       |
+| Copied from bspcurv.c with V7 logic restored, with option to ignore   |
+| the V7 linear case which doesn't mangle knots.  Treating linears      |
+| just like other orders during import ensures that every V7 closed     |
+| B-spline curve comes in with mangled knots---which V8 can recognize   |
+| and so process accordingly.                                           |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_closeCurve_V7
+(
+MSBsplineCurve  *outCurve,
+MSBsplineCurve  *inCurve,
+bool            bUseLinearShift
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsprsurf_closeSurfaceU_V7                               |
+|                                                                       |
+|                                                                       |
+| Copied from bsprsurf.c with call to closeCurve changed.               |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_closeSurfaceU_V7
+(
+MSBsplineSurface    *output,
+MSBsplineSurface    *input,
+bool                bUseLinearShift
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsprsurf_closeSurfaceV_V7                               |
+|                                                                       |
+|                                                                       |
+| Copied from bsprsurf.c with call to closeCurve changed.               |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      mdlBspline_closeSurfaceV_V7
+(
+MSBsplineSurface    *output,
+MSBsplineSurface    *input,
+bool                bUseLinearShift
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

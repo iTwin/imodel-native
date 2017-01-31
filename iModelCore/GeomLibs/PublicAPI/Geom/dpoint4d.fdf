@@ -1,0 +1,1021 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/dpoint4d.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @param pInstance OUT     point to zero out.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_setZero (DPoint4dP pInstance);
+
+//!
+//! @param pInstance OUT     point to fill
+//! @param xComponent IN      x component
+//! @param yComponent IN      y component
+//! @param zComponent IN      z component
+//! @param wComponent IN      w component
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_setComponents
+(
+DPoint4dP pInstance,
+double          xComponent,
+double          yComponent,
+double          zComponent,
+double          wComponent
+);
+
+//!
+//! Fill a DPoint4d, using given xyz components and weight.
+//! All components are copied in directly --
+//!  the xyz components are not multiplied by the weight.
+//!
+//! @param pInstance OUT     point to be filled
+//! @param pSource IN      xyz components
+//! @param w       IN      w component
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_initFromDPoint3dAndWeight
+(
+DPoint4dP pInstance,
+DPoint3dCP pSource,
+double      w
+);
+
+//!
+//! Copy 4 components (xyzw) from a double array into this instance
+//!
+//! @param pInstance OUT     point to be filled
+//! @param pArray IN      array of doubles
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_initFromArray
+(
+DPoint4dP pInstance,
+double      *pArray
+);
+
+//!
+//! Copies component data out of this instance into
+//! doubles pXCoord, pYCoord, pZCoord and pWCoord.
+//!
+//! @param pInstance IN      point whose components are set
+//! @param pXCoord OUT     x component
+//! @param pYCoord OUT     y component
+//! @param pZCoord OUT     z component
+//! @param pWCoord OUT     w component
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_getComponents
+(
+DPoint4dCP pInstance,
+double      *pXCoord,
+double      *pYCoord,
+double      *pZCoord,
+double      *pWCoord
+);
+
+//!
+//! Set x,y,z or w component of a point.
+//!
+//! @param pInstance OUT     point whose components are set
+//! @param a IN      component value
+//! @param index IN      0=x, 1=y, 2=z, 3=w, others cyclic
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_setComponent
+(
+DPoint4dP pInstance,
+double       a,
+int         index
+);
+
+//!
+//! @param pInstance IN      point whose components are accessed
+//! @param index IN      0=x, 1=y, 2=z, 3=w, others cyclic
+//! @return specified component of the point or vector
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_getComponent
+(
+DPoint4dCP pInstance,
+int         index
+);
+
+//!
+//! @param pInstance IN      point whose components are accessed
+//! magnitude as pure 4d point -- sqrt sum of squares.
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_magnitudeXYZW (DPoint4dCP pInstance);
+
+//!
+//!
+//! Return the full 4d (xyzw) dot product of two homogeneous points.
+//! @param pInstance IN      first point
+//! @param pVec2 IN      second second
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotProduct
+(
+DPoint4dCP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//! Return the dot product of only the xy parts of two homogeneous points.  Ignore z, ignore w.
+//! @param pInstance IN      first point
+//! @param    pPoint IN      second point
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotProductXY
+(
+DPoint4dCP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//!
+//! Return the xyz dot product of two homogeneous points, i.e. ignore w.
+//! @param pInstance IN      first point
+//! @param pVec2 IN      second second
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotProductXYZ
+(
+DPoint4dCP pInstance,
+DPoint4dCP pPoint2
+);
+
+//!
+//!
+//! Return the xyz dot product of two homogeneous points, i.e. ignore z.
+//! @param pInstance IN      first point
+//! @param pPoint IN      second second
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotProductXYW
+(
+DPoint4dCP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//!
+//! @param pInstance   IN      first point
+//! @param    x       IN      x component of second point
+//! @param    y       IN      y component of second point
+//! @param    z       IN      z component of second point
+//! @param    w         IN      w component of second point
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotComponents
+(
+DPoint4dCP pInstance,
+double    x,
+double    y,
+double    z,
+double    w
+);
+
+//!
+//!
+//! @param pInstance   IN      first point
+//! @param pPoint2   IN      second point
+//! @param    w         IN      w component of second point
+//! @return dot product of two homogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_dotWeightedPoint
+(
+DPoint4dCP pInstance,
+DPoint3dCP pPoint2,
+double    w
+);
+
+//!
+//! Return the dot product of a plane normal and a vector 'to the
+//! eyepoint'.   The plane is given as cartesian origin and normal; the
+//! eye is given as homogeneous point, i.e. weight zero for flat view,
+//! nonzero for perspective.
+//! Eyepoints constucted 'by hand' usually look like this:
+//! Flat view "from infinity" looking in direction (xyz):
+//!       eyepoint = (x,y,z,0)
+//! i.e. a top view has eyepoint (0,0,1,0)
+//! Perspective from eyepoint at (x,y,z): eyepoint (x,y,z,1)
+//! When viewing is constructed by a sequence of homogeneous
+//! transformations, with the final (device) projection to the xy plane,
+//! the (pretransform) eyepoint is 'by definition'
+//!       Tinverse * (0,0,1,0)'
+//! i.e column 2 (zero based) of the composite viewing transform.
+//! (Note that the weight part can be nonzero.)
+//!
+//! @param pInstance IN      eye point 0 weight for flat view eye at infinity
+//! @param pOrigin IN      any cartesian point on plane
+//! @param pNormal IN      cartesian plane normal
+//! @return dot product of plane normal with vector towards eye.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_eyePlaneTest
+(
+DPoint4dCP pInstance,
+DPoint3dCP pOrigin,
+DPoint3dCP pNormal
+);
+
+//!
+//! @param pInstance IN      first point
+//! @param pVec2 IN      second point
+//! @return distance between projections of two homnogeneous points.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_realDistance
+(
+DPoint4dCP pInstance,
+DPoint4dCP pVec2
+);
+
+//!
+//! @param pVec1 IN      first point
+//! @param pDistSquared OUT     squared distance
+//! @param pVec2 IN      second point
+//! @return true iff the homogeneous point was properly normalized.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_realDistanceSquaredXY
+(
+DPoint4dCP pVec1,
+double    *pDistanceSquared,
+DPoint3dCP pVec2
+);
+
+//!
+//! @param pVec1 IN      first point
+//! @param pDistSquared OUT     squared distance
+//! @param pVec2 IN      second point
+//! @return true iff the homogeneous point was properly normalized.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_realDistanceSquaredDPoint3d
+(
+DPoint4dCP pVec1,
+double    *pDistanceSquared,
+DPoint3dCP pVec2
+);
+
+//!
+//! @param pVec1 IN      first point
+//! @param pDistSquared OUT     squared distance
+//! @param pVec2 IN      second point
+//! @return true iff the homogeneous points were properly normalized.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_realDistanceSquared
+(
+DPoint4dCP pVec1,
+double    *pDistanceSquared,
+DPoint4dCP pVec2
+);
+
+//!
+//! Interpolates between two homogeneous vectors.                         |
+//!
+//! @param pInstance OUT     interpolated point
+//! @param pPoint0 IN      s=0 point
+//! @param s IN      interpolation parameter
+//! @param pPoint1 IN      s=1 point
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_interpolate
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint0,
+double     s,
+DPoint4dCP pPoint1
+);
+
+Public GEOMDLLIMPEXP bool     bsiDPoint4d_interpolateQuaternions
+(
+DPoint4dP    pSum,
+DPoint4dCP    pQuaternion0,
+double      fractionParameter,
+DPoint4dCP    pQuaternion1
+);
+
+//!
+//! Initialize a homogeneous point from a 3D point and separate weight.
+//! NOTE The xyz components copied unchanged, i.e. not multiplied by the
+//! weight.
+//!
+//! @param pInstance OUT     homogeneous point
+//! @param pPoint IN      cartesian point
+//! @param w IN      weight component
+//! 
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_copyAndWeight
+(
+DPoint4dP pInstance,
+DPoint3dCP pPoint,
+double    w
+);
+
+//!
+//! Copy the xyz components out of a homogeneous point.  The weight is
+//! not referenced, i.e. the xyz components are NOT normalized.
+//!
+//! @param pInstance IN      homogeneous point
+//! @param pPoint OUT     cartesian point
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_cartesianFromHomogeneous
+(
+DPoint4dCP pInstance,
+DPoint3dP pPoint
+);
+
+//!
+//! Copy the xyw components out of a homogeneous point.  The z component
+//! not referenced. This is a copy, not a normalization.
+//!
+//! @param pInstance IN      homogeneous point
+//! @param pPoint OUT     xyw parts copied to xyz
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_getXYW
+(
+DPoint4dCP pInstance,
+DPoint3dP pPoint
+);
+
+//!
+//! Set components of a 3d point from 3 indices into a homogeneous point.
+//! Indices are interpreted cyclically.
+//!
+//! @param pInstance   IN      homogeneous point with coordinates to select
+//! @param    pPoint  OUT     output point
+//! @param    xIndex  IN      index for x component of output
+//! @param    yIndex  IN      index for y component of output
+//! @param    zIndex  IN      index for z component of output
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_selectDPoint3d
+(
+DPoint4dCP pInstance,
+DPoint3dP pPoint,
+int       xIndex,
+int       yIndex,
+int       zIndex
+);
+
+//!
+//! Copies an array of homogeneous points
+//!
+//! @param pOutPoint OUT     destination array
+//! @param m IN      maximum number of points to copy
+//! @param pInPoint IN      source array
+//! @param n IN      number of points
+//! @return number of copied
+//! 
+//!
+Public GEOMDLLIMPEXP int bsiDPoint4d_copyArray
+(
+DPoint4dP pOutPoint,
+int           m,
+DPoint4dCP pInPoint,
+int           n
+);
+
+//!
+//! In-place reversal.
+//!
+//! @param pPointArray IN OUT  array to modify
+//! @param n IN      number of points
+//! @return number of copied
+//! 
+//!
+Public GEOMDLLIMPEXP void     bsiDPoint4d_reverseArrayInPlace
+(
+DPoint4dP pPointArray,
+int           n
+);
+
+//!
+//! copies n DPoint4d structures from the pSource array to the pDest
+//! using an index array to rearrange (not necessarily 1to1) the order.
+//! The indexing assigns pDest[i] = pSource[indexP[i]].
+//!
+//!
+//! @param pDest OUT     destination array
+//! @param pSource IN      source array
+//! @param pIndex IN      array of indices into source array
+//! @param nIndex IN      number of points
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_copyIndexedArray
+(
+DPoint4dP pDest,
+DPoint4dCP pSource,
+int         *pIndex,
+int          nIndex
+);
+
+//!
+//! Computes the homogeneous vector for a plane defined by 3D origin
+//! and normal.
+//! NOTE If the normal vector is null, a 0000 vector is returned.
+//!
+//! @param pInstance OUT     homogeneous vector for plane
+//! @param pOrigin OUT     origin point
+//! @param pNormal OUT     normal vector
+//! @return true unless normal is null
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_planeFromOriginAndNormal
+(
+DPoint4dP pInstance,
+DPoint3dCP pOrigin,
+DPoint3dCP pNormal
+);
+
+//!
+//! Computes the homogeneous vectors for planes defined by 3D origin
+//! and normal.
+//! Any given planes with 0 normal are ignored and omitted from the
+//! output array.  (Hence caller should revise their count with the
+//!
+//!
+//! @param pPlane OUT     homogeneous vector for plane
+//! @param pOrigin OUT     origin point
+//! @param pNormal OUT     normal vector
+//! @param int       numIn                 OUT     number of origins, normals
+//! @return number of planes with nonzero normal.
+//! 
+//!
+Public GEOMDLLIMPEXP int bsiDPoint4d_planesFromOriginAndNormalArrays
+(
+DPoint4dP pPlane,
+DPoint3dCP pOrigin,
+DPoint3dCP pNormal,
+int       numIn
+);
+
+//!
+//! Computes the homogeneous coordinate vector for a plane defined by
+//! 3 3D points.
+//!
+//! @param pInstance IN      homogeneous vector for plane
+//! @param pOrigin OUT     origin point
+//! @param pPoint1 OUT     another point on plane
+//! @param pPoint2 OUT     another point on plane
+//! @return true if normal is well defined.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_planeFrom3DPoint3d
+(
+DPoint4dP pInstance,
+DPoint3dCP pOrigin,
+DPoint3dCP pPoint1,
+DPoint3dCP pPoint2
+);
+
+//!
+//! Computes the homogeneous coordinate vector for a plane defined by
+//! a DPoint4d origin and a pair of 3D vectors.
+//!
+//! @param pInstance IN      homogeneous vector for plane
+//! @param pOrigin OUT     a point on the plane.
+//! @param pVector1 OUT     a vector in the plane.
+//! @param pVector2 OUT     another vector in the plane.
+//! @return false if origin, vectors are not independent.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_planeFromDPoint4dAndDPoint3dVectors
+(
+DPoint4dP pInstance,
+DPoint4dCP pOrigin,
+DPoint3dCP pVector0,
+DPoint3dCP pVector1
+);
+
+//!
+//! @param pInstance IN      homogeneous plane coeffciients
+//! @param pOrigin OUT     cartesian orign
+//! @param pNormal OUT     cartesian normal
+//! @return true if
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_originAndNormalFromPlane
+(
+DPoint4dCP pInstance,
+DPoint3dP pOrigin,
+DPoint3dP pNormal
+);
+
+//!
+//! Adds two homogeneous points.
+//!
+//! @param pInstance OUT     pt1 + pt2
+//! @param pt1 IN      point 1
+//! @param pt2 IN      point 2
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_addDPoint4dDPoint4d
+(
+DPoint4dP pInstance,
+DPoint4dCP pt1,
+DPoint4dCP pt2
+);
+
+//!
+//! Scale each point by the other's weight and return the difference
+//!
+//! @param sum OUT     pA * pB->w - pB * pA->w
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_weightedDifference
+(
+DPoint4dP pInstance,
+DPoint4dCP pA,
+DPoint4dCP pB
+);
+
+//!
+//! Scale each point by the other's weight and return the difference.
+//! (Note that the w component of the result is always zero)
+//!
+//! @param sum OUT     pA * pB->w - pB * pA->w
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_weightedDifferenceDPoint4dDPoint3d
+(
+DPoint4dP pInstance,
+DPoint4dCP pA,
+DPoint3dCP pB,
+double       wB
+);
+
+//!
+//! Scale each point by the other's weight and return the difference.
+//! (Note that the w component of the result is always zero)
+//!
+//! @param sum OUT     pA * pB->w - pB * pA->w
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_weightedDifferenceDPoint3dDPoint4d
+(
+DPoint4dP pInstance,
+DPoint3dCP pA,
+double         wA,
+DPoint4dCP pB
+);
+
+//!
+//! Add a vector to the instance.
+//!
+//! @param pInstance OUT     pInstance + pVector
+//! @param pVector IN      vector to add
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_add
+(
+DPoint4dP pInstance,
+DPoint4dCP pVector
+);
+
+//!
+//! Subtract a vector from the instance.
+//!
+//! @param pInstance OUT     pInstance - pVector
+//! @param pPoint IN      vector to subtract
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_subtract
+(
+DPoint4dP pInstance,
+DPoint4dCP pVector
+);
+
+//!
+//! Subtract second point from first.
+//!
+//! @param <= pPoint1 - pPoint2
+//! @param pPoint1 IN      first point
+//! @param pPoint2 IN      second point
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_subtractDPoint4dDPoint4d
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint1,
+DPoint4dCP pPoint2
+);
+
+//!
+//! Adds two homogeneous points to a base point.
+//!
+//! @param pInstance OUT     P0 + P1 * s1 + P2 * s2
+//! @param pPoint0 IN      base point
+//! @param pPoint1 IN      point 1
+//! @param scale1 IN      scale factor for point 1
+//! @param pPoint2 IN      point 2
+//! @param scale2 IN      scale factor for point 2
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_add2ScaledDPoint4d
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint0,
+DPoint4dCP pPoint1,
+double      scale1,
+DPoint4dCP pPoint2,
+double      scale2
+);
+
+//!
+//! Adds three homogeneous points to a base point.
+//!
+//! @param pInstance OUT     P0 + P1 * s1 + P2 * s2
+//! @param pPoint0 IN      base point
+//! @param pPoint1 IN      point 1
+//! @param scale1 IN      scale factor for point 1
+//! @param pPoint2 IN      point 2
+//! @param scale2 IN      scale factor for point 2
+//! @param pPoint3 IN      point 3
+//! @param scale3 IN      scale factor for point 3
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_add3ScaledDPoint4d
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint0,
+DPoint4dCP pPoint1,
+double      scale1,
+DPoint4dCP pPoint2,
+double      scale2,
+DPoint4dCP pPoint3,
+double      scale3
+);
+
+//!
+//! Adds two homogeneous points to a base point.
+//!
+//! @param pInstance OUT     P0 + P1 * s1 + P2 * s2
+//! @param pPoint0 IN      base point
+//! @param pPoint1 IN      point 1
+//! @param scale1 IN      scale factor for point 1
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_addScaledDPoint4d
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint0,
+DPoint4dCP pPoint1,
+double      scale1
+);
+
+//!
+//! Apply a Givens to the two points, as if they are columns of a matrix to be postmultiplied
+//! by the Givens matrx.
+//! The Givens matrix is
+//!       R(0,0)=R(1,1)=c
+//!       R(0,1)=-s
+//!       R(1,0)=s
+//!
+//! @param    pOut0   OUT     rotation of pIn0
+//! @param    pOut1   OUT     rotation of pIn1
+//! @param    pIn0    IN      first vector
+//! @param    pIn1    IN      second vector
+//! @param    c   IN      cosine of givens rotation.
+//! @param    s   IN      sine of givens rotation.
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_applyGivensRotation
+(
+DPoint4dP pOut0,
+DPoint4dP pOut1,
+DPoint4dCP pIn0,
+DPoint4dCP pIn1,
+double          c,
+double          s
+);
+
+//!
+//! Apply a hyperbolic rotation to the two points, as if they are columns of a matrix to be postmultiplied
+//! by the hyperbolic matrix
+//! The hyperbolic matrix is
+//!       R(0,0)=R(1,1)=secant
+//!       R(0,1)=R(1,0)= tangent
+//!
+//! @param    pOut0   OUT     rotation of pIn0
+//! @param    pOut1   OUT     rotation of pIn1
+//! @param    pIn0    IN      first vector
+//! @param    pIn1    IN      second vector
+//! @param    secant  IN      secant (diagonal) part of the hyperbolic transformation
+//! @param    tangent IN      tangent (offdiagonal) part of the hyperbolic transformation
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_applyHyperbolicReflection
+(
+DPoint4dP pOut0,
+DPoint4dP pOut1,
+DPoint4dCP pIn0,
+DPoint4dCP pIn1,
+double          secant,
+double          tangent
+);
+
+//!
+//! Normalize a 4d point and tangent so as to produce a vector parallel
+//! but probably a different length from the 3d tangent.
+//!
+//! @param pTangent OUT     normalized point
+//! @param pX IN      homogeneous point
+//! @param pdX IN      homogeneous
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_pseudoTangent
+(
+DPoint3dP pTangent,
+DPoint4dCP pX,
+DPoint4dCP pdX
+);
+
+//!
+//! @description Tests if two homogeneous derivatives are parallel in homogeneous space.
+//! @remarks Use bsiTrig_smallAngle() for tightest tolerance.
+//!
+//! @param pDot           OUT     dot product of pseudotangets, e.g., for determining if antiparallel (or NULL)
+//! @param pOrigin1       IN      the first homogeneous point
+//! @param pDerivative1   IN      the homogeneous derivative at pOrigin1
+//! @param pOrigin2       IN      the second homogeneous point
+//! @param pDerivative2   IN      the homogeneous derivative at pOrigin2
+//! @param tolerance      IN      radian tolerance for angle between vectors
+//! @return true if the derivatives' pseudotangents are parallel within tolerance
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint4d_areParallelDerivatives
+(
+double*         pDot,
+DPoint4dCP  pOrigin1,
+DPoint4dCP  pDerivative1,
+DPoint4dCP  pOrigin2,
+DPoint4dCP  pDerivative2,
+double          tolerance
+);
+
+//!
+//! @description Normalizes a homogeneous point (by dividing by w part).
+//!
+//! @param pIn IN      homogeneous point
+//! @param pOut OUT     normalized point
+//! @return true if normalization succeeded
+//! @group "DPoint4d Normalize"
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_normalize
+(
+DPoint4dCP  pIn,
+DPoint3dP  pOut
+);
+
+//!
+//! @description Normalizes a quaternion in place (i.e., so that it satisfies x*x + y*y + z*z + w*w = 1).
+//! @remarks The process is exactly analogous to normalization of a Cartesian vector.
+//!
+//! @param pQuaternion    IN OUT  quaternion to be normalized
+//! @return magnitude of quaternion
+//! @group "DPoint4d Quaternion"
+//!
+Public GEOMDLLIMPEXP double   bsiDPoint4d_normalizeQuaternion (DPoint4dP pQuaternion);
+
+//!
+//! Normalizes a homogeneous point, first, and second derivatives.
+//!
+//! @param pInstance IN      homogeneous point
+//! @param pRPoint OUT     normalized point
+//! @return true if normalization succeeded
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_normalizePointAndDerivatives
+(
+DPoint3dP pX,
+DPoint3dP pdX,
+DPoint3dP pddX,
+DPoint4dCP pZ,
+DPoint4dCP pdZ,
+DPoint4dCP pddZ
+);
+
+//!
+//! Initializes the instance by normalizing the weight of the source.
+//!
+//! @param pInstance IN      point to normalize
+//! @return true if normalization succeeded
+//! 
+//!
+Public GEOMDLLIMPEXP bool      bsiDPoint4d_initWithNormalizedWeight
+(
+DPoint4dP pInstance,
+DPoint4dCP pSource
+);
+
+//!
+//! Divide through by weight component.
+//!
+//! @param pInstance IN      point to normalize
+//! @return true if normalization succeeded
+//! 
+//!
+Public GEOMDLLIMPEXP bool      bsiDPoint4d_normalizeWeightInPlace (DPoint4dP pInstance);
+
+//!
+//! Normalizes a homogeneous plane (by dividing through by the vector
+//! magnitude).
+//!
+//! @param pInstance OUT     normalized plane
+//! @param pPlane0 IN      homogeneous plane
+//! @return true unless normal is zero vector.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_normalizePlane
+(
+DPoint4dP pInstance,
+DPoint4dCP pPlane0
+);
+
+//!
+//! Normalizes an array of  homogeneous points (by dividing by w part.)
+//! If w==0 is encountered, treat that point as w==1, set return value false, and
+//! continue with remaining points.
+//!
+//! @param pRPoint OUT     normalized points
+//! @param pHPoint IN      homogeneous points
+//! @param numPoint IN      number of points in both arrays
+//! @return false if any zero weights were detected.
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint4d_normalizeArray
+(
+DPoint3dP pRPoint,
+DPoint4dCP pHPoint,
+int       numPoint
+);
+
+//!
+//! Normalizes an array of  homogeneous points (by dividing by w part.)
+//! If w==0 is encountered, treat that point as w==1, set return value false, and
+//! continue with remaining points.
+//!
+//! @param pPointArray IN OUT  homogeneous points
+//! @param numPoint IN      number of points in array
+//! @return false if any zero weights were detected.
+//! 
+//!
+Public GEOMDLLIMPEXP bool     bsiDPoint4d_normalizeArrayInPlace
+(
+DPoint4dP pPointArray,
+int       numPoint
+);
+
+//!
+//! sets pOutVec to pInVec*scale.
+//!
+//! @param pInstance OUT     output vector
+//! @param pInVec IN      input vector
+//! @param scale IN      scale
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_scale
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint,
+double       scale
+);
+
+//!
+//! Scale a point in place.
+//!
+//! @param pInstance IN OUT  point to scale
+//! @param scale IN      scale factor
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_scaleInPlace
+(
+DPoint4dP pInstance,
+double       scale
+);
+
+//!
+//! Negate a point.
+//!
+//! @param pInstance OUT     output point
+//! @param pPoint IN      input point
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_negate
+(
+DPoint4dP pInstance,
+DPoint4dCP pPoint
+);
+
+//!
+//! Negate all components of a point in place.
+//! @param pInstance IN OUT  point to negate.
+//! 
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_negateInPlace (DPoint4dP pInstance);
+
+//!
+//! Exact equality test between points.  (Also see method with same name
+//! but added tolerance argument.)
+//!
+//! @param pInstance IN      vector
+//! @param pVec2 IN      vector
+//! @return true if the points are identical.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_pointEqual
+(
+DPoint4dCP pInstance,
+DPoint4dCP pVec2
+);
+
+//!
+//! @param pInstance IN      vector
+//! @param pVec2 IN      vector
+//! @param tolerance IN      tolerance
+//! @return true if all components are within given tolerance of each other.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_pointEqualTolerance
+(
+DPoint4dCP pInstance,
+DPoint4dCP pVec2,
+double                  tolerance
+);
+
+//!
+//! @param pInstance IN      vector
+//! @param pVec2 IN      vector
+//! @param tolerance IN      tolerance
+//! @param xyzTol IN      tolerance for absolute difference between x,y,z components.
+//! @param wTol IN      tolerance for absolute difference between w components.
+//! @return true if all components are within given tolerance of each other,
+//!       using different tolerances for xyz and w data.
+//! 
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_pointEqualMixedTolerance
+(
+DPoint4dCP pInstance,
+DPoint4dCP pVec2,
+double                  xyzTol,
+double                  wTol
+);
+
+//!
+//! @param pInstance IN      vector
+//! @return largest absoluted value among point coordinates.
+//! 
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_maxAbs (DPoint4dCP pInstance);
+
+//!
+//! @description Returns the angle of rotation represented by the quaternion and
+//!       sets pAxis to be the normalized vector about which the quaternion rotates.
+//! @remarks The quaternion is assumed to be normalized, i.e. of the form (x,y,z,w), where x*x + y*y + z*z + w*w = 1.
+//!
+//! @param pQuaternion    IN      input quaternion
+//! @param pAxis          OUT     normalized axis of rotation
+//! @return rotation angle (in radians) between 0 and Pi, inclusive
+//! @group "DPoint4d Quaternion"
+//!
+Public GEOMDLLIMPEXP double bsiDPoint4d_getRotationAngleAndVectorFromQuaternion
+(
+DPoint4dCP    pQuaternion,
+DPoint3dP    pAxis
+);
+
+//!
+//! @return true if the point has coordinates which indicate it is
+//!   a disconnect (separator) ponit.
+//!
+Public GEOMDLLIMPEXP bool    bsiDPoint4d_isDisconnect (DPoint4dCP pPoint);
+
+//!
+//! Initialize a point with all coordinates as the disconnect value.
+//!
+Public GEOMDLLIMPEXP void bsiDPoint4d_initDisconnect (DPoint4dP pPoint);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

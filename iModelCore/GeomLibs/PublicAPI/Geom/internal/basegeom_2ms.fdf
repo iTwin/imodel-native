@@ -1,0 +1,106 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/internal/basegeom_2ms.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! Copy all entries from an mdl-style transform (form3d only!!!) to DTransform3d
+//!
+//! @param        mdlTransformP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiDTransform3d_initFromTransform
+(
+DTransform3dP   baseGeomTransformP,
+TransformCP     mdlTransformP
+);
+
+//!
+//! Copy all entries from an mdl-style transform (form3d only!!!) to DTransform3d,
+//! transposing the matrix.
+//!
+//! @param        mdlTransformP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiDTransform3d_initFromTransformTranspose
+(
+DTransform3dP   baseGeomTransformP,
+TransformCP     mdlTransformP
+);
+
+
+//!
+//! Copy all entries from a DTransform3d to form3d in mdl-style Transform.
+//!
+//! @param        baseGeomTransformP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiTransform_initFromDTransform3d
+(
+TransformP      mdlTransformP,
+DTransform3dCP  baseGeomTransformP
+);
+
+//!
+//! Copy all entries from a DTransform3d to form3d in mdl-style Transform,
+//! transposing the matrix part.
+//!
+//! @param        baseGeomTransformP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiTransform_initFromDTransform3dTranspose
+(
+TransformP      mdlTransformP,
+DTransform3dCP  baseGeomTransformP
+);
+
+//!
+//! Copy all entries from an mdl-style matrix (form3d only!!!) to DMatrix3d
+//!
+//! @param        mdlMatrixP IN      source matrix
+//!
+Public GEOMDLLIMPEXP void    bsiDMatrix3d_initFromRotMatrix
+(
+DMatrix3dP  baseGeomMatrixP,
+RotMatrixCP mdlMatrixP
+);
+
+//!
+//! Copy transposed entries from an mdl-style matrix (form3d only!!!) to DMatrix3d.
+//!
+//! @param        mdlMatrixP IN      source matrix
+//!
+Public GEOMDLLIMPEXP void    bsiDMatrix3d_initFromRotMatrixTranspose
+(
+DMatrix3dP  baseGeomMatrixP,
+RotMatrixCP mdlMatrixP
+);
+
+//!
+//! Copy transposed entries from a DMatrix3d to form3d in mdl-style RotMatrix.
+//!
+//! @param        baseGeomMatrixP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiRotMatrix_initFromDMatrix3dTranspose
+(
+RotMatrixP  mdlMatrixP,
+DMatrix3dCP baseGeomMatrixP
+);
+
+//!
+//! Copy all entries from a DMatrix3d to form3d in mdl-style RotMatrix.
+//!
+//! @param        baseGeomMatrixP IN      source transform
+//!
+Public GEOMDLLIMPEXP void    bsiRotMatrix_initFromDMatrix3d
+(
+RotMatrixP  mdlMatrixP,
+DMatrix3dCP baseGeomMatrixP
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

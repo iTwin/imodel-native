@@ -1,0 +1,10 @@
+PRIMITIVE Group
+<def name=SUMMARY>A group of geometry.
+</def>
+<def name=Interface_BaseList>IGeometry, IAggregate</def>
+
+
+<def name=MEMBERS><list ItemType=IGeometry ItemTagName=Member ItemSemanticName=Member ItemParamName=member ListName=mMember ItemDescription="Group member" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

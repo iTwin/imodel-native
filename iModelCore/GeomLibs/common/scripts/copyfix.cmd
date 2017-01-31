@@ -1,0 +1,1 @@
+call gemaproc %GEMADIR%g\copyfix.g %1

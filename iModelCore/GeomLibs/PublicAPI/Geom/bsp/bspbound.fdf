@@ -1,0 +1,371 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/bsp/bspbound.fdf $
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_rectanglesIntersect
+(
+DRange2d      *rect1,
+DRange2d      *rect2
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_boxCompute
+(
+BoundBox        *box,
+DPoint3d        *points,
+int             numU,
+int             numV
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Loosely based on - A Linear-Time Simple Bounding Volume Algorithum Xiolain Wu (Page 301, Graphics Gems III)
+* @bsimethod                                                    BentleySystems  05/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void bound_optimizedBoxCompute
+(
+BoundBox    *boxP,
+DPoint3d    *pointP,
+int         nPoints
+);
+
+/*---------------------------------------------------------------------------------**//**
+* pts[0] = box->origin 6---------7 pts[1] = x direction /| /| pts[2] = y direction / | / | pts[3] = z direction 3---------5 | . | | | | . |
+* 2------|--4 . | / | / as indicated. |/ |/ 0---------1
+* @bsimethod                                                    BentleySystems  03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_getBoxCorners
+(
+DPoint3d        *pts,                  /* OUT     corners in world coordinates */
+BoundBox        *box
+);
+
+/*---------------------------------------------------------------------------------**//**
+* segment is in rotated coordinate system of box, so the normals of the box are simply unit vectors in x,y,z
+* @bsimethod                                                    BentleySystems  03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool    bound_segmentBoxIntersect
+(
+DSegment3d       *segment,
+BoundBox        *box
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_boxesIntersect
+(
+BoundBox        *b1,
+BoundBox        *b2
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_boxFlat
+(
+BoundBox        *box,
+double          tolerance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_boxFromSurface
+(
+BoundBox            *box,
+MSBsplineSurface    *surface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  05/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  int bound_optimizedBoxFromSurface
+(
+BoundBox            *boxP,
+MSBsplineSurface    *surfaceP
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  11/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_boxFromCyl
+(
+BoundBox        *box,
+BoundCyl        *cyl,
+double          expansion
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_boxFromCurve
+(
+BoundBox        *box,
+MSBsplineCurve  *curve
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  09/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void     bound_boxFromEval
+(
+BoundBox        *box,
+Evaluator       *eval
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  02/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_boxRayIntersect
+(
+DPoint3d        *point,                /* OUT     intersect point, or NULL */
+DRay3d          *ray,                  /* IN      origin & unit vector */
+BoundBox        *box
+);
+
+/*---------------------------------------------------------------------------------**//**
+* from Graphics Gems page 301
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_sphereCompute
+(
+DPoint3d        *center,
+double          *radius,
+DPoint3d        *points,
+int             numPoints
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_sphereMinMax
+(
+double          *min,
+double          *max,
+DPoint3d        *testPt,
+DPoint3d        *center,
+double          radius
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_spherePtInside
+(
+DPoint3d        *testPt,
+DPoint3d        *center,
+double          radius
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_spherePairDist
+(
+double          *minDist,
+double          *maxDist,
+DPoint3d        *center0,
+double          radius0,
+DPoint3d        *center1,
+double          radius1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* from Graphic Gems page 388
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_sphereLineIntersect
+(
+DPoint3d        *point,                /* OUT     intersect point, or NULL */
+DRay3d          *ray,                  /* IN      origin & unit vector */
+DPoint3d        *center,
+double          radius
+);
+
+/*---------------------------------------------------------------------------------**//**
+* from Graphic Gems page 388, but modified for ray projecting in only one direction
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_sphereRayIntersect
+(
+DPoint3d        *point,                /* OUT     intersect point, or NULL */
+DRay3d          *ray,                  /* IN      origin & unit vector */
+DPoint3d        *center,
+double          radius
+);
+
+/*---------------------------------------------------------------------------------**//**
+* returns true if segment lies entirely within sphere
+* @bsimethod                                                    BentleySystems  01/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_sphereIntersectSegment
+(
+DPoint3d        *point,                /* OUT     intersect point, or NULL */
+DSegment3d       *segment,              /* IN      endpoints of segment */
+DPoint3d        *center,
+double          radius
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_sphereFromCurve
+(
+DPoint3d        *center,
+double          *radius,
+MSBsplineCurve  *curve
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_sphereFromSurface
+(
+DPoint3d            *center,
+double              *radius,
+MSBsplineSurface    *surface
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_rangesIntersect
+(
+DRange3d       *range0,
+DRange3d       *range1
+);
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  07/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_rangeFromBox
+(
+DRange3d       *range,
+BoundBox        *box
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  12/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_range1EntirelyIn2
+(
+DRange3d       *r1,                   /* IN      input range */
+DRange3d       *r2                    /* IN      input range */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  03/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  void bound_rangeComputeUnion
+(
+DRange3d   *unionP,
+DRange3d   *rect1P,
+DRange3d   *rect2P
+);
+
+/*---------------------------------------------------------------------------------**//**
+* returns (volume 1 that is inside 2 / volume 1)
+* @bsimethod                                                    BentleySystems  04/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_rangeAmount1In2 /* OUT     percent contained */
+(
+DRange3d       *r1,                   /* IN      input range */
+DRange3d       *r2                    /* IN      input range */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_rangeContainsPoints
+(
+int             *index,                /* OUT     index of first point in range, or NULL */
+int             *numOut,               /* OUT     number of points outside, or NULL */
+DPoint3d        *points,
+int             numPoints,
+DRange3d        *range
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  04/93
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_rangeContainsCurvePolygon
+(
+int             *index,
+int             *numOut,
+MSBsplineCurve  *curve,
+DRange3d        *range
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  02/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_cylCompute
+(
+BoundCyl        *cyl,
+DPoint3d        *points,
+int             numPoints
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  02/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  double   bound_cylFromCurve
+(
+BoundCyl        *cyl,
+MSBsplineCurve  *curve
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  07/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_cylMinMax
+(
+double          *min,
+double          *max,
+DPoint3d        *testPt,
+BoundCyl        *cyl
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  07/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_cylPairDist
+(
+double          *minDist,
+double          *maxDist,
+BoundCyl        *cyl0,
+BoundCyl        *cyl1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  08/92
++---------------+---------------+---------------+---------------+---------------+------*/
+Public  bool     bound_cylFlat
+(
+BoundCyl        *cyl,
+double          tolerance
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,50 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Mtg/jmdl_facetdisk.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/**
+* Writes a Facets structure to the stream.
+*
+* @param pStream IN OUT data stream ptr
+* @param pFacets IN facet structure to write to data stream
+* @param pFuncs IN callback bundle for reading/writing to the stream
+* @return false if error; true if success
+* @see #jmdlMTGFacets_loadFromDataStream
+* @bsimethod                                                    BentleySystems  09/99
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlMTGFacets_storeToDataStream
+(
+void                *pStream,
+const MTGFacets     *pFacets,
+const MTG_IOFuncs   *pFuncs
+);
+
+/**
+* Populates this instance from the given stream, as written by
+* jmdlMTGFacets_storeToDataStream.
+*
+* @param    pFacets IN OUT facet structure to fill from data stream
+* @param pStream IN OUT data stream ptr
+* @param pFuncs IN callback bundle for reading/writing to the stream
+* @return false if error; true if success
+* @see #jmdlMTGFacets_storeToDataStream
+* @bsimethod                                                    BentleySystems  09/99
++---------------+---------------+---------------+---------------+------*/
+Public bool    jmdlMTGFacets_loadFromDataStream
+(
+MTGFacets           *pFacets,
+void                *pStream,
+const MTG_IOFuncs   *pFuncs
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

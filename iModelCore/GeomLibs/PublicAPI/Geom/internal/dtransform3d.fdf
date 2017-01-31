@@ -1,0 +1,1903 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Geom/internal/dtransform3d.fdf $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @description Returns a value from a specified row and column of the matrix part of the transformation.
+//! @param pTransform IN      The input transformation.
+//! @param row IN      The index of row to read.  Row indices are 0, 1, 2.
+//! @param col IN      The index of column to read.  Column indices are 0, 1, 2.
+//! @return requested component of the matrix
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP double bsiDMatrix3d_getMatrixComponentByRowAndColumn
+(
+DTransform3dCP pTransform,
+int            row,
+int            col
+);
+
+//!
+//! @description Sets a value at a specified row and column of the matrix part of the transformation
+//! @param pTransform IN      The input transformation.
+//! @param row IN      The index of row to set.
+//! @param col IN      The index of column to set.
+//! @param value  IN      the value to set.
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setMatrixComponentByRowAndColumn
+(
+DTransform3dP pTransform,
+int            row,
+int            col,
+double         value
+);
+
+//!
+//! @description Returns a value from a specified component of the point (translation) part of the transformation.
+//! @param pTransform IN      The input transformation.
+//! @param row IN      The index of point component to read.  Indices are 0, 1, 2 for x, y, z
+//! @return requested component of translation
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP double bsiDMatrix3d_getTranslationComponent
+(
+DTransform3dCP pTransform,
+int            row
+);
+
+//!
+//! @description Sets a value at a specified row of the point (translation) part of the transformation.
+//! @param pTransform IN      The input transformation.
+//! @param row IN      The index of the point component to set
+//! @param value  IN      the value to set.
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setTranslationComponent
+(
+DTransform3dP pTransform,
+int            row,
+double         value
+);
+
+//!
+//! @description Multiplies a point by a transform, returning the result in
+//!   place of the input point.
+//! @param pTransform IN      The transformation matrix
+//! @param pPoint IN OUT  point to be updated
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint
+);
+
+//!
+//! @description Returns the product of a transform times a point.
+//! @param pTransform IN      The transform to apply.
+//! @param pResult OUT     returned point.
+//! @param pPoint IN      The input point.
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3d
+(
+DTransform3dCP pTransform,
+DPoint3dP pResult,
+DPoint3dCP pPoint
+);
+
+//!
+//! Multiplies a "weighted point" in place.  That is, the point is input and output as
+//!   (wx,wy,wz,w) where x,y,z are the cartesian image coordinates.
+//!
+//! @param pTransform IN      The transformation matrix
+//! @param pPoint IN OUT  point to be updated
+//! @param weight IN      The weight
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyWeightedDPoint3dInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint,
+double          weight
+);
+
+//!
+//! Multiplies an array of "weighted points" in place.  That is, the point is input and output as
+//!   (wx,wy,wz,w) where x,y,z are the cartesian image coordinates.
+//!
+//! @param pTransform IN      The transformation matrix
+//! @param pOutPoint  IN      The transformed points.
+//! @param pInPoint   IN      The original points
+//! @param pWeight    IN      The weight array.  If null, unit weight is used.
+//! @param numPoint   IN      number of points in arrays.
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyWeightedDPoint3dArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+const double    *pWeight,
+int             numPoint
+);
+
+//!
+//! Multiplies this instance times the column vector pPoint and replaces pPoint
+//! with the result, using the transpose of the matrix part of this instance in
+//! the multiplication.
+//! Symbolically, this is equivalent to being given transform [R t] and row
+//! vector p, and returning the point p*R + t.
+//!
+//! @param pTransform IN      The transformation matrix
+//! @param pPoint IN OUT  point to be updated
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposePoint
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint
+);
+
+//!
+//! @description Returns the product of a matrix times a point, with the point
+//!       specified as explict x, y, and z values.
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint OUT     result of transformation * point operation
+//! @param x IN      The x component of the point
+//! @param y IN      The y component of the point
+//! @param z IN      The z component of the point
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyComponents
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! Multiplies this instance times the column vector constructed from components
+//! x,y,z, using the transpose of the matrix part of this instance in the
+//! multiplication.
+//! Symbolically, this is equivalent to being given transform [R t] and row
+//! vector p, and returning the point p*R + t.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint OUT     result of transformation * point operation
+//! @param x IN      The x component of the point
+//! @param y IN      The y component of the point
+//! @param z IN      The z component of the point
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposeComponents
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//!
+//! Transform the a,b,c,d components for an implicit plane.
+//! The plane equation format is ax+by+cz=d.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param paOut OUT     x coefficient in transformed plane equation
+//! @param pbOut OUT     y coefficient in transformed plane equation
+//! @param pcOut OUT     z coefficient in transformed plane equation
+//! @param pdOut OUT     transformed right hand side constant
+//! @param a IN      The x coefficient in plane equation
+//! @param b IN      The y coefficient in plane equation
+//! @param c IN      The z coefficient in plane equation
+//! @param d IN      The constant on right hand side of plane equation
+//! @return value of plane equation.
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_transformImplicitPlane
+(
+DTransform3dCP pTransform,
+double        *paOut,
+double        *pbOut,
+double        *pcOut,
+double        *pdOut,
+double        a,
+double        b,
+double        c,
+double        d
+);
+
+//!
+//! Multiplies the matrix part of this instance times the column vector
+//! constructed from components x,y,z.
+//! Symbolically, given transform [R t] and column vector p,
+//! the returned point is R*p.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint OUT     result of matrix * point operation
+//! @param x IN      The x component of the point
+//! @param y IN      The y component of the point
+//! @param z IN      The z component of the point
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyComponentsByMatrixPart
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! Multiplies the matrix part of this instance times column vector pInPoint.
+//! Symbolically, given transform [R t] and column vector p,
+//! the returned point is R*p.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     result of matrix * point operation
+//! @param pInPoint IN      The point by which matrix is multiplied
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dByMatrixPart
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint
+);
+
+//!
+//! Multiplies the matrix part of this instance times column vector pPoint and
+//! replaces pPoint with the result.
+//! Symbolically, given transform [R t] and column vector p,
+//! the returned point is R*p.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint IN OUT  point to be updated
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dByMatrixPartInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint
+);
+
+//!
+//! Multiplies the row vector constructed from components x,y,z times the matrix
+//! part of this instance.
+//! Symbolically, given transform [R t] and row vector p,
+//! the returned point is p*R.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint OUT     result of point * matrix operation
+//! @param x IN      The x component of the point
+//! @param y IN      The y component of the point
+//! @param z IN      The z component of the point
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposeComponentsByMatrixPart
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! Multiplies the row vector pInPoint times the matrix
+//! part of this instance.
+//! Symbolically, given transform [R t] and row vector p,
+//! the returned point is p*R.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     result of point * matrix operation
+//! @param pInPoint IN      The point which multiplies matrix
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposePointByMatrixPart
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint
+);
+
+//!
+//! Multiplies the row vector pPoint times the matrix
+//! part of this instance, and replaces pPoint with the result.
+//! Symbolically, given transform [R t] and row vector p,
+//! the returned point is p*R.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPoint IN OUT  point to be updated
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposePointByMatrixPartInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pPointArray
+//! and replaces pPointArray with the resulting points.
+//! Symbolically, given transform [R t],
+//! each returned point is of the form R*p + t, where p is a column vector.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPointArray IN OUT  array of points to be multiplied
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dArrayInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPointArray,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pPointArray,
+//! using the transpose of the matrix part of this instance in the multiplications,
+//! and replaces pPointArray with the resulting points.
+//! Symbolically, given transform [R t], each returned point has the equivalent
+//! form p*R + t, where p is a row vector.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pPointArray IN OUT  array of points to be multiplied
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposeDPoint3dArrayInPlace
+(
+DTransform3dCP pTransform,
+DPoint3dP pPointArray,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! pInPoint and pOutPoint may be the same.
+//! Symbolically, given transform [R t], each returned point has the
+//! form R*p + t*w (with weight w), where p is a column vector and w is its
+//! weight.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint4dArray
+(
+DTransform3dCP pTransform,
+DPoint4dP pOutPoint,
+DPoint4dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! pInPoint and pOutPoint may be the same.
+//! Symbolically, given transform [R t], each returned point has the
+//! form R*p + t, where p is a column vector.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! pInPoint and pOutPoint may be the same.
+//! Symbolically, given transform [R t], each returned point has the
+//! form R*p + t, where p is a column vector.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyFPoint3dArray
+(
+DTransform3dCP pTransform,
+FPoint3dP pOutPoint,
+FPoint3dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint,
+//! using the transpose of the matrix part of this instance in the multiplications,
+//! and places the resulting points in pOutPoint.
+//! Symbolically, given transform [R t], each returned point has the equivalent
+//! form p*R + t, where p is a row vector.
+//! pInPoint and pOutPoint may be the same.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransposeDPoint3dArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! pInPoint and pOutPoint may be the same.
+//! All z parts (i.e. last row and column) of this instance are ignored.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint2dArray
+(
+DTransform3dCP pTransform,
+DPoint2dP pOutPoint,
+DPoint2dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! pInPoint and pOutPoint may be the same.
+//! All z parts (i.e. last row and column) of this instance are ignored.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyFPoint2dArray
+(
+DTransform3dCP pTransform,
+FPoint2dP pOutPoint,
+FPoint2dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! resulting points in pOutPoint.
+//! Each input point is given a z=0.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint2dArrayTo3d
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint2dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! Multiplies this instance times each column vector in pInPoint and places the
+//! x and y components of the resulting points in pOutPoint.
+//!
+//! @param pTransform IN      The transformation to apply
+//! @param pOutPoint OUT     transformed points
+//! @param pInPoint IN      The input points
+//! @param numPoint IN      The number of points
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDPoint3dArrayTo2d
+(
+DTransform3dCP pTransform,
+DPoint2dP pOutPoint,
+DPoint3dCP pInPoint,
+int            numPoint
+);
+
+//!
+//! @description Returns the product of two transformations.
+//! Symbolically, given transforms [R t] and [S u], return the product transform
+//! [R t][S u] = [R*S t+R*u].
+//!
+//! @param pProduct OUT     product transformation
+//! @param pTransform1 IN      The first factor
+//! @param pTransform2 IN      The second factor
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransformTransform
+(
+DTransform3dP pProduct,
+DTransform3dCP pTransform1,
+DTransform3dCP pTransform2
+);
+
+//!
+//! @description Returns the product of three transformations.
+//! Symbolically, given transforms [R t], [S u] and [T v], return the product transform
+//! [R t][S u][T v] = [R*S*T t+R*(u+S*v)].
+//!
+//! @param pProduct OUT     product transformation
+//! @param pTransform1 IN      The first factor (R)
+//! @param pTransform2 IN      The second factor (S)
+//! @param pTransform3 IN      The third factor (T)
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyTransformTransformTransform
+(
+DTransform3dP pProduct,
+DTransform3dCP pTransform1,
+DTransform3dCP pTransform2,
+DTransform3dCP pTransform3
+);
+
+//!
+//! @description Returns the product of a matrix and a transformation.
+//! The matrix acts like a transformation with a zero point as its translation part.
+//!
+//! @param pProduct OUT     product transformation
+//! @param pMatrix IN      The first factor (matrix)
+//! @param pTransform IN      The second factor (transform)
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDMatrix3dDTransform3d
+(
+DTransform3dP pProduct,
+DMatrix3dCP pMatrix,
+DTransform3dCP pTransform
+);
+
+//!
+//! @description returns the product of a transformation times a matrix, treating
+//!   the matrix as a transformation with zero as its translation components.
+//! @param pProduct OUT     product transformation
+//! @param pTransform IN      The first facpatentor (transform)
+//! @param pMatrix IN      The second factor (matrix)
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyDTransform3dDMatrix3d
+(
+DTransform3dP pProduct,
+DTransform3dCP pTransform,
+DMatrix3dCP pMatrix
+);
+
+//!
+//! Computes the 8 corner points of the range cube defined by the two points
+//! of pRange, multiplies pTransform times each point, and computes the
+//! twopoint range limits (min max) of the resulting rotated box.
+//! Note that the volume of the rotated box is generally larger than
+//! that of the input because the postrotation minmax operation expands
+//! the box.
+//!
+//! @param pTransform IN      The transform to apply
+//! @param pOutRange OUT     range of transformed cube
+//! @param pInRange IN      The any two corners of original cube
+//! @group "DTransform3d Multiplication"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_multiplyRange
+(
+DTransform3dCP pTransform,
+DRange3dP pOutRange,
+DRange3dCP pInRange
+);
+
+//!
+//! @description returns an identity transformation, i.e. zero
+//! translation part and identity matrix part.
+//!
+//! @param pTransform OUT     identity transformation
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initIdentity (DTransform3dP pTransform);
+
+//!
+//! @description Returns a transformation with the given matrix part and a zero
+//!           translation part.
+//! @param pTransform OUT     constructed transformation
+//! @param pMatrix IN      The matrix part
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromMatrix
+(
+DTransform3dP pTransform,
+DMatrix3dCP pMatrix
+);
+
+//!
+//! @description Returns a transformation with the given matrix and translation parts.
+//! @param pTransform OUT     constructed transformation
+//! @param pMatrix IN      The matrix part
+//! @param pTranslation IN      The translation part
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromMatrixAndTranslation
+(
+DTransform3dP pTransform,
+DMatrix3dCP pMatrix,
+DPoint3dCP pTranslation
+);
+
+//!
+//! @description Returns a transformation with identity matrix part and
+//!           given translation part.
+//! @param pTransform OUT     transformation with identity matrix, given translation
+//! @param pTranslation IN      The translation part
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromTranslation
+(
+DTransform3dP pTransform,
+DPoint3dCP pTranslation
+);
+
+//!
+//! @description Returns a transformation with identity matrix part and
+//!       translation part given as x, y, and z components.
+//! @param pTransform OUT     transformation with identity matrix, given translation
+//! @param x IN      The x-coordinate of translation part
+//! @param y IN      The y-coordinate of translation part
+//! @param z IN      The z-coordinate of translation part
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromTranslationXYZ
+(
+DTransform3dP pTransform,
+double        x,
+double        y,
+double        z
+);
+
+//!
+//! Copies the double values directly into the rows of this instance.
+//!
+//! @param pTransform OUT     constructed transform
+//! @param x00 IN      The (0,0) entry of the matrix (row, column)
+//! @param x01 IN      The (0,1) entry
+//! @param x02 IN      The (0,2) entry
+//! @param tx  IN      The x-coordinate of the translation part
+//! @param x10 IN      The (1,0) entry
+//! @param x11 IN      The (1,1) entry
+//! @param x12 IN      The (1,2) entry
+//! @param ty  IN      The y-coordinate of the translation part
+//! @param x20 IN      The (2,0) entry
+//! @param x21 IN      The (2,1) entry
+//! @param x22 IN      The (2,2) entry
+//! @param tz  IN      The z-coordinate of the translation part
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromRowValues
+(
+DTransform3dP pTransform,
+double        x00,
+double        x01,
+double        x02,
+double        tx,
+double        x10,
+double        x11,
+double        x12,
+double        ty,
+double        x20,
+double        x21,
+double        x22,
+double        tz
+);
+
+//!
+//! @description Returns a transformation of rotation about a specified line.
+//! @param pTransform OUT     rotation transformation
+//! @param pPoint0 IN      The start point of the line
+//! @param pPoint1 IN      The end point of the line
+//! @param radians IN      The rotation angle
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromLineAndRotationAngle
+(
+DTransform3dP pTransform,
+DPoint3dCP pPoint0,
+DPoint3dCP pPoint1,
+double         radians
+);
+
+//!
+//! Sets this instance to a transformation that has the same matrix part
+//! as transform pIn and a translation part that is the SUM of the
+//! translation part of pIn plus the product of the
+//! matrix part of pIn times the given point.
+//! If the translation part of pIn is interpreted as the
+//! origin of a coordinate system (whose axis directions and sizes
+//! are given by the columns of the matrix part), this instance
+//! becomes a coordinate frame with the same axis directions and sizes,
+//! but with the origin shifted to point x,y,z of the pIn
+//! system.  That is, x,y,z are the local coordinates of the new
+//! origin, and the translation part of this instance becomes the global
+//! coordinates of the new origin.
+//! pIn may be identical to this instance.
+//! Symbolically, if pIn is the transform [R t] and the local
+//! origin coordinates x,y,z are in column vector p, the result is
+//! the transformation [R t+R*p].
+//!
+//! @param pOut OUT     output transformation
+//! @param pIn IN      The input transformation
+//! @param x IN      The x-coordinate of the local origin
+//! @param y IN      The y-coordinate of the local origin
+//! @param z IN      The z-coordinate of the local origin
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_translateInLocalCoordinates
+(
+DTransform3dP pOut,
+DTransform3dCP pIn,
+double         x,
+double         y,
+double         z
+);
+
+//!
+//! @description Overwrites the matrix part of a preexisting transformation.
+//!   The translation part is unchanged.
+//! @param pTransform IN OUT  transformation whose matrix part is modified
+//! @param pMatrix IN      The matrix to insert
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setMatrix
+(
+DTransform3dP pTransform,
+DMatrix3dCP pMatrix
+);
+
+//!
+//! Sets the translation part of this instance to pPoint.  The prior
+//! translation part is overwritten, and the matrix part is unchanged.
+//! Symbolically, if pPoint is u then this instance [R t] becomes the
+//! transformation [R u].
+//!
+//! @param pTransform IN OUT  transformation whose vector part is modified
+//! @param pPoint IN      The vector to insert
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setTranslation
+(
+DTransform3dP pTransform,
+DPoint3dCP pPoint
+);
+
+//!
+//! Sets the translation part of this instance to zero.  The prior
+//! translation part is overwritten, and the matrix part is unchanged.
+//! Symbolically, this instance [R t] becomes the transformation [R 0].
+//!
+//! @param pTransform IN OUT  transformation whose vector is zeroed
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_zeroTranslation (DTransform3dP pTransform);
+
+//!
+//! Sets the translation part of this instance so that it leaves point
+//! pPoint unchanged, i.e. so that this instance may be interpreted as
+//! applying its matrix part as a rotation or scaling about pPoint.
+//! Symbolically, given transform [R t] and column vector p,
+//! the returned transform is [R p-R*p].
+//! (The prior translation part is destroyed, and does not affect the
+//! result in any way.)
+//!
+//! @param pTransform IN OUT  matrix whose vector part is modified
+//! @param pPoint IN      The point that is to remain fixed when multiplied by the modified transformation
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setFixedPoint
+(
+DTransform3dP pTransform,
+DPoint3dCP pPoint
+);
+
+//!
+//! @description Returns a transformation with given matrix part, and translation
+//!   part computed from the matrix and a given fixed point.  This translation part
+//!   is generally different from the fixed point itself.   The resulting transformation
+//!   will leave the fixed point unchanged and apply whatever effects are contained in the
+//!   matrix as if the fixed point is the origin.
+//! @param pTransform OUT     transform to be initialized
+//! @param pMatrix IN      The matrix part
+//! @param pOrigin IN      The point that is to remain fixed when multiplied by the transformation.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromMatrixAndFixedPoint
+(
+DTransform3dP pTransform,
+DMatrix3dCP pMatrix,
+DPoint3dCP pOrigin
+);
+
+//!
+//!
+//! Sets this instance to a matrix which is the inverse of pIn
+//! IN THE SPECIAL CASE WHERE pIn HAS ONLY PURE ROTATION OR
+//! MIRRORING IN ITS ROTATIONAL PART.   These special conditions allow
+//! the 'inversion' to be done by only a transposition and one
+//! matrix-times-point multiplication, rather than the full effort of
+//! inverting a general transformation. It is the caller's responsibility
+//! to be sure that these special conditions hold.  This usually occurs
+//! when the caller has just constructed the transform by a sequence of
+//! translations and rotations.
+//! If the caller has received the matrix from nonverified external
+//! sources and therefore does not know if the special conditions apply,
+//! the <CODE>inverseOf</CODE> method should be used instead.
+//! pIn may be the same as this instance.
+//! The specific computations in this special-case inversion are (1) the
+//! output transform's translation is the input transform's
+//! matrix times the negative of the input transform's translation, and (2) the
+//! output transform's matrix part is the tranpose of the input transform's
+//! matrix part.
+//! Symbolically, given transform [R t] return transform [R^ (R^)*(-t)]
+//! where ^ indicates transposition.
+//!
+//! @param pOut OUT     inverted transformation
+//! @param    pIn  IN      The input transformation
+//! @group "DTransform3d Inverse"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_invertAsRotation
+(
+DTransform3dP pOut,
+DTransform3dCP pIn
+);
+
+//!
+//! @description Compute the inverse transform of pIn.
+//! @remarks pIn may be the same as pOut.
+//! @remarks This is a modestly expensive floating point computation (33 multiplies, 14 adds).
+//! @remarks Symbolically, given transform [R t] return transform [Q Q*(-t)] where Q is the inverse of matrix R.
+//! @param pOut OUT     inverted transformation
+//! @param pIn IN      The input transformation
+//! @return true if transform is invertible
+//! @group "DTransform3d Inverse"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_invertDTransform3d
+(
+DTransform3dP pOut,
+DTransform3dCP pIn
+);
+
+//!
+//! @description Test if a transform has an inverse.
+//! @param pTransform IN      The transform to test.
+//! @return true if the matrix has an inverse.
+//! @group "DTransform3d Inverse"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_hasInverse (DTransform3dCP pTransform);
+
+//!
+//! Solves the linear system Tx=b, where T is this instance, b is the input
+//! point and x is the output point.  No simplifying assumptions are made
+//! regarding the matrix part of T.  Symbolically, if T = [M t], then
+//! x = Q (b - t), where Q is the inverse of M (i.e., the system is equivalent
+//! to Mx = b - t).  pInPoint and pOutPoint may have identical addresses.
+//!
+//! @param pTransform  IN      The matrix and translation
+//! @param    pOutPoint   OUT     solution to system
+//! @param    pInPoint    IN      The constant point of the system
+//!
+//! @return false if the matrix part of this instance is singular.
+//! @group "DTransform3d Inverse"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_solveDPoint3d
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint
+);
+
+//!
+//! Solves the linear systems TX=B, where T is this instance, B is the matrix
+//! of numPoints input points and X is the matrix of numPoints output points.
+//! No simplifying assumptions are made regarding the matrix part of T.
+//! Symbolically, if T = [M t], then for each input/output point i,
+//! X[i] = Q (B[i] - t), where Q is the inverse of M (i.e., the i_th system is
+//! equivalent to MX[i] = B[i] - t).  pInPoint and pOutPoint may have identical
+//! addresses.
+//!
+//! @param pTransform  IN      matrix and translation
+//! @param    pOutPoint   OUT     column points of solution matrix to system
+//! @param    pInPoint    IN      The column points of constant matrix of system
+//! @param    numPoints   IN      The number of input/output points
+//!
+//! @return false if the matrix part of this instance is singular.
+//! @group "DTransform3d Inverse"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_solveDPoint3dArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+int           numPoints
+);
+
+//!
+//! Sets this instance to the transformation obtained by premultiplying
+//! pInTransform by 3 matrix rotations about principle axes, given by the
+//! angles xrot, yrot and zrot.
+//! pInTransform may be the same as this instance.
+//! Symbolically, given transform [M t] and rotation
+//! matrices X,Y,Z, the resulting transform is [X*Y*Z*M X*Y*Z*t]
+//!
+//! @param pOutTransform OUT     rotated transformation
+//! @param pInTransform IN      The base transformation
+//! @param xrot IN      The x axis rotation, in radians
+//! @param yrot IN      The y axis rotation, in radians
+//! @param zrot IN      The z axis rotation, in radians
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_rotateByPrincipleAngles
+(
+DTransform3dP pOutTransform,
+DTransform3dCP pInTransform,
+double         xrot,
+double         yrot,
+double         zrot
+);
+
+//!
+//! Scale the columns of the matrix part by respective factors.
+//! Translation part is unaffected.  (See also scaleMatrixRows, scaleTransformRows)
+//! @param pResult OUT     output transform
+//! @param pTransform IN      The input transform.  If NULL, an identity transform is implied.
+//! @param xscale IN      The x column scale factor
+//! @param yscale IN      The y column scale factor
+//! @param zscale IN      The z column scale factor
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_scaleMatrixColumns
+(
+DTransform3dP pResult,
+DTransform3dCP pTransform,
+double         xscale,
+double         yscale,
+double         zscale
+);
+
+//!
+//! Scale the rows of the matrix part by respective factors.
+//! Translation part is unaffected.  (See also scaleMatrixColumns, scaleTransformRows)
+//! @param pResult OUT     output transform
+//! @param pTransform IN      The input transform.  If NULL, an identity transform is implied.
+//! @param xscale IN      The x column scale factor
+//! @param yscale IN      The y column scale factor
+//! @param zscale IN      The z column scale factor
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_scaleMatrixRows
+(
+DTransform3dP pResult,
+DTransform3dCP pTransform,
+double         xscale,
+double         yscale,
+double         zscale
+);
+
+//!
+//! Scale the complete rows by respective factors.
+//! (See also scaleMatrixColumns, scaleMatrixRows, which only act on the matrix part)
+//! @param pA OUT     output transform
+//! @param pTransform IN      The input transform.  If NULL, an identity transform is implied.
+//! @param xscale IN      The x column scale factor
+//! @param yscale IN      The y column scale factor
+//! @param zscale IN      The z column scale factor
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_scaleCompleteRows
+(
+DTransform3dP pA,
+DTransform3dCP pTransform,
+double         xscale,
+double         yscale,
+double         zscale
+);
+
+//!
+//! @description Returns the translation (point) part of a transformation.
+//!
+//! @param pTransform IN      The transformation whose vector part is returned
+//! @param pPoint OUT     vector part of transformation
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getTranslation
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint
+);
+
+//!
+//! @description Returns a column from the matrix part of the transformation.
+//!
+//! @param pTransform IN      The transformation being accessed.
+//! @param pColumn OUT     column of matrix part.
+//! @param index IN      index of matrix column.  If outside 012, this is adjusted cyclically.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getMatrixColumn
+(
+DTransform3dCP pTransform,
+DPoint3dP pColumn,
+int           index
+);
+
+//!
+//! @description Returns the matrix part of a transformation.
+//!
+//! @param pTransform IN      The transformation whose matrix part is returned
+//! @param pMatrix OUT     matrix part of transformation
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getMatrix
+(
+DTransform3dCP pTransform,
+DMatrix3dP pMatrix
+);
+
+//!
+//! Adds column i of the matrix part of this instance to point pIn and places
+//! the result in pOut.
+//!
+//! @param pTransform IN      The input transform
+//! @param pOut OUT     sum of pIn and column i
+//! @param pIn  IN      The base point for sum
+//! @param i    IN      The column index of matrix
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_offsetPointByColumn
+(
+DTransform3dCP pTransform,
+DPoint3dP pOut,
+DPoint3dCP pIn,
+int             i
+);
+
+//!
+//! Sets pPoint0 to the origin (translation part), and sets pPoint1, pPoint2
+//! pPoint3 to the x, y and z points (translations of columns
+//! of matrix part by origin) from this instance.
+//!
+//! @param pTransform IN      The input transform
+//! @param pPoint0 OUT     origin of transform coordinates
+//! @param pPoint1 OUT     100 point of transform coordinates
+//! @param pPoint2 OUT     010 point of transform coordinates
+//! @param pPoint3 OUT     001 point of transform coordinates
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_get4Points
+(
+DTransform3dCP pTransform,
+DPoint3dP pPoint0,
+DPoint3dP pPoint1,
+DPoint3dP pPoint2,
+DPoint3dP pPoint3
+);
+
+//!
+//! Sets the four points in pArray to the origin (translation part), x, y and z
+//! points (translations of columns of matrix part by origin) from this
+//! instance.
+//!
+//! @param pTransform IN      The input transformation
+//! @param pArray OUT     origin, 100, 010, 001 points as an array
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_get4PointArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pArray
+);
+
+//!
+//! Sets pOrigin to the translation part, and sets pVector0, pVector1
+//! pVector2 to the columns of this instance.
+//!
+//! @param pTransform IN      The input transform
+//! @param pOrigin OUT     origin of transform coordinates
+//! @param pVector0 OUT     100 vector of transform coordinates
+//! @param pVector1 OUT     010 vector of transform coordinates
+//! @param pVector2 OUT     001 vector of transform coordinates
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getOriginAndVectors
+(
+DTransform3dCP pTransform,
+DPoint3dP pOrigin,
+DPoint3dP pVector0,
+DPoint3dP pVector1,
+DPoint3dP pVector2
+);
+
+//!
+//! Sets the four points in pArray to the translation part and the columns
+//! of this instance.
+//!
+//! @param pTransform IN      The input transformation
+//! @param pArray OUT     origin, 100, 010, 001 vectors as an array
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getOriginAndVectorArray
+(
+DTransform3dCP pTransform,
+DPoint3dP pArray
+);
+
+//!
+//! @description Returns true if the transform is the identity transform.
+//! @param pTransform IN      The transformation to test
+//! @return true if the transformation is within tolerance of the identity.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isIdentity (DTransform3dCP pTransform);
+
+//!
+//! @description Returns true if the matrix part of a transform is a rigid body rotation,
+//! i.e. its transpose is its inverse and it has a positive determinant.
+//!
+//! @param pTransform IN      The transformation to test
+//! @return true if the transformation is rigid (no scale or shear in the matrix part)
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isRigid (DTransform3dCP pTransform);
+
+//!
+//! @description Returns true if transformation effects are entirely within the plane
+//!       with given normal.
+//!
+//! @param pTransform IN      The transform to be tested for out-of-plane effects.
+//! @param pNormal IN      The plane normal
+//!
+//! @return true if the transform has no effects perpendicular to planes with the given normal.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isPlanar
+(
+DTransform3dCP pTransform,
+DVec3dCP pNormal
+);
+
+//!
+//! @description Returns true if two transforms have exact (bitwise) equality.
+//!
+//! @param pTransform1 IN      The first transform
+//! @param    pTransform2 IN      The second transform
+//! @return   true if the transforms are identical
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isEqual
+(
+DTransform3dCP pTransform1,
+DTransform3dCP pTransform2
+);
+
+//!
+//! @description Returns true if two transformations are equal within tolerance, using
+//!       separate tolerances for the matrix and point parts.
+//! @param pTransform1 IN first matrix
+//! @param pTransform2 IN second matrix
+//! @param matrixTolerance IN tolerance for comparing matrix components
+//! @param pointTolerance IN tolerance for comparing point components.
+//! @return   true if the transforms are identical
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isEqualTolerance
+(
+DTransform3dCP pTransform1,
+DTransform3dCP pTransform2,
+double                  matrixTolerance,
+double                  pointTolerance
+);
+
+//!
+//! @description Returns a transformation with origin at pOrigin, x-axis
+//! pXVector, y-axis pYVector, and z-axis pZVector.
+//! All axes are unnormalized.
+//! There is no effort to detect zero length axes or degenerate points that
+//! define only a line or plane but not a full coordinate system.
+//! The axes may be skewed.
+//!
+//! @param pTransform OUT     computed transformation
+//! @param pOrigin IN      The origin of transformed coordinates
+//! @param pXVector IN      The 100 point of transformed coordinates
+//! @param pYVector IN      The 010 point of transformed coordinates
+//! @param pZVector IN      The 001 point of transformed coordinates
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromOriginAndVectors
+(
+DTransform3dP pTransform,
+DPoint3dCP pOrigin,
+DPoint3dCP pXVector,
+DPoint3dCP pYVector,
+DPoint3dCP pZVector
+);
+
+//!
+//! @description Returns a transformation with origin at pOrigin, x-axis from
+//! pOrigin to pXPoint, y-axis from pOrigin to pYPoint,
+//! and z-axis from pOrigin to pZPoint.
+//! All axes are unnormalized.
+//! There is no effort to detect zero length axes or degenerate points that
+//! define only a line or plane but not a full coordinate system.
+//! The axes may be skewed.
+//!
+//! @param pTransform OUT     computed transformation
+//! @param pOrigin IN      The origin of transformed coordinates
+//! @param pXPoint IN      The 100 point of transformed coordinates
+//! @param pYPoint IN      The 010 point of transformed coordinates
+//! @param pZPoint IN      The 001 point of transformed coordinates
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFrom4Points
+(
+DTransform3dP pTransform,
+DPoint3dCP pOrigin,
+DPoint3dCP pXPoint,
+DPoint3dCP pYPoint,
+DPoint3dCP pZPoint
+);
+
+//!
+//! @description Returns a transformation with origin at pOrigin, x-axis from
+//! pOrigin to pXPoint, y-axis from pOrigin to pYPoint,
+//! and z-axis equal to the cross product of x and y axes.
+//! All axes are unnormalized.
+//! There is no effort to detect zero length axes or degenerate points that
+//! define only a line or plane but not a full coordinate system.
+//!
+//! @param pTransform OUT     computed transformation
+//! @param pOrigin IN      The origin of coordinate system
+//! @param pXPoint IN      The 100 point of coordinate system
+//! @param pYPoint IN      The 010 point of coordinate system
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFrom3DPoint3d
+(
+DTransform3dP pTransform,
+DPoint3dCP pOrigin,
+DPoint3dCP pXPoint,
+DPoint3dCP pYPoint
+);
+
+//!
+//! Approximate a coordinate frame through a set of points.
+//! The xy plane is determined by planeThroughPoints.
+//! The xy axes are arbitrary within that plane, and z is perpendicular.
+//! @param pTransform OUT     transformation
+//! @param pPoint IN      The point array
+//! @param numPoint IN      The number of points
+//!
+//! @return true if the points define a clear plane.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool     bsiDTransform3d_initFromPlaneOfDPoint3dArray
+(
+DTransform3dP pTransform,
+DPoint3dCP pPoint,
+int             numPoint
+);
+
+//!
+//! @description Returns a (possibly skewed) transformation with origin
+//! pOrigin, the axis axisId towards pXPoint, and other axes perpendicular.
+//! If normalize is false, all axes have length equal to the distance
+//! between the two pOrigin and pXPoint.
+//! The axes may be skewed.
+//!
+//! @param pTransform OUT     computed transformation
+//! @param pOrigin IN      The origin of coordinate system
+//! @param pXPoint IN      The target point of axis axisId of coordinate system
+//! @param axisId IN      The axis that points from pOrigin to pXPoint
+//! @param normalize IN      true to have coordinate system normalized
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFrom2Points
+(
+DTransform3dP pTransform,
+DPoint3dCP pOrigin,
+DPoint3dCP pXPoint,
+int            axisId,
+bool           normalize
+);
+
+//!
+//! Sets pNpcToGlobal to the transformation from 000...111 to the
+//! globallyaligned cube with diagonally opposite corners pMin and pMax.
+//! Sets pGlobalToNpc to the inverse of this transform.
+//! The diagonal component for any degenerate direction is 1.
+//! A NULL for either transformation parameter indicates that that
+//! transformation is not needed.
+//!
+//! @param pNpcToGlobal OUT     transformation from unit cube to given cube
+//! @param pGlobalToNpc OUT     transformation from given cube to unit cube
+//! @param pMin IN      The 000 corner of cube
+//! @param pMax IN      The 111 corner of cube
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromRange
+(
+DTransform3dP pNpcToGlobal,
+DTransform3dP pGlobalToNpc,
+DPoint3dCP pMin,
+DPoint3dCP pMax
+);
+
+//!
+//! Initializes a transformation that takes pMin1 and pMax1 to
+//! pMin2 and pMax2 (respectively).   Initializes pTransform21 to the inverse
+//! of this transform.
+//!
+//! The diagonal component for any degenerate direction is 1.
+//! A NULL for either transformation parameter indicates that that
+//! transformation is not needed.
+//!
+//! @param pTransform12 OUT     forward transformation
+//! @param pTransform21 OUT     inverse transformation
+//! @param pMin1 IN      The 000 corner of cube 1
+//! @param pMax1 IN      The 111 corner of cube 1
+//! @param pMin2 IN      The 000 corner of cube 2
+//! @param pMax2 IN      The 111 corner of cube 2
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromRangePair
+(
+DTransform3dP pTransform12,
+DTransform3dP pTransform21,
+DPoint3dCP pMin1,
+DPoint3dCP pMax1,
+DPoint3dCP pMin2,
+DPoint3dCP pMax2
+);
+
+//!
+//! Initializes a DTransform3d from the affine part a 4x4 matrix.
+//! If the scale factor is 0, the transform is returned as an identity.
+//! If the scale factor is other than 1, the all coefficients are divided
+//! by the scale factor.
+//! Return code is false if the 4'th row is significantly different from
+//! (0,0,0,A).
+//!
+//! @param pTransform OUT     extracted transform
+//! @param pMatrix IN      The source matrix.
+//!
+//! @return true if the DMatrix4d can be collapsed to affine form.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_initFromHMatrix
+(
+DTransform3dP pTransform,
+DMatrix4dCP pMatrix
+);
+
+//!
+//! Initializes a DTransform3d from the affine part of one of the
+//! matrices in an DMap4d.
+//! If the scale factor is 0, the transform is returned as an identity.
+//! If the scale factor is other than 1, the all coefficients are divided
+//! by the scale factor.
+//! Return code is false if the 4'th row is significantly different from
+//! (0,0,0,A).
+//!
+//! @param pTransform OUT     extracted transform
+//! @param pHMap IN      The source mapping
+//! @param inverse IN      true to extract the inverse, false to extract the forward
+//!
+//! @return true if the DMatrix4d can be collapsed to affine form.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_initFromHMap
+(
+DTransform3dP pTransform,
+DMap4dCP            pHMap,
+int             inverse
+);
+
+//!
+//! @description Returns a copy of a transformation.
+//!
+//! @param pDest OUT     copied data
+//! @param pSource IN      The source transform
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_copy
+(
+DTransform3dP pDest,
+DTransform3dCP pSource
+);
+
+//!
+//! @description Returns a transformation in the xy-plane with origin pOrigin
+//! and x,y-axes of given lengths.
+//! The z-coordinate of the origin is zero and the z-axis is unscaled.
+//!
+//! @param pTransform   OUT     2D transform with scaled identity matrix and translation pOrigin
+//! @param pOrigin        IN      origin of coordinate system (or null)
+//! @param xAxisLength    IN      The length of x-axis
+//! @param yAxisLength    IN      The length of y-axis
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromDPoint2dOriginAndLengths
+(
+DTransform3dP pTransform,
+DPoint2dCP pOrigin,
+double          xAxisLength,
+double          yAxisLength
+);
+
+//!
+//! @description Returns a transformation in the xy-plane with    origin pOrigin and
+//! x,y-axes of the given lengths rotated counter-clockwise from standard position
+//! by the given angle.
+//! The z-coordinate of the origin is zero and the z-axis is unscaled.
+//!
+//! @param pTransform   OUT     2D transform with scaled and rotated matrix, and translation pOrigin
+//! @param pOrigin        IN      origin of coordinate system (or null)
+//! @param xAxisAngleRadians IN      The ccw angle     separating x-axis from its standard position
+//! @param xAxisLength    IN      The length of x-axis
+//! @param yAxisLength    IN      The length of y-axis
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromDPoint2dOriginAngleAndLengths
+(
+DTransform3dP pTransform,
+DPoint2dCP pOrigin,
+double          xAxisAngleRadians,
+double          xAxisLength,
+double          yAxisLength
+);
+
+//!
+//! Sets the translation part of this instance so that it leaves the given point
+//! unchanged, i.e. so that this instance may be interpreted as
+//! applying its matrix part as a rotation or scaling (in the xy-plane)
+//! about the point.
+//! Symbolically, given transform [R t] and column vector p,
+//! the returned transform is [R p-R*p].
+//! (The prior translation part is destroyed, and does not affect the
+//! result in any way.)
+//!
+//! @param pTransform IN OUT  2D transformation whose translation part is modified
+//! @param pPoint IN      The point that is to remain fixed when multiplied by the modified transformation
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setDPoint2dFixedPoint
+(
+DTransform3dP pTransform,
+DPoint2dCP pPoint
+);
+
+//!
+//! Sets the translation part of this instance to the given point.
+//! The prior translation part is overwritten (and z-coord set to zero) and the
+//! matrix part is unchanged.
+//! Symbolically, if pPoint is u then this instance [R t] becomes the
+//! transformation [R u].
+//!
+//! @param pTransform IN OUT  transformation whose vector part is modified
+//! @param pPoint IN      The point to insert
+//! @group "DTransform3d In Place Modification"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_setDPoint2dTranslation
+(
+DTransform3dP pTransform,
+DPoint2dCP pPoint
+);
+
+//!
+//! Sets the given point to the x- and y-coordinates of the translation part
+//! of this instance.
+//!
+//! @param pTransform IN      The transformation whose translation part is returned
+//! @param pPoint OUT     translation part of transformation
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getDPoint2dTranslation
+(
+DTransform3dCP pTransform,
+DPoint2dP pPoint
+);
+
+//!
+//! Sets this instance to a transformation in the xy-plane with origin at
+//! pOrigin, x-axis pXVector and y-axis pYVector.
+//! All axes are unnormalized.
+//! There is no effort to detect zero length axes or degenerate points that
+//! define a line but not a full coordinate system.
+//! The axes may be skewed.
+//!
+//! @param pTransform OUT     computed 2D transformation
+//! @param pOrigin IN      The origin of transformed coordinates (or null)
+//! @param pXVector IN      The 10 point of transformed coordinates
+//! @param pYVector IN      01 point of transformed coordinates
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFromDPoint2dOriginAndVectors
+(
+DTransform3dP pTransform,
+DPoint2dCP pOrigin,
+DPoint2dCP pXVector,
+DPoint2dCP pYVector
+);
+
+//!
+//! Sets this instance to a transformation in the xy-plane with origin at pOrigin,
+//! x-axis from pOrigin to pXPoint and y-axis from pOrigin to pYPoint.
+//! All axes are unnormalized.
+//! There is no effort to detect zero length axes or degenerate points that
+//! define a line but not a full coordinate system.
+//! The axes may be skewed.
+//!
+//! @param pTransform OUT     computed 2D transformation
+//! @param pOrigin IN      The origin of transformed coordinates (or null)
+//! @param pXPoint IN      The 10 point of transformed coordinates
+//! @param pYPoint IN      The 01 point of transformed coordinates
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFrom3DPoint2d
+(
+DTransform3dP pTransform,
+DPoint2dCP pOrigin,
+DPoint2dCP pXPoint,
+DPoint2dCP pYPoint
+);
+
+
+//!
+//! Initialize from first three rows of DMatrix4d, divided by weight entry.
+//! ALWAYS copy the data, even if final row has invalid data.
+//! @param pTransform OUT initialized transform
+//! @param pMatrix IN 4x4 matrix
+//! @return false if 4th row is other than 0001
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_initFromDMatrix4d
+(
+DTransform3dP pTransform,
+DMatrix4dCP pMatrix
+);
+
+
+//!
+//! @description Returns a transformation in the xy-plane
+//! with origin pOrigin, axis axisId towards pXPoint, and the other axis
+//! perpendicular.
+//! If normalize is false, both axes have length equal to the distance
+//! between pOrigin and pXPoint.
+//!
+//! @param pTransform OUT     computed 2D transformation
+//! @param pOrigin IN      The origin of coordinate system (or null)
+//! @param pXPoint IN      The target point of axis axisId of coordinate system
+//! @param axisId IN      The axis (x=0, y=1) that points from pOrigin to pXPoint
+//! @param normalize IN      true to have coordinate system normalized
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_initFrom2DPoint2d
+(
+DTransform3dP pTransform,
+DPoint2dCP pOrigin,
+DPoint2dCP pXPoint,
+int            axisId,
+bool           normalize
+);
+
+//!
+//! Sets pOrigin to the translation part, and sets pVector0 and pVector1
+//! to the columns of this 2D instance.
+//!
+//! @param pTransform IN      The input 2D transform
+//! @param pOrigin OUT     origin of transform coordinates
+//! @param pVector0 OUT     10 vector of transform coordinates
+//! @param pVector1 OUT     01 vector of transform coordinates
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getDPoint2dOriginAndVectors
+(
+DTransform3dCP pTransform,
+DPoint2dP pOrigin,
+DPoint2dP pVector0,
+DPoint2dP pVector1
+);
+
+//!
+//! Sets the three points in pArray to the translation part and the columns
+//! of this 2D instance.
+//!
+//! @param pTransform IN      The input 2D transformation
+//! @param pArray OUT     origin, 10, 01 vectors as an array
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP void bsiDTransform3d_getDPoint2dOriginAndVectorArray
+(
+DTransform3dCP pTransform,
+DPoint2dP pArray
+);
+
+//!
+//! @description Construct a transform which preserves both a primary column directon
+//! and a secondary column plane.   Scale all columns to length of
+//! primary axis.
+//! @param pSquaredColumns OUT     matrix with squared columns.
+//! @param pTransform IN      original matrix.
+//! @param primaryAxis IN      axis to be retained.
+//! @param secondaryAxis IN      axis defining plane to be maintained.
+//! @return true if the primary and secondary axes are independent.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_initFromSquaredColumns
+(
+DTransform3dP pSquaredColumns,
+DTransform3dCP pTransform,
+int             primaryAxis,
+int             secondaryAxis
+);
+
+//!
+//! @description Construct a transform which mirrors about a plane.
+//! @param pTransform  OUT     mirror transform.
+//! @param pOrigin IN      any point on plane.
+//! @param pNormal IN      normal vector.
+//! @return false if the plane normal is 000.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_initFromMirrorPlane
+(
+DTransform3dP pTransform,
+DPoint3dCP pOrigin,
+DPoint3dCP pNormal
+);
+
+//!
+//! @description Returns true if the transform is a simple translation.
+//! @param pTransform IN      The transformation to test
+//! @param pTranslation OUT     the translation vector. Zero of not a translation transform.
+//! @return true if the transformation is a pure translation.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isTranslate
+(
+DTransform3dCP pTransform,
+DPoint3dP pTranslation
+);
+
+//!
+//! @description Returns true if the transform is a uniform scale with scale factor other than 1.0.
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     (If function result is true) the (one) point which
+//!                           remains in place in the transformation.
+//! @param pScale OUT     The scale factor.  If the transform is not a scale, this is returned as 1.0.
+//! @return true if the transformation is a uniform scale.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isUniformScale
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint,
+double          *pScale
+);
+
+//!
+//! @description Returns true if the transform is a non-zero rotation around a line.
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     a point on the line.
+//! @param pDirectionVector OUT     vector in the line direction.
+//! @param pRadians OUT     rotation angle in radians.
+//! @return true if the transformation is a non-zero rotation.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isRotateAroundLine
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint,
+DPoint3dP pDirectionVector,
+double          *pRadians
+);
+
+//!
+//! @description Returns true if the transform is a mirror with respect to
+//!       a plane.
+//! @param pTransform IN      The transformation to test
+//! @param pPlanePoint OUT     Some point on the plane.
+//! @param pUnitNormal OUT     unit vector perpendicular to the plane.
+//! @return true if the transformation is a mirror.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isMirrorAboutPlane
+(
+DTransform3dCP pTransform,
+DPoint3dP pPlanePoint,
+DPoint3dP pUnitNormal
+);
+
+//!
+//! @description Returns true if the transform is a uniform scale combined with
+//!       a rotation.  One, but not both, of the two steps may be null (unit scale or no rotation)
+//!
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     fixed point of scaling.  This is also a point on the
+//!               line.
+//! @param pDirectionVector OUT     vector in the direction of the rotation.
+//! @param pRadians OUT     rotation angle
+//! @param pScale OUT     scale factor.
+//! @return true if the transformation has at least one of the scale, rotate effects.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_isUniformScaleAndRotateAroundLine
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint,
+DPoint3dP pDirectionVector,
+double          *pRadians,
+double          *pScale
+);
+
+//!
+//! @description Compute any single point that remains unchanged by action of
+//!       a transform.   Note that a pure translation has no fixed points,
+//!       while any other transformation does.
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     Point that is not changed by the transformation.
+//! @return true if the transformation has a fixed point.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_getAnyFixedPoint
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint
+);
+
+//!
+//! @description Compute the line (if any) of points that are not affected by
+//!       this transformation.  Returns false if the fixed point set for the
+//!       transform is empty, a single point, a plane, or all points.
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     A point on the line.
+//! @param pDirectionVector OUT     vector along the line.
+//! @return true if the transformation has a fixed point.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_getFixedLine
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint,
+DPoint3dP pDirectionVector
+);
+
+//!
+//! @description Compute the plane (if any) of points that are not affected by
+//!       this transformation.  Returns false if the fixed point set for the
+//!       transform is empty, a single point, a line, or all points.
+//! @param pTransform IN      The transformation to test
+//! @param pFixedPoint OUT     A point on the line.
+//! @param pPlaneVectorX OUT     a unit vector in the plane.
+//! @param pPlaneVectorY OUT     another unit vector in the plane,
+//!               perpendicular to pDirectionVectorX.
+//! @return true if the transformation has a fixed point.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_getFixedPlane
+(
+DTransform3dCP pTransform,
+DPoint3dP pFixedPoint,
+DPoint3dP pPlaneVectorX,
+DPoint3dP pPlaneVectorY
+);
+
+//!
+//! @description Factor a combination of a mirror part and a non-mirror part,
+//!           attempting to use a common fixed point for the two parts.
+//! Equationally, the old transform T0 becomes
+//! <pre>
+//!            T0 = T1 * M
+//! </pre>
+//! where M is the mirror, and T1 is a mirror-free transform.
+//! The mirror transform is returned in both matrix form and as plane point with normal.
+//! In an order of operations view, a point X is transformed as
+//! <pre>
+//!            T0 * X = T1 * M * X
+//! </pre>
+//! That is, X mirrored first, followed by rotation and scaling in the residual transform.
+//!
+//! @param pTransform IN      The transformation to test
+//! @param pResidualTransform OUT     the residual transform.
+//! @param pMirrorTransform OUT     the mirror transform.
+//! @param pPlanePoint OUT     A fixed point of the mirror transform.
+//! @param pPlaneNormal OUT     Unit normal for the mirror plane.
+//! @return false if the transform has no mirror effects.  In this case the mirror transform is the identity,
+//!       the residual transform is the original transform, and the fixed point and normal are both zero.
+//! @group "DTransform3d Queries"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_factorMirror
+(
+DTransform3dCP pTransform,
+DTransform3dP pResidualTransform,
+DTransform3dP pMirrorTransform,
+DPoint3dP pPlanePoint,
+DPoint3dP pPlaneNormal
+);
+
+//!
+//! @description Compute the composite transformation
+//!    Transform = Xlate(putdownPoint) . ( putdownAxes . Inverse (pickupAxes) ) . S (s,s,s) . Xlate(-pickupPoint)
+//! In common usage, geometry flows from right to left as follows:
+//! <ul>
+//! <li>Treat the pickup point as the origin.
+//! <li>Scale about the (local) origin.
+//! <li>Using the same origin, Rotate from the pickup axes to the putdown axes.
+//! <li>Move the pickup point to the putdown point.
+//! </ul>
+//!
+//! @param pResult OUT composite transformation.
+//! @param pPutdownPoint IN putdown point
+//! @param pPutdownAxes IN matrix whose columns are axes of putdown orientation.  Usually, but not necessarily,
+//!    a rotation.
+//! @param pScale IN scale factor to apply.
+//! @param pPickupAxes IN matrix whose columns are axes of pickup orientation.  Usually, but not necessarily,
+//!    a rotation.
+//! @param pPickupPoint IN pickup origin
+//! @return false if pPickupAxes was not invertible.  In this case the computation completes using the global
+//! principal axes as pickup axes.
+//! @group "DTransform3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool    bsiDTransform3d_composeLocalOriginOperations
+(
+DTransform3dP pResult,
+DPoint3dCP pPutdownPoint,
+DMatrix3dCP pPutdownAxes,
+const double    *pScale,
+DMatrix3dCP pPickupAxes,
+DPoint3dCP pPickupPoint
+);
+
+
+//!
+//! @description Apply a transformation to the source conic.
+//! @param pDest OUT     transformed conic
+//! @param pTransform IN      transformation to apply.
+//! @param pSource IN      source conic.
+//! @group "DConic4d Transform"
+//!
+Public GEOMDLLIMPEXP void     bsiDConic4d_applyDTransform3d
+(
+DConic4dP pDest,
+DTransform3dCP pTransform,
+DConic4dCP pSource
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

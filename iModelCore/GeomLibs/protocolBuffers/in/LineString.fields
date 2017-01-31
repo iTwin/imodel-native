@@ -1,0 +1,17 @@
+PRIMITIVE LineString
+<def name=SUMMARY>Points joined by line segments.  Point are held as coordinates (not references to point objects).
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+
+<def name=MEMBERS>
+    <list   ItemType=DPoint3d
+            ItemTagName=xyz
+            ItemSemanticName=Point
+            ItemParamName=Point
+            ListName=mPoint
+            ItemDescription="Point coordinates in line string"
+            ScaleMode=Length
+            />
+</def>
+
+END_PRIMITIVE
