@@ -6,7 +6,7 @@
 |       $Date: 2011/11/09 18:11:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -301,6 +301,16 @@ private:
         m_ptArray.WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
     /*---------------------------------------------------------------------------------**//**
     * @description  
     * @bsimethod                                                  Raymond.Gauthier   10/2010
@@ -435,6 +445,17 @@ private:
 #endif
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
 
     /*---------------------------------------------------------------------------------**//**
     * @description  

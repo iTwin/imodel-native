@@ -113,6 +113,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         FILE*                           m_xyzFile;
         size_t                          m_nbPoints;
         IScalableMeshGroundPreviewerPtr m_groundPreviewer;
+        Transform                       m_previewTransform;
 
     protected : 
 
@@ -136,6 +137,11 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             m_nbPoints += points.size();
             }
 
+        virtual void _GetPreviewTransform(Transform& transform) const
+            {
+            transform = m_previewTransform;
+            }
+
         virtual void _OutputPreview(PolyfaceQueryCR currentGround) const override
             {
             if (m_groundPreviewer.IsValid())
@@ -152,12 +158,13 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
 
     public :
 
-        ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer)
+        ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer, Transform previewTransform)
             {            
             BeFileName xyzFile(GetTempXyzFilePath());
             m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
             m_nbPoints = 0;
             m_groundPreviewer = groundPreviewer;
+            m_previewTransform = previewTransform;
             }
 
         ~ScalableMeshPointsAccumulator()
@@ -174,7 +181,6 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             {
             return m_nbPoints;
             }
-
     };
 
 
@@ -188,6 +194,9 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     {
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
+
+    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
+    m_smGcsRatioToMeter = gcs.GetUnit().GetRatioToBase();
     }
 
 ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
@@ -305,11 +314,11 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
             minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
             }
         }   
-
+        
     if (minTextureResolution != DBL_MAX)
-        return minTextureResolution;
+        return minTextureResolution * m_smGcsRatioToMeter;
 
-    return DEFAULT_TEXTURE_RESOLUTION;
+    return DEFAULT_TEXTURE_RESOLUTION * m_smGcsRatioToMeter;
     }
 
 
@@ -525,7 +534,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());     
     params->SetPointsProviderCreator(ptsProviderCreator);        
 
-    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer));
+    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
     params->SetGroundPointsAccumulator(accumPtr);
 
@@ -572,7 +581,29 @@ static bool s_fixTest = false;
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
     {
     if (!s_fixTest)
-        m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+        {                 
+        Transform transform(m_scalableMesh->GetReprojectionTransform());
+
+        if (transform.IsIdentity())
+            { 
+            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());            
+
+            double ratioFromMeter = 1.0 / m_smGcsRatioToMeter;
+
+            //Convert from UOR to SM unit.
+            for (auto& pt : m_extractionArea)
+                {
+                pt.Scale(ratioFromMeter);
+                }
+            }            
+        else
+            {        
+            Transform transformToSm;
+            bool result = transformToSm.InverseOf(transform);
+            assert(result == true);            
+            transformToSm.Multiply(m_extractionArea, area);
+            }               
+        }
     else
         {        
         /*Small Melaka*/

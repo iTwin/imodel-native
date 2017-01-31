@@ -19,9 +19,9 @@
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
             <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -37,7 +37,8 @@
     </Part>
 
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
-        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" />
+        <!--<SubPart PartName="TilePublisherLib" PartFile="DgnPlatform"                          Repository="DgnPlatform"/>-->
         <!--<SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->  
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>

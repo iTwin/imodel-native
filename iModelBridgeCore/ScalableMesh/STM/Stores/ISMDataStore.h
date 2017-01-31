@@ -26,6 +26,7 @@ need be.
 #include <ImagePP\all\h\HPMDataStore.h>
 
 #include "..\Edits\DifferenceSet.h"
+#include <TilePublisher\MeshTile.h>
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
@@ -40,6 +41,7 @@ enum class SMStoreDataType
     DiffSet, 
     Graph,
     Texture,    
+    TextureCompressed,
     LinearFeature,    
     Skirt,     
     ClipDefinition,     
@@ -49,6 +51,7 @@ enum class SMStoreDataType
     BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
+    Cesium3DTiles,
     MeshParts,
     Metadata,
     //Not persisted data type
@@ -128,7 +131,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
         to loading the block, the method GetBlockDataCount() can be used. No decompression
         prior to loading will be performed before loading the block.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadCompressedBlock(bvector<DataType>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             HASSERT(false); // Not implemented;
             return 0;
@@ -148,6 +151,15 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
+struct Cesium3DTilesBase
+    {
+    DPoint3d* m_pointData = nullptr;
+    int32_t*  m_indicesData = nullptr;
+    int32_t*  m_uvIndicesData = nullptr;
+    DPoint2d* m_uvData = nullptr;
+    Byte*     m_textureData = nullptr;
+    };
+
 typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>>      ISM3DPtDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DifferenceSet>> ISDiffSetDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
@@ -158,6 +170,8 @@ typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<bvector<Byte>>>  ISMTileMeshDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Cesium3DTilesBase>>  ISMCesium3DTilesDataStorePtr;
 
 
 
@@ -218,9 +232,12 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) = 0;
         
-        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) = 0;
 
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
-                                            
+
+        virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
     };

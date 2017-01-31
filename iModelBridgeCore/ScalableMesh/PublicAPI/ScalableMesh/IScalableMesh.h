@@ -69,6 +69,7 @@ enum DTMAnalysisType
 enum SMCloudServerType
     {
     LocalDisk = 0,
+    LocalDiskCURL,
     Azure,
     WSG
     };
@@ -188,6 +189,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
+        virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
@@ -203,6 +205,8 @@ struct IScalableMesh abstract:  IRefCounted
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
+
+        virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
@@ -221,7 +225,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity()) = 0;
+        virtual void                               _TextureFromRaster(ITextureProviderPtr provider) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
@@ -253,7 +257,7 @@ struct IScalableMesh abstract:  IRefCounted
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
+        void TextureFromRaster(ITextureProviderPtr provider);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
@@ -336,6 +340,10 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
+        BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
+
+
+
         BENTLEY_SM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
@@ -377,6 +385,13 @@ struct IScalableMesh abstract:  IRefCounted
                                                                 bool                    openShareable,
                                                                 StatusInt&              status);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                   needsNeighbors,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
+
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable);
@@ -386,7 +401,13 @@ struct IScalableMesh abstract:  IRefCounted
                                                                 bool                    openReadOnly,
                                                                 bool                    openShareable);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                bool                  needsNeighbors,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
 #ifdef SCALABLE_MESH_ATP
+        BENTLEY_SM_EXPORT int                     ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;

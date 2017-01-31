@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter_dgndb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -448,6 +448,16 @@ private:
         m_packetXYZ.AssignTo(pi_rRawEntities[0]);
         m_packetRGB.AssignTo(pi_rRawEntities[1]);
         m_packetIntensity.AssignTo(pi_rRawEntities[2]);
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
 
     /*---------------------------------------------------------------------------------**//**

@@ -32,6 +32,7 @@
 #include "ScalableMeshDraping.h"
 
 
+
 namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ScalableMesh
@@ -329,11 +330,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void  BuildSkirts();
 
+#if 0
     void CreateSkirtsForMatchingTerrain();
 
     SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
 
     void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
+#endif
 
     bool HasClip(uint64_t clipId);
 
@@ -669,6 +672,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
+    void         Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
+
+    void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
+
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
     virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
@@ -692,7 +699,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr();
 
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr(uint64_t texID);
-                             
+
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTextureCompressedPtr();
+
     void PushUV(const DPoint2d* points, size_t size);
             
     virtual RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> GetUVCoordsPtr()
@@ -702,24 +711,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         if (!IsTextured())
             return poolMemVectorItemPtr;
                             
-        if (!SMMemoryPool::GetInstance()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex))
-            {                              
-            ISMUVCoordsDataStorePtr nodeDataStore;
-            bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-            assert(result == true);        
-
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-                new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
-#else
-            SMStoredMemoryPoolVectorItem<DPoint2d>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
-#endif
-                );
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_uvCoordsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_uvCoordsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }    
+        if (!m_SMIndex->IsFromCesium())
+            {
+            poolMemVectorItemPtr = GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_pointsPoolItemId, SMStoreDataType::UvCoords, GetBlockID());
+            }
+        else
+            {
+            SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+            bool result = poolMemMultiItemsPtr->GetItem<DPoint2d>(poolMemVectorItemPtr, SMStoreDataType::UvCoords);
+            assert(result == true);
+            }
 
         return poolMemVectorItemPtr;
         }           
@@ -835,7 +836,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     ISMPointIndexFilter<POINT, EXTENT>* filter, 
                     bool balanced, 
                     bool textured,
-                    bool propagatesDataDown, 
+                    bool propagatesDataDown,
+                    bool needsNeighbors,
                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
 
@@ -851,12 +853,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
+        StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+
         StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+
+        StatusInt           ChangeGeometricError(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
         
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
-        void                SetClipRegistry(ClipRegistry* registry);        
+        void                SetClipRegistry(ClipRegistry* registry);       
+
 
         SMMemoryPoolPtr GetMemoryPool() const { return m_smMemoryPool; }                                
 
@@ -909,10 +916,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
-
+#if 0
         void SetSMTerrainMesh(IScalableMesh* terrainP);
         IScalableMesh* GetSMTerrainMesh();
-
+#endif
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -922,17 +929,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
-
         size_t m_texId = 0;
 
         SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
         bvector < RefCountedPtr<EditOperation> > m_edits;
-
+#if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;
         IScalableMesh* m_smTerrainMesh;
-
+#endif
     };
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMMemoryPool.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -22,14 +22,25 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMStoreDataType compositeDataType) 
     {
-    if (compositeDataType == SMStoreDataType::PointAndTriPtIndices)
+    switch (compositeDataType)
         {
-        dataTypes.push_back(SMStoreDataType::Points);
-        dataTypes.push_back(SMStoreDataType::TriPtIndices);
-        return; 
-        }
-
-    assert(!"Unknown composite data type");
+        case SMStoreDataType::Cesium3DTiles:
+            {
+            dataTypes.push_back(SMStoreDataType::UvCoords);
+            dataTypes.push_back(SMStoreDataType::Texture);
+            }
+        case SMStoreDataType::PointAndTriPtIndices:
+            {
+            dataTypes.push_back(SMStoreDataType::Points);
+            dataTypes.push_back(SMStoreDataType::TriPtIndices);
+            break;
+            }
+        default:
+            {
+            assert(!"Unknown composite data type");
+            break;
+            }
+        };
     }
 
 SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType)
@@ -224,7 +235,7 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDat
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType, smId))
         {
-
+                
         TRACEPOINT(THREAD_ID(), EventType::POOL_REMOVEITEM, nodeId, (uint64_t)-1, dataType == SMStoreDataType::DisplayTexture ? nodeId : -1, memItemPtr->GetPoolItemId(), (uint64_t)&m_memPoolItems[binId][itemId], memItemPtr->GetRefCount())
 
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
@@ -323,6 +334,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
                 if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_lastAccessTime[binIndToDelete][itemIndToDelete] < flushTimeThreshold && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)                    
                     {
                     m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize(); 
+
 
                     TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), (uint64_t)-1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
 

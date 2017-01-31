@@ -465,14 +465,17 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
         return BSIERROR;
 
-    if (IsCanceled()) return BSISUCCESS;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
     // Import sources
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_IMPORT_SOURCE;
+    GetProgress()->Progress() = 0.0;
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
 
-    if (IsCanceled()) return BSISUCCESS;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
         
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
@@ -481,7 +484,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
         }
 #endif
-
+    GetProgress()->Progress() = 1.0;
 #ifdef SCALABLE_MESH_ATP
     s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
     s_getNbImportedPoints = pDataIndex->m_nbInputPoints;
@@ -505,7 +508,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             itEdit++;
         }
 
-
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_BALANCE;
+    GetProgress()->Progress() = 0.0;
     if (pDataIndex->GetRootNode() == 0)
         {
 #ifdef SCALABLE_MESH_ATP
@@ -526,13 +530,18 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->PropagateDataDownImmediately((int)endLevel);
         }
 
-    if (IsCanceled()) return BSISUCCESS;
+    GetProgress()->Progress() = 1.0;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 #ifdef SCALABLE_MESH_ATP
     s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 
     startClock = clock();
 #endif
 
+    pDataIndex->GatherCounts();
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_MESH;
+    GetProgress()->Progress() = 0.0;
     if (s_mesh)
         {
         // Mesh data             
@@ -540,7 +549,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             return BSIERROR;
         }
 
-    if (IsCanceled()) return BSISUCCESS;
+    GetProgress()->Progress() = 1.0;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -553,6 +563,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
         size_t depth = pDataIndex->GetDepth();
+        GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
+        GetProgress()->Progress() = 0.0;
+
+        CachedDataEventTracer::GetInstance()->start();
 
         for (int level = (int)depth; level >= 0; level--)
             {
@@ -563,7 +577,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
                 return BSIERROR;
 
-            if (IsCanceled()) return BSISUCCESS;
+            if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
@@ -572,7 +586,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
                 return BSIERROR;
 
-            if (IsCanceled()) return BSISUCCESS;
+            if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;
@@ -582,6 +596,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
             }
 
+        GetProgress()->Progress() = 1.0;
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = s_getLastStitchingDuration / CLOCKS_PER_SEC / 60.0;
         s_getLastFilteringDuration = s_getLastFilteringDuration / CLOCKS_PER_SEC / 60.0;
@@ -624,9 +639,12 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->PropagateFullMeshDown();
         }
 
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+    GetProgress()->Progress() = 0.0;
     ImportRasterSourcesTo(pDataIndex);
     ApplyEditsFromSources(pDataIndex);
 
+    GetProgress()->Progress() = 1.0;
 #ifdef ACTIVATE_TEXTURE_DUMP
     pDataIndex->DumpAllNodeTextures();
 #endif
@@ -639,10 +657,16 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
         }
 #endif
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_SAVE;
+    GetProgress()->Progress() = 0.0;
+
     pDataIndex->Store();
     m_smSQLitePtr->CommitAll();
 
     pDataIndex = 0;
+
+    GetProgress()->Progress() = 1.0;
 
     if (RasterUtilities::s_rasterMemPool != nullptr)
         {

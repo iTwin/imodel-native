@@ -22,9 +22,10 @@ template <class DATATYPE, class EXTENT> class SMStreamedSourceStore : public ISM
         SMStoreDataType            m_dataType;
         HFCPtr<HRARASTER>          m_source;
 
+
     public:
 
-        SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt);
+        SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<ImagePP::HRARaster> source);
 
         virtual ~SMStreamedSourceStore();
 

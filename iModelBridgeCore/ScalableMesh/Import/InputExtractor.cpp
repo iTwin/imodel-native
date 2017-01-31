@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:37:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -148,6 +148,16 @@ void InputExtractor::Read ()
 bool InputExtractor::Next ()
     {
     return m_baseP->_Next();
+    }
+
+size_t InputExtractor::GetPhysicalSize()
+    {
+    return m_baseP->_GetPhysicalSize();
+    }
+
+size_t InputExtractor::GetReadPosition()
+    {
+    return m_baseP->_GetReadPosition();
     }
 
 /*---------------------------------------------------------------------------------**//**

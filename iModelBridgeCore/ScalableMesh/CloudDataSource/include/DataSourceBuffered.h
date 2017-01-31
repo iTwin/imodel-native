@@ -20,6 +20,7 @@ protected:
 
 public:
                                 DataSourceBuffered      (DataSourceAccount *sourceAccount);
+                                ~DataSourceBuffered      (void);
 
     bool                        isValid                 (void);
     bool                        isEmpty                 (void);

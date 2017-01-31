@@ -21,6 +21,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformMapboxTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ExportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ImportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);

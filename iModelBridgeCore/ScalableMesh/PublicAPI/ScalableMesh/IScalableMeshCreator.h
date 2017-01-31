@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,8 +38,49 @@ namespace BENTLEY_NAMESPACE_NAME
 #endif
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+enum ScalableMeshStep
+    {
+    STEP_NOT_STARTED = 0,
+    STEP_IMPORT_SOURCE,
+    STEP_BALANCE,
+    STEP_MESH,
+    STEP_GENERATE_LOD,
+    STEP_TEXTURE,
+    STEP_SAVE,
+    STEP_QTY
+    };
+
 struct IScalableMeshCreator;
 typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
+
+struct IScalableMeshProgress
+    {
+    protected:
+        virtual bool _IsCanceled() const =0 ;
+        virtual void _Cancel() = 0;
+
+        virtual std::atomic<int> const& _GetProgressStep() const = 0;
+        virtual int _GetTotalNumberOfSteps() const = 0;
+
+        virtual std::atomic<float> const& _GetProgress() const = 0; //Progress of current step ([0..1])
+
+        virtual std::atomic<float>& _Progress() = 0;
+        virtual std::atomic<int>& _ProgressStep() = 0;
+
+    public:
+    BENTLEY_SM_EXPORT bool IsCanceled() const;
+    BENTLEY_SM_EXPORT void Cancel();
+
+    BENTLEY_SM_EXPORT std::atomic<int> const& GetProgressStep() const;
+    BENTLEY_SM_EXPORT int GetTotalNumberOfSteps() const;
+
+    BENTLEY_SM_EXPORT std::atomic<float> const& GetProgress() const; //Progress of current step ([0..1])
+    
+    BENTLEY_SM_EXPORT std::atomic<float>& Progress();
+    BENTLEY_SM_EXPORT std::atomic<int>& ProgressStep();
+    };
+
  
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
@@ -75,8 +116,8 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider);
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
@@ -116,10 +157,7 @@ public:
 
         BENTLEY_SM_EXPORT  void                   SetBaseExtraFilesPath(const WString& path);
 
-        BENTLEY_SM_EXPORT  bool                   IsCanceled();
-
-
-        BENTLEY_SM_EXPORT  void                   Cancel();
+        BENTLEY_SM_EXPORT  IScalableMeshProgress* GetProgress();
 
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath,
@@ -128,7 +166,7 @@ public:
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&     scmPtr,
                                                                                      StatusInt&                  status);
 
-        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url);
 
        /* BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
 

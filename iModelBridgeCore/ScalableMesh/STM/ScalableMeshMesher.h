@@ -6,7 +6,7 @@
 //:>       $Date: 2010/12/15 18:23:19 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -45,6 +45,7 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
                             ScalableMesh2DDelaunayMesher() {};
         virtual             ~ScalableMesh2DDelaunayMesher() {};
 
+
         virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
@@ -62,6 +63,7 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         size_t UpdateMeshNodeFromIndexLists(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<vector<int32_t>>& indices, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
         void   SimplifyMesh(vector<int32_t>& indices, vector<POINT>& points, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, std::string& s) const;
 
+        //Used to restrict meshing to a nonconvex polygonal shape (when importing within a nonconvex polygon)
         bvector<DPoint3d> m_clip;
     };
 

@@ -383,6 +383,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString stmFileName;
+    bool streamFromMapBox = false;
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
     if (status != BEXML_Success)
@@ -489,13 +490,50 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }//
+
+            WString streamAttr;
+            auto readStatus = pTestNode->GetAttributeStringValue(streamAttr, "textureStreaming");
+            if (readStatus == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+                {
+                streamFromMapBox = true;
+                }
+
             if (ParseSourceSubNodes(creatorPtr->EditSources(), pTestNode) == true)
                 {
                 SetGroundDetectionDuration(0.0);
                 clock_t t = clock();
 
+                bool importInProgress = true;
+                std::thread mythread([&importInProgress, &creatorPtr] ()
+                    {
+                    float lastProgress = 0;
+                    int lastStep = 0;
+                    while (importInProgress)
+                        {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                      
+                            {
+                            float progress = 0;
+                            int step = 0;
+                            int nSteps = 0;
+                            if (!creatorPtr.IsValid() || creatorPtr->GetProgress() == nullptr) continue;
+
+                            progress = creatorPtr->GetProgress()->GetProgress();
+                            step = creatorPtr->GetProgress()->GetProgressStep();
+                            nSteps = creatorPtr->GetProgress()->GetTotalNumberOfSteps();
+                            if ((fabs(progress - lastProgress) > 0.01 || abs(step - lastStep) > 0))
+                                {
+                                std::cout << " PROGRESS: " << progress * 100.0 << " % ON STEP " << step << " OUT OF " << nSteps << std::endl;
+                                lastProgress = progress;
+                                lastStep = step;
+                                }
+                            }
+                        }
+                    });
 
                 StatusInt status = creatorPtr->Create(isSingleFile);
+                importInProgress = false;
+                mythread.join();
 
                 t = clock() - t;
                 double delay = (double)t / CLOCKS_PER_SEC;
@@ -518,6 +556,35 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     else
                         {
                         result = L"CREATION : SUCCESS | STM FILE OPENING : FAILURE";
+                        }
+
+                    if (streamFromMapBox)
+                        {
+                        stmFile = 0;
+                        StatusInt smCreateStatus = 0;
+                        auto newSourceCreatorP = IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), smCreateStatus);
+                        Utf8String mapBoxPath = "http://api.mapbox.com/v4";
+                        if (smCreateStatus == 0)
+                            {
+                            if (!gcsKeyName.empty())
+                                {
+                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                                newSourceCreatorP->SetBaseGCS(baseGCSPtr);
+                                }
+                            ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                                                                                                            WString(mapBoxPath.c_str(), true).c_str());
+                            newSourceCreatorP->EditSources().Add(sourceP);
+                            newSourceCreatorP->SetBaseExtraFilesPath(stmFileName);
+                            newSourceCreatorP->SaveToFile();
+                            newSourceCreatorP = 0;
+                            }
+                        stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
+                        StatusInt stat;
+                        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);
+                        meshCreator->SetBaseExtraFilesPath(stmFileName);
+                        WString url = WString(mapBoxPath.c_str(), true);
+                        if (stat == SUCCESS)
+                            meshCreator->SetTextureStreamFromUrl(url);
                         }
 
                     stmFile = 0;
@@ -1600,7 +1667,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, mode(L"normal"), result;
+    WString scmFileName, outputDir, strategy(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1612,21 +1679,29 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
-    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(strategy, "strategy") != BEXML_Success)
         {
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
 
+    BeFileName baseFiles(outputDir);
+    baseFiles.PopDir(); // remove //g
+    baseFiles.PopDir(); // remove //headers
+    Utf8String baseFilesDir(baseFiles.GetName());
     double t = clock();
 
     short groupMode = -1;
-    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
-        {
-        groupMode = 0;
-        }
-    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+    if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"normal"))
         {
         groupMode = 1;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"virtual"))
+        {
+        groupMode = 2;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"cesium"))
+        {
+        groupMode = 3;
         }
     else
         {
@@ -1636,7 +1711,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), baseFilesDir, false, false, false, status);
 
     if (scmFile != 0 && status == SUCCESS)
         {
@@ -4578,8 +4653,9 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString smFileName, cloudContainer, cloudName, result;
-    bool uploadToAzure = false;
+    WString smFileName, cloudContainer, cloudName, server_type, result;
+    SMCloudServerType server(SMCloudServerType::LocalDisk);
+
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
@@ -4587,11 +4663,22 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
-    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
         {
-        printf("Saving cloud format to local directory ");
+        printf("Saving cloud format to local directory... \n");
         }
-    if (uploadToAzure)
+    else
+        {
+        if (server_type == L"azure")
+            {
+            server = SMCloudServerType::Azure;
+            }
+        else if (server_type == L"wsg")
+            {
+            server = SMCloudServerType::WSG;
+            }
+        }
+    if (server == SMCloudServerType::Azure || server == SMCloudServerType::WSG)
         {
         if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
             {
@@ -4603,7 +4690,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             printf("ERROR : name attribute not found\r\n");
             return;
             }
-        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
+        printf("Saving to server type (%ls)... container: %ls  name: %ls\n", server_type.c_str(), cloudContainer.c_str(), cloudName.c_str());
         }
     else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
@@ -4612,6 +4699,14 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
+
+    double geometricError = std::numeric_limits<double>::max();
+    bool   changeGeometricError = false;
+    if (pTestNode->GetAttributeDoubleValue(geometricError, "geometric_error") == BEXML_Success)
+        {
+        changeGeometricError = true;
+        }
+
     // remove trailing slashes if any
     size_t position;
     if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
@@ -4622,12 +4717,19 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
 
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
+        if (changeGeometricError)
+            {
+            status = smFile->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
+            }
+        else
+            {
+            status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+            }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
@@ -4674,15 +4776,16 @@ void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     printf("Saving to Azure... container: %ls  directory: %ls", azureContainer.c_str(), directory.c_str());
 
-    StatusInt status = SUCCESS;
+    //StatusInt status = SUCCESS;
     bool allTestPass = true;
-    double t = 0, t_up = 0, t_down = 0;
+    double /*t = 0,*/ t_up = 0, t_down = 0;
 
     // remove trailing slashes if any
     size_t position;
     if ((position = azureContainer.find_last_of(L"\\")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
     if ((position = azureContainer.find_last_of(L"/")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
 
+#if 0 //seems to not build??
     DataSourceManager dataSourceManager;
 
     DataSourceAccount::AccountIdentifier        accountIdentifier(azureId.c_str());
@@ -4856,6 +4959,7 @@ void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     delete[] threads;
     result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> Azure tests not completed";
+#endif 
 
     fwprintf(pResultFile, L"%s,%s,%s,%0.5f,%0.5f\n",
              azureContainer.c_str(),
@@ -5115,4 +5219,51 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
                  L"ERROR");
         }
     fflush(pResultFile);
+    }
+
+void PerformMapboxTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    BeXmlStatus status;
+    WString stmFileName;
+    status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        }
+    else
+        {
+        StatusInt smCreateStatus = 0;
+        auto newSourceCreatorP = IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), smCreateStatus);
+        Utf8String mapBoxPath = "http://api.mapbox.com/v4";
+        if (smCreateStatus == 0)
+            {
+            WString gcsKeyName;//
+
+            pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+
+                
+            if (!gcsKeyName.empty())
+                {
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                newSourceCreatorP->SetBaseGCS(baseGCSPtr);
+                }
+            ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                                                                                            WString(mapBoxPath.c_str(), true).c_str());
+            newSourceCreatorP->EditSources().Add(sourceP);
+            newSourceCreatorP->SetBaseExtraFilesPath(stmFileName);
+            newSourceCreatorP->SaveToFile();
+            newSourceCreatorP = 0;
+            }
+        StatusInt stat;
+        auto stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, stat);
+        IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);
+        meshCreator->SetBaseExtraFilesPath(stmFileName);
+        WString url = WString(mapBoxPath.c_str(), true);
+        if (stat == SUCCESS)
+            meshCreator->SetTextureStreamFromUrl(url);
+
+    stmFile = 0;
+        }
     }

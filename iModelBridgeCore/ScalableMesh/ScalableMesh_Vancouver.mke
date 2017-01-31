@@ -42,6 +42,12 @@ always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
 
+always:
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+
+
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312
 
 
@@ -321,6 +327,14 @@ $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)Reproject
 $(o)MapBoxTextureProvider$(oext) : $(stmDir)MapBoxTextureProvider.cpp $(stmDir)MapBoxTextureProvider.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
+#   Build Tile Publisher
+#-----------------------------------------------------------------------
+
+$(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
+
+$(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
+
+#-----------------------------------------------------------------------
 #   Build Stores
 #-----------------------------------------------------------------------
 $(o)SMSQLiteSisterFile$(oext) : $(stmDir)Stores/SMSQLiteSisterFile.cpp $(stmDir)Stores/SMSQLiteSisterFile.h ${MultiCompileDepends}
@@ -483,6 +497,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)IppZlib.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \

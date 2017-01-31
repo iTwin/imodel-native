@@ -174,6 +174,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = EXPORT_TO_UNITY;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"sqlFileUpdate"))
             t = TEST_SQL_FILE_UPDATE;        
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"textureStreaming"))
+            t = TEST_MAPBOX;
         else return false;
         }
     else return false;
@@ -347,6 +349,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case TEST_SQL_FILE_UPDATE:
                 PerformSqlFileUpdateTest(pTestNode, pResultFile);
+                break;
+            case TEST_MAPBOX:
+                PerformMapboxTest(pTestNode, pResultFile);
                 break;
                
             default: break;

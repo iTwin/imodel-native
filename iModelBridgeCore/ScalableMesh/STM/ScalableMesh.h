@@ -150,12 +150,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override;
 
     public:
-        ScalableMeshDTM(IScalableMeshPtr scMesh)
-            {
-            m_draping = new ScalableMeshDraping(scMesh);
-            m_dtmVolume = new ScalableMeshVolume(scMesh);
-            m_scMesh = scMesh.get();
-            }
+
+        ScalableMeshDTM(IScalableMeshPtr& scMesh);            
 
         virtual ~ScalableMeshDTM()
             {
@@ -166,19 +162,14 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
             {
             return new ScalableMeshDTM(scMesh);
-            }
-
-        void SetStorageToUors(DMatrix4d& storageToUors)
-            {
-            m_transformToUors.InitFrom(storageToUors);
-            m_draping->SetTransform(m_transformToUors);
-            ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
-            }
+            }        
 
         void SetAnalysisType(DTMAnalysisType type)
             {
             m_draping->SetAnalysisType(type);
             }
+
+        void SetStorageToUors(DMatrix4d& storageToUors);
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh
@@ -198,6 +189,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;
+        bool                            m_needsNeighbors;
         double                          m_minScreenPixelsPerPoint;            
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
@@ -219,7 +211,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
                                                                         const WString&             filePath,
                                                                         const Utf8String&     baseEditsFilePath,
-                                                                        StatusInt&                      status);
+                                                                      bool                    needsNeighbors,
+                                                                      StatusInt&                      status);
 
 
         int                             Open                           ();                
@@ -248,7 +241,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
     protected : 
 
         HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> GetRootNode();                    
-        virtual void                               _TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity()) override;
+        virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override;
  
         virtual __int64          _GetPointCount() override;
 
@@ -299,6 +292,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+        virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override;
+
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
@@ -317,6 +312,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         
 #ifdef SCALABLE_MESH_ATP
+        virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override;
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override;
@@ -353,6 +349,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<MeshIndexType> GetMainIndexP() { return m_scmIndexPtr; }
 
         void SetMainIndexP(HFCPtr<MeshIndexType> newIndex) { m_scmIndexPtr = newIndex; }
+
+        void SetNeedsNeighbors(bool needsNeighbors) { m_needsNeighbors = needsNeighbors; }
                                     
     };
 
@@ -380,7 +378,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual ~ScalableMeshSingleResolutionPointIndexView();
 
-        virtual void                               _TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity()) override;
+        virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override;
 
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
@@ -433,6 +431,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
+        virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override {}
+
         
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -480,6 +480,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 #endif
 
 #ifdef SCALABLE_MESH_ATP
+        virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override { return ERROR; }
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override { return ERROR; }

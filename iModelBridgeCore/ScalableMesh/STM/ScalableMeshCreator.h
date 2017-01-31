@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -98,6 +98,41 @@ inline bool fileExist(const WChar* fileName)
 
 bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsiclass                                               Elenie.Godzaridis   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScalableMeshProgress : public IScalableMeshProgress
+    {
+
+    private:
+        std::atomic<bool> m_canceled;
+        std::atomic<int> m_currentStep;
+
+        std::atomic<float> m_progressInStep;
+
+    protected:
+    virtual bool _IsCanceled() const override;
+    virtual void _Cancel() override;
+
+    virtual std::atomic<int> const& _GetProgressStep() const override;
+    virtual int _GetTotalNumberOfSteps() const override { return STEP_QTY;  }
+
+    virtual std::atomic<float> const& _GetProgress() const override; //Progress of current step ([0..1])
+
+    virtual std::atomic<float>& _Progress() override;
+    virtual std::atomic<int>& _ProgressStep() override;
+
+    public:
+        ScalableMeshProgress()
+            {
+            m_canceled = false;
+            m_currentStep = 0;
+            m_progressInStep = 0;
+            }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
@@ -153,6 +188,8 @@ struct IScalableMeshCreator::Impl
 
         virtual bool                                IsFileDirty();
 
+        ScalableMeshProgress m_progress;
+
     protected:
         
         HFCPtr<MeshIndexType>               m_dataIndex;
@@ -195,13 +232,15 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureProvider(ITextureProviderPtr provider);
+        StatusInt  SetTextureStreamFromUrl(WString url);
 
         StatusInt                           Filter                         ();
 
         void                               SetBaseExtraFilesPath(const WString& path);
+
+        ScalableMeshProgress*            GetProgress();
 
         bool                               IsCanceled();
 

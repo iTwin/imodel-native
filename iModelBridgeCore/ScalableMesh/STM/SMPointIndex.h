@@ -27,9 +27,14 @@
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
+#include <CloudDataSource/DataSourceManager.h>
 #include "SMNodeGroup.h"
 
+#include <ScalableMesh\IScalableMeshCreator.h>
+
 class DataSourceAccount;
+class SMNodeGroup;
+class SMNodeGroupMasterHeader;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -270,6 +275,8 @@ public:
 
     bool IsTextured() const;
 
+    bool IsFromCesium() const;
+
     /*
     Recursively set nodes as balanced or not.
     */
@@ -353,6 +360,8 @@ public:
     size_t GetDepth() const;
 
     void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
+
+    void NeedToLoadNeighbors(const bool& needsNeighbors);
 
     /**----------------------------------------------------------------------------
     Indicates if node is leaf
@@ -558,6 +567,11 @@ public:
     virtual void Unload();
 
     /**----------------------------------------------------------------------------
+    Disconnects the present tile if delay loaded.
+    -----------------------------------------------------------------------------*/
+    virtual void Disconnect();
+
+    /**----------------------------------------------------------------------------
     This method indicates if the node is loaded or not.
     -----------------------------------------------------------------------------*/
     bool IsLoaded() const;
@@ -588,12 +602,8 @@ public:
             }
         }
 
-    virtual void         AddOpenGroup(const size_t&, SMNodeGroup* pi_pNodeGroup) const;
-
-    virtual void         SaveAllOpenGroups() const;
-
     void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1079,6 +1089,11 @@ protected:
     -----------------------------------------------------------------------------*/
     void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
+    /**----------------------------------------------------------------------------
+    Publishes node header and point data in Cesium 3D tile format.
+    -----------------------------------------------------------------------------*/
+    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
+
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
         
@@ -1135,17 +1150,71 @@ protected:
             return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
+        template<class DataStoreType, class PoolItemType, class MemoryPoolItemType, class StoredMemoryPoolType>
+        RefCountedPtr<MemoryPoolItemType> GetMemoryPoolItem(SMMemoryPoolItemId& poolItemID, SMStoreDataType dataType, HPMBlockID blockID, bool loadData = true)
+            {
+            RefCountedPtr<MemoryPoolItemType> poolItemPtr;
+            //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+            if (!SMMemoryPool::GetInstance()->GetItem<PoolItemType>(poolItemPtr, poolItemID, blockID.m_integerID, dataType, (uint64_t)m_SMIndex) && loadData)
+                {
+                DataStoreType dataStore;
+                bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(dataStore, &m_nodeHeader, dataType);
+                assert(result == true);
+
+                RefCountedPtr<StoredMemoryPoolType> storedMemoryPool(
+#ifndef VANCOUVER_API
+                    new StoredMemoryPoolType(blockID.m_integerID, dataStore, dataType, (uint64_t)m_SMIndex)
+#else
+                    StoredMemoryPoolType::CreateItem(blockID.m_integerID, dataStore, dataType, (uint64_t)m_SMIndex)
+#endif
+                    );
+                SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPool.get());
+                poolItemID = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+                assert(poolItemID != SMMemoryPool::s_UndefinedPoolItemId);
+                poolItemPtr = storedMemoryPool.get();
+                }
+            return poolItemPtr;
+            }
+
+        template<class DataStoreType, class PoolItemType, class MemoryPoolItemType, class StoredMemoryPoolType>
+        RefCountedPtr<MemoryPoolItemType> GetMemoryPoolMultiItem(SMMemoryPoolItemId& poolItemID, SMStoreDataType dataType, HPMBlockID blockID, bool loadData = true)
+            {
+            RefCountedPtr<MemoryPoolItemType> poolItemPtr;
+            //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+            if (!SMMemoryPool::GetInstance()->GetItem(poolItemPtr, poolItemID, blockID.m_integerID, dataType, (uint64_t)m_SMIndex) && loadData)
+                {
+                DataStoreType dataStore;
+                bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(dataStore, &m_nodeHeader);
+                assert(result == true);
+
+                RefCountedPtr<SMStoredMemoryPoolMultiItems<PoolItemType>> storedMemoryPool(
+#ifndef VANCOUVER_API
+                    new SMStoredMemoryPoolMultiItems<PoolItemType>(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
+#else
+                    SMStoredMemoryPoolMultiItems<PoolItemType>::CreateItem(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
+#endif
+                    );
+                SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPool.get());
+                poolItemID = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+                assert(poolItemID != SMMemoryPool::s_UndefinedPoolItemId);
+                poolItemPtr = storedMemoryPool.get();
+                }
+            return poolItemPtr;
+            }
+
+
         //Should be accessed using GetParentNode.        
         bool m_isParentNodeSet;
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pParentNode;      // Parent node      
-        SMMemoryPoolItemId m_pointsPoolItemId;
         uint64_t           m_nodeId; 
         bool               m_isDirty;
         std::mutex         m_ptsLock;
-        
-        static std::map<size_t, SMNodeGroup*> s_OpenGroups;
-        static int s_GroupID;    
-    };
+        bool               m_loadNeighbors;
+
+
+        public:
+            SMMemoryPoolItemId m_pointsPoolItemId;
+     };
 
 
 template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : public NODE
@@ -1191,7 +1260,8 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
 
     template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>
     {
-
+    friend class SMPointIndexNode<POINT, EXTENT>;
+    friend class SMMeshIndexNode<POINT, EXTENT>;
 public:
 
     static map<void*, int> s_allNodes;
@@ -1341,6 +1411,8 @@ public:
     uint64_t GetNextID() const;
 
 
+    void GatherCounts();
+
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
     delayed till the most appropariate moment (re-filtering for example)
@@ -1381,12 +1453,14 @@ public:
     -----------------------------------------------------------------------------*/
     bool                IsBalanced() const;
 
-    bool                IsTextured() const;
+    IndexTexture                IsTextured() const;
 
     void              SetTextured(IndexTexture textureState);
 
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
+
+    bool IsFromCesium() const;
 
     void SetIsTerrain(bool isTerrain)
         {
@@ -1495,6 +1569,10 @@ public:
         m_isGenerating = isGenerating;
         if (m_pRootNode != nullptr) m_pRootNode->SetGenerating(isGenerating);
         }
+    void SetNeedsNeighbors(bool needsNeighbors)
+        {
+        m_loadNeighbors = needsNeighbors;
+        }
 
     void SetCanceled(bool isCanceled)
         {
@@ -1505,6 +1583,10 @@ public:
         {
         return m_isCanceled;
         }
+
+    void               SetProgressCallback(IScalableMeshProgress* progress);
+
+    IScalableMeshProgress* m_progress = nullptr;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
@@ -1549,11 +1631,23 @@ protected:
 
     bool                    m_isGenerating;
 
+    bool                    m_loadNeighbors;
+
     bool                    m_needsBalancing;
 
     bool                    m_propagatesDataDown; 
 
     std::atomic<bool>       m_isCanceled;
+
+
+    //progress info
+    bvector<size_t> m_countsOfNodesAtLevel;
+
+    std::atomic<size_t> m_nMeshedNodes;
+    std::atomic<size_t> m_nStitchedNodes;
+    std::atomic<size_t> m_nFilteredNodes;
+    std::atomic<size_t> m_nTexturedNodes;
+
     };
 
 
