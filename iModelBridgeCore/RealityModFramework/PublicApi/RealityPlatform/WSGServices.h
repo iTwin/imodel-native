@@ -179,17 +179,18 @@ protected:
     mutable HttpRequestType m_requestType;
     };
 
-
 struct NavNode
 {
 public:
-    REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject);
+    REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
     REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
     REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName();
     REALITYDATAPLATFORM_EXPORT Utf8String GetClassName();
     REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootId();
 
 private:
     NavNode();
@@ -198,7 +199,24 @@ private:
     Utf8String m_schemaName;
     Utf8String m_className;
     Utf8String m_instanceId;
+
+    Utf8String m_rootNode;
+    Utf8String m_rootId;
 };
+
+struct WSGServer; //forward declaration
+
+struct NodeNavigator
+    {
+    static NodeNavigator* s_nnInstance;
+
+public:
+    REALITYDATAPLATFORM_EXPORT static NodeNavigator& GetInstance();
+    NodeNavigator();
+
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode);
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016

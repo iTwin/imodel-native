@@ -212,8 +212,10 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
     }
 
-NavNode::NavNode(Json::Value jsonObject)
-{
+NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
+    {
+    m_rootNode = rootNode;
+    m_rootId = rootId;
     if(jsonObject.isMember("instanceId"))
         m_navString = jsonObject["instanceId"].asCString();
     if(jsonObject.isMember("properties"))
@@ -227,14 +229,76 @@ NavNode::NavNode(Json::Value jsonObject)
         if (jsonObject["properties"].isMember("Key_InstanceId"))
             m_instanceId = jsonObject["properties"]["Key_InstanceId"].asCString();
         }
-}
+    if(m_rootNode.length() == 0)
+        {
+        m_rootNode = m_navString;
+        m_rootId = m_instanceId;
+        }
+    }
 
 Utf8String NavNode::GetNavString() { return m_navString; }
 Utf8String NavNode::GetTypeSystem() { return m_typeSystem; }
 Utf8String NavNode::GetSchemaName() { return m_schemaName; }
 Utf8String NavNode::GetClassName() { return m_className; }
 Utf8String NavNode::GetInstanceId() { return m_instanceId; }
+Utf8String NavNode::GetRootNode() { return m_rootNode; }
+Utf8String NavNode::GetRootId() { return m_rootId; }
 
+NodeNavigator* NodeNavigator::s_nnInstance = nullptr;
+NodeNavigator& NodeNavigator::GetInstance()
+    {
+    if (nullptr == s_nnInstance)
+        s_nnInstance = new NodeNavigator();
+    return *s_nnInstance;
+    }
+
+NodeNavigator::NodeNavigator()
+    {
+    s_nnInstance = this;
+    }
+
+bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId)
+    {
+    bvector<NavNode> returnVector = bvector<NavNode>();
+    WSGNavRootRequest* navRoot = new WSGNavRootRequest(server.GetServerName(), server.GetVersion(), repoId);
+
+    int status = 0;
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navRoot, status, 0);
+
+    Json::Value instances(Json::objectValue);
+    if((status != CURLE_OK) || !Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+        return returnVector; 
+
+    for (auto instance : instances["instances"])
+        returnVector.push_back(NavNode(instance));
+
+    return returnVector;
+    }
+
+bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode)
+    {
+    Utf8String navString = parentNode.GetRootNode();
+    if(!navString.Contains(parentNode.GetInstanceId()))
+        {
+        navString.append("~2F");
+        navString.append(parentNode.GetInstanceId());
+        navString.ReplaceAll("/", "~2F");
+        }
+
+    bvector<NavNode> returnVector = bvector<NavNode>();
+    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, navString);
+    int status = 0;
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
+
+    Json::Value instances(Json::objectValue);
+    if ((status != CURLE_OK) || !Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
+        return returnVector;
+
+    for (auto instance : instances["instances"])
+        returnVector.push_back(NavNode(instance, parentNode.GetRootNode(), parentNode.GetRootId()));
+
+    return returnVector;
+    }
 
 WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId)
     {

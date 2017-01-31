@@ -17,19 +17,6 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-Utf8String NavNodeFct(WSGServer server, Utf8String repo, Utf8String nodeString)
-    {
-    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repo, nodeString);
-    int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
-
-    Json::Value instances(Json::objectValue);
-    BeAssert((status == CURLE_OK) && Json::Reader::Parse(returnJsonString, instances) && (!instances.isMember("errorMessage") && instances.isMember("instances")));
-
-    return returnJsonString;
-    }
-
-
 int main(int argc, char *argv[])
     {
     // the sandbox server does not have a certificate, so we must set verify peer to false;
@@ -79,35 +66,15 @@ int main(int argc, char *argv[])
 
     //-----------------WSGRequest methods-----------------------//
     //getting all Nav Roots
-    WSGNavRootRequest* navRoot = new WSGNavRootRequest(server.GetServerName(), server.GetVersion(), repos[0]);
-    
-    int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navRoot, status, 0); //again, normally you should call PerformRequest without the 0
-
-    Json::Value instances(Json::objectValue);
-    BeAssert ((status == CURLE_OK) && Json::Reader::Parse(returnJsonString, instances) && (!instances.isMember("errorMessage") && instances.isMember("instances")));
-        
-    bvector<NavNode> nodes = bvector<NavNode>();
-    for (auto instance : instances["instances"])
-        nodes.push_back(NavNode(instance));
+    bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, repos[0]);
 
     std::cout << "NavRoots:" << std::endl;
     for (NavNode root : nodes)
         std::cout << root.GetNavString() << std::endl;
     std::cout << std::endl;
-
-
+    
     //using a NavNode request
-    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repos[0], nodes[0].GetNavString());
-    status = 0;
-    returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
-
-    Json::Value instances2(Json::objectValue);
-    BeAssert((status == CURLE_OK) && Json::Reader::Parse(returnJsonString, instances2) && (!instances2.isMember("errorMessage") && instances2.isMember("instances")));
-
-    bvector<NavNode> subNodes = bvector<NavNode>();
-    for (auto instance : instances2["instances"])
-        subNodes.push_back(NavNode(instance));
+    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], nodes[0]);
 
     std::cout << "NavNodes under "<< nodes[0].GetNavString() << " :" << std::endl;
     for (NavNode subNode : subNodes)
@@ -127,7 +94,7 @@ int main(int argc, char *argv[])
                 {
                 objectFound = true;
                 objectIndex = i;
-                navString = nodes[0].GetNavString();
+                navString = subNodes[i].GetRootNode();
                 navString.append("~2F");
                 navString.append(subNodes[i].GetInstanceId());
                 navString.ReplaceAll("/", "~2F");
@@ -136,30 +103,20 @@ int main(int argc, char *argv[])
             }
         
         if(!objectFound)
-            {
-            navString = nodes[0].GetNavString();
-            navString.append("~2F");
-            navString.append(subNodes[0].GetInstanceId());
-            navString.ReplaceAll("/", "~2F");
-            returnJsonString = NavNodeFct(server, repos[0], navString);
-            BeAssert(Json::Reader::Parse(returnJsonString, instances2) && (!instances2.isMember("errorMessage") && instances2.isMember("instances")));
-
-            subNodes = bvector<NavNode>();
-            for (auto instance : instances2["instances"])
-                subNodes.push_back(NavNode(instance));
-            }
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0]);
         }
 
     std::cout<<"Object location :" << std::endl;
     std::cout<< navString << std::endl << std::endl;
 
-    Utf8String objectId = nodes[0].GetInstanceId();
+    Utf8String objectId = subNodes[objectIndex].GetRootId();
     objectId.append("~2F");
     objectId.append(subNodes[objectIndex].GetInstanceId());
     objectId.ReplaceAll("/","~2F");
 
     WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetClassName(), objectId);
-    returnJsonString = WSGRequest::GetInstance().PerformRequest(*objRequest, status, 0);
+    int status = 0;
+    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*objRequest, status, 0);
 
     std::cout << "Object JSON :" << std::endl;
     std::cout << returnJsonString << std::endl << std::endl;
