@@ -132,6 +132,7 @@
     <ClInclude Include="PerformanceTest\GeomLibsTests.h" />
     <ClInclude Include="PerformanceTest\PerformanceTestFixture.h" />
     <ClInclude Include="PolyfaceTest\tests\testHarness.h" />
+    <ClInclude Include="SerializationTest\CGSerializationTestPCH.h" />
     <ClInclude Include="src\CGWriter.h" />
     <ClInclude Include="src\checkers.h" />
     <ClInclude Include="src\CommonExport.h" />
@@ -184,6 +185,8 @@
     <ClCompile Include="RootTest\polygonAccelerator.cpp" />
     <ClCompile Include="RootTest\t_GaussKronrod.cpp" />
     <ClCompile Include="RootTest\univariateRoots_test.cpp" />
+    <ClCompile Include="SerializationTest\CGBinarySerializationTests.cpp" />
+    <ClCompile Include="SerializationTest\CGSerializationTests.cpp" />
     <ClCompile Include="src\CGWriter.cpp" />
     <ClCompile Include="src\checkers.cpp" />
     <ClCompile Include="src\SampleGeometry.cpp" />

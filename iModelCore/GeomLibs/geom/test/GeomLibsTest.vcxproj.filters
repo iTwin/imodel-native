@@ -61,6 +61,9 @@
     <Filter Include="Source Files\RootTest">
       <UniqueIdentifier>{419a9bb2-ab97-4a32-a978-c4a4c7ead5fb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\SerializationTest">
+      <UniqueIdentifier>{94cb53b9-d9f4-4b50-af29-e7019afded69}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\SampleGeometry.h">
@@ -128,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="src\GeomTestFixture.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SerializationTest\CGSerializationTestPCH.h">
+      <Filter>Source Files\SerializationTest</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -319,6 +325,12 @@
     </ClCompile>
     <ClCompile Include="structsTest\t_DRange1d.cpp">
       <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="SerializationTest\CGBinarySerializationTests.cpp">
+      <Filter>Source Files\SerializationTest</Filter>
+    </ClCompile>
+    <ClCompile Include="SerializationTest\CGSerializationTests.cpp">
+      <Filter>Source Files\SerializationTest</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
