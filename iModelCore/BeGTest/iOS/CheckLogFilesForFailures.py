@@ -81,9 +81,9 @@ def checkLogFileForFailures(logfilename):
             report = report + "and re-run the following tests:\n"
             report = report + failedTests + "\n"
             if foundCrash:
-                report = report + "(*) crashed."
+                report = report + "(*) crashed.\n"
             if foundAddressSanitizerErrors:
-                report = report + '*** ADDRESS SANITIZER ERRORS DETECTED ***\nSee log for details.'
+                report = report + '*** ADDRESS SANITIZER ERRORS DETECTED ***\nSee log for details.\n'
         else:
             report = report + "*** BUILD FAILURE OR CRASH ***\n"
             report = report + "See " + logfilename + " for details\n"
@@ -116,6 +116,7 @@ if __name__ == '__main__':
             path = os.path.join(root, file)
             failures, reportThisLog = checkLogFileForFailures(path)
             report = report + reportThisLog
+            report = report + '-'*100 + '\n'
             if failures != 0:
                 failureCount = failureCount + failures
                 failedProductCount = failedProductCount + 1
