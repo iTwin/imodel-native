@@ -122,16 +122,16 @@ TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
     ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
     bmap<OrderedIGeometryPtr, BeExtendedData>::const_iterator extendedDataIterator;
 
-    for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
-        {
-        OrderedIGeometryPtr geometryObj = extendedDataIterator->first;
-        //printf("Geometry type: %d\n", geometryObj.m_geometry->GetGeometryType());
-        BeExtendedData entries = extendedDataIterator->second;
-        for (auto const& entry: entries)
-            {
-            //printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
-            }
-        }
+    //for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
+    //    {
+    //    OrderedIGeometryPtr geometryObj = extendedDataIterator->first;
+    //    printf("Geometry type: %d\n", geometryObj.m_geometry->GetGeometryType());
+    //    BeExtendedData entries = extendedDataIterator->second;
+    //    for (auto const& entry: entries)
+    //        {
+    //        printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
+    //        }
+    //    }
 
     bvector<IGeometryPtr> geoms2;
     bmap<OrderedIGeometryPtr, BeExtendedData> extendedData2;
