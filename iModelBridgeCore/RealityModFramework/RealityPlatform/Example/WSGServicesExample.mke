@@ -33,6 +33,7 @@ EXE_OBJS     = $(o)WSGServicesExample$(oext)
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib \
                        $(ContextDeliveryDir)RealityPackage.lib 
 

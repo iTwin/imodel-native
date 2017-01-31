@@ -85,21 +85,62 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     SpatialEntityPtr data = SpatialEntity::Create();
 
+    //Id
+    if (properties.isMember("Id") && !properties["Id"].isNull())
+        data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+
+    //Enterprise
+    if (properties.isMember("Enterprise") && !properties["Enterprise"].isNull())
+        data->SetEnterprise(Utf8CP(properties["Enterprise"].asString().c_str()));
+    
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())
         data->SetName(Utf8CP(properties["Name"].asString().c_str()));
 
+    //Dataset
+    if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
+        data->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
+
+    //Description
+    if (properties.isMember("Description") && !properties["Description"].isNull())
+        data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
+
+    //RootDocument
+    if (properties.isMember("RootDocument") && !properties["Description"].isNull())
+        data->SetRootDocument(Utf8CP(properties["RootDocument"].asString().c_str()));
+
     // DataType
     if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
         data->SetDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
+    else if (properties.isMember("Type") && !properties["Type"].isNull())
+        data->SetDataType(Utf8CP(properties["Type"].asString().c_str()));
 
     // Classification
     if (properties.isMember("Classification") && !properties["Classification"].isNull())
         data->SetClassification(Utf8CP(properties["Classification"].asString().c_str()));
 
+    // Thumbnail Url
+    if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
+        data->SetThumbnailURL(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
+
+    // MetadataUrl
+    if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
+        data->SetMetadataURL(Utf8CP(properties["MetadataURL"].asString().c_str()));
+
+    if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
+        data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
+
     // Provider
     if(properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
         data->SetProvider(Utf8CP(properties["DataProviderName"].asString().c_str()));
+
+    // Public Access
+    if (properties.isMember("PublicAccess") && !properties["PublicAccess"].isNull())
+        data->SetPublicAccess(properties["PublicAccess"].asBool());
+
+    // Listable
+    if (properties.isMember("Listable") && !properties["Listable"].isNull())
+        data->SetListable(properties["Listable"].asBool());
 
     // Date
     if (properties.isMember("Date") && !properties["Date"].isNull())
@@ -107,10 +148,24 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         DateTime::FromString(date, properties["Date"].asCString());
         data->SetDate(date);
         }
+    else if (properties.isMember("CreatedTimestamp") && !properties["CreatedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
+        data->SetDate(date);
+        }
 
+    // Modified Date
+    if (properties.isMember("ModifiedTimestamp") && !properties["ModifiedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["ModifiedTimestamp"].asCString());
+        data->SetModifiedTimestamp(date);
+        }
+    
     //// Approximate file size
     if(properties.isMember("FileSize") && !properties["FileSize"].isNull())
         data->SetApproximateFileSize(std::stoi(properties["FileSize"].asString().c_str()));
+    else if (properties.isMember("Size") && !properties["Size"].isNull())
+        data->SetApproximateFileSize(std::stoi(properties["Size"].asString().c_str()));
 
     // Resolution
     if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
@@ -146,6 +201,10 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
         data->SetFootprint(footprint);
         }
+
+    if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
+        data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
+
     return data;
     }
 
