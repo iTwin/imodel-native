@@ -14,7 +14,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalObject">
+    <ECEntityClass typeName="PhysicalObject" modifier="Sealed">
         <!-- A generic PhysicalObject is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a PhysicalObject -->
