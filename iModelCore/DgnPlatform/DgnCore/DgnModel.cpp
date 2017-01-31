@@ -626,9 +626,8 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
     {
-    if (forInsert == ForInsert::Yes)
+    if (ForInsert::Yes == forInsert)
         statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
-
 
     if (!m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
         {
@@ -636,7 +635,9 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
         return ;
         }
 
-    statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
+    if (ForInsert::Yes == forInsert)
+        statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
+
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
@@ -1289,7 +1290,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {   
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
