@@ -27,8 +27,6 @@ UnitsTest.TestConvertingUnitSpecifications
 UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
 
-CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
-
 # NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole
 
 # DgnDb0601, x64, NDEBUG, PRG
