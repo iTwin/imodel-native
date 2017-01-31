@@ -89,6 +89,43 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target)
+    {
+    RotMatrix rotMatrix = pose.GetRotMatrixFromRotation(pose.GetOmega(), pose.GetPhi(), pose.GetKappa());
+    DPoint3d center = pose.GetCenter();
+
+    double zOff = 1.10 * center.Distance(target);
+    double xOff = zOff * tan(fieldofView.x);
+    double yOff = zOff * tan(fieldofView.y);
+
+    DVec3d xCameraAxis = DVec3d::FromRow(rotMatrix, 0);
+    DVec3d yCameraAxis = DVec3d::FromRow(rotMatrix, 1);
+    DVec3d zCameraAxis = DVec3d::FromRow(rotMatrix, 2);
+
+    xCameraAxis.ScaleToLength(xOff);
+    yCameraAxis.ScaleToLength(yOff);
+    zCameraAxis.ScaleToLength(zOff);
+
+    DPoint3d corner = center;
+    corner.Add(zCameraAxis);
+
+    corner.Add(xCameraAxis);
+    corner.Add(yCameraAxis);
+    points[1] = corner;
+    corner.Subtract(xCameraAxis);
+    corner.Subtract(xCameraAxis);
+    points[0] = corner;
+    corner.Subtract(yCameraAxis);
+    corner.Subtract(yCameraAxis);
+    points[2] = corner;
+    corner.Add(xCameraAxis);
+    corner.Add(xCameraAxis);
+    points[3] = corner;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Daniel.McKenzie                  01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoPoint Pose::GetCenterAsLatLongValue() const
