@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refrotmatrix.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -327,11 +327,13 @@ double        &maxScale
     double dmax, dmin;
     double smax, smin;
     bool isUniform = false;
-    this->DiagonalAbsRange (dmin, dmax);
+    this->DiagonalSignedRange (dmin, dmax);
     this->OffDiagonalAbsRange (smin, smax);
-    isUniform =  smax < s_mediumRelTol * dmax
-              && dmax - dmin < s_mediumRelTol * dmax;
-    maxScale = dmax;
+    double delta = dmax - dmin;
+    double absD = DoubleOps::MaxAbs (dmin, dmax);
+    isUniform =  smax < s_mediumRelTol * absD
+              && delta < s_mediumRelTol * fabs (dmax);
+    maxScale = fabs (dmin) > fabs (dmax) ? dmin : dmax;
     return isUniform;
     }
 
@@ -368,7 +370,7 @@ double  &minValue,
 double  &maxValue
 ) const
     {
-    minValue = maxValue = form3d[0][0];
+    minValue = maxValue = fabs (form3d[0][0]);
     updateExtrema (&minValue, &maxValue, fabs (form3d[1][1]));
     updateExtrema (&minValue, &maxValue, fabs (form3d[2][2]));
     }
@@ -713,6 +715,39 @@ double     &scale
     return ortho && ratio > almostOne && this->Determinant () > 0.0;
     }
 
+/*-----------------------------------------------------------------*//**
+* @description Test if this instance matrix is composed of only rigid rotation and (possibly negative) scaling
+* @param [out] columns (optional) matrix containing the unit vectors along the columns.
+* @param [out] scale largest axis scale factor.  If function value is true,
+*       the min scale is the same.  Use areColumnsOrthonormal to get
+*       separate column scales.
+* @return true if the matrix is orthonormal.
+* @bsimethod                                                    EarlinLutz      12/97
++----------------------------------------------------------------------*/
+bool RotMatrix::IsRigidSignedScale
+(
+RotMatrixR columns,
+double     &scale
+) const
+    {
+    double almostOne = 1.0 - s_mediumRelTol;
+    DVec3d axisScales;
+    double ratio;
+
+    bool ortho = this->IsOrthonormal (columns, axisScales, ratio);
+    // Start scale as largest absolute scale ...
+    scale = axisScales.x;
+    if (axisScales.y > scale)
+        scale = axisScales.y;
+    if (axisScales.z > scale)
+        scale = axisScales.z;
+    // adjust for determinant ..
+    if (Determinant () < 0.0)
+        scale = - scale;
+    double s1 = 1.0 / scale;
+    columns.ScaleColumns (*this, s1, s1, s1);
+    return ortho && ratio > almostOne;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Tests if this instance matrix has no effects perpendicular to any plane with the given normal.  This

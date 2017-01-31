@@ -318,7 +318,7 @@ TEST(RotMatrix, IsDiagonal)
     matrix1.DiagonalAbsRange (minValue1, maxValue1);
     matrix1.OffDiagonalSignedRange (minValue2, maxValue2);
     matrix1.OffDiagonalAbsRange (minValue3, maxValue3);
-    Check::Near (11.0, maxScale0);
+    Check::Near (-11.0, maxScale0);
     Check::Near (1.0, maxScale1);
     Check::Near (-11.0, minValue);
     Check::Near (5.0, maxValue);
@@ -328,6 +328,22 @@ TEST(RotMatrix, IsDiagonal)
     Check::Near (8.0, maxValue2);
     Check::Near (2.0, minValue3);
     Check::Near (8.0, maxValue3);
+    for (double s0 : bvector<double> {1,2,0.5, -2, -1, -0.5})
+        {
+        RotMatrix matrix4 = RotMatrix::FromIdentity ();
+        matrix4.ScaleColumns (s0, s0, s0);
+        double s1;
+        Check::True (matrix4.IsUniformScale (s1), "mirror scale");
+        Check::Near (s0, s1, "scale of principal mirror and scale");
+        RotMatrix column2;
+        double s2;
+        Check::True (matrix4.IsRigidSignedScale (column2, s2), "rigid signed scale");
+        Check::Near (s0, s2, "scale of RigidSignedScale");
+        double s3;
+        RotMatrix column3;
+        // Confirm that IsRigidScale accept/reject matches sign
+        Check::Bool (s0 > 0, matrix4.IsRigidScale (column3, s3), "Rigid Positive Scale");
+        }
     }
 
 TEST(RotMatrix, IsSignedPermutation)
@@ -1325,4 +1341,55 @@ TEST(RotMatrix, Quaternion)
     a = Angle::FromDegrees(71.5650511771);
     angle = rotMat.ColumnXAngleXY();
     Check::Near(a.Radians(), angle);
+    }
+
+void CheckMatrixRigid (RotMatrixCR matrix, bool isRigidScale, bool isRigidSignedScale, double s)
+    {
+    double s0, s1;
+    RotMatrix matrix0, matrix1;
+    if (Check::Bool (isRigidScale, matrix.IsRigidScale (matrix0, s0), "Rigid Scale extraction"))
+        {
+        if (isRigidScale)
+            {
+            RotMatrix matrix0A;
+            matrix0A.ScaleColumns (matrix0, s0, s0, s0);
+            Check::Near (matrix0A, matrix);
+            Check::True (matrix0.IsRigid (), "Rigid factor");
+            }
+        }
+    if (Check::Bool (isRigidSignedScale, matrix.IsRigidSignedScale (matrix1, s1), "Rigid Scale extraction"))
+        {
+        if (isRigidSignedScale)
+            {
+            RotMatrix matrix1A;
+            matrix1A.ScaleColumns (matrix1, s1, s1, s1);
+            Check::Near (matrix1A, matrix);
+            Check::True (matrix1.IsRigid (), "Rigid factor");
+            }
+        }
+    }
+TEST(RotMatrix,IsRigidSignedScale)
+    {
+    RotMatrix pureRotation = RotMatrix::FromVectorAndRotationAngle (DVec3d::From (1,2,3), 0.23);
+    CheckMatrixRigid (pureRotation, true, true, 1.0);
+
+    for (double s : bvector<double>{1,2,0.5, -1, -2, -0.5})
+        {
+        RotMatrix matrix1, matrix2, matrix3, matrix4;
+
+
+        matrix1.ScaleColumns (pureRotation, s, s, s);
+        CheckMatrixRigid (matrix1, s > 0.0, true, s);
+
+        matrix2.ScaleColumns (pureRotation, s, s, -s);
+        CheckMatrixRigid (matrix2, s < 0.0, true, s);
+
+        matrix3.ScaleColumns (pureRotation, s, -s, s);
+        CheckMatrixRigid (matrix3, s < 0.0, true, s);
+
+        matrix4.ScaleColumns (pureRotation, -s, s, s);
+        CheckMatrixRigid (matrix4, s < 0.0, true, s);
+        // Note: this sequence tests 0 and 1 sign flips.  2 and 3 gets caught when the bvector has the negative
+        }
+    
     }

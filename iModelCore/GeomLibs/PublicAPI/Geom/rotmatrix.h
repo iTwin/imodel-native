@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/rotmatrix.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1456,6 +1456,20 @@ double          &axisRatio
 //! @return true if the matrix is orthonormal.
 //!
 bool IsRigidScale
+(
+RotMatrixR      columns,
+double          &scale
+) const;
+
+//!
+//! @description Test if this instance matrix is composed of only rigid rotation and scaling, allowing negative (mirror) scale
+//! @param [out] columns  matrix containing the unit vectors along the columns.
+//! @param [out] scale signed scale of largest magnitude. If function value is true,
+//!       the min scale is the same.  Use areColumnsOrthonormal to get
+//!       separate column scales.
+//! @return true if the matrix is orthonormal (i.e. the return columns are a rotation)
+//!
+bool IsRigidSignedScale
 (
 RotMatrixR      columns,
 double          &scale
