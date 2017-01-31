@@ -134,10 +134,10 @@ DPoint3dCR      translation
 //! Return values are strongly typed as DVec3d (in columns 0,1,2) and DPoint3d (column3)
 void GetColumnsXYZ
 (
-DVec3dR      col0,  //! [out] xyz part of column 0
-DVec3dR      col1,  //! [out] xyz part of column 1
-DVec3dR      col2,  //! [out] xyz part of column 2
-DPoint3dR      translation  //! [out] translation xyz parts
+DVec3dR      col0,  //!< [out] xyz part of column 0
+DVec3dR      col1,  //!< [out] xyz part of column 1
+DVec3dR      col2,  //!< [out] xyz part of column 2
+DPoint3dR      translation  //!< [out] translation xyz parts
 ) const;
 
 //!
