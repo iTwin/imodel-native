@@ -286,7 +286,7 @@ void ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
 
-#ifndef VANCOUVER_API        
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
 #endif
     double   X;
