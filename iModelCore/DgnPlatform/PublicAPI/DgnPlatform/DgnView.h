@@ -1302,5 +1302,17 @@ public:
 
 ENUM_IS_FLAGS(ViewDefinition::Iterator::Options::Source);
 
+//=======================================================================================
+// @bsiclass                                                      John.Gooding    01/17
+//=======================================================================================
+struct IDisplayMetricsLogger :  DgnHost::IHostObject
+{
+    DGNPLATFORM_EXPORT static bool IsLoggerActive();
+    DGNPLATFORM_EXPORT static IDisplayMetricsLogger* GetLogger();
+    DGNPLATFORM_EXPORT static void SetLogger(IDisplayMetricsLogger*logger);
+    virtual bool _IsActive() const = 0;
+    virtual void _RecordMeasurement(Utf8CP measurementType, JsonValueCR measurement) = 0;
+};
+
 END_BENTLEY_DGN_NAMESPACE
 

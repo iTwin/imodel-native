@@ -1545,6 +1545,38 @@ void ViewDisplayStyle::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassL
     }
 
 }
+
+static DgnHost::Key s_displayMetricsLoggerKey;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+IDisplayMetricsLogger* IDisplayMetricsLogger::GetLogger()
+    {
+    // This is normally NULL. It is only used when playing back a DisplayBenchmark
+    return static_cast<IDisplayMetricsLogger*> (T_HOST.GetHostObject (s_displayMetricsLoggerKey));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void IDisplayMetricsLogger::SetLogger(IDisplayMetricsLogger*logger)
+    {
+    //  This should happen 0 or 1 times.
+    BeAssert(GetLogger() == nullptr);
+
+    T_HOST.SetHostObject (s_displayMetricsLoggerKey, logger);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+bool IDisplayMetricsLogger::IsLoggerActive()
+    {
+    IDisplayMetricsLogger*logger = GetLogger();
+    return logger ? logger->_IsActive() : false;
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
