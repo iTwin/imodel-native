@@ -46,6 +46,8 @@ public:
 
     bool                    IsReadOnly() const { return NULL == m_parserRegex && !m_isDefaultOnly; }
 
+    bool IsDefaultOnly() const { return m_isDefaultOnly; }
+
     ECOBJECTS_EXPORT static RefCountedPtr<CalculatedPropertySpecification> Create (ECPropertyCR hostProperty, PrimitiveType propertyType);
     };
 

@@ -3463,13 +3463,13 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
     ClassLayoutCR classLayout = GetClassLayout();
     appendFormattedString (oss, "%sECClass=%s at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     uint32_t nProperties = classLayout.GetPropertyCount ();
-    uint32_t nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
+    uint32_t nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (classLayout.GetPropertyCountExcludingEmbeddedStructs());
     
     for (uint32_t i = 0; i < nNullflagsBitmasks; i++)
         {
-        uint32_t offset = GetECDHeaderCP()->GetSize() + i * sizeof(NullflagsBitmask);
+        uint32_t offset = i * sizeof(NullflagsBitmask);
         Byte const * address = offset + data;
-        appendFormattedString (oss, "%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
+        appendFormattedString (oss, "%s  [0x%" PRIx64 "][%4" PRIu32 "] Nullflags[%" PRIu32 "] = 0x%" PRIx32 "\n", indent, (uint64_t)address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (uint32_t i = 0; i < nProperties; i++)
@@ -3478,7 +3478,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (ECObjectsStatus::Success != status)
             {
-            appendFormattedString (oss, "%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
+            appendFormattedString (oss, "%sError (%d) returned while getting PropertyLayout #%" PRIu32 "", indent, status, i);
             return oss;
             }
 
@@ -3500,13 +3500,13 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
         Utf8String valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
-            appendFormattedString (oss, "%s  [0x%x][%4.d] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, "%s  [0x%x][%4." PRIu32 "] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             Byte const * realAddress = data + secondaryOffset;
             
-            appendFormattedString (oss, "%s  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, "%s  [0x%x][%4." PRIu32 "] -> [0x%x][%4." PRIu32 "] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
             
         if (propertyLayout->GetTypeDescriptor().IsArray())
@@ -3530,7 +3530,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
                         {
                         Byte const * bitAddress = nullflagsOffset + data;
 
-                        appendFormattedString (oss, "%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
+                        appendFormattedString (oss, "%s  [0x%x][%4." PRIu32 "] Nullflags[%" PRIu32 "] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
                         nullflagsOffset += sizeof(NullflagsBitmask);
                         }
                     }
@@ -3550,13 +3550,13 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
-                        appendFormattedString (oss, "%s      [0x%x][%4.d] %d = %s\n", indent, address, offset, i, valueAsString.c_str());
+                        appendFormattedString (oss, "%s      [0x%x][%4." PRIu32 "] %" PRIu32 " = %s\n", indent, address, offset, i, valueAsString.c_str());
                     else
                         {
                         SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                         Byte const * realAddress = data + secondaryOffset;
                         
-                        appendFormattedString (oss, "%s      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
+                        appendFormattedString (oss, "%s      [0x%x][%4." PRIu32 "] -> [0x%x][%4." PRIu32 "] %" PRIu32 " = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
                     if ((ECObjectsStatus::Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
@@ -3583,7 +3583,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
         {
         uint32_t offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
         SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-        appendFormattedString (oss, "%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+        appendFormattedString (oss, "%s  [0x%x][%4." PRIu32 "] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
         }
 
     return oss;

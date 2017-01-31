@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,6 +19,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================    
 //! StandardCustomAttributeHelper provides APIs to access items of the Bentley standard schemas
+//! @remarks Deprecated. Only use to access legacy schema, Bentley_Standard_CustomAttributes.
 //! @bsiclass
 //=======================================================================================    
 struct StandardCustomAttributeHelper : NonCopyableClass
@@ -49,6 +50,64 @@ public:
     //! @param[in] attributeName The name of the custom attribute to create
     //! @return An instance of the given custom attribute
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+    };
+
+//=======================================================================================    
+//! CoreCustomAttributeHelper provides APIs to access items of the Bentley standard schema, 
+//! CoreCustomAttributes
+//! @bsiclass
+//=======================================================================================    
+struct CoreCustomAttributeHelper final
+    {
+private:
+    //static class
+    CoreCustomAttributeHelper();
+    ~CoreCustomAttributeHelper();
+
+public:
+    //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
+    //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
+    //! @b CoreCustomAttributes) on a date time ECProperty.
+    //! See also DateTimeInfo.
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+    //!             carry the %DateTimeInfo custom attribute, the parameter remains unmodified.
+    //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
+    //! @return ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
+    //! is not of type ::PRIMITIVETYPE_DateTime. 
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
+
+    //! Returns the specified ECCustomAttributeClass from the CoreCustomAttributes schema
+    //! @param[in] attributeName The name of the ECCustomAttributeClass
+    //! @return An ECCustomAttributeClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
+    ECOBJECTS_EXPORT static ECCustomAttributeClassCP GetCustomAttributeClass(Utf8CP attributeName);
+
+    //! Creates a custom attribute instance for the given custom attribute from the CoreCustomAttributes schema
+    //! @remarks The only supported custom attributes at this time are SupplementalSchemaMetaData, SupplementalProvenance, and
+    //! IsMixin. If any other custom attributes are desired, use GetCustomAttributeClass and create an instance from the resulting
+    //! class.
+    //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
+    //! @return An IECInstance of the given custom attribute name, if it is one of the supported custom attributes. Otherwise, nullptr will be returned.
+    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+    };
+
+//=======================================================================================    
+//! ConversionCustomAttributeHelper provides APIs to access items of the Bentley standard schema, 
+//! ECv3ConversionAttributes
+//! @bsiclass
+//=======================================================================================    
+struct ConversionCustomAttributeHelper final
+    {
+    private:
+        //static class
+        ConversionCustomAttributeHelper();
+        ~ConversionCustomAttributeHelper();
+
+    public:
+        //! Creates a custom attribute instance for the given custom attribute from the ECv3ConversionAttributes schema
+        //! @remarks The only supported custom attribute at this time is PropertyRenamed. 
+        //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
+        //! @return An IECInstance of the given custom attribute name, if it is a supported custom attribute. Otherwise, nullptr will be returned.
+        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
     };
 
 struct ECDbSchemaMap;

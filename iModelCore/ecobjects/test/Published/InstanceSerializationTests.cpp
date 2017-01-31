@@ -1,12 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/Published/InstanceXMLTests.cpp $
+|     $Source: test/Published/InstanceSerializationTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+
+#include "BeXml/BeXml.h"
 
 using namespace BentleyApi::ECN;
 
@@ -42,7 +44,7 @@ static Byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty)
+void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty = true, bool isJson = false)
     {
     ECValue ecValue;
 
@@ -71,7 +73,14 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     EXPECT_EQ (-42, ecValue.GetInteger()) << "Expected -42 for negativemember";
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "DateTimeMember"));
-    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
+    if (isJson)
+        {
+        uint64_t julianDay;
+        EXPECT_EQ(BentleyStatus::SUCCESS, ecValue.GetDateTime().ToJulianDay(julianDay)) << "Failed to translate DateTimeMember to Unix Milliseconds";
+        EXPECT_EQ(DateTime::CommonEraTicksToJulianDay(633374681466664305), julianDay) << "Wrong value for DateTimeMember";
+        }
+    else
+        EXPECT_EQ(633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StartPoint"));
     EXPECT_EQ (1.1, ecValue.GetPoint3d().x) << "Incorrect x value for StartPoint";
@@ -892,6 +901,139 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
     IGeometryPtr geomPtr = deserializedGeomProp.GetIGeometry();
     ASSERT_TRUE(geomPtr.IsValid());
     ASSERT_TRUE(geomPtr->IsSameStructureAndGeometry(*storedGeometryPtr1)) << "Did not get same structure for " << ecInstanceXml.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str (), *schemaContext);
+
+    EXPECT_EQ (SchemaReadStatus::Success, schemaStatus);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
+
+    IECInstancePtr  testInstance;
+    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath (L"SimpleTest_Instance.xml").c_str (), *instanceContext);
+    EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
+
+    VerifyTestInstance (testInstance.get(), false);
+
+    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), true, false));
+    IECInstancePtr  readbackInstance;
+    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), *instanceContext);
+
+    EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
+    VerifyTestInstance (readbackInstance.get(), false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceSerializationTest, WriteECInstance)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "TestClass");
+    
+    uint32_t propIndex;
+
+    PrimitiveECPropertyP prop;
+    ecClass->CreatePrimitiveProperty(prop, "StringProperty", PRIMITIVETYPE_String);
+    ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "StringProperty");
+
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringProperty", ECValue("Some value")));
+
+    // WriteToBeXmlNode
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlNode(*xmlWriter));
+
+    Utf8String nodeInstanceString;
+    xmlWriter->ToString(nodeInstanceString);
+
+    // WriteToBeXmlDom
+    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
+    Utf8String domInstanceString = "";
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlDom(*xmlDOMWriter, true));
+    xmlDOMWriter->ToString(domInstanceString);
+
+    // compare strings
+    ASSERT_STREQ(nodeInstanceString.c_str(), domInstanceString.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Bill.Goehrig     01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceSerializationTest, TestInstanceJsonRoundtrip)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ(SchemaReadStatus::Success, schemaStatus);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+
+    IECInstancePtr  testInstance;
+    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile(testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
+    EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
+    VerifyTestInstance(testInstance.get(), false);
+
+    Json::Value jsonRoot(Json::objectValue);
+    EXPECT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(jsonRoot, *testInstance, "$Instance", false));
+
+    StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
+    IECInstancePtr readbackInstance = enabler->CreateInstance();
+    ASSERT_TRUE(readbackInstance.IsValid());
+    BentleyStatus readbackStatus = ECJsonUtilities::ECInstanceFromJson(*readbackInstance, jsonRoot["$Instance"]);
+
+    EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
+    VerifyTestInstance(readbackInstance.get(), false, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Bill.Goehrig     01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ(SchemaReadStatus::Success, schemaStatus);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+
+    IECInstancePtr  testInstance;
+    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile(testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
+    EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
+    VerifyTestInstance(testInstance.get(), false);
+
+    Json::Value jsonRoot(Json::objectValue);
+    EXPECT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(jsonRoot, *testInstance, "$Instance", false));
+
+    Json::FastWriter writer;
+    rapidjson::Document rapidJsonRoot;
+    rapidjson::ParseResult parseResult = rapidJsonRoot.Parse(writer.ToString(jsonRoot).c_str());
+    EXPECT_FALSE(parseResult.IsError());
+
+    StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
+    IECInstancePtr readbackInstance = enabler->CreateInstance();
+    ASSERT_TRUE(readbackInstance.IsValid());
+    BentleyStatus readbackStatus = ECRapidJsonUtilities::ECInstanceFromJson(*readbackInstance, rapidJsonRoot["$Instance"]);
+
+    EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
+    VerifyTestInstance(readbackInstance.get(), false, true);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

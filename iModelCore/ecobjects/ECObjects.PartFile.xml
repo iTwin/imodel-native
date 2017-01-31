@@ -18,7 +18,7 @@
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
-        <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
@@ -59,11 +59,11 @@
 
     <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
 
-    <Part Name="ECObjectsTestsBasicDependencies">
+    <Part Name="ECObjectsTestsBasicDependencies" DeferType="BuildUnitTests">
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
-    <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="PublishedApi"/>
     </Part>
@@ -71,7 +71,7 @@
     <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
     <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
 
-    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke">
+    <Part Name="ECObjectsTestsSeedData" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/SeedData.prewire.mke">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
             <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
@@ -89,7 +89,7 @@
     </Part>
     -->
 
-    <Part Name="TestDependencies" BentleyBuildMakeFile="test/prewire.mke">
+    <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/prewire.mke">
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
@@ -102,14 +102,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="TestFixture" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+    <Part Name="TestFixture" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
         <SubPart PartName="TestDependencies"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
         <SubPart PartName="NonPublishedTests"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
@@ -117,7 +117,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="NonPublishedTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
         <Bindings>
@@ -141,7 +141,7 @@
         </Bindings>
     </Part>
 -->
-    <Part Name="PerformanceTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+    <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
         <Bindings>
@@ -150,7 +150,7 @@
     </Part>
 
     <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
-    <Part Name="Tests">
+    <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="PublishedTests" />
         <SubPart PartName="NonPublishedTests" />
         <!--    

@@ -375,6 +375,22 @@
             <xs:attribute name="ImageId"                  type="xs:string"/>
             <xs:attribute name="CreateGroupForSingleItem" type="xs:boolean" default="false"/>
             <xs:attribute name="CreateGroupForUnspecifiedValues" type="xs:boolean" default="true"/>
+            <xs:attribute name="GroupingValue" default="DisplayLabel">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="DisplayLabel" />
+                        <xs:enumeration value="PropertyValue" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="SortingValue" default="DisplayLabel">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="DisplayLabel" />
+                        <xs:enumeration value="PropertyValue" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="Range">

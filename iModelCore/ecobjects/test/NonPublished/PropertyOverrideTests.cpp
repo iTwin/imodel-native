@@ -2,19 +2,20 @@
 |
 |     $Source: test/NonPublished/PropertyOverrideTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <ECObjects/ECObjectsAPI.h>
-#include <Bentley/BeTest.h>
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 using namespace BentleyApi::ECN;
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PropertyOverrideTests : Public::testing::Test
+struct PropertyOverrideTests : ECTestFixture
     {
     ECSchemaPtr RoundTripSchema(ECSchemaPtr testSchema);
     void VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd, ECClassCP ef, ECClassCP gh, ECClassCP ij, ECClassCP kl, ECClassCP mn);
@@ -493,3 +494,88 @@ TEST_F(PropertyOverrideTests, VerifyTraversalOrderAfterSerializingDeserializingS
     ASSERT_NE(foo1->GetPropertyP("A"), root1->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
     ASSERT_EQ(foo1->GetPropertyP("A")->GetBaseProperty(), root1->GetPropertyP("A")) << "Expected Foo and Root both to return Root property even after adding property A to class B2";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyOverrideTests, TestKOQOverride)
+    {
+    ECSchemaPtr ecSchema;
+    ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP a;
+    ECEntityClassP b;
+    ECEntityClassP c;
+    KindOfQuantityP feet;
+    KindOfQuantityP inch;
+    KindOfQuantityP temperature;
+    PrimitiveECPropertyP primProp;
+    PrimitiveECPropertyP primPropOverride;
+    PrimitiveECPropertyP primPropOverride2;
+    PrimitiveArrayECPropertyP primArrProp;
+    PrimitiveArrayECPropertyP primArrPropOverride;
+    PrimitiveArrayECPropertyP primArrPropOverride2;
+
+    ecSchema->CreateEntityClass(a, "A");
+    ecSchema->CreateEntityClass(b, "B");
+    ecSchema->CreateEntityClass(c, "C");
+    ecSchema->CreateKindOfQuantity(feet, "Feet");
+    ecSchema->CreateKindOfQuantity(inch, "Inches");
+    ecSchema->CreateKindOfQuantity(temperature, "Temperature");
+
+    // Phenomenon Length
+    feet->SetDefaultPresentationUnit("FT");
+    feet->SetPrecision(10);
+
+    // Phenomenon Length
+    inch->SetDefaultPresentationUnit("IN");
+    inch->SetPrecision(5);
+    
+    // Phenomenon Temperature
+    temperature->SetDefaultPresentationUnit("FAHRENHEIT");
+    temperature->SetPrecision(10);
+
+    // Test PrimitiveECProperty
+    a->CreatePrimitiveProperty(primProp, "PrimProp");
+    primProp->SetKindOfQuantity(feet);
+
+    b->CreatePrimitiveProperty(primPropOverride, "PrimProp");
+    primPropOverride->SetKindOfQuantity(temperature);
+
+    EXPECT_NE(ECObjectsStatus::Success, b->AddBaseClass(*a)) << "Should have failed to add since the property A:PrimProp has a kind of quantity with a different Phenomenon then B:PrimProp";
+    primPropOverride->SetKindOfQuantity(feet);
+    EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a)) << "Failed even though the property Kind of Quantities are the same.";
+
+    c->AddBaseClass(*a);
+    c->CreatePrimitiveProperty(primPropOverride2, "PrimProp");
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primPropOverride2->SetKindOfQuantity(temperature));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride2->SetKindOfQuantity(inch));
+
+    a->RemoveProperty("PrimProp");
+    EXPECT_EQ(0, a->GetPropertyCount()) << "All properties were not successfully removed from class 'A'";
+    b->RemoveProperty("PrimProp");
+    EXPECT_EQ(0, b->GetPropertyCount()) << "All properties were not successfully removed from class 'B'";
+    EXPECT_EQ(ECObjectsStatus::Success, b->RemoveBaseClass(*a));
+    c->RemoveProperty("PrimProp");
+    EXPECT_EQ(0, c->GetPropertyCount()) << "All properties were not successfully removed from class 'C'";
+    EXPECT_EQ(ECObjectsStatus::Success, c->RemoveBaseClass(*a));
+
+    // Test PrimitiveArrayECProperty
+    a->CreatePrimitiveArrayProperty(primArrProp, "PrimArrProp");
+    primArrProp->SetKindOfQuantity(feet);
+
+    b->CreatePrimitiveArrayProperty(primArrPropOverride, "PrimArrProp");
+    primArrPropOverride->SetKindOfQuantity(temperature);
+
+    EXPECT_NE(ECObjectsStatus::Success, b->AddBaseClass(*a)) << "Should have failed to add since the property A:PrimArrProp has a kind of quantity with a different Phenomenon then B:PrimArrProp";
+    primArrPropOverride->SetKindOfQuantity(feet);
+    EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a)) << "Failed even though the property Kind of Quantities are the same.";
+
+    c->AddBaseClass(*a);
+    c->CreatePrimitiveArrayProperty(primArrPropOverride2, "PrimArrProp");
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primArrPropOverride2->SetKindOfQuantity(temperature));
+    EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(inch));
+    }
+
+
+END_BENTLEY_ECN_TEST_NAMESPACE

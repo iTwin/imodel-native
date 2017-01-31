@@ -16,10 +16,6 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-// NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
-#define SCHEMAS_PATH  L"" 
-
-
 struct SchemaDeserializationTest : ECTestFixture 
     {
     /*---------------------------------------------------------------------------------**//**

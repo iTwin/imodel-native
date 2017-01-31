@@ -2,6 +2,16 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
+#Navigation properties are being reworked and only support the long primitive type at the moment
+NavigationECPropertyTests.InstanceWithNavProp_String
+
+# Not yet implemented
+RelationshipClassTests.RelationshipClassAbstractness
+RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition
+RelationshipClassTests.CyclicRelationships
+ClassTests.CheckAbstractness
+ClassTests.CheckClassTypeForStandAloneInstances
+ClassTests.DerivedClassTypesOfAbstractClass
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -10,69 +20,27 @@
 CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamed                                      # Fails on Android
 CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamedFromFile                              # Fails on Android
 
-UnitsTest.Formatting    # Fails on Android
-UnitsTest.Conversions   # Takes WAY too long to run every time
-
-SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
-
-CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
-
-SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
-
-NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole
-
-RelationshipConstraintTests.KeyPropertiesPathDefined # Not yet implemented
-
-RelationshipClassTests.RelationshipClassAbstractness # Not yet implemented
-
-RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition # Not yet implemented
-
-RelationshipClassTests.CyclicRelationships # Not yet implemented
-
-RelationshipConstraintTests.StructKeyPropertiesNotSupported # Not yet implemented
-
-RelationshipConstraintTests.MultipleKeyPropertiesNotSupported # Not yet implemented
-
-RelationshipConstraintTests.MultipleConstraintClassesWithKeyPropertyNotSupported # Not yet implemented
-
-ClassTests.CheckAbstractness # Not yet implemented
-
-ClassTests.CheckClassTypeForStandAloneInstances # Not yet implemented
-
-ClassTests.DerivedClassTypesOfAbstractClass # Not yet implemented
-
 # Temp Disabled until we're ready to enable unit conversion on this branch.
 SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
 UnitsTest.TestConvertingUnitSpecifications
 
-AdhocPropertyTest.SwapAdhocProperties
-    # DgnDb0601, x64, NDEBUG, PRG
-    # <build output no longer provides failure details, and cannot access log files in PRG>
+UnitsTest.Formatting    # Fails on Android
+UnitsTest.Conversions   # Takes WAY too long to run every time
 
-AdhocPropertyTest.InvalidCases
-    # DgnDb0601, x64, NDEBUG, PRG
-    # <build output no longer provides failure details, and cannot access log files in PRG>
+CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-AdhocPropertyTest.GetAdhocPropertyUsingECValueAccessor
-    # DgnDb0601, x64, NDEBUG, PRG
-    # <build output no longer provides failure details, and cannot access log files in PRG>
+# NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole
 
-AdhocPropertyTest.VerifyReadOnlyAdhocProperty
-    # DgnDb0601, x64, NDEBUG, PRG
-    # <build output no longer provides failure details, and cannot access log files in PRG>
-
+# DgnDb0601, x64, NDEBUG, PRG
+# <build output no longer provides failure details, and cannot access log files in PRG>
 AdhocPropertyTest.AddPropertyWithOptionalMetadata
-    # DgnDb0601, x64, NDEBUG, PRG
-    # <build output no longer provides failure details, and cannot access log files in PRG>
+AdhocPropertyTest.VerifyReadOnlyAdhocProperty
+AdhocPropertyTest.GetAdhocPropertyUsingECValueAccessor
+AdhocPropertyTest.InvalidCases
+AdhocPropertyTest.SwapAdhocProperties
 
 #SchemaConverter doesn't support string enums correctly
 StandardValueToEnumConversionTest.CAConversionTest
 
 #Base64 conversion appears to have been busted for a long time
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
-
-#Navigation properties are being reworked and only support long at the moment
-NavigationECPropertyTests.InstanceWithNavProp_String
-
-# clang address sanitizer detected buffer overrun - notified Caleb Shafer
-CGBinarySerializationTests.*

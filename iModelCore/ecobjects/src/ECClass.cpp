@@ -367,6 +367,8 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties, Utf8String newName)
     {
+    Utf8String originalName = prop->GetName();
+
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
@@ -393,6 +395,9 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         delete newProperty;
         return status;
         }
+
+    // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
+    newProperty->SetOriginalName(originalName.c_str());
 
     if (renameDerivedProperties)
         {
@@ -585,9 +590,14 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             {
             if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                 {
+                Utf8String originalName = pProperty->GetName();
+
                 Utf8String newName;
                 FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
                 pProperty->SetName(newName);
+
+                // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
+                pProperty->SetOriginalName(originalName.c_str());
                 }
             else
                 return status;
@@ -595,7 +605,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         else if (!baseProperty->GetName().Equals(pProperty->GetName()))
             {
             if (resolveConflicts)
-                pProperty->SetName(baseProperty->GetName());
+                pProperty->SetName(baseProperty->GetName()); // Does not need the Renamed CustomAttribute since the GetPropertyP is a case-insensitive search.
             else
                 {
                 LOG.errorv("Case-collision between %s:%s and %s:%s", baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str(), GetFullName(), pProperty->GetName().c_str());
@@ -1496,6 +1506,7 @@ bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
             ( (0 == thisClass->GetName().compare(thatClass->GetName())) &&
               (0 == thisClass->GetSchema().GetName().compare(thatClass->GetSchema().GetName())) &&
               (thisClass->GetSchema().GetVersionRead() == thatClass->GetSchema().GetVersionRead()) &&
+              (thisClass->GetSchema().GetVersionWrite() == thatClass->GetSchema().GetVersionWrite()) &&
               (thisClass->GetSchema().GetVersionMinor() == thatClass->GetSchema().GetVersionMinor())));
     }
 
@@ -2209,6 +2220,43 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
         ecProperty = nullptr;
         }
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEntityClass::CanApply(ECEntityClassCR mixinClass) const
+    {
+    if (!mixinClass.IsMixin())
+        return false;
+
+    IECInstancePtr caInstance = mixinClass.GetCustomAttribute("CoreCustomAttributes", "IsMixin");
+    if (!caInstance.IsValid())
+        return false;
+
+    ECValue appliesToValue;
+    caInstance->GetValue(appliesToValue, "AppliesToEntityClass");
+    if (appliesToValue.IsNull() || !appliesToValue.IsString())
+        return false;
+
+    Utf8String alias;
+    Utf8String className;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
+        return false;
+
+    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
+    if (nullptr == resolvedSchema)
+        return false;
+
+    ECClassCP appliesToClass = resolvedSchema->GetClassCP(className.c_str());
+    if (nullptr == appliesToClass)
+        return false;
+
+    ECEntityClassCP appliesToEntityClass = appliesToClass->GetEntityClassCP();
+    if (nullptr == appliesToEntityClass)
+        return false;
+
+    return Is(appliesToEntityClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3112,6 +3160,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
 
     return ECObjectsStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECRelationshipConstraint::RemoveConstraintClasses() { m_constraintClasses.clear(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  01/2017

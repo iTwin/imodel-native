@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,6 +265,27 @@ ECObjectsStatus ECProperty::GetMaximumValue(ECValueR value) const
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECProperty::SetMinimumLength(uint32_t min)
+    {
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_String &&
+        pt != PrimitiveType::PRIMITIVETYPE_Binary)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    m_minimumLength = min;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -475,6 +496,12 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
         }
 
+    uint32_t minLength;
+    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        SetMinimumLength(minLength);
+        }
+
     uint32_t maxLength;
     if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
@@ -554,6 +581,11 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         {
         xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
         }
+
+    if (IsMinimumLengthDefined())
+        {
+        xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
+        }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {
@@ -628,6 +660,87 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
 
+// Used by PrimitiveECProperty and PrimitiveArrayECProperty for _CanOverride methods
+bool phenomenonsEqual(ECPropertyCR ecProp, ECPropertyCR compareProp)
+    {
+    if (!(ecProp.GetIsPrimitive() || ecProp.GetIsPrimitiveArray()) || !(compareProp.GetIsPrimitive() || compareProp.GetIsPrimitiveArray()))
+        return false;
+
+    KindOfQuantityCP koq;
+    KindOfQuantityCP compareKOQ;
+    if (ecProp.GetIsPrimitive())
+        koq = ecProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        koq = ecProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (compareProp.GetIsPrimitive())
+        compareKOQ = compareProp.GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        compareKOQ = compareProp.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (nullptr == koq || nullptr == compareKOQ)
+        return true;
+
+    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
+
+    Units::UnitCP unit = unitRegistry.LookupUnit(koq->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+
+    if (nullptr == unit || nullptr == compareUnit)
+        return true;
+
+    if (!unit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+        {
+        LOG.errorv("The ECProperty %s:%s has KindOfQuantity %s that is of Phenomenon %s which differs from the Phenomenon %s of KindOfQuantity %s on ECProperty %s:%s",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), koq->GetFullName().c_str(), unit->GetPhenomenon()->GetName(), compareUnit->GetPhenomenon()->GetName(),
+                   compareKOQ->GetFullName().c_str(), compareProp.GetClass().GetFullName(), compareProp.GetName().c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+// Used by PrimitiveECProperty and PrimitiveArrayECProperty for SetKindOfQuantity methods
+bool isKindOfQuantityCompatible(ECPropertyCR ecProp, KindOfQuantityCP compareKOQ)
+    {
+    if (!ecProp.GetIsPrimitive() && !ecProp.GetIsPrimitiveArray())
+        return false;
+
+    if (nullptr == compareKOQ)
+        return true;
+
+    ECPropertyCP baseProp = ecProp.GetBaseProperty();
+    if (nullptr == baseProp)
+        return true;
+
+    KindOfQuantityCP baseKOQ;
+    if (baseProp->GetIsPrimitive())
+        baseKOQ = baseProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        baseKOQ = baseProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (nullptr == baseKOQ)
+        return true;
+
+    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
+
+    Units::UnitCP baseUnit = unitRegistry.LookupUnit(baseKOQ->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+
+    if (nullptr == baseUnit || nullptr == compareUnit)
+        return true;
+
+    if (!baseUnit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+        {
+        LOG.errorv("The ECProperty %s:%s has a base property %s:%s with KindOfQuantity %s of Phenomenon %s which differs from the Phenomenon %s of the provided KindOfQuantity %s.",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetPhenomenon()->GetName(), 
+                   compareUnit->GetPhenomenon()->GetName(), compareKOQ->GetFullName().c_str());
+        return false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -657,7 +770,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return phenomenonsEqual(*this, baseProperty);;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -821,6 +934,18 @@ KindOfQuantityCP PrimitiveECProperty::GetKindOfQuantity() const
         }
 
     return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
+    {
+    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    m_kindOfQuantity = kindOfQuantity;
+    return ECObjectsStatus::Success;
     }
 
 ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
@@ -1259,7 +1384,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         return false;
         }
 
-    return true;
+    return phenomenonsEqual(*this, baseProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1410,6 +1535,18 @@ KindOfQuantityCP PrimitiveArrayECProperty::GetKindOfQuantity() const
         }
 
     return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveArrayECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
+    {
+    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    m_kindOfQuantity = kindOfQuantity;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1862,6 +1999,56 @@ void ECProperty::InvalidateClassLayout()
     // TFS#290587: When a property is modified in a way that affects the ClassLayout, must
     // invalidate the containing class's default standalone enabler
     m_class.InvalidateDefaultStandaloneEnabler();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECProperty::SetOriginalName(Utf8CP originalName)
+    {
+    LOG.debugv("Attempting to add PropertyRenamed custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+
+    IECInstancePtr renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("PropertyRenamed");
+    if (!renameInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    ECValue origNameValue(originalName);
+    if (ECObjectsStatus::Success != renameInstance->SetValue("OriginalName", origNameValue))
+        {
+        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for the property '%s.%s' with 'OriginalName' set to '%s'.", GetClass().GetFullName(), GetName().c_str(), originalName);
+        return;
+        }
+
+    // Add ECv3ConversionAttributes as a schema reference, if it is not already.
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaKey key("ECv3ConversionAttributes", 1, 0);
+    ECSchemaPtr convSchema = ECSchema::LocateSchema(key, *context);
+    if (!convSchema.IsValid())
+        {
+        LOG.warningv("Failed to locate schema, %s.", key.GetName().c_str());
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+        }
+
+    if (!ECSchema::IsSchemaReferenced(GetClass().GetSchema(), *convSchema))
+        {
+        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetClass().GetSchema().GetName().c_str());
+            LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+            return;
+            }
+        }
+
+    if (ECObjectsStatus::Success != SetCustomAttribute(*renameInstance))
+        {
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute, with 'OriginalName' set to '%s', to property '%s.%s'.", originalName, GetClass().GetFullName(), GetName().c_str());
+        return;
+        }
+
+    LOG.debugv("Successfully added PropertyRenamed custom attribute to property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -103,6 +103,11 @@
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES                           "CreateGroupForUnspecifiedValues"
 #define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
 #define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
+
+#define PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE                                    "GroupingValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE                                     "SortingValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE                "PropertyValue"
+#define PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL                 "DisplayLabel"
 
 #define PROPERTY_RANGE_GROUP_XML_NODE_NAME                                            "Range"
 #define PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL                                      "Label"

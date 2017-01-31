@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/StringEncodingTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -49,6 +49,13 @@ struct StringEncodingTests : ECTestFixture
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
         EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  
+        }
+
+    void TearDown() override
+        {
+        // Resetting string encoding to the anticipated default
+        // The static variable does not get cleaned after the test fixture is finished so need to manually reset it.
+        ECDBuffer::SetDefaultStringEncoding(ECDBuffer::StringEncoding::StringEncoding_Utf8);
         }
 
     struct          Utf16String

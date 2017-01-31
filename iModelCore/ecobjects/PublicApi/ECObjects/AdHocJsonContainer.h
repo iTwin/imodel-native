@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/AdHocJsonContainer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -254,10 +254,10 @@ public:
     //! Constructor
     AdHocJsonContainer() : m_value(Json::objectValue) {}
 
-    //! Initialize from a JSON string (from a stored string)
+    //! Initialize from a JSON string
     ECOBJECTS_EXPORT BentleyStatus FromString(Utf8CP jsonStr);
 
-    //! Convert to a JSON string (to a string that be stored)
+    //! Convert to a JSON string
     ECOBJECTS_EXPORT Utf8String ToString();
 
     //! Get the property value by name

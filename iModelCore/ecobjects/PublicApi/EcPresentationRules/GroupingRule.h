@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -236,6 +236,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
     };
 
 /*---------------------------------------------------------------------------------**//**
+* Lists possible grouping values.
+* @bsiclass                                     Grigas.Petraitis                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class PropertyGroupingValue
+    {
+    PropertyValue,  //!< Groups by property value
+    DisplayLabel,   //!< Groups by display label
+    };
+
+/*---------------------------------------------------------------------------------**//**
 PropertyGroup that identifies parameters on how to group specific class ECInstances 
 by a specific property.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
@@ -246,6 +256,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         Utf8String              m_imageId;
         bool                    m_createGroupForSingleItem;
         bool                    m_createGroupForUnspecifiedValues;
+        PropertyGroupingValue   m_groupingValue;
+        PropertyGroupingValue   m_sortingValue;
         Utf8String              m_propertyName;
         PropertyRangeGroupList  m_ranges;
 
@@ -292,6 +304,18 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! ECProperty name to group ECInstances by.
         ECOBJECTS_EXPORT Utf8StringCR             GetPropertyName (void) const;
+
+        //! Get the property grouping value type.
+        PropertyGroupingValue GetPropertyGroupingValue() const {return m_groupingValue;}
+
+        //! Set the property grouping value type.
+        void SetPropertyGroupingValue(PropertyGroupingValue value) {m_groupingValue = value;}
+        
+        //! Get the sorting value type.
+        PropertyGroupingValue GetSortingValue() const {return m_sortingValue;}
+
+        //! Set the sorting value type.
+        void SetSortingValue(PropertyGroupingValue value) {m_sortingValue = value;}
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
         ECOBJECTS_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;

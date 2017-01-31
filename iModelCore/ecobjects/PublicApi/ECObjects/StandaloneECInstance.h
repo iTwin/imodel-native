@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -95,38 +95,38 @@ protected:
 
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetIsHidden (bool set) override;
-    ECOBJECTS_EXPORT virtual bool               _IsHidden () const override;
-    ECOBJECTS_EXPORT virtual bool               _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength);
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength);
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ShrinkAllocation ();
-    ECOBJECTS_EXPORT virtual void               _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (uint32_t bytesNeeded);
+    ECOBJECTS_EXPORT ECObjectsStatus    _SetIsHidden (bool set) override;
+    ECOBJECTS_EXPORT bool               _IsHidden () const override;
+    ECOBJECTS_EXPORT bool               _IsMemoryInitialized () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength) override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _ShrinkAllocation () override;
+    ECOBJECTS_EXPORT void               _FreeAllocation () override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _GrowAllocation (uint32_t bytesNeeded) override;
 
-    ECOBJECTS_EXPORT virtual Byte const *       _GetData () const override;
-    ECOBJECTS_EXPORT virtual uint32_t           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, uint32_t index) override;    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override;
-    ECOBJECTS_EXPORT virtual ECN::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
+    ECOBJECTS_EXPORT Byte const *       _GetData () const override;
+    ECOBJECTS_EXPORT uint32_t           _GetBytesAllocated () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, uint32_t index) override;    
+    ECOBJECTS_EXPORT ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override;
+    ECOBJECTS_EXPORT ECN::PrimitiveType _GetStructArrayPrimitiveType () const override {return PRIMITIVETYPE_Integer;}
 
-    ECOBJECTS_EXPORT virtual void               _ClearValues () override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyFromBuffer (ECDBufferCR src) override;
+    ECOBJECTS_EXPORT void               _ClearValues () override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _CopyFromBuffer (ECDBufferCR src) override;
 
-                     virtual bool               _AcquireData (bool forWrite) const override { return true; }
-                     virtual bool               _ReleaseData() const override { return true; }
+                     bool               _AcquireData(bool forWrite) const override {return true;}
+                     bool               _ReleaseData() const override {return true;}
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) override;
-    ECOBJECTS_EXPORT virtual bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus    _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) override;
+    ECOBJECTS_EXPORT bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
 
                      virtual IECInstanceP       _GetAsIECInstance () const = 0;
 //    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const override;
 
-    virtual bool _AllowWritingDirectlyToInstanceMemory() const override { return m_allowWritingDirectlyToInstanceMemory; }
-    virtual bool _AreAllPropertiesCalculated() const override { return m_allPropertiesCalculated; }
-    virtual void _SetAllPropertiesCalculated(bool allCalculated) override { m_allPropertiesCalculated = allCalculated; }
+    bool _AllowWritingDirectlyToInstanceMemory() const override {return m_allowWritingDirectlyToInstanceMemory;}
+    bool _AreAllPropertiesCalculated() const override {return m_allPropertiesCalculated;}
+    void _SetAllPropertiesCalculated(bool allCalculated) override {m_allPropertiesCalculated = allCalculated;}
 
     ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 public:
@@ -213,27 +213,27 @@ protected:
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
-    ECOBJECTS_EXPORT virtual Utf8String          _GetInstanceId() const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(Utf8CP id) override;
-    ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (uint32_t propIdx) override;    
-    ECOBJECTS_EXPORT virtual Utf8String          _ToString (Utf8CP indent) const override;
-    ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
-    ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
-    ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    ECOBJECTS_EXPORT virtual ECDBuffer*          _GetECDBuffer() const override;
-    ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
+    ECOBJECTS_EXPORT Utf8String          _GetInstanceId() const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetInstanceId(Utf8CP id) override;
+    ECOBJECTS_EXPORT bool                _IsReadOnly() const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _ClearArray (uint32_t propIdx) override;    
+    ECOBJECTS_EXPORT Utf8String          _ToString (Utf8CP indent) const override;
+    ECOBJECTS_EXPORT ClassLayoutCR       _GetClassLayout () const override;
+    ECOBJECTS_EXPORT ECEnablerCR         _GetEnabler() const override;
+    ECOBJECTS_EXPORT MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    ECOBJECTS_EXPORT ECDBuffer*          _GetECDBuffer() const override;
+    ECOBJECTS_EXPORT size_t              _GetOffsetToIECInstance () const override;
 
     // MemoryECInstanceBase
-    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const override;
+    ECOBJECTS_EXPORT IECInstanceP        _GetAsIECInstance () const override;
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECOBJECTS_EXPORT ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
 
 public:
     // We use this as an optimization for setting struct array members.
@@ -284,17 +284,17 @@ protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
-    virtual Utf8CP                      _GetName() const override;
-    virtual ECObjectsStatus             _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override;
-    virtual ECObjectsStatus             _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override;
-    virtual uint32_t                    _GetFirstPropertyIndex (uint32_t parentIndex) const override;
-    virtual uint32_t                    _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override;
-    virtual bool                        _HasChildProperties (uint32_t parentIndex) const override;
-    virtual uint32_t                    _GetParentPropertyIndex (uint32_t childIndex) const override;
-    virtual ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
-    virtual bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
+    Utf8CP                      _GetName() const override;
+    ECObjectsStatus             _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override;
+    ECObjectsStatus             _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override;
+    uint32_t                    _GetFirstPropertyIndex (uint32_t parentIndex) const override;
+    uint32_t                    _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override;
+    bool                        _HasChildProperties (uint32_t parentIndex) const override;
+    uint32_t                    _GetParentPropertyIndex (uint32_t childIndex) const override;
+    ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
+    bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     //! Creates a StandaloneECEnabler for the specified ECClass

@@ -70,6 +70,7 @@
 #define     ALIAS_ATTRIBUTE                     "alias"
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
+#define     MINIMUM_LENGTH_ATTRIBUTE            "MinimumLength"
 #define     MAXIMUM_LENGTH_ATTRIBUTE            "MaximumLength"
 #define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
 #define     PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
@@ -130,13 +131,16 @@
 #define ECINSTANCE_SCHEMA_ATTRIBUTE             "ecSchema"
 #define ECINSTANCE_CLASS_ATTRIBUTE              "ecClass"
 #define ECINSTANCE_ID_ATTRIBUTE                 "id"
-#define ECINSTANCE_INSTANCEID_ATTRIBUTE         "instanceId"
 #define ECINSTANCE_SOURCECLASS_ATTRIBUTE        "sourceClass"
 #define ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE   "sourceInstanceID"
 #define ECINSTANCE_TARGETCLASS_ATTRIBUTE        "targetClass"
 #define ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE   "targetInstanceID"
 #define ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE    "relECClassId"
 #define ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE   "relECClassName"
+// InstanceId for xml has to contain capitalized 'D' to support legacy data, but we want to use lower case going forward.
+// Therefore separate attribute names for Json and Xml are needed.
+#define ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE    "instanceId"
+#define ECINSTANCE_INSTANCEID_XML_ATTRIBUTE     "instanceID"
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/PropertiesTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -27,7 +27,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         timer.Stop();
 
         PERFORMANCELOG.infov("%s - %lf", timerName, timer.GetElapsedSeconds());
-        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Adding array elements one at a time: %s", propertyName.c_str()), 1000);
+        LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 1000, Utf8PrintfString("Adding array elements one at a time: %s", propertyName.c_str()).c_str());
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
     void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
@@ -41,7 +41,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         timer.Stop();
 
         PERFORMANCELOG.infov("ls - %lf", timerName, timer.GetElapsedSeconds());
-        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Adding array elements at once: %s", propertyName.c_str()), 1000);
+        LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 1000, Utf8PrintfString("Adding array elements at once: %s", propertyName.c_str()).c_str());
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
 };

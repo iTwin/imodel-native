@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/PerformanceECXmlTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -55,8 +55,8 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         PERFORMANCELOG.infov ("%s, De-serializing schema: %s (%" PRIx64 " references), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), (uint64_t) references.size (), deserializationTimer.GetElapsedSeconds ());
         PERFORMANCELOG.infov ("%s, Serializing schema: %s (%" PRIx64 " bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), (uint64_t) stringLength, serializationTimer.GetElapsedSeconds ());
 
-        LOGTODB(testcaseName, testName, deserializationTimer.GetElapsedSeconds(), Utf8PrintfString("De-serializing sheme: %s", schema->GetFullSchemaName().c_str()));
-        LOGTODB(testcaseName, testName, serializationTimer.GetElapsedSeconds(), Utf8PrintfString("Serializing sheme: %s", schema->GetFullSchemaName().c_str()));
+        LOGTODB(testcaseName.c_str(), testName.c_str(), deserializationTimer.GetElapsedSeconds(), -1, Utf8PrintfString("De-serializing sheme: %s", schema->GetFullSchemaName().c_str()).c_str());
+        LOGTODB(testcaseName.c_str(), testName.c_str(), serializationTimer.GetElapsedSeconds(), -1, Utf8PrintfString("Serializing sheme: %s", schema->GetFullSchemaName().c_str()).c_str());
 
         LogResultsToFile (results);
         }
@@ -94,8 +94,8 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         PERFORMANCELOG.infov ("%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), readingTimer.GetElapsedSeconds ());
         PERFORMANCELOG.infov ("%s, Writing instance from class: %s:%s (%" PRIx64 " bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), (uint64_t) stringLength, writingTimer.GetElapsedSeconds ());
 
-        LOGTODB(testcaseName, testName, readingTimer.GetElapsedSeconds(), Utf8PrintfString("Reading instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()));
-        LOGTODB(testcaseName, testName, writingTimer.GetElapsedSeconds(), Utf8PrintfString("Writing instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()));
+        LOGTODB(testcaseName.c_str(), testName.c_str(), readingTimer.GetElapsedSeconds(), -1, Utf8PrintfString("Reading instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()).c_str());
+        LOGTODB(testcaseName.c_str(), testName.c_str(), writingTimer.GetElapsedSeconds(), -1, Utf8PrintfString("Writing instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()).c_str());
 
         bmap<Utf8String, double> results;
         Utf8String readingString;
