@@ -2,7 +2,7 @@
 |
 |     $Source: test/ECObjectsTestPCH.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,8 +24,9 @@
 #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
 
 #define LOG_ASSERT_FAILURE(_LogMessage, ...) LogFailureMessage(_LogMessage, ## __VA_ARGS__)
-
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 #define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)           \
         {                                                           \

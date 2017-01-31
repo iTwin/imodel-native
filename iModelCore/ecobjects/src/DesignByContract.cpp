@@ -2,7 +2,7 @@
 |
 |     $Source: src/DesignByContract.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -50,7 +50,7 @@ AssertDisabler::~AssertDisabler ()
     putenv(const_cast<char*>("MS_IGNORE_ASSERTS="));
 #endif
     }
-
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -65,7 +65,4 @@ void LogFailureMessage (WCharCP message, ...)
     va_end (arguments);
     LOG.warning(msg.c_str());
     }
-
-
-
-  
+END_BENTLEY_ECOBJECT_NAMESPACE
