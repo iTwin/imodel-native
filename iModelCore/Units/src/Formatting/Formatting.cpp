@@ -54,7 +54,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormat::DefaultInit(Utf8CP name, size_t precision)
+void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
     {
     m_name = name;
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
@@ -69,7 +69,7 @@ void NumericFormat::DefaultInit(Utf8CP name, size_t precision)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormat::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
     m_name = name;
     m_presentationType = presType;
@@ -91,14 +91,14 @@ void NumericFormat::Init(Utf8CP name, PresentationType presType, ShowSignOption 
     m_roundFactor = 0.0;
     }
 
-void NumericFormat::SetAlias(Utf8CP alias)
+void NumericFormatSpec::SetAlias(Utf8CP alias)
     { 
     m_alias = alias;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-double NumericFormat::RoundDouble(double dval, double roundTo)
+double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     {
     if (FormatConstant::IsNegligible(roundTo))
         return dval;
@@ -113,7 +113,7 @@ double NumericFormat::RoundDouble(double dval, double roundTo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-bool NumericFormat::AcceptableDifference(double dval1, double dval2, double maxDiff) 
+bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double maxDiff) 
     { 
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
@@ -121,7 +121,7 @@ bool NumericFormat::AcceptableDifference(double dval1, double dval2, double maxD
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormat::NumericFormat(NumericFormatCR other)
+NumericFormatSpec::NumericFormatSpec(NumericFormatSpecCR other)
     {
     m_name = other.m_name;
     m_alias = other.m_alias;
@@ -138,7 +138,7 @@ NumericFormat::NumericFormat(NumericFormatCR other)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormat::NumericFormat(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
+NumericFormatSpec::NumericFormatSpec(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
     {
     Init(name, presType, signOpt, formatTraits, precision);   
     }
@@ -147,7 +147,7 @@ NumericFormat::NumericFormat(Utf8CP name, PresentationType presType, ShowSignOpt
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormat::SetPrecisionByValue(int prec)
+void NumericFormatSpec::SetPrecisionByValue(int prec)
     {
     if (PresentationType::Fractional == m_presentationType)
         {
@@ -169,7 +169,7 @@ void NumericFormat::SetPrecisionByValue(int prec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetKeepTrailingZeroes(bool keep)
+void NumericFormatSpec::SetKeepTrailingZeroes(bool keep)
     {
     size_t temp = static_cast<int>(m_formatTraits);
 
@@ -183,7 +183,7 @@ void NumericFormat::SetKeepTrailingZeroes(bool keep)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetUseLeadingZeroes(bool use)
+void NumericFormatSpec::SetUseLeadingZeroes(bool use)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (use)
@@ -196,7 +196,7 @@ void NumericFormat::SetUseLeadingZeroes(bool use)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetKeepDecimalPoint(bool keep)
+void NumericFormatSpec::SetKeepDecimalPoint(bool keep)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (keep)
@@ -209,7 +209,7 @@ void NumericFormat::SetKeepDecimalPoint(bool keep)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetKeepSingleZero(bool keep)
+void NumericFormatSpec::SetKeepSingleZero(bool keep)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (keep)
@@ -222,7 +222,7 @@ void NumericFormat::SetKeepSingleZero(bool keep)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetZeroEmpty(bool empty)
+void NumericFormatSpec::SetZeroEmpty(bool empty)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (empty)
@@ -236,7 +236,7 @@ void NumericFormat::SetZeroEmpty(bool empty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetUse1000Separator(bool use)
+void NumericFormatSpec::SetUse1000Separator(bool use)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (use)
@@ -249,7 +249,7 @@ void NumericFormat::SetUse1000Separator(bool use)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetApplyRounding(bool use)
+void NumericFormatSpec::SetApplyRounding(bool use)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (use)
@@ -263,7 +263,7 @@ void NumericFormat::SetApplyRounding(bool use)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormat::SetExponentZero(bool empty)
+void NumericFormatSpec::SetExponentZero(bool empty)
     {
     size_t temp = static_cast<int>(m_formatTraits);
     if (empty)
@@ -276,7 +276,7 @@ void NumericFormat::SetExponentZero(bool empty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-double NumericFormat::RoundedValue(double dval, double round)
+double NumericFormatSpec::RoundedValue(double dval, double round)
     {
     round = fabs(round);
     if (round < m_minTreshold)
@@ -292,7 +292,7 @@ double NumericFormat::RoundedValue(double dval, double round)
 // If the destination buffer is shorter than source, only the right portion of the source 
 // will be copied. The destination will be terminated by zero if so indicated by the bool flag
 //  and the useful capacity of the destination buffer will be reduced by 1 
-int NumericFormat::RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen)
+int NumericFormatSpec::RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen)
     {
     if (nullptr == src)
         srcLen = 0;
@@ -314,7 +314,7 @@ int NumericFormat::RightAlignedCopy(CharP dest, int destLen, bool termZero, Char
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::IntPartToText (double n, CharP bufOut, int bufLen, bool useSeparator)
+int NumericFormatSpec::IntPartToText (double n, CharP bufOut, int bufLen, bool useSeparator)
     {
     char sign = '+';
     char buf[64];
@@ -375,7 +375,7 @@ int NumericFormat::IntPartToText (double n, CharP bufOut, int bufLen, bool useSe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::FormatInteger (int n, CharP bufOut,  int bufLen)
+int NumericFormatSpec::FormatInteger (int n, CharP bufOut,  int bufLen)
     {
     char sign = '+';
     char buf[64];
@@ -438,7 +438,7 @@ int NumericFormat::FormatInteger (int n, CharP bufOut,  int bufLen)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero)
+int NumericFormatSpec::FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero)
     {
     char sign = '+';
     char buf[64];
@@ -484,7 +484,7 @@ int NumericFormat::FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool sh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
+int NumericFormatSpec::TrimTrailingZeroes(CharP buf, int index)
     {
     if (nullptr == buf)
         return index;
@@ -510,7 +510,7 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-size_t NumericFormat::InsertChar(CharP buf, size_t index, char c, int num)
+size_t NumericFormatSpec::InsertChar(CharP buf, size_t index, char c, int num)
     {
     if (nullptr != buf && 0 < num)
         {
@@ -522,7 +522,7 @@ size_t NumericFormat::InsertChar(CharP buf, size_t index, char c, int num)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-double NumericFormat::GetDecimalPrecisionFactor(int prec = -1) 
+double NumericFormatSpec::GetDecimalPrecisionFactor(int prec = -1) 
     { 
     return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
     }
@@ -530,7 +530,7 @@ double NumericFormat::GetDecimalPrecisionFactor(int prec = -1)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-int  NumericFormat::GetDecimalPrecisionIndex(int prec = -1) 
+int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1) 
     { 
     if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
         return prec;
@@ -540,12 +540,12 @@ int  NumericFormat::GetDecimalPrecisionIndex(int prec = -1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormat::FormatDouble(double dval, CharP buf, size_t bufLen, int prec, double round)
+size_t NumericFormatSpec::FormatDouble(double dval, CharP buf, size_t bufLen, int prec, double round)
     {
     double ival;
     Utf8Char sign = '+';
-    double precScale = NumericFormat::GetDecimalPrecisionFactor(prec);
-    int totFractLen = NumericFormat::GetDecimalPrecisionIndex(prec);
+    double precScale = NumericFormatSpec::GetDecimalPrecisionFactor(prec);
+    int totFractLen = NumericFormatSpec::GetDecimalPrecisionIndex(prec);
     double expInt = 0.0;
     double fract;
     char intBuf[64];
@@ -652,17 +652,20 @@ size_t NumericFormat::FormatDouble(double dval, CharP buf, size_t bufLen, int pr
             ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
             locBuf[ind++] = sign;
         ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
-        if(ind < locBufL)
-            ind = Utils::AppendText(locBuf, locBufL, ind, " ");
-        if (ind < locBufL)
-            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
-        if (ind < locBufL)
-            ind = Utils::AppendText(locBuf, locBufL, ind, "/");
-        if (ind < locBufL)
-            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
-        ind++;
-        if (ind > bufLen)
-            ind = bufLen;
+        if (fn.HasFractionPart())
+            {
+            if (ind < locBufL)
+                ind = Utils::AppendText(locBuf, locBufL, ind, " ");
+            if (ind < locBufL)
+                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
+            if (ind < locBufL)
+                ind = Utils::AppendText(locBuf, locBufL, ind, "/");
+            if (ind < locBufL)
+                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
+            }
+            ind++;
+            if (ind > bufLen)
+                ind = bufLen;
         memcpy(buf, locBuf, ind);
         }
 
@@ -672,14 +675,14 @@ size_t NumericFormat::FormatDouble(double dval, CharP buf, size_t bufLen, int pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormat::FormatDouble(double dval, int prec, double round)
+Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
     {
     char buf[64];
     FormatDouble(dval, buf, sizeof(buf), prec, round);
     return Utf8String(buf);
     }
 
-Utf8String NumericFormat::FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec, double round)
     {
     UnitCP unitQ = qty.GetUnit();
     QuantityPtr temp = qty.ConvertTo(unitQ->GetName());
@@ -688,7 +691,7 @@ Utf8String NumericFormat::FormatQuantity(QuantityCR qty, UnitCP useUnit, int pre
     return Utf8String(buf);
     }
 
-Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
+Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
     {
     return FormatDouble(RoundedValue(dval, round));
     }
@@ -702,9 +705,9 @@ Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
-Utf8String NumericFormat::RefFormatDouble(double dval, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::RefFormatDouble(double dval, Utf8P stdName, int prec, double round)
     {
-    NumericFormatP fmtP = StdFormatSet::FindFormat(stdName);
+    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -712,9 +715,9 @@ Utf8String NumericFormat::RefFormatDouble(double dval, Utf8P stdName, int prec, 
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
     {
-    NumericFormatP fmtP = StdFormatSet::FindFormat(stdName);
+    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -724,12 +727,22 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
     QuantityPtr temp = qty.ConvertTo(useUOM);
     return fmtP->FormatDouble(temp->GetMagnitude(), prec, round);
     }
-
+ 
+Utf8String NumericFormatSpec::RefFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec, double round)
+    {
+    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
+    if (nullptr == fmtP)  // invalid name
+        fmtP = StdFormatSet::DefaultDecimal();
+    if (nullptr == fmtP)
+        return "";
+    return qtr->FormatQuantTriad(space, prec, fmtP->IsFractional(), qtr->GetIncludeZero());
+    }
+//ormatQuantTriad(Utf8CP space, int prec, bool fract=false, bool includeZero = false);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::FormatInteger(int ival)
+ Utf8String NumericFormatSpec::FormatInteger(int ival)
     {
         char buf[64];
         FormatInteger(ival, buf, sizeof(buf));
@@ -742,7 +755,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
  // this function returns the number of bytes that was not populated - in case of success it will 0
- int NumericFormat::FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen)
+ int NumericFormatSpec::FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen)
  {
      char binBuf[8];
      unsigned char mask = 0x80;
@@ -759,7 +772,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormat::FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[64];
 
@@ -776,7 +789,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormat::FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
 
@@ -792,7 +805,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
      return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
  }
 
- int NumericFormat::FormatBinaryDouble (double x, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryDouble (double x, CharP bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
      union { unsigned int ival[2]; double x; }temp;
@@ -810,7 +823,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
 
- Utf8String NumericFormat::ByteToBinaryText(unsigned char n)
+ Utf8String NumericFormatSpec::ByteToBinaryText(unsigned char n)
  {
      char buf[64];
      FormatBinaryByte(n, buf, sizeof(buf));
@@ -820,7 +833,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::ShortToBinaryText(short int n, bool useSeparator)
+ Utf8String NumericFormatSpec::ShortToBinaryText(short int n, bool useSeparator)
  {
      char buf[64];
      FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
@@ -830,7 +843,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::IntToBinaryText(int n, bool useSeparator)
+ Utf8String NumericFormatSpec::IntToBinaryText(int n, bool useSeparator)
  {
      char buf[80];
      FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
@@ -840,7 +853,7 @@ Utf8String NumericFormat::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::DoubleToBinaryText(double x, bool useSeparator)
+ Utf8String NumericFormatSpec::DoubleToBinaryText(double x, bool useSeparator)
  {
      char buf[80];
      FormatBinaryDouble(x, buf, sizeof(buf), useSeparator);
@@ -1059,7 +1072,7 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
+Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormatSpec format)
     {
     Utf8StringP str = new Utf8String();
 
@@ -1095,7 +1108,7 @@ Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatP StdFormatSet::AddFormat(NumericFormatP fmtP)
+NumericFormatSpecP StdFormatSet::AddFormat(NumericFormatSpecP fmtP)
     {
     m_formatSet.push_back(fmtP);
     return fmtP;
@@ -1107,24 +1120,24 @@ NumericFormatP StdFormatSet::AddFormat(NumericFormatP fmtP)
 void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    AddFormat(new NumericFormat("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
-    AddFormat(new NumericFormat("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
-    AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
-    AddFormat(new NumericFormat("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");
-    AddFormat(new NumericFormat("SignedFractional", PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fractSign");
-    AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
-    AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
-    AddFormat(new NumericFormat("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
-    AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
-    NumericFormatP tmp = new NumericFormat("Fractional16", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    AddFormat(new NumericFormatSpec("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
+    AddFormat(new NumericFormatSpec("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
+    AddFormat(new NumericFormatSpec("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
+    AddFormat(new NumericFormatSpec("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");
+    AddFormat(new NumericFormatSpec("SignedFractional", PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fractSign");
+    AddFormat(new NumericFormatSpec("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
+    AddFormat(new NumericFormatSpec("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
+    AddFormat(new NumericFormatSpec("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
+    AddFormat(new NumericFormatSpec("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
+    NumericFormatSpecP tmp = new NumericFormatSpec("Fractional16", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
     tmp->SetAlias("fract16");
     tmp->SetFractionaPrecision(FractionalPrecision::Sixteenth);
     AddFormat(tmp);
-    tmp = new NumericFormat("Fractional8", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    tmp = new NumericFormatSpec("Fractional8", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
     tmp->SetAlias("fract8");
     tmp->SetFractionaPrecision(FractionalPrecision::Eighth);
     AddFormat(tmp);
-    tmp = new NumericFormat("Fractional32", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
+    tmp = new NumericFormatSpec("Fractional32", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
     tmp->SetAlias("fract32");
     tmp->SetFractionaPrecision(FractionalPrecision::Over_32);
     AddFormat(tmp);
@@ -1133,9 +1146,9 @@ void StdFormatSet::StdInit()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatP StdFormatSet::DefaultDecimal()
+NumericFormatSpecP StdFormatSet::DefaultDecimal()
     {
-    NumericFormatP fmtP;
+    NumericFormatSpecP fmtP;
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
@@ -1149,9 +1162,9 @@ NumericFormatP StdFormatSet::DefaultDecimal()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatP StdFormatSet::FindFormat(Utf8CP name)
+NumericFormatSpecP StdFormatSet::FindFormat(Utf8CP name)
     {
-    NumericFormatP fmtP = *Set().m_formatSet.begin();
+    NumericFormatSpecP fmtP = *Set().m_formatSet.begin();
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
@@ -1205,9 +1218,9 @@ void NumericTriad::Convert()
             break;
 
         case 3:
-            m_topValue = floor(m_dval / toplow);
+            m_topValue = floor((m_dval + FormatConstant::FPV_RoundFactor())/ toplow);
             rem = m_dval - m_topValue * toplow;
-            m_midValue = floor(rem / midlow);
+            m_midValue = floor((rem + +FormatConstant::FPV_RoundFactor()) / midlow);
             m_lowValue = rem - m_midValue * midlow;
             m_midAssigned = true;
             m_lowAssigned = true;
@@ -1272,7 +1285,7 @@ NumericTriad::NumericTriad(double dval, size_t topMid, size_t midLow)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
     {
-    NumericFormat fmt("FW");
+    NumericFormatSpec fmt("FW");
     fmt.SetDecimalPrecision(prec);
     return fmt.FormatDouble(GetWhole());
     }
@@ -1280,9 +1293,14 @@ Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero, int prec)
+Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract,  bool includeZero)
     {
-    NumericFormat fmt("Triad");
+    //NumericFormat fmt =  NumericFormat("Triad");
+    PresentationType presType = fract ? PresentationType::Fractional: PresentationType::Decimal;
+    ShowSignOption signOpt = FormatConstant::DefaultSignOption();
+    FormatTraits formatTraits = FormatConstant::DefaultFormatTraits();
+    NumericFormatSpec fmt = NumericFormatSpec("Triad", presType, signOpt, formatTraits, (size_t)prec);
+
     Utf8CP blank = FormatConstant::BlankString();
     if (IsNameNullOrEmpty(topName))
         topName = blank;
@@ -1343,7 +1361,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
 //
 //===================================================
 
-void QuantityTriad::Init()
+void QuantityTriadSpec::Init(bool incl0)
     {
     m_quant = nullptr;
     m_topUnit = nullptr;
@@ -1353,15 +1371,16 @@ void QuantityTriad::Init()
     m_midUnitSymbol = nullptr;
     m_lowUnitSymbol = nullptr;
     m_problemCode = FormatProblemCode::NoProblems;
+    m_includeZero = incl0;
     }
 
 //---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-QuantityTriad::QuantityTriad()
+QuantityTriadSpec::QuantityTriadSpec()
     {
-    Init();
+    Init(false);
     }
 //---------------------------------------------------------------------------------------
 // The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
@@ -1371,7 +1390,7 @@ QuantityTriad::QuantityTriad()
 //    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-size_t QuantityTriad::UnitRatio(UnitCP major, UnitCP minor)
+size_t QuantityTriadSpec::UnitRatio(UnitCP major, UnitCP minor)
     {
     if (nullptr != major && nullptr != minor && (major->GetPhenomenon() == minor->GetPhenomenon()))
         {
@@ -1392,7 +1411,7 @@ size_t QuantityTriad::UnitRatio(UnitCP major, UnitCP minor)
 //    the phenomenon of the source quantity
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-bool QuantityTriad::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
+bool QuantityTriadSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
     {
     if (nullptr == srcPhen || nullptr == targPhen)
         return UpdateProblemCode(FormatProblemCode::QT_PhenomenonNotDefined);
@@ -1407,7 +1426,7 @@ bool QuantityTriad::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP tar
 //    problems it's better than override earlier encountered problems
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-bool QuantityTriad::UpdateProblemCode(FormatProblemCode code)
+bool QuantityTriadSpec::UpdateProblemCode(FormatProblemCode code)
     {
     if (m_problemCode == FormatProblemCode::NoProblems)
         m_problemCode = code;
@@ -1417,9 +1436,9 @@ bool QuantityTriad::UpdateProblemCode(FormatProblemCode code)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-QuantityTriad::QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit = nullptr, UnitCP lowUnit = nullptr)
+QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midUnit, UnitCP lowUnit, bool incl0)
     {
-    Init();
+    Init(incl0);
     int caseBits = 0;
     // before populating the structure - check validity of arguments combination  
     UnitCP unitQ = qty.GetUnit();
@@ -1519,7 +1538,7 @@ QuantityTriad::QuantityTriad(QuantityCR qty, UnitCP topUnit, UnitCP midUnit = nu
         }
     }
 
-Utf8String QuantityTriad::FormatQuantTriad(Utf8CP space, bool includeZero, int prec)
+Utf8String QuantityTriadSpec::FormatQuantTriad(Utf8CP space, int prec, bool fract, bool includeZero)
     {
     if (IsProblem())
         return FormatConstant::FailedOperation();
@@ -1527,7 +1546,7 @@ Utf8String QuantityTriad::FormatQuantTriad(Utf8CP space, bool includeZero, int p
     Utf8CP topUOM = (nullptr == m_topUnitSymbol) ? GetTopUOM(): m_topUnitSymbol;
     Utf8CP midUOM = (nullptr == m_midUnitSymbol) ? GetMidUOM() : m_midUnitSymbol;
     Utf8CP lowUOM = (nullptr == m_lowUnitSymbol) ? GetLowUOM() : m_lowUnitSymbol;
-    return FormatTriad(topUOM, midUOM, lowUOM, space, includeZero, prec);
+    return FormatTriad(topUOM, midUOM, lowUOM, space, prec, fract, includeZero);
     }
    
 

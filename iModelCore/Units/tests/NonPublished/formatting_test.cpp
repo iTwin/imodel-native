@@ -36,29 +36,43 @@ TEST(FormattingTest, FormattingUOM)
     
     UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
     UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
-    QuantityPtr len = Quantity::Create(22.7, "M");
-    QuantityTriad qtr = QuantityTriad(*len, yrdUOM, ftUOM, inUOM);
-    EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", false, 2).c_str());
-    EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", false, 2).c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract").c_str());
-    EXPECT_STREQ ("74 1/2", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormat::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormat::RefFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
-
-    QuantityPtr ang = Quantity::Create(135.45, "ARC_DEG");
     UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
     UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
     UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
 
-    QuantityTriad atr = QuantityTriad(*ang, degUOM, minUOM, secUOM);
-    LOG.infov(u8"135.45\xB0 = %s", NumericFormat::RefFormatQuantity(*ang, degUOM, "fract32").c_str());
-    LOG.infov(u8"135.45\xB0 = %s", atr.FormatQuantTriad("_", false, 4).c_str());
+
+    QuantityPtr len = Quantity::Create(22.7, "M");
+    QuantityTriadSpec qtr = QuantityTriadSpec(*len, yrdUOM, ftUOM, inUOM);
+
+    EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
+    EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
+
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract").c_str());
+    EXPECT_STREQ ("74 1/2", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::RefFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
+
+    QuantityPtr ang = Quantity::Create(135.0 + 23.0/120.0, "ARC_DEG");
+
+    QuantityTriadSpec atr = QuantityTriadSpec(*ang, degUOM, minUOM, secUOM);
     atr.SetTopUnitSymbol(u8"\xB0");
     atr.SetMidUnitSymbol(u8"'");
     atr.SetLowUnitSymbol(u8"\"");
-    LOG.infov(u8"135.45\xB0 = %s", atr.FormatQuantTriad("", false, 4).c_str());
+    EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
+
+    LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::RefFormatQuantity(*ang, degUOM, "fract").c_str());
+    LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("_", 4).c_str());
+    atr.SetTopUnitSymbol(u8"°");
+    atr.SetMidUnitSymbol(u8"'");
+    atr.SetLowUnitSymbol(u8"\"");
+    LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("", 4).c_str());
+    EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
+
+    LOG.infov(u8"135.45° = %s", NumericFormatSpec::RefFormatQuantityTriad(&atr, "fract32", "").c_str());
+
+   
   /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
     reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);*/
 
@@ -226,10 +240,10 @@ TEST(FormattingTest, Simple)
     LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
 #endif
 
-    EXPECT_STREQ ("1 27/64", NumericFormat::RefFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+1 27/64", NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormat::RefFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormat::RefFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("1 27/64", NumericFormatSpec::RefFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+1 27/64", NumericFormatSpec::RefFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::RefFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::RefFormatDouble(-fval, "fractSign").c_str());
     fval  *= 3.5;
 
 #if defined FORMAT_DEBUG_PRINT
@@ -239,38 +253,38 @@ TEST(FormattingTest, Simple)
     LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
 #endif
 
-    EXPECT_STREQ ("4 61/64", NumericFormat::RefFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+4 61/64", NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormat::RefFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormat::RefFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("4 61/64", NumericFormatSpec::RefFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+4 61/64", NumericFormatSpec::RefFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::RefFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::RefFormatDouble(-fval, "fractSign").c_str());
     EXPECT_STREQ ("15 7/8", FractionalNumeric(15.0 + 14.0 / 16.0, 256).ToTextDefault(true).c_str());
 
-    EXPECT_STREQ ("1414.213562", NumericFormat::RefFormatDouble(testV, "real").c_str());
-    EXPECT_STREQ ("1414.21356237", NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
-    EXPECT_STREQ ("1414.2135624", NumericFormat::RefFormatDouble(testV, "real", 7).c_str());
-    EXPECT_STREQ ("1414.213562", NumericFormat::RefFormatDouble(testV, "real", 6).c_str());
-    EXPECT_STREQ ("1414.21356", NumericFormat::RefFormatDouble(testV, "real", 5).c_str());
-    EXPECT_STREQ ("1414.2136", NumericFormat::RefFormatDouble(testV, "real", 4).c_str());
-    EXPECT_STREQ ("1414.214", NumericFormat::RefFormatDouble(testV, "real", 3).c_str());
-    EXPECT_STREQ ("1414.21", NumericFormat::RefFormatDouble(testV, "real", 2).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormat::RefFormatDouble(testV, "real", 1).c_str());
-    EXPECT_STREQ ("1414.0", NumericFormat::RefFormatDouble(testV, "real", 0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 8, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 7, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 6, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 5, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 4, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormat::RefFormatDouble(testV, "real", 3, 5.0).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str());
-    EXPECT_STREQ ("7071.05", NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
-    EXPECT_STREQ ("4242.65", NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
-    EXPECT_STREQ ("9899.5", NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
-    EXPECT_STREQ ("12727.9", NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
-    EXPECT_STREQ ("2828.45", NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
-    EXPECT_STREQ ("2.82843e+3", NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
-    EXPECT_STREQ ("0.28284e+4", NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::RefFormatDouble(testV, "real").c_str());
+    EXPECT_STREQ ("1414.21356237", NumericFormatSpec::RefFormatDouble(testV, "real", 8).c_str());
+    EXPECT_STREQ ("1414.2135624", NumericFormatSpec::RefFormatDouble(testV, "real", 7).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::RefFormatDouble(testV, "real", 6).c_str());
+    EXPECT_STREQ ("1414.21356", NumericFormatSpec::RefFormatDouble(testV, "real", 5).c_str());
+    EXPECT_STREQ ("1414.2136", NumericFormatSpec::RefFormatDouble(testV, "real", 4).c_str());
+    EXPECT_STREQ ("1414.214", NumericFormatSpec::RefFormatDouble(testV, "real", 3).c_str());
+    EXPECT_STREQ ("1414.21", NumericFormatSpec::RefFormatDouble(testV, "real", 2).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::RefFormatDouble(testV, "real", 1).c_str());
+    EXPECT_STREQ ("1414.0", NumericFormatSpec::RefFormatDouble(testV, "real", 0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 8, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 7, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 6, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 5, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 4, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 3, 5.0).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::RefFormatDouble(testV, "real", 8, 0.05).c_str());
+    EXPECT_STREQ ("7071.05", NumericFormatSpec::RefFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
+    EXPECT_STREQ ("4242.65", NumericFormatSpec::RefFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
+    EXPECT_STREQ ("9899.5", NumericFormatSpec::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
+    EXPECT_STREQ ("12727.9", NumericFormatSpec::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
+    EXPECT_STREQ ("2828.45", NumericFormatSpec::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
+    EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::RefFormatDouble(2.0*testV, "sci", 5).c_str());
+    EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
 
-    NumericFormatP fmtP = StdFormatSet::FindFormat("real");
+    NumericFormatSpecP fmtP = StdFormatSet::FindFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
     fmtP->SetUse1000Separator(true);
 
@@ -340,7 +354,7 @@ TEST(FormattingTest, Simple)
 #endif
 
     FormatDictionary fd = FormatDictionary();
-    NumericFormat numFmt = NumericFormat("Default");
+    NumericFormatSpec numFmt = NumericFormatSpec("Default");
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
     EXPECT_STREQ ("135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("135689", numFmt.FormatInteger(135689).c_str());
@@ -396,7 +410,7 @@ TEST(FormattingTest, Simple)
         {
         for (int m = 0; m < 9; m++)
             {
-            EXPECT_NEAR(resultRnd[n * 9 + m], NumericFormat::RoundDouble(valR[n], rnd[m]), 0.00001);
+            EXPECT_NEAR(resultRnd[n * 9 + m], NumericFormatSpec::RoundDouble(valR[n], rnd[m]), 0.00001);
             }
         }
    
@@ -500,9 +514,9 @@ TEST(FormattingTest, Simple)
 
     NumericTriad tr = NumericTriad(1000.0, (size_t)3, (size_t)12);
 
-    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false, 2).c_str());
-    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false, 2).c_str());
-    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false, 2).c_str());
+    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", 2).c_str());
+    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", 2).c_str());
+    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", 2).c_str());
 
 #if defined FORMAT_DEBUG_PRINT
     size_t ucode = curs.GetNextSymbol();

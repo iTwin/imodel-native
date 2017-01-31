@@ -227,7 +227,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      m_totalElapsed += m_lastInterval;
      m_lastAmount = amount;
      m_totalAmount += amount;
-     NumericFormat nfmt = NumericFormat("LIM", 6);
+     NumericFormatSpec nfmt = NumericFormatSpec("LIM", 6);
      nfmt.SetUse1000Separator(true);
      Utf8String amTxt = nfmt.FormatInteger((int)amount);
      Utf8String duraTxt = (amount > 0) ? nfmt.FormatDouble(m_lastInterval / (double)amount) : "n/a";
@@ -333,7 +333,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  //----------------------------------------------------------------------------------------
   void FractionalNumeric::FormTextParts(bool reduce)
      {
-     NumericFormat fmt =  NumericFormat("fract", PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
+     NumericFormatSpec fmt =  NumericFormatSpec("fract", PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
      size_t numer = m_numerator;
      size_t denom = m_denominator;
      if (reduce && m_gcf > 1)
@@ -342,8 +342,11 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
          denom /= m_gcf;
          }
      m_textParts.push_back(fmt.FormatInteger((int)m_integral));
-     m_textParts.push_back(fmt.FormatInteger((int)numer));
-     m_textParts.push_back(fmt.FormatInteger((int)denom));
+     if (numer > 0)
+         {
+         m_textParts.push_back(fmt.FormatInteger((int)numer));
+         m_textParts.push_back(fmt.FormatInteger((int)denom));
+         }
      }
 
   //----------------------------------------------------------------------------------------
@@ -352,7 +355,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
  Utf8String FractionalNumeric::GetIntegralString()
      {
      Utf8String strP;
-     if (3 <= m_textParts.size())
+     if (0 < m_textParts.size())
          strP = m_textParts.at(0);
      return strP ;
      }
@@ -488,7 +491,7 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
          {
          if (n > 0)
              buf[i++] = 'x';
-         i += NumericFormat::FormatIntegerSimple (static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
+         i += NumericFormatSpec::FormatIntegerSimple (static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
          }
      return Utf8String(buf);
      }
