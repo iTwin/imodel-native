@@ -128,6 +128,10 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadMasterHeader(SMIndexMa
     if (!m_smSQLiteFile->GetMasterHeader(header)) return 0;
     if (header.m_rootNodeBlockID == SQLiteNodeHeader::NO_NODEID) return 0;
     *indexHeader = header;
+
+    // keep a copy of the master header for future use...
+    m_masterHeader = header;
+
     return sizeof(*indexHeader);
     }
 
@@ -250,14 +254,10 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
-    SMIndexMasterHeader<EXTENT> indexHeader;
-    if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
+    if (m_masterHeader.m_textured == IndexTexture::Streaming)
         {
-        if (indexHeader.m_textured == IndexTexture::Streaming)
-            {
-           dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
-            return true;
-            }
+        dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
+        return true;
         }
 
     dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);

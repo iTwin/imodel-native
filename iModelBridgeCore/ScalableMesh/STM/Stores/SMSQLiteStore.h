@@ -14,6 +14,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         GeoCoordinates::BaseGCSCPtr m_cs;
         IDTMSourceCollection m_sources;
         HFCPtr<ImagePP::HRARaster> m_raster;
+        SMIndexMasterHeader<EXTENT> m_masterHeader;
 
 
     public : 
