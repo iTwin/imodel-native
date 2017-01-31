@@ -158,8 +158,8 @@ DbTable const* GetTablesPropertyMapVisitor::GetSingleTable() const
 //---------------------------------------------------------------------------------------
 BentleyStatus SearchPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_foundPropertyMaps.push_back(&propertyMap);
+	if (m_propertyMapFilterCallback(propertyMap))
+		m_foundPropertyMaps.push_back(&propertyMap);
 
     return SUCCESS;
     }
@@ -168,29 +168,37 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 BentleyStatus SearchPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
-    {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_foundPropertyMaps.push_back(&propertyMap);
+	{
+	if (m_propertyMapFilterCallback(propertyMap))
+		m_foundPropertyMaps.push_back(&propertyMap);
 
-    if (!m_recurseIntoCompoundPropertyMaps)
-        return SUCCESS;
+	if (!m_recurseIntoCompoundPropertyMap(propertyMap))
+		return SUCCESS;
 
-    for (DataPropertyMap const* childPropMap : propertyMap)
-        {
-        if (SUCCESS != childPropMap->AcceptVisitor(*this))
-            return ERROR;
-        }
+	for (DataPropertyMap const* childPropMap : propertyMap)
+		{
+		if (SUCCESS != childPropMap->AcceptVisitor(*this))
+			return ERROR;
+		}
 
-    return SUCCESS;
-    }
+	return SUCCESS;
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_foundPropertyMaps.push_back(&propertyMap);
+	if (m_propertyMapFilterCallback(propertyMap))
+		{
+		if (m_systemPropertySelector == nullptr)
+			m_foundPropertyMaps.push_back(&propertyMap);
+		else
+			{
+			if (SingleColumnDataPropertyMap const* selected = m_systemPropertySelector(propertyMap))
+				m_foundPropertyMaps.push_back(selected);
+			}
+		}
 
     return SUCCESS;
     }
@@ -310,8 +318,13 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
                 return SUCCESS;
 
             case ECSqlScope::NonSelectAssignmentExp:
-                if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
-                    return SUCCESS;
+				if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
+					{
+					if (relClassIdPropMap.GetColumn().IsInOverflow())
+						sqlBuilder.Append(relClassIdPropMap.GetColumn().GetName().c_str());
+
+					return SUCCESS;
+					}
 
                 sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
                 return SUCCESS;
@@ -322,7 +335,10 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
             NativeSqlBuilder idColStrBuilder;
-            idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+			if (idPropMap.GetColumn().IsInOverflow())
+				idColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", idPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), idPropMap.GetColumn().GetName().c_str());
+			else
+				idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
 
             NativeSqlBuilder relClassIdColStrBuilder;
             if (relClassIdPropMap.IsVirtual())

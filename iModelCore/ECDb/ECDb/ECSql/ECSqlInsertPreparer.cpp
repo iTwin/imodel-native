@@ -25,6 +25,10 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ctx.PushScope(exp);
 
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+	if (classMap.GetClass().GetName().Equals("InformationContentElement"))
+		{
+		printf("");
+		}
     if (auto info = ctx.GetJoinedTableInfo())
         {
         ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
@@ -216,7 +220,26 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
 
         size_t component = 0;
-        SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
+        SearchPropertyMapVisitor visitor;
+		visitor.SetCallbackPropertyMapFilter([](PropertyMap const& propertyMap) 
+			{
+			if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap.GetType()))
+				{
+				return true;
+				}
+
+			return Enum::Contains(PropertyMap::Type::System, propertyMap.GetType());
+			});
+
+		visitor.SetCallbackSystemPropertyMapSelector([](SystemPropertyMap const& propertyMap) 
+			{
+			SingleColumnDataPropertyMap const* selected = nullptr;
+			if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && propertyMap.IsMappedToSingleTable())
+				selected = propertyMap.GetDataPropertyMaps().front();
+
+			return selected;
+			});
+
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
         for (PropertyMap const* childPropertyMap : visitor.Results())
             {

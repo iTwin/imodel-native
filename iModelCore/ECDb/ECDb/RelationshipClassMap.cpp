@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <random>
+#include <array>
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
@@ -201,7 +201,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //root class (no base class)
 
-    ColumnLists columns(*this);
+    ColumnLists columns(*this, relClassMappingInfo);
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
         return ClassMappingStatus::Error;
 
@@ -308,12 +308,10 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
 
-    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetFkMappingInfo()->GetOnDeleteAction();
-    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetFkMappingInfo()->GetOnUpdateAction();
-
-    ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
+	ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
     ForeignKeyDbConstraint::ActionType onUpdate = ForeignKeyDbConstraint::ActionType::NotSpecified;
-
+	ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnDeleteAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
+	ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnUpdateAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
     if (userRequestedDeleteAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
         onDelete = userRequestedDeleteAction;
     else
@@ -436,7 +434,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             }
 
         if (!fkTable.IsOwnedByECDb() || fkTable.GetPersistenceType() == PersistenceType::Virtual ||
-            referencedTable->GetPersistenceType() == PersistenceType::Virtual)
+            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsShared() || fkCol->IsInOverflow())
             continue;
 
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
@@ -895,7 +893,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd()
     for (SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
-        if (persistenceEndTable.GetType() == DbTable::Type::Existing)
+        if (persistenceEndTable.GetType() == DbTable::Type::Existing || vmap->GetColumn().IsShared() || vmap->GetColumn().IsInOverflow())
             continue;
 
         // name of the index
@@ -1721,16 +1719,48 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
         defaultConstraintClassId = ECClassId();
     }
 //************************RelationshipClassEndTableMap::ColumnFactory********************
+RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
+	:m_relMap(relMap), m_relInfo(relInfo) 
+	{
+		Initialize();
+	}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
 	{
-	DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? 
-		DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
-
+	const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;		
 	const DbColumn::Type colType = DbColumn::Type::Integer;
-	return table.CreateColumn(colName, colType, position, colKind, persType);
+	
+	if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
+		return table.CreateColumn(colName, colType, position, colKind, persType);
+
+	auto itor = m_constraintClassMaps.find(&table);
+	if (itor == m_constraintClassMaps.end())
+		{
+		BeAssert(false);
+		return nullptr;
+		}
+
+	ClassMapCP rootClassMap = itor->second;
+	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
+	if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+		rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+		{
+		return table.CreateColumn(colName, colType, position, colKind, persType);
+		}
+	//ECDB_RULE: Create shared column or overflow column
+		
+	ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
+	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+	ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
+	return rootClassMap->GetColumnFactory().AllocateDataColumn(
+		*constraintECInstanceIdProp,
+		colType,
+		DbColumn::CreateParams(colName.c_str()),
+		m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()),
+		nullptr);
 	}
 
 //---------------------------------------------------------------------------------------
@@ -1740,7 +1770,62 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
 	{
 	const DbColumn::Type colType = DbColumn::Type::Integer;
 	const DbColumn::Kind colKind = DbColumn::Kind::RelECClassId;
-	return table.CreateColumn(colName, colType, colKind, persType);
+	if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
+		return table.CreateColumn(colName, colType, colKind, persType);
+
+	auto itor = m_constraintClassMaps.find(&table);
+	if (itor == m_constraintClassMaps.end())
+		{
+		BeAssert(false);
+		return nullptr;
+		}
+
+	ClassMapCP rootClassMap = itor->second;
+	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
+	if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+		rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+		{
+		return table.CreateColumn(colName, colType, colKind, persType);
+		}
+
+	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+	//ECDB_RULE: Note we are using ECClassId here its not a mistake.
+	ECPropertyCP  relECClassIdProp = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
+	return rootClassMap->GetColumnFactory().AllocateDataColumn(
+		*relECClassIdProp,
+		colType,
+		DbColumn::CreateParams(colName.c_str()),
+		m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
 	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
+void RelationshipClassEndTableMap::ColumnFactory::Initialize()
+	{
+	ECDbMap const& ecdbMap = m_relMap.GetDbMap();
+	ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
+
+	std::function<void(ECClassCR)> traverseConstraintClass =
+		[&](ECClassCR constraintClass)
+		{
+		if (ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass))
+			{
+			m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
+			if (classMap->GetMapStrategy().IsTablePerHierarchy())
+				return;
+			}
+
+		if (constraint.GetIsPolymorphic())
+			for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
+				traverseConstraintClass(*derivedClass);
+		};
+
+		for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
+			{
+			traverseConstraintClass(*constraintClass);
+			}
+	}
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
