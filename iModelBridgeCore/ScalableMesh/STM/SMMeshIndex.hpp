@@ -449,8 +449,6 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
 #ifndef VANCOUVER_API
-        if (node->m_nodeHeader.m_nodeCount > 0)
-            {
             // Gather all data in one place
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
             IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
@@ -466,10 +464,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
 
             if (!cesiumData.empty())
                 tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
-            }
 
-        // Store header
-        pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
+        //// Store header
+        //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
         //{
         //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -529,7 +526,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             }
         }
 
-    distributor->AddWorkItem(this/*, false*/);
+    if (this->m_nodeHeader.m_nodeCount > 0)
+        {
+        distributor->AddWorkItem(this/*, false*/);
+        }
 
     if (this->m_nodeHeader.m_level == 0)
         {
@@ -4860,14 +4860,42 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore);
+    GetRootNode()->Unload();
 
-    Json::Value         rootJson;
+    SMIndexMasterHeader<EXTENT> oldMasterHeader;
+    this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
 
-    rootJson["refine"] = "replace";
-    rootJson["geometricError"] = 1.E+06; // What should this value be?
-    TilePublisher::WriteBoundingVolume(rootJson, GetRootNode()->GetNodeExtent());
+    // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
+    oldMasterHeader.m_singleFile = false;
 
-    rootJson["content"]["url"] = Utf8String((BeFileName(path) + L"quebeccity.json").c_str());
+    SMNodeGroup::Ptr group = new SMNodeGroup(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path + L"\\data", 0, nullptr, SMNodeGroup::StrategyType::CESIUM);
+
+    group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
+
+    auto strategy = group->GetStrategy<EXTENT>();
+
+    strategy->SetOldMasterHeader(oldMasterHeader);
+
+    GetRootNode()->SaveGroupedNodeHeaders(group);
+
+    // Handle all open groups 
+    strategy->SaveAllOpenGroups();
+
+    // Save group master file which contains info about all the generated groups (groupID and blockID)
+    BeFileName masterHeaderPath(path.c_str());
+    masterHeaderPath.PopDir();
+    masterHeaderPath.PopDir();
+
+    strategy->SaveMasterHeader(masterHeaderPath);
+
+
+    //Json::Value         rootJson;
+    //
+    //rootJson["refine"] = "replace";
+    //rootJson["geometricError"] = 1.E+06; // What should this value be?
+    //TilePublisher::WriteBoundingVolume(rootJson, GetRootNode()->GetNodeExtent());
+    //
+    //rootJson["content"]["url"] = Utf8String((BeFileName(path) + L"quebeccity.json").c_str());
 
 
     return SUCCESS;

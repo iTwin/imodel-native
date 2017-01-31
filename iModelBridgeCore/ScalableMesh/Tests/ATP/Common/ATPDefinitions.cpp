@@ -4665,7 +4665,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
         {
-        printf("Saving cloud format to local directory... ");
+        printf("Saving cloud format to local directory... \n");
         }
     else
         {

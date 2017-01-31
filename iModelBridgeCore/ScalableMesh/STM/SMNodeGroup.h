@@ -134,18 +134,21 @@ public:
     void AddWorkItem(Type &&value, bool notify = true)
         {
         std::unique_lock<std::mutex> lock(*this);
-        while (Queue::size() == capacity)
+        if (Queue::size() == capacity)
             {
+            while (!wait_for(lock, 1000ms, [this]
+                {
+                return Queue::size() < capacity / 2;
+                }))
+                {
 #ifdef DEBUG_GROUPS
-                    {
-                    std::lock_guard<mutex> clk(s_consoleMutex);
-                    std::cout << "[" << std::this_thread::get_id() << "] Queue is full, waiting for jobs to complete" << std::endl;
-                    }
-#endif
-                    wait(lock, [this]
                         {
-                        return Queue::size() < capacity / 2;
-                        });
+                        std::lock_guard<mutex> clk(s_consoleMutex);
+                        std::cout << "\r  Queue size (" << Queue::size() << ")";
+                        }
+#endif
+
+                }
             }
         Queue::push(std::forward<Type>(value));
         if (notify) notify_one();
@@ -186,28 +189,28 @@ private:
                 lock.lock();
                 }
             else if (m_done) {
-#ifdef DEBUG_GROUPS
-                    {
-                    std::lock_guard<mutex> clk(s_consoleMutex);
-                    std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
-                    }
-#endif
+//#ifdef DEBUG_GROUPS
+//                    {
+//                    std::lock_guard<mutex> clk(s_consoleMutex);
+//                    std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
+//                    }
+//#endif
                     break;
                 }
             else {
-#ifdef DEBUG_GROUPS
-                    {
-                    std::lock_guard<mutex> clk(s_consoleMutex);
-                    std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
-                    }
-#endif
+//#ifdef DEBUG_GROUPS
+//                    {
+//                    std::lock_guard<mutex> clk(s_consoleMutex);
+//                    std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
+//                    }
+//#endif
                     wait(lock);
-#ifdef DEBUG_GROUPS
-                    {
-                    std::lock_guard<mutex> clk(s_consoleMutex);
-                    std::cout << "[" << std::this_thread::get_id() << "] Going to perform work; size of queue = " << Queue::size() << std::endl;
-                    }
-#endif
+//#ifdef DEBUG_GROUPS
+//                    {
+//                    std::lock_guard<mutex> clk(s_consoleMutex);
+//                    std::cout << "[" << std::this_thread::get_id() << "] Going to perform work; size of queue = " << Queue::size() << std::endl;
+//                    }
+//#endif
                 }
             }
         }
@@ -252,9 +255,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             };
         typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
         typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMNodeGroup> Ptr;
-
-        template<class EXTENT>
-        static SMGroupingStrategy<EXTENT>* s_groupingStrategy;
 
     private:
         bool   m_isLoaded = false;
@@ -388,7 +388,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         template<class EXTENT> void Close()
             {
-            s_groupingStrategy<EXTENT>->SaveNodeGroup(this);
+            GetStrategy<EXTENT>()->SaveNodeGroup(this);
             Clear();
             }
 
@@ -403,7 +403,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         template<class EXTENT> uint32_t AddNode(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader)
             {
-            return s_groupingStrategy<EXTENT>->AddNodeToGroup(pi_NodeHeader, this);
+            return GetStrategy<EXTENT>()->AddNodeToGroup(pi_NodeHeader, this);
             }
 
         bool IsEmpty() { return m_groupHeader->empty() && m_tileTreeMap.empty(); }
@@ -453,20 +453,21 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
-            if (!s_groupingStrategy<EXTENT>)
+            static SMGroupingStrategy<EXTENT>* s_groupingStrategy = nullptr;
+            if (!s_groupingStrategy)
                 {
                 switch (m_strategyType)
                     {
                     case StrategyType::NORMAL:
                     case StrategyType::VIRTUAL:
                         {
-                        s_groupingStrategy<EXTENT> = new SMBentleyGroupingStrategy<EXTENT>(m_strategyType);
+                        s_groupingStrategy = new SMBentleyGroupingStrategy<EXTENT>(m_strategyType);
                         s_max_group_depth = 2;
                         break;
                         }
                     case StrategyType::CESIUM:
                         {
-                        s_groupingStrategy<EXTENT> = new SMCesium3DTileStrategy<EXTENT>();
+                        s_groupingStrategy = new SMCesium3DTileStrategy<EXTENT>();
                         break;
                         }
                     default:
@@ -475,11 +476,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                         }
                     }
                 // Add this group as the first group to the grouping strategy
-                s_groupingStrategy<EXTENT>->AddGroup(this);
+                s_groupingStrategy->AddGroup(this);
                 }
-            assert(nullptr != s_groupingStrategy<EXTENT>);
+            assert(nullptr != s_groupingStrategy);
 
-            return s_groupingStrategy<EXTENT>;
+            return s_groupingStrategy;
             }
 
         void Save()
@@ -842,9 +843,6 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
     private:
         bvector<uint8_t> m_oldMasterHeader;
     };
-
-template<class EXTENT>
-SMGroupingStrategy<EXTENT>* SMNodeGroup::s_groupingStrategy = nullptr;
 
 
 /**---------------------------------------------------------------------------------------------
