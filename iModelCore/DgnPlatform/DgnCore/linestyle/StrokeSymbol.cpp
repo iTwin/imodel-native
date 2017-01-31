@@ -85,9 +85,8 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
     if (NULL == m_symbol.get ())
         return ERROR;
 
-    // ViewContextP context = lineStyleContext.GetViewContext();
-    Transform  transform;
-    RotMatrix   planeByRows;
+    Transform transform;
+    RotMatrix planeByRows;
     modifiers->GetPlaneAsMatrixRows (planeByRows);
     DVec3d xVector, yVector, zVector;
     planeByRows.GetRows(xVector, yVector, zVector);
@@ -121,8 +120,8 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
             planeByColumns.InitFromColumnVectors (xVector, yVector, zVector);
             rotatedMatrix.InitFromPrincipleAxisRotations (planeByColumns, 0.0, 0.0, m_angle);
             transform.SetMatrix (rotatedMatrix);
-            }
             break;
+            }
 
         case ROTATE_Adjusted:
             {
@@ -132,22 +131,22 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
             transform.GetOriginAndVectors (org, xDir, yDir, zDir);
             DVec3d xDirTemp = xDir;
             planeByRows.Multiply(xDirTemp);
+
             if (xDirTemp.x < 0.0 || fabs (xDirTemp.y + 1.0) < .0001)
                 {
                 xDir.Negate ();
                 yDir.Negate ();
                 }
-            transform.InitFromOriginAndVectors (org, xDir, yDir, zDir);
 
+            transform.InitFromOriginAndVectors (org, xDir, yDir, zDir);
             RotMatrix rotation, product, baseMatrix;
             rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
             transform.GetMatrix (baseMatrix);
             product.InitProduct (baseMatrix, rotation);
             transform.SetMatrix (product);
-            }
             break;
+            }
         }
-
 
     scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale() / m_symbol->GetMuDef());
     DPoint3d    scaleVec;
@@ -156,7 +155,7 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
         scaleVec.x *= *xScale;
 
     transform.ScaleMatrixColumns (transform, scaleVec.x, scaleVec.y, scaleVec.z);
- 
+
     ConvexClipPlaneSet  convexClip;
     // if there is clip at either the beginning or the end of the symbol, set up the clip planes
     if (clipOrg || clipEnd)
@@ -206,7 +205,7 @@ void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, 
         if (!geometry.IsValid())
             continue;
 
-        if (cookParams) // NEEDSWORK: Is there a reason to keep IsColorByLevel/GetLineColor/GetFillColor?
+        if (cookParams)
             {
             // NOTE: Symbol geometry can have line codes and other symbology changes.
             Render::GeometryParams symbParams(iter.GetGeometryParams());
@@ -223,6 +222,9 @@ void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, 
             
             if (ignoreWeight || creatingTexture) // TextureParams cache doesn't support weight changes on symbol components...
                 symbParams.SetWeight(baseParams.GetWeight());
+
+            if (nullptr != symbParams.GetLineStyle() && !symbParams.GetLineStyle()->GetLineStyleSymb().UseLinePixels())
+                symbParams.SetLineStyle(nullptr);
 
             context.GetViewContext().CookGeometryParams(symbParams, graphic);
             }
@@ -287,7 +289,7 @@ LsSymbolComponent::~LsSymbolComponent ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsSymbolComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsSymbolComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
     BeAssert (0);  // symbol components should never be drawn this way
     return  SUCCESS;

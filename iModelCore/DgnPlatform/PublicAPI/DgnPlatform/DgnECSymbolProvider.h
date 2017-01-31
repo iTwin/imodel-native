@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/DgnPlatform/DgnECSymbolProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -30,8 +30,8 @@ private:
     void                    InitDefaultMethods();
 
     // IECSymbolProvider
-    virtual Utf8CP         _GetName() const override           { return "DgnECSymbolProvider"; }
-    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
+    Utf8CP         _GetName() const override           { return "DgnECSymbolProvider"; }
+    void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
     // ECInstance methods for use in ECExpressions
     static ECN::ExpressionStatus GetInstanceId (ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);

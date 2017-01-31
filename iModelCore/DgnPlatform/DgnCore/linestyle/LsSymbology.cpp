@@ -29,7 +29,6 @@ void LineStyleSymb::Init (ILineStyleCP lStyle)
     m_orgWidth = m_endWidth = m_phaseShift = m_autoPhase = m_styleWidth = 0.0;
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity();
-    m_texture = nullptr;
     m_useLinePixels = false;
     m_useStroker = false;
     }
@@ -91,9 +90,6 @@ bool LineStyleSymb::operator==(LineStyleSymbCR rhs) const
         return false;
 
     if (!rhs.m_planeByRows.IsEqual (m_planeByRows))
-        return false;
-
-    if (rhs.m_texture != m_texture)
         return false;
 
     return true;
@@ -396,17 +392,28 @@ void LineStyleSymb::CheckContinuationData ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  01/08
++---------------+---------------+---------------+---------------+---------------+------*/
+void LineStyleSymb::ClearContinuationData ()
+    {
+    m_options.xElemPhaseSet      = 0;
+    m_options.startTangentSet    = 0;
+    m_options.endTangentSet      = 0;
+    m_options.continuationXElems = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR params)
+void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnDbR db)
     {
     Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
     if (!styleId.IsValid())
         return;
 
-    LsCacheP lsCache = &context.GetDgnDb().LineStyles().GetCache();
-    LsDefinitionP nameRec = lsCache->GetLineStyleP(styleId);
+    LsCacheR lsCache = db.LineStyles().GetCache();
+    LsDefinitionP nameRec = lsCache.GetLineStyleP(styleId);
 
     if (nullptr == nameRec)
         return;
@@ -469,35 +476,17 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
         return;
         }
 
-    bool xElemPhaseSet = m_options.xElemPhaseSet; // Save current value before Init clears it...
-
     Init(nameRec);
     BeAssert(0 == (styleParams.modifiers & (STYLEMOD_DSCALE | STYLEMOD_GSCALE)));
     
     m_options.isContinuous = nameRec->IsContinuous();
 
-    //  Instances of the texture are applied uniformly so none of these options make sense.
-    SetTangents(startTangent, endTangent);
-
-    if ((nullptr != startTangent) && xElemPhaseSet)
-        {
-        // if there's a start tangent, then that means we're continuing from a previous call.
-        // the phase shift value should be valid too.
-        m_options.phaseShift = true;
-        m_options.autoPhase = false;
-        m_options.continuationXElems = true;
-        m_phaseShift = m_xElemPhase;
-        }
-
-    if (!m_options.phaseShift)
-        {
-        if (styleParams.modifiers & STYLEMOD_DISTPHASE)
-            SetPhaseShift(true, styleParams.distPhase);
-        else if (styleParams.modifiers & STYLEMOD_FRACTPHASE)
-            SetFractionalPhase(true, styleParams.fractPhase);
-        else if (styleParams.modifiers & STYLEMOD_CENTERPHASE)
-            SetCenterPhase(true);
-        }
+    if (styleParams.modifiers & STYLEMOD_DISTPHASE)
+        SetPhaseShift(true, styleParams.distPhase);
+    else if (styleParams.modifiers & STYLEMOD_FRACTPHASE)
+        SetFractionalPhase(true, styleParams.fractPhase);
+    else if (styleParams.modifiers & STYLEMOD_CENTERPHASE)
+        SetCenterPhase(true);
 
     //  It appears that QV takes care of keeping the texture parallel to the view.
     if (styleParams.modifiers & STYLEMOD_NORMAL)
@@ -552,16 +541,8 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     SetScale(scaleWithUnits);
 
-    // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    bool forceTexture = false;
-
-    if (!forceTexture || !IsContinuous()) // Don't create a texture for continuous...
-        {
-        m_texture = nameRec->GetTexture(context, *this, forceTexture, params);
-
-        if (!m_texture.IsValid())
-            SetUseStroker(true);
-        }
+    if (LsComponentType::RasterImage != topComponent->GetComponentType())
+        SetUseStroker(true);
 
     // Get the width of this linestyle to use for "discernable" checks...
     m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()));
@@ -585,17 +566,6 @@ double LineStyleSymb::GetEndWidth () const
 double LineStyleSymb::GetOriginWidth () const
     {
     return m_options.orgWidth ? m_orgWidth : m_endWidth;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  01/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleSymb::ClearContinuationData ()
-    {
-    m_options.xElemPhaseSet      = 0;
-    m_options.startTangentSet    = 0;
-    m_options.endTangentSet      = 0;
-    m_options.continuationXElems = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -696,6 +666,65 @@ bool LineStyleParams::operator==(LineStyleParamsCR rhs) const
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
+    {
+    if (modifiers & STYLEMOD_NORMAL)
+        {
+        transform.MultiplyMatrixOnly(normal);
+        normal.Normalize();
+        }
+
+    if (modifiers & STYLEMOD_RMATRIX)
+        {
+        RotMatrix rTmp;
+
+        /*---------------------------------------------------------------
+        The rotation matrix is stored (through some cosmic anomaly) in
+        row format like shared cells and views so it needs to be
+        transposed for the multiplication.
+        ---------------------------------------------------------------*/
+        rTmp.InverseOf(rMatrix);
+        rTmp.InitProduct(transform, rTmp);
+        rTmp.SquareAndNormalizeColumns(rTmp, 0, 1);
+        
+        rMatrix.InverseOf(rTmp);
+        }
+
+    if (options & 0x01)
+        return;
+
+    double      scaleFactor = 1.0;
+    DVec3d      scaleVector;
+    RotMatrix   scaleMatrix;
+
+    transform.GetMatrix(scaleMatrix);
+    scaleMatrix.NormalizeRowsOf(scaleMatrix, scaleVector);
+
+    // Check for flatten transform, dividing scaleVector by 3 gives wrong scaleFactor
+    if (scaleVector.x != 0.0 && scaleVector.y != 0.0 && scaleVector.z != 0.0)
+        scaleFactor = (scaleVector.x + scaleVector.y + scaleVector.z) / 3.0;
+    else
+        scaleFactor = (scaleVector.x + scaleVector.y + scaleVector.z) / 2.0;
+
+    if (1.0 == scaleFactor)
+        return;
+
+    modifiers |= STYLEMOD_SCALE;
+    scale = scaleFactor;
+
+    if (!(modifiers & STYLEMOD_TRUE_WIDTH))
+        return;
+
+    if (modifiers & STYLEMOD_SWIDTH)
+        startWidth *= scaleFactor;
+
+    if (modifiers & STYLEMOD_EWIDTH)
+        endWidth *= scaleFactor;
+    }
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -750,7 +779,7 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleInfo::Cook(ViewContextR context, GeometryParamsR params)
+void LineStyleInfo::Resolve(DgnDbR db)
     {
-    m_lStyleSymb.Init(m_styleId, m_styleParams, nullptr, nullptr, context, params);
+    m_lStyleSymb.Init(m_styleId, m_styleParams, db);
     }

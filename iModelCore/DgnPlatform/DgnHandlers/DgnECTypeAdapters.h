@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnECTypeAdapters.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -79,8 +79,8 @@ struct StringFormatTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 protected:
     StringFormatTypeAdapter() { }
 
-    virtual bool                _ConvertToString (Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _IsTreatedAsString() const override { return true; }
+    bool                _ConvertToString (Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _IsTreatedAsString() const override { return true; }
     virtual bool                GetUnformattedStringValue(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const = 0;
 public:
     static void ConvertCase(Utf8StringR str, IECInstanceCP fmtr);
@@ -99,12 +99,12 @@ private:
 protected:
     BooleanFormatTypeAdapter();
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _GetDisplayType (ECN::PrimitiveType& primType) const override { primType = ECN::PRIMITIVETYPE_String; return true; }
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _GetDisplayType (ECN::PrimitiveType& primType) const override { primType = ECN::PRIMITIVETYPE_String; return true; }
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 
     virtual Utf8String             GetBooleanString (bool booleanValue, IDgnECTypeAdapterContextCR context) const = 0;
 
@@ -119,13 +119,13 @@ struct AngleFormatTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 protected:
     AngleFormatTypeAdapter() { }
 
-    virtual bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; } // WIP_TOPAZ_MERGE: This needs an actual implementation.  The merge from topaz doesn't actually work on graphite
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _SupportsUnits() const override { return true; }
-    virtual bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; } // WIP_TOPAZ_MERGE: This needs an actual implementation.  The merge from topaz doesn't actually work on graphite
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _SupportsUnits() const override { return true; }
+    bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
     static void                 InitOptions (ECN::IECInstanceR opts);
     static void                 InitFormatter (AngleFormatter& fmtr, ECN::IECInstanceCP opts);
     };
@@ -142,11 +142,11 @@ private:
 protected:
     PrimitiveAdapterBase (ECN::PrimitiveType type) : m_primitiveType (type) { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
 
-    virtual bool            _GetDisplayType (ECN::PrimitiveType& type) const override { type = m_primitiveType; return true; }
-    virtual bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
+    bool            _GetDisplayType (ECN::PrimitiveType& type) const override { type = m_primitiveType; return true; }
+    bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
     };
 
 ////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BooleanTypeAdapter : BooleanFormatTypeAdapter
     {
-private: virtual Utf8String             GetBooleanString (bool booleanValue, IDgnECTypeAdapterContextCR context) const override;
+private: Utf8String             GetBooleanString (bool booleanValue, IDgnECTypeAdapterContextCR context) const override;
 protected: BooleanTypeAdapter() { }
 public:
     static IDgnECTypeAdapterPtr Create () { return new BooleanTypeAdapter(); }
@@ -174,12 +174,12 @@ struct DoubleTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 protected:
     DoubleTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetDouble(123.45); return true; }
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetDouble(123.45); return true; }
 public:
     static void                 InitFormatter (DoubleFormatterBase& fmtr, ECN::IECInstanceCP options);
     static void                 InitOptions (ECN::IECInstanceR options);
@@ -197,12 +197,12 @@ struct IntegerTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 private:
     IntegerTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Integer; return true; }
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetInteger(12345); return true; }
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Integer; return true; }
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetInteger(12345); return true; }
 
     void                        ExtractFormatString(Utf8StringR fmt, ECN::IECInstanceCP opts) const;
 public:
@@ -217,10 +217,10 @@ struct StringTypeAdapter : StringFormatTypeAdapter
 private:
     StringTypeAdapter() { }
 
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                GetUnformattedStringValue(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                GetUnformattedStringValue(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create () { return new StringTypeAdapter(); }
     };
@@ -233,12 +233,12 @@ struct DateTimeTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 private:
     DateTimeTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override   { return false; }
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _IsOrdinalType () const override { return true; };
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override   { return false; }
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _IsOrdinalType () const override { return true; };
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 
     static void                 FormatWithInstructions(Utf8StringR str, Utf8StringCR fmt, DateTimeCR);
     static void                 FormatWithPicture(Utf8StringR str, Utf8StringCR fmt, DateTimeCR);
@@ -256,12 +256,12 @@ struct DateTimeFormatTypeAdapter : IDgnECTypeAdapter
 private:
     DateTimeFormatTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _HasStandardValues() const override { return true; }
-    virtual bool                _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _HasStandardValues() const override { return true; }
+    bool                _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static int32_t              LookupFormatIndex (Utf8CP dateTimeFormatString);
     static IDgnECTypeAdapterPtr Create() { return new DateTimeFormatTypeAdapter(); }
@@ -275,7 +275,7 @@ struct PointFormatTypeAdapter : IDgnECTypeAdapter
 protected:
     virtual bool                _Is2d() const       { return false; }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
 
     ECN::ECValue                FromStorageType (ECN::ECValueCR v) const;
     ECN::ECValue                ToStorageType (ECN::ECValueCR v) const;
@@ -286,8 +286,8 @@ protected:
     
     virtual bool                UseGlobalOrigin() const = 0;
     virtual bool                _AllowDoubleType() const { return false; }   // Dumb special-case...people apply Coordinates extended type to double-type properties and 8.11.9 happens to allow it.
-    virtual bool                _IsOrdinalType () const override { return true; };
-    virtual bool                _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _IsOrdinalType () const override { return true; };
+    bool                _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 
     static void                 ConvertPointSpecToDwgFormatString (Utf8StringR formatString, ECN::IECInstanceCR fmtr);
 
@@ -341,9 +341,9 @@ struct UnitlessPointTypeAdapter : PointFormatTypeAdapter
 protected:
     UnitlessPointTypeAdapter() { }
 
-    virtual bool                _ConvertToString (Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                UseGlobalOrigin() const override { return false; }
+    bool                _ConvertToString (Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                UseGlobalOrigin() const override { return false; }
 public:
     static IDgnECTypeAdapterPtr     Create()        { return new UnitlessPointTypeAdapter(); }
     };
@@ -356,7 +356,7 @@ struct Point2DTypeAdapter : UnitlessPointTypeAdapter
 private:
     Point2DTypeAdapter() { }
 
-    virtual bool                _Is2d() const override  { return true; }
+    bool                _Is2d() const override  { return true; }
 public:
     static IDgnECTypeAdapterPtr Create() { return new Point2DTypeAdapter(); }
     };
@@ -369,8 +369,8 @@ struct LongTypeAdapter : PrimitiveAdapterBase
 private:
     LongTypeAdapter() : PrimitiveAdapterBase (PRIMITIVETYPE_Long) { }
 
-    virtual bool        _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool        _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetLong(1234567890L); return true; }
+    bool        _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool        _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { v.SetLong(1234567890L); return true; }
 public:
     static IDgnECTypeAdapterPtr Create() { return new LongTypeAdapter(); }
     };
@@ -383,10 +383,10 @@ struct BinaryTypeAdapter : PrimitiveAdapterBase
 private:
     BinaryTypeAdapter() : PrimitiveAdapterBase (PRIMITIVETYPE_Binary) { }
 
-    virtual bool        _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool        _GetDisplayType (ECN::PrimitiveType& type) const override { return false; }
-    virtual bool        _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return false; }
-    virtual bool        _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool        _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool        _GetDisplayType (ECN::PrimitiveType& type) const override { return false; }
+    bool        _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return false; }
+    bool        _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
 public:
     static IDgnECTypeAdapterPtr Create() { return new BinaryTypeAdapter(); }
     };
@@ -400,13 +400,13 @@ struct StructTypeAdapter : IDgnECTypeAdapter
 protected:
     StructTypeAdapter () { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _CanConvertToString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _IsStruct() const override { return true; }
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _CanConvertToString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _IsStruct() const override { return true; }
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
 public:
     static IDgnECTypeAdapterPtr Create () { return new StructTypeAdapter(); }
     };
@@ -423,11 +423,11 @@ struct MissingExtendTypeAdapter : IDgnECTypeAdapter, HasParensNullString
 private:
     MissingExtendTypeAdapter () { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
 public:
     static IDgnECTypeAdapterPtr Create () { return new MissingExtendTypeAdapter (); }
     };
@@ -462,16 +462,16 @@ private:
         void                    MoveNext();
         };
 
-    virtual bool            GetUnformattedStringValue(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _HasStandardValues() const override { return true; }
-    virtual bool            _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            GetUnformattedStringValue(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _HasStandardValues() const override { return true; }
+    bool            _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 protected:
     StandardValuesTypeAdapter() { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _IsTreatedAsString() const override { return true; }
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _IsTreatedAsString() const override { return true; }
 public:
     static IDgnECTypeAdapterPtr   Create()    { return new StandardValuesTypeAdapter(); }
     };
@@ -486,11 +486,11 @@ struct FormatStringTypeAdapter : StringFormatTypeAdapter, HasTrueString, HasFals
 private:
     FormatStringTypeAdapter() { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            GetUnformattedStringValue(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _HasStandardValues() const override     { return false; }
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            GetUnformattedStringValue(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _HasStandardValues() const override     { return false; }
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 public: 
     static IDgnECTypeAdapterPtr   Create()        { return new FormatStringTypeAdapter(); }
     };
@@ -504,10 +504,10 @@ struct BooleanDisplayTypeAdapter : BooleanFormatTypeAdapter
 private:
     BooleanDisplayTypeAdapter() { }
 
-    virtual bool            _IsTreatedAsString() const override         { return true; }
-    virtual bool            _HasStandardValues () const override        { return true; }
-    virtual bool            _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
-    virtual Utf8String         GetBooleanString (bool booleanValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _IsTreatedAsString() const override         { return true; }
+    bool            _HasStandardValues () const override        { return true; }
+    bool            _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
+    Utf8String         GetBooleanString (bool booleanValue, IDgnECTypeAdapterContextCR context) const override;
 
     ECN::IECInstancePtr      GetCustomAttributeInstance (IDgnECTypeAdapterContextCR context) const;
 public:
@@ -529,13 +529,13 @@ struct FileSizeTypeAdapter : IDgnECTypeAdapter, HasKBString
 protected:
     FileSizeTypeAdapter() { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Long; return true; }
-    virtual bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Long; return true; }
+    bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override { return true; }
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static int32_t                LookupFormatIndex (Utf8CP formatString);
     static IDgnECTypeAdapterPtr   Create()        { return new FileSizeTypeAdapter(); }
@@ -553,9 +553,9 @@ private:
 
     FileSizeLongTypeAdapter();
 
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return true; }
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return true; }
 public:
     static IDgnECTypeAdapterPtr   Create()        { return new FileSizeLongTypeAdapter(); }
     };
@@ -569,10 +569,10 @@ struct ReadonlyTypeAdapter : StringFormatTypeAdapter
 protected:
     ReadonlyTypeAdapter() { }
 
-    virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    bool            _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override { return false; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,8 +583,8 @@ struct AngleTypeAdapter : AngleFormatTypeAdapter
 protected:
     AngleTypeAdapter () { }
 
-    virtual bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create () { return new AngleTypeAdapter(); }
     };
@@ -597,8 +597,8 @@ struct DirectionAngleTypeAdapter : AngleFormatTypeAdapter
 protected:
     DirectionAngleTypeAdapter () { }
 
-    virtual bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create () { return new DirectionAngleTypeAdapter(); }
     };
@@ -613,14 +613,14 @@ protected:
 
     enum { Format_MU = 0, Format_MU_Label = 1, Format_SU = 2, Format_SU_Label = 3, Format_MUSU = 4, Format_MUSU_Label = 5 };
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
-    virtual void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
+    void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
 
-    virtual bool                _SupportsSecondaryUnits() const override { return true; }
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _SupportsSecondaryUnits() const override { return true; }
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static void             InitOptions (ECN::IECInstanceR opts);
     static void             InitFormatter (DistanceFormatterR fmtr, GeometricModelCP model, ECN::IECInstanceCP opts);
@@ -634,14 +634,14 @@ public:
 struct AreaOrVolumeTypeAdapter : IDgnECTypeAdapter, HasParensNullString, TypeAdapterUnitsSerialization
     {
 private:
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
-    virtual void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
-    virtual void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _CanConvertFromString (IDgnECTypeAdapterContextCR context) const override { return false; }
+    void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
+    void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
 
-    virtual bool                _SupportsSecondaryUnits() const override { return false; }
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _SupportsSecondaryUnits() const override { return false; }
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 protected:
     AreaOrVolumeTypeAdapter() { }
 
@@ -662,10 +662,10 @@ struct AreaTypeAdapter : AreaOrVolumeTypeAdapter
 private:
     AreaTypeAdapter() { }
 
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual Utf8CP              GetClassName() const override { return "AreaClass"; }
-    virtual bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    Utf8CP              GetClassName() const override { return "AreaClass"; }
+    bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create() { return new AreaTypeAdapter(); }
     };
@@ -678,10 +678,10 @@ struct VolumeTypeAdapter : AreaOrVolumeTypeAdapter
 private:
     VolumeTypeAdapter() { }
 
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual Utf8CP              GetClassName() const override { return "Vol"; }
-    virtual bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    Utf8CP              GetClassName() const override { return "Vol"; }
+    bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create() { return new VolumeTypeAdapter(); }
     };
@@ -694,17 +694,17 @@ struct CoordinatesTypeAdapter : PointFormatTypeAdapter, TypeAdapterUnitsSerializ
 protected:
     CoordinatesTypeAdapter () { }
 
-    virtual bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                UseGlobalOrigin() const override { return true; }
-    virtual bool                _AllowDoubleType() const override { return true; }
-    virtual void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
-    virtual void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                UseGlobalOrigin() const override { return true; }
+    bool                _AllowDoubleType() const override { return true; }
+    void                _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const override    { return TypeAdapterUnitsSerialization::Process (formatter, false, *this); }
+    void                _PostProcessDeserializedFormatter (ECN::IECInstanceR formatter) const override       { return TypeAdapterUnitsSerialization::Process(formatter, true, *this); }
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 
-    virtual bool                _SupportsUnits() const override { return true; }
-    virtual bool                _SupportsSecondaryUnits() const override { return true; }
-    virtual bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
+    bool                _SupportsUnits() const override { return true; }
+    bool                _SupportsSecondaryUnits() const override { return true; }
+    bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create () { return new CoordinatesTypeAdapter(); }
     };
@@ -717,9 +717,9 @@ struct XyzRotationsTypeAdapter : PointFormatTypeAdapter
 private:
     XyzRotationsTypeAdapter () { }
 
-    virtual bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool            UseGlobalOrigin() const override { return false; }
+    bool            _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool            _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool            UseGlobalOrigin() const override { return false; }
 public:
     static IDgnECTypeAdapterPtr Create () { return new XyzRotationsTypeAdapter(); }
     };
@@ -732,12 +732,12 @@ struct UnitDefinitionTypeAdapter : StringFormatTypeAdapter, HasSheetScaleCustomS
 protected:
     UnitDefinitionTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _HasStandardValues() const override { return true; }
-    virtual bool                _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                GetUnformattedStringValue(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP str, IDgnECTypeAdapterContextCR context) const override;
+    bool                _HasStandardValues() const override { return true; }
+    bool                _GetStandardValues (StandardValuesCollection& values, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                GetUnformattedStringValue(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static IDgnECTypeAdapterPtr Create() { return new UnitDefinitionTypeAdapter(); }
     };
@@ -749,9 +749,9 @@ template <class T_BaseAdapter>
 struct VariableTypeAdapter : T_BaseAdapter
     {
 private:
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override
         { return (!v.IsNull() && IsSigil (v)) ? false : T_BaseAdapter::_Validate (ToBase (v), context); }
-    virtual bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override
+    bool                _ConvertToString(Utf8StringR str, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override
         {
         if (!v.IsNull() && IsSigil(v)) { str = DgnCoreL10N::GetString(DgnCoreL10N::ECTYPEADAPTER_VariesAcross()); return true; }
         else                                { return T_BaseAdapter::_ConvertToString (str, !v.IsNull() ? ToBase (v) : v, context, opts); };
@@ -838,14 +838,14 @@ struct ECUnitsTypeAdapter : IDgnECTypeAdapter
 private:
     ECUnitsTypeAdapter() { }
 
-    virtual bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
-    virtual bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
-    virtual bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
-    virtual bool                _SupportsUnits() const override { return true; }
-    virtual bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
-    virtual bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
+    bool                _ConvertToString(Utf8StringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+    bool                _ConvertFromString (ECN::ECValueR v, Utf8CP stringValue, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetDisplayType (ECN::PrimitiveType& type) const override { type = ECN::PRIMITIVETYPE_Double; return true; }
+    bool                _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const override;
+    bool                _SupportsUnits() const override { return true; }
+    bool                _GetUnits (ECN::UnitSpecR units, IDgnECTypeAdapterContextCR context) const override;
+    bool                _GetPlaceholderValue(ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const override;
 public:
     static void                 ApplyUnitLabelCustomization (UnitR unit, DgnModelR dgnFile);
 

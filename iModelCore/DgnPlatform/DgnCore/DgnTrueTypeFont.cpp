@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnTrueTypeFont.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -63,11 +63,11 @@ private:
     
 public:
     DgnTrueTypeGlyph(FT_Face face, FT_UInt glyphIndex) : m_face(face), m_glyphIndex(glyphIndex), m_isRangeValid(false), m_isExactRangeValid(false), m_isBlank(IS_BLANK_Untested) {}
-    virtual T_Id _GetId() const override { return (T_Id)m_glyphIndex; }
-    virtual DRange2d _GetRange() const override;
-    virtual DRange2d _GetExactRange() const override;
-    virtual BentleyStatus _FillGpa(GPArrayR) const override;
-    virtual bool _IsBlank() const override;
+    T_Id _GetId() const override { return (T_Id)m_glyphIndex; }
+    DRange2d _GetRange() const override;
+    DRange2d _GetExactRange() const override;
+    BentleyStatus _FillGpa(GPArrayR) const override;
+    bool _IsBlank() const override;
     FT_Face GetFace() const { return m_face; }
     DoFixup _DoFixup () const override { return DoFixup::Always; }
 };

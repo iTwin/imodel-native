@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/SolarUtility.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -282,7 +282,7 @@ DPoint3dR   SolarUtility::AzimuthAnglesToDirection (DPoint3dR direction, double 
     /* Compensate for true North */
     RotMatrix   azimuthRotMatrix;
 
-    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS* dgnGcs = model.GetDgnDb().GeoLocation().GetDgnGCS();
     double azimuthAngle = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
     azimuthRotMatrix.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (),  0.0,  0.0,  azimuthAngle * msGeomConst_radiansPerDegree);
     azimuthRotMatrix.Multiply (direction);
@@ -298,7 +298,7 @@ void    SolarUtility::DirectionToAzimuthAngles (double& azimuth, double& altitud
     {
     /* Compensate for true North */
     RotMatrix   azimuthRotMatrix;
-    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS* dgnGcs = model.GetDgnDb().GeoLocation().GetDgnGCS();
     double azimuthAngle = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
     azimuthRotMatrix.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (),  0.0,  0.0,  azimuthAngle * msGeomConst_radiansPerDegree);
 

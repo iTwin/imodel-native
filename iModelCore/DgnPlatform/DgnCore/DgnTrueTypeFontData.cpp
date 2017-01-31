@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnCore/DgnTrueTypeFontData.cpp $
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 
 #if defined (BENTLEY_WIN32)
@@ -142,11 +142,11 @@ private:
 public:
     DgnTrueTypeFileFontData(Utf8CP familyName) : m_openCount(0), m_familyName(familyName) {}
     void RegisterFace(BeFileNameCR, FT_Long faceIndex);
-    virtual IDgnFontData* _CloneWithoutData() override;
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual FT_Face _GetFaceP(DgnFontStyle) override;
+    IDgnFontData* _CloneWithoutData() override;
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    FT_Face _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -379,11 +379,11 @@ private:
 
 public:
     DgnTrueTypeDbFontData(DgnFonts::DbFaceDataDirect& dbFaceData, Utf8CP familyName) : m_dbFaceData(dbFaceData), m_familyName(familyName), m_openCount(0) {}
-    virtual IDgnFontData* _CloneWithoutData() override { return new DgnTrueTypeDbFontData(m_dbFaceData, m_familyName.c_str()); }
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual FT_Face _GetFaceP(DgnFontStyle) override;
+    IDgnFontData* _CloneWithoutData() override { return new DgnTrueTypeDbFontData(m_dbFaceData, m_familyName.c_str()); }
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    FT_Face _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -577,7 +577,7 @@ struct Win32TrueTypeContext : public DgnHost::IHostObject
     mutable HDC m_dc;
 
 protected:
-    virtual void _OnHostTermination(bool isProgramExit) override;
+    void _OnHostTermination(bool isProgramExit) override;
 
 public:
     Win32TrueTypeContext() : m_dc(nullptr) {}
@@ -651,11 +651,11 @@ struct Win32TrueTypeFontData : IDgnTrueTypeFontData
 
 public:
     Win32TrueTypeFontData(Utf8CP familyName) : m_familyName(familyName), m_openCount(0) {}
-    virtual IDgnFontDataP _CloneWithoutData() override { return new Win32TrueTypeFontData(m_familyName.c_str()); }
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual FT_Face _GetFaceP(DgnFontStyle) override;
+    IDgnFontDataP _CloneWithoutData() override { return new Win32TrueTypeFontData(m_familyName.c_str()); }
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    FT_Face _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------

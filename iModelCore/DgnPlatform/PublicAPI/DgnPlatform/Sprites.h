@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Sprites.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ public:
     DGNPLATFORM_EXPORT ~RgbaSprite();
 
     Point2d _GetSize() override {_LoadSprite(); Point2d pt; pt.x=m_image.GetWidth(); pt.y=m_image.GetHeight(); return pt;}
-    virtual Byte const* _GetRgbaDefinition() override;
+    Byte const* _GetRgbaDefinition() override;
     DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFrom(Render::ImageSourceCR);
 };
 
@@ -46,7 +46,7 @@ private:
 
 public:
     //! The buffer is required to be in RGBA format. The size is given by m_size.x * m_size.y
-    DGNPLATFORM_EXPORT virtual void _LoadSprite() override;
+    DGNPLATFORM_EXPORT void _LoadSprite() override;
     DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFromPng(Utf8CP nameSpace, Utf8CP spriteName);
 };
 

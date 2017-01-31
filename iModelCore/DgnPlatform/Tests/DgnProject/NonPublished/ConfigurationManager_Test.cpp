@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ConfigurationManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -251,7 +251,7 @@ MacroDebugOutput (BeTextFile* debugFile)
     m_debugFile      = debugFile;
     }
 
-virtual void        ShowDebugMessage (int indent,WCharCP format, ...) override
+void        ShowDebugMessage (int indent,WCharCP format, ...) override
     {
     WString     message;
     va_list     ap;
@@ -524,23 +524,23 @@ struct TestMonitor : IVariableMonitor
         m_rootUndefined  = 0;
         }
 
-    virtual void _VariableChanged (WCharCP variableName) override
+    void _VariableChanged (WCharCP variableName) override
         {
         m_directChange++;
         }
-    virtual void _VariableRootChanged (WCharCP variableName, WCharCP rootVariableName) override
+    void _VariableRootChanged (WCharCP variableName, WCharCP rootVariableName) override
         {
         m_rootChange++;
         }
-    virtual void _VariableUndefined (WCharCP variableName) override
+    void _VariableUndefined (WCharCP variableName) override
         {
         m_directUndefine++;
         }
-    virtual void _VariableRootUndefined (WCharCP variableName, WCharCP rootVariableName) override
+    void _VariableRootUndefined (WCharCP variableName, WCharCP rootVariableName) override
         {
         m_rootUndefined++;
         }
-    virtual void _MonitorStopped (WCharCP variableName) override
+    void _MonitorStopped (WCharCP variableName) override
         {
         delete this;
         }
@@ -663,7 +663,7 @@ TEST (ConfigurationManagerTest, CheckBooleanStatus)
 struct TestConfigVarIterator: public IConfigVariableIteratorDelegate
 {
     //! Called for each configuration variable.
-    virtual void EachConfigVariable(WCharCP name, WCharCP value, ConfigurationVariableLevel level, bool locked) override
+    void EachConfigVariable(WCharCP name, WCharCP value, ConfigurationVariableLevel level, bool locked) override
     {
         wprintf(L"Name = [%ls] value = [%ls]\n", name, value);
     }
@@ -694,7 +694,7 @@ struct SimpleTestMonitor : public SimpleConfigurationVariableMonitor
         m_directChange = 0;
         }
     //! Called for each configuration variable.
-    virtual void _UpdateState(WCharCP variableName) override
+    void _UpdateState(WCharCP variableName) override
         {
         wprintf(L"Variable changed Name = [%ls]\n", variableName);
         ++m_directChange;

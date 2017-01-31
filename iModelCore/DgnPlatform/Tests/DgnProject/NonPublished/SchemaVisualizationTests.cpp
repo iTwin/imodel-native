@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/NonPublished/SchemaVisualizationTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1845,7 +1845,7 @@ public:
     CreateElementsDiagramRenderer(DgnDbPtr& db, DgnModelId& modelId, DgnCategoryId& categoryId, DgnClassId& classId)
         : db(db), modelId(modelId), categoryId(categoryId), classId(classId) {}
 
-    virtual void textspan           (GVJ_t* job, pointf p, textspan_t* span) override
+    void textspan           (GVJ_t* job, pointf p, textspan_t* span) override
         {
         GenericPhysicalObjectPtr textspanElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         textspanElement->SetCode(DgnCode::CreateEmpty());
@@ -1868,17 +1868,17 @@ public:
         ASSERT_TRUE(db->Elements().Insert(*textspanElement).IsValid());
         }
 
-    virtual void resolve_color      (GVJ_t* job, gvcolor_t* color) override
+    void resolve_color      (GVJ_t* job, gvcolor_t* color) override
         {
 
         }
 
-    virtual void ellipse            (GVJ_t* job, pointf* A, int filled) override
+    void ellipse            (GVJ_t* job, pointf* A, int filled) override
         {
 
         }
 
-    virtual void polygon            (GVJ_t* job, pointf* A, int n, int filled) override
+    void polygon            (GVJ_t* job, pointf* A, int n, int filled) override
         {
         GenericPhysicalObjectPtr polygonElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         polygonElement->SetCode(DgnCode::CreateEmpty());
@@ -1901,7 +1901,7 @@ public:
         ASSERT_TRUE(db->Elements().Insert(*polygonElement).IsValid());
         }
 
-    virtual void beziercurve        (GVJ_t* job, pointf* A, int n, int arrow_at_start, int arrow_at_end, int x) override
+    void beziercurve        (GVJ_t* job, pointf* A, int n, int arrow_at_start, int arrow_at_end, int x) override
         {
         GenericPhysicalObjectPtr bezierElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         bezierElement->SetCode(DgnCode::CreateEmpty());
@@ -1934,7 +1934,7 @@ public:
         ASSERT_TRUE(db->Elements().Insert(*bezierElement).IsValid());
         }
 
-    virtual void polyline           (GVJ_t* job, pointf* A, int n) override
+    void polyline           (GVJ_t* job, pointf* A, int n) override
         {
         GenericPhysicalObjectPtr polylineElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         polylineElement->SetCode(DgnCode::CreateEmpty());
@@ -1956,7 +1956,7 @@ public:
         ASSERT_TRUE(db->Elements().Insert(*polylineElement).IsValid());
         }
 
-    virtual void comment            (GVJ_t* job, char* comment) override
+    void comment            (GVJ_t* job, char* comment) override
         {
 
         }
@@ -1972,7 +1972,7 @@ private:
 public:
     GVFileDiagramRenderer(WCharCP filename) : m_filename(filename) {}
 
-    virtual void RenderDiagram(GraphvizDiagram& diagram, BentleyGraphvizContext& bgvc) override
+    void RenderDiagram(GraphvizDiagram& diagram, BentleyGraphvizContext& bgvc) override
         {
         BeFileName fileName;
         BeTest::GetHost().GetOutputRoot(fileName);

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnCore/DgnShxFontData.cpp $
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnFontData.h>
@@ -252,13 +252,13 @@ private:
 public:
     DgnShxDbFontData(DgnFonts::DbFaceDataDirect& dbFaceData, Utf8CP familyName) : m_dbFaceData(dbFaceData), m_familyName(familyName), m_openCount(0) {}
 
-    virtual IDgnFontData* _CloneWithoutData() override { return new DgnShxDbFontData(m_dbFaceData, m_familyName.c_str()); }
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual size_t _Read(void* buffer, size_t size, size_t count) override;
-    virtual BentleyStatus _Seek(int64_t offset, BeFileSeekOrigin origin) override;
-    virtual uint64_t _Tell() override;
+    IDgnFontData* _CloneWithoutData() override { return new DgnShxDbFontData(m_dbFaceData, m_familyName.c_str()); }
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    size_t _Read(void* buffer, size_t size, size_t count) override;
+    BentleyStatus _Seek(int64_t offset, BeFileSeekOrigin origin) override;
+    uint64_t _Tell() override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -391,13 +391,13 @@ private:
 public:
     DgnShxFileFontData(BeFileName path) : m_path(path), m_openCount(0) {}
 
-    virtual IDgnFontData* _CloneWithoutData() override { return new DgnShxFileFontData(m_path); }
-    virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
-    virtual BentleyStatus _AddDataRef() override;
-    virtual void _ReleaseDataRef() override;
-    virtual size_t _Read(void* buffer, size_t size, size_t count) override;
-    virtual BentleyStatus _Seek(int64_t offset, BeFileSeekOrigin origin) override;
-    virtual uint64_t _Tell() override;
+    IDgnFontData* _CloneWithoutData() override { return new DgnShxFileFontData(m_path); }
+    BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
+    BentleyStatus _AddDataRef() override;
+    void _ReleaseDataRef() override;
+    size_t _Read(void* buffer, size_t size, size_t count) override;
+    BentleyStatus _Seek(int64_t offset, BeFileSeekOrigin origin) override;
+    uint64_t _Tell() override;
 };
 
 //---------------------------------------------------------------------------------------

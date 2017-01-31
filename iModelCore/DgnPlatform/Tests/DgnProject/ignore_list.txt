@@ -27,13 +27,9 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
+ 
+#TFS 655716
+BRepUtilTests.CreateBodyFromLoft
 
-EcutilsTests.ConvertECValueToJson
-    # bim0200, x86, NDEBUG
-    # [ RUN      ] EcutilsTests.ConvertECValueToJson
-    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Ecutils_Tests.cpp(107): error:       Expected: BentleyStatus::BSISUCCESS
-    #       Which is: 0
-    # To be equal to: ECUtils::ConvertECValueToJson(obj, EcValue2)
-    #       Which is: 32768
-    # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
-
+#TFS 655719
+BRepUtilTests.CreateBodyFromSweep

@@ -93,7 +93,7 @@ public:
     };
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit LinkModel(CreateParams const& params) : T_Super(params) {}
 
@@ -119,7 +119,7 @@ protected:
     explicit LinkElement(CreateParams const& params) : T_Super(params) {}
 
     //! Called when an element is about to be inserted into the DgnDb.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
 
 public:
     //! Add the link to a source element
@@ -304,9 +304,9 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
     //! Parameters used to construct a UrlLink
@@ -434,9 +434,9 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
     //! Constructor

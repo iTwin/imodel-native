@@ -2997,17 +2997,17 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     switch (geomParams.GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
-            if (!viewFlags.m_constructions)
+            if (!viewFlags.ShowConstructions())
                 return false;
             break;
 
         case DgnGeometryClass::Dimension:
-            if (!viewFlags.m_dimensions)
+            if (!viewFlags.ShowDimensions())
                 return false;
             break;
 
         case DgnGeometryClass::Pattern:
-            if (!viewFlags.m_patterns)
+            if (!viewFlags.ShowPatterns())
                 return false;
             break;
         }
@@ -3088,8 +3088,8 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
-    bool isQVis = mainGraphic.IsForDisplay();
-    bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool isSimplify = mainGraphic.IsSimplifyGraphic();
+    bool geomParamsChanged = activateParams || isSimplify; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
@@ -3140,14 +3140,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
                 // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
-//                geomParamsChanged = !isQVis;
-//                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
-//                subGraphicParams = graphicParams; // Save current params for AddSubGraphic in case there are symbology changes...
-
                 geomParams.Resolve(context);
                 subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
 
-                if (!isQVis)
+                if (isSimplify)
                     {
                     currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
                     geomParamsChanged = false;
@@ -3192,7 +3188,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 int         nPts;
@@ -3263,7 +3259,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 int         nPts;
@@ -3322,7 +3318,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 DEllipse3d  arc;
@@ -3376,7 +3372,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3434,7 +3430,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3481,7 +3477,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3499,7 +3495,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3517,7 +3513,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3536,7 +3532,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
@@ -3575,7 +3571,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3590,7 +3586,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3609,7 +3605,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 TextString  text;
@@ -4476,8 +4472,35 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic)
+void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic)
     {
+    /* BEGIN - ADD LSWIDTH TO RANGE - Hopefully this can be removed when/if we start doing locate from mesh tiles */
+    DRange3d localRange = localRangeIn;
+
+    if (m_elParams.GetCategoryId().IsValid())
+        {
+        m_elParams.Resolve(m_dgnDb);
+
+        LineStyleInfoCP lsInfo = m_elParams.GetLineStyle();
+
+        if (nullptr != lsInfo)
+            {
+            double maxWidth = lsInfo->GetLineStyleSymb().GetStyleWidth();
+
+            localRange.low.x -= maxWidth;
+            localRange.low.y -= maxWidth;
+            localRange.high.x += maxWidth;
+            localRange.high.y += maxWidth;
+
+            if (m_is3d)
+                {
+                localRange.low.z -= maxWidth;
+                localRange.high.z += maxWidth;
+                }
+            }
+        }
+    /* END - ADD LSWIDTH TO RANGE */
+
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
@@ -4858,9 +4881,9 @@ private:
 public:
     TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder, GeometryBuilder::CoordSystem coord) : m_text(text), m_builder(builder), m_coord(coord) {}
 
-    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
-    virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
-    virtual void _OutputGraphics(ViewContextR) override;
+    bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
+    bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
+    void _OutputGraphics(ViewContextR) override;
 };
 
 //---------------------------------------------------------------------------------------

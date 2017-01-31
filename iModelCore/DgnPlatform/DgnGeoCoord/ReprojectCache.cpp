@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/ReprojectCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -564,7 +564,7 @@ DgnGCSP                 GetDestinationGCS () override
 * Returns the tolerance in source model UORS
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double          GetStrokeToleranceDestUors() override
+double          GetStrokeToleranceDestUors() override
     {
     return m_strokeToleranceRootUors;
     }
@@ -573,7 +573,7 @@ virtual double          GetStrokeToleranceDestUors() override
 * Returns the tolerance in source model UORS
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double          GetStrokeToleranceSourceUors() override
+double          GetStrokeToleranceSourceUors() override
     {
     return m_strokeToleranceRefUors;
     }
