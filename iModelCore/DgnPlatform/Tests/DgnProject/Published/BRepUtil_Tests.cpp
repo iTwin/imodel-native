@@ -246,5 +246,65 @@ TEST_F(BRepUtilTests, CreateBodyFromPolyface)
     ASSERT_EQ(12, BRepUtil::GetBodyEdges(NULL, *brep));
     ASSERT_EQ(8, BRepUtil::GetBodyVertices(NULL, *brep));
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CutProfileBodyFromOpenCurveVector)
+    {
+    CurveVectorPtr rect = CurveVector::CreateRectangle(1, 2, 3, 4, 0.5);
+    ASSERT_TRUE(rect.IsValid());
+    IBRepEntityPtr profile;
+    IBRepEntityPtr brep;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::CutProfileBodyFromOpenCurveVector(brep, *rect, DRange3d::From(DPoint3d::From(1,1,1))));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(1, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFromSweep)
+    {
+    CurveVectorPtr rect = CurveVector::CreateRectangle(1, 2, 3, 4, 0.5);
+    ASSERT_TRUE(rect.IsValid());
+    bvector<DPoint3d> points;
+    points.push_back(DPoint3d::From(1, 2, 0.5));
+    points.push_back(DPoint3d::From(3, 4, 0.5));
+    CurveVectorPtr sec2 = CurveVector::CreateLinear(points);
+    IBRepEntityPtr brep,brep2;
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromSweep(brep, *rect, *sec2, true,true,true));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(6, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(12, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(8, BRepUtil::GetBodyVertices(NULL, *brep));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BRepUtilTests, CreateBodyFromLoft)
+    {   
+    IBRepEntityPtr brep;
+    bvector<CurveVectorPtr>profiles;
+    bvector<DPoint3d> Points;
+    Points.push_back(DPoint3d::From(1, 2, 0.5));
+    Points.push_back(DPoint3d::From(3, 2, 0.5));
+    CurveVectorPtr line = CurveVector::CreateLinear(Points);
+    profiles.push_back(line);
+    //bvector<DPoint3d> Point1s;
+    Points.erase(Points.begin(), Points.begin() + 1);
+    Points.push_back(DPoint3d::From(1, 5, 0.5));
+    Points.push_back(DPoint3d::From(3, 5, 0.5));
+    CurveVectorPtr line2 = CurveVector::CreateLinear(Points);
+    profiles.push_back(line2);
+    bvector<CurveVectorPtr>guides;
+    ICurvePrimitivePtr arc1 = ICurvePrimitive::CreateArc(DEllipse3d::From(5, 10, 0, 10, 0, 0, 0, 10, 0, 0.0, Angle::TwoPi()));
+    guides.push_back(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, arc1));
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromLoft(brep, profiles, &guides));
+    ASSERT_TRUE(!brep.IsNull());
+    ASSERT_EQ(2, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyEdges(NULL, *brep));
+    ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
+    }
 #endif
 
