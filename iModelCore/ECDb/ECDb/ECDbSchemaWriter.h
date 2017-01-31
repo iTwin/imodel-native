@@ -50,6 +50,8 @@ private:
     BentleyStatus UpdateECSchemaReferences(ReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
     BentleyStatus UpdateECClasses(ECClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
     BentleyStatus UpdateECEnumerations(ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+	BentleyStatus UpdateECEnumeration(ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+
     BentleyStatus UpdateECKindOfQuanitites(ECKindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
 
     BentleyStatus UpdateECProperties(ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);

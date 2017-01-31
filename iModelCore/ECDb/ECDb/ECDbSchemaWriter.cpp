@@ -2008,7 +2008,140 @@ BentleyStatus ECDbSchemaWriter::UpdateECKindOfQuanitites(ECKindOfQuantityChanges
 
     return SUCCESS;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECEnumeration(ECEnumerationChange& enumChange, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum)
+	{
+	if (enumChange.GetStatus() == ECChange::Status::Done)
+		return SUCCESS;
 
+	//CREATE TABLE ec_Enumeration(Id INTEGER PRIMARY KEY,SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,Name TEXT NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,UnderlyingPrimitiveType INTEGER NOT NULL,IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),EnumValues TEXT NOT NULL);
+	SqlUpdateBuilder sqlUpdateBuilder("ec_Enumeration");
+	
+	if (enumChange.GetName().IsValid())
+		{
+		if (enumChange.GetName().GetNew().IsNull())
+			{
+			Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s: 'Name' must always be set for an ECEnumeration.",
+				oldEnum.GetFullName().c_str());
+
+			return ERROR;
+			}
+
+		sqlUpdateBuilder.AddSetExp("Name", enumChange.GetName().GetNew().Value().c_str());
+		}
+
+	if (enumChange.GetTypeName().IsValid())
+		{
+		Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s: 'Type' change is not supported.",
+			oldEnum.GetFullName().c_str());
+
+		return ERROR;
+		}
+
+	bool allowDisruptiveChanges = !newEnum.GetIsStrict();
+	if (enumChange.IsStrict().IsValid())
+		{
+		if (enumChange.IsStrict().GetNew().IsNull())
+			{
+			Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s: 'IsStrict' must always be set for an ECEnumeration.",
+				oldEnum.GetFullName().c_str());
+
+			return ERROR;
+			}
+
+		//Allow transition from "strict" to "non-strict" but not the other way around.
+		if (enumChange.IsStrict().GetOld().Value() == true &&
+			enumChange.IsStrict().GetNew().Value() == false)
+			{
+			allowDisruptiveChanges = true;
+			sqlUpdateBuilder.AddSetExp("IsStrict", enumChange.IsStrict().GetNew().Value());
+			}
+		else
+			{
+			Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s: 'IsStrict' changed. 'None-strict' cannot be change to 'strict'. The other way around is allowed.",
+				oldEnum.GetFullName().c_str());
+
+			return ERROR;
+			}
+		}
+
+	if (enumChange.GetDisplayLabel().IsValid())
+		{
+		if (enumChange.GetDisplayLabel().GetNew().IsNull())
+			sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+		else
+			sqlUpdateBuilder.AddSetExp("DisplayLabel", enumChange.GetDisplayLabel().GetNew().Value().c_str());
+		}
+
+	if (enumChange.GetDescription().IsValid())
+		{
+		if (enumChange.GetDescription().GetNew().IsNull())
+			sqlUpdateBuilder.AddSetToNull("Description");
+		else
+			sqlUpdateBuilder.AddSetExp("Description", enumChange.GetDescription().GetNew().Value().c_str());
+		}
+
+
+
+	ECEnumeratorChanges enumeratorChanges = enumChange.Enumerators();
+	if (enumeratorChanges.IsValid())
+		{
+		if (allowDisruptiveChanges)
+			{
+			Utf8String enumValueJson;
+			if (SUCCESS != ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(enumValueJson, newEnum))
+				return ERROR;
+
+			sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
+			}
+		else
+			{
+			size_t newEnumerators = 0;
+			for (size_t i = 0; i < enumeratorChanges.Count(); i++)
+				{
+				ECEnumeratorChange& change = enumeratorChanges.At(i);
+				if (change.GetState() == ChangeState::Deleted)
+					{
+					Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. Enumerator %s was deleted from Enumeration %s which is not supported.",
+						change.GetId(), oldEnum.GetFullName().c_str());
+
+					return ERROR;
+					}
+				else if (change.GetState() == ChangeState::New)
+					{
+					newEnumerators++;
+					}
+				else if (change.GetState() == ChangeState::Modified)
+					{
+					Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. Enumerator %s was updated from Enumeration %s which is not supported.",
+						change.GetId(), oldEnum.GetFullName().c_str());
+
+					return ERROR;
+					}
+				}
+
+			if (newEnumerators > 0)
+				{
+				Utf8String enumValueJson;
+				if (SUCCESS != ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(enumValueJson, newEnum))
+					return ERROR;
+
+				sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
+				}
+			}
+		}
+
+	sqlUpdateBuilder.AddWhereExp("Id", oldEnum.GetId().GetValue());
+	if (sqlUpdateBuilder.IsValid())
+		{
+		if (sqlUpdateBuilder.ExecuteSql(m_ecdb) != SUCCESS)
+			return ERROR;
+		}
+
+	return SUCCESS;
+	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2039,9 +2172,16 @@ BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumC
             }
         else if (change.GetState() == ChangeState::Modified)
             {
-            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s in ECSchema %s: Changing ECEnumerations is not supported.",
-                                      change.GetId(), oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
+			ECEnumerationCP oldEnum = oldSchema.GetEnumerationCP(change.GetId());
+			ECEnumerationCP newEnum = newSchema.GetEnumerationCP(change.GetId());
+			BeAssert(oldEnum != nullptr && newEnum != nullptr);
+			if (oldEnum == nullptr || newEnum == nullptr)
+				{
+				return ERROR;
+				}
+
+			if (UpdateECEnumeration(change, *oldEnum, *newEnum) != SUCCESS)
+				return ERROR;
             }
         }
 
