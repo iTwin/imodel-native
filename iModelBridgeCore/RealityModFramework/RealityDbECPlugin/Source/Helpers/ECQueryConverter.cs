@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/ECQueryConverter.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #define BBOXQUERY
@@ -713,7 +713,13 @@ namespace IndexECPlugin.Source.Helpers
                     string maxYCol = spatialBBox["MaxYColumnName"].StringValue;
                     m_sqlQueryBuilder.AddBBoxIntersectsWhereClause(propertyTable.Alias, minXCol, maxXCol, minYCol, maxYCol, DbGeometryHelpers.ExtractBboxFromWKTPolygon(m_polygonDescriptor.WKT));
 #else
-                    m_sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, m_polygonDescriptor.WKT, m_polygonDescriptor.SRID);
+                    IECPropertyValue indexProp = dbColumn.GetPropertyValue("SpatialIndexName");
+                    string spatialIndexName = null;
+                    if( indexProp != null )
+                        {
+                        spatialIndexName = indexProp.StringValue;
+                        }
+                    m_sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, m_polygonDescriptor.WKT, m_polygonDescriptor.SRID, spatialIndexName);
 #endif
                     return;
                     }

@@ -120,6 +120,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1305,6 +1306,7 @@
                 <DBColumn>
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1363,6 +1365,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>

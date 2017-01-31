@@ -22,11 +22,12 @@ always:
 	
 %ifdef IMSOFF
     CSCOpt = \/define:IMSOFF 
+	%ifdef CONNECTENV
+		CSCOpt +% \/define:CONNECTENV
+	%endif
 %endif
     
-%ifdef FTRACKING
-	CSCOpt +% \/define:FTRACKING
-%endif
+
 
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)RealityServicesNet.dll
 %include csrefapnd.mki
@@ -83,7 +84,7 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.Entity.dll
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
 %include csrefapnd.mki
 
-%ifdef FTRACKING
+%ifdef CONNECTENV
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.SelectServer.SaaS.Client.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.ServiceBus.dll

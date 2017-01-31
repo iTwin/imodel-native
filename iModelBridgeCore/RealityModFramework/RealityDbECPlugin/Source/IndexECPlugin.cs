@@ -49,7 +49,7 @@ using System.IdentityModel.Services.Configuration;
 using System.IdentityModel.Tokens;
 #endif
 
-#if FTRACKING
+#if CONNECTENV
 using Bentley.SelectServer.SaaS.Client;
 using Bentley.SelectServer.SaaS.Client.FeatureTracking;
 #endif
@@ -82,7 +82,7 @@ namespace IndexECPlugin.Source
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
 
-#if FTRACKING
+#if CONNECTENV
 
         private static IUsageTrackingContext m_usageTrackingContext = null;
         private static IUsageTrackingSender m_usageTrackingSender = null;
@@ -734,7 +734,7 @@ namespace IndexECPlugin.Source
             }
 #endif
 
-#if FTRACKING
+#if CONNECTENV
         private static string GetClaimValue (string claimType)
             {
             var user = (ClaimsPrincipal) System.Web.HttpContext.Current.User;
@@ -762,7 +762,8 @@ namespace IndexECPlugin.Source
             {
 
             IUsageTrackingContext eventContext = UsageTrackingContext.AsVolatile();
-            if ( null == eventContext )
+            IUsageTrackingSender eventSender = UsageTrackingSender;
+            if ( null == eventContext || eventSender == null)
                 return;
 
             string userId = GetClaimValue("http://schemas.bentley.com/ws/2011/03/identity/claims/userid");
@@ -777,10 +778,10 @@ namespace IndexECPlugin.Source
                 ipAddress = ipAddress.Split(',')[0];
                 }
 
-            //eventContext.UserImsId = new Guid(userId);
-            //eventContext.FeatureId = featureGuid;
-            //eventContext.ProjectId = Guid.Empty;
-            //eventContext.ClientId = ipAddress;
+            eventContext.UserImsId = new Guid(userId);
+            eventContext.FeatureId = featureGuid;
+            eventContext.ProjectId = Guid.Empty;
+            eventContext.ClientId = ipAddress;
 
             // Add additional arbitrary properties.
             if ( additionalProperties != null )
@@ -790,7 +791,8 @@ namespace IndexECPlugin.Source
                     eventContext.Properties.Add(additionalProperty);
                     }
                 }
-            UsageTrackingSender.MarkFeature(eventContext.AsMarkEvent());
+
+            eventSender.MarkFeature(eventContext.AsMarkEvent());
             }
 
 #endif

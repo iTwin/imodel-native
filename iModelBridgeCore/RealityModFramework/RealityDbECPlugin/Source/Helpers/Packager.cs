@@ -209,7 +209,7 @@ namespace IndexECPlugin.Source.Helpers
 
             UploadPackageInDatabase(instance, version, requestor, requestorVersion);
 
-#if FTRACKING
+#if CONNECTENV
             string regionString = String.Join(" ", m_selectedRegion.Select(d => Convert.ToString(d)));
 
             Dictionary<string, object> additionalProperties = new Dictionary<string, object>();

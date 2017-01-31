@@ -186,7 +186,8 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dFTRACKING=1" OnlyPlatforms="x86,x64">
+    <!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64"> -->
+	<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
 	    <SubPart PartName="FeatureTrackingNuGetPackages"/>
     	<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
