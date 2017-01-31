@@ -27,6 +27,9 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
+ 
+#TFS 655716
+BRepUtilTests.CreateBodyFromLoft
 
-
-
+#TFS 655719
+BRepUtilTests.CreateBodyFromSweep
