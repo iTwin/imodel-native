@@ -713,7 +713,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                             
         if (!m_SMIndex->IsFromCesium())
             {
-            poolMemVectorItemPtr = GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_pointsPoolItemId, SMStoreDataType::UvCoords, GetBlockID());
+            poolMemVectorItemPtr = GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_uvCoordsPoolItemId, SMStoreDataType::UvCoords, GetBlockID());
             }
         else
             {
