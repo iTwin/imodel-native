@@ -4526,4 +4526,84 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
         }
     }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ParameterBindingTestWithNestedQuery)
+	{
+	ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
+	NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(ecdb);
+	ecdb.Schemas().CreateECClassViewsInDb();
+	ecdb.SaveChanges();
+	ECSqlStatement stmt;
+	Utf8CP sql0 =
+		"SELECT"
+		"	ECPropertyDef.Name "
+		"FROM "
+		"	[ec].[ECPropertyDef] "
+		"WHERE "
+		"	[ECPropertyDef].[ECInstanceId] = 131 "
+		"	AND [ECPropertyDef].[Class].[Id] IN( "
+		"		SELECT"
+		"			[ECClassDef].[ECInstanceId] "
+		"		FROM "
+		"			[ec].[ECClassDef] "
+		"		WHERE"
+		"			[ECClassDef].[Schema].[Id] = 6"
+		")";
+
+	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql0));
+	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+	ASSERT_STREQ("City", stmt.GetValueText(0));
+	stmt.Finalize();
+
+	Utf8CP sql1 =
+		"SELECT"
+		"	ECPropertyDef.Name "
+		"FROM "
+		"	[ec].[ECPropertyDef] "
+		"WHERE "
+		"	[ECPropertyDef].[ECInstanceId] = ? "
+		"	AND [ECPropertyDef].[Class].[Id] IN( "
+		"		SELECT"
+		"			[ECClassDef].[ECInstanceId] "
+		"		FROM "
+		"			[ec].[ECClassDef] "
+		"		WHERE"
+		"			[ECClassDef].[Schema].[Id] = ?"
+		")";
+
+	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql1));
+	stmt.BindInt64(1, 131);
+	stmt.BindInt64(2, 6);
+	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+	ASSERT_STREQ("City", stmt.GetValueText(0));
+	stmt.Finalize();
+
+	Utf8CP sql2 =
+		"SELECT"
+		"	ECPropertyDef.Name "
+		"FROM "
+		"	[ec].[ECPropertyDef] "
+		"WHERE "
+		"	[ECPropertyDef].[ECInstanceId] = :aa "
+		"	AND [ECPropertyDef].[Class].[Id] IN( "
+		"		SELECT"
+		"			[ECClassDef].[ECInstanceId] "
+		"		FROM "
+		"			[ec].[ECClassDef] "
+		"		WHERE"
+		"			[ECClassDef].[Schema].[Id] = :bb"
+		")";
+
+	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql2));
+	const int aaIdx = stmt.GetParameterIndex("aa");
+	const int bbIdx = stmt.GetParameterIndex("bb");
+	stmt.BindInt64(aaIdx, 131);
+	stmt.BindInt64(bbIdx, 6);
+	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+	ASSERT_STREQ("City", stmt.GetValueText(0));
+	}
 END_ECDBUNITTESTS_NAMESPACE
