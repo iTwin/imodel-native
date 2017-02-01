@@ -72,7 +72,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& c
             //only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
             if (expWithVaryingTypeInfo != nullptr)
                 {
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
+                ctx.Issues().Report("Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -161,7 +161,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         if (m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot &&
             m_op != BooleanSqlOperator::EqualTo && m_op != BooleanSqlOperator::NotEqualTo)
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. NULL can only be used with operators IS, IS NOT, = or <>.", ToECSql().c_str());
+            ctx.Issues().Report("Type mismatch in expression '%s'. NULL can only be used with operators IS, IS NOT, = or <>.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -170,7 +170,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         {
         if (!lhsIsNull && !rhsIsNull)
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operators IS or IS NOT can only be used with NULL.", ToECSql().c_str());
+            ctx.Issues().Report("Type mismatch in expression '%s'. Operators IS or IS NOT can only be used with NULL.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -180,9 +180,9 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
     if (!lhsIsParameter && !rhsIsParameter && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
         {
         if (canCompareErrorMessage.empty())
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'.", ToECSql().c_str());
+            ctx.Issues().Report("Type mismatch in expression '%s'.", ToECSql().c_str());
         else
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
+            ctx.Issues().Report("Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
 
         return FinalizeParseStatus::Error;
         }
@@ -192,7 +192,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         if ((!lhsIsParameter && (!lhsTypeInfo.IsPrimitive() || lhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)) ||
             (!rhsIsParameter && (!rhsTypeInfo.IsPrimitive() || rhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)))
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. LIKE operator only supported with string operands.", ToECSql().c_str());
+            ctx.Issues().Report("Type mismatch in expression '%s'. LIKE operator only supported with string operands.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -222,7 +222,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
                     return FinalizeParseStatus::Completed;
 
                 default:
-                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
+                    ctx.Issues().Report("Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
             }
         }
@@ -233,7 +233,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray)
         {
         //structs and arrays not supported in where expressions for now
-        ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
+        ctx.Issues().Report("Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -348,7 +348,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
     ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
     if (valueExp->IsParameterExp() || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
         {
-        ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
+        ctx.Issues().Report("Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

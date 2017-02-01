@@ -82,9 +82,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         DbResult nativeSqlStat = GetSqliteStatementR().TryPrepare(m_ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
-            IssueReporter const& issues = GetECDb().GetECDbImplR().GetIssueReporter();
-            if (issues.IsSeverityEnabled(ECDbIssueSeverity::Error))
-                issues.Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", ecsql, nativeSql.c_str(),
+            GetECDb().GetECDbImplR().GetIssueReporter().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", ecsql, nativeSql.c_str(),
                                                                    ECDb::InterpretDbResult(nativeSqlStat), GetECDb().GetLastError().c_str());
 
             //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
@@ -410,7 +408,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             {
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
+            GetECDb().GetECDbImplR().GetIssueReporter().Report("Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
             return BE_SQLITE_CONSTRAINT_UNIQUE;
             }
 

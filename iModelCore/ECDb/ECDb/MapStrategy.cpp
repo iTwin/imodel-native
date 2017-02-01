@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -65,7 +65,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         {
         if (shareColumnsCA.IsValid())
             {
-            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
+            issues.Report("Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
                           ecClass.GetFullName());
 
             return ERROR;
@@ -97,7 +97,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
 
         if (customShareColCount <= 0)
             {
-            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCount' must be greater or equal to 1, but was %d.",
+            issues.Report("Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCount' must be greater or equal to 1, but was %d.",
                           ecClass.GetFullName(), customShareColCount);
             return ERROR;
             }
@@ -120,7 +120,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTabl
         {
         if (hasJoinedTablePerDirectSubclassOption)
             {
-            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.",
+            issues.Report("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.",
                           ecClass.GetFullName());
 
             return ERROR;

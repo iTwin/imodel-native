@@ -202,7 +202,7 @@ DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015
 //---------------------------------------------------------------------------------------
-void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const { _OnIssueReported(severity, message); }
+void ECDb::IIssueListener::ReportIssue(Utf8CP message) const { _OnIssueReported(message); }
 
 
 

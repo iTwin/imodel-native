@@ -32,7 +32,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     {
     if (ecdb.IsReadonly())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -98,7 +98,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     {
     if (ecdb.IsReadonly())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -151,7 +151,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
 
         if (classMap->GetType() == ClassMap::Type::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
                                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }

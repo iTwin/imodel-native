@@ -30,11 +30,7 @@ public:
     BentleyStatus AddListener(ECDb::IIssueListener const&);
     void RemoveListener();
 
-    bool IsSeverityEnabled(ECDbIssueSeverity) const;
-
-    void Report(ECDbIssueSeverity, Utf8CP message, ...) const;
-
-    static NativeLogging::SEVERITY ToLogSeverity(ECDbIssueSeverity sev) { return sev == ECDbIssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
+    void Report(Utf8CP message, ...) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

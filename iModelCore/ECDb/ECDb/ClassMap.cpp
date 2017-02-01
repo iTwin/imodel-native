@@ -119,7 +119,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         {
         if (SUCCESS != GetJoinedTable().CreateSharedColumns(tphInfo))
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
+            Issues().Report("Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
             return ClassMappingStatus::Error;
             }
         }
@@ -363,7 +363,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         BeAssert(ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().IsValid());
         if (SUCCESS != GetJoinedTable().CreateSharedColumns(ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo()))
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
+            Issues().Report("Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
             return ClassMappingStatus::Error;
             }
         }
@@ -391,8 +391,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             PropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
-                Issues().Report(ECDbIssueSeverity::Error,
-                   "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                    "The specified ECProperty '%s' does not exist or is not mapped.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -401,8 +400,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             ECPropertyCR prop = propertyMap->GetProperty();
             if (!prop.GetIsPrimitive())
                 {
-                Issues().Report(ECDbIssueSeverity::Error,
-                              "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                               "The specified ECProperty '%s' is not of a primitive type.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -419,8 +417,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
             if (columnVisitor.GetOverflowColumnCount() > 0)
                 {
-                Issues().Report(ECDbIssueSeverity::Error,
-                                "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                 "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
                                 i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -428,8 +425,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
                 {
-                Issues().Report(ECDbIssueSeverity::Error,
-                                "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                 "The specified ECProperty '%s' is mapped to a virtual column.",
                                 i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -439,16 +435,14 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 {
                 if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
                     {
-                    Issues().Report(ECDbIssueSeverity::Error,
-                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
+                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
                                     "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
                                     "is applied to this class hierarchy.",
                                     i, GetClass().GetFullName());
                     }
                 else
                     {
-                    Issues().Report(ECDbIssueSeverity::Error,
-                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
+                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
                                     "The properties that make up the index are mapped to different tables.",
                                     i, GetClass().GetFullName());
 

@@ -18,9 +18,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle     09/2015
 //---------------------------------------------------------------------------------------
-void ECDbIssueListener::_OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const
+void ECDbIssueListener::_OnIssueReported(Utf8CP message) const
     {
-    m_issue = ECDbIssue(severity, message);
+    m_issue = ECDbIssue(message);
     }
 
 //---------------------------------------------------------------------------------------

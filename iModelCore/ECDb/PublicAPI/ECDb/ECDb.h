@@ -16,16 +16,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbSchemaManager;
 struct ECSqlScalarFunction;
 
-//=======================================================================================
-//! Severity of an ECDb issue
-// @bsiclass                                                Krischan.Eberle      09/2015
-//+===============+===============+===============+===============+===============+======
-enum class ECDbIssueSeverity
-    {
-    Warning, //!< Warning
-    Error //!< Error
-    };
-
 struct ECCrudWriteToken;
 struct DbSchemaModificationToken;
 
@@ -60,19 +50,17 @@ public:
     struct Impl;
 
     //=======================================================================================
-    //! Allows clients to be notified of error or warning messages.
-    //! @remarks ECDb cares for logging any error and warnings sent to listeners via BentleyApi::NativeLogging. 
-    //! So implementors
-    //! don't have to do that anymore.
+    //! Allows clients to be notified of error messages.
+    //! @remarks ECDb cares for logging any error sent to listeners via BentleyApi::NativeLogging. 
+    //! So implementors don't have to do that anymore.
     // @bsiclass                                                Krischan.Eberle      09/2015
     //+===============+===============+===============+===============+===============+======
     struct IIssueListener
         {
     private:
         //! Fired by ECDb whenever an issue occurred during the schema import.
-        //! @param[in] severity Issue severity
         //! @param[in] message Issue message
-        virtual void _OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const = 0;
+        virtual void _OnIssueReported(Utf8CP message) const = 0;
 
     protected:
         IIssueListener() {}
@@ -82,9 +70,8 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Called by ECDb to report an issue to clients.
-        //! @param[in] severity Issue severity
         //! @param[in] message Issue message
-        void ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const;
+        void ReportIssue(Utf8CP message) const;
 #endif
         };
 

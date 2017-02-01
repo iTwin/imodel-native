@@ -24,14 +24,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECDbIssue
     {
     private:
-        BeSQLite::EC::ECDbIssueSeverity m_severity;
         Utf8String m_issue;
 
     public:
-        explicit ECDbIssue(BeSQLite::EC::ECDbIssueSeverity severity = BeSQLite::EC::ECDbIssueSeverity::Error, Utf8CP issue = nullptr) : m_severity(severity), m_issue(issue) {}
+        explicit ECDbIssue(Utf8CP issue = nullptr) : m_issue(issue) {}
 
         bool IsIssue() const { return !m_issue.empty(); }
-        BeSQLite::EC::ECDbIssueSeverity GetSeverity() const { return m_severity; }
         Utf8CP GetMessage() const { return m_issue.c_str(); }
     };
 
@@ -53,7 +51,7 @@ struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     private:
         ECDbR m_ecdb;
         mutable ECDbIssue m_issue;
-        void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
+        void _OnIssueReported(Utf8CP message) const override;
 
     public:
         explicit ECDbIssueListener(ECDbR ecdb) : BeSQLite::EC::ECDb::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }

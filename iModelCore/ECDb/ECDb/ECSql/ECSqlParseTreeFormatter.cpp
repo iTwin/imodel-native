@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParseTreeFormatter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -27,7 +27,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
     if (parseNode == nullptr)
         {
         if (!error.empty())
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str());
+            ecdb.GetECDbImplR().GetIssueReporter().Report(error.c_str());
 
         return ERROR;
         }

@@ -176,13 +176,13 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     {
     if (m_ecdb.IsReadonly())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECDb file is read-only.");
         return ERROR;
         }
 
     if (schemas.empty())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
         }
 
@@ -229,7 +229,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
         //Deserializing into older versions is not needed in ECDb and therefore not supported.
         if (schema->GetECVersion() != ECVersion::Latest)
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
             return ERROR;
             }
 
@@ -238,7 +238,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
             ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
             if (!id.IsValid() || id != schema->GetId())
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -276,7 +276,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
 
@@ -311,11 +311,10 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
         std::vector<Utf8String> errorMessages;
         validationResult.ToString(errorMessages);
 
-        const ECDbIssueSeverity sev = ECDbIssueSeverity::Error;
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. Details: ");
 
         for (Utf8StringCR errorMessage : errorMessages)
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, errorMessage.c_str());
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(errorMessage.c_str());
         }
 
     if (!isValid)

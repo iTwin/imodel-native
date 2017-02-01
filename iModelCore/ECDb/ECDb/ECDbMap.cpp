@@ -127,7 +127,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
         if (!allowDbSchemaChange)
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+            Issues().Report("Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
                                                                "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
             return ERROR;
             }
@@ -302,7 +302,7 @@ BentleyStatus ECDbMap::DoMapSchemas() const
     
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Synchronizing existing table to which classes are mapped failed.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
         }
 
@@ -905,7 +905,7 @@ BentleyStatus ECDbMap::SaveDbSchema() const
         ClassMap& classMap = *kvPair.second;
         if (SUCCESS != classMap.Save(ctx))
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }

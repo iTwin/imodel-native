@@ -381,7 +381,7 @@ DbIndex* DbSchema::CreateIndex(DbIndexId id, DbTable& table, Utf8CP indexName, b
                     }
                 }
             }
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Index with name '%s' already defined in the ECDb file.", indexName);
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Index with name '%s' already defined in the ECDb file.", indexName);
         return nullptr;
         }
 
@@ -748,7 +748,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
 
             if (BE_SQLITE_OK != m_ecdb.ExecuteSql(ddl.c_str()))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
                                                                 m_ecdb.GetLastError().c_str());
                 BeAssert(false && "Failed to create index");
                 return ERROR;
@@ -1229,11 +1229,11 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         {
         IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
         if (m_type == Type::Existing)
-            issues.Report(ECDbIssueSeverity::Error, "Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
+            issues.Report("Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
         else
             {
             BeAssert(false && "Cannot add columns to read-only table.");
-            issues.Report(ECDbIssueSeverity::Error, "Cannot add columns to the table '%s'. Table is not in edit mode.", m_name.c_str());
+            issues.Report("Cannot add columns to the table '%s'. Table is not in edit mode.", m_name.c_str());
             }
 
         return nullptr;
@@ -2004,7 +2004,7 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
         if (table->HasExclusiveRootECClass())
             {
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Table %s is exclusively used by the ECClass with Id %s and therefore "
+            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report("Table %s is exclusively used by the ECClass with Id %s and therefore "
                                                                         "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
                                                                         tableName.c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
             return nullptr;
@@ -2013,7 +2013,7 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
         if (exclusiveRootClassId.IsValid())
             {
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECClass with Id %s requests exclusive use of the table %s, "
+            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report("The ECClass with Id %s requests exclusive use of the table %s, "
                                                                         "but it is already used by some other ECClass.",
                                                                         exclusiveRootClassId.ToString().c_str(), tableName.c_str());
             return nullptr;

@@ -16,13 +16,13 @@ ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteTo
     {
     if (IsPrepared())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL statement has already been prepared.");
+        LOG.error("ECSQL statement has already been prepared.");
         return ECSqlStatus::Error;
         }
 
     if (Utf8String::IsNullOrEmpty(ecsql))
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL string is empty.");
+        LOG.error("ECSQL string is empty.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -69,7 +69,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
     ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType() != ECSqlType::Select, ctx.GetWriteToken()));
     if (!policy.IsSupported())
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage().c_str());
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());
         Finalize();
         return ECSqlStatus::Error;
         }
@@ -263,7 +263,7 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType(ECSqlType expectedType, Utf8CP e
 
     if (GetPreparedStatementP()->GetType() != expectedType)
         {
-        GetECDb()->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
+        GetECDb()->GetECDbImplR().GetIssueReporter().Report(errorMessage);
         return ECSqlStatus::Error;
         }
 

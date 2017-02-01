@@ -34,14 +34,14 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 
     if (parseTree == nullptr || !error.empty())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str());
+        GetIssueReporter().Report(error.c_str());
         return nullptr;
         }
 
     if (!parseTree->isRule())
         {
         BeAssert(false && "ECSQL grammar has changed, but parser wasn't adopted.");
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL grammar has changed, but parser wasn't adopted.");
+        GetIssueReporter().Report("ECSQL grammar has changed, but parser wasn't adopted.");
         return nullptr;
         }
 
@@ -89,12 +89,12 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
             }
 
             case OSQLParseNode::manipulative_statement:
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Manipulative statements are not supported.");
+                GetIssueReporter().Report("Manipulative statements are not supported.");
                 return nullptr;
 
             default:
                 BeAssert(false && "Not a valid statement");
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Not a valid statement");
+                GetIssueReporter().Report("Not a valid statement");
                 return nullptr;
         };
 
@@ -164,7 +164,7 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(unique_ptr<SingleSelectSta
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL without select clause or from clause is invalid.");
+        GetIssueReporter().Report("ECSQL without select clause or from clause is invalid.");
         return ERROR;
         }
 
@@ -203,7 +203,7 @@ BentleyStatus ECSqlParser::ParseSelection(unique_ptr<SelectClauseExp>& exp, OSQL
     if (!SQL_ISRULE(parseNode, scalar_exp_commalist))
         {
         BeAssert(false && "Wrong grammar");
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar");
+        GetIssueReporter().Report("Wrong grammar");
         return ERROR;
         }
 
@@ -234,7 +234,7 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(unique_ptr<DerivedPropertyExp>& ex
     if (!SQL_ISRULE(parseNode, derived_column))
         {
         BeAssert(false && "Wrong grammar");
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar");
+        GetIssueReporter().Report("Wrong grammar");
         return ERROR;
         }
 
@@ -298,7 +298,7 @@ BentleyStatus ECSqlParser::ParseUpdateStatementSearched(unique_ptr<UpdateStateme
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        GetIssueReporter().Report("ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -364,7 +364,7 @@ BentleyStatus ECSqlParser::ParseDeleteStatementSearched(unique_ptr<DeleteStateme
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        GetIssueReporter().Report("ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -520,7 +520,7 @@ BentleyStatus ECSqlParser::ParseFold(std::unique_ptr<ValueExp>& exp, OSQLParseNo
             default:
             {
             BeAssert(false && "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
+            GetIssueReporter().Report("Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
             return ERROR;
             }
         }
@@ -623,7 +623,7 @@ BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLPa
         if (!paramTokenValue.Equals("?"))
             {
             BeAssert(paramTokenValue.Equals("?") && "Invalid grammar. Only : or ? allowed as parameter tokens");
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid grammar. Only : or ? allowed as parameter tokens");
+            GetIssueReporter().Report("Invalid grammar. Only : or ? allowed as parameter tokens");
             return ERROR;
             }
         }
@@ -704,7 +704,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(unique_ptr<ValueExp>& exp, OSQLParseNod
         BeAssert(castTargetNode->getChild(1)->getNodeType() == SQL_NODE_ARRAY_INDEX);
         if (!castTargetNode->getChild(1)->getTokenValue().empty())
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
+            GetIssueReporter().Report("Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
             return ERROR;
             }
         }
@@ -760,7 +760,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
+        GetIssueReporter().Report("Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
 
@@ -892,7 +892,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(unique_ptr<ValueExp>& exp, OSQLPar
 
             default:
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
+            GetIssueReporter().Report("Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
             return ERROR;
             }
         }
@@ -1111,7 +1111,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(unique_ptr<ValueExp>& exp, OSQL
         if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             return LiteralValueExp::Create(exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
 
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
+        GetIssueReporter().Report("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
         return ERROR;
         }
 
@@ -1580,7 +1580,7 @@ BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogNam
             {
             //parseNode
             //     child 0: class name
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
+            GetIssueReporter().Report("Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
                                       parseNode.getChild(0)->getTokenValue().c_str());
             return ERROR;
             }
@@ -1893,7 +1893,7 @@ BentleyStatus ECSqlParser::ParseInPredicate(unique_ptr<BooleanExp>& exp, OSQLPar
     if (SQL_ISRULE(firstChildNode, in_predicate_part_2))
         {
         BeAssert(false);
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "IN predicate without left-hand side property not supported.");
+        GetIssueReporter().Report("IN predicate without left-hand side property not supported.");
         return ERROR;
         }
 
@@ -2133,7 +2133,7 @@ BentleyStatus ECSqlParser::ParseComparison(BooleanSqlOperator& op, OSQLParseNode
         {
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
+            GetIssueReporter().Report("'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
             return ERROR;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
@@ -2535,7 +2535,7 @@ BentleyStatus ECSqlParser::ParseSelectStatement(std::unique_ptr<SelectStatementE
 
         if (!single_select->IsCoreSelect())
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
+            GetIssueReporter().Report("SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
             return ERROR;
             }
 
@@ -2780,7 +2780,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
 
     if (resolvedClass == nullptr)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrAlias.c_str(), className.c_str());
+        Issues().Report("ECClass '%s.%s' does not exist.", schemaNameOrAlias.c_str(), className.c_str());
         return ERROR;
         }
 
@@ -2794,7 +2794,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
     if (map == nullptr)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className.c_str());
+        Issues().Report("Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className.c_str());
         return ERROR;
         }
 

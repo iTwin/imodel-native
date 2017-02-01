@@ -35,21 +35,12 @@ void IssueReporter::RemoveListener()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IssueReporter::IsSeverityEnabled(ECDbIssueSeverity severity) const
-    {
-    return m_issueListener != nullptr || LOG.isSeverityEnabled(ToLogSeverity(severity));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void IssueReporter::Report(ECDbIssueSeverity severity, Utf8CP message, ...) const
+void IssueReporter::Report(Utf8CP message, ...) const
     {
     if (Utf8String::IsNullOrEmpty(message))
         return;
 
-    const NativeLogging::SEVERITY logSeverity = ToLogSeverity(severity);
-    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(logSeverity);
+    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
 
     BeMutexHolder lock(m_mutex);
 
@@ -62,10 +53,10 @@ void IssueReporter::Report(ECDbIssueSeverity severity, Utf8CP message, ...) cons
         formattedMessage.VSprintf(message, args);
 
         if (m_issueListener != nullptr)
-            m_issueListener->ReportIssue(severity, formattedMessage.c_str());
+            m_issueListener->ReportIssue(formattedMessage.c_str());
 
         if (isLogSeverityEnabled)
-            LOG.message(logSeverity, formattedMessage.c_str());
+            LOG.error(formattedMessage.c_str());
 
         va_end(args);
         }

@@ -104,10 +104,9 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
     if (!policy.IsSupported())
         {
         //until we can enforce this, we just issue a warning, so that people can fix their ECSchemas
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
-                                                      "DB-schema modifying ECSchema import: %s table '%s'.",
-                                                      mode == CreateOrUpdateTableResult::Created ? "created" : "modified", table.GetName().c_str());
-        /*ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
+        LOG.warningv("DB-schema modifying ECSchema import: %s table '%s'.",
+                       mode == CreateOrUpdateTableResult::Created ? "created" : "modified", table.GetName().c_str());
+        /*ecdb.GetECDbImplR().GetIssueReporter().Report(
                "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to %s table '%s'.",
                       mode == CreateOrUpdateTableResult::Created ? "create" : "modify", table.GetName().c_str());
         return CreateOrUpdateTableResult::Error;
@@ -197,8 +196,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 
     if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create table %s: %s",
-                                                      table.GetName().c_str(), ecdb.GetLastError().c_str());
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -233,7 +231,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop view '%s'", tableName);
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to drop view '%s'", tableName);
             return ERROR;
             }
 
@@ -314,7 +312,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
         if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
@@ -480,8 +478,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
     if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                        "Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
                                                         index.GetName().c_str(), ecclass->GetFullName());
         return ERROR;
         }
@@ -525,7 +522,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             {
             if (failIfExists)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
+                ecdb.GetECDbImplR().GetIssueReporter().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
                 return ERROR;
                 }
 
@@ -552,7 +549,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
