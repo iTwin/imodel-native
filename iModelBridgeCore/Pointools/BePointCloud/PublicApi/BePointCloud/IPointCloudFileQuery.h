@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/IPointCloudFileQuery.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,6 @@ struct IPointCloudFileQuery : public IRefCounted
         virtual StatusInt   _GetUserMetaTagByIndex(int32_t sectionIndex, int32_t tagIndex, WStringR tagName, WStringR tagValue) const = 0;
         virtual StatusInt   _GetUserMetaTagByName(WStringCR sectionDotName, WStringR tagValue) const = 0;
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
     public:
 
