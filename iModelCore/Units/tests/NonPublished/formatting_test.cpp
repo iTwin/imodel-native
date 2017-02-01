@@ -56,7 +56,7 @@ TEST(FormattingTest, FormattingUOM)
     QuantityPtr ang = Quantity::Create(135.0 + 23.0/120.0, "ARC_DEG");
 
     QuantityTriadSpec atr = QuantityTriadSpec(*ang, degUOM, minUOM, secUOM);
-    atr.SetTopUnitSymbol(u8"\xB0");
+    atr.SetTopUnitSymbol("\xC2\xB0");
     atr.SetMidUnitSymbol(u8"'");
     atr.SetLowUnitSymbol(u8"\"");
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
