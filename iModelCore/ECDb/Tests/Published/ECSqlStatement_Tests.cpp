@@ -4497,10 +4497,10 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     ECInstanceKey key;
         {
         ECSqlStatement stmt;
-        //zeroblob function doesn't work for IGeometry props because of type mismatch.
-        //But as we want to test the error handling of OpenBlobIO this is sufficient.
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow) VALUES(zeroblob(10),?,zeroblob(10))"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow,Prop2_Overflow) VALUES(zeroblob(10),?,?,?)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(2, 10)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
         }
 

@@ -1406,7 +1406,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
     GetECDb().SaveChanges();
 
     assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "ECInstanceIdECClassIdAB");
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 3, 1, "C1ECInstanceIdECClassIdscoverflow");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 4, 1, "C1ECInstanceIdECClassIdsc1sc2");
 
     //Verifying the inserted values for classes C1 and C2
     ECSqlStatement stmt;
@@ -1537,7 +1537,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
             sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
             ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(GetECDb(), sql.c_str())) << "Prepare failed for sql: " << sql;
             ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-            ASSERT_EQ(1152, sqlstmt.GetValueInt(0));  // 128 + 1024 = 1152 (OR between SharedDataColumn(128) and InOverflow(1024) column kinds)   
+            ASSERT_EQ(128, sqlstmt.GetValueInt(0));  // 128  == SharedDataColumn(128)
             }
 
         //Inserting Instances in Classes C31 and C32
@@ -1546,7 +1546,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         GetECDb().SaveChanges();
 
         //Verifying values
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1ECInstanceIdECClassIdscoverflow");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 6, 2, "C1ECInstanceIdECClassIdsc1sc2sc3sc4");
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(11.1, stmt.GetValueDouble(0));
@@ -1975,7 +1975,7 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 7));
+    testItems.push_back(std::make_pair("ts_Parent", 4));
     AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
 
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, P2");
@@ -2011,7 +2011,7 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 7));
+        testItems.push_back(std::make_pair("ts_Parent", 6));
         AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
 
         ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, -P2, +P3, +P4, +P5");
