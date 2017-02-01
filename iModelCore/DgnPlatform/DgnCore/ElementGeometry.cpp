@@ -1274,17 +1274,24 @@ void GeometryStreamIO::Writer::Append(DgnGeometryPartId geomPart, TransformCP ge
         return;
         }
 
+    double              scale;
     DPoint3d            origin;
-    RotMatrix           rMatrix;
+    RotMatrix           rMatrix, deScaledMatrix;
     YawPitchRollAngles  angles;
 
     geomToElem->GetTranslation(origin);
     geomToElem->GetMatrix(rMatrix);
+    
+    if (!rMatrix.IsRigidSignedScale(deScaledMatrix, scale))
+        scale = 1.0;
+
+    BeAssert(scale > 0.0); // Mirror not allowed...
+
     YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
+    auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees(), fabs(scale));
 
     fbb.Finish(mloc);
     Append(Operation(OpCode::GeometryPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1753,8 +1760,12 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
 
     DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+    double              scale  = ppfb->scale();
 
     geomToElem = angles.ToTransform(origin);
+
+    if (1.0 != scale)
+        geomToElem.ScaleMatrixColumns(geomToElem, scale, scale, scale);
 
     return true;
     }
@@ -2314,7 +2325,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 FlatBufferBuilder remappedfbb;
 
-                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll(), ppfb->scale());
 
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::GeometryPartInstance, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
@@ -2514,7 +2525,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                DgnGeometryPartId       partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
+                DgnGeometryPartId   partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
                 DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
                 YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
@@ -2531,7 +2542,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 // for (int i=0; i<3; i++)
                 //     output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
 
-                if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll()))
+                if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll() || ppfb->has_scale()))
                     break;
 
                 output._DoOutputLine(Utf8PrintfString("  ").c_str());
@@ -2547,6 +2558,9 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
                 if (ppfb->has_roll())
                     output._DoOutputLine(Utf8PrintfString("Roll: %lf ", angles.GetRoll().Degrees()).c_str());
+
+                if (ppfb->has_scale())
+                    output._DoOutputLine(Utf8PrintfString("Scale: %lf ", ppfb->scale()).c_str());
 
                 output._DoOutputLine(Utf8PrintfString("\n").c_str());
                 break;
@@ -2932,7 +2946,7 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
             continue;
 
         DgnGeometryPartId geomPartId;
-        Transform     geomToElem;
+        Transform geomToElem;
 
         if (!reader.Get(egOp, geomPartId, geomToElem))
             continue;
