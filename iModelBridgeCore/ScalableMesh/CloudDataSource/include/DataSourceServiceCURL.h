@@ -5,15 +5,15 @@
 #include "DataSourceBuffer.h"
 
 
-#define DATA_SOURCE_SERVICE_WSG_DEFAULT_SEGMENT_SIZE  (32 * 1024)
+#define DATA_SOURCE_SERVICE_CURL_DEFAULT_SEGMENT_SIZE  (32 * 1024)
 
 #ifndef NDEBUG
-#define DATA_SOURCE_SERVICE_WSG_DEFAULT_TIMEOUT       (6000 * 1000)
+#define DATA_SOURCE_SERVICE_CURL_DEFAULT_TIMEOUT       (6000 * 1000)
 #else
-#define DATA_SOURCE_SERVICE_WSG_DEFAULT_TIMEOUT       (60 * 1000)
+#define DATA_SOURCE_SERVICE_CURL_DEFAULT_TIMEOUT       (60 * 1000)
 #endif
 
-class DataSourceServiceWSG : public DataSourceService
+class DataSourceServiceCURL : public DataSourceService
 {
 
 public:
@@ -27,7 +27,7 @@ protected:
 
 public:
 
-                                        DataSourceServiceWSG          (DataSourceManager &manager, const ServiceName &service);
+                                        DataSourceServiceCURL           (DataSourceManager &manager, const ServiceName &service);
 
         DataSourceAccount *             createAccount                   (const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key);
         DataSourceStatus                destroyAccount                  (const AccountName & account);

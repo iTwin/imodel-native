@@ -1693,9 +1693,17 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
         memcpy_s(&dimensionY, sizeof(int), (int*)m_texturePtr->GetData() + 1, sizeof(int));
         m_dimension.y = dimensionY;
         memcpy_s(&m_nbChannels, sizeof(int), (int*)m_texturePtr->GetData() + 2, sizeof(int));
-        m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
+        if (!m_texturePtr->IsCompressedType())
+            {
+            m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
+            m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
+            }
+        else
+            {
+            m_dataSize = m_texturePtr->GetSize() - sizeof(int) * 4;
+            m_textureData = m_texturePtr->GetData() + sizeof(int) * 4;
+            }
 
-        m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
         } 
     else
         {
@@ -2408,6 +2416,11 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToSh
 IScalableMeshTexturePtr IScalableMeshNode::GetTexture() const
     {
     return _GetTexture();
+    }
+
+IScalableMeshTexturePtr IScalableMeshNode::GetTextureCompressed() const
+    {
+    return _GetTextureCompressed();
     }
 
 bool IScalableMeshNode::IsTextured() const

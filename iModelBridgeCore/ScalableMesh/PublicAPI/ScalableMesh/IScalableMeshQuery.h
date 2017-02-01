@@ -439,6 +439,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshTexturePtr _GetTexture() const = 0;    
 
+        virtual IScalableMeshTexturePtr _GetTextureCompressed() const = 0;
+
         virtual bool                    _IsTextured() const = 0;        
 
         virtual void                    _GetResolutions(float& geometricResolution, float& textureResolution) const = 0;
@@ -512,6 +514,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow) const;
 
         BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture() const;   
+
+        BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTextureCompressed() const;
 
         BENTLEY_SM_EXPORT bool                    IsTextured() const;           
 

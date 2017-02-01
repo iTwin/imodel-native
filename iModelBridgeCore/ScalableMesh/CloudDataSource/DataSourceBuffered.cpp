@@ -11,6 +11,14 @@ DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super
     setSegmentSize(0);
 }
 
+DataSourceBuffered::~DataSourceBuffered(void)
+    {
+    if (this->buffer)
+        {
+        delete this->buffer;
+        }
+    }
+
 void DataSourceBuffered::setBuffer(DataSourceBuffer * newBuffer)
 {
     buffer = newBuffer;
@@ -174,12 +182,7 @@ DataSourceStatus DataSourceBuffered::flush(void)
     }
     else if (getMode() == DataSourceMode_Write)
         {
-        auto buffer = this->getBuffer();
-
-        account->uploadBlobSync(*this, buffer->getSegment(0), buffer->getSize());
-                          // Upload of this buffer is complete, delete it
-        delete buffer;
-        setBuffer(nullptr);
+        account->upload(*this);
         }
 
     return DataSourceStatus();

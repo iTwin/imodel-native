@@ -613,7 +613,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
                                        10000,
                                        pFilter,
-                                       needBalancing, false, false,
+                                       needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
         BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
@@ -631,7 +631,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        10000,
                                        pFilter,
-                                       needBalancing, false, false,
+                                       needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
 
