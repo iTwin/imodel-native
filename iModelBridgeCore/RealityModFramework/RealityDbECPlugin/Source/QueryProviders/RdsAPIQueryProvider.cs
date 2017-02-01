@@ -108,7 +108,7 @@ namespace IndexECPlugin.Source.QueryProviders
             string thumbnailDocument = properties.TryToGetString("ThumbnailDocument");
             if ( !String.IsNullOrWhiteSpace(thumbnailDocument) )
                 {
-                instance["ThumbnailURL"].StringValue = IndexConstants.RdsUrlBase + IndexConstants.RdsDocumentClass + instance.InstanceId + "~2f" + thumbnailDocument.Replace("/", "~2f");
+                instance["ThumbnailURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + instance.InstanceId + "~2f" + thumbnailDocument.Replace("/", "~2f");
                 }
 
             //DataProvider
@@ -158,7 +158,7 @@ namespace IndexECPlugin.Source.QueryProviders
             string thumbnailDocument = properties.TryToGetString("ThumbnailDocument");
             if ( !String.IsNullOrWhiteSpace(thumbnailDocument) )
                 {
-                instance["ThumbnailURL"].StringValue = IndexConstants.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + thumbnailDocument.Replace("/", "~2f");
+                instance["ThumbnailURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + thumbnailDocument.Replace("/", "~2f");
                 }
             //ThumbnailLoginKey
             //DataProvider
@@ -246,7 +246,7 @@ namespace IndexECPlugin.Source.QueryProviders
             string rootDocument = properties.TryToGetString("RootDocument");
             if ( !String.IsNullOrWhiteSpace(rootDocument) )
                 {
-                instance["MainURL"].StringValue = IndexConstants.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + rootDocument.Replace("/", "~2f");
+                instance["MainURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + rootDocument.Replace("/", "~2f");
                 }
 
             //ParameterizedURL
@@ -292,14 +292,14 @@ namespace IndexECPlugin.Source.QueryProviders
             instance.InstanceId = sourceID;
             instance["Id"].StringValue = sourceID;
 
-            instance["CommunicationProtocol"].StringValue = IndexConstants.RdsUrlBase.Split(':')[0];
+            instance["CommunicationProtocol"].StringValue = m_rdsDataFetcher.RdsUrlBase.Split(':')[0];
             instance["Streamed"].NativeValue = false; 
             //loginKey
             instance["LoginMethod"].StringValue = "IMS";
             //RegistrationPage
             //OrganisationPage
             instance["Name"].StringValue = IndexConstants.RdsSourceName;
-            instance["URL"].StringValue = IndexConstants.RdsUrlBase;
+            instance["URL"].StringValue = m_rdsDataFetcher.RdsUrlBase;
             //ServerContactInformation
             //Fees
             //Legal

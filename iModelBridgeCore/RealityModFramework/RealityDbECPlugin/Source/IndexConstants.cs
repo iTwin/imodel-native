@@ -20,7 +20,7 @@ namespace IndexECPlugin.Source
         public const int USGSIdLenght = 24;
 
         //Rds Constants
-        public const string RdsUrlBase = "https://s3mxcloudservice.cloudapp.net/v2.3/repositories/S3MXECPlugin--Server/S3MX/";
+        //public const string RdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase"); // "https://s3mxcloudservice.cloudapp.net/v2.3/repositories/S3MXECPlugin--Server/S3MX/";
         public const string RdsRealityDataClass = "RealityData";
         public const string RdsDocumentClass = "Document/";
         public const string RdsSubAPIString = "RDS";

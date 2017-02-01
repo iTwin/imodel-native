@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Bentley.EC.Persistence.Operations;
 using Bentley.EC.Persistence.Query;
+using Bentley.ECSystem.Configuration;
 using Bentley.Exceptions;
 using Newtonsoft.Json.Linq;
 
@@ -18,6 +19,11 @@ namespace IndexECPlugin.Source.Helpers
     /// </summary>
     public interface IRDSDataFetcher
         {
+
+        /// <summary>
+        /// The base URL of the RDS Service.
+        /// </summary>
+        string RdsUrlBase {get;}
 
         /// <summary>
         /// Method for querying information on a single entity
@@ -38,7 +44,15 @@ namespace IndexECPlugin.Source.Helpers
 
     internal class RDSDataFetcher : IRDSDataFetcher
         {
-        //const string RdsUrlBase = "https://s3mxcloudservice.cloudapp.net/v2.3/repositories/S3MXECPlugin--Server/S3MX/";
+        string m_rdsUrlBase;
+
+        public string RdsUrlBase 
+            {
+            get
+                {
+                return m_rdsUrlBase;
+                }
+            }
         //const string RealityDataClass = "RealityData/";
 
         string m_token;
@@ -50,6 +64,12 @@ namespace IndexECPlugin.Source.Helpers
         public RDSDataFetcher (string token)
             {
             m_token = token;
+
+            m_rdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase");
+            if(m_rdsUrlBase == null)
+                {
+                throw new ProgrammerException("The RECPRdsUrlBase app setting has not been set");
+                }
             }
 
         private string GetHttpResponse (string url)
@@ -83,7 +103,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <returns>The Jobject containing the information requested.</returns>
         public JObject GetSingleData (string entityID)
             {
-            string url = IndexConstants.RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID;
+            string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID;
 
             JObject jsonResponse = JObject.Parse(GetHttpResponse(url));
             JArray array = jsonResponse["instances"] as JArray;
@@ -108,7 +128,7 @@ namespace IndexECPlugin.Source.Helpers
                 string[] convertedCriteria = classificationCriteria.Select(criterion => ConvertWhereCriteriaToWSG(criterion, criterion.Property.Name)).ToArray();
                 classificationFilter = "&$filter=" + String.Join("+and+", convertedCriteria);
                 }
-            string url = IndexConstants.RdsUrlBase + IndexConstants.RdsRealityDataClass + "?polygon=" + polygon + classificationFilter;
+            string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "?polygon=" + polygon + classificationFilter;
             JObject jsonResponse = JObject.Parse(GetHttpResponse(url));
 
             return jsonResponse["instances"] as JArray;
