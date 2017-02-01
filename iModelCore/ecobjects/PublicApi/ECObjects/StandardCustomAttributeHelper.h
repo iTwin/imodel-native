@@ -262,21 +262,22 @@ public:
     //! @return true if ShareColumns exists on the ECClass, false if it doesn't exist on the ECClass.
     bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
 
+    //! Tries to get the value of the ApplyToSubclassesOnly property from the ShareColumns custom attribute.
+    //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. It remains unchanged, if the ApplyToSubclassesOnly property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if ApplyToSubclassesOnly was set or unset in the ShareColumns custom attribute, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const;
+
     //! Tries to get the value of the SharedColumnCount property from the ShareColumns custom attribute.
     //! The SharedColumnCount includes the overflow column.
     //! @param[out] sharedColumnCount Number of shared columns to use. It remains unchanged, if the SharedColumnCount property wasn't set.
     //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetSharedColumnCount(int& sharedColumnCount) const;
 
-    //! Tries to get the value of the OverflowColumnName property in the ShareColumns custom attribute.
-    //! @param[out] overflowColumnName Name of excess column. It remains unchanged, if the OverflowColumnName property wasn't set.
-    //! @return ECOBJECTSTATUS_Success if OverflowColumnName was set or unset in the ShareColumns custom attribute, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetOverflowColumnName(Utf8String& overflowColumnName) const;
+    //! Tries to get the value of the SharedColumnCountPerOverflowTable property in the ShareColumns custom attribute.
+    //! @param[out] sharedColumnCountPerOverflowTable Number of shared columns of each overflow table. It remains unchanged, if the SharedColumnCountPerOverflowTable property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if SharedColumnCountPerOverflowTable was set or unset in the ShareColumns custom attribute, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSharedColumnCountPerOverflowTable(int& sharedColumnCountPerOverflowTable) const;
 
-    //! Tries to get the value of the ApplyToSubclassesOnly property from the ShareColumns custom attribute.
-    //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. It remains unchanged, if the ApplyToSubclassesOnly property wasn't set.
-    //! @return ECOBJECTSTATUS_Success if ApplyToSubclassesOnly was set or unset in the ShareColumns custom attribute, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const;
     };
 
 //=======================================================================================    

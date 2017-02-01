@@ -809,6 +809,16 @@ ECObjectsStatus ECDbPropertyMap::TryGetCollation(Utf8StringR collation) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ShareColumns::TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const
+    {
+    if (m_ca == nullptr)
+        return ECObjectsStatus::Error;
+
+    return CustomAttributeReader::TryGetBooleanValue(applyToSubclassesOnly, *m_ca, "ApplyToSubclassesOnly");
+    }
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   08 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ShareColumns::TryGetSharedColumnCount(int& sharedColumnCount) const
     {
     if (m_ca == nullptr)
@@ -818,26 +828,17 @@ ECObjectsStatus ShareColumns::TryGetSharedColumnCount(int& sharedColumnCount) co
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   08 / 2016
+//@bsimethod                                               Krischan.Eberle   02 / 2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ShareColumns::TryGetOverflowColumnName(Utf8String& excessColumnName) const
+ECObjectsStatus ShareColumns::TryGetSharedColumnCountPerOverflowTable(int& sharedColumnCountPerOverflowTable) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
 
-    return CustomAttributeReader::TryGetTrimmedValue(excessColumnName, *m_ca, "OverflowColumnName");
+    return CustomAttributeReader::TryGetIntegerValue(sharedColumnCountPerOverflowTable, *m_ca, "SharedColumnCountPerOverflowTable");
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   08 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ShareColumns::TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
 
-    return CustomAttributeReader::TryGetBooleanValue(applyToSubclassesOnly, *m_ca, "ApplyToSubclassesOnly");
-    }
 
 //*****************************************************************
 //ECDbLinkTableRelationshipMap
