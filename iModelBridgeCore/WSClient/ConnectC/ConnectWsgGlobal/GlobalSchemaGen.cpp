@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/ConnectWsgGlobal/GlobalSchemaGen.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //--------------------------------------------------------------------------------------+
@@ -535,7 +535,7 @@ WCharCP Country_Code
     Json::Value instance;
     instance["schemaName"] = "GlobalSchema";
     instance["className"] = "Project_V4";
-
+    
     Json::Value propertiesJson;
     if (UltimateRefId != nullptr) propertiesJson["UltimateRefId"] = Utf8String(UltimateRefId);
     if (Name != nullptr) propertiesJson["Name"] = Utf8String(Name);
@@ -552,6 +552,8 @@ WCharCP Country_Code
     if (Status != nullptr) propertiesJson["Status"] = *Status;
     if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
     if (Country_Code != nullptr) propertiesJson["Country_Code"] = Utf8String(Country_Code);
+    //rbac
+    propertiesJson["IsRbacEnabled"] = true;
     if (propertiesJson.size() == 0)
         {
         api->SetStatusMessage("Invalid parameter passed to function");
