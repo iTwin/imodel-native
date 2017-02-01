@@ -112,21 +112,15 @@ struct Session final
     struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
         {
         private:
-            mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
             mutable Utf8String m_issue;
 
-            void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
-                {
-                m_severity = severity;
-                m_issue = message;
-                }
+            void _OnIssueReported(Utf8CP message) const override { m_issue = message; }
 
         public:
             ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
 
             void Reset() const { m_issue.clear(); }
             bool HasIssue() const { return !m_issue.empty(); }
-            BeSQLite::EC::ECDbIssueSeverity GetSeverity() const { return m_severity; }
             Utf8CP GetIssue() const { return m_issue.c_str(); }
         };
 
