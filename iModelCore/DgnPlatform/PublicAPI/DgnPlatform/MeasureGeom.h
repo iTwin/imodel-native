@@ -103,7 +103,6 @@ BentleyStatus GetOperationStatus ();
 MeasureGeomCollector (OperationType);
 
 //__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
 public:
 
 //! 

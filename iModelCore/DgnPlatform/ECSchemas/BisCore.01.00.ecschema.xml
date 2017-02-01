@@ -177,7 +177,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="A container for persisting physical elements and modeling physical space.">
+    <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="A container for persisting physical elements that model physical space.">
         <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -249,7 +249,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model" description="The singleton container for repository-related definition elements.">
+    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model" description="The singleton container for repository-specific definition elements.">
         <BaseClass>DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -498,15 +498,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalTemplate" modifier="Abstract" displayLabel="Physical Template">
-        <BaseClass>DefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type">
+    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -524,7 +516,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type">
+    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type" description="Defines a set of properties (the 'type') that can be associated with a 2D Graphical Element.">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
