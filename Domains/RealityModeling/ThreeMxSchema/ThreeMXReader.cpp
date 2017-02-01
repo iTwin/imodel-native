@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMXReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -229,7 +229,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
+            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::BottomUp::Yes);
             }
         }
 
