@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceRegularVsOverflowColumns.cpp $
+|  $Source: Tests/Performance/PerformanceRegularVsOverflowTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PerformanceRegularVsOverflowColumns : ECDbTestFixture
+struct PerformanceRegularVsOverflowTestFixture : ECDbTestFixture
     {
     enum class Scenario
         {
@@ -59,7 +59,7 @@ struct PerformanceRegularVsOverflowColumns : ECDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunIntegerTest(int intValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunIntegerTest(int intValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -110,7 +110,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTest(int intValues[], Scenar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunLongTest(int64_t longValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunLongTest(int64_t longValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -161,7 +161,7 @@ void PerformanceRegularVsOverflowColumns::RunLongTest(int64_t longValues[], Scen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunDoubleTest(double doubleValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunDoubleTest(double doubleValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -214,7 +214,7 @@ void PerformanceRegularVsOverflowColumns::RunDoubleTest(double doubleValues[], S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunBoolTest(bool boolValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunBoolTest(bool boolValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -264,7 +264,7 @@ void PerformanceRegularVsOverflowColumns::RunBoolTest(bool boolValues[], Scenari
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunStringTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunStringTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -314,7 +314,7 @@ void PerformanceRegularVsOverflowColumns::RunStringTest(Utf8String stringValues[
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunPoint2dTest(std::vector<DPoint2d> const& point2dValues, Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunPoint2dTest(std::vector<DPoint2d> const& point2dValues, Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -366,7 +366,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint2dTest(std::vector<DPoint2d> c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunPoint3dTest(std::vector<DPoint3d> const& point3dValues, Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunPoint3dTest(std::vector<DPoint3d> const& point3dValues, Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -416,7 +416,7 @@ void PerformanceRegularVsOverflowColumns::RunPoint3dTest(std::vector<DPoint3d> c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunBlobTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunBlobTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
     {
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
@@ -468,7 +468,7 @@ void PerformanceRegularVsOverflowColumns::RunBlobTest(Utf8String stringValues[],
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime)
     {
     Utf8String insertECSql;
     Utf8String selectECSql;
@@ -551,7 +551,7 @@ void PerformanceRegularVsOverflowColumns::RunIntegerTestSpecifiedSchema(int intV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance)
     {
     // get random int values between minimum and maximum integer
     std::random_device rd;
@@ -582,7 +582,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, LongPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, LongPerformance)
     {
     // get random int values between minimum and maximum long
     std::random_device rd;
@@ -612,7 +612,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, LongPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, DoublePerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, DoublePerformance)
     {
     // get random int values between minimum and maximum Double
     std::random_device rd;
@@ -643,7 +643,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, DoublePerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, BoolPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, BoolPerformance)
     {
     std::random_device rd;
     std::uniform_int_distribution<int> dist(std::numeric_limits<int>().min(), std::numeric_limits<int>().max());
@@ -672,7 +672,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, BoolPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, StringPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, StringPerformance)
     {
     Utf8String stringValues[s_insertCount];
     GetRandomStrings(stringValues);
@@ -699,7 +699,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, StringPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, Point2dPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, Point2dPerformance)
     {
     std::random_device rd;
     std::uniform_real_distribution<double> dist(-10000.0, 10000.0);
@@ -729,7 +729,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, Point2dPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, Point3dPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, Point3dPerformance)
     {
     std::random_device rd;
     std::uniform_real_distribution<double> dist(-10000.0, 10000.0);
@@ -759,7 +759,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, Point3dPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, BlobPerformance)
+TEST_F(PerformanceRegularVsOverflowTestFixture, BlobPerformance)
     {
     Utf8String testSchemaXml;
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Binary, Scenario::Regular);
@@ -786,7 +786,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, BlobPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance_VaryProperties_VarySharedColumns)
+TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance_VaryProperties_VarySharedColumns)
     {
     int intValues[s_insertCount];
     GetRandomIntegers(intValues, s_insertCount);
@@ -820,7 +820,7 @@ TEST_F(PerformanceRegularVsOverflowColumns, IntegerPerformance_VaryProperties_Va
 // @bsimethod                                    Krischan.Eberle                 01/17
 //+---------------+---------------+---------------+---------------+---------------+---
 //static
-void PerformanceRegularVsOverflowColumns::GetTestSchemaXml(Utf8StringR schemaXml, PrimitiveType primType, Scenario scenario)
+void PerformanceRegularVsOverflowTestFixture::GetTestSchemaXml(Utf8StringR schemaXml, PrimitiveType primType, Scenario scenario)
     {
     switch (scenario)
         {
@@ -856,7 +856,7 @@ void PerformanceRegularVsOverflowColumns::GetTestSchemaXml(Utf8StringR schemaXml
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::SetUpTestDb(Utf8String seedDbName, Utf8CP schemaXml, Utf8String destFileName)
+void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName, Utf8CP schemaXml, Utf8String destFileName)
     {
     BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(seedDbName.c_str());
 
@@ -874,7 +874,7 @@ void PerformanceRegularVsOverflowColumns::SetUpTestDb(Utf8String seedDbName, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount)
+void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount)
     {
     Utf8String seedFileName;
     seedFileName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties_seed%d.ecdb", sharedColumnsCount, propertiesCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
@@ -938,7 +938,7 @@ void PerformanceRegularVsOverflowColumns::SetUpDbWithSpecifiedSchema(Utf8String 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql)
+void PerformanceRegularVsOverflowTestFixture::GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql)
     {
     ECSchemaCP ecSchema = GetECDb().Schemas().GetECSchema("TestSchema", true);
     for (ECClassCP testClass : ecSchema->GetClasses())
@@ -979,7 +979,7 @@ void PerformanceRegularVsOverflowColumns::GetECSqlStatements(Utf8StringR insertE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::ReopenECDb()
+void PerformanceRegularVsOverflowTestFixture::ReopenECDb()
     {
     Utf8String dbFileName(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -989,7 +989,7 @@ void PerformanceRegularVsOverflowColumns::ReopenECDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::GetRandomStrings(Utf8String stringValues[])
+void PerformanceRegularVsOverflowTestFixture::GetRandomStrings(Utf8String stringValues[])
     {
     std::random_device rd;
     std::uniform_int_distribution<int> dist(0, 61);
@@ -1010,7 +1010,7 @@ void PerformanceRegularVsOverflowColumns::GetRandomStrings(Utf8String stringValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowColumns::GetRandomIntegers(int intValues[], int count)
+void PerformanceRegularVsOverflowTestFixture::GetRandomIntegers(int intValues[], int count)
     {
     // get random int values between minimum and maximum integer
     std::random_device rd;
@@ -1023,7 +1023,7 @@ void PerformanceRegularVsOverflowColumns::GetRandomIntegers(int intValues[], int
 // @bsimethod                                    Krischan.Eberle                 01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP PerformanceRegularVsOverflowColumns::PrimitiveTypeToXmlString(PrimitiveType type)
+Utf8CP PerformanceRegularVsOverflowTestFixture::PrimitiveTypeToXmlString(PrimitiveType type)
     {
     switch (type)
         {

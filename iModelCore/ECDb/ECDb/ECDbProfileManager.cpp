@@ -437,7 +437,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
                            "SharedColumnCount INTEGER,"
-                           "OverflowColumnName TEXT,"
+                           "SharedColumnCountPerOverflowTable INTEGER,"
                            "JoinedTableInfo INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;

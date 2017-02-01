@@ -550,7 +550,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, CRUDOnColumnTypes_Physical_Shared_Overfl
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>2</SharedColumnCount>"
+        "              <SharedColumnCount>1</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -582,11 +582,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, CRUDOnColumnTypes_Physical_Shared_Overfl
             case 0:
                 ASSERT_EQ(64, sqlstmt.GetValueInt(0)); //Column A is unshared Data Column
                 break;
-            case 1:
-                ASSERT_EQ(128, sqlstmt.GetValueInt(0)); //Column B is a Shared Column
-                break;
-            case 2:
-                ASSERT_EQ(1152, sqlstmt.GetValueInt(0)); //Column B is Overflow Column
+            default:
+                ASSERT_EQ(128, sqlstmt.GetValueInt(0)); //other columns are a Shared Column
                 break;
             }
         sqlstmt.Finalize();

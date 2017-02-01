@@ -349,7 +349,6 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
                              <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
                         <ShareColumns xmlns='ECDbMap.02.00'>
-                              <SharedColumnCount>1</SharedColumnCount>
                         </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="I" typeName="int" />
@@ -3607,7 +3606,7 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, GeometryAndOverflowColumns)
+TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
     {
     ECDbCR ecdb = SetupECDb("ecsql_geometry.ecdb", SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -3618,7 +3617,7 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflowColumns)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>3</SharedColumnCount>
+                                        <SharedColumnCount>2</SharedColumnCount>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
@@ -4288,7 +4287,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
         "           <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "           </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
@@ -4335,7 +4334,7 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>6</SharedColumnCount>
+                                        <SharedColumnCount>5</SharedColumnCount>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -4356,8 +4355,8 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql() << "BindZeroBlob against string prop is ok as blob and strings are compatible in SQLite";
     ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql() << "BindZeroBlob against prim array is never allowed";
     ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(5, 10)) << stmt.GetECSql() << "BindZeroBlob against struct array is never allowed";
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(6, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(7, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(6, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(7, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4484,7 +4483,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>3</SharedColumnCount>
+                                        <SharedColumnCount>2</SharedColumnCount>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -4498,7 +4497,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     ECInstanceKey key;
         {
         ECSqlStatement stmt;
-        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroBlob is not supported for overflow columns.
+        //zeroblob function doesn't work for IGeometry props because of type mismatch.
         //But as we want to test the error handling of OpenBlobIO this is sufficient.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow) VALUES(zeroblob(10),?,zeroblob(10))"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
@@ -4510,19 +4509,19 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
 
         {
         BlobIO io;
-        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop1", key.GetECInstanceId(), true)) << "Binary property not mapped to overflow column";
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop1", key.GetECInstanceId(), true)) << "Binary property not mapped to overflow table";
         }
         {
         BlobIO io;
-        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop2", key.GetECInstanceId(), true)) << "IGeometry property not mapped to overflow column";
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop2", key.GetECInstanceId(), true)) << "IGeometry property not mapped to overflow table";
         }
         {
         BlobIO io;
-        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *testClass, "Prop1_Overflow", key.GetECInstanceId(), true)) << "Binary property mapped to overflow column";
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop1_Overflow", key.GetECInstanceId(), true)) << "Binary property mapped to overflow table";
         }
         {
         BlobIO io;
-        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *testClass, "Prop2_Overflow", key.GetECInstanceId(), true)) << "IGeometry property mapped to overflow column";
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop2_Overflow", key.GetECInstanceId(), true)) << "IGeometry property mapped to overflow table";
         }
     }
     }

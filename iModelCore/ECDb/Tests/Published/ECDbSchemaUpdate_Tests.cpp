@@ -1369,7 +1369,7 @@ auto assertSelectSql = [](ECDbCR ecdb, Utf8CP sql, int expectedColumnCount, int 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         1/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowColumnOnJoinedTable)
+TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "

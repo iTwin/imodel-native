@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,20 +50,20 @@ struct TablePerHierarchyInfo
             ApplyToSubclassesOnly = 2
             };
     private:
-        bool m_isValid;
-        ShareColumnsMode m_shareColumnsMode;
-        int m_sharedColumnCount;
-        Utf8String m_overflowColumnName;
-        JoinedTableInfo m_joinedTableInfo;
+        bool m_isValid = false;
+        ShareColumnsMode m_shareColumnsMode = ShareColumnsMode::No;
+        int m_sharedColumnCount = -1;
+        int m_sharedColumnCountPerOverflowTable = -1;
+        JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
 
         BentleyStatus DetermineSharedColumnsInfo(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
         BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
 
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
-        explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid), m_shareColumnsMode(ShareColumnsMode::No), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
-        TablePerHierarchyInfo(ShareColumnsMode shareColumnsMode, int sharedColumnCount, Utf8CP overflowColName, JoinedTableInfo joinedTableInfo)
-            : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColName), m_joinedTableInfo(joinedTableInfo)
+        explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid) {}
+        TablePerHierarchyInfo(ShareColumnsMode shareColumnsMode, int sharedColumnCount, int sharedColumnCountPerOverflowTable, JoinedTableInfo joinedTableInfo)
+            : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_sharedColumnCount(sharedColumnCount), m_sharedColumnCountPerOverflowTable(sharedColumnCountPerOverflowTable), m_joinedTableInfo(joinedTableInfo)
             {}
 
         BentleyStatus Initialize(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
@@ -72,7 +72,7 @@ struct TablePerHierarchyInfo
         bool IsValid() const { return m_isValid; }
         ShareColumnsMode GetShareColumnsMode() const { return m_shareColumnsMode; }
         int GetSharedColumnCount() const { return m_sharedColumnCount; }
-        Utf8StringCR GetOverflowColumnName() const { return m_overflowColumnName; }
+        int GetSharedColumnCountPerOverflowTable() const { return m_sharedColumnCountPerOverflowTable; }
         JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }
     };
 

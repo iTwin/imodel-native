@@ -229,9 +229,6 @@
     <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceRegularVsOverflowColumns.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ChangeSummary_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -239,6 +236,9 @@
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceOverflowTablesResearchTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceRegularVsOverflowTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
