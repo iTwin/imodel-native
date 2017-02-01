@@ -380,7 +380,7 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         auto const& displayParams = mesh.GetDisplayParams();
         displayParams.ResolveTextureImage(db);
         if (nullptr != displayParams.GetTextureImage())
-            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
+            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
 
         return true;
         }

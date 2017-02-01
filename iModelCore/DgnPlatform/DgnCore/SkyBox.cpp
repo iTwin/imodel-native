@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SkyBox.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -120,7 +120,7 @@ Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::S
         return nullptr;
 
     ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
-    return system._CreateTexture(jpeg, Image::Format::Rgba, Image::BottomUp::No);
+    return system._CreateTexture(jpeg, Image::BottomUp::No);
     }
 
 static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}

@@ -119,7 +119,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     ImageSource source(mapRoot.m_format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
+    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, textureParams);
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency

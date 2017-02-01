@@ -1288,9 +1288,9 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddInstancedTriMesh(TriMeshArgs const&, Instances const&) { BeAssert(false); }
+    virtual void _AddInstancedTriMesh(TriMeshArgs const&, Instances const&) { BeAssertOnce(false); }
     virtual void _AddIndexedPolylines(IndexedPolylineArgs const& args) = 0;
-    virtual void _AddInstancedPolylines(IndexedPolylineArgs const&, Instances const&) { BeAssert(false); }
+    virtual void _AddInstancedPolylines(IndexedPolylineArgs const&, Instances const&) { BeAssertOnce(false); }
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
@@ -1756,7 +1756,7 @@ struct System
     virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -1849,7 +1849,7 @@ public:
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
-    TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
+    TexturePtr CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
