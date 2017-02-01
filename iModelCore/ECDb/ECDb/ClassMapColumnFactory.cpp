@@ -236,10 +236,9 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
     bool effectiveNotNullConstraint = params.AddNotNullConstraint();
     if (params.AddNotNullConstraint() && (GetTable().HasExclusiveRootECClass() && GetTable().GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
-                                                        "For the ECProperty '%s' on ECClass '%s' a NOT NULL constraint is defined. The constraint cannot be enforced though because "
-                                                        "the ECProperty has base ECClasses mapped to the same table.",
-                                                        ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
+        LOG.warningv("For the ECProperty '%s' on ECClass '%s' a NOT NULL constraint is defined. The constraint cannot be enforced though because "
+                     "the ECProperty has base ECClasses mapped to the same table.",
+                     ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
 
         effectiveNotNullConstraint = false;
         }
@@ -313,10 +312,9 @@ DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR pro
     bool addUniqueConstraint = params.AddUniqueConstraint();
     if (params.AddNotNullConstraint() || params.AddUniqueConstraint())
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
-                                                        "For the ECProperty '%s' on ECClass '%s' either a NOT NULL or a UNIQUE constraint is defined. The constraint cannot be enforced though because "
-                                                        "the ECProperty is mapped to a column shared with other ECProperties.",
-                                                        prop.GetName().c_str(), prop.GetClass().GetFullName());
+        LOG.warningv("For the ECProperty '%s' on ECClass '%s' either a NOT NULL or a UNIQUE constraint is defined. The constraint cannot be enforced though because "
+                     "the ECProperty is mapped to a column shared with other ECProperties.",
+                     prop.GetName().c_str(), prop.GetClass().GetFullName());
 
         addNotNullConstraint = false;
         addUniqueConstraint = false;

@@ -36,7 +36,7 @@
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceOverflowProps.cpp" />
-    <ClCompile Include="Performance\PerformanceOverflowTablesReasearchTests.cpp" />
+    <ClCompile Include="Performance\PerformanceOverflowTablesResearchTests.cpp" />
     <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp" />
     <ClCompile Include="Performance\PerformanceRegularVsOverflowColumns.cpp" />
     <ClCompile Include="Performance\PerformancePhysicalVsOverflowColumnsSqliteCrudTests.cpp" />

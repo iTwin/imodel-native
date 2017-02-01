@@ -244,8 +244,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>()->GetColumn());
     if (currentTimeStampColumn.IsShared())
         {
-        Issues().Report(ECDbIssueSeverity::Warning,
-                   "ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
+        LOG.warningv("ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
                    "ECDb therefore does not create the current timestamp trigger for this property.",
                            currentTimeStampProp.GetName().c_str(), currentTimeStampProp.GetClass().GetFullName());
 

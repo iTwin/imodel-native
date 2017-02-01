@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -52,7 +52,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
 
     if (GetType() != ECSqlType::Select && m_ecdb.IsReadonly())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
+        LOG.error("ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
         return ECSqlStatus::Error;
         }
 
@@ -82,9 +82,11 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         DbResult nativeSqlStat = GetSqliteStatementR().TryPrepare(m_ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
-            Utf8String errorMessage;
-            errorMessage.Sprintf("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare with error code", ecsql, nativeSql.c_str());
-            Issues().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
+            IssueReporter const& issues = GetECDb().GetECDbImplR().GetIssueReporter();
+            if (issues.IsSeverityEnabled(ECDbIssueSeverity::Error))
+                issues.Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", ecsql, nativeSql.c_str(),
+                                                                   ECDb::InterpretDbResult(nativeSqlStat), GetECDb().GetLastError().c_str());
+
             //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
             //is a wrong ECSQL provided by the user.
             return ECSqlStatus::InvalidECSql;
@@ -115,7 +117,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder(int parameterIndex)
         return *binder;
 
     if (stat == ECSqlStatus::Error)
-        Issues().Report(ECDbIssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
+        LOG.errorv("Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
 
     return NoopECSqlBinder::Get();
     }
@@ -130,7 +132,7 @@ int ECSqlPreparedStatement::GetParameterIndex(Utf8CP parameterName) const
 
     int index = GetParameterMap().GetIndexForName(parameterName);
     if (index <= 0)
-        Issues().Report(ECDbIssueSeverity::Error, "No parameter index found for parameter name :%s.", parameterName);
+        LOG.errorv("No parameter index found for parameter name :%s.", parameterName);
 
     return index;
     }
@@ -154,7 +156,7 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        Issues().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat);
+        ECDbLogger::LogSqliteError(GetECDb(), nativeSqlStat);
         return ECSqlStatus(nativeSqlStat);
         }
 
@@ -177,7 +179,7 @@ DbResult ECSqlPreparedStatement::DoStep()
         {
         Utf8String msg;
         msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
-        Issues().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStatus, msg.c_str());
+        ECDbLogger::LogSqliteError(GetECDb(), nativeSqlStatus, msg.c_str());
         }
     return nativeSqlStatus;
     }
@@ -215,7 +217,7 @@ BentleyStatus ECSqlPreparedStatement::AssertIsValid() const
     {
     if (m_preparationClearCacheCounter != m_ecdb.GetECDbImplR().GetClearCacheCounter())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "The ECSqlStatement '%s' can no longer be used because an ECSchema import took place. ECSqlStatements are invalidated after an ECSchema import.",
+        LOG.errorv("The ECSqlStatement '%s' can no longer be used because an ECSchema import took place. ECSqlStatements are invalidated after an ECSchema import.",
                         m_ecsql.c_str());
         return ERROR;
         }
@@ -295,7 +297,7 @@ IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
 
     if (columnIndex < 0 || columnIndex >= (int) (m_fields.size()))
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Column index '%d' is out of bounds.", columnIndex);
+        LOG.errorv("Column index '%d' is out of bounds.", columnIndex);
         return NoopECSqlValue::GetSingleton();
         }
 
@@ -408,7 +410,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             {
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
-            Issues().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
             return BE_SQLITE_CONSTRAINT_UNIQUE;
             }
 
@@ -431,13 +433,13 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
     DbResult dbStat = GetECDb().GetECDbImplR ().GetECInstanceIdSequence().GetNextValue<ECInstanceId> (generatedECInstanceId);
     if (dbStat != BE_SQLITE_OK)
         {
-        Issues().ReportSqliteIssue(ECDbIssueSeverity::Error, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
+        ECDbLogger::LogSqliteError(GetECDb(), dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
         return ECSqlStatus(dbStat);
         }
 
     const ECSqlStatus stat = ecinstanceidBinder->BindId(generatedECInstanceId);
     if (!stat.IsSuccess())
-        Issues().Report(ECDbIssueSeverity::Error, "ECSqlStatement::Step failed: Could not bind the generated ECInstanceId.");
+        LOG.error("ECSqlStatement::Step failed: Could not bind the generated ECInstanceId.");
 
     return stat;
     }

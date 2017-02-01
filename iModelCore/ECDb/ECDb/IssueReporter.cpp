@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/IssueReporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -68,28 +68,6 @@ void IssueReporter::Report(ECDbIssueSeverity severity, Utf8CP message, ...) cons
             LOG.message(logSeverity, formattedMessage.c_str());
 
         va_end(args);
-        }
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void IssueReporter::ReportSqliteIssue(ECDbIssueSeverity sev, DbResult sqliteStat, Utf8CP messageHeader) const
-    {
-    if (BE_SQLITE_OK != sqliteStat && IsSeverityEnabled(sev))
-        {
-        if (messageHeader == nullptr)
-            messageHeader = "SQLite error:";
-
-        Utf8CP dbResultStr = ECDb::InterpretDbResult(sqliteStat);
-
-        Utf8String lastSqliteErrorMsg = m_ecdb.GetLastError();
-        //ECDb sometimes returns DbResult errors on its own. In that case there is no SQLite error to output
-        if (lastSqliteErrorMsg.empty())
-            Report(sev, "%s %s", messageHeader, dbResultStr);
-        else
-            Report(sev, "%s %s: %s", messageHeader, dbResultStr, lastSqliteErrorMsg.c_str());
         }
     }
 

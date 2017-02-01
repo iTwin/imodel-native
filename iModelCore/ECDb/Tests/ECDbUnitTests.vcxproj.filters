@@ -238,7 +238,7 @@
     <ClCompile Include="Performance\PerformancePhysicalVsOverflowColumnsSqliteCrudTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceOverflowTablesReasearchTests.cpp">
+    <ClCompile Include="Performance\PerformanceOverflowTablesResearchTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>

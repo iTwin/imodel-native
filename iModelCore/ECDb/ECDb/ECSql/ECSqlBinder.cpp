@@ -49,21 +49,7 @@ ECDbCR ECSqlBinder::GetECDb() const
 ECSqlStatus ECSqlBinder::LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
     BeAssert(m_ecsqlStatement.IsPrepared());
-    if (BE_SQLITE_OK != sqliteStat && LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
-        {
-        if (errorMessageHeader == nullptr)
-            errorMessageHeader = "SQLite error:";
-
-        Utf8CP dbResultStr = ECDb::InterpretDbResult(sqliteStat);
-
-        Utf8String lastSqliteErrorMsg = GetECDb().GetLastError();
-        //ECDb sometimes returns DbResult errors on its own. In that case there is no SQLite error to output
-        if (lastSqliteErrorMsg.empty())
-            LOG.errorv("%s %s", errorMessageHeader, dbResultStr);
-        else
-            LOG.errorv("%s %s: %s", errorMessageHeader, dbResultStr, lastSqliteErrorMsg.c_str());
-        }
-
+    ECDbLogger::LogSqliteError(GetECDb(), sqliteStat, errorMessageHeader);
     return ECSqlStatus(sqliteStat);
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -254,7 +254,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
             {
             if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
+                LOG.warningv("Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
                 continue;
                 }
 

@@ -2,12 +2,13 @@
 |
 |     $Source: ECDb/ECDbLogger.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDbTypes.h>
+#include <BeSQLite/BeSQLite.h>
 #include <Logging/bentleylogging.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -28,6 +29,8 @@ private:
 
 public:
     static BentleyApi::NativeLogging::ILogger& Get ();
+
+    static void LogSqliteError(BeSQLite::Db const&, BeSQLite::DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

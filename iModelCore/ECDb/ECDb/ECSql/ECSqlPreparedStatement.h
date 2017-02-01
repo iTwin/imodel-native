@@ -53,8 +53,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
 
         BentleyStatus AssertIsValid() const;
 
-        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
-
     public:
         virtual ~ECSqlPreparedStatement() {}
 
