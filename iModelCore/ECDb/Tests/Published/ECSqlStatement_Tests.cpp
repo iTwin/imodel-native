@@ -1721,14 +1721,11 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
     //add three array elements
     const int count = 3;
 
-    ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
 
     for (int i = 0; i < count; i++)
         {
         IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = arrayElementBinder["i"].BindInt(i * 2);
@@ -1787,16 +1784,12 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUpdate)
     statement.BindInt(3, 123);
     statement.BindInt64(1, 1000);
 
-    ECDbIssueListener issueListener(ecdb);
-
     //add three array elements
     const uint32_t arraySize = 3;
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < arraySize; i++)
         {
         IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = arrayElementBinder["i"].BindInt(i * 2);
@@ -2086,9 +2079,7 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
     size_t expectedIndex = 0;
     for (IECSqlValue const* arrayElement : intArray)
         {
-        ECDbIssueListener issueListener(ecdb);
         int actualArrayElement = arrayElement->GetInt();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         ASSERT_EQ(expectedIntArray[expectedIndex], actualArrayElement);
         expectedIndex++;
         }
@@ -2097,9 +2088,7 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
     expectedIndex = 0;
     for (IECSqlValue const* arrayElement : stringArray)
         {
-        ECDbIssueListener issueListener(ecdb);
         auto actualArrayElement = arrayElement->GetText();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         ASSERT_STREQ(expectedStringArray[expectedIndex].c_str(), actualArrayElement);
         expectedIndex++;
         }
@@ -2123,32 +2112,25 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
         DateTime(DateTime::Kind::Local, 2014, 07, 07, 12, 0)};
 
 
-    ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& arrayBinderDt = statement.GetBinder(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
         IECSqlBinder& arrayElementBinder = arrayBinderDt.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Local ? ECSqlStatus::Error : ECSqlStatus::Success;
         ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate));
-        issueListener.Reset();
         }
 
 
     IECSqlBinder& arrayBinderDtUtc = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
         IECSqlBinder& arrayElementBinder = arrayBinderDtUtc.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::Error;
         ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate));
-        issueListener.Reset();
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
@@ -2258,9 +2240,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
         auto stat = statement.Prepare(ecdb, insertECSql);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
 
-        ECDbIssueListener issueListener(ecdb);
         auto& binder = statement.GetBinder(structParameterIndex);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson(bindStatus, statement, expectedStructValue, binder);
@@ -2278,9 +2258,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
-        issueListener.Reset();
         IECSqlValue const& structValue = statement.GetValue(structValueIndex);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         VerifyECSqlValue(statement, expectedStructValue, structValue);
         };
 
@@ -2394,9 +2372,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         auto stat = statement.Prepare(ecdb, insertECSql);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
 
-        ECDbIssueListener issueListener(ecdb);
         IECSqlBinder& structBinder = statement.GetBinder(structParameterIndex);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson(bindStatus, statement, structValue, structBinder);
@@ -2418,9 +2394,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         stat = statement.BindId(ecInstanceIdParameterIndex, ecInstanceKey.GetECInstanceId());
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed";
 
-        ECDbIssueListener issueListener(ecdb);
         auto& binder = statement.GetBinder(structParameterIndex);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson(bindStatus, statement, expectedStructValue, binder);
@@ -2436,9 +2410,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
         stepStat = statement.Step();
         ASSERT_EQ((int) BE_SQLITE_ROW, (int) stepStat);
 
-        issueListener.Reset();
         IECSqlValue const& structValue = statement.GetValue(structValueIndex);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         VerifyECSqlValue(statement, expectedStructValue, structValue);
         };
 
@@ -3077,31 +3049,19 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //Top level column
-    ECDbIssueListener issueListener(ecdb);
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("Dt_Array", false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
-    issueListener.Reset();
     auto const& topLevelArrayValue = stmt.GetValueArray(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     //out of bounds test
-    BeTest::SetFailOnAssert(false);
-    {
-    stmt.GetColumnInfo(-1);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1) is expected to fail";
-    stmt.GetColumnInfo(2);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo is expected to fail with too large index";
-    }
-    BeTest::SetFailOnAssert(true);
-
+    ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid()) << "ECSqlStatement::GetColumnInfo (-1) is expected to fail";
+    ASSERT_FALSE(stmt.GetColumnInfo(2).IsValid()) << "ECSqlStatement::GetColumnInfo is expected to fail with too large index";
+    
     //In array level
     int arrayIndex = 0;
     for (IECSqlValue const* arrayElement : topLevelArrayValue)
         {
-        issueListener.Reset();
         auto const& arrayElementColumnInfo = arrayElement->GetColumnInfo();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "Primitive array element IECSqlValue::GetColumnInfo failed.";
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf("Dt_Array[%d]", arrayIndex);
         AssertColumnInfo(nullptr, false, expectedPropPath.c_str(), "PSA", "c", arrayElementColumnInfo);
@@ -3123,67 +3083,35 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ECDbIssueListener issueListener(ecdb);
     //Top level column
-    auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
+    ECSqlColumnInfo const& topLevelColumnInfo = stmt.GetColumnInfo(0);
     AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
 
     //out of bounds test
-    BeTest::SetFailOnAssert(false);
     {
-    issueListener.Reset();
-    stmt.GetColumnInfo(-1);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1)";
-    stmt.GetColumnInfo(2);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo with too large index";
+    ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid()) << "Index out of range";
+    ASSERT_FALSE(stmt.GetColumnInfo(2).IsValid()) << "Index out of range";
     }
-    BeTest::SetFailOnAssert(true);
 
     //SAStructProp.PStructProp level
     auto const& topLevelStructValue = stmt.GetValueStruct(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     auto const& nestedStructPropColumnInfo = topLevelStructValue.GetValue(0).GetColumnInfo(); //0 refers to first member in SAStructProp which is PStructProp
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "Struct IECSqlValue::GetColumnInfo ()";
     AssertColumnInfo("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, nestedStructPropColumnInfo);
     auto const& nestedStructValue = topLevelStructValue.GetValue(0).GetStruct();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "Struct IECSqlValue::GetStruct ()";;
-
-    //out of bounds test
-    BeTest::SetFailOnAssert(false);
-    {
-    topLevelStructValue.GetValue(-1);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (-1) for struct value.";
-    topLevelStructValue.GetValue(topLevelStructValue.GetMemberCount());
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue with too large index for struct value";
-    }
-    BeTest::SetFailOnAssert(true);
 
     //SAStructProp.PStructProp.XXX level
     auto const& firstStructMemberColumnInfo = nestedStructValue.GetValue(0).GetColumnInfo();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, firstStructMemberColumnInfo);
 
-    issueListener.Reset();
     auto const& secondStructMemberColumnInfo = nestedStructValue.GetValue(1).GetColumnInfo();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, secondStructMemberColumnInfo);
 
-    issueListener.Reset();
     auto const& eighthStructMemberColumnInfo = nestedStructValue.GetValue(8).GetColumnInfo();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, eighthStructMemberColumnInfo);
 
     //out of bounds test
-    BeTest::SetFailOnAssert(false);
-    {
-    issueListener.Reset();
-    nestedStructValue.GetValue(-1).GetColumnInfo();
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (-1) for struct value on second nesting level.";
-    nestedStructValue.GetValue(nestedStructValue.GetMemberCount());
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue with too large index for struct value on second nesting level.";
-    }
-    BeTest::SetFailOnAssert(true);
+    ASSERT_FALSE(nestedStructValue.GetValue(-1).GetColumnInfo().IsValid());
+    ASSERT_FALSE(nestedStructValue.GetValue(nestedStructValue.GetMemberCount()).GetColumnInfo().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3199,43 +3127,26 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ECDbIssueListener issueListener(ecdb);
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
-    issueListener.Reset();
     auto const& topLevelStructValue = stmt.GetValueStruct(0);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     //out of bounds test
-    BeTest::SetFailOnAssert(false);
     {
-    stmt.GetColumnInfo(-1);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1)";
-    stmt.GetColumnInfo(2);
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo with too large index";
+    ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid());
+    ASSERT_FALSE(stmt.GetColumnInfo(2).IsValid());
     }
-    BeTest::SetFailOnAssert(true);
 
     //SAStructProp.PStruct_Array level
     int columnIndex = 1;
     auto const& pstructArrayColumnInfo = topLevelStructValue.GetValue(columnIndex).GetColumnInfo();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
     AssertColumnInfo("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayColumnInfo);
-    issueListener.Reset();
     auto const& pstructArrayValue = topLevelStructValue.GetValue(columnIndex).GetArray();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
     //out of bounds test
-    BeTest::SetFailOnAssert(false);
-    {
-    topLevelStructValue.GetValue(-1).GetColumnInfo();
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (-1).GetColumnInfo () for struct value";
-    topLevelStructValue.GetValue(topLevelStructValue.GetMemberCount()).GetColumnInfo();
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (N).GetColumnInfo with N being too large index for struct value";
-    }
-    BeTest::SetFailOnAssert(true);
+    ASSERT_FALSE(topLevelStructValue.GetValue(-1).GetColumnInfo().IsValid()) << "GetValue (-1).GetColumnInfo () for struct value";
+    ASSERT_FALSE(topLevelStructValue.GetValue(topLevelStructValue.GetMemberCount()).GetColumnInfo().IsValid()) << "GetValue (N).GetColumnInfo with N being too large index for struct value";
 
     //SAStructProp.PStruct_Array[] level
     int arrayIndex = 0;
@@ -3244,30 +3155,20 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
         {
         IECSqlStructValue const& pstructArrayElement = arrayElement->GetStruct();
         //first struct member
-        issueListener.Reset();
         auto const& arrayElementFirstColumnInfo = pstructArrayElement.GetValue(0).GetColumnInfo();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
+        ASSERT_FALSE(arrayElementFirstColumnInfo.IsValid());
 
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].b", arrayIndex);
         AssertColumnInfo("b", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementFirstColumnInfo);
 
         //second struct member
-        issueListener.Reset();
         auto const& arrayElementSecondColumnInfo = pstructArrayElement.GetValue(1).GetColumnInfo();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].bi", arrayIndex);
         AssertColumnInfo("bi", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementSecondColumnInfo);
 
         //out of bounds test
-        BeTest::SetFailOnAssert(false);
-        {
-        issueListener.Reset();
-        pstructArrayElement.GetValue(-1).GetColumnInfo();
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (-1).GetColumnInfo () for struct array value";
-        pstructArrayElement.GetValue(pstructArrayElement.GetMemberCount()).GetColumnInfo();
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "GetValue (N).GetColumnInfo with N being too large index for struct array value";
-        }
-        BeTest::SetFailOnAssert(true);
+        ASSERT_FALSE(pstructArrayElement.GetValue(-1).GetColumnInfo().IsValid()) << "GetValue (-1).GetColumnInfo () for struct array value";
+        ASSERT_FALSE(pstructArrayElement.GetValue(pstructArrayElement.GetMemberCount()).GetColumnInfo().IsValid()) << "GetValue (N).GetColumnInfo with N being too large index for struct array value";
 
         arrayIndex++;
         }
@@ -3474,80 +3375,9 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     ECSqlStatement stmt;
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "new ECSqlStatement";
 
-    issueListener.Reset();
     auto stat = stmt.Prepare(ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Prepare.";
-
-    issueListener.Reset();
-    BeTest::SetFailOnAssert(false);
-    stat = stmt.BindPoint2d(1, DPoint2d::From(1.0, 1.0));
-    ASSERT_EQ(ECSqlStatus::Error, stat) << "Cannot bind points to int parameter";
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "Cannot bind points to int parameter";
-    BeTest::SetFailOnAssert(true);
-
-    issueListener.Reset();
-    stat = stmt.BindInt(1, 123);
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-
-    issueListener.Reset();
-    BeTest::SetFailOnAssert(false);
-    stat = stmt.BindDouble(2, 3.14);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(ECSqlStatus::Error, stat) << "Index out of bounds error expected.";
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "Index out of bounds error expected.";
-
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Step";
-
-        stmt.GetColumnInfo(0);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-
-        BeTest::SetFailOnAssert(false);
-        stmt.GetColumnInfo(-1);
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
-        stmt.GetColumnInfo(0);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-        BeTest::SetFailOnAssert(false);
-        stmt.GetColumnInfo(100);
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
-        stmt.GetColumnInfo(0);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-
-        BeTest::SetFailOnAssert(false);
-        stmt.GetValueInt(-1);
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
-        stmt.GetValueInt(0);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-        BeTest::SetFailOnAssert(false);
-        stmt.GetValueInt(100);
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
-        stmt.GetValueDouble(1);
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-        BeTest::SetFailOnAssert(false);
-        stmt.GetValuePoint2d(1);
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
-        }
-
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-
-    stat = stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to ClearBindings";
-
-    stat = stmt.Reset();
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Reset";
-
-    stmt.Finalize();
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Finalize";
     }
 
     {
@@ -3567,35 +3397,8 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     //now reprepare with valid ECSQL
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Prepare";
-
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Step";
-        }
-
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Step";
     }
-
-    {
-    ECDbIssueListener issueListener(ecdb);
-
-    BeBriefcaseBasedId id(BeBriefcaseId(111), 111); //an id not used in the current file
-    ECSqlStatement stmt;
-    ECSqlStatus stat = stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly";
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
-
-    ECInstanceKey newKey;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Step failed unexpectedly";
-    ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    //reuse same id again to provoke constraint violation
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
-    ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
-    ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "After insert of row with same ECInstanceId";
-    }
+   
     }
 
 
@@ -3667,9 +3470,7 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
     for (auto& geom : expectedGeoms)
         {
-        ECDbIssueListener issueListener(ecdb);
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3683,14 +3484,10 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
 
-    ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
-        issueListener.Reset();
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
@@ -3702,20 +3499,14 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
-    ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& structBinder = statement.GetBinder(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetBinder for struct is expected to succeed";
 
     ASSERT_EQ(ECSqlStatus::Success, structBinder["Geometry"].BindGeometry(*expectedGeomSingle));
 
-    issueListener.Reset();
     IECSqlBinder& arrayBinder = structBinder["Geometry_Array"];
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
-        issueListener.Reset();
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3910,9 +3701,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
         rowCount++;
         ASSERT_FALSE(ecsqlStmt.IsValueNull(0)) << "Geometry column is not expected to be null.";
 
-        ECDbIssueListener issueListener(ecdb);
         ASSERT_TRUE(ecsqlStmt.GetValueGeometry(0) == nullptr) << "Invalid geom blob format expected so that nullptr is returned.";
-        ASSERT_TRUE(issueListener.GetIssue().IsIssue());
         }
 
     ASSERT_EQ(1, rowCount);
@@ -3931,24 +3720,15 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     auto stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
-    ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& saStructBinder = statement.GetBinder(1); //SAStructProp
-    ECDbIssue lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.IsIssue()) << lastIssue.GetMessage();
     ASSERT_EQ(ECSqlStatus::Success, saStructBinder["PStructProp"]["i"].BindInt(99));
 
     //add three array elements
     const int count = 3;
-    issueListener.Reset();
     IECSqlBinder& arrayBinder = saStructBinder["PStruct_Array"];
-    lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.IsIssue()) << lastIssue.GetMessage();
     for (int i = 0; i < count; i++)
         {
-        issueListener.Reset();
         IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        lastIssue = issueListener.GetIssue();
-        ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
         ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["d"].BindDouble(i * PI));
         ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["i"].BindInt(i * 2));
         ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["l"].BindInt64(i * 3));
@@ -3979,17 +3759,12 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
-    ECDbIssueListener issueListener(ecdb);
-
     //add three array elements
     const int count = 3;
     IECSqlBinder& arrayBinder = statement.GetBinder(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < count; i++)
         {
-        issueListener.Reset();
         IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         auto stat = arrayElementBinder["d"].BindDouble(i * PI);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = arrayElementBinder["i"].BindInt(i * 2);

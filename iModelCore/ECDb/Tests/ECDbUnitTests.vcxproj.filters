@@ -238,6 +238,9 @@
     <ClCompile Include="Performance\PerformancePhysicalVsOverflowColumnsSqliteCrudTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceOverflowTablesReasearchTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

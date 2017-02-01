@@ -110,7 +110,7 @@ private:
     void _MoveNext(bool onInitializingIterator) const override;
     bool _IsAtEnd() const override;
     IECSqlValue const* _GetCurrent() const override;
-    int _GetArrayLength() const override { return (int) GetJson().Size(); }
+    int _GetArrayLength() const override;
 
 public:
     ArrayJsonECSqlValue(ECDbCR, rapidjson::Value const&, ECSqlColumnInfo const&);

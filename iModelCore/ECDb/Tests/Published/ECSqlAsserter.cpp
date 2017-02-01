@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlAsserter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlAsserter.h"
@@ -382,30 +382,9 @@ void ECSqlSelectAsserter::AssertCurrentCell(ECSqlTestItem const& testItem, ECSql
     auto getValueCallList = CreateGetValueCallList(value);
     for (auto const& getValueCallItem : getValueCallList)
         {
-        ECTypeDescriptor const& getValueDataType = getValueCallItem.first;
         auto const& getValueCall = getValueCallItem.second;
-        const bool expectedToSucceed = isExpectedToSucceedDelegate(getValueDataType);
-
-        if (!expectedToSucceed)
-            BeTest::SetFailOnAssert(false);
-
-        ECDbIssueListener issueListener(GetECDb());
-
         //do the actual call to IECSqlValue::GetXXX
         getValueCall();
-
-        if (!expectedToSucceed)
-            BeTest::SetFailOnAssert(true);
-
-        ECDbIssue issue = issueListener.GetIssue();
-
-        Utf8String assertMessage(GetValueCallToString(getValueDataType));
-        assertMessage.append(" for a ").append(DataTypeToString(columnDataType)).append(" column.");
-
-        if (expectedToSucceed)
-            ASSERT_FALSE(issue.IsIssue()) << assertMessage.c_str();
-        else
-            ASSERT_TRUE(issue.IsIssue()) << assertMessage.c_str();
         }
     }
 

@@ -468,9 +468,17 @@ bool ArrayJsonECSqlValue::_IsAtEnd() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlValue const* ArrayJsonECSqlValue::_GetCurrent() const
+IECSqlValue const* ArrayJsonECSqlValue::_GetCurrent() const { return m_currentElement.get(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//---------------------------------------------------------------------------------------
+int ArrayJsonECSqlValue::_GetArrayLength() const
     {
-    return m_currentElement.get();
+    if (GetJson().IsNull()) 
+        return 0; 
+    
+    return (int) GetJson().Size();
     }
 
 //************************************************
