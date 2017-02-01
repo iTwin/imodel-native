@@ -12,6 +12,7 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/WSGServices.h>
 #include <RealityPlatform/SpatialEntity.h>
+#include <RealityPlatform/RealityDataObjects.h>
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
@@ -523,7 +524,7 @@ public:
     static Utf8StringCR GetWSGProtocol();
 
     //! Returns the name of the WSG repository containing the RealityData Service objects
-    static Utf8StringCR GetName();
+    static Utf8StringCR GetRepoName();
 
     //! Returns the name of the schema defining the classes exposed by the RealityData Service.
     static Utf8StringCR GetSchemaName();
@@ -547,13 +548,13 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(RealityDataByIdRequestCR request);
 
     //! Returns a RealityDataDocument or null if an error occured
-    //TODO: REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequestCR request);
 
     //! Returns the content of a RealityData Service document
     REALITYDATAPLATFORM_EXPORT static bvector<Byte> Request(RealityDataDocumentContentByIdRequestCR request);
 
     //! Returns a RealityDataFolder or null if an error occured
-    //TODO: REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequestCR request);
 
     //! Returns a list of RealityData objects that belongs to the enterprise.
     //! Notice that the enterprise is not usually provided and the enterprise of the currently
@@ -565,7 +566,7 @@ public:
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    //TODO: REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationPtr> Request(RealityDataProjectRelationByProjectIdPagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationByProjectIdPagedRequestCR request);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically

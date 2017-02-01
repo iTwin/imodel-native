@@ -25,7 +25,7 @@ Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetS
 
 //Utf8StringCR RealityDataUrl::GetClassName() const { return ""; }
 
-Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetName(); }
+Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 
 void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
@@ -35,8 +35,10 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityData/");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/RealityData/");
     m_httpRequestString.append(m_id);
     }
 
@@ -47,8 +49,10 @@ void RealityDataProjectRelationshipByIdRequest::_PrepareHttpRequestStringAndPayl
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'");
     }
@@ -60,8 +64,10 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/Folder/");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/Folder/");
     m_httpRequestString.append(m_id);
     }
 
@@ -72,8 +78,10 @@ void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/Document/");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/Document/");
     m_httpRequestString.append(m_id);
     }
 
@@ -92,8 +100,10 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     url.append("/");
     url.append(RealityDataService::GetWSGProtocol());
     url.append("/Repositories/");
-    url.append(RealityDataService::GetName());
-    url.append("/S3MX/Document/");
+    url.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/Document/");
     url.append(m_id);
     url.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true ");
     m_allowAzureRedirection = false;
@@ -220,27 +230,24 @@ Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
 
 Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
-    /*m_serverName = RealityDataService::GetServer();
-    WSGUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
-    m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityData?$filter=Enterprise+eq+'");
-    m_httpRequestString.append(m_id);
-    m_httpRequestString.append("'&$skip=");
-    Utf8P buf = new Utf8Char();
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
-    m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);*/
-    return "TODO";
+    Utf8String filter = "CreatedTimestamp+ge+'";
+    filter.append(minDate.ToString());
+    filter.append("'&CreatedTimestamp+le+'");
+    filter.append(maxDate.ToString());
+    filter.append("'");
+
+    return filter;
     }
 
 Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
-    return "TODO";
+    Utf8String filter = "ModifiedTimestamp+ge+'";
+    filter.append(minDate.ToString());
+    filter.append("'&ModifiedTimestamp+le+'");
+    filter.append(maxDate.ToString());
+    filter.append("'");
+
+    return filter;
     }
 
 Utf8String RealityDataFilterCreator::FilterPublic(bool isPublic)
@@ -255,12 +262,30 @@ Utf8String RealityDataFilterCreator::FilterPublic(bool isPublic)
 
 Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double resMax, bool filterOutUnspecified)
     {
-    return "TODO";
+    Utf8String filter = "ResolutionInMeters+ge+'";
+    char buf[32];
+    sprintf(buf, "%f", resMin);
+    filter.append(buf);
+    filter.append("'&ResolutionInMeters+le+'");
+    sprintf(buf, "%f", resMax);
+    filter.append(buf);
+    filter.append("'");
+
+    return filter;
     }
 
 Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified)
     {
-    return "TODO";
+    Utf8String filter = "AccuracyInMeters+ge+'";
+    char buf[32];
+    sprintf(buf, "%f", accuracyMin);
+    filter.append(buf);
+    filter.append("'&AccuracyInMeters+le+'");
+    sprintf(buf, "%f", accuracyMax);
+    filter.append(buf);
+    filter.append("'");
+
+    return filter;
     }
 
 Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
@@ -273,7 +298,11 @@ Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
 
 Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     {
-    return "TODO";
+    Utf8String filter = "Dataset+eq+'";
+    filter.append(dataset);
+    filter.append("'");
+
+    return filter;
     }
 
 
@@ -311,7 +340,7 @@ Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataSer
 //Utf8StringCR RealityDataPagedRequest::GetPluginName() const { return ""; }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 //Utf8StringCR RealityDataPagedRequest::GetClassName() const { return ""; }
-Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetName(); }
+Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
@@ -320,8 +349,10 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityData?");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/RealityData?");
     m_httpRequestString.append(m_filter);
     m_httpRequestString.append(m_order);
     m_httpRequestString.append("'&$skip=");
@@ -417,8 +448,10 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityData?$filter=Enterprise+eq+'");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/RealityData?$filter=Enterprise+eq+'");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
     Utf8P buf = new Utf8Char();
@@ -436,8 +469,10 @@ void RealityDataProjectRelationByProjectIdPagedRequest::_PrepareHttpRequestStrin
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetName());
-    m_httpRequestString.append("/S3MX/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
     Utf8P buf = new Utf8Char();
@@ -470,7 +505,7 @@ const Utf8String RealityDataService::s_PinnedKey = "Pinned";
 
 Utf8StringCR RealityDataService::GetServer() { return s_realityDataServer; }
 Utf8StringCR RealityDataService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
-Utf8StringCR RealityDataService::GetName() { return s_realityDataName; }
+Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataName; }
 Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaName; }
 
 bvector<SpatialEntityPtr> RealityDataService::Request(RealityDataPagedRequestCR request)
@@ -497,25 +532,38 @@ SpatialEntityPtr RealityDataService::Request(RealityDataByIdRequestCR request)
     RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
 
     return entities[0];
-    /*bvector<Utf8String> nodes = bvector<Utf8String>();
-    Json::Value instances(Json::objectValue);
-    for (auto instance : instances["instances"])
-        {
-        if (instance.isMember("instanceId") && instance.isMember("properties") && instance["properties"].isMember("Label"))
-            nodes.push_back(instance["instanceId"].asCString());
-        }
-
-    return nodes[0];*/
     }
 
-//TODORealityDataDocumentPtr RealityDataService::Request(RealityDataDocumentByIdRequestCR request);
+RealityDataDocumentPtr RealityDataService::Request(RealityDataDocumentByIdRequestCR request)
+    {
+    Utf8String jsonString;
+    BentleyStatus status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+
+    BeAssert(status == BentleyStatus::SUCCESS);
+
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(jsonString, instances);
+
+    return RealityDataDocument::Create(instances["instances"][0]);
+    }
 
 bvector<Byte> RealityDataService::Request(RealityDataDocumentContentByIdRequestCR request)
     {
     return bvector<Byte>();//TODO
     }
 
-//TODO RealityDataFolderPtr RealityDataService::Request(RealityDataFolderByIdRequestCR request);
+RealityDataFolderPtr RealityDataService::Request(RealityDataFolderByIdRequestCR request)
+    {
+    Utf8String jsonString;
+    BentleyStatus status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+
+    BeAssert(status == BentleyStatus::SUCCESS);
+
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(jsonString, instances);
+
+    return RealityDataFolder::Create(instances["instances"][0]);
+    }
 
 bvector<SpatialEntityPtr> RealityDataService::Request(RealityDataListByEnterprisePagedRequestCR request)
     {
@@ -530,7 +578,23 @@ bvector<SpatialEntityPtr> RealityDataService::Request(RealityDataListByEnterpris
     return entities;
     }
 
-//TODO bvector<RealityDataProjectRelationPtr> RealityDataService::Request(RealityDataProjectRelationByProjectIdPagedRequestCR request)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(RealityDataProjectRelationByProjectIdPagedRequestCR request)
+    {   
+    Utf8String jsonString;
+    BentleyStatus status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+
+    BeAssert(status == BentleyStatus::SUCCESS);
+
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(jsonString, instances);
+
+    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+
+    for(auto instance : instances["instances"])
+        relations.push_back(RealityDataProjectRelationship::Create(instance));
+
+    return relations;
+    }
 
 BentleyStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequestPtr request, Utf8StringR jsonResponse)
     {
