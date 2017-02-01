@@ -655,7 +655,8 @@ public:
     QueryProcessor()
         {        
 #ifndef DEACTIVATE_THREADING
-        m_numWorkingThreads = std::thread::hardware_concurrency() - 2;        
+        m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
+        m_numWorkingThreads = max(1, m_numWorkingThreads);
 #else
         m_numWorkingThreads = 1;        
 #endif
