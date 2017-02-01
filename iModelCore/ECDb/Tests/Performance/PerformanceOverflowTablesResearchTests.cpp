@@ -184,39 +184,4 @@ TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
         }, "Delete using view");
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                  Affan.Khan     01/2017
-//---------------------------------------------------------------------------------------
-TEST_F(PerformanceOverflowTablesResearchTestFixture, TestCachedStatement)
-    {
-    ECDbR db = SetupECDb("performanceoverflowtables_cachedstatement.ecdb");
-    ASSERT_TRUE(db.IsDbOpen());
-
-    ASSERT_EQ(db.ExecuteSql("CREATE TABLE Foo(Id INTEGER PRIMARY KEY, Str TEXT NOT NULL)"), BE_SQLITE_OK);
-    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(1,'Test1')"), BE_SQLITE_OK);
-    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(2,'Test2')"), BE_SQLITE_OK);
-    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(3,'Test3')"), BE_SQLITE_OK);
-
-    bvector<CachedStatementPtr> recursionStack(100);
-    for (CachedStatementPtr& ptr : recursionStack)
-        {
-        ptr = db.GetCachedStatement("SELECT Id, Str FROM Foo ORDER BY Id");
-        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(ptr->GetValueInt64(0), 1);
-        ASSERT_STREQ(ptr->GetValueText(1), "Test1");
-        }
-
-    for (CachedStatementPtr& ptr : recursionStack)
-        {
-        ASSERT_EQ(ptr->GetValueInt64(0), 1);
-        ASSERT_STREQ(ptr->GetValueText(1), "Test1");
-        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(ptr->GetValueInt64(0), 2);
-        ASSERT_STREQ(ptr->GetValueText(1), "Test2");
-        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(ptr->GetValueInt64(0), 3);
-        ASSERT_STREQ(ptr->GetValueText(1), "Test3");
-        ASSERT_EQ(ptr->Step(), BE_SQLITE_DONE);
-        }
-    }
 END_ECDBUNITTESTS_NAMESPACE
