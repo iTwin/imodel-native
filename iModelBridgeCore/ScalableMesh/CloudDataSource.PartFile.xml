@@ -16,7 +16,9 @@
         <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>		
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>			
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
             <VendorAPI Domain="CloudDataSource" />
         </Bindings>
     </Part>
