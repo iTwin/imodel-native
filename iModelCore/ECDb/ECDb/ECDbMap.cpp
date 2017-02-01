@@ -40,55 +40,22 @@ bool ECDbMap::IsImportingSchema() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2016
 //---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECDbMap::PurgeOrphanColumns() const
-    {
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
-                                     "SELECT ec_Column.Id, ec_Column.IsVirtual, ec_Column.Name, ec_Table.Name"
-                                     "   FROM ec_Column"
-                                     "        INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.TableId"
-                                     "   WHERE ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " = 0 AND" //Skip SharedColumns
-                                     "         ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 AND" //Skip ECClassId
-                                     "         ec_Table.[Type] != " SQLVAL_DbTable_Type_Existing " AND"         //Skip Existing Tables
-                                     "         ec_Column.Id NOT IN ("                       //Skip columns that are mapped
-                                     "          SELECT ec_Column.Id"
-                                     "                 FROM ec_PropertyMap"
-                                     "                      INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
-                                     "                      INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-                                     "                      INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id)"))
-        {
-        BeAssert(false && "system sql schema changed");
-        return ERROR;
-        }
-
-    BeAssert(false && "WIP_NOT_IMPLEMENTED");
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        //!!!WIP_AFFAN
-        }
-
-    return SUCCESS;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2016
-//---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECDbMap::PurgeOrphanTables() const
+BentleyStatus ECDbMap::PurgeOrphanTables(DbSchemaModificationToken const* mayModifyDbSchemaToken) const
     {
     //skip ExistingTable and NotMapped
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
-                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
-                     "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
-                     "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                     "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-                     "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
-                     "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
+                                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                                     "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
+                                     "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                                     "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                                     "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                                     "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
         {
         BeAssert(false && "ECDb profile changed");
         return ERROR;
         }
-    
+
     std::vector<Utf8String> nonVirtualTables;
     std::vector<Utf8String> virtualTables;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -121,35 +88,49 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
             }
         }
 
-    if (!nonVirtualTables.empty())
+    if (nonVirtualTables.empty())
+        return SUCCESS;
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(MayModifyDbSchemaPolicyAssertion(GetECDb(), mayModifyDbSchemaToken));
+    if (!policy.IsSupported())
         {
-        BeBriefcaseId briefcaseId = GetECDb().GetBriefcaseId();
-        const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
-        if (!allowDbSchemaChange)
+        Utf8String tableNames;
+        bool isFirstTable = true;
+        for (Utf8StringCR tableName : nonVirtualTables)
             {
-            Issues().Report("Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
-                                                               "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+            if (!isFirstTable)
+                tableNames.append(",");
+
+            tableNames.append(tableName);
+            isFirstTable = false;
+            }
+
+        //until we can enforce this, we just issue a warning, so that people can fix their ECSchemas
+        LOG.warningv("DB-schema modifying ECSchema import. The following tables are deleted: %s", tableNames.c_str());
+        /*ecdb.GetECDbImplR().GetIssueReporter().Report(
+        "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to delete these tables: %s", tableNames.c_str());
+        return CreateOrUpdateTableResult::Error;
+        */
+        }
+
+    for (Utf8StringCR name : nonVirtualTables)
+        {
+        if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
+            {
+            BeAssert(false && "failed to drop a table");
             return ERROR;
             }
 
-        for (Utf8StringCR name : nonVirtualTables)
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindText(1, name, Statement::MakeCopy::No);
+        if (stmt.Step() != BE_SQLITE_DONE)
             {
-            if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
-                {
-                BeAssert(false && "failed to drop a table");
-                return ERROR;
-                }
-
-            stmt.Reset();
-            stmt.ClearBindings();
-            stmt.BindText(1, name, Statement::MakeCopy::No);
-            if (stmt.Step() != BE_SQLITE_DONE)
-                {
-                BeAssert(false && "constraint violation");
-                return ERROR;
-                }
+            BeAssert(false && "constraint violation");
+            return ERROR;
             }
         }
+
     return SUCCESS;
     }
 
@@ -205,7 +186,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx, DbSchemaModification
         return ERROR;
         }
     
-    if (PurgeOrphanTables() != SUCCESS)
+    if (PurgeOrphanTables(mayModifyDbSchemaToken) != SUCCESS)
         {
         BeAssert(false);
         ClearCache();

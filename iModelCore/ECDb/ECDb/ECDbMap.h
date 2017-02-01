@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,8 +36,7 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus SaveDbSchema() const;
         BentleyStatus CreateOrUpdateRequiredTables(DbSchemaModificationToken const*) const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
-        BentleyStatus PurgeOrphanTables() const;
-        BentleyStatus PurgeOrphanColumns() const;
+        BentleyStatus PurgeOrphanTables(DbSchemaModificationToken const*) const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         BentleyStatus UpdateECClassIdColumnIfRequired(DbTable&, bset<ClassMap*> const&) const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
