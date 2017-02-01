@@ -80,7 +80,7 @@ static wchar_t const* s_configFileName = L"logging.config.xml";
 
 void WSClientBaseTest::InitLogging()
     {
-#if defined(BENTLEY_WIN32) // _wgetenv is non-portable, and s_configFileName is carved out above...
+#if defined(BENTLEY_WIN32)
     BeFileName loggingConfigFile(_wgetenv(L"WSCLIENT_TEST_LOGGING_CONFIG_FILE"));
     if (!BeFileName::DoesPathExist(loggingConfigFile))
         {
@@ -93,9 +93,9 @@ void WSClientBaseTest::InitLogging()
         NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
         NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+	return;
         }
-    else
-        {
+#endif
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
         NativeLogging::LoggingConfig::SetMaxMessageSize(100000);
 
@@ -104,6 +104,4 @@ void WSClientBaseTest::InitLogging()
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_TASKS, BentleyApi::NativeLogging::LOG_WARNING);
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, BentleyApi::NativeLogging::LOG_WARNING);
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, BentleyApi::NativeLogging::LOG_WARNING);
-        }    
-#endif
     }
