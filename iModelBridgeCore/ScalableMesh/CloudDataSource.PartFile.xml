@@ -17,7 +17,7 @@
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
-            <PublicAPI Domain="CloudDataSource" />
+            <VendorAPI Domain="CloudDataSource" />
         </Bindings>
     </Part>
   
