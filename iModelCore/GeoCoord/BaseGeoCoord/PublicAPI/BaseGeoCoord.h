@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -2136,7 +2136,6 @@ class MemberEnumerator;
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE Group
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Gets the name of the GCS Group
@@ -2205,7 +2204,6 @@ Group (WStringCR name, WStringCR description)
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE GroupEnumerator
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Moves to the next group
@@ -2253,7 +2251,6 @@ GroupEnumerator ();
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE MemberEnumerator
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Moves to the GCS group member
@@ -2905,7 +2902,6 @@ static EllipsoidCP CreateEllipsoid (WCharCP keyName, LibraryP sourceLibrary);
 BASEGEOCOORD_EXPORTED static EllipsoidCP CreateEllipsoid (CSEllipsoidDef const& ellipsoidDef, LibraryP sourceLibrary);
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3116,7 +3112,6 @@ EllipsoidEnumerator ();
 ~EllipsoidEnumerator ();
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3186,7 +3181,6 @@ Datum (CSDatumDef const& datum, LibraryP sourceLibrary);
 ~Datum();
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3513,7 +3507,6 @@ DatumEnumerator ();
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~DatumEnumerator ();
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
