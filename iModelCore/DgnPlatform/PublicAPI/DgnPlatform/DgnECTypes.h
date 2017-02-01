@@ -35,7 +35,7 @@ struct DgnECExtendedType
     {
     friend struct DgnECTypeRegistry;
 
-//__PUBLISH_CLASS_VIRTUAL__
+public:
 
     /*=================================================================================**//**
     Standard extended types which can be specified by integer ID in an ECSchema
@@ -290,7 +290,6 @@ private:
     ECN::IECClassLocaterR _GetUnitsECClassLocater() const override;
     
 /*__PUBLISH_SECTION_START__*/
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
     //! Create a StandaloneTypeAdapterContext
     //! @param[in] ecproperty       The ECProperty the type adapter will operate on

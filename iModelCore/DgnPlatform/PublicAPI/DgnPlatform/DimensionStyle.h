@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DimensionStyle.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -276,7 +276,6 @@ public:
     DGNPLATFORM_EXPORT static DimensionStylePtr      CreateFromElement (ElementHandleCR styleElem);
 
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     typedef DimStylePropMaskPtr PropertyMaskPtr;
@@ -612,7 +611,6 @@ public:
     static  void                DeleteLinkages (ElementGraphicsR elm);
             void                AppendAsLinkages (ElementGraphicsR elm) const;
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 
     //!  Create a new DimStylePropMask object.  All bits will be off.
