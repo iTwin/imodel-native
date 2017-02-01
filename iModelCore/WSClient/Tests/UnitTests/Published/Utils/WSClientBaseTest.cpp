@@ -80,7 +80,8 @@ static wchar_t const* s_configFileName = L"logging.config.xml";
 
 void WSClientBaseTest::InitLogging()
     {
-     BeFileName loggingConfigFile(_wgetenv(L"WSCLIENT_TEST_LOGGING_CONFIG_FILE"));
+#if defined(BENTLEY_WIN32) // _wgetenv is non-portable, and s_configFileName is carved out above...
+    BeFileName loggingConfigFile(_wgetenv(L"WSCLIENT_TEST_LOGGING_CONFIG_FILE"));
     if (!BeFileName::DoesPathExist(loggingConfigFile))
         {
         loggingConfigFile.AssignOrClear(s_pathProvider->GetAssetsRootDirectory());
@@ -104,4 +105,5 @@ void WSClientBaseTest::InitLogging()
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, BentleyApi::NativeLogging::LOG_WARNING);
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, BentleyApi::NativeLogging::LOG_WARNING);
         }    
+#endif
     }
