@@ -19,7 +19,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
-HANDLER_DEFINE_MEMBERS(TestPhysicalTemplateHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
@@ -326,16 +325,6 @@ TestSpatialLocationPtr TestSpatialLocation::Create(SpatialModelR model, DgnCateg
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestPhysicalTemplatePtr TestPhysicalTemplate::Create(DefinitionModelR model)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTemplateHandler::GetHandler());
-    return new TestPhysicalTemplate(CreateParams(db, model.GetModelId(), classId));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
@@ -473,7 +462,6 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
-    RegisterHandler(TestPhysicalTemplateHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());

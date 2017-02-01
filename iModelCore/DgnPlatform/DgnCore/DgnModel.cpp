@@ -312,18 +312,6 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::Create(PhysicalTemplateCR modeledElement)
-    {
-    PhysicalModelPtr model = Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
-    if (model.IsValid())
-        model->m_isTemplate = true;
-
-    return model;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
@@ -337,18 +325,6 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement)
-    {
-    PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalTemplateCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
     if (!model.IsValid())

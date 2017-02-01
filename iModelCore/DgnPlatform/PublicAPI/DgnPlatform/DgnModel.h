@@ -925,9 +925,6 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
-
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement);
 };
 
 //=======================================================================================
