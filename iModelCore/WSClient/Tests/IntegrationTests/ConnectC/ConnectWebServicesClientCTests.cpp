@@ -435,8 +435,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     //      To successfully run this test, restart Fiddler AND make sure to Require Proxy Authentication!
     //This test is meant to ensure that a proxy, requiring authentication, will only successfully complete if authentication is correct.
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+    (m_pmadmUsername.c_str(),
+     m_pmadmPassword.c_str() ,
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
