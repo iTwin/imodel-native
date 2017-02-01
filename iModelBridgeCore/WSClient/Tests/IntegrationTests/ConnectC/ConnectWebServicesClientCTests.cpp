@@ -427,10 +427,13 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
     }
 
 
-#ifdef WIP_MERGE_Vincas
+//#ifdef WIP_MERGE_Vincas
 
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
+    //NOTE: If Fiddler is running, and has been running for previous tests, this test will probably fail.
+    //      To successfully run this test, restart Fiddler AND make sure to Require Proxy Authentication!
+    //This test is meant to ensure that a proxy, requiring authentication, will only successfully complete if authentication is correct.
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_pmUsername.c_str (),
         m_pmPassword.c_str (),
@@ -1012,6 +1015,6 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     ASSERT_TRUE (status == SUCCESS);
     }
 
-#endif
+//#endif
 
     
