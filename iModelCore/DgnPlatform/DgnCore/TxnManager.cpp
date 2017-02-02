@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TxnManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -646,11 +646,22 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     OnChangesApplied(changes, TxnAction::Merge);
 
-    // Note: We do need to run the propagation irrespective of whether there are local changes or
-    // not. This is to ensure the order of merges don't affect the final state (use 
-    // DependencyRevisionTest.Merge test to validate this)
-    if (SUCCESS != PropagateChanges())
-        status = RevisionStatus::MergePropagationError;
+    if (HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
+        {
+        /*
+         * We propagate changes (run dependency rules) ONLY if there are no local changes.
+         * + The final state of the (incoming) revision is always setup to be exactly right. This 
+         *   is in turn because we cannot expect dependency handlers to be around on a server (or for 
+         *   that matter other briefcases), and the revisions offer the only mechanism to get the final 
+         *   state of the server exactly right. We generalize this behavior to be applicable to the server 
+         *   and local briefcases - if there are NO local changes, we simply accept the incoming revision's 
+         *   changes, and don't bother running the dependency handlers (even if the are actually available).
+         *
+         * Also see comments in RevisionChangesFileReader::_OnConflict()
+         */
+        if (SUCCESS != PropagateChanges())
+            status = RevisionStatus::MergePropagationError;
+        }
 
     UndoChangeSet indirectChanges;
     if (HasChanges())

@@ -2363,28 +2363,6 @@ Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& pa
     return new SimplifyGraphic(params, m_processor, *this);
     }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override
-    {
-    if (!m_processor._DoPatternStroke())
-        return;
-
-    T_Super::_DrawAreaPattern(builder, curve, params, doCook);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const override
-    {
-    if (!lsSymb.GetUseStroker())
-        return false;
-
-    return m_processor._DoLineStyleStroke(builder, lsSymb, facetOptions);
-    }
-
 public:
 
 /*----------------------------------------------------------------------------------*//**

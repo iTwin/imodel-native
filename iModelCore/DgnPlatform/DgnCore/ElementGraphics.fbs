@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/ElementGraphics.fbs $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
 namespace BentleyB0200.Dgn.FB;
@@ -92,6 +92,7 @@ table GeometryPart
     yaw:double;
     pitch:double;
     roll:double;
+    scale:double = 1.0;
 
     } // GeometryPart
 

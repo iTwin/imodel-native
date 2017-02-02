@@ -310,7 +310,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         return SUCCESS;
 
     // Output element local range for debug display and locate...
-    if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
+    if (graphic->IsSimplifyGraphic() && nullptr == GetIPickGeom())
         return SUCCESS;
 
     Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
@@ -347,9 +347,9 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
     if (!partGeometry.IsValid())
         return nullptr;
 
-    bool isForDisplay = graphic.IsForDisplay();
+    bool isSimplify = graphic.IsSimplifyGraphic();
 
-    if (!isForDisplay && m_viewport)
+    if (isSimplify && m_viewport)
         {
         Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
         ElementAlignedBox3d range = partGeometry->GetBoundingBox();
@@ -360,8 +360,8 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr; // Part range doesn't overlap pick...
         }
 
-    BeAssert(!isForDisplay || nullptr != m_viewport);
-    Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
+    BeAssert(isSimplify || nullptr != m_viewport);
+    Render::GraphicPtr partGraphic = (isSimplify ? nullptr : partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()));
 
     if (!partGraphic.IsValid())
         {
@@ -375,7 +375,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr;
 
         partBuilder->Close(); 
-        if (isForDisplay)
+        if (!isSimplify) // NOTE: QvGraphic is the only Render::Graphic that doesn't sub-class SimplifyGraphic currently...and this element graphic cache probably goes away with mesh tiles anyway...
             partGeometry->Graphics().Save(*partGraphic);
         }
 

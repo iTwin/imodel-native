@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IAuxCoordSys.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -135,7 +135,6 @@ DGNVIEW_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
 DGNVIEW_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
 DGNVIEW_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
 
