@@ -31,3 +31,40 @@ TEST(DRange1d, FindLength)
     Check::ExactDouble(88.8, dRange.MaxAbs());
     Check::Near(dRange.High() - dRange.Low(), dRange.Length());
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
+TEST(DRange1d, RangeChecks)
+    {
+    DRange1d range1 = DRange1d::FromLowHigh(3, 11);
+    Check::True(range1.IsPositiveLength());
+
+    DRange1d range2 = DRange1d::FromLowHigh(3, 3);
+    Check::True(range2.IsSinglePoint());
+
+    DRange1d range3 = DRange1d::FromLowHigh(-3, -11);
+    Check::True(range3.IsEmpty());
+
+    range2.Extend(4);
+    Check::True(range2.IsPositiveLength());
+
+    range3.Extend(1, 11);
+    Check::True(range3.IsPositiveLength());
+    }
+
+////---------------------------------------------------------------------------------------
+//// @bsimethod                                     Farhad.Kabir                    01/17
+////---------------------------------------------------------------------------------------
+TEST(DRange1d, RangeExtension) 
+    {
+    DRange1d rangeNull = DRange1d::NullRange();
+    DRange1d rangeNull2;
+    rangeNull2.InitNull();
+    Check::True(rangeNull.IsNull());
+    Check::True(rangeNull2.IsNull());
+
+    double vals[] = { 23, 34,22, 11.2, 3 };
+    rangeNull.Extend(vals, 5);
+    Check::Near(rangeNull.high - rangeNull.low, rangeNull.Length());
+    Check::False(rangeNull.IsEqualLowHigh(rangeNull2));
+    }
