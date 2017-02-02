@@ -370,7 +370,6 @@ public:
     static LsComponentId Import(LsComponentId sourceId, DgnImportContext& importer);
     static LsComponentPtr GetImportedComponent(LsComponentId sourceId, DgnImportContext& importer);
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
 
@@ -554,7 +553,6 @@ public:
                                                 uint32_t mod1, double xOffset, double yOffset, double radians, int strokeNumber);
     DGNPLATFORM_EXPORT      LsSymbolReference       ();
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     enum RotationMode
@@ -1314,7 +1312,6 @@ public:
     static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition);
     void InitializeJsonObject (Json::Value& jsonObj);
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //!  Defines a scaling factor to be applied to the components.
@@ -1485,7 +1482,6 @@ public:
     DGNPLATFORM_EXPORT LsIdNodeP SearchIdsForName(Utf8CP name) const;
     DGNPLATFORM_EXPORT static LsDefinitionP FindInMap(DgnDbR dgndb, DgnStyleId styleId);
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT Utf8String GetFileName() const;    //!< Name of file used to load the map.

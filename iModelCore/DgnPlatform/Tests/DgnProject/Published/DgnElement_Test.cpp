@@ -1835,53 +1835,6 @@ TEST_F(DgnElementTests, FederationGuid)
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, PhysicalTemplateCRUD)
-    {
-    SetupSeedProject();
-    DgnElementId physicalTemplateId[3];
-
-    // insert some sample PhysicalTemplates
-    for (int32_t i=0; i<_countof(physicalTemplateId); i++)
-        {
-        TestPhysicalTemplatePtr physicalTemplate = TestPhysicalTemplate::Create(m_db->GetDictionaryModel());
-        ASSERT_TRUE(physicalTemplate.IsValid());
-        physicalTemplate->SetUserLabel(Utf8PrintfString("PhysicalTemplate%d", i).c_str());
-        ASSERT_TRUE(physicalTemplate->Insert().IsValid());
-        physicalTemplateId[i] = physicalTemplate->GetElementId();
-        }
-
-    // flush cache to make sure PhysicalTemplates were inserted properly
-        {
-        m_db->Memory().PurgeUntil(0);
-        for (int32_t i=0; i<_countof(physicalTemplateId); i++)
-            {
-            TestPhysicalTemplateCPtr physicalTemplate = m_db->Elements().Get<TestPhysicalTemplate>(physicalTemplateId[i]);
-            ASSERT_TRUE(physicalTemplate.IsValid());
-            ASSERT_FALSE(physicalTemplate->GetSubModel().IsValid());
-
-            PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*physicalTemplate);
-            ASSERT_TRUE(model.IsValid());
-            ASSERT_TRUE(physicalTemplate->GetSubModel().IsValid());
-            }
-        }
-
-    // flush cache to make sure PhysicalTemplate subModels were inserted properly
-        {
-        m_db->Memory().PurgeUntil(0);
-        for (int32_t i=0; i<_countof(physicalTemplateId); i++)
-            {
-            TestPhysicalTemplateCPtr physicalTemplate = m_db->Elements().Get<TestPhysicalTemplate>(physicalTemplateId[i]);
-            ASSERT_TRUE(physicalTemplate.IsValid());
-            ASSERT_TRUE(physicalTemplate->GetSubModel().IsValid());
-            ASSERT_TRUE(physicalTemplate->GetSubModel()->IsTemplate());
-            ASSERT_TRUE(physicalTemplate->GetSub<PhysicalModel>().IsValid());
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, PhysicalTypeCRUD)
