@@ -102,9 +102,7 @@ public:
         TargetECClassId = 32,
         DataColumn = 64, //! unshared data column
         SharedDataColumn = 128, //! shared data column
-        RelECClassId = 256,
-        PhysicalOverflow = 512, //! physical overflow column (one per table)
-        InOverflow = 1024 //! virtual column pointing to JSON object in the physical overflow column
+        RelECClassId = 256
         };
 
     struct Constraints : NonCopyableClass
@@ -190,13 +188,11 @@ public:
     Type GetType() const { return m_type; }
     bool DoNotAllowDbNull() const { return m_pkConstraint != nullptr || m_constraints.HasNotNullConstraint(); }
     bool IsUnique() const;
-    DbColumn const* GetPhysicalOverflowColumn() const;
     DbTable const& GetTable() const { return m_table; }
     Constraints const& GetConstraints() const { return m_constraints; };
     bool IsOnlyColumnOfPrimaryKeyConstraint() const;
     Kind GetKind() const { return m_kind; }
     bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
-    bool IsInOverflow() const { return Enum::Intersects(m_kind, Kind::InOverflow); }
     DbTable& GetTableR() const { return m_table; }
     Constraints& GetConstraintsR() { return m_constraints; };
     void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
@@ -377,7 +373,6 @@ private:
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
     bvector<DbColumn const*> m_orderedColumns;
     DbColumn const* m_classIdColumn;
-    DbColumn const* m_overflowColumn;
 
     std::unique_ptr<PrimaryKeyDbConstraint> m_pkConstraint;
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
@@ -410,7 +405,6 @@ public:
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
-    DbColumn* CreateOverflowSlaveColumn(DbColumn::Type);
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
     std::vector<DbTable const*> const& GetJoinedTables() const { return m_joinedTables; }
@@ -420,7 +414,6 @@ public:
     DbColumn const* FindColumn(Utf8CP name) const;
     DbColumn* FindColumnP(Utf8CP name) const;
     DbColumn const& GetECClassIdColumn() const { BeAssert(m_classIdColumn != nullptr); return *m_classIdColumn; }
-    DbColumn const* GetPhysicalOverflowColumn() const { return m_overflowColumn; }
     bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;

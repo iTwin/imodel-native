@@ -19,10 +19,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_ClassHasTablesCache "ec_cache_ClassHasTables"
 
 #define COL_ECClassId "ECClassId"
-#define COL_Overflow "scoverflow"
-
-#define SQLFUNC_BlobToBase64 "BlobToBase64"
-#define SQLFUNC_Base64ToBlob "Base64ToBlob"
 
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf
@@ -66,10 +62,6 @@ static_assert(64 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::
 static_assert(128 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_RelECClassId "256"
 static_assert(256 == (int) DbColumn::Kind::RelECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_PhysicalOverflow "512"
-static_assert(512 == (int) DbColumn::Kind::PhysicalOverflow, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_InOverflow "1024"
-static_assert(1024 == (int) DbColumn::Kind::InOverflow, "Persisted enum DbColumn::Kind has changed");
 
 //** Enum DbTable::Type
 #define SQLVAL_DbTable_Type_Primary "0"

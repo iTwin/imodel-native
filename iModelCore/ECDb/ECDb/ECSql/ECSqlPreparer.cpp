@@ -386,8 +386,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
         std::function<void(int& colCount, ECStructClassCR structType)> countColumns;
         countColumns = [&countColumns] (int& colCount, ECStructClassCR structType)
             {
-            //WIP This will most likely not work for overflow properties. Depending
-            //on how we implement them at this point here they might just map to a single col too.
             for (ECPropertyCP prop : structType.GetProperties())
                 {
                 if (prop->GetIsPrimitive())
@@ -1555,31 +1553,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         {
         BeAssert(valueExp != nullptr);
 
-        NativeSqlBuilder::List nativeSqlSnippets;
         const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
-        PropertyNameExp const* targetPropertyExp = targetExp->GetPropertyNameExp(index);
-        bool allColsAreOverflow = false;
-        if (targetPropertyExp->GetPropertyMap().IsData())
-            {
-            GetColumnsPropertyMapVisitor getColsVisitor;
-            if (SUCCESS != targetPropertyExp->GetPropertyMap().AcceptVisitor(getColsVisitor) ||
-                getColsVisitor.GetColumns().empty())
-                {
-                BeAssert(false);
-                return ECSqlStatus::Error;
-                }
 
-            allColsAreOverflow = true;
-            for (DbColumn const* col : getColsVisitor.GetColumns())
-                {
-                if (!col->IsInOverflow())
-                    {
-                    allColsAreOverflow = false;
-                    break;
-                    }
-                }
-            }
-
+        NativeSqlBuilder::List nativeSqlSnippets;
 
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
@@ -1598,7 +1574,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
                 stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), targetNativeSqlSnippetCount);
                 }
             }
-        else if (targetNativeSqlSnippetCount > 0 || allColsAreOverflow)
+        else if (targetNativeSqlSnippetCount > 0)
             stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
 
         if (!stat.IsSuccess())

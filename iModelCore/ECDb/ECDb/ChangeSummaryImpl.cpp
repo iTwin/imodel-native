@@ -84,19 +84,17 @@ void TableMap::InitSystemColumnMaps()
     Utf8StringCR instanceIdColumnName = instanceIdColumn->GetName();
     int instanceIdColumnIndex = GetColumnIndexByName(instanceIdColumnName);
     BeAssert(instanceIdColumnIndex >= 0);
-    m_instanceIdColumnMap = ColumnMap(instanceIdColumnName, instanceIdColumnIndex, false, "");
+    m_instanceIdColumnMap = ColumnMap(instanceIdColumnName, instanceIdColumnIndex);
 
     DbColumn const* classIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
     if (classIdColumn->GetPersistenceType() != PersistenceType::Virtual)
         {
         Utf8StringCR classIdColumnName = classIdColumn->GetName();
         int classIdColumnIndex = GetColumnIndexByName(classIdColumnName);
-        m_classIdColumnMap = ColumnMap(classIdColumnName, classIdColumnIndex, false, "");
+        m_classIdColumnMap = ColumnMap(classIdColumnName, classIdColumnIndex);
         }
     else
-        {
         m_primaryClassId = QueryClassId();
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -177,7 +175,7 @@ ECN::ECClassId TableMap::GetECClassId() const
 //---------------------------------------------------------------------------------------
 DbDupValue TableMap::QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const
     {
-    Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetECInstanceIdColumn().GetPhysicalName().c_str());
+    Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetECInstanceIdColumn().GetName().c_str());
     CachedStatementPtr statement = m_ecdb.GetCachedStatement(ecSql.c_str());
     BeAssert(statement.IsValid());
 
@@ -205,7 +203,7 @@ int TableMap::GetColumnIndexByName(Utf8StringCR columnName) const
 //---------------------------------------------------------------------------------------
 bool TableMap::QueryInstance(ECInstanceId instanceId) const
     {
-    DbDupValue value = QueryValueFromDb(GetECInstanceIdColumn().GetPhysicalName(), instanceId);
+    DbDupValue value = QueryValueFromDb(GetECInstanceIdColumn().GetName(), instanceId);
     if (!value.IsValid() || value.IsNull())
         return false;
 
@@ -303,16 +301,12 @@ void TableClassMap::InitPropertyColumnMaps()
 void TableClassMap::AddColumnMapsForProperty(SingleColumnDataPropertyMap const& singleColumnMap)
     {
     DbColumn const& column = singleColumnMap.GetColumn();
-    bool isOverflowColumn = column.IsInOverflow();
 
-    if (column.GetPersistenceType() == PersistenceType::Virtual && !isOverflowColumn)
+    if (column.GetPersistenceType() == PersistenceType::Virtual)
         return; // TODO: This is to filter virtual Navigation property's RelECClassId column - needs a better check from Affan. 
 
-    Utf8String overflowColumnName = isOverflowColumn ? column.GetName() : "";
-    Utf8StringCR physicalColumnName = isOverflowColumn ? column.GetPhysicalOverflowColumn()->GetName() : column.GetName();
-    int physicalColumnIndex = m_tableMap.GetColumnIndexByName(physicalColumnName);
-
-    m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(physicalColumnName, physicalColumnIndex, isOverflowColumn, overflowColumnName);
+    int columnIndex = m_tableMap.GetColumnIndexByName(column.GetName());
+    m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(column.GetName(), columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1968,7 +1962,7 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
     {
     BeAssert(m_tableMap->IsMapped());
 
-    m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetECInstanceIdColumn().GetPhysicalIndex());
+    m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetECInstanceIdColumn().GetIndex());
     BeAssert(m_primaryInstanceId.IsValid());
 
     if (m_sqlChange->GetDbOpcode() == DbOpcode::Update && !m_tableMap->QueryInstance(m_primaryInstanceId))
@@ -1982,7 +1976,7 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
 
     ECClassId primaryClassId;
     if (m_tableMap->ContainsECClassIdColumn())
-        primaryClassId = GetClassIdFromChangeOrTable(m_tableMap->GetECClassIdColumn().GetPhysicalName().c_str(), m_primaryInstanceId);
+        primaryClassId = GetClassIdFromChangeOrTable(m_tableMap->GetECClassIdColumn().GetName().c_str(), m_primaryInstanceId);
     else
         primaryClassId = m_tableMap->GetECClassId();
 
@@ -2156,31 +2150,6 @@ ChangeIterator::ColumnEntry::ColumnEntry(ColumnIterator const& columnIterator) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-DbDupValue ChangeIterator::ColumnEntry::ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap) const
-    {
-    BeAssert(m_isValid);
-
-    if (!columnValue.IsValid() || columnValue.IsNull())
-        return DbDupValue(nullptr);
-
-    // TODO: Avoid using the common shared cache
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT json_extract(?,?)");
-    BeAssert(stmt.IsValid());
-
-    Utf8PrintfString extractPropExpr("$.%s", columnMap.GetOverflowName().c_str());
-
-    stmt->BindDbValue(1, columnValue);
-    stmt->BindText(2, extractPropExpr.c_str(), Statement::MakeCopy::No);
-
-    DbResult result = stmt->Step();
-    BeAssert(result == BE_SQLITE_ROW);
-
-    return stmt->GetDbValue(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
 Utf8StringCR ChangeIterator::ColumnEntry::GetPropertyAccessString() const
     {
     if (!m_isValid)
@@ -2207,12 +2176,7 @@ DbDupValue ChangeIterator::ColumnEntry::QueryValueFromDb() const
     BeAssert(columnMap != nullptr);
 
     RowEntry const& rowEntry = m_columnIterator.GetRowEntry();
-    DbDupValue value = rowEntry.GetTableMap()->QueryValueFromDb(columnMap->GetPhysicalName(), rowEntry.GetPrimaryInstanceId());
-
-    if (columnMap->IsOverflow())
-        return ExtractOverflowValue(value, *columnMap);
-
-    return value;
+    return rowEntry.GetTableMap()->QueryValueFromDb(columnMap->GetName(), rowEntry.GetPrimaryInstanceId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2229,10 +2193,7 @@ DbDupValue ChangeIterator::ColumnEntry::GetValue(Changes::Change::Stage stage) c
     ColumnMap const* columnMap = m_columnMapIterator->second;
     BeAssert(columnMap != nullptr);
 
-    DbValue value = m_sqlChange->GetChange().GetValue(columnMap->GetPhysicalIndex(), stage);
-    if (columnMap->IsOverflow())
-        return ExtractOverflowValue(value, *columnMap);
-
+    DbValue value = m_sqlChange->GetChange().GetValue(columnMap->GetIndex(), stage);
     return DbDupValue(value.GetSqlValueP());        
     }
 
@@ -2250,7 +2211,7 @@ bool ChangeIterator::ColumnEntry::IsPrimaryKeyColumn() const
     ColumnMap const* columnMap = m_columnMapIterator->second;
     BeAssert(columnMap != nullptr);
 
-    int idx = columnMap->GetPhysicalIndex();
+    int idx = columnMap->GetIndex();
     return m_sqlChange->IsPrimaryKeyColumn(idx);
     }
 

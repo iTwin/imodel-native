@@ -25,9 +25,6 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap c
 
         if (col.GetPersistenceType() == PersistenceType::Virtual)
             m_virtualColumnCount++;
-
-        if (col.IsInOverflow())
-            m_overflowColumnCount++;
         }
 
     return SUCCESS;
@@ -68,9 +65,6 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             m_columns.push_back(&col);
             if (col.GetPersistenceType() == PersistenceType::Virtual)
                 m_virtualColumnCount++;
-
-            if (col.IsInOverflow())
-                m_overflowColumnCount++;
             }
 
         return SUCCESS;
@@ -84,9 +78,6 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             m_columns.push_back(&col);
             if (col.GetPersistenceType() == PersistenceType::Virtual)
                 m_virtualColumnCount++;
-
-            if (col.IsInOverflow())
-                m_overflowColumnCount++;
             }
         }
 
@@ -189,16 +180,8 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& pr
 //---------------------------------------------------------------------------------------
 BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-	if (m_propertyMapFilterCallback(propertyMap))
-		{
-		if (m_systemPropertySelector == nullptr)
-			m_foundPropertyMaps.push_back(&propertyMap);
-		else
-			{
-			if (SingleColumnDataPropertyMap const* selected = m_systemPropertySelector(propertyMap))
-				m_foundPropertyMaps.push_back(selected);
-			}
-		}
+    if (m_propertyMapFilterCallback(propertyMap))
+        m_foundPropertyMaps.push_back(&propertyMap);
 
     return SUCCESS;
     }
@@ -251,48 +234,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenLeft();
 
-    if (!propertyMap.GetColumn().IsInOverflow())
-        {
-        sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-        if (m_wrapInParentheses)
-            sqlBuilder.AppendParenRight();
-
-        return SUCCESS;
-        }
-
-    switch (m_scope)
-        {
-            case ECSqlScope::Select:
-                sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-                break;
-
-            case ECSqlScope::NonSelectAssignmentExp:
-                sqlBuilder.Append(propertyMap.GetColumn().GetName().c_str());
-                break;
-
-            case ECSqlScope::NonSelectNoAssignmentExp:
-            {
-            const bool addBase64ToBlobFunc = propertyMap.GetColumnDataType() == DbColumn::Type::Blob;
-
-            if (addBase64ToBlobFunc)
-                sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");
-            
-            DbColumn const* physicalOverflowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
-            BeAssert(physicalOverflowColumn != nullptr);
-
-            sqlBuilder.Append("json_extract(").Append(m_classIdentifier, physicalOverflowColumn->GetName().c_str())
-                .AppendComma().Append("'$.").Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-
-            if (addBase64ToBlobFunc)
-                sqlBuilder.AppendParenRight();
-
-            break;
-            }
-
-            default:
-                BeAssert(false);
-                return ERROR;
-        }
+    sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
 
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenRight();
@@ -319,12 +261,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
 
             case ECSqlScope::NonSelectAssignmentExp:
 				if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
-					{
-					if (relClassIdPropMap.GetColumn().IsInOverflow())
-						sqlBuilder.Append(relClassIdPropMap.GetColumn().GetName().c_str());
-
 					return SUCCESS;
-					}
 
                 sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
                 return SUCCESS;
@@ -335,10 +272,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
             NativeSqlBuilder idColStrBuilder;
-			if (idPropMap.GetColumn().IsInOverflow())
-				idColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", idPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), idPropMap.GetColumn().GetName().c_str());
-			else
-				idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+            idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
 
             NativeSqlBuilder relClassIdColStrBuilder;
             if (relClassIdPropMap.IsVirtual())

@@ -372,14 +372,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (columnVisitor.GetOverflowColumnCount() > 0)
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
-                                i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "

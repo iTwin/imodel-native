@@ -714,18 +714,13 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if ((classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical|| classIdPropertyMap->GetColumn().IsInOverflow()) &&
+            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
                 (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {    
                 NativeSqlBuilder classIdFilter;
                 Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
                 relationMap.GetClass().GetId().ToString(classIdStr);
-				if (classIdPropertyMap->GetColumn().IsInOverflow())
-					{
-					classIdFilter.AppendFormatted("json_extract([%s].[%s], '$.%s')", table->GetName().c_str(), classIdPropertyMap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), classIdPropertyMap->GetColumn().GetName().c_str());
-					}
-				else
-					classIdFilter.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped(classIdPropertyMap->GetColumn().GetName().c_str());
+                classIdFilter.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped(classIdPropertyMap->GetColumn().GetName().c_str());
 
                 if (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
                     classIdFilter.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(classIdStr).Append(")");
@@ -1005,14 +1000,12 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 NativeSqlBuilder propertySql;
                 if (r.GetColumn().IsShared())
                     {
-                    //non-overflow shared columns don't have a column data type in its DDL.
-                    //overflow cols don't have a data type either. It is deduced from the result of the SQLite
-                    //function json_extract which only knows the SQLite types.
+                    //shared columns don't have a column data type in its DDL.
                     //ECDb uses SQL-99 data types as SQLite supports them in their CAST expression
                     //and DDL - although they have only informational meaning.
                     //So to render data in shared columns according to the correct type, ECDb casts the shared column
                     //to the respective type
-                    BeAssert(r.GetColumn().IsInOverflow() || r.GetColumn().GetType() == DbColumn::Type::Any);
+                    BeAssert(r.GetColumn().GetType() == DbColumn::Type::Any);
                     Utf8String castExp;
                     castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
                     propertySql.Append(castExp.c_str());
@@ -1024,11 +1017,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 continue;
                 }
 
-            NativeSqlBuilder propertySql(r.GetSqlBuilder());
-            if (dataProperty->GetColumn().IsInOverflow())
-                propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
-
-            propertySqlList.push_back(propertySql);
+            propertySqlList.push_back(r.GetSqlBuilder());
             continue;
             }
 
@@ -1044,14 +1033,12 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
         if (ctx.GetViewType() == ViewType::ECClassView && r.GetColumn().IsShared())
             {
-            //non-overflow shared columns don't have a column data type in its DDL.
-            //overflow cols don't have a data type either. It is deduced from the result of the SQLite
-            //function json_extract which only knows the SQLite types.
+            //shared columns don't have a column data type in its DDL.
             //ECDb uses SQL-99 data types as SQLite supports them in their CAST expression
             //and DDL - although they have only informational meaning.
             //So to render data in shared columns according to the correct type, ECDb casts the shared column
             //to the respective type
-            BeAssert(r.GetColumn().IsInOverflow() || r.GetColumn().GetType() == DbColumn::Type::Any);
+            BeAssert(r.GetColumn().GetType() == DbColumn::Type::Any);
             Utf8String castExp;
             castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
             propertySql.Append(castExp.c_str());
@@ -1068,9 +1055,6 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
                 colAlias = &basePropertyMapCol.GetName();
             }
-
-        if (colAlias == nullptr && dataProperty->GetColumn().IsInOverflow())
-            colAlias = &dataProperty->GetColumn().GetName();
 
         if (colAlias != nullptr)
             propertySql.AppendSpace().AppendEscaped(colAlias->c_str());
@@ -1180,36 +1164,26 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSql(bo
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSql() const
-	{
-	if (!RequiresJoin())
-		{
-		BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeJoinSql can only be called if RequiresJoin() is true");
-		return NativeSqlBuilder();
-		}
+    {
+    if (!RequiresJoin())
+        {
+        BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeJoinSql can only be called if RequiresJoin() is true");
+        return NativeSqlBuilder();
+        }
 
-	NativeSqlBuilder sql(" INNER JOIN ");
-	sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
-		.AppendSpace()
-		.AppendEscaped(GetSqlTableAlias())
-		.Append(" ON ")
-		.AppendEscaped(GetSqlTableAlias())
-		.AppendDot()
-		.AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
-		.Append(BooleanSqlOperator::EqualTo);
+    NativeSqlBuilder sql(" INNER JOIN ");
+    sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
+        .AppendSpace()
+        .AppendEscaped(GetSqlTableAlias())
+        .Append(" ON ")
+        .AppendEscaped(GetSqlTableAlias())
+        .AppendDot()
+        .AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
+        .Append(BooleanSqlOperator::EqualTo)
+        .AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
 
-	if (m_foreignECInstanceIdCol->IsInOverflow())
-		{
-		DbColumn const* physicalOverflowColumn = m_foreignECInstanceIdCol->GetPhysicalOverflowColumn();
-		sql.Append("json_extract(").Append(m_foreignECInstanceIdCol->GetTable().GetName().c_str(), physicalOverflowColumn->GetName().c_str()).AppendComma();
-		sql.Append("'$.").Append(m_foreignECInstanceIdCol->GetName().c_str()).Append("')");
-		}
-	else 
-		{
-		sql.AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
-		}
-
-	return sql;
-	}
+    return sql;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
@@ -1317,25 +1291,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyM
     Result& result = Record(propertyMap);
     NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
 
-    if (!propertyMap.GetColumn().IsInOverflow())
-        {
-        sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-        return SUCCESS;
-        }
-
-    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetColumnDataType() == DbColumn::Type::Blob;
-
-    if (addBase64ToBlobFunc)
-        sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");
-
-    DbColumn const* physicalOverflowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
-    BeAssert(physicalOverflowColumn != nullptr);
-    sqlBuilder.Append("json_extract(").Append(m_classIdentifier, physicalOverflowColumn->GetName().c_str()).AppendComma();
-    sqlBuilder.Append("'$.").Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-
-    if (addBase64ToBlobFunc)
-        sqlBuilder.AppendParenRight();
-
+    sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
     return SUCCESS;
     }
 
@@ -1350,29 +1306,20 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
     NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
     NativeSqlBuilder idColStrBuilder;
-	if (idPropMap.GetColumn().IsInOverflow())
-		idColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", idPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), idPropMap.GetColumn().GetName().c_str());
-	else
-		idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
-
+    idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
 
     NativeSqlBuilder relClassIdColStrBuilder;
-	if (relClassIdPropMap.IsVirtual())
-		{
-		if (relClassIdPropMap.GetColumn().IsInOverflow())
-			relClassIdColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", relClassIdPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), relClassIdPropMap.GetColumn().GetName().c_str());
-		else 
-			relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
-		}
+    if (relClassIdPropMap.IsVirtual())
+        relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
     else
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
 
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-	if (idPropMap.GetColumn().IsShared())
-		result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
-	else
-		result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
+    if (idPropMap.GetColumn().IsShared())
+        result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
+    else
+        result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
 
     return SUCCESS;
     }
@@ -1390,20 +1337,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
         }
 
     Result& result = Record(*vmap);
-	if (vmap->GetColumn().IsInOverflow())
-		{
-		result.GetSqlBuilderR()
-			.Append("json_extract(")
-			.Append(m_classIdentifier, vmap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str())
-			.AppendComma()
-			.Append("'$.")
-			.Append(vmap->GetColumn().GetName().c_str())
-			.Append("')");
-		}
-	else
-		{
-		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-		}
+    result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
 	if (m_usePropertyNameAsAliasForSystemPropertyMaps)
 		{
@@ -1428,25 +1362,10 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
 
     Result& result = Record(*vmap);
-	if (isVirtual)
-		{
-		if (vmap->GetColumn().IsInOverflow())
-			{
-			result.GetSqlBuilderR()
-				.Append("json_extract(")
-				.Append(m_classIdentifier, vmap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str())
-				.AppendComma()
-				.Append("'$.")
-				.Append(vmap->GetColumn().GetName().c_str())
-				.Append("')");
-			}
-		else
-			result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-		}
-	else
-		{
-			result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-		}
+    if (isVirtual)
+        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+    else
+        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
@@ -1475,9 +1394,8 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
     if (isVirtual)
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
 	else
-		{
 		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-		}
+
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
         if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
@@ -1520,6 +1438,5 @@ ViewGenerator::ToSqlVisitor::Result& ViewGenerator::ToSqlVisitor::Record(SingleC
     m_resultSet.push_back(Result(propertyMap));
     return m_resultSet.back();
     }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

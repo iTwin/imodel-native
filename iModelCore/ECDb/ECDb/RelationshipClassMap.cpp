@@ -434,7 +434,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             }
 
         if (!fkTable.IsOwnedByECDb() || fkTable.GetPersistenceType() == PersistenceType::Virtual ||
-            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsShared() || fkCol->IsInOverflow())
+            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsShared())
             continue;
 
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
@@ -572,34 +572,31 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
     if (!canEdit)
         table.GetEditHandleR().BeginEdit();
 
-	relClassIdCol = colfactory.AllocateForeignKeyRelECClassId(table, relClassIdColName, persType);
+    relClassIdCol = colfactory.AllocateForeignKeyRelECClassId(table, relClassIdColName, persType);
     if (relClassIdCol == nullptr)
         return nullptr;
 
-	//! only know overflow columns have index and null constraints
-	if (false == relClassIdCol->IsInOverflow())
-		{
-		if (makeNotNull && !relClassIdCol->DoNotAllowDbNull())
-			{
-			relClassIdCol->GetConstraintsR().SetNotNullConstraint();
-			BeAssert(relClassIdCol->GetId().IsValid());
-			}
+    if (makeNotNull && !relClassIdCol->DoNotAllowDbNull())
+        {
+        relClassIdCol->GetConstraintsR().SetNotNullConstraint();
+        BeAssert(relClassIdCol->GetId().IsValid());
+        }
 
-		if (persType != PersistenceType::Virtual)
-			{
-			Utf8String indexName("ix_");
-			indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
-			DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, { relClassIdCol }, true, true, GetClass().GetId());
-			if (index == nullptr)
-				{
-				LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
-				return nullptr;
-				}
-			}
+    if (persType != PersistenceType::Virtual)
+        {
+        Utf8String indexName("ix_");
+        indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
+        DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {relClassIdCol}, true, true, GetClass().GetId());
+        if (index == nullptr)
+            {
+            LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
+            return nullptr;
+            }
+        }
 
-		if (!canEdit)
-			table.GetEditHandleR().EndEdit();
-		}
+    if (!canEdit)
+        table.GetEditHandleR().EndEdit();
+
     return relClassIdCol;
     }
 
@@ -893,7 +890,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd()
     for (SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
-        if (persistenceEndTable.GetType() == DbTable::Type::Existing || vmap->GetColumn().IsShared() || vmap->GetColumn().IsInOverflow())
+        if (persistenceEndTable.GetType() == DbTable::Type::Existing || vmap->GetColumn().IsShared())
             continue;
 
         // name of the index
@@ -1750,7 +1747,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 		{
 		return table.CreateColumn(colName, colType, position, colKind, persType);
 		}
-	//ECDB_RULE: Create shared column or overflow column
+	//ECDB_RULE: Create shared column
 		
 	ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
 	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();

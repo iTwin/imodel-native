@@ -14,21 +14,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BlobToBase64* BlobToBase64::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-BlobToBase64::BlobToBase64() : ScalarFunction(SQLFUNC_BlobToBase64, 1, DbValueType::TextVal) {}
+BlobToBase64SqlFunction* BlobToBase64SqlFunction::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BlobToBase64& BlobToBase64::GetSingleton()
+BlobToBase64SqlFunction& BlobToBase64SqlFunction::GetSingleton()
     {
     if (s_singleton == nullptr)
-        s_singleton = new BlobToBase64();
+        s_singleton = new BlobToBase64SqlFunction();
 
     return *s_singleton;
     }
@@ -36,7 +31,7 @@ BlobToBase64& BlobToBase64::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void BlobToBase64::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+void BlobToBase64SqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& blobArg = args[0];
     if (blobArg.IsNull())
@@ -57,21 +52,16 @@ void BlobToBase64::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Base64ToBlob* Base64ToBlob::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-Base64ToBlob::Base64ToBlob() : ScalarFunction(SQLFUNC_Base64ToBlob, 1, DbValueType::BlobVal) {}
+Base64ToBlobSqlFunction* Base64ToBlobSqlFunction::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Base64ToBlob& Base64ToBlob::GetSingleton()
+Base64ToBlobSqlFunction& Base64ToBlobSqlFunction::GetSingleton()
     {
     if (s_singleton == nullptr)
-        s_singleton = new Base64ToBlob();
+        s_singleton = new Base64ToBlobSqlFunction();
 
     return *s_singleton;
     }
@@ -79,7 +69,7 @@ Base64ToBlob& Base64ToBlob::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void Base64ToBlob::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+void Base64ToBlobSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& base64Arg = args[0];
 

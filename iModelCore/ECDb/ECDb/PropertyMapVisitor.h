@@ -22,7 +22,6 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         bool m_doNotSkipSystemPropertyMaps = false;
         mutable std::vector<DbColumn const*> m_columns;
         mutable uint32_t m_virtualColumnCount = 0;
-        mutable uint32_t m_overflowColumnCount = 0;
 
         BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
@@ -43,7 +42,6 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
 
         uint32_t GetColumnCount() const { return (uint32_t) m_columns.size(); }
         uint32_t GetVirtualColumnCount() const { return m_virtualColumnCount ; }
-        uint32_t GetOverflowColumnCount() const { return m_overflowColumnCount; }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
@@ -76,7 +74,6 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
         mutable std::vector<PropertyMap const*> m_foundPropertyMaps;
 		std::function<bool(PropertyMap const&)> m_propertyMapFilterCallback;
 		std::function<bool(CompoundDataPropertyMap const&)> m_recurseIntoCompoundPropertyMap;
-		std::function<const SingleColumnDataPropertyMap*(SystemPropertyMap const&)> m_systemPropertySelector;
 
         BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
@@ -93,7 +90,6 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 
 		void SetCallbackPropertyMapFilter(std::function<bool(PropertyMap const&)> callback) { m_propertyMapFilterCallback = callback; }
 		void SetCallbackRecurseIntoCompoundPropertyMap(std::function<bool(CompoundDataPropertyMap const&)> callback) { m_recurseIntoCompoundPropertyMap = callback; }
-		void SetCallbackSystemPropertyMapSelector(std::function<const SingleColumnDataPropertyMap*(SystemPropertyMap const&)> callback) { m_systemPropertySelector = callback; }
 
         std::vector<PropertyMap const*> const& Results() const { return m_foundPropertyMaps; }
     };

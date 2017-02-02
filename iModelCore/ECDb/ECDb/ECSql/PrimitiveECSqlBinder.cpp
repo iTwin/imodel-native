@@ -104,14 +104,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindZeroBlob(int blobSize)
     if (!stat.IsSuccess())
         return stat;
 
-    PropertyMap const* propMap = GetTypeInfo().GetPropertyMap();
-    BeAssert(propMap == nullptr || Enum::Contains(PropertyMap::Type::SingleColumnData, propMap->GetType()));
-    if (propMap != nullptr && propMap->GetAs<PrimitivePropertyMap>()->GetColumn().IsInOverflow())
-        {
-        LOG.error("Type mismatch. Cannot call BindZeroBlob for ECProperty that maps into the overflow column.");
-        return ECSqlStatus::Error;
-        }
-
     std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
     if (ehs != nullptr)
         {

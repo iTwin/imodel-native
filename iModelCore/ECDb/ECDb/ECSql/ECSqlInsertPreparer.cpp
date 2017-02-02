@@ -218,41 +218,6 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
             return stat;
 
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
-
-        size_t component = 0;
-        SearchPropertyMapVisitor visitor;
-		visitor.SetCallbackPropertyMapFilter([](PropertyMap const& propertyMap) 
-			{
-			if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap.GetType()))
-				{
-				return true;
-				}
-
-			return Enum::Contains(PropertyMap::Type::System, propertyMap.GetType());
-			});
-
-		visitor.SetCallbackSystemPropertyMapSelector([](SystemPropertyMap const& propertyMap) 
-			{
-			SingleColumnDataPropertyMap const* selected = nullptr;
-			if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && propertyMap.IsMappedToSingleTable())
-				selected = propertyMap.GetDataPropertyMaps().front();
-
-			return selected;
-			});
-
-        propNameExp->GetPropertyMap().AcceptVisitor(visitor);
-        for (PropertyMap const* childPropertyMap : visitor.Results())
-            {
-            SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
-            if (childDataPropertyMap->GetColumn().IsInOverflow())
-                {
-                insertSqlSnippets.m_overflowPropertyComponentIndexes[index].push_back(component);
-                insertSqlSnippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);
-                }
-
-            component++;
-            }
-
         index++;
         }
 
@@ -360,87 +325,27 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
     //the list will contain more than one snippet. Consequently the the list of ECSQL expressions is translated
     //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
     //before building the final SQLite sql string.
-    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_propertyNamesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
-    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_valuesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
+    const std::vector<size_t> emptyIndexSkipList;
+    NativeSqlBuilder::List propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_propertyNamesNativeSqlSnippets, emptyIndexSkipList);
+    NativeSqlBuilder::List valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_valuesNativeSqlSnippets, emptyIndexSkipList);
 
     insertBuilder.Append("INSERT INTO ").Append(snippets.m_classNameNativeSqlSnippet);
 
     insertBuilder.AppendSpace().AppendParenLeft().Append(propertyNamesNativeSqlSnippets);
-    //Just append the first overflow column as there is really just one and is repeated for every overflow property
-    DbColumn const* overflowColumn = nullptr;
-    if (!snippets.m_overflowPropertyComponentIndexes.empty())
-        {
-        if (!propertyNamesNativeSqlSnippets.empty())
-            insertBuilder.AppendComma();
-
-        overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetPhysicalOverflowColumn();;
-        insertBuilder.AppendEscaped(overflowColumn->GetName().c_str());
-        }
 
     if (!snippets.m_pkColumnNamesNativeSqlSnippets.empty())
         {
-        if (!propertyNamesNativeSqlSnippets.empty() || overflowColumn!= nullptr)
+        if (!propertyNamesNativeSqlSnippets.empty())
             insertBuilder.AppendComma();
 
         insertBuilder.Append(snippets.m_pkColumnNamesNativeSqlSnippets);
         }
     
-        insertBuilder.AppendParenRight();
-    insertBuilder.Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
-
-    //overflow value expression
-    if (!snippets.m_overflowPropertyComponentIndexes.empty())
-        {
-        if (!valuesNativeSqlSnippets.empty())
-            insertBuilder.AppendComma();
-        insertBuilder.Append("json_object(");
-
-        std::vector<size_t> overflowIndexes;
-        std::transform(std::begin(snippets.m_overflowPropertyComponentIndexes), std::end(snippets.m_overflowPropertyComponentIndexes), std::back_inserter(overflowIndexes),
-                       [] (decltype(snippets.m_overflowPropertyComponentIndexes)::value_type const& pair)
-            {
-            return pair.first;
-            });
-
-        std::sort(begin(overflowIndexes), end(overflowIndexes));
-        bool first = true;
-        for (size_t i : overflowIndexes)
-            {
-            std::vector<size_t> const& overflowComponentIndexes = const_cast<NativeSqlSnippets&>(snippets).m_overflowPropertyComponentIndexes[i];
-            std::vector<SingleColumnDataPropertyMap const*> const& overflowPropertyMaps = const_cast<NativeSqlSnippets&>(snippets).m_overflowPropertyMaps[i];
-
-            NativeSqlBuilder::List const& propertyNameSnippets = snippets.m_propertyNamesNativeSqlSnippets[i];
-            NativeSqlBuilder::List const& valueSnippets = snippets.m_valuesNativeSqlSnippets[i];
-            BeAssert(valueSnippets.size() == propertyNameSnippets.size());
-            for (size_t j = 0; j < overflowComponentIndexes.size(); j++)
-                {
-                const size_t overflowComponentIndex = overflowComponentIndexes[j];
-
-                if (first)
-                    first = false;
-                else
-                    insertBuilder.AppendComma();
-
-                insertBuilder.Append("'").Append(propertyNameSnippets[overflowComponentIndex]).Append("',");
-
-                SingleColumnDataPropertyMap const* propMap = overflowPropertyMaps[j];
-                const bool addBlobToBase64Func = propMap->GetColumnDataType() == DbColumn::Type::Blob;
-                if (addBlobToBase64Func)
-                    insertBuilder.Append(SQLFUNC_BlobToBase64 "(");
-
-                insertBuilder.Append(valueSnippets[overflowComponentIndex]);
-
-                if (addBlobToBase64Func)
-                    insertBuilder.AppendParenRight();
-                }
-            }
-
-        insertBuilder.Append(")");
-        }
+    insertBuilder.AppendParenRight().Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
     
     if (!snippets.m_pkValuesNativeSqlSnippets.empty())
         {
-        if (!valuesNativeSqlSnippets.empty() || overflowColumn != nullptr)
+        if (!valuesNativeSqlSnippets.empty())
             insertBuilder.AppendComma();
 
         insertBuilder.Append(snippets.m_pkValuesNativeSqlSnippets);

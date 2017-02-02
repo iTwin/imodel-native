@@ -187,7 +187,7 @@ public:
     //!     - @p ecClass is not mapped to a table
     //!     - No ECProperty found in @p ecClass for @p propertyAccessString
     //!     - ECProperty is not primitive and not of type ECN::PRIMITIVETYPE_Binary or ECN::PRIMITIVETYPE_IGeometry
-    //!     - ECProperty is mapped to an overflow column or not mapped to a column at all
+    //!     - ECProperty is not mapped to a column at all
     //!     - Write token validation failed
     //! @see BeSQLite::BlobIO
     ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const;

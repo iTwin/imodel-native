@@ -147,8 +147,6 @@ struct ChangeIterator
 
         explicit ColumnEntry(ColumnIterator const&);
         ColumnEntry(ColumnIterator const&, bmap<Utf8String, ColumnMap*>::const_iterator columnMapIterator);
-
-        DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const&) const;
         
     public:
         //! Get the access string for the EC property corresponding to this column

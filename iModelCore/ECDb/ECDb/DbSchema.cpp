@@ -1070,7 +1070,7 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
     : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable), m_overflowColumn(nullptr)
+      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
     {
     BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
         (tableType != Type::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for Type::Joined and must be null for any other DbTable::Type.");
@@ -1209,22 +1209,6 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         return nullptr;
         }
 
-    //Overflow property check
-    if (Enum::Intersects(kind, DbColumn::Kind::PhysicalOverflow))
-        {
-        if (kind != DbColumn::Kind::PhysicalOverflow)
-            {
-            BeAssert(false && "OverflowMaster should be the only flag on a column");
-            return nullptr;
-            }
-
-        if (GetFilteredColumnFirst(DbColumn::Kind::PhysicalOverflow) != nullptr)
-            {
-            BeAssert(false && "There can only be exactly one overflow column per table");
-            return nullptr;
-            }
-        }
-
     if (!GetEditHandleR().CanEdit())
         {
         IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
@@ -1250,7 +1234,6 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         id = DbColumnId(columnId.GetValue());
         }
 
-
     std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
@@ -1259,9 +1242,6 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         m_orderedColumns.push_back(newColumnP);
     else
         m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
-
-    if (kind == DbColumn::Kind::PhysicalOverflow)
-        m_overflowColumn = newColumnP;
 
     if (Enum::Contains(kind, DbColumn::Kind::ECClassId))
         m_classIdColumn = newColumnP;
@@ -1323,18 +1303,6 @@ DbColumn* DbTable::CreateSharedColumn(DbColumn::Type colType)
 
     return CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical);
 
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  11/2016
-//---------------------------------------------------------------------------------------
-DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType)
-    {
-    Utf8String generatedName;
-    m_sharedColumnNameGenerator.Generate(generatedName);
-    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
-
-    return CreateColumn(generatedName, DbColumn::Type::Any, Enum::Or(DbColumn::Kind::InOverflow, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1473,20 +1441,6 @@ bool DbColumn::IsUnique() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                               Affan.Khan 02/2016
-//---------------------------------------------------------------------------------------
-DbColumn const* DbColumn::GetPhysicalOverflowColumn() const
-    {
-    if (Enum::Intersects(m_kind, Kind::InOverflow))
-        {
-        BeAssert(m_table.GetPhysicalOverflowColumn() != nullptr);
-        return m_table.GetPhysicalOverflowColumn();
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
 bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
@@ -1501,12 +1455,6 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     {
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
-
-    if (m_kind == DbColumn::Kind::PhysicalOverflow)
-        {
-        BeAssert(false && "Cannot change Kind for a Overflow physical column");
-        return ERROR;
-        }
 
     m_kind = kind;
     return SUCCESS;

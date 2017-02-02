@@ -21,33 +21,25 @@ typedef RefCountedPtr<TableClassMap> TableClassMapPtr;
 struct ColumnMap
     {
     private:
-        Utf8String m_physicalColumnName;
-        Utf8String m_overflowColumnName;
-        bool m_isOverflowColumn = false;
-        int m_physicalColumnIndex = -1;
+        Utf8String m_columnName;
+        int m_columnIndex = -1;
     public:
         //! Constructor
         ColumnMap() {}
 
         //! Constructor
-        ColumnMap(Utf8StringCR physicalColumnName, int physicalColumnIndex, bool isOverflowColumn, Utf8StringCR overflowColumnName)
-            : m_physicalColumnName(physicalColumnName), m_physicalColumnIndex(physicalColumnIndex), m_isOverflowColumn(isOverflowColumn), m_overflowColumnName(overflowColumnName)
+        ColumnMap(Utf8StringCR columnName, int columnIndex)
+            : m_columnName(columnName), m_columnIndex(columnIndex)
             {}
 
-        //! Gets the name of the physical column
-        Utf8StringCR GetPhysicalName() const { return m_physicalColumnName; }
+        //! Gets the name of the column
+        Utf8StringCR GetName() const { return m_columnName; }
 
-        //! Gets the index of the physical column in the table
-        int GetPhysicalIndex() const { return m_physicalColumnIndex; }
-
-        //! Returns true if it's a overflow column.
-        bool IsOverflow() const { return m_isOverflowColumn; }
-
-        //! Gets the name of the overflow column (if applicable)
-        Utf8StringCR GetOverflowName() const { return m_overflowColumnName; }
+        //! Gets the index of the column in the table
+        int GetIndex() const { return m_columnIndex; }
 
         //! Returns true if the column has been initialized
-        bool IsValid() const { return m_physicalColumnIndex >= 0; }
+        bool IsValid() const { return m_columnIndex >= 0; }
     };
 
 //=======================================================================================

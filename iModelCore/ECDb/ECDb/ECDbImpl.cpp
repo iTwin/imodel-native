@@ -182,8 +182,8 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
-    m_ecdb.AddFunction(Base64ToBlob::GetSingleton());
-    m_ecdb.AddFunction(BlobToBase64::GetSingleton());
+    m_ecdb.AddFunction(Base64ToBlobSqlFunction::GetSingleton());
+    m_ecdb.AddFunction(BlobToBase64SqlFunction::GetSingleton());
     }
 
 //---------------------------------------------------------------------------------------
@@ -194,8 +194,8 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
-    m_ecdb.RemoveFunction(Base64ToBlob::GetSingleton());
-    m_ecdb.RemoveFunction(BlobToBase64::GetSingleton());
+    m_ecdb.RemoveFunction(Base64ToBlobSqlFunction::GetSingleton());
+    m_ecdb.RemoveFunction(BlobToBase64SqlFunction::GetSingleton());
     }
 
 //---------------------------------------------------------------------------------------
@@ -389,13 +389,6 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
 
     PrimitivePropertyMap const* primPropMap = propMap->GetAs<PrimitivePropertyMap>();
     DbColumn const& col = primPropMap->GetColumn();
-
-    if (col.IsInOverflow())
-        {
-        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' as it is mapped to an overflow column.",
-                   ecClass.GetFullName(), propertyAccessString);
-        return ERROR;
-        }
 
     if (col.GetPersistenceType() == PersistenceType::Virtual)
         {

@@ -14,16 +14,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // TEXT BlobToBase64(BLOB blob)
 // @bsiclass                                                   Krischan.Eberle   11/16
 //=======================================================================================
-struct BlobToBase64 final : ScalarFunction
+struct BlobToBase64SqlFunction final : ScalarFunction
     {
     private:
-        static BlobToBase64* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+        static BlobToBase64SqlFunction* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
 
-        BlobToBase64();
+        BlobToBase64SqlFunction() : ScalarFunction("BlobToBase64", 1, DbValueType::TextVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        static BlobToBase64& GetSingleton();
+        static BlobToBase64SqlFunction& GetSingleton();
     };
 
 
@@ -31,16 +31,16 @@ struct BlobToBase64 final : ScalarFunction
 // BLOB Base64ToBlob(TEXT base64Str)
 // @bsiclass                                                   Krischan.Eberle   11/16
 //=======================================================================================
-struct Base64ToBlob final : ScalarFunction
+struct Base64ToBlobSqlFunction final : ScalarFunction
     {
     private:
-        static Base64ToBlob* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+        static Base64ToBlobSqlFunction* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
 
-        Base64ToBlob();
+        Base64ToBlobSqlFunction() : ScalarFunction("Base64ToBlob", 1, DbValueType::BlobVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        static Base64ToBlob& GetSingleton();
+        static Base64ToBlobSqlFunction& GetSingleton();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

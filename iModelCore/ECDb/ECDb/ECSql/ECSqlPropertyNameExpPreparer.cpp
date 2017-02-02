@@ -97,25 +97,13 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
     const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount();
-    const bool allColumnsAreOverflow = columnVisitor.GetOverflowColumnCount() == columnVisitor.GetColumnCount();
 
     if (allColumnsAreVirtual || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
-            {
-            if (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId())
-                return true;
-
-            return allColumnsAreOverflow;
-            }
+            return (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId());
         
-        if (currentScopeECSqlType == ECSqlType::Update)
-            {
-            if (allColumnsAreOverflow)
-                return true;
-            }
-
         switch (currentScope.GetExp().GetType())
             {
                 case Exp::Type::AssignmentList: //UPDATE SET clause
@@ -188,7 +176,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //(we must check for the prop name list clause, because if it shows up in the values list, it must not be ignored)
         //INSERT INTO Foo(SourceECClassId) -> ignore SourceECClassId if it maps to a virtual column
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
-        if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual && !r.GetColumn().IsInOverflow())
+        if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             continue;
 
         nativeSqlSnippets.push_back(r.GetSqlBuilder());

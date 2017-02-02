@@ -67,19 +67,19 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
     // UPDATE clause
     nativeSqlBuilder.Append("UPDATE ");
-    auto status = ECSqlExpPreparer::PrepareClassRefExp(nativeSqlBuilder, ctx, *classNameExp);
+    ECSqlStatus status = ECSqlExpPreparer::PrepareClassRefExp(nativeSqlBuilder, ctx, *classNameExp);
     if (!status.IsSuccess())
         return status;
 
     // SET clause
-    NativeSqlSnippets snippets;
-    status = PrepareAssignmentListExp(snippets, ctx, exp.GetAssignmentListExp());
+    NativeSqlSnippets sqlSnippets;
+    status = PrepareAssignmentListExp(sqlSnippets, ctx, exp.GetAssignmentListExp());
     if (!status.IsSuccess())
         return status;
 
-    //Skip overflow properties
-    auto propertyListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_propertyNamesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
-    auto valueListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_valuesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
+    const std::vector<size_t> emptyIndexSkipList;
+    NativeSqlBuilder::List propertyListSnippets = NativeSqlBuilder::FlattenJaggedList(sqlSnippets.m_propertyNamesNativeSqlSnippets, emptyIndexSkipList);
+    NativeSqlBuilder::List valueListSnippets = NativeSqlBuilder::FlattenJaggedList(sqlSnippets.m_valuesNativeSqlSnippets, emptyIndexSkipList);
     if (propertyListSnippets.size() != valueListSnippets.size())
         {
         BeAssert(false);
@@ -95,50 +95,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         nativeSqlBuilder.Append(propertyListSnippets[i]).Append(BooleanSqlOperator::EqualTo).Append(valueListSnippets[i]);
         }
 
-    if (!snippets.m_overflowPropertyComponentIndexes.empty())
-        {
-        if (!propertyListSnippets.empty())
-            nativeSqlBuilder.AppendComma();
-
-        DbColumn const* overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetPhysicalOverflowColumn();
-        nativeSqlBuilder.AppendEscaped(overflowColumn->GetName().c_str()).Append(BooleanSqlOperator::EqualTo);
-        nativeSqlBuilder.Append("json_set(ifnull(").AppendEscaped(overflowColumn->GetName().c_str()).AppendComma().Append("'{}')");
-
-        std::vector<size_t> overflowIndexes;
-        std::transform(std::begin(snippets.m_overflowPropertyComponentIndexes), std::end(snippets.m_overflowPropertyComponentIndexes), std::back_inserter(overflowIndexes),
-                  [] (decltype(snippets.m_overflowPropertyComponentIndexes)::value_type const& pair)
-            {
-            return pair.first;
-            });
-
-        std::sort(begin(overflowIndexes), end(overflowIndexes));
-        for (size_t i : overflowIndexes)
-            {
-            NativeSqlBuilder::List const& propertyNamesNativeSqlSnippets = snippets.m_propertyNamesNativeSqlSnippets[i];
-            NativeSqlBuilder::List const& valuesNativeSqlSnippets = snippets.m_valuesNativeSqlSnippets[i];
-            std::vector<size_t> const& overflowComponentIndexes = snippets.m_overflowPropertyComponentIndexes[i];
-            std::vector<SingleColumnDataPropertyMap const*> const& overflowPropertyMaps = snippets.m_overflowPropertyMaps[i];
-            for (size_t j = 0; j < overflowComponentIndexes.size(); j++)
-                {
-                const size_t k = overflowComponentIndexes[j];
-
-                nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',");
-
-                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetColumnDataType() == DbColumn::Type::Blob;
-                if (addBlobToBase64Func)
-                    nativeSqlBuilder.Append(SQLFUNC_BlobToBase64 "(");
-
-                nativeSqlBuilder.Append(valuesNativeSqlSnippets[k]);
-
-                if (addBlobToBase64Func)
-                    nativeSqlBuilder.AppendParenRight();
-                }
-            }
-
-        nativeSqlBuilder.Append(")");
-        }
-
-    if (snippets.m_propertyNamesNativeSqlSnippets.empty())
+    if (sqlSnippets.m_propertyNamesNativeSqlSnippets.empty())
         ctx.SetNativeStatementIsNoop(true);
 
     //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
@@ -289,40 +246,21 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
         {
         BeAssert(childExp != nullptr);
         AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*> (childExp);
-        if (assignmentExp->GetPropertyNameExp()->GetPropertyMap().IsData())
-            {
-            size_t component = 0;
-            SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
-            assignmentExp->GetPropertyNameExp()->GetPropertyMap().AcceptVisitor(visitor);
-            for (PropertyMap const* childPropertyMap : visitor.Results())
-                {               
-                SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
-                if (childDataPropertyMap->GetColumn().IsInOverflow())
-                    {
-                    snippets.m_overflowPropertyComponentIndexes[index].push_back(component);
-                    snippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);
-                    }
-
-                component++;
-                }
-            }
-
-        
         NativeSqlBuilder::List propertyNamesNativeSqlSnippets;
-        auto stat = ECSqlPropertyNameExpPreparer::Prepare(propertyNamesNativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp());
+        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(propertyNamesNativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp());
         if (!stat.IsSuccess())
             {
             ctx.PopScope();
             return stat;
             }
 
-        const auto sqlSnippetCount = propertyNamesNativeSqlSnippets.size();
+        const size_t sqlSnippetCount = propertyNamesNativeSqlSnippets.size();
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
         if (sqlSnippetCount > 0)
             {
             NativeSqlBuilder::List rhsNativeSqlSnippets;
-            auto valueExp = assignmentExp->GetValueExp();
+            ValueExp const* valueExp = assignmentExp->GetValueExp();
             //if value is null exp, we need to pass target operand snippets
             if (ECSqlExpPreparer::IsNullExp(*valueExp))
                 {

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlUpdatePreparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +------------------------------------------------ --------------------------------------*/
 #pragma once
@@ -22,8 +22,6 @@ private:
         {
         NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
         NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
-        std::map<size_t, std::vector<size_t>> m_overflowPropertyComponentIndexes;
-        std::map<size_t, std::vector<SingleColumnDataPropertyMap const*>> m_overflowPropertyMaps;
         };
 
     //static class
