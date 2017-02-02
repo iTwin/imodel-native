@@ -1328,7 +1328,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
     if (ecOther.IsValid())
         {
-        bool sameClass = (GetElementClassId() != other.GetElementClassId());
+        bool sameClass = (GetElementClassId() == other.GetElementClassId());
         // Note that we are NOT necessarily going to call _SetPropertyValue on each property. 
         // If the subclass needs to validate specific auto-handled properties even during copying, then it
         // must override _CopyFrom and validate after the copy is done.
