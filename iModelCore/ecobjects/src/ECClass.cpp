@@ -3459,27 +3459,10 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema, bool verify) : ECEntityClass (schema), m_strength( StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
+ECRelationshipClass::ECRelationshipClass(ECN::ECSchemaCR schema, bool verify) : ECEntityClass(schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
     {
     m_source = new ECRelationshipConstraint(this, true, verify);
     m_target = new ECRelationshipConstraint(this, false, verify);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::~ECRelationshipClass()
-    {
-    delete m_source;
-    delete m_target;
-    }
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StrengthType ECRelationshipClass::GetStrength () const
-    {
-    return m_strength;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3499,7 +3482,7 @@ ECObjectsStatus ECRelationshipClass::SetStrength (StrengthType strength)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrength (Utf8CP strength)
     {
-    PRECONDITION (NULL != strength, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != strength, ECObjectsStatus::PreconditionViolated);
 
     StrengthType strengthType;
     ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
@@ -3509,14 +3492,6 @@ ECObjectsStatus ECRelationshipClass::SetStrength (Utf8CP strength)
         SetStrength (strengthType);
         
     return status;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelatedInstanceDirection ECRelationshipClass::GetStrengthDirection () const
-    {
-    return m_strengthDirection;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3536,7 +3511,7 @@ ECObjectsStatus ECRelationshipClass::SetStrengthDirection (ECRelatedInstanceDire
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrengthDirection (Utf8CP directionString)
     {
-    PRECONDITION (NULL != directionString, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != directionString, ECObjectsStatus::PreconditionViolated);
 
     ECRelatedInstanceDirection direction;
     ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
@@ -3546,22 +3521,6 @@ ECObjectsStatus ECRelationshipClass::SetStrengthDirection (Utf8CP directionStrin
         SetStrengthDirection (direction);
         
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintR ECRelationshipClass::GetSource () const
-    {
-    return *m_source;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintR ECRelationshipClass::GetTarget () const
-    {
-    return *m_target;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3722,15 +3681,6 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
         return ECObjectsStatus::RelationshipAlreadyHasBaseClass;
 
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipClass::_RemoveBaseClass(ECClassCR baseClass)
-    {
-    m_verified = false;
-    return ECClass::_RemoveBaseClass(baseClass);
     }
 
 //---------------------------------------------------------------------------------------

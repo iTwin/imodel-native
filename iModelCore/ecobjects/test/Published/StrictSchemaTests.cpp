@@ -118,48 +118,6 @@ TEST_F(ClassTests, CheckAbstractness)
     }
 
 //---------------------------------------------------------------------------------------//
-// Test to check that Only Domain and Custom Attribute classes may be used to create 
-// standalone instances
-// @bsimethod                             Prasanna.Prakash                       02/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, CheckClassTypeForStandAloneInstances)
-    {
-    CreateTestSchema();
-
-    ECClassCP domainClass = m_schema->GetClassCP("ClassA");
-    ASSERT_NE(nullptr, domainClass) << "Cannot find 'ClassA' in the test schema";
-    EXPECT_EQ(ECClassType::Entity, domainClass->GetClassType());
-
-    StandaloneECEnablerPtr doaminClassEnabler = domainClass->GetDefaultStandaloneEnabler();
-    ASSERT_TRUE(doaminClassEnabler.IsValid()) << "Cannot create an enabler for Domain Class";
-
-    StandaloneECInstancePtr domainClassInstance = doaminClassEnabler->CreateInstance();
-    ASSERT_TRUE(domainClassInstance.IsValid()) << "Cannot create an instance for the Domain class";
-
-    ECClassCP customAttributeClass = m_schema->GetClassCP("ClassC");
-    ASSERT_NE(nullptr, customAttributeClass) << "Cannot find 'ClassC' in the test schema";
-    EXPECT_EQ(ECClassType::CustomAttribute, customAttributeClass->GetClassType());
-
-    StandaloneECEnablerPtr customAttributeClassEnabler = customAttributeClass->GetDefaultStandaloneEnabler();
-    ASSERT_TRUE(customAttributeClassEnabler.IsValid()) << "Cannot create an enabler for CustomAttribute class";
-
-    StandaloneECInstancePtr customAttributeClassInstance = customAttributeClassEnabler->CreateInstance();
-    ASSERT_TRUE(customAttributeClassInstance.IsValid())
-        << "Cannot create a standAlone instance of the CustomAttribute class";
-
-    ECClassCP structClass = m_schema->GetClassCP("ClassB");
-    ASSERT_NE(nullptr, structClass) << "Cannot find 'ClassB' in the test schema";
-    EXPECT_EQ(ECClassType::Struct, structClass->GetClassType());
-
-    StandaloneECEnablerPtr structClassEnabler = structClass->GetDefaultStandaloneEnabler();
-    ASSERT_TRUE(structClassEnabler.IsValid()) << "Cannot create an enabler for Struct class";
-
-    StandaloneECInstancePtr structClassInstance = structClassEnabler->CreateInstance();
-    ASSERT_FALSE(structClassInstance.IsValid())
-        << "Only Domain and Custom Attribute classes may be used to create standalone instances";
-    }
-
-//---------------------------------------------------------------------------------------//
 // Test to check that It is only valid to set one of the following flags to true: 
 // isDomainClass, isStruct and isCustomAttributeClass 
 // @bsimethod                             Prasanna.Prakash                       02/2016
@@ -223,72 +181,6 @@ TEST_F(ClassTests, ValidateOnlyOneFlagTrue)
     ASSERT_NE(nullptr, structClass) << "Cannot find 'RegularClassD' in the test schema";
     ASSERT_TRUE(!structClass->IsEntityClass() && !structClass->IsCustomAttributeClass() && structClass->IsStructClass())
         << "Only isStruct property should be true for a class with isDomainClass and isStruct and isCustomAttributeClass equal to true";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that An abstract class may only have derived classes of one type 
-// @bsimethod                             Prasanna.Prakash                       02/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, DerivedClassTypesOfAbstractClass)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECEntityClass typeName=\"AbstractClass\" displayLabel=\"Abstract Class\" modifier=\"Abstract\">"
-        "   </ECEntityClass>"
-        "   <ECCustomAttributeClass typeName=\"CustomAttributeClass\" displayLabel=\"Custom Attribute Class\" modifier=\"None\" appliesTo=\"Any\">"
-        "   </ECCustomAttributeClass>"
-        "   <ECEntityClass typeName=\"DomainClassA\" displayLabel=\"Domain Class A\" modifier=\"None\">"
-        "       <BaseClass>AbstractClass</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName=\"DomainClassB\" displayLabel=\"Domain Class B\" modifier=\"None\">"
-        "       <BaseClass>AbstractClass</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECStructClass typeName=\"StructClassA\" displayLabel=\"Struct Class A\" modifier=\"None\">"
-        "   </ECStructClass>"
-        "   <ECStructClass typeName=\"StructClassB\" displayLabel=\"Struct Class B\" modifier=\"None\">"
-        "   </ECStructClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context))
-        << "Unable to read the schema file";
-
-    ECClassP abstractClass = schema->GetClassP("AbstractClass");
-    ASSERT_NE(nullptr, abstractClass) << "Cannot find Abstract Class in the test schema";
-    EXPECT_EQ(ECClassModifier::Abstract, abstractClass->GetClassModifier());
-
-    ECEntityClassP domainClass1 = schema->GetClassP("DomainClassA")->GetEntityClassP();
-    ASSERT_NE(nullptr, domainClass1) << "Cannot find Domain class in the test schema";
-
-    ECEntityClassP domainClass2 = schema->GetClassP("DomainClassB")->GetEntityClassP();
-    ASSERT_NE(nullptr, domainClass2) << "Cannot find Domain class in the test schema";
-
-    ECCustomAttributeClassP customAttributeClass = schema->GetClassP("CustomAttributeClass")->GetCustomAttributeClassP();
-    ASSERT_NE(nullptr, customAttributeClass) << "CustomAttribute Class could not be found in the test schema";
-    ASSERT_NE(ECObjectsStatus::Success, customAttributeClass->AddBaseClass(*abstractClass))
-        << "An abstract class may only have derived classes of one type";
-
-    ECStructClassP structClass1 = schema->GetClassP("StructClassA")->GetStructClassP();
-    ASSERT_NE(nullptr, structClass1) << "Cannot find Struct class in the test schema";
-    ASSERT_NE(ECObjectsStatus::Success, structClass1->AddBaseClass(*abstractClass))
-        << "An abstract class may only have derived classes of one type";
-
-    ASSERT_EQ(ECObjectsStatus::Success, domainClass1->RemoveBaseClass(*abstractClass))
-        << "Cannot remove the Abstract base class form Entity class";
-    ASSERT_EQ(ECObjectsStatus::Success, domainClass2->RemoveBaseClass(*abstractClass))
-        << "Cannot remove the abstract base class from Entity Class";
-
-    ASSERT_EQ(ECObjectsStatus::Success, structClass1->AddBaseClass(*abstractClass))
-        << "Cannot add the Abstract Class as a base class of Struct Class";
-
-    ECStructClassP structClass2 = schema->GetClassP("StructClassB")->GetStructClassP();
-    ASSERT_NE(nullptr, structClass2) << "Cannot find Struct class in the test schema";
-    ASSERT_EQ(ECObjectsStatus::Success, structClass2->AddBaseClass(*abstractClass))
-        << "Cannot add the Abstract Class as a base class of Struct Class";
-
-    ASSERT_NE(ECObjectsStatus::Success, customAttributeClass->AddBaseClass(*abstractClass))
-        << "An abstract class may only have derived classes of one type";
     }
 
 //---------------------------------------------------------------------------------------//

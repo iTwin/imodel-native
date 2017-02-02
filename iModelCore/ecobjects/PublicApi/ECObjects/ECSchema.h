@@ -2090,10 +2090,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipConstraint : IECCustomAttributeCont
 friend struct ECRelationshipClass;
 
 private:
-    // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
-    // to support implicit relationships.  For now, just support explicit relationships
-//    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
-
     bool                        m_isSource;
     bool                        m_isPolymorphic;
     bool                        m_verify;
@@ -2146,8 +2142,8 @@ public:
 
     //! Set the label of the constraint role in the relationship.
     //! @param[in] roleLabel The role label to be set on this relationship constraint
-    //! @returns An ECObjectsStatus::Error is returned if the given label is null or empty
-    ECOBJECTS_EXPORT ECObjectsStatus SetRoleLabel (Utf8CP roleLabel);
+    //! @returns An ::Error is returned if the given label is null or empty
+    ECOBJECTS_EXPORT ECObjectsStatus SetRoleLabel(Utf8CP roleLabel);
     
     //! Get the label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
@@ -2165,7 +2161,7 @@ public:
 
     //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     //! @param[in] isPolymorphic String representation of true/false
-    //! @return Success if the string is parsed into a bool
+    //! @return ::Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus SetIsPolymorphic(Utf8CP isPolymorphic);
     
     //! Sets whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
@@ -2175,44 +2171,44 @@ public:
     //! Determine whether the constraint can also relate to instances of subclasses of classes applied to the constraint.
     bool GetIsPolymorphic() const {return m_isPolymorphic;}
 
-    //! Set the given multiplicity of the constraint in the relationship
+    //! Set the given RelationshipMultiplicity of this constraint.
     //! @param[in] multiplicity The multiplicity to be set on this relationship constraint
-    ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(RelationshipMultiplicityCR multiplicity);
+    ECOBJECTS_EXPORT ECObjectsStatus SetMultiplicity(RelationshipMultiplicityCR multiplicity);
 
-    //! Set the multiplicity of the constraint using the string format of @ref ECN::RelationshipMultiplicity. Multiplicity is not set if input string cannot be parsed.
+    //! Set the multiplicity of the constraint using the string format of RelationshipMultiplicity. Multiplicity is not set if input string cannot be parsed.
     //! @param[in] multiplicity The string representation of a multiplicity
-    //! @return Error if it fails to parse the multiplicity string into a valid multiplicity.
-    ECObjectsStatus SetMultiplicity(Utf8CP multiplicity) {return SetMultiplicity(multiplicity, m_verify);};
+    //! @return An error if it fails to parse the multiplicity string into a valid RelationshipMultiplicity.
+    ECObjectsStatus SetMultiplicity(Utf8CP multiplicity) {return SetMultiplicity(multiplicity, m_verify);}
 
-    //! Get the multiplicity of the constraint in the relationship
+    //! Get the RelationshipMultiplicity of the constraint in the relationship
     RelationshipMultiplicityCR GetMultiplicity() const {return *m_multiplicity;}
 
     //! Set the abstract constraint class by input string of format {SchemaName}:{ClassName}. All of the constraint classes must be or derive from. 
-    //! @param[in] abstractConstraint String representation of an the full name of either an ECEntityClass or ECInterfaceClass
-    //! @return Success if the abstract constraint can be parsed into a valid ECEntityClass or ECInterfaceClass
+    //! @param[in] abstractConstraint String representation of the full name of an ECEntityClass
+    //! @return ::Success if the abstract constraint can be parsed into a valid ECEntityClass
     ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint) {return SetAbstractConstraint(abstractConstraint, m_verify);}
     
     //! Set the abstract constraint class of the constraint in the relationship. 
     //! @remarks The specified class must be a base class class of all constraint classes defined in
-    //! @param[in] abstractConstraint An ECEntityClass to be set as the abstract constraint of the constraint in the relationship
+    //! @param[in] abstractConstraint The ECEntityClass to be set as the abstract constraint of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECEntityClassCR abstractConstraint);
     
     //! Get the abstract constraint class for this ECRelationshipConstraint. 
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
-    //! If one does not exist and there is only one constraint class that constraint class will be returned. If all the previous fail to find a valid class
+    //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
-    //! @return The abstract constraint ECClass if one is defined, if not found nullptr is returned.
+    //! @return The abstract constraint, ECEntityClass, if one is defined, if one cannot be found nullptr is returned.
     ECOBJECTS_EXPORT ECEntityClassCP const GetAbstractConstraint() const;
     
-    //! Determine whether the abstract constraint is set in this constraint of the relationship or inherited from a constraint in a base relationship
+    //! Determine whether the abstract constraint is set in this constraint or in a base constraint.
     ECOBJECTS_EXPORT bool IsAbstractConstraintDefined() const;
 
-    //! Determine whether the abstract constraint is set in this constraint of the relationship and not inherited from a constraint in a base relationship.
+    //! Determine whether the abstract constraint is set in this constraint and not inherited a base constraint.
     bool IsAbstractConstraintDefinedLocally() const {return nullptr != m_abstractConstraint;}
 
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
-    //! @note If the class does not derive from the abstract constraint it will fail to be added and ECObjectsStatus::Error will be returned.
+    //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECEntityClassCR classConstraint);
 
     //! Remove the specified class from the constraint.
@@ -2233,26 +2229,25 @@ public:
     
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
-    ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
+    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
 
     //! Returns whether the relationship is ordered on this constraint.
-    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+    ECOBJECTS_EXPORT bool GetIsOrdered() const;
 
     //! Returns the storage mode of the OrderId for this constraint.
-    ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
+    ECOBJECTS_EXPORT OrderIdStorageMode GetOrderIdStorageMode() const;
 
     //! Gets the name of the OrderId property for this constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (Utf8String& propertyName)  const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetOrderedRelationshipPropertyName(Utf8String& propertyName) const;
 };
 
 //=======================================================================================
-//! The in-memory representation of a relationship class as defined by ECSchemaXML
+//! The in-memory representation of an ECRelationshipClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECEntityClass
 {
 DEFINE_T_SUPER(ECEntityClass)
-/*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
@@ -2268,55 +2263,59 @@ private:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema, bool verify = true);
-    virtual ~ECRelationshipClass ();
+    ECRelationshipClass(ECSchemaCR schema, bool verify = true);
+    virtual ~ECRelationshipClass() {delete m_source; delete m_target;}
 
-    ECObjectsStatus SetStrength (Utf8CP strength);
-    ECObjectsStatus SetStrengthDirection (Utf8CP direction);
+    ECObjectsStatus SetStrength(Utf8CP strength);
+    ECObjectsStatus SetStrengthDirection(Utf8CP direction);
 
     bool ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
     bool Verify(bool resolveIssues = false) const;
 
 protected:
-    SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    SchemaReadStatus _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
+    SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
 
-    ECRelationshipClassCP _GetRelationshipClassCP () const override {return this;};
-    ECRelationshipClassP _GetRelationshipClassP ()  override {return this;};
+    ECRelationshipClassCP _GetRelationshipClassCP() const override {return this;}
+    ECRelationshipClassP _GetRelationshipClassP()  override {return this;}
     ECClassType _GetClassType() const override {return ECClassType::Relationship;}
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
-    ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass) override;
+    ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass) override {m_verified = false; return ECClass::_RemoveBaseClass(baseClass);}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::RelationshipClass;}
 
-//__PUBLISH_SECTION_START__
 public:
-    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
-    //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (Utf8String& propertyName, ECRelationshipEnd end)  const;
-    //! Sets the StrengthType of this constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
-    //! Gets the StrengthType of this constraint
-    ECOBJECTS_EXPORT StrengthType               GetStrength() const;
-    //! Sets the StrengthDirection (either Forward or Backward) of this constraint
-    ECOBJECTS_EXPORT ECObjectsStatus            SetStrengthDirection(ECRelatedInstanceDirection value);
-    //! Gets the StrengthDirection (either Forward or Backward) of this constraint
-    ECOBJECTS_EXPORT ECRelatedInstanceDirection GetStrengthDirection() const;
-    //! Gets the constraint at the target end of the relationship
-    ECOBJECTS_EXPORT ECRelationshipConstraintR  GetTarget() const;
-    //! Gets the constraint at the source end of the relationship
-    ECOBJECTS_EXPORT ECRelationshipConstraintR  GetSource() const;
+    ECRelationshipConstraintR GetSource() const {return *m_source;} //!< Gets the ECRelationshipConstraint at the source end of the relationship
+    ECRelationshipConstraintR GetTarget() const {return *m_target;} //!< Gets the ECRelationshipConstraint at the target end of the relationship
 
-    //! Returns true if the constraint is explicit
-    ECOBJECTS_EXPORT bool                       GetIsExplicit() const;
+    //! Sets the ::StrengthType of this relationship. 
+    //! @remarks The ::StrengthType must be consisten with its base class's strength type. If it is not, Verify() will return false.
+    //! @return ::Success if the strength is set, otherwise ::RelationshipConstraintsNotCompatible.
+    ECOBJECTS_EXPORT ECObjectsStatus SetStrength(StrengthType value); 
+    StrengthType GetStrength() const {return m_strength;} //!< Gets the ::StrengthType of this ECRelationshipClass.
+
+    //! Sets the strength direction for this relationship.
+    //! @see ECRelatedInstanceDirection
+    //! @remarks The Strength Direction must be consistent with its base class to be valid. If it is not, Verify() will return false.
+    //! @return ::Success if the strength direction is set, otherwise ::RelationshipConstraintsNotCompatible.
+    ECOBJECTS_EXPORT ECObjectsStatus SetStrengthDirection(ECRelatedInstanceDirection value);
+    //! Gets the strength direction
+    //! @return ::Forward or ::Backward
+    ECRelatedInstanceDirection GetStrengthDirection() const {return m_strengthDirection;}
+
     //! Returns true if the constraint is ordered.  This is determined by seeing if the custom attribute signifying a Ordered relationship is defined
-    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+    ECOBJECTS_EXPORT bool GetIsOrdered() const;
+    //! If this relationship class supports ordered relationships, it will get the property name for the provided relationship end.
+    //! @param[out] propertyName The property name found for the provided relationship end
+    //! @param[in] end The end to get the property name from.
+    //! @return ::Success if the relationship class supports ordered relationships has a valid property name, otherwise ::Error.
+    ECOBJECTS_EXPORT ECObjectsStatus GetOrderedRelationshipPropertyName(Utf8String& propertyName, ECRelationshipEnd end) const;
 
-    //! Verifies the relationship
-    ECOBJECTS_EXPORT bool                       Verify();
+    //! Returns true if successfully verifies the relationship, otherwise false.
+    ECOBJECTS_EXPORT bool Verify();
     //! Returns true if the relationship is verified.
-    ECOBJECTS_EXPORT bool                       GetIsVerified();
+    ECOBJECTS_EXPORT bool GetIsVerified();
 
 }; // ECRelationshipClass
 
