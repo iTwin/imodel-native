@@ -587,7 +587,18 @@ size_t NumericFormatSpec::FormatDouble(double dval, CharP buf, size_t bufLen, in
 
     if (decimal)
         {
-        fract = modf(IsPrecisionZero()? dval + FormatConstant::FPV_RoundFactor(): dval, &ival);
+        double actval = IsPrecisionZero() ? dval + FormatConstant::FPV_RoundFactor() : dval + FormatConstant::FPV_MinTreshold();
+        fract = modf(actval , &ival);
+        if (!IsPrecisionZero())
+            {
+            fract = fabs(fract) * precScale + FormatConstant::FPV_RoundFactor();
+            if (fract >= precScale)
+                {
+                ival += 1;
+                fract -= precScale;
+                }
+            }
+
         int iLen = IntPartToText(ival, intBuf, sizeof(intBuf), true);
         if (m_signOption == ShowSignOption::SignAlways || 
             ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
@@ -606,9 +617,9 @@ size_t NumericFormatSpec::FormatDouble(double dval, CharP buf, size_t bufLen, in
             }
         else
             {
-            if (fract < 0.0)
+           /* if (fract < 0.0)
                 fract = -fract;
-            fract = fract * precScale + 0.501;
+            fract = fract * precScale + 0.501;*/
             int fLen = IntPartToText(fract, fractBuf, sizeof(fractBuf), false);
 
             locBuf[ind++] = m_decimalSeparator;
@@ -705,7 +716,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
-Utf8String NumericFormatSpec::RefFormatDouble(double dval, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatDouble(double dval, Utf8P stdName, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -715,7 +726,7 @@ Utf8String NumericFormatSpec::RefFormatDouble(double dval, Utf8P stdName, int pr
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -728,7 +739,30 @@ Utf8String NumericFormatSpec::RefFormatQuantity(QuantityCR qty, UnitCP useUnit, 
     return fmtP->FormatDouble(temp->GetMagnitude(), prec, round);
     }
  
-Utf8String NumericFormatSpec::RefFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatPhysValue(double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8P stdName, int prec, double round)
+    {
+      QuantityPtr qty = Quantity::Create(dval, fromUOM);
+      UnitCP toUnit = UnitRegistry::Instance().LookupUnit(toUOM);
+      UnitCP fromUnit = qty->GetUnit();
+      PhenomenonCP phTo = toUnit->GetPhenomenon();
+      PhenomenonCP phFrom = fromUnit->GetPhenomenon();
+      if (phTo != phFrom)
+          {
+          Utf8String txt = "Impossible conversion from ";
+          txt += fromUnit->GetName();
+          txt += " to ";
+          txt +=toUnit->GetName();
+          return txt;
+          }
+      Utf8String str = StdFormatQuantity(*qty, toUnit, stdName, prec, round);
+      if (nullptr != toLabel)
+          str += toLabel;
+      return str;
+    }
+
+
+
+Utf8String NumericFormatSpec::StdFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -1121,6 +1155,9 @@ void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     AddFormat(new NumericFormatSpec("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
+    AddFormat(new NumericFormatSpec("Real2", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real2");
+    AddFormat(new NumericFormatSpec("Real3", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real3");
+    AddFormat(new NumericFormatSpec("Real4", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real4");
     AddFormat(new NumericFormatSpec("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
     AddFormat(new NumericFormatSpec("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
     AddFormat(new NumericFormatSpec("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");
@@ -1367,9 +1404,9 @@ void QuantityTriadSpec::Init(bool incl0)
     m_topUnit = nullptr;
     m_midUnit = nullptr;
     m_lowUnit = nullptr;
-    m_topUnitSymbol = nullptr;
-    m_midUnitSymbol = nullptr;
-    m_lowUnitSymbol = nullptr;
+    m_topUnitLabel = nullptr;
+    m_midUnitLabel = nullptr;
+    m_lowUnitLabel = nullptr;
     m_problemCode = FormatProblemCode::NoProblems;
     m_includeZero = incl0;
     }
@@ -1543,9 +1580,9 @@ Utf8String QuantityTriadSpec::FormatQuantTriad(Utf8CP space, int prec, bool frac
     if (IsProblem())
         return FormatConstant::FailedOperation();
 
-    Utf8CP topUOM = (nullptr == m_topUnitSymbol) ? GetTopUOM(): m_topUnitSymbol;
-    Utf8CP midUOM = (nullptr == m_midUnitSymbol) ? GetMidUOM() : m_midUnitSymbol;
-    Utf8CP lowUOM = (nullptr == m_lowUnitSymbol) ? GetLowUOM() : m_lowUnitSymbol;
+    Utf8CP topUOM = (nullptr == m_topUnitLabel) ? GetTopUOM(): m_topUnitLabel;
+    Utf8CP midUOM = (nullptr == m_midUnitLabel) ? GetMidUOM() : m_midUnitLabel;
+    Utf8CP lowUOM = (nullptr == m_lowUnitLabel) ? GetLowUOM() : m_lowUnitLabel;
     return FormatTriad(topUOM, midUOM, lowUOM, space, prec, fract, includeZero);
     }
    

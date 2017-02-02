@@ -33,55 +33,150 @@ TEST(FormattingTest, FormattingUOM)
     UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
     UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
     UnitCP yrdsdUOM = UnitRegistry::Instance().LookupUnit("YRDS");
-    
+  
     UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
     UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
     UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
     UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
     UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
 
-
     QuantityPtr len = Quantity::Create(22.7, "M");
     QuantityTriadSpec qtr = QuantityTriadSpec(*len, yrdUOM, ftUOM, inUOM);
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
-
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract").c_str());
-    EXPECT_STREQ ("74 1/2", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::RefFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract").c_str());
+    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract16").c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity(*len, yardUOM, "fract8").c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
 
     QuantityPtr ang = Quantity::Create(135.0 + 23.0/120.0, "ARC_DEG");
 
     QuantityTriadSpec atr = QuantityTriadSpec(*ang, degUOM, minUOM, secUOM);
-    atr.SetTopUnitSymbol("\xC2\xB0");
-    atr.SetMidUnitSymbol(u8"'");
-    atr.SetLowUnitSymbol(u8"\"");
+    atr.SetTopUnitLabel("\xC2\xB0");
+    atr.SetMidUnitLabel(u8"'");
+    atr.SetLowUnitLabel(u8"\"");
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
 
-    LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::RefFormatQuantity(*ang, degUOM, "fract").c_str());
+    LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::StdFormatQuantity(*ang, degUOM, "fract").c_str());
     LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("_", 4).c_str());
-    atr.SetTopUnitSymbol(u8"°");
-    atr.SetMidUnitSymbol(u8"'");
-    atr.SetLowUnitSymbol(u8"\"");
+    atr.SetTopUnitLabel(u8"°");
+    atr.SetMidUnitLabel(u8"'");
+    atr.SetLowUnitLabel(u8"\"");
     LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("", 4).c_str());
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
-    LOG.infov(u8"135.45° = %s", NumericFormatSpec::RefFormatQuantityTriad(&atr, "fract32", "").c_str());
+    LOG.infov(u8"135.45° = %s", NumericFormatSpec::StdFormatQuantityTriad(&atr, "fract32", "").c_str());
 
-   
-  /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
+    QuantityPtr tmp = Quantity::Create(36.6, "CELSIUS");
+    UnitCP farhUOM = UnitRegistry::Instance().LookupUnit("FAHRENHEIT");
+    LOG.infov(u8"36.6°C = %s (real2)", NumericFormatSpec::StdFormatQuantity(*tmp, farhUOM, "real2").c_str());
+    
+    double cels = -40.0;
+    while (cels < 250.0)
+        {
+        LOG.infov(u8"%.2f °C = %s (real4)", cels, NumericFormatSpec::StdFormatPhysValue(cels, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+        cels += 4.0;
+        }
+    LOG.infov(u8"100.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(100.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    LOG.infov(u8"0.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(0.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+
+    EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue(36.6, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue(100, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+
+    EXPECT_STREQ (u8"-40.0°C", NumericFormatSpec::StdFormatPhysValue(-40.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-35.0°C", NumericFormatSpec::StdFormatPhysValue(-31.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-30.0°C", NumericFormatSpec::StdFormatPhysValue(-22.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-25.0°C", NumericFormatSpec::StdFormatPhysValue(-13.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-20.0°C", NumericFormatSpec::StdFormatPhysValue(-4.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-15.0°C", NumericFormatSpec::StdFormatPhysValue(5.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-10.0°C", NumericFormatSpec::StdFormatPhysValue(14.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-5.0°C", NumericFormatSpec::StdFormatPhysValue(23.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+
+    EXPECT_STREQ (u8"-40.0°F", NumericFormatSpec::StdFormatPhysValue(-40.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"-31.0°F", NumericFormatSpec::StdFormatPhysValue(-35.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"-22.0°F", NumericFormatSpec::StdFormatPhysValue(-30.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"-13.0°F", NumericFormatSpec::StdFormatPhysValue(-25.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"-4.0°F",  NumericFormatSpec::StdFormatPhysValue(-20.0,  "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"5.0°F",   NumericFormatSpec::StdFormatPhysValue(-15.0,   "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"14.0°F",  NumericFormatSpec::StdFormatPhysValue(-10.0,  "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"23.0°F",  NumericFormatSpec::StdFormatPhysValue(-5.0,   "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+
+
+
+    /*-40.00 °C = -40.0°F (real4)
+        - 35.00 °C = -31.0°F (real4)
+        - 30.00 °C = -22.0°F (real4)
+        - 25.00 °C = -13.0°F (real4)
+        - 20.00 °C = -4.0°F (real4)
+        - 15.00 °C = 5.0°F (real4)
+        - 10.00 °C = 14.0°F (real4)
+        - 5.00 °C = 23.0°F (real4)
+        0.00 °C = 32.0°F (real4)
+        5.00 °C = 41.0°F (real4)
+        10.00 °C = 50.0°F (real4)
+        15.00 °C = 59.0°F (real4)
+        20.00 °C = 68.0°F (real4)
+        25.00 °C = 77.0°F (real4)
+        30.00 °C = 86.0°F (real4)
+        35.00 °C = 95.0°F (real4)
+        40.00 °C = 104.0°F (real4)
+        45.00 °C = 113.0°F (real4)
+        50.00 °C = 122.0°F (real4)
+        55.00 °C = 131.0°F (real4)
+        60.00 °C = 140.0°F (real4)
+        65.00 °C = 149.0°F (real4)
+        70.00 °C = 158.0°F (real4)
+        75.00 °C = 167.0°F (real4)
+        80.00 °C = 176.0°F (real4)
+        85.00 °C = 185.0°F (real4)
+        90.00 °C = 194.0°F (real4)
+        95.00 °C = 203.0°F (real4)
+        100.00 °C = 212.0°F (real4)
+        105.00 °C = 221.0°F (real4)
+        110.00 °C = 230.0°F (real4)
+        115.00 °C = 239.0°F (real4)
+        120.00 °C = 248.0°F (real4)
+        125.00 °C = 257.0°F (real4)
+        130.00 °C = 266.0°F (real4)
+        135.00 °C = 275.0°F (real4)
+        140.00 °C = 284.0°F (real4)
+        145.00 °C = 293.0°F (real4)
+        150.00 °C = 302.0°F (real4)
+        155.00 °C = 311.0°F (real4)
+        160.00 °C = 320.0°F (real4)
+        165.00 °C = 329.0°F (real4)
+        170.00 °C = 338.0°F (real4)
+        175.00 °C = 347.0°F (real4)
+        180.00 °C = 356.0°F (real4)
+        185.00 °C = 365.0°F (real4)
+        190.00 °C = 374.0°F (real4)
+        195.00 °C = 383.0°F (real4)
+        200.00 °C = 392.0°F (real4)
+        205.00 °C = 401.0°F (real4)
+        210.00 °C = 410.0°F (real4)
+        215.00 °C = 419.0°F (real4)
+        220.00 °C = 428.0°F (real4)
+        225.00 °C = 437.0°F (real4)
+        230.00 °C = 446.0°F (real4)
+        235.00 °C = 455.0°F (real4)
+        240.00 °C = 464.0°F (real4)
+        245.00 °C = 473.0°F (real4)*/
+       
+
+
+    
+    /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
     reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);*/
 
 #if defined FORMAT_DEBUG_PRINT
 
-    LOG.infov("22.7 M = %s FT", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
-    LOG.infov("22.7 M = %s YRD", NumericFormat::RefFormatQuantity(*len, yardUOM, "fract8").c_str());
-    LOG.infov("22.7 M = %s FT(16)", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract16").c_str());
-    LOG.infov("22.7 M = %s FT(32)", NumericFormat::RefFormatQuantity(*len, ftUOM, "fract32").c_str());
+    LOG.infov("22.7 M = %s FT", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
+    LOG.infov("22.7 M = %s YRD", NumericFormat::StdFormatQuantity(*len, yardUOM, "fract8").c_str());
+    LOG.infov("22.7 M = %s FT(16)", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract16").c_str());
+    LOG.infov("22.7 M = %s FT(32)", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
 
     UnitCP mileUOM = UnitRegistry::Instance().LookupUnit("MILE");
     if (nullptr != mileUOM && nullptr != yrdUOM)
@@ -186,36 +281,36 @@ TEST(FormattingTest, Simple)
 #endif
 
 #if defined FORMAT_DEBUG_PRINT
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real").c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real").c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 2).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 1).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 0).c_str());
 
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4, 5.0).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3, 5.0).c_str());
     LOG.info("Scientific");
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sci", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sciN", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(testV, "sci", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(testV, "sciN", 5).c_str());
 
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::StdFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::StdFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::StdFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
     LOG.info("Scientific");
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sci", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sciN", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "sci", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "sciN", 5).c_str());
 #endif
     /////  end of demo print
         /*Value 1.414214  (denom 4) 1 1 / 2
@@ -236,53 +331,53 @@ TEST(FormattingTest, Simple)
 #if defined FORMAT_DEBUG_PRINT
     fn = FractionalNumeric(fval, 128);
     LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fract").c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fract").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fractSign").c_str());
 #endif
 
-    EXPECT_STREQ ("1 27/64", NumericFormatSpec::RefFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+1 27/64", NumericFormatSpec::RefFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::RefFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::RefFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fractSign").c_str());
     fval  *= 3.5;
 
 #if defined FORMAT_DEBUG_PRINT
     fn = FractionalNumeric(fval, 128);
     LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fract").c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::RefFormatDouble(fval, "fractSign").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fract").c_str());
+    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fractSign").c_str());
 #endif
 
-    EXPECT_STREQ ("4 61/64", NumericFormatSpec::RefFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+4 61/64", NumericFormatSpec::RefFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::RefFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::RefFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
+    EXPECT_STREQ ("+4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble(-fval, "fract").c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble(-fval, "fractSign").c_str());
     EXPECT_STREQ ("15 7/8", FractionalNumeric(15.0 + 14.0 / 16.0, 256).ToTextDefault(true).c_str());
 
-    EXPECT_STREQ ("1414.213562", NumericFormatSpec::RefFormatDouble(testV, "real").c_str());
-    EXPECT_STREQ ("1414.21356237", NumericFormatSpec::RefFormatDouble(testV, "real", 8).c_str());
-    EXPECT_STREQ ("1414.2135624", NumericFormatSpec::RefFormatDouble(testV, "real", 7).c_str());
-    EXPECT_STREQ ("1414.213562", NumericFormatSpec::RefFormatDouble(testV, "real", 6).c_str());
-    EXPECT_STREQ ("1414.21356", NumericFormatSpec::RefFormatDouble(testV, "real", 5).c_str());
-    EXPECT_STREQ ("1414.2136", NumericFormatSpec::RefFormatDouble(testV, "real", 4).c_str());
-    EXPECT_STREQ ("1414.214", NumericFormatSpec::RefFormatDouble(testV, "real", 3).c_str());
-    EXPECT_STREQ ("1414.21", NumericFormatSpec::RefFormatDouble(testV, "real", 2).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormatSpec::RefFormatDouble(testV, "real", 1).c_str());
-    EXPECT_STREQ ("1414.0", NumericFormatSpec::RefFormatDouble(testV, "real", 0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 8, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 7, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 6, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 5, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 4, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::RefFormatDouble(testV, "real", 3, 5.0).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormatSpec::RefFormatDouble(testV, "real", 8, 0.05).c_str());
-    EXPECT_STREQ ("7071.05", NumericFormatSpec::RefFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
-    EXPECT_STREQ ("4242.65", NumericFormatSpec::RefFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
-    EXPECT_STREQ ("9899.5", NumericFormatSpec::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
-    EXPECT_STREQ ("12727.9", NumericFormatSpec::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
-    EXPECT_STREQ ("2828.45", NumericFormatSpec::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
-    EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::RefFormatDouble(2.0*testV, "sci", 5).c_str());
-    EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble(testV, "real").c_str());
+    EXPECT_STREQ ("1414.21356237", NumericFormatSpec::StdFormatDouble(testV, "real", 8).c_str());
+    EXPECT_STREQ ("1414.2135624", NumericFormatSpec::StdFormatDouble(testV, "real", 7).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble(testV, "real", 6).c_str());
+    EXPECT_STREQ ("1414.21356", NumericFormatSpec::StdFormatDouble(testV, "real", 5).c_str());
+    EXPECT_STREQ ("1414.2136", NumericFormatSpec::StdFormatDouble(testV, "real", 4).c_str());
+    EXPECT_STREQ ("1414.214", NumericFormatSpec::StdFormatDouble(testV, "real", 3).c_str());
+    EXPECT_STREQ ("1414.21", NumericFormatSpec::StdFormatDouble(testV, "real", 2).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble(testV, "real", 1).c_str());
+    EXPECT_STREQ ("1414.0", NumericFormatSpec::StdFormatDouble(testV, "real", 0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 8, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 7, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 6, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 5, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 4, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 3, 5.0).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble(testV, "real", 8, 0.05).c_str());
+    EXPECT_STREQ ("7071.05", NumericFormatSpec::StdFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
+    EXPECT_STREQ ("4242.65", NumericFormatSpec::StdFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
+    EXPECT_STREQ ("9899.5", NumericFormatSpec::StdFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
+    EXPECT_STREQ ("12727.9", NumericFormatSpec::StdFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
+    EXPECT_STREQ ("2828.45", NumericFormatSpec::StdFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
+    EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble(2.0*testV, "sci", 5).c_str());
+    EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble(2.0*testV, "sciN", 5).c_str());
 
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
@@ -343,9 +438,9 @@ TEST(FormattingTest, Simple)
 
     for (int i = 0; i < repet; i++)
         {
-        repStr = NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str();
+        repStr = NumericFormat::StdFormatDouble(testV, "real", 8, 0.05).c_str();
         }
-    LOG.info("Tested RefFormatDouble");
+    LOG.info("Tested StdFormatDouble");
     LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
@@ -725,30 +820,30 @@ for (int i = 0; i < repet; i++)
 }
 LOG.infov("Processed string %s", sw->LastIntervalMetrics(repet));
 
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real"));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 2));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 1));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 0));
 
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4, 5.0));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3, 5.0));
 
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::StdFormatDouble(5.0*testV, "real", 7, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::StdFormatDouble(3.0*testV, "real", 6, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::StdFormatDouble(7.0*testV, "real", 5, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "real", 4, 0.05));
+//LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(2.0*testV, "real", 3, 0.05));
 //LOG.info("With Separator and trailing zeroes");
 //LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05));
 //LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05));

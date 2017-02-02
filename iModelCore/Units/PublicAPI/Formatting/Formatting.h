@@ -334,7 +334,7 @@ public:
     static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
     static Utf8String FPN_RightAlign() { return "RightAlign"; }
     static Utf8String FPN_MapName() { return "MapName"; }
-    static const double FPV_MinTreshold() { return 1.0e-16; }  // format parameter default values
+    static const double FPV_MinTreshold() { return 1.0e-15; }  // format parameter default values
     static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
     static const Utf8Char FPV_DecimalSeparator() { return '.'; }
     static const Utf8Char FPV_ThousandSeparator() { return ','; }
@@ -535,12 +535,12 @@ public:
     UNITS_EXPORT size_t FormatDouble(double dval, CharP buf, size_t bufLen, int prec = -1, double round = -1.0);
     //Utf8P
     
-    UNITS_EXPORT static Utf8String RefFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String RefFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String RefFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
-
+    UNITS_EXPORT static Utf8String StdFormatPhysValue(double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8P stdName, int prec = -1, double round = -1.0);
     //FormatDoubleStd
 
 
@@ -611,9 +611,9 @@ private:
     UnitCP m_topUnit;
     UnitCP m_midUnit;
     UnitCP m_lowUnit;
-    Utf8CP m_topUnitSymbol;
-    Utf8CP m_midUnitSymbol;
-    Utf8CP m_lowUnitSymbol;
+    Utf8CP m_topUnitLabel;
+    Utf8CP m_midUnitLabel;
+    Utf8CP m_lowUnitLabel;
     bool m_includeZero;
     FormatProblemCode m_problemCode;
 
@@ -622,12 +622,12 @@ private:
     bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
 public:
 
-    Utf8CP SetTopUnitSymbol(Utf8CP symbol) { return m_topUnitSymbol = symbol; }
-    Utf8CP GetTopUnitSymbol() { return m_topUnitSymbol; }
-    Utf8CP SetMidUnitSymbol(Utf8CP symbol) { return m_midUnitSymbol = symbol; }
-    Utf8CP GetMidUnitSymbol() { return m_midUnitSymbol; }
-    Utf8CP SetLowUnitSymbol(Utf8CP symbol) { return m_lowUnitSymbol = symbol; }
-    Utf8CP GetLowUnitSymbol() { return m_lowUnitSymbol; }
+    Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
+    Utf8CP GetTopUnitLabel() { return m_topUnitLabel; }
+    Utf8CP SetMidUnitLabel(Utf8CP symbol) { return m_midUnitLabel = symbol; }
+    Utf8CP GetMidUnitLabel() { return m_midUnitLabel; }
+    Utf8CP SetLowUnitLabel(Utf8CP symbol) { return m_lowUnitLabel = symbol; }
+    Utf8CP GetLowUnitLabel() { return m_lowUnitLabel; }
     bool SetIncludeZero(bool val) { return m_includeZero = val; }
     bool GetIncludeZero() const { return m_includeZero; }
     UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
