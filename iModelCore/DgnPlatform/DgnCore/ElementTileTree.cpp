@@ -3223,8 +3223,15 @@ bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsR 
 bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsR displayParams, TransformCR transform)
     {
     PolyfaceHeaderPtr clone = polyface.Clone();
-    if (!clone->IsTriangulated())
-        clone->Triangulate();
+    if (!clone->IsTriangulated() && SUCCESS != clone->Triangulate())
+        {
+        BeAssert(false && "Failed to triangulate...");
+        return false;
+        }
+    else
+        {
+        BeAssert(clone->IsTriangulated());
+        }
 
     if (m_haveTransform)
         clone->Transform(Transform::FromProduct(m_transform, transform));
