@@ -553,7 +553,7 @@ struct OffscreenViewport : DgnViewport
     BSIRect m_rect;
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
-    OffscreenViewport();
+    DGNVIEW_EXPORT OffscreenViewport();
 };
 
 //=======================================================================================

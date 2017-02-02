@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
+    struct Definition; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -2712,21 +2712,6 @@ public:
     //! @param[in] name The name of the variable to remove
     //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
     void RemoveVariable(Utf8CP name) {m_variables.removeMember(name); m_dirty=true;}
-};
-
-//=======================================================================================
-//! A PhysicalTemplate identifies a set of template elements that have been gathered together for modeling reuse purposes.
-//! A PhysicalTemplate has a PhysicalModel as its <i>SubModel</i>.
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : DefinitionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, DefinitionElement)
-    friend struct dgn_ElementHandler::PhysicalTemplate;
-
-protected:
-    explicit PhysicalTemplate(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

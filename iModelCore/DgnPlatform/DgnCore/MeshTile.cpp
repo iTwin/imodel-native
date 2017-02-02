@@ -102,7 +102,6 @@ ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageM
 
 typedef bvector<PK_MARK_t>  T_RollbackMarks;
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

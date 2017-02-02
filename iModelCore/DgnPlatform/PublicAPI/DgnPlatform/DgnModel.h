@@ -804,6 +804,8 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
     virtual void _AddTerrainGraphics(TerrainContextR) const {}
 
+    virtual void _PickTerrainGraphics(PickContextR) const {}
+
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
@@ -923,9 +925,6 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
-
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement);
 };
 
 //=======================================================================================

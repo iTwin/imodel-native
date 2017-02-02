@@ -255,9 +255,29 @@ ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::
         iter.Dump(m_dgndb, false, 1);
         }
 
-    // We take the consistent position that an indirect change always loses to a direct change. The same element
-    // can be directly modified either locally, or in the server, but not in both places due to locking. 
-    return indirect ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
+    /*
+     * We ALWAYS accept the incoming revision in cases of conflicts:
+     *
+     * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision) 
+     *   may not exactly match the initial state of the incoming revision. This will cause a conflict.
+     *      - The final state of the incoming (later) revision will always be setup exactly right to accommodate 
+     *        cases where dependency handlers won't be available (for instance on the server), and we have to rely on 
+     *        the revision to correctly set the final state of the row in the Db. Therefore it's best to resolve the 
+     *        conflict in favor of the incoming change. 
+     *
+     * + In a briefcase with local changes, the state of relevant dependent properties (due to propagated indirect changes) 
+     *   may not correspond with the initial state of these properties in an incoming revision. This will cause a conflict.
+     *      - Resolving the conflict in favor of the incoming revision may cause some dependent properties to be set 
+     *        incorrectly, but the dependency handlers will run anyway and set this right. The new changes will be part of 
+     *        a subsequent revision generated from that briefcase.
+     *
+     * + Note that conflicts can NEVER happen between direct changes made locally and direct changes in the incoming revision. 
+     *      - Only one user can make a direct change at one time, and the next user has to pull those changes before getting a
+     *        lock to the same element
+     *
+     * + Also see comments in TxnManager::MergeRevision()
+     */
+    return ChangeSet::ConflictResolution::Replace;
     }
 
 //=======================================================================================

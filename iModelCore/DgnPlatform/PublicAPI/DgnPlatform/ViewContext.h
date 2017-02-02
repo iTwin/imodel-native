@@ -109,7 +109,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
     DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
     DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
-    DGNPLATFORM_EXPORT virtual bool _UseLineStyleStroker(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr& facetOptions) const;
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);

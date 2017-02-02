@@ -1274,17 +1274,24 @@ void GeometryStreamIO::Writer::Append(DgnGeometryPartId geomPart, TransformCP ge
         return;
         }
 
+    double              scale;
     DPoint3d            origin;
-    RotMatrix           rMatrix;
+    RotMatrix           rMatrix, deScaledMatrix;
     YawPitchRollAngles  angles;
 
     geomToElem->GetTranslation(origin);
     geomToElem->GetMatrix(rMatrix);
+    
+    if (!rMatrix.IsRigidSignedScale(deScaledMatrix, scale))
+        scale = 1.0;
+
+    BeAssert(scale > 0.0); // Mirror not allowed...
+
     YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
+    auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees(), fabs(scale));
 
     fbb.Finish(mloc);
     Append(Operation(OpCode::GeometryPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1753,8 +1760,12 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
 
     DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+    double              scale  = ppfb->scale();
 
     geomToElem = angles.ToTransform(origin);
+
+    if (1.0 != scale)
+        geomToElem.ScaleMatrixColumns(geomToElem, scale, scale, scale);
 
     return true;
     }
@@ -2314,7 +2325,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 FlatBufferBuilder remappedfbb;
 
-                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll(), ppfb->scale());
 
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::GeometryPartInstance, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
@@ -2514,7 +2525,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                DgnGeometryPartId       partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
+                DgnGeometryPartId   partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
                 DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
                 YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
@@ -2531,7 +2542,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 // for (int i=0; i<3; i++)
                 //     output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
 
-                if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll()))
+                if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll() || ppfb->has_scale()))
                     break;
 
                 output._DoOutputLine(Utf8PrintfString("  ").c_str());
@@ -2547,6 +2558,9 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
                 if (ppfb->has_roll())
                     output._DoOutputLine(Utf8PrintfString("Roll: %lf ", angles.GetRoll().Degrees()).c_str());
+
+                if (ppfb->has_scale())
+                    output._DoOutputLine(Utf8PrintfString("Scale: %lf ", ppfb->scale()).c_str());
 
                 output._DoOutputLine(Utf8PrintfString("\n").c_str());
                 break;
@@ -2932,7 +2946,7 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
             continue;
 
         DgnGeometryPartId geomPartId;
-        Transform     geomToElem;
+        Transform geomToElem;
 
         if (!reader.Get(egOp, geomPartId, geomToElem))
             continue;
@@ -3088,8 +3102,8 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
-    bool isQVis = mainGraphic.IsForDisplay();
-    bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool isSimplify = mainGraphic.IsSimplifyGraphic();
+    bool geomParamsChanged = activateParams || isSimplify; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
@@ -3140,14 +3154,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 // QVis: Don't bake into sub-graphic, will be supplied to AddSubGraphic...
                 // SimplifyGraphic: The geometry processor wants to know the params before it gets the geometry...
-//                geomParamsChanged = !isQVis;
-//                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, *currGraphic, geomParamsChanged);
-//                subGraphicParams = graphicParams; // Save current params for AddSubGraphic in case there are symbology changes...
-
                 geomParams.Resolve(context);
                 subGraphicParams.Cook(geomParams, context); // Save current params for AddSubGraphic in case there are additional symbology changes...
 
-                if (!isQVis)
+                if (isSimplify)
                     {
                     currGraphic->ActivateGraphicParams(subGraphicParams, &geomParams);
                     geomParamsChanged = false;
@@ -3192,7 +3202,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 int         nPts;
@@ -3263,7 +3273,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 int         nPts;
@@ -3322,7 +3332,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 DEllipse3d  arc;
@@ -3376,7 +3386,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3434,7 +3444,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3481,7 +3491,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3499,7 +3509,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3517,7 +3527,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3536,7 +3546,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
@@ -3575,7 +3585,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3590,7 +3600,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3609,7 +3619,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isSimplify ? &subGraphicRange : nullptr))
                     break;
 
                 TextString  text;
