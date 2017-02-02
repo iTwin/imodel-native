@@ -161,17 +161,17 @@ bool            m_viewInfoValidated;
 
 protected:
 
-virtual ACSType     /*AuxCoordSys::*/_GetType() const override {return m_acsData.m_type;}
-virtual Utf8String  /*AuxCoordSys::*/_GetName() const override {return m_name;}
-virtual Utf8String  /*AuxCoordSys::*/_GetDescription() const override {return m_description;}
-virtual bool        /*AuxCoordSys::*/_GetIsReadOnly() const override {return false;}
-virtual uint32_t    /*AuxCoordSys::*/_GetExtenderId() const override {return 0;}
-virtual uint32_t    /*AuxCoordSys::*/_GetSerializedSize() const override {return sizeof (m_acsData);}
+ACSType     /*AuxCoordSys::*/_GetType() const override {return m_acsData.m_type;}
+Utf8String  /*AuxCoordSys::*/_GetName() const override {return m_name;}
+Utf8String  /*AuxCoordSys::*/_GetDescription() const override {return m_description;}
+bool        /*AuxCoordSys::*/_GetIsReadOnly() const override {return false;}
+uint32_t    /*AuxCoordSys::*/_GetExtenderId() const override {return 0;}
+uint32_t    /*AuxCoordSys::*/_GetSerializedSize() const override {return sizeof (m_acsData);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetType(ACSType type) override
+StatusInt   /*AuxCoordSys::*/_SetType(ACSType type) override
     {
     m_acsData.m_type = type;
 
@@ -181,7 +181,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetType(ACSType type) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetName(Utf8CP name) override
+StatusInt   /*AuxCoordSys::*/_SetName(Utf8CP name) override
     {
     m_name.assign(name);
     TrimWhiteSpace(m_name); // Don't store leading/trailing spaces...
@@ -192,7 +192,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetName(Utf8CP name) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetDescription(Utf8CP descr) override
+StatusInt   /*AuxCoordSys::*/_SetDescription(Utf8CP descr) override
     {
     m_description.assign(descr);
     TrimWhiteSpace(m_description); // Don't store leading/trailing spaces...
@@ -203,7 +203,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetDescription(Utf8CP descr) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt    /*AuxCoordSys::*/_SetScale(double scale) override
+StatusInt    /*AuxCoordSys::*/_SetScale(double scale) override
     {
     m_acsData.m_scale = scale;
 
@@ -213,7 +213,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetScale(double scale) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt    /*AuxCoordSys::*/_SetOrigin(DPoint3dCR pOrigin) override
+StatusInt    /*AuxCoordSys::*/_SetOrigin(DPoint3dCR pOrigin) override
     {
     m_acsData.m_origin = pOrigin;
 
@@ -223,7 +223,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetOrigin(DPoint3dCR pOrigin) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetRotation(RotMatrixCR pRot) override
+StatusInt   /*AuxCoordSys::*/_SetRotation(RotMatrixCR pRot) override
     {
     m_acsData.m_rotation = pRot;
 
@@ -233,7 +233,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetRotation(RotMatrixCR pRot) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
+StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
     {
     m_acsData.m_flags = flags;
 
@@ -243,7 +243,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialViewControllerCP info) override
+StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialViewControllerCP info) override
     {
     m_attachedToView = true;
 
@@ -253,7 +253,7 @@ virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialVie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IAuxCoordSysPtr /*AuxCoordSys::*/_Clone() const override
+IAuxCoordSysPtr /*AuxCoordSys::*/_Clone() const override
     {
     return new AuxCoordSys(this);
     }
@@ -261,7 +261,7 @@ virtual IAuxCoordSysPtr /*AuxCoordSys::*/_Clone() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    /*AuxCoordSys::*/_Equals(IAuxCoordSysCP other) const override
+bool    /*AuxCoordSys::*/_Equals(IAuxCoordSysCP other) const override
     {
     if (NULL == other)
         return false;
@@ -280,7 +280,7 @@ virtual bool    /*AuxCoordSys::*/_Equals(IAuxCoordSysCP other) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Utf8String /*AuxCoordSys::*/_GetTypeName() const override
+Utf8String /*AuxCoordSys::*/_GetTypeName() const override
     {
     L10N::StringId id;
 
@@ -299,7 +299,7 @@ virtual Utf8String /*AuxCoordSys::*/_GetTypeName() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual double  /*AuxCoordSys::*/_GetScale() const override
+double  /*AuxCoordSys::*/_GetScale() const override
     {
     return m_acsData.m_scale;
     }
@@ -307,7 +307,7 @@ virtual double  /*AuxCoordSys::*/_GetScale() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint3dR   /*AuxCoordSys::*/_GetOrigin(DPoint3dR pOrigin) const override
+DPoint3dR   /*AuxCoordSys::*/_GetOrigin(DPoint3dR pOrigin) const override
     {
     pOrigin = m_acsData.m_origin;
 
@@ -317,7 +317,7 @@ virtual DPoint3dR   /*AuxCoordSys::*/_GetOrigin(DPoint3dR pOrigin) const overrid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot) const override
+RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot) const override
     {
     pRot = m_acsData.m_rotation;
 
@@ -327,7 +327,7 @@ virtual RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot) const overrid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const override
+RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const override
     {
     return _GetRotation(pRot); // not position dependent.
     }
@@ -335,7 +335,7 @@ virtual RotMatrixR  /*AuxCoordSys::*/_GetRotation(RotMatrixR pRot, DPoint3dR pPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ACSFlags    /*AuxCoordSys::*/_GetFlags() const override
+ACSFlags    /*AuxCoordSys::*/_GetFlags() const override
     {
     return m_acsData.m_flags;
     }
@@ -343,7 +343,7 @@ virtual ACSFlags    /*AuxCoordSys::*/_GetFlags() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) override
+StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) override
     {
     m_acsData.m_grid.Init();
 
@@ -362,7 +362,7 @@ virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Po
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const override
+StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const override
     {
     gridReps   = m_acsData.m_grid.m_repetitions;
     gridOffset = m_acsData.m_grid.m_originOffset;
@@ -376,7 +376,7 @@ virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Poi
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_Serialize(void *buffer, uint32_t maxSize) const override
+StatusInt   /*AuxCoordSys::*/_Serialize(void *buffer, uint32_t maxSize) const override
     {
     if (maxSize < sizeof(m_acsData))
         return ERROR;
@@ -653,7 +653,7 @@ DirectionFormatterR directionFormatter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const override
+void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const override
     {
     // Called for active ACS when tcb->gridOrientation is GridOrientationType::ACS.
     DPoint3d    origin;
@@ -686,7 +686,7 @@ virtual void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const overr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    /*AuxCoordSys::*/_PointToGrid(DgnViewportR viewport, DPoint3dR point) const override
+void    /*AuxCoordSys::*/_PointToGrid(DgnViewportR viewport, DPoint3dR point) const override
     {
     DPoint3d    origin;
     RotMatrix   rMatrix;

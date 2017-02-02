@@ -684,7 +684,7 @@ protected:
 
     DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 public:
     DGNPLATFORM_EXPORT void CopyFrom(LineStyleInfoCR);
 

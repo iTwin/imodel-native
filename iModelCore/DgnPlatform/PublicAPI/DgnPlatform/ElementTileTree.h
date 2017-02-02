@@ -129,7 +129,7 @@ private:
 
     DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams) { if (nullptr != geometryParams) m_geometryParams = *geometryParams; }
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
 
 public:
     static DisplayParamsPtr Create() { return Create(Render::GraphicParams(), nullptr); }
@@ -186,7 +186,7 @@ private:
 
     MeshPart(MeshList&& meshes) : m_meshes(std::move(meshes)) { }
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
 public:
     static MeshPartPtr Create(MeshList&& meshes) { return new MeshPart(std::move(meshes)); }
 
@@ -486,7 +486,7 @@ private:
     GeometryList            m_geometries;
     mutable size_t          m_facetCount;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
 
 protected:
     GeomPart(DRange3dCR range, GeometryList const& geometry);
@@ -594,10 +594,10 @@ private:
 
     Loader(TileR tile, TileTree::TileLoadStatePtr loads);
 
-    virtual folly::Future<BentleyStatus> _GetFromSource() override;
-    virtual BentleyStatus _LoadTile() override;
-    virtual folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
-    virtual folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
+    folly::Future<BentleyStatus> _GetFromSource() override;
+    BentleyStatus _LoadTile() override;
+    folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
+    folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
 
     BentleyStatus DoGetFromSource();
 public:
@@ -666,8 +666,8 @@ private:
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
 
-    virtual Utf8CP _GetName() const override { return m_name.c_str(); }
-    virtual void _AdjustViewFlags(Render::ViewFlags&) const override { }
+    Utf8CP _GetName() const override { return m_name.c_str(); }
+    void _AdjustViewFlags(Render::ViewFlags&) const override { }
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:
@@ -701,9 +701,9 @@ private:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
-    virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
-    virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
-    virtual double _GetMaximumSize() const override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
+    double _GetMaximumSize() const override;
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
     GeometryList CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, LoadContextCR context);

@@ -157,11 +157,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         @verbatim
     struct Example1 : ExampleInterface
         {
-        virtual void _DoExample(DgnElementCR) override {printf("Example1");}
+        void _DoExample(DgnElementCR) override {printf("Example1");}
         };
     struct Example2 : ExampleInterface
         {
-        virtual void _DoExample(DgnElementCR) override {printf("Example2");}
+        void _DoExample(DgnElementCR) override {printf("Example2");}
         };
         @endverbatim
         Then, register your Handler::Extension on an existing Handler by calling the Handler::Extension's "RegisterExtension" method.

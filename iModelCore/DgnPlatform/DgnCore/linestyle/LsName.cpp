@@ -40,10 +40,10 @@ explicit LineStyleRangeCollector(LsComponentR component, LineStyleSymbR lsSymb, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-//  virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-//  virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-//  virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
-//  virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+//  bool _ProcessAsFacets(bool isPolyface) const override {return false;}
+//  bool _ProcessAsBody(bool isCurved) const override {return false;}
+//  void _AnnounceContext(ViewContextR context) override {m_context = &context;}
+//  void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015

@@ -545,7 +545,7 @@ struct Root : TileTree::Root
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
     ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
 
-    virtual ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+    ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
@@ -635,10 +635,10 @@ protected:
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
 public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
-    virtual bool _HasChildren() const override { return !m_isLeaf; }
-    virtual ChildTiles const* _GetChildren(bool load) const override;
-    virtual void _DrawGraphics(TileTree::DrawArgsR) const override;
-    virtual Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
+    bool _HasChildren() const override { return !m_isLeaf; }
+    ChildTiles const* _GetChildren(bool load) const override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
+    Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     
     TileId GetTileId() const { return m_id; }
     TileId GetRelativeTileId() const;

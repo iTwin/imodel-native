@@ -550,9 +550,9 @@ struct RangeAccumulator : RangeIndex::Traverser
 
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
-    virtual bool _AbortOnWriteRequest() const override { return true; }
-    virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return Accept::Yes; }
-    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+    bool _AbortOnWriteRequest() const override { return true; }
+    Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return Accept::Yes; }
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         m_range.Extend(entry.m_range.ToRange3d());
         return Stop::No;
@@ -590,10 +590,10 @@ private:
     PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
         : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override;
-    virtual bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
+    PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
+    StrokesList _GetStrokes (IFacetOptionsR facetOptions) override;
+    bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
+    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
 public:
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
         {
@@ -613,8 +613,8 @@ private:
     SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
         : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
+    PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
+    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
     static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
         {
@@ -637,7 +637,7 @@ private:
         InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
         }
 
-    virtual bool _DoVertexCluster() const override { return false; }
+    bool _DoVertexCluster() const override { return false; }
 
 public:
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
@@ -660,7 +660,7 @@ bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override
+PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override
     {
 
     PolyfaceList                polyfaces;
@@ -714,7 +714,7 @@ virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override
+StrokesList _GetStrokes (IFacetOptionsR facetOptions) override
     {
     StrokesList strokes;
 
@@ -740,7 +740,7 @@ virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual size_t _GetFacetCount(FacetCounter& counter) const override 
+size_t _GetFacetCount(FacetCounter& counter) const override 
     { 
     InitGlyphCurves();
     size_t              count = 0;
@@ -796,10 +796,10 @@ private:
 public:
     static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
-    virtual GeomPartCPtr _GetPart() const override { return m_part; }
+    PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
+    StrokesList _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
+    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
+    GeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
 
@@ -845,16 +845,16 @@ private:
     TileGeometrySource3d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
 
-    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
-    virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
-    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
-    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
-    virtual Placement3dCR _GetPlacement() const override { return m_placement; }
+    DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    DgnElementCP _ToElement() const override { return nullptr; }
+    GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
+    DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    Placement3dCR _GetPlacement() const override { return m_placement; }
 
-    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
-    virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
     static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
@@ -877,16 +877,16 @@ private:
     TileGeometrySource2d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
         : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
 
-    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
-    virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override { return this; }
-    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
-    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
-    virtual Placement2dCR _GetPlacement() const override { return m_placement; }
+    DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    DgnElementCP _ToElement() const override { return nullptr; }
+    GeometrySource2dCP _GetAsGeometrySource2d() const override { return this; }
+    DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    Placement2dCR _GetPlacement() const override { return m_placement; }
 
-    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
-    virtual DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
     static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
         {
@@ -989,16 +989,16 @@ private:
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
 
-    virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
+    IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
 
-    virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
-    virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
-    virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
-    virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
-    virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
-    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
+    bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
+    bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
+    bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
+    bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
+    bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
+    bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
-    virtual double _AdjustZDepth(double zDepthIn) override
+    double _AdjustZDepth(double zDepthIn) override
         {
 #if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
         // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
@@ -1017,9 +1017,9 @@ private:
 #endif
         }
 
-    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
-    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
-    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
+    UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
+    UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
+    UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
 #if defined(ELEMENT_TILE_REGENERATION)
@@ -1088,7 +1088,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     11/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
+    UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
         {
         DRange2d        range = textString.GetRange();
         Transform       transformToTile = Transform::FromProduct(GetTransformFromDgn(), simplifyGraphic.GetLocalToWorldTransform(), textString.ComputeTransform());
@@ -1118,15 +1118,15 @@ private:
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
 
-    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
         {
         return new SimplifyGraphic(params, m_processor, *this);
         }
 
-    virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
-    virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
-    virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
-    virtual bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
+    StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
+    Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
+    bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
 
     Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
         {
@@ -1156,12 +1156,12 @@ struct GeometryCollector : RangeIndex::Traverser
     GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, GeometryProcessorContext& context)
         : m_range(range), m_processor(proc), m_context(context) { }
 
-    virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+    Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
         {
         return !m_context.CheckStop() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
         }
 
-    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         if (m_context.CheckStop())
             return Stop::Yes;
@@ -2532,12 +2532,12 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
 
         bool ThresholdReached() const { return m_count >= m_threshold; }
 
-        virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+        Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
             {
             return !ThresholdReached() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
             }
 
-        virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
             {
             if (!entry.m_range.IntersectsWith(m_range))
                 return Stop::No;
