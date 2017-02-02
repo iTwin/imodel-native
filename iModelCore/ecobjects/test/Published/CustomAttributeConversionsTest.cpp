@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeConversionsTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1751,6 +1751,91 @@ TEST_F(StandardValueToEnumConversionTest, PrimitiveArraySupport)
 
     CheckTypeName("TestClass_testArray", *m_schema, "testArray", {"TestClass"});
     CheckTypeName("TestClass_testArray", *m_schema, "testProp", {"TestClass2"});
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, UseBasePropertyStandardValueIfSubset)
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='test' version='1.0' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECClass typeName='TestClass' isDomainClass='True'>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>2</Value>"
+        "                           <DisplayString>value2</DisplayString>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='DerivedClassWithSubset' isDomainClass='True'>"
+        "       <BaseClass>TestClass</BaseClass>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                   <MustBeFromList>False</MustBeFromList>"
+        "                   <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='DerivedClassWithExact' isDomainClass='True'>"
+        "       <BaseClass>TestClass</BaseClass>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                   <MustBeFromList>False</MustBeFromList>"
+        "                   <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>2</Value>"
+        "                           <DisplayString>value2</DisplayString>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    ReadSchema(schemaXML);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+
+    ASSERT_EQ(1, m_schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+
+    CheckTypeName("TestClass_testProp", *m_schema, "testProp", {"TestClass", "DerivedClassWithSubset", "DerivedClassWithExact"});
     }
 
 Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String name)
