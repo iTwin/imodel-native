@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HandlerTypeInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -95,76 +95,36 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getCategoryString(Utf8StringR categoryStr, DgnCategoryId categoryId, DgnDbR db)
+static Utf8String getCategoryString(DgnCategoryId categoryId, DgnDbR db)
     {
     DgnCategoryCPtr category = DgnCategory::Get(db, categoryId);
-
     if (!category.IsValid())
-        return;
+        return nullptr;
 
-    Utf8String displayFormat;
+    Utf8String displayName;
+    if (SUCCESS != getCategoryDisplayName(displayName, *category, LEVEL_NAME_DISPLAY_FORMAT_STRING))
+        return nullptr;
 
-#ifdef WIP_CFGVAR // MS_LEVEL_DISPLAY_FORMAT
-    if (SUCCESS != ConfigurationManager::GetVariable(displayFormat, L"MS_LEVEL_DISPLAY_FORMAT") || displayFormat.size() == 0)
-#endif
-        displayFormat = LEVEL_NAME_DISPLAY_FORMAT_STRING;
-
-    Utf8String     displayName;
-
-    if (SUCCESS != getCategoryDisplayName(displayName, *category, displayFormat.c_str()))
-        return;
-
-    categoryStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()).c_str());
-    categoryStr.append(displayName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const
-    {
-    DgnElementCP el = ToElement();
-    Utf8String   categoryStr, modelStr;
-
-    getCategoryString(categoryStr, GetCategoryId(), GetSourceDgnDb());
-
-    if (nullptr == el)
-        {
-        descr = categoryStr.c_str();
-        return;
-        }
-
-    Utf8String  labelStr = el->GetDisplayLabel();
-
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetName());
-
-    if (!labelStr.empty())
-        {
-        descr = labelStr.c_str();
-        descr.append(delimiter).append(categoryStr.c_str());
-        descr.append(delimiter).append(modelStr.c_str());
-        return;
-        }
-
-    descr = categoryStr.c_str();
-    descr.append(delimiter).append(modelStr.c_str());
+    return  DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + displayName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_GetInfoString(Utf8StringR descr, Utf8CP delimiter) const
+Utf8String HitDetail::_GetInfoString(Utf8CP delimiter) const
     {
-    DgnElementCPtr   element = GetElement();
-    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+    if (m_hitDescription.IsValid())
+        return m_hitDescription->GetDescription();
 
+    auto el = GetElement();
+    if (!el.IsValid())
+        return nullptr;
+
+    auto geom = el->ToGeometrySource();
     if (nullptr == geom)
-        {
-        IElemTopologyCP elemTopo = GetElemTopology();
+        return nullptr;
 
-        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return;
-        }
-
-    geom->GetInfoString(*this, descr, delimiter);
+    return  el->GetDisplayLabel() + delimiter + 
+            getCategoryString(geom->GetCategoryId(), el->GetDgnDb()) + delimiter +
+            DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + el->GetModel()->GetName();
     }

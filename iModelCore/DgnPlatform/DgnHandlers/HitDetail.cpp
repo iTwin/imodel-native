@@ -395,6 +395,7 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_she
     m_geomDetail        = from.m_geomDetail;
     m_elemTopo          = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
     m_subSelectionMode  = from.m_subSelectionMode;
+    m_hitDescription    = from.m_hitDescription;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -161,14 +161,14 @@ protected:
     DgnViewportR m_viewport;
     Sheet::Attachment::ViewportP m_sheetViewport; // null unless this hit was generated from a view attachment on a sheet
     DgnElementId m_elementId;
-    HitSource m_locateSource;         // Operation that generated the hit.
-    DPoint3d m_testPoint;            // the point that was used to search (world coordinates).
-    GeomDetail m_geomDetail;           // element specific hit details.
-    IElemTopologyPtr m_elemTopo;             // details about the topology of the element.
-    SubSelectionMode m_subSelectionMode;     // segment hilite/flash mode.
+    HitSource m_locateSource;  // Operation that generated the hit.
+    DPoint3d m_testPoint;      // the point that was used to search (world coordinates).
+    GeomDetail m_geomDetail;   // element specific hit details.
+    IElemTopologyPtr m_elemTopo; // details about the topology of the element.
+    HitDescriptionPtr m_hitDescription;
+    SubSelectionMode m_subSelectionMode; // segment hilite/flash mode.
 
     virtual HitDetailType _GetHitType() const {return HitDetailType::Hit;}
-    virtual void _GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
     virtual SubSelectionMode _GetSubSelectionMode() const {return m_subSelectionMode;}
     virtual void _SetSubSelectionMode(SubSelectionMode mode) {m_subSelectionMode = mode;}
     virtual DPoint3dCR _GetHitPoint() const {return m_geomDetail.GetClosestPoint();}
@@ -177,6 +177,7 @@ protected:
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
     virtual void _Draw(ViewContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
+    virtual Utf8String _GetInfoString(Utf8CP delimiter) const;
 
 public:
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, Sheet::Attachment::ViewportP attachVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
@@ -190,7 +191,7 @@ public:
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     void Draw(ViewContextR context) const {_Draw(context);}
-    void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
+    Utf8String GetInfoString(Utf8CP delimiter) const {return _GetInfoString(delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
@@ -208,6 +209,8 @@ public:
     GeomDetailR GetGeomDetailW() {return m_geomDetail;}
     IElemTopologyCP GetElemTopology() const {return m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr;}
     void SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
+    void SetHitDescription(HitDescription* descr) {m_hitDescription = descr;}
+    HitDescriptionPtr GetHitDescription() const {return m_hitDescription;}
 };
 
 DEFINE_REF_COUNTED_PTR(HitDetail)
