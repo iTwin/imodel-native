@@ -215,6 +215,10 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
 
+        virtual bool                               _ShouldInvertClips() = 0;
+
+        virtual void                               _SetInvertClip(bool invertClips) = 0;
+
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) = 0;
 
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
@@ -232,16 +236,30 @@ struct IScalableMesh abstract:  IRefCounted
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
+
+        virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) = 0;
                                                                                                                                                                  
-        virtual BentleyStatus                      _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) = 0;
+        virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
 
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
+
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) = 0;
+
+        virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
 
         virtual Transform              _GetReprojectionTransform() const = 0;
+
+
+        virtual  IScalableMeshPtr             _GetGroup() = 0;
+
+        virtual void                          _AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0) = 0;
+
+
+        virtual void                          _RemoveFromGroup(IScalableMeshPtr& sMesh) = 0;
          
 #ifdef WIP_MESH_IMPORT
         virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
@@ -350,6 +368,10 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
+        BENTLEY_SM_EXPORT bool                   ShouldInvertClips();
+
+        BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
+
         BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
@@ -364,9 +386,15 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
-        BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer);
+        BENTLEY_SM_EXPORT BentleyStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer);
+
+        BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id);
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
+
+        BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids);
+
+        BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 
@@ -392,6 +420,13 @@ struct IScalableMesh abstract:  IRefCounted
                                                                 bool                    openReadOnly,
                                                                 bool                    openShareable);
 
+
+        BENTLEY_SM_EXPORT  IScalableMeshPtr             GetGroup ();
+
+        BENTLEY_SM_EXPORT void                          AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0);
+
+
+        BENTLEY_SM_EXPORT void                          RemoveFromGroup(IScalableMeshPtr& sMesh);
 #ifdef SCALABLE_MESH_ATP
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;

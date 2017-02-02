@@ -476,7 +476,7 @@ private:
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips();
                 meshNode->RemoveDisplayDataFromCache();                    
-                meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture);
+                meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
                 assert(meshNode->HasCorrectClipping(clipVisibilities));                 
                 }
 
@@ -934,7 +934,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
             {
             node->ApplyAllExistingClips();
             node->RemoveDisplayDataFromCache();                    
-            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);
+            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
             }
         }        
@@ -952,7 +952,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
 
     meshNode->ApplyAllExistingClips();
     meshNode->RemoveDisplayDataFromCache();                    
-    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
+    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, sMesh->ShouldInvertClips());                               
     assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
@@ -1085,6 +1085,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
         queryParam->GetViewBox(),
         false,
         queryParam->GetViewClipVector(),
+        smP->ShouldInvertClips(),
         100000000);
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));

@@ -525,6 +525,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
                                                                                                  scmViewDependentParamsPtr->GetViewBox(),
                                                                                                  false,                                                                                                 
                                                                                                  scmViewDependentParamsPtr->GetViewClipVector(),
+                                                                                                 false,
                                                                                                  maxNbPoints));                        
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
@@ -655,6 +656,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
                                                                                                  scmViewDependentParamsPtr->GetViewBox(),
                                                                                                  false,
                                                                                                  scmViewDependentParamsPtr->GetViewClipVector(),
+                                                                                                 false,
                                                                                                  maxNbPoints));                        
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
@@ -1350,7 +1352,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
     return meshP;
     }
 
-template <class POINT> bool ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const
+template <class POINT> bool ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, bool shouldInvertClips) const
     {
 #ifdef USE_DIFFSET
     bool allClips = true;
@@ -1365,9 +1367,10 @@ template <class POINT> bool ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
+        bool diffsetEnabledForSelection = (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate);
 
 
-            if (d.toggledForID && (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate))
+        if (d.toggledForID && ((diffsetEnabledForSelection && !shouldInvertClips) || (shouldInvertClips && !diffsetEnabledForSelection)))
                 {
                 wasApplied = true;
                 //meshPtr->ApplyDifferenceSet(d);
@@ -2056,7 +2059,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
         }
     }
 
-template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
+template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool shouldInvertClips)
     {
     static bool s_deactivateTexture = false; 
 
@@ -2180,7 +2183,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 bool anythingToApply = false;
                 if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0))
                     {
-                    anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow);
+                    anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, shouldInvertClips);
                     }
 
                     if (anythingToApply) 
@@ -2236,7 +2239,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     isClipped = true;
                     }
-                else
+                    else if (!shouldInvertClips)
                     {
                     toLoadPoints = &dataPoints[0];
                     toLoadNbPoints = dataPoints.size();
