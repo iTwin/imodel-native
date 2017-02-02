@@ -341,7 +341,7 @@
 
     Two flavors of Foreign Key mapping exist:
     If the ECRelationshipClass has the @b ForeignKeyConstraint custom attribute:
-    - b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
+    - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
     If the custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
     @note Cardinality is not enforced either in that case.  
