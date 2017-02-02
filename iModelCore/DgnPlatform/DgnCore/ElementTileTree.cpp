@@ -969,7 +969,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 private:
     IFacetOptionsR              m_facetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
-    IFacetOptionsPtr            m_lsStrokerOptions;
+    mutable IFacetOptionsPtr    m_lsStrokerOptions;
     RootR                       m_root;
     GeometryList&               m_geometries;
     DRange3d                    m_range;
@@ -1055,7 +1055,7 @@ public:
         return range.DiagonalDistance() < m_minRangeDiagonal;
         }
 
-    IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb)
+    IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
         {
         if (!lsSymb.GetUseStroker())
             return nullptr;
@@ -1077,6 +1077,12 @@ public:
             }
 
         return m_lsStrokerOptions;
+        }
+
+    bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& opts, SimplifyGraphic& gf) const override
+        {
+        opts = GetLineStyleStrokerOptions(lsSymb);
+        return opts.IsValid();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1121,12 +1127,6 @@ private:
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     virtual bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
-
-    bool _UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const override
-        {
-        facetOptions = m_processor.GetLineStyleStrokerOptions(lsSymb);
-        return facetOptions.IsValid();
-        }
 
     Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
         {
@@ -2339,7 +2339,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system, ViewControll
     DRange3d range;
     if (model.Is3dModel())
         {
-        range = model.GetDgnDb().Units().GetProjectExtents();
+        range = model.GetDgnDb().GeoLocation().GetProjectExtents();
         }
     else
         {

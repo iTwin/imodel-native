@@ -691,15 +691,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ViewContext::_GetIndexedLineWidth(int index) const
-    {
-    DgnViewportP vp = GetViewport();
-    return nullptr != vp ? vp->GetIndexedLineWidth(index) : DgnViewport::GetDefaultIndexedLineWidth(index);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 Render::MaterialPtr ViewContext::_GetMaterial(DgnMaterialId id) const
     {
     DgnViewportP vp = GetViewport();
@@ -714,7 +705,6 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     {
     Init();
 
-    m_rasterWidth = context.GetIndexedLineWidth(elParams.GetWeight());
     m_rasterWidth = DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 

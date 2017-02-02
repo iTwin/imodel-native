@@ -3103,7 +3103,7 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
     bool isSimplify = mainGraphic.IsSimplifyGraphic();
-    bool geomParamsChanged = activateParams || isSimplify; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool geomParamsChanged = true;
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
