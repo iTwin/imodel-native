@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECRelationshipInstance.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -373,8 +373,15 @@ StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStanda
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECRelationshipInstancePtr       StandaloneECRelationshipEnabler::CreateRelationshipInstance () const
+StandaloneECRelationshipInstancePtr StandaloneECRelationshipEnabler::CreateRelationshipInstance() const
     {
+    if (ECClassModifier::Abstract == GetClass().GetClassModifier())
+        {
+        LOG.errorv("A StandaloneECRelationshipInstance could not be created for class %s because it is an abstract class.",
+                   GetClass().GetFullName());
+        return nullptr;
+        }
+
     return new StandaloneECRelationshipInstance (*this);
     }
 

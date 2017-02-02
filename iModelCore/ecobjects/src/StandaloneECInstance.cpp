@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1252,8 +1252,15 @@ bool StandaloneECEnabler::_IsPropertyReadOnly (uint32_t propertyIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (Byte * data, uint32_t size)
+StandaloneECInstanceP StandaloneECEnabler::CreateSharedInstance(Byte * data, uint32_t size)
     {
+    if (ECClassModifier::Abstract == GetClass().GetClassModifier())
+        {
+        LOG.errorv("A StandaloneECInstance could not be created for class %s because it is an abstract class.",
+                   GetClass().GetFullName());
+        return nullptr;
+        }
+
     StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
     instance->SetUsingSharedMemory ();
 
@@ -1263,8 +1270,15 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (Byte * data, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (uint32_t minimumBufferSize)
+StandaloneECInstancePtr StandaloneECEnabler::CreateInstance(uint32_t minimumBufferSize)
     {
+    if (ECClassModifier::Abstract == GetClass().GetClassModifier())
+        {
+        LOG.errorv("A StandaloneECInstance could not be created for class %s because it is an abstract class.",
+                   GetClass().GetFullName());
+        return nullptr;
+        }
+
     StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);
     return instance;
     }    
