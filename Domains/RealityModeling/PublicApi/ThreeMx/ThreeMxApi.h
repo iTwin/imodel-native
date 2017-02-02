@@ -57,6 +57,7 @@ public:
     THREEMX_EXPORT Geometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
+    void Pick(Dgn::TileTree::PickArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
     bvector<FPoint3d> const& GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
@@ -126,6 +127,7 @@ private:
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
+    void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 public:
     Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
@@ -209,6 +211,7 @@ public:
     ~ThreeMxModel() {}
 
     THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
+    THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;

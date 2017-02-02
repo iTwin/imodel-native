@@ -80,10 +80,12 @@ size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
     {
-    static const double s_minToleranceRatio = 1000.0;
+    static size_t       s_depthLimit = 20;
+    static size_t       s_minTilePointCount = 100;
+    static const double s_minToleranceRatio = 1000.0;       // This is key parameter - increasing it will make fewer, larger tiles.   Too low will produce small tiles and excessive draw calls degrading performance.
+                                                            // 1000 will generate around a half million points per tile which seems to work well.
     double              tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
     bool                isLeaf = tileTolerance < leafTolerance;
-    static size_t       s_depthLimit = 20;
 
     tile.SetTolerance (tileTolerance);
     if (depth < s_depthLimit &&!isLeaf && tile.QueryPointCount(s_maxTilePointCount) >= s_maxTilePointCount)
@@ -98,7 +100,7 @@ void ProcessTile(PublishTileNode& tile, double leafTolerance, size_t depth)
             T_PublishTilePtr    childTile = new PublishTileNode(*this, m_model, childRange, m_transformDbToTile, depth + 1, childIndex++, &tile);
             size_t              childPointCount = childTile->QueryPointCount(s_maxTilePointCount);
 
-            if (childPointCount > 0)   
+            if (childPointCount > s_minTilePointCount)   
                 {
                 m_totalTiles++;
                 tile.GetChildren().push_back(childTile);

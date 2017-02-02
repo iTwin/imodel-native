@@ -250,7 +250,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
             Render::GraphicParams graphicParams;
             graphicParams.SetLineColor(m_model.GetColor());
             graphicParams.SetFillColor(m_model.GetColor());
-            graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
+            graphicParams.SetWidth(DgnViewport::GetDefaultIndexedLineWidth(m_model.GetWeight()));
             graphic->ActivateGraphicParams(graphicParams);
             graphic->AddPointCloud(queryBuffers->GetNumPoints(), origin, s_floatsPts.data(), pRgb);
             graphicArray.Add(*graphic);

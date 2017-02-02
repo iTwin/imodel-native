@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudGcsFacility.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -146,7 +146,7 @@ BentleyStatus PointCloudGcsFacility::ComputeSceneToWorldTransform(TransformR sce
         return SUCCESS; // Assumed to be coincident.
 
     // Dgn GCS
-    DgnGCSP pDstGcs = dgnDb.Units().GetDgnGCS();
+    DgnGCSP pDstGcs = dgnDb.GeoLocation().GetDgnGCS();
     if (pDstGcs == NULL || !pDstGcs->IsValid())
         return SUCCESS; // Assumed to be coincident.    
 

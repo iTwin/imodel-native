@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -25,7 +25,7 @@ StatusInt WmsSource::ComputeLinearApproximation(TransformR cartesianToWorld)
     {
     DgnDbR db = GetModel().GetDgnDb();
 
-    if (nullptr == GetGcsP() || GetModel().GetDgnDb().Units().GetDgnGCS() == nullptr)
+    if (nullptr == GetGcsP() || GetModel().GetDgnDb().GeoLocation().GetDgnGCS() == nullptr)
         {
         cartesianToWorld.InitIdentity(); // assumed coincident
         return SUCCESS;
@@ -51,7 +51,7 @@ StatusInt WmsSource::ComputeLinearApproximation(TransformR cartesianToWorld)
             DPoint3d pointCartesian = DPoint3d::FromInterpolateBilinear(pointsCartesian[0], pointsCartesian[1], pointsCartesian[2], pointsCartesian[3], seed[x], seed[y]);
 
             DPoint3d pointWorld;
-            if (SUCCESS == GcsUtils::Reproject(pointWorld, *db.Units().GetDgnGCS(), pointCartesian, *GetGcsP()))
+            if (SUCCESS == GcsUtils::Reproject(pointWorld, *db.GeoLocation().GetDgnGCS(), pointCartesian, *GetGcsP()))
                 {
                 tiePoints.push_back(pointCartesian);    // uncorrected
                 tiePoints.push_back(pointWorld);        // corrected
@@ -275,7 +275,7 @@ StatusInt WmsSource::ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesi
     {
     GeoCoordinates::BaseGCSP pSrcGcs = GetGcsP();
 
-    DgnGCSP pDgnGcs = m_model.GetDgnDb().Units().GetDgnGCS();
+    DgnGCSP pDgnGcs = m_model.GetDgnDb().GeoLocation().GetDgnGCS();
 
     if (NULL == pSrcGcs || NULL == pDgnGcs || !pSrcGcs->IsValid() || !pDgnGcs->IsValid())
         {

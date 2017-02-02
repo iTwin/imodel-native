@@ -911,7 +911,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
 
-        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        DgnGCSPtr projGCS = dgnProject.GeoLocation().GetDgnGCS();
         if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
             DRange3d smExtent, smExtentUors;
@@ -931,8 +931,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
     else
         {
-        if (dgnProject.Units().GetDgnGCS()!=nullptr)
-            dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        if (dgnProject.GeoLocation().GetDgnGCS()!=nullptr)
+            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
         }
            
     DPoint3d translation = {0,0,0};

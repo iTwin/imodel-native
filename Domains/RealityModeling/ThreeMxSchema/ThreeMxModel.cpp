@@ -70,7 +70,7 @@ BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
 //----------------------------------------------------------------------------------------
 BentleyStatus Scene::LocateFromSRS()
     {
-    DgnGCSPtr bimGCS = m_db.Units().GetDgnGCS();
+    DgnGCSPtr bimGCS = m_db.GeoLocation().GetDgnGCS();
     if (!bimGCS.IsValid())
         return ERROR; // BIM is not geolocated, can't use geolocation in 3mx scene
 
@@ -137,8 +137,10 @@ void ThreeMxModel::Load(SystemP renderSys) const
 
     // if we ask for the model with a different Render::System, we just throw the old one away.
     m_scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), renderSys);
+    m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,6 +210,16 @@ TileTree::RootPtr ThreeMxModel::_CreateTileTree(RenderContextR context, ViewCont
         m_scene->SetClip(m_clip.get());
 
     return m_scene;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called whenever the camera moves. Must be fast.
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
+    {
+    if (m_scene.IsValid())
+        m_scene->Pick(context, m_scene->GetLocation(), m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
