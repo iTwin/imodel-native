@@ -200,6 +200,7 @@
     <ClCompile Include="structsTest\t_DPoint3d.cpp" />
     <ClCompile Include="structsTest\t_DPoint4d.cpp" />
     <ClCompile Include="structsTest\t_DRange1d.cpp" />
+    <ClCompile Include="structsTest\t_DRange2d.cpp" />
     <ClCompile Include="structsTest\t_DRange3d.cpp" />
     <ClCompile Include="structsTest\t_DRay3d.cpp" />
     <ClCompile Include="structsTest\t_DSegment3d.cpp" />
