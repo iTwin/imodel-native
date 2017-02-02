@@ -2346,7 +2346,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system, ViewControll
         // ###TODO_ELEMENT_TILE: What happens if user later adds geometry outside initial range?
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
+            {
+#if defined(TODO_ELEMENT_TILE)
+            // Empty models exist...
             return nullptr;
+#else
+            range = DRange3d::From(DPoint3d::FromZero());
+#endif
+            }
         }
 
     // Translate world coordinates to center of range in order to reduce precision errors
