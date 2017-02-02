@@ -551,7 +551,7 @@ size_t ECDbRelationshipsIntegrityTests::GetInsertedRelationshipsCount(Utf8CP rel
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassId ECDbRelationshipsIntegrityTests::GetRelationShipClassId(Utf8CP className)
     {
-    return testSchema->GetClassP(className)->GetEntityClassP()->GetId();
+    return testSchema->GetClassP(className)->GetRelationshipClassP()->GetId();
     }
 
 //---------------------------------------------------------------------------------------
