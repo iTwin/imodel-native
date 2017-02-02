@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/View.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ View_Includes.sampleCode
@@ -60,7 +60,7 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, Ca
     CameraViewDefinition view(db, name, catSel, dstyle, modSel);
 
     view.SetStandardViewRotation(StandardView::Iso);
-    view.LookAtVolume(db.Units().GetProjectExtents());
+    view.LookAtVolume(db.GeoLocation().GetProjectExtents());
 
     // Write the ViewDefinition to the bim
     if (!view.Insert().IsValid())

@@ -23,8 +23,8 @@ BEGIN_UNNAMED_NAMESPACE
 struct TileCache : RealityData::Cache
 {
     uint64_t m_allowedSize;
-    virtual BentleyStatus _Prepare() const override;
-    virtual BentleyStatus _Cleanup() const override;
+    BentleyStatus _Prepare() const override;
+    BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 };
 
@@ -811,6 +811,47 @@ void Root::DrawInView(RenderContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Pick(PickArgsR args, int depth) const
+    {
+    DgnDb::VerifyClientThread();
+
+    if (args.m_context.WasAborted())
+        return;
+
+    bool tooCoarse = true;
+
+    if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
+        {
+        Frustum box(m_range);
+
+        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
+            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
+            {
+            return;
+            }
+
+        double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
+        DPoint3d center = args.GetTileCenter(*this);
+        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+        tooCoarse = pixelSize > _GetMaximumSize();
+        }
+
+    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
+    if (tooCoarse && nullptr != children)
+        {
+        for (auto const& child : *children)
+            child->Pick(args, depth+1);
+
+        return;
+        }
+
+    _PickGraphics(args, depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementAlignedBox3d Tile::ComputeRange() const
@@ -879,12 +920,12 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
 void Root::_AdjustViewFlags(ViewFlags& flags) const
     {
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.m_textures = true;
-    flags.m_visibleEdges = false;
-    flags.m_shadows = false;
-    flags.m_ignoreLighting = true;
+    flags.SetShowTextures(true);
+    flags.SetShowVisibleEdges(false);
+    flags.SetShowShadows(false);
+    flags.SetIgnoreLighting(true);
     }
-
+    
 /*---------------------------------------------------------------------------------**//**
 * Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
@@ -1034,6 +1075,18 @@ Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
         }
 
     return m_children.empty() ? nullptr : &m_children;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
+    {
+    if (!GetRootTile().IsValid())
+        return;
+
+    PickArgs args(context, location, *this, clips);
+    m_rootTile->Pick(args, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**

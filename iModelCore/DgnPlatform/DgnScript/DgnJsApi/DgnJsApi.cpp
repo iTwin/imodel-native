@@ -403,12 +403,10 @@ RepositoryStatus JsDgnModel::PopulateRequest(JsRepositoryRequestP req, BeSQLiteD
 //---------------------------------------------------------------------------------------
 struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     {
-    mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
     mutable Utf8String m_issue;
 
-    void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+    void _OnIssueReported(Utf8CP message) const override
         {
-        m_severity = severity;
         m_issue = message;
         }
     };

@@ -310,7 +310,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         return SUCCESS;
 
     // Output element local range for debug display and locate...
-    if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
+    if (graphic->IsSimplifyGraphic() && nullptr == GetIPickGeom())
         return SUCCESS;
 
     Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
@@ -347,9 +347,9 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
     if (!partGeometry.IsValid())
         return nullptr;
 
-    bool isForDisplay = graphic.IsForDisplay();
+    bool isSimplify = graphic.IsSimplifyGraphic();
 
-    if (!isForDisplay && m_viewport)
+    if (isSimplify && m_viewport)
         {
         Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
         ElementAlignedBox3d range = partGeometry->GetBoundingBox();
@@ -360,8 +360,8 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr; // Part range doesn't overlap pick...
         }
 
-    BeAssert(!isForDisplay || nullptr != m_viewport);
-    Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
+    BeAssert(isSimplify || nullptr != m_viewport);
+    Render::GraphicPtr partGraphic = (isSimplify ? nullptr : partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()));
 
     if (!partGraphic.IsValid())
         {
@@ -375,7 +375,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr;
 
         partBuilder->Close(); 
-        if (isForDisplay)
+        if (!isSimplify) // NOTE: QvGraphic is the only Render::Graphic that doesn't sub-class SimplifyGraphic currently...and this element graphic cache probably goes away with mesh tiles anyway...
             partGeometry->Graphics().Save(*partGraphic);
         }
 
@@ -392,10 +392,10 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    if (!m_viewflags.m_weights)
+    if (!m_viewflags.ShowWeights())
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewflags.m_transparency)
+    if (!m_viewflags.ShowTransparency())
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -708,24 +708,6 @@ Render::MaterialPtr ViewContext::_GetMaterial(DgnMaterialId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                    07/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicParams::Init()
-    {
-    m_isFilled          = false;
-    m_isBlankingRegion  = false;
-    m_linePixels        = (uint32_t) LinePixels::Solid;
-    m_rasterWidth       = 1;
-    m_lineColor         = ColorDef::Black();
-    m_fillColor         = ColorDef::Black();
-    m_trueWidthStart    = 0.0;
-    m_trueWidthEnd      = 0.0;
-    m_lineTexture       = nullptr;
-    m_material          = nullptr;
-    m_gradient          = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
@@ -733,6 +715,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     Init();
 
     m_rasterWidth = context.GetIndexedLineWidth(elParams.GetWeight());
+    m_rasterWidth = DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();
@@ -802,12 +785,16 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
                 }
             else
                 {
-                m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                double       textureWidth = 0.0;
+                ILineStyleCP currLStyle = lsSymb.GetILineStyle();
+
+                if (nullptr != currLStyle)
+                    m_lineTexture = (const_cast<ILineStyleP> (currLStyle))->_GetTexture(textureWidth, context, elParams, false);
 
                 if (m_lineTexture.IsValid())
                     {
-                    m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
-                    m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
+                    m_trueWidthStart = textureWidth;
+                    m_trueWidthEnd = textureWidth;
                     }
                 }
             }
@@ -931,32 +918,6 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_pattern               = rhs.m_pattern;
 
     return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParams::GeometryParams()
-    {
-    m_resolved = false;
-    m_elmPriority = 0;
-    m_netPriority = 0;    
-    m_weight = 0;
-    m_fillDisplay = FillDisplay::Never;
-    m_elmTransparency = 0;             
-    m_netElmTransparency = 0;          
-    m_fillTransparency = 0;            
-    m_netFillTransparency = 0;         
-    m_geometryClass = DgnGeometryClass::Primary; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  1/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParams::GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
-    {
-    m_categoryId = categoryId;
-    m_subCategoryId = subCategoryId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1092,6 +1053,9 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     else
         m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
 
+    if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
+        m_styleInfo->Resolve(dgnDb);
+
     m_resolved = true;
     }
 
@@ -1101,9 +1065,18 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
+    }
 
-    if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
-        m_styleInfo->Cook(context, *this);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
+    {
+    if (m_pattern.IsValid())
+        m_pattern->ApplyTransform(transform, options);
+
+    if (m_styleInfo.IsValid())
+        m_styleInfo->GetStyleParamsR().ApplyTransform(transform, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1183,7 +1156,7 @@ enum
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
     {
     // Limit grid to project extents in 3d views, but ask the viewcontroller for its extents for 2d views.
-    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().Units().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
+    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().GeoLocation().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
     if (range.IsEmpty())
         return 0;
 

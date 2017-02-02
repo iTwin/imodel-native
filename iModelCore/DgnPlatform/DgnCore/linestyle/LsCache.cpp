@@ -519,11 +519,12 @@ double              offset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
     DVec3d    normal;
     RotMatrix matrix;
-    modifiers->GetPlaneAsMatrixRows(matrix);
+
+    modifiers.GetPlaneAsMatrixRows(matrix);
     matrix.GetRow (normal, 2);
 
     ScopedArray<LineJoint, 50> scopedJoints(nPoints);
@@ -532,7 +533,7 @@ StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoin
 
     ScopedArray<DPoint3d, 50> scopedOffsetPts(nPoints);
     DPoint3d*   offsetPts = scopedOffsetPts.GetData();
-    double      scale = modifiers->GetScale();
+    double      scale = modifiers.GetScale();
 
     for (T_ComponentsCollectionConstIter curr = m_components.begin (); curr < m_components.end (); curr++)
         {
@@ -628,7 +629,7 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
 #if defined (WIP_LINESTYLE)
     if (GetLocation ()->IsInternalDefault ())

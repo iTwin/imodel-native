@@ -49,7 +49,6 @@
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
-#define DPTEST_CLASS_TestPhysicalTemplate "TestPhysicalTemplate"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 
@@ -330,7 +329,7 @@ struct TestGroup : Dgn::PhysicalElement, Dgn::IElementGroupOf<Dgn::PhysicalEleme
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+    Dgn::DgnElementCP _ToGroupElement() const override {return this;}
 
     explicit TestGroup(CreateParams const& params) : T_Super(params) {}
 
@@ -375,32 +374,6 @@ typedef RefCountedCPtr<TestSpatialLocation> TestSpatialLocationCPtr;
 struct TestSpatialLocationHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestSpatialLocation, TestSpatialLocation, TestSpatialLocationHandler, Dgn::dgn_ElementHandler::SpatialLocation, )
-};
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    10/16
-//=======================================================================================
-struct TestPhysicalTemplate : Dgn::PhysicalTemplate
-{
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTemplate, Dgn::PhysicalTemplate)
-    friend struct TestPhysicalTemplateHandler;
-
-protected:
-    explicit TestPhysicalTemplate(CreateParams const& params) : T_Super(params) {}
-
-public:
-    static RefCountedPtr<TestPhysicalTemplate> Create(Dgn::DefinitionModelR);
-};
-
-typedef RefCountedPtr<TestPhysicalTemplate> TestPhysicalTemplatePtr;
-typedef RefCountedCPtr<TestPhysicalTemplate> TestPhysicalTemplateCPtr;
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    10/16
-//=======================================================================================
-struct TestPhysicalTemplateHandler : Dgn::dgn_ElementHandler::PhysicalTemplate
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTemplate, TestPhysicalTemplate, TestPhysicalTemplateHandler, Dgn::dgn_ElementHandler::PhysicalTemplate, )
 };
 
 //=======================================================================================

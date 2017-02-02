@@ -46,8 +46,8 @@ public:
 };
 
 #define ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
-        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name); }\
-        virtual std::type_info const& _ElementType() const override {return typeid(__classname__);}\
+        protected: uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name); }\
+        std::type_info const& _ElementType() const override {return typeid(__classname__);}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
 // This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
@@ -58,12 +58,12 @@ public:
 // @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
-        private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        private: Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         public:
 
 #define ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
-        private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return nullptr;}\
+        private: Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return nullptr;}\
         public:
 
 //=======================================================================================
@@ -88,10 +88,10 @@ namespace dgn_ElementHandler
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat);
-        virtual ElementHandlerP _ToElementHandler() override {return this;}
+        ElementHandlerP _ToElementHandler() override {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
-        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
-        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
+        DGNPLATFORM_EXPORT DgnDbStatus _VerifySchema(DgnDomains&) override;
+        uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
     public:
         //! This function is called when a handler is registered by its domain in order to allow the handler to refister get and set functions 
@@ -201,12 +201,6 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Session, Dgn::Session, Session, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for PhysicalTemplate
-    struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : Definition
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, Dgn::PhysicalTemplate, PhysicalTemplate, Definition, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for PhysicalType
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
     {
@@ -279,7 +273,7 @@ namespace dgn_AspectHandler
         friend struct DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
     protected:
-        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _VerifySchema(DgnDomains&) override;
     public:
         //! The subclass must override this method in order to create an instance using its default constructor.
         //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)

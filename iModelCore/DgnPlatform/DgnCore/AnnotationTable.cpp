@@ -4800,7 +4800,7 @@ struct FillRunInitializer : IFillRunInitializer
 
     FillRunInitializer (uint32_t i) : m_hostIndex(i) { }
 
-    virtual AnnotationTableFillRun CreateNewRun (AnnotationTableFillRunCP seedRun) const override
+    AnnotationTableFillRun CreateNewRun (AnnotationTableFillRunCP seedRun) const override
         {
         AnnotationTableFillRun newRun;
 
@@ -5082,7 +5082,7 @@ struct EdgeRunInitializer : IEdgeRunInitializer
     EdgeRunInitializer (AnnotationTableR e, EdgeRunHostType t)             : m_table(e), m_hostType(t), m_hostIndex(0) { BeAssert (EdgeRunHostType::Left == m_hostType || EdgeRunHostType::Top == m_hostType); }
     EdgeRunInitializer (AnnotationTableR e, EdgeRunHostType t, uint32_t i) : m_table(e), m_hostType(t), m_hostIndex(i) { BeAssert (EdgeRunHostType::Row == m_hostType  || EdgeRunHostType::Column == m_hostType); }
 
-    virtual AnnotationTableEdgeRun CreateNewRun (AnnotationTableEdgeRun const* seedRun) const override
+    AnnotationTableEdgeRun CreateNewRun (AnnotationTableEdgeRun const* seedRun) const override
         {
         AnnotationTableEdgeRun newRun(m_table);
 
@@ -7886,7 +7886,7 @@ private:
     bool    m_foundHorizontal;
     bool    m_foundVertical;
 
-    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+    DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
 
 public:
     bool            FoundHorizontal  () { return m_foundHorizontal; }
@@ -7940,7 +7940,7 @@ struct CellEdgeSymbologyGetter : CellEdgeAccessor
 private:
     bset<uint32_t>    m_keys;
 
-    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+    DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
 
 public:
     /* ctor */      CellEdgeSymbologyGetter (AnnotationTableCR table) : CellEdgeAccessor (table) {}
@@ -8024,7 +8024,7 @@ struct CellEdgeSymbologySetter : CellEdgeAccessor
 private:
     AnnotationTableSymbologyValuesCR      m_symbology;
 
-    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+    DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
 
 public:
     /* ctor */      CellEdgeSymbologySetter (AnnotationTableR table, AnnotationTableSymbologyValuesCR symb) : CellEdgeAccessor (table), m_symbology(symb) {}

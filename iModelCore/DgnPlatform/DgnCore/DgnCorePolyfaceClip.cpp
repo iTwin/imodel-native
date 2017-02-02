@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCorePolyfaceClip.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -37,12 +37,12 @@ struct FrustumPolyfaceClipper : PolyfaceQuery::IClipToPlaneSetOutput
     IPolyfaceConstructionR      m_builder;
 
     FrustumPolyfaceClipper(IPolyfaceConstructionR builder) : m_builder(builder), m_unclipped(false) { }
-    virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_unclipped = true; return SUCCESS; }
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_unclipped = true; return SUCCESS; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
+StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
     {
     m_builder.AddPolyface(polyfaceHeader); 
 

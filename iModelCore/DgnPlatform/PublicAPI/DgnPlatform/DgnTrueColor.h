@@ -49,15 +49,15 @@ public:
 private:
     ColorDef m_colorDef;
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     
-    virtual DgnDbStatus _OnUpdate(DgnElementCR) override { return DgnDbStatus::WrongElement; }
-    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
-    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
+    DgnDbStatus _OnUpdate(DgnElementCR) override { return DgnDbStatus::WrongElement; }
+    DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
+    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
+    DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
     explicit DgnTrueColor(CreateParams const& params) : T_Super(params), m_colorDef(params.m_colorDef) { }

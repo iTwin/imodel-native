@@ -175,7 +175,6 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
@@ -222,7 +221,7 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     void SynchronizeViewport(UpdatePlan const&);
-    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliSeconds(500)); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliseconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
@@ -258,8 +257,6 @@ public:
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
     //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
-
-    int GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
 
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private
@@ -456,7 +453,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return GetViewFlags().m_grid;}
+    bool IsGridOn() const {return GetViewFlags().ShowGrid();}
 
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.
@@ -570,7 +567,7 @@ struct OffscreenViewport : DgnViewport
     BSIRect m_rect;
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
-    OffscreenViewport();
+    DGNVIEW_EXPORT OffscreenViewport();
 };
 
 //=======================================================================================

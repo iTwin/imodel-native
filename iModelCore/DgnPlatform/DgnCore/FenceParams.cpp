@@ -17,7 +17,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetDrawViewFlags (ViewFlags flags) override
+void _SetDrawViewFlags (ViewFlags flags) override
     {
     T_Super::_SetDrawViewFlags(flags);
 
@@ -75,7 +75,7 @@ FenceAcceptContext(FenceParamsR fp, FenceCheckStop* checkStop = nullptr) : m_fp(
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, *this, *this);
     }
@@ -83,19 +83,19 @@ virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override
+Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override
     {
 #if defined (NEEDS_WORK)
 #endif
     return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);
     }
 
-virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
-virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // BAD - NEEDSWORK...
-virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
+UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
+UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
+UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
+UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // BAD - NEEDSWORK...
+UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
+UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
@@ -148,7 +148,7 @@ void CheckCurrentAccept()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _CheckStop() override
+bool _CheckStop() override
     {
     // NOTE: Don't set abort flag set for "early decision", it's not reset between elements; only set for "user events"...    
     if (WasAborted() || (nullptr != m_checkStop && AddAbortTest(m_checkStop->_CheckStopFenceContents())))
@@ -160,7 +160,7 @@ virtual bool _CheckStop() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override
+void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     FenceParamsP    fp = m_graphic->GetFenceParamsP ();
@@ -297,7 +297,7 @@ bool ProcessCurve(MSBsplineCurveCR geom, bool filled, SimplifyGraphic& graphic)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled, SimplifyGraphic& graphic) override
+bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled, SimplifyGraphic& graphic) override
     {
     switch (primitive.GetCurvePrimitiveType())
         {
@@ -349,7 +349,7 @@ virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& graphic) override
+bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& graphic) override
     {
     // If already detected overlap (or not a region/filled in wireframe), can skip interior check... 
     if (m_fp.HasOverlaps() || !curves.IsAnyRegionType() || (RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !filled))
@@ -400,7 +400,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGrap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& graphic) override
+bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& graphic) override
     {
 #if defined (NOT_NOW)
     // NOTE: Always return ERROR for default edge processing...
@@ -438,7 +438,7 @@ virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& gr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) override
+bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) override
     {
 #if defined (NOT_NOW)
     // NOTE: Always return ERROR for default edge processing...
@@ -477,7 +477,7 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& graphic) override
+bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& graphic) override
     {
 #if defined (NOT_NOW)
     // NOTE: Always return SUCCESS, don't want default edge processing...
@@ -533,7 +533,7 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitGeometry(GeometrySourceCR source) override
+StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
     if (SUCCESS == T_Super::_VisitGeometry(source) && m_accept)
         {
@@ -549,7 +549,7 @@ virtual StatusInt _VisitGeometry(GeometrySourceCR source) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override
+StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override
     {
     // Always ignore elements that are not from the context's target dgnDb...
     if (&inDgnModel.GetDgnDb() != &GetDgnDb())

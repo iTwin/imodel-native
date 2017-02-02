@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -121,6 +121,8 @@ ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_LoadState()
     {
+    m_activeVolume = m_definition->GetViewClip();
+
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_Load(*m_definition);
     }
@@ -130,6 +132,7 @@ void ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_StoreState()
     {
+    m_definition->SetViewClip(m_activeVolume);
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
     }
@@ -672,7 +675,7 @@ double SpatialViewDefinition::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13
 //---------------------------------------------------------------------------------------
-static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
+static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnGeoLocation const& units, GeoPointCR location)
     {
     if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
@@ -691,7 +694,7 @@ static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& st
 bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
@@ -712,7 +715,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 bool OrthographicViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
@@ -846,7 +849,7 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
         {
         case OrientationMode::CompassHeading:
             {
-            DgnGCS* dgnGcs = GetDgnDb().Units().GetDgnGCS();
+            DgnGCS* dgnGcs = GetDgnDb().GeoLocation().GetDgnGCS();
             double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
             azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + azimuth);
             forward.RotateXY(azimuthCorrection);
@@ -947,7 +950,7 @@ bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, Orientat
 bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
     RotMatrix viewInverse;
@@ -1432,7 +1435,7 @@ static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMa
 
     // start with global origin (in world coords) and identity matrix
     rMatrix.InitIdentity();
-    origin = db.Units().GetGlobalOrigin();
+    origin = db.GeoLocation().GetGlobalOrigin();
 
     DVec3d xVec, yVec, zVec;
 

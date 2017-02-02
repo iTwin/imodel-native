@@ -104,6 +104,21 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::PublisherContext::Statistics::RecordPointCloud (size_t nPoints)
+    {
+    m_pointCloudTotalPoints += nPoints;
+    m_pointCloudCount++;
+    if (0 == m_pointCloudMinPoints || nPoints < m_pointCloudMinPoints)
+        m_pointCloudMinPoints = nPoints;
+
+    if (nPoints > m_pointCloudMaxPoints)
+        m_pointCloudMaxPoints = nPoints;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -115,6 +130,10 @@ PublisherContext::PublisherContext::Statistics::~Statistics()
         {
         printf ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
         printf ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
+        }
+    if (0 != m_pointCloudCount)
+        {
+        printf ("Point Cloud count: %g, Total Points: %g, Min Points: %g, Max Points: %g, Average: %g\n", (double) m_pointCloudCount, (double) m_pointCloudTotalPoints, (double) m_pointCloudMinPoints,(double) m_pointCloudMaxPoints, (double) m_pointCloudTotalPoints / (double) m_pointCloudCount);
         }
 #endif
     }
@@ -470,11 +489,10 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     {
     long            startPosition = ftell (outputFile);
     Json::Value     featureTable;
-    ByteStream      binaryData;
+    bool            rgbPresent = pointCloud.Colors().size() == pointCloud.Points().size();
 
     featureTable["POINTS_LENGTH"] = pointCloud.Points().size();
     featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
-
 
     DRange3d        positionRange = DRange3d::NullRange();
 
@@ -489,23 +507,8 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.y);
     featureTable["QUANTIZED_VOLUME_SCALE"].append(positionScale.z);
 
-    for (auto& point : pointCloud.Points())
-        {
-        int16_t             quantizedPosition[3];
-        static double       range = (double) (0xffff);
-
-        quantizedPosition[0] = (uint16_t) (.5 + range * (point.x - positionRange.low.x) / positionScale.x);
-        quantizedPosition[1] = (uint16_t) (.5 + range * (point.y - positionRange.low.y) / positionScale.y);
-        quantizedPosition[2] = (uint16_t) (.5 + range * (point.z - positionRange.low.z) / positionScale.z);
-
-        binaryData.Append ((uint8_t const*) quantizedPosition, sizeof(quantizedPosition));
-        }     
-    if (pointCloud.Colors().size() == pointCloud.Points().size())
-        {
-        featureTable["RGB"]["byteOffset"] = binaryData.size();
-        binaryData.Append ((uint8_t const*)pointCloud.Colors().data(), pointCloud.Colors().size() * sizeof(TileMeshPointCloud::Rgb));
-        }
-
+    if (rgbPresent)
+        featureTable["RGB"]["byteOffset"] = pointCloud.Points().size() * 3 * sizeof(int16_t);
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
 
@@ -513,8 +516,7 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 
     uint32_t        zero = 0, 
                     featureTableStrLen = featureTableStr.size(),
-                    featureTableBinaryLength = binaryData.size();
-
+                    featureTableBinaryLength = pointCloud.Points().size() * (3 * sizeof(int16_t) + (rgbPresent ?  sizeof(TileMeshPointCloud::Rgb) : 0));
 
     std::fwrite(s_pointCloudMagic, 1, 4, outputFile);
     std::fwrite(&s_pointCloudVersion, 1, 4, outputFile);                                                                                                                                  
@@ -527,7 +529,19 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
 
     std::fwrite(featureTableStr.data(), 1, featureTableStrLen, outputFile);
-    std::fwrite(binaryData.data(), 1, binaryData.size(), outputFile);
+    for (auto& point : pointCloud.Points())
+        {
+        int16_t             quantizedPosition[3];
+        static double       range = (double) (0xffff);
+
+        quantizedPosition[0] = (uint16_t) (.5 + range * (point.x - positionRange.low.x) / positionScale.x);
+        quantizedPosition[1] = (uint16_t) (.5 + range * (point.y - positionRange.low.y) / positionScale.y);
+        quantizedPosition[2] = (uint16_t) (.5 + range * (point.z - positionRange.low.z) / positionScale.z);
+
+        std::fwrite (quantizedPosition, 1, sizeof(quantizedPosition), outputFile);
+        }     
+    if (rgbPresent)
+        std::fwrite (pointCloud.Colors().data(), pointCloud.Colors().size(), sizeof(TileMeshPointCloud::Rgb), outputFile);
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
@@ -536,6 +550,8 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 
 
     m_tile.SetPublishedRange (positionRange);
+
+    m_context.m_statistics.RecordPointCloud(pointCloud.Points().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1740,7 +1756,7 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
     {
-    return nullptr != GetDgnDb().Units().GetDgnGCS();
+    return nullptr != GetDgnDb().GeoLocation().GetDgnGCS();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1754,10 +1770,10 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_dataDir = m_outputDir;
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
-    DPoint3d        origin = db.Units().GetProjectExtents().GetCenter();
+    DPoint3d        origin = db.GeoLocation().GetProjectExtents().GetCenter();
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
-    DgnGCS*         dgnGCS = db.Units().GetDgnGCS();
+    DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
@@ -2316,7 +2332,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
-    AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
+    AxisAlignedBox3d projectExtents = GetDgnDb().GeoLocation().GetProjectExtents();
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);

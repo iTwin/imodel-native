@@ -171,28 +171,28 @@ protected:
     friend struct Txns;
     friend struct DgnElement;
 
-    Utf8String          m_fileName;
-    DgnElements         m_elements;
-    DgnModels           m_models;
-    DgnVersion          m_schemaVersion;
-    DgnDomains          m_domains;
-    DgnFonts            m_fonts;
-    DgnLineStylesPtr    m_lineStyles;
-    DgnUnits            m_units;
-    DgnCodeSpecs        m_codeSpecs;
-    TxnManagerPtr       m_txnManager;
-    SessionManager      m_sessionManager;
-    MemoryManager       m_memoryManager;
+    Utf8String m_fileName;
+    DgnElements m_elements;
+    DgnModels m_models;
+    DgnVersion m_schemaVersion;
+    DgnDomains m_domains;
+    DgnFonts m_fonts;
+    DgnLineStylesPtr m_lineStyles;
+    DgnGeoLocation m_geoLocation;
+    DgnCodeSpecs m_codeSpecs;
+    TxnManagerPtr m_txnManager;
+    SessionManager m_sessionManager;
+    MemoryManager m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
-    DgnSearchableText   m_searchableText;
+    DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
+    DGNPLATFORM_EXPORT void _OnDbClose() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    virtual void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
+    void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
@@ -242,7 +242,7 @@ public:
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
-    DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
+    DgnGeoLocation& GeoLocation() const {return const_cast<DgnGeoLocation&>(m_geoLocation);}  //!< The geolocation information for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
@@ -328,7 +328,7 @@ public:
 /** @name DgnPlatform Threads */
 /** @{ */
     //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, IoPool=103, CpuPool=104, SheetTile=105};
+    enum class ThreadId {Unknown=0, Client=100, Render=101, IoPool=103, CpuPool=104};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();    //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName(); //!< For debugging purposes, get the current ThreadId as a string

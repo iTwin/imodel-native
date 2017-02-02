@@ -4,7 +4,6 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "ChangeTestFixture.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 // #define DEBUG_REVISION_TEST_COMPRESSION 1
 
@@ -13,52 +12,70 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTestFixture::ChangeTestFixture(WCharCP testFileName, bool wantTestDomain) : m_testFileName (testFileName), m_wantTestDomain(wantTestDomain)
-    {
-    if (wantTestDomain)
-        DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
-    }
+DgnPlatformSeedManager::SeedDbInfo ChangeTestFixture::s_seedFileInfo;
+CodeSpecId ChangeTestFixture::m_defaultCodeSpecId;
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::_SetupDgnDb()
+void ChangeTestFixture::SetUpTestCase()
     {
-    SetupSeedProject(m_testFileName.c_str());
+    ScopedDgnHost tempHost;
 
-    m_testFileName = BeFileName(m_db->GetDbFileName(), true);
-    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+    //  Request a root seed file.
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
 
-    if (m_wantTestDomain)
-        ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_db));
+    //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
+    //  Note that we must put our group seed file in a group-specific sub-directory
+    ChangeTestFixture::s_seedFileInfo = rootSeedInfo;
+    ChangeTestFixture::s_seedFileInfo.fileName.SetName(L"ChangeTestFixture/ChangeTestFixtureSeed.bim");
 
-    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, ChangeTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
 
-    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestCodeSpec");
+    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
+    TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+
+    m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
 
-    m_db->SaveChanges();
-
+    db->SaveChanges();
     // Create a dummy revision to purge transaction table for the test
-    DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+    DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
-    m_db->Revisions().FinishCreateRevision();
+    db->Revisions().FinishCreateRevision();
 
-    CloseDgnDb();
-    OpenDgnDb();    
+    db->SaveChanges();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeTestFixture::SetupDgnDb(BeFileName seedFileName, WCharCP newFileName)
+{
+    m_db = DgnPlatformSeedManager::OpenSeedDbCopy(seedFileName, newFileName);
+    ASSERT_TRUE(m_db.IsValid());
+
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
+
+    m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
+    ASSERT_TRUE(m_defaultCodeSpec.IsValid());
+
+    m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+    ASSERT_TRUE(m_defaultModel.IsValid());
+
+    m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::OpenDgnDb()
-    {
+void ChangeTestFixture::OpenDgnDb(BeFileName fileName)
+{
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_db = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
@@ -66,19 +83,18 @@ void ChangeTestFixture::OpenDgnDb()
 
     m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
     ASSERT_TRUE(m_defaultModel.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CloseDgnDb()
-    {
+{
     m_db->CloseDb();
     m_db = nullptr;
     m_defaultModel = nullptr;
     m_defaultCodeSpec = nullptr;
-    }
-
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -110,7 +126,7 @@ double randFraction()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z)
+DgnElementId ChangeTestFixture::InsertPhysicalElement(DgnDbR db, PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z)
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
@@ -125,57 +141,41 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
     BentleyStatus status = builder->Finish(*testElement);
     BeAssert(status == SUCCESS);
 
-    DgnElementId elementId = m_db->Elements().Insert(*testElement)->GetElementId();
+    DgnElementId elementId = db.Elements().Insert(*testElement)->GetElementId();
     return elementId;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    03/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
+void ChangeTestFixture::CreateDefaultView(DgnDbR db)
     {
-    auto categories = new CategorySelector(*m_db,"");
-    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_db))
+    auto categories = new CategorySelector(db,"");
+    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-    auto style = new DisplayStyle3d(*m_db,"");
+    auto style = new DisplayStyle3d(db,"");
     auto flags = style->GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     style->SetViewFlags(flags);
 
-    auto models = new ModelSelector(*m_db,"");
-    ModelIterator modIter = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+    auto models = new ModelSelector(db,"");
+    ModelIterator modIter = db.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
     for (ModelIteratorEntryCR entry : modIter)
         {
         auto id = entry.GetModelId();
-        auto model = m_db->Models().GetModel(id);
+        auto model = db.Models().GetModel(id);
 
         if (model.IsValid())
             models->AddModel(id);
         }
 
-    CameraViewDefinition view(*m_db, "Default", *categories, *style, *models);
+    CameraViewDefinition view(db, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());
 
     DgnViewId viewId = view.GetViewId();
-    m_db->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+    db.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void ChangeTestFixture::UpdateDgnDbExtents()
-    {
-    m_db->Units().InitializeProjectExtents();
-    AxisAlignedBox3d physicalExtents = m_db->Units().GetProjectExtents();
-
-    auto view = ViewDefinition::Get(*m_db, "Default");
-    ASSERT_TRUE(view.IsValid());
-    auto editView = view->MakeCopy<SpatialViewDefinition>();
-    ASSERT_TRUE(editView.IsValid());
-
-    editView->LookAtVolume(physicalExtents);
-    ASSERT_TRUE(editView->Update().IsValid());
-    }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/MeasureGeom.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,22 +60,22 @@ int                     m_calculationMode; // 0=best available, 1=solid kernel p
 mutable DPoint3d        m_spinMoments; // Holds computed result...
 mutable DPoint3d        m_centroidSum; // Holds computed result...
 
-virtual DrawPurpose _GetProcessPurpose() const override {return DrawPurpose::Measure;}
-virtual IFacetOptionsP _GetFacetOptionsP() override;
+DrawPurpose _GetProcessPurpose() const override {return DrawPurpose::Measure;}
+IFacetOptionsP _GetFacetOptionsP() override;
 
-virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
-virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
+UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
-virtual bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
-virtual bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;
-virtual bool _ProcessSurface (MSBsplineSurfaceCR, SimplifyGraphic&) override;
-virtual bool _ProcessPolyface (PolyfaceQueryCR, bool isFilled, SimplifyGraphic&) override;
-virtual bool _ProcessBody (IBRepEntityCR, SimplifyGraphic&) override;
+bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
+bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;
+bool _ProcessSurface (MSBsplineSurfaceCR, SimplifyGraphic&) override;
+bool _ProcessPolyface (PolyfaceQueryCR, bool isFilled, SimplifyGraphic&) override;
+bool _ProcessBody (IBRepEntityCR, SimplifyGraphic&) override;
 
-virtual void _OutputGraphics (ViewContextR context) override;
+void _OutputGraphics (ViewContextR context) override;
 
 void AccumulateVolumeSums (double volumeB, double areaB, double closureErrorB, DPoint3dCR centroidB, DPoint3dCR momentB2, double iXYB, double iXZB, double iYZB);
 void AccumulateAreaSums (double areaB, double perimeterB, DPoint3dCR centroidB, DPoint3dCR momentB2, double iXYB, double iXZB, double iYZB);
@@ -103,7 +103,6 @@ BentleyStatus GetOperationStatus ();
 MeasureGeomCollector (OperationType);
 
 //__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
 public:
 
 //! 

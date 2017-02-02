@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
+    struct Definition; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -157,7 +157,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom);
     DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
     DGNPLATFORM_EXPORT virtual DgnStyleId _RemapLineStyleId(DgnStyleId sourceId);
-
 
 public:
     //! Construct a DgnImportContext object.
@@ -286,7 +285,7 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         }
 
     //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
-    template <class T_ElementId>  void BuildIdList (bvector<T_ElementId>& idList)
+    template <class T_ElementId> void BuildIdList(bvector<T_ElementId>& idList)
         {
         for (ElementIteratorEntry entry : *this)
             idList.push_back(entry.GetId<T_ElementId>());
@@ -419,16 +418,16 @@ public:
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
-    protected: virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
-               virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
+    protected: Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+               Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 #define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
     private:    typedef __superclass__ T_Super;\
     public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
                 static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
-                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    protected:  Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 
 /**
@@ -1055,7 +1054,7 @@ public:
             }
 
     protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR) override;
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
@@ -1182,6 +1181,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement was successfully imported into the database.
+    //! @note If you override this method, you @em must call T_Super::_OnImported.
     virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
@@ -1200,6 +1200,7 @@ protected:
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement. Only
     //! override this method if your element needs to do additional work when updating the element, such as updating
     //! a relationship.
+    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
     //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is 
@@ -1306,12 +1307,14 @@ protected:
     //! @param[in] child The original element which is being imported
     //! @param[in] destModel The model into which the child is being imported
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    //! @note If you override this method, you @em must call T_Super::_OnChildImport, forwarding its status.
     virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const {return DgnDbStatus::Success;}
 
     //! Called after an element, with this element as its parent, was successfully imported
     //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
     //! @param[in] imported The clone which was imported, which is a child of this element.
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    //! @note If you override this method, you @em must call T_Super::_OnChildImported.
     virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
     //! Called when this element is being <i>modeled</i> by a new DgnModel.
@@ -2061,8 +2064,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 
@@ -2077,8 +2080,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
-    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
+    AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement2dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
 
@@ -2148,7 +2151,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
+    DGNPLATFORM_EXPORT bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -2276,7 +2279,7 @@ protected:
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -2406,7 +2409,7 @@ public:
     //! Create a AnnotationElement2d from CreateParams.
     static AnnotationElement2dPtr Create(CreateParams const& params) {return new AnnotationElement2d(params);}
 protected:
-    virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
+    AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
     explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) {}
 }; // AnnotationElement2d
@@ -2424,7 +2427,7 @@ public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
 protected:
-    virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
+    DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
     explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
 
@@ -2561,7 +2564,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationContentElement : DgnElement
     friend struct dgn_ElementHandler::InformationContent;
 
 protected:
-    virtual InformationContentElementCP _ToInformationContentElement() const override final {return this;}
+    InformationContentElementCP _ToInformationContentElement() const override final {return this;}
     explicit InformationContentElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2579,7 +2582,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
     friend struct dgn_ElementHandler::Document;
 
 protected:
-    virtual DocumentCP _ToDocumentElement() const override final {return this;}
+    DocumentCP _ToDocumentElement() const override final {return this;}
     explicit Document(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2652,8 +2655,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     friend struct dgn_ElementHandler::Definition;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2674,8 +2677,8 @@ protected:
     explicit Session(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnInsert() override {SaveVariables(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveVariables(); return T_Super::_OnUpdate(original);}
 
@@ -2709,21 +2712,6 @@ public:
     //! @param[in] name The name of the variable to remove
     //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
     void RemoveVariable(Utf8CP name) {m_variables.removeMember(name); m_dirty=true;}
-};
-
-//=======================================================================================
-//! A PhysicalTemplate identifies a set of template elements that have been gathered together for modeling reuse purposes.
-//! A PhysicalTemplate has a PhysicalModel as its <i>SubModel</i>.
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : DefinitionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, DefinitionElement)
-    friend struct dgn_ElementHandler::PhysicalTemplate;
-
-protected:
-    explicit PhysicalTemplate(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -3000,8 +2988,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
     friend struct dgn_ElementHandler::Role;
 
 protected:
-    virtual RoleElementCP _ToRoleElement() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    RoleElementCP _ToRoleElement() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -3093,8 +3081,8 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-    virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    virtual uint64_t _Purge(uint64_t memTarget) override;
+    uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
+    uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
@@ -3346,18 +3334,18 @@ public:
     //! Add an element and editable copies of its children to the collection
     //! @param el       The parent element to be added and queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
+    void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
 
     //! Add an editable copy of the specified element to the collection.
     //! If the collection already contains an element with the same ElementId, then \a el is not added and the existing element is returned.
     //! @param el  The element to be edited
     //! @return The element that is in the collection or nullptr if the element could not be copied for edit.
-    DGNPLATFORM_EXPORT DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
+    DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
     
     //! Add an editable copy of the specified element and its children to the collection.
     //! @param el       The element to be added
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
+    void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
 
     //! Look up the editable copy of an element in the collection by its ElementId.
     //! @return The element that is in the collection or nullptr if not found.
@@ -3377,7 +3365,7 @@ public:
     //! Remove the specified editable copy of an element and its children (by Id) from the collection.
     //! @param el  The editable copy of the parent element to remove and to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
-    DGNPLATFORM_EXPORT void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
+    void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
 
     //! Get the number of elements currently in the collection
     size_t size() {return m_elements.size();}

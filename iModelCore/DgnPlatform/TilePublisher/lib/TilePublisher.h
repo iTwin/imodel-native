@@ -96,6 +96,13 @@ struct PublisherContext : TileGenerator::ITileCollector
         BeMutex     m_mutex;
         double      m_textureCompressionSeconds = 0.0;
         double      m_textureCompressionMegaPixels = 0.0;
+        size_t      m_pointCloudCount = 0;
+        size_t      m_pointCloudTotalPoints = 0;
+        size_t      m_pointCloudMaxPoints = 0;
+        size_t      m_pointCloudMinPoints = 0;
+        size_t      m_pointCloudTiles = 0;
+
+        void RecordPointCloud (size_t nPoints);
         };
     Statistics                              m_statistics;
 
@@ -133,9 +140,9 @@ protected:
 
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
-    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
-    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
-    TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
+    TILEPUBLISHER_EXPORT bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
     void WriteModelTileset(TileNodeCR rootTile);
 public:

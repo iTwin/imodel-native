@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -3827,7 +3827,7 @@ LocalTransformerP   localTransformer
     type66.rot_Y                = csParams.datum.rot_Y;
     type66.rot_Z                = csParams.datum.rot_Z;
     type66.bwscale              = csParams.datum.bwscale;
-    *((DPoint3d*)&type66.deprec_globorg) = cache.Units().GetGlobalOrigin();
+    *((DPoint3d*)&type66.deprec_globorg) = cache.GeoLocation().GetGlobalOrigin();
 
     // this ridiculous unit stuff is only needed in the case where this file is saved to V7. I don't think the V8 geocoord stuff used it.
 #ifdef WIP_DGN_GEOCOORD
@@ -4227,7 +4227,7 @@ double      paperScale
         }
 #else
     m_uorsPerBaseUnit = 1; // in DgnDb, all coordinates are stored in meters
-    m_globalOrigin = project.Units().GetGlobalOrigin();
+    m_globalOrigin = project.GeoLocation().GetGlobalOrigin();
 #endif
     }
 
@@ -4925,7 +4925,7 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
         }
 
         // *** NEEDS WORK: Global origin is not saved, right? I have to get it from the project, don't I?
-    gcs->m_globalOrigin = project.Units().GetGlobalOrigin();
+    gcs->m_globalOrigin = project.GeoLocation().GetGlobalOrigin();
 
     project.AddAppData(DgnGCSAppData::GetKey(), new DgnGCSAppData(*gcs));
     return gcs;

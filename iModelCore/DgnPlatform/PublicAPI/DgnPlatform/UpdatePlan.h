@@ -152,7 +152,6 @@ struct UpdatePlan
         BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
-        mutable bool m_wait = false;
         uint32_t m_minElements = 3000;
         uint32_t m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
@@ -166,8 +165,6 @@ struct UpdatePlan
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
         void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
-        void SetWait(bool val) const {m_wait=val;}
-        bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
         void SetDelayAfter(uint32_t val) const {m_delayAfter=val;}
     };
@@ -199,14 +196,14 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    uint32_t    m_priority = 0;
-    uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
+    bool m_hasSubRect = false;
+    mutable bool m_wantWait = false;
+    uint32_t m_priority = 0;
+    BeTimePoint m_sceneQuitTime; // don't allow scene creation past this timepoint
     BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
-    bool        m_timeoutIsPct = false;
-    bool        m_hasSubRect = false;
-    DRange3d    m_subRect;
-    Query       m_query;
-    AbortFlags  m_abortFlags;
+    DRange3d m_subRect;
+    Query m_query;
+    AbortFlags m_abortFlags;
 
 public:
     Query& GetQueryR() {return m_query;}
@@ -216,13 +213,13 @@ public:
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
+    void SetWait(bool val) const {m_wantWait=val;}
+    bool WantWait() const {return m_wantWait;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetCreateSceneTimeoutMillis(BeDuration::MilliSeconds milliseconds) {m_timeout = (uint32_t) milliseconds.count(); m_timeoutIsPct=false;}
-    void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
     void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
     BeTimePoint GetQuitTime() const {return m_quitTime;}
-    uint32_t GetCreateSceneTimeout() const {return m_timeout;}
-    bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
+    void SetSceneQuitTime(BeTimePoint end) {m_sceneQuitTime = end;}
+    BeTimePoint GetSceneQuitTime () const {return m_sceneQuitTime;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
 };
 
@@ -231,7 +228,7 @@ public:
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
 {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeoutPct(75);} // You can use up 75% of frame time for the query
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
 };
 
 END_BENTLEY_DGN_NAMESPACE

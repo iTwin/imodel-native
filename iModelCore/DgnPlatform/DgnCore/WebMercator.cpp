@@ -148,7 +148,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
         return ERROR;
 
     IGraphicBuilder::TileCorners corners;
-    auto& units= m_root.GetDgnDb().Units();
+    auto& units= m_root.GetDgnDb().GeoLocation();
     for (int i=0; i<4; ++i)
         {
         if (SUCCESS != units.XyzFromLatLong(corners.m_pts[i], llPts[i]))
@@ -224,7 +224,7 @@ Utf8String MapRoot::_ConstructTileName(TileCR tile) const
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
         uint8_t maxZoom, uint32_t maxSize) : QuadTree::Root(db, trans, rootUrl.c_str(), system, maxZoom, maxSize, transparency), m_format(format), m_urlSuffix(urlSuffix)
     {
-    AxisAlignedBox3d extents = db.Units().GetProjectExtents();
+    AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
 
@@ -241,7 +241,7 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
         }
 
     Transform worldToMercator;
-    status = db.Units().GetDgnGCS()->GetLocalTransform(&worldToMercator, center, &extents.low, true/*doRotate*/, true/*doScale*/, *wgs84);
+    status = db.GeoLocation().GetDgnGCS()->GetLocalTransform(&worldToMercator, center, &extents.low, true/*doRotate*/, true/*doScale*/, *wgs84);
 
     bool inv = m_mercatorToWorld.InverseOf(worldToMercator);
     if (!inv)

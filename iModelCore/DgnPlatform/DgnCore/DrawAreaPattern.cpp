@@ -58,7 +58,7 @@ static double getTransformPatternScale(TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PatternParams::ApplyTransform(TransformCR transform)
+void PatternParams::ApplyTransform(TransformCR transform, uint32_t options)
     {
     if (m_symbolId.IsValid())
         {
@@ -876,13 +876,13 @@ static bool Cook(ViewContextR context, Render::GraphicBuilderR graphic, Render::
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_WantAreaPatterns()
     {
-    return GetViewFlags().m_patterns;
+    return GetViewFlags().ShowPatterns();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook)
+void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook)
     {
     // NEEDSWORK_PATTERN_GEOMETRY_MAP - This is all just temporary to see if the PatternParams is being converted from V8 ok...
     // We'll want display patterns as geometry maps all the time (at least in 3d), but I'm waiting
@@ -897,10 +897,20 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorC
     if (nullptr == (pattern = params.GetPatternParams()))
         return;
 
+    if (builder.IsSimplifyGraphic())
+        {
+        Graphic& graphic = builder;
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
+
+        BeAssert(nullptr != sGraphic);
+        if (!sGraphic->GetGeometryProcesor()._DoPatternStroke(*pattern, *sGraphic))
+            return;
+        }
+
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
         {
-        graphic.AddCurveVector(boundary, false);
+        builder.AddCurveVector(boundary, false);
         return;
         }
 
@@ -915,24 +925,24 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorC
         }
 
     if (doCook)
-        CookGeometryParams(params, graphic);
+        CookGeometryParams(params, builder);
 
     Render::GeometryParams cookedParams(params);
 
-    bool changed = PatternHelper::Cook(*this, graphic, cookedParams);
+    bool changed = PatternHelper::Cook(*this, builder, cookedParams);
 
     if (Is3dView())
         PatternHelper::AdjustOrigin(*cookedParams.GetPatternParamsP(), boundary);
 
     if (pattern->GetSymbolId().IsValid())
-        PatternHelper::ProcessAreaPattern(*this, graphic, cookedParams, boundary);
+        PatternHelper::ProcessAreaPattern(*this, builder, cookedParams, boundary);
     else if (0 != pattern->GetDwgHatchDef().size())
-        PatternHelper::ProcessDWGHatchPattern(*this, graphic, cookedParams, boundary);
+        PatternHelper::ProcessDWGHatchPattern(*this, builder, cookedParams, boundary);
     else
-        PatternHelper::ProcessHatchPattern(*this, graphic, cookedParams, boundary);
+        PatternHelper::ProcessHatchPattern(*this, builder, cookedParams, boundary);
 
     if (changed)
-        CookGeometryParams(params, graphic); // Restore original symbology...
+        CookGeometryParams(params, builder); // Restore original symbology...
 
     if (nullptr != detail)
         detail->SetNonSnappable(!wasSnappable);

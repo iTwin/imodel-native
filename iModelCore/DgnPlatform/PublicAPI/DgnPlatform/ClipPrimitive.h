@@ -26,30 +26,29 @@ struct ClipPolygon : bvector<DPoint2d>
     Json::Value ToJson() const;
 };
 
-
 typedef ClipPolygon const* ClipPolygonCP;
 typedef ClipPolygon const& ClipPolygonCR;
 
 /*=================================================================================**//**
 * @bsiclass                                                     
 +===============+===============+===============+===============+===============+======*/
-struct  ClipPrimitive  : RefCountedBase
+struct ClipPrimitive : RefCountedBase
 {
 protected:
     virtual ClipPlaneSetCP _GetClipPlanes() const = 0;
     virtual ClipPlaneSetCP _GetMaskPlanes() const = 0;
     virtual ClipPrimitive* _Clone() const = 0;
     virtual bool _GetInvisible() const = 0;
-    virtual GPArrayCP _GetGPA (bool onlyIfNonLinear) const {return NULL;}
-    virtual MSBsplineCurveCP _GetBCurve() const {return NULL;}
+    virtual GPArrayCP _GetGPA (bool onlyIfNonLinear) const {return nullptr;}
+    virtual MSBsplineCurveCP _GetBCurve() const {return nullptr;}
     virtual double _GetZLow() const {return 0.0;}
     virtual double _GetZHigh() const {return 0.0;}
     virtual bool _ClipZLow() const {return false;}
     virtual bool _ClipZHigh() const {return false;}
     virtual bool _IsMask() const {return false;}
-    virtual ClipPolygonCP _GetPolygon() const {return NULL;}
-    virtual TransformCP _GetTransformToClip() const {return NULL;}
-    virtual TransformCP _GetTransformFromClip() const {return NULL;}
+    virtual ClipPolygonCP _GetPolygon() const {return nullptr;}
+    virtual TransformCP _GetTransformToClip() const {return nullptr;}
+    virtual TransformCP _GetTransformFromClip() const {return nullptr;}
     virtual void _SetInvisible(bool invisible) = 0;
     virtual bool _GetRange(DRange3dR range, TransformCP transform, bool returnMaskRange) const = 0;
     virtual void _SetIsMask(bool isMask) {BeAssert(false);}
@@ -73,7 +72,7 @@ public:
     ClipPlaneSetCP GetMaskPlanes() const {return _GetMaskPlanes();}
     ClipPlaneSetCP GetMaskOrClipPlanes() const {return NULL == _GetMaskPlanes() ? _GetClipPlanes() : _GetMaskPlanes();}
 
-    Json::Value ToJson() const;
+    virtual Json::Value _ToJson() const = 0;
     static ClipPrimitivePtr FromJson(JsonValueCR);
 
     GPArrayCP GetGPA(bool onlyIfNonLinear) const {return _GetGPA(onlyIfNonLinear);}

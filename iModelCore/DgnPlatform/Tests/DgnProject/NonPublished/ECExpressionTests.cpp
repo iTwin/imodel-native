@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -241,7 +241,7 @@ public:
 struct DgpLiteralExpressionTests : DgpInstanceExpressionTests
     {
 public:
-    virtual Utf8String GetTestSchemaXMLString() override
+    Utf8String GetTestSchemaXMLString() override
         {
         return
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -425,7 +425,7 @@ TEST_F (DgpLiteralExpressionTests, DgnMiscSymbols)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgpFullyQualifiedExpressionTests : DgpInstanceExpressionTests
     {
-    virtual Utf8String GetTestSchemaXMLString() override
+    Utf8String GetTestSchemaXMLString() override
         {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -477,7 +477,7 @@ TEST_F (DgpFullyQualifiedExpressionTests, DgnFullyQualifiedAccessors)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgpInstanceListExpressionTests : DgpInstanceExpressionTests
     {
-    virtual Utf8String GetTestSchemaXMLString() override
+    Utf8String GetTestSchemaXMLString() override
         {
         return      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"

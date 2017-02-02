@@ -41,7 +41,7 @@ Frustum::Frustum(DRange3dCR range)
 SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Super(def)
     {
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
-    m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
+    m_auxCoordSys->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
 
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
@@ -118,7 +118,7 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
-    AxisAlignedBox3d box = GetDgnDb().Units().GetProjectExtents();
+    AxisAlignedBox3d box = GetDgnDb().GeoLocation().GetProjectExtents();
     box.Extend(GetGroundExtents(vp));
     return box;
     }
@@ -352,6 +352,24 @@ void SpatialViewController::_DrawView(ViewContextR context)
         context.SetActiveVolume(*m_activeVolume);
 
     _VisitAllElements(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_PickTerrain(PickContextR context)
+    {
+    auto& models = GetDgnDb().Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto geomModel = model->ToGeometricModel3d();
+        if (nullptr != geomModel)
+            geomModel->_PickTerrainGraphics(context);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

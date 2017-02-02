@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/DgnPlatformSeedManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -57,21 +58,10 @@ struct DgnPlatformSeedManager : NonCopyableClass
         };
 
 private:
-    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase);
-
     static SeedDbInfo GetOneSpatialModelSeedDb(SeedDbOptions const& options);
 
 public:
-    //! Create a DgnDb from scratch in the test output directory. 
-    //! The specified name must be a relative path, including an optional subdirectory path, and a filename.
-    //! If the file already exists, that is an ERROR, indicating that two test groups are trying to create seed DgnDbs with the same names.
-    //! Each test group should use its own group-specific, unique name for its subdirectory and/or seed DgnDbs.
-    //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
-    //! @param mustBeBriefcase If true, the new DgnDb is marked as a (fake) briefcase. This is the default.
-    //! @return a pointer to the newly created file, or nullptr if the location is invalid
-    //! @note Normally, this should be called only once for an entire test group in the group's TC_SETUP function.
-    //! @see GetSeedDb for access to a pre-existing "library" of seed DgnDbs. It is faster to copy and modify a library seed DgnDb than to create a new seed from scratch.
-    static DgnDbPtr CreateSeedDb(WCharCP relPath, bool mustBeBriefcase = true) {return CreateDgnDb(relPath, false, mustBeBriefcase);}
+    static DgnDbPtr CreateSeedDb(WCharCP relPath, bool mustBeBriefcase = true) {return DgnDbTestUtils::CreateDgnDb(relPath, false, mustBeBriefcase);}
 
     //! Get information about a root seed DgnDb. DgnDbTestUtils offers a "library" of seed DgnDbs. You can open them read-only or you
     //! can open a writable copy of one of these seed DgnDbs in your tests. If the library contains roughly what you need, then 
@@ -83,52 +73,17 @@ public:
     //! @see OpenDgnDb
     static SeedDbInfo GetSeedDb(SeedDbId seedId, SeedDbOptions const& options = SeedDbOptions());
 
-    //! Open the specified seed DgnDb read-only
-    //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test group's TC_SETUP logic, then you must specify the
-    //! relative path to it. If you want to open a program-wide seed DgnDb, call GetSeedDb to get its relative path. 
-    //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist
-    //! @see GetSeedDb
-    static DgnDbPtr OpenSeedDb(WCharCP relSeedPath);
+    static DgnDbPtr OpenSeedDb(WCharCP relSeedPath) {return DgnDbTestUtils::OpenSeedDb(relSeedPath);}
         
-    //! Open <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
-    //! The copy will always be located in a subdirectory with the same name as the caller's test case.
-    //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
-    //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test group's TC_SETUP logic, then you must specify the
-    //! relative path to it. If you want to open a program-wide seed DgnDb, call GetSeedDb to get its name. 
-    //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
-    //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
-    //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist.
-    //! @see OpenDgnDb, GetSeedDb
-    static DgnDbPtr OpenSeedDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr);
+    static DgnDbPtr OpenSeedDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr) {return DgnDbTestUtils::OpenSeedDbCopy(relSeedPath, newName);}
 
-    //! Create <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
-    //! The copy will always be located in a subdirectory with the same name as the caller's test case.
-    //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
-    //! @param[out] actualName  Set to the name of the file that was created. May not be the same as \a newName, if a unique name was generated.
-    //! @param[in] relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test group's TC_SETUP logic, then you must specify the
-    //! relative path to it. If you want to open a program-wide seed DgnDb, call GetSeedDb to get its name. 
-    //! @param[in] newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
-    //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
-    //! @return a non-zero error status if the seed DgnDb does not exist or the copy could not be created.
-    //! @see OpenDgnDb, GetSeedDb
-    static DgnDbStatus MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName);
+    static DgnDbStatus MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName) {return DgnDbTestUtils::MakeSeedDbCopy(actualName, relSeedPath, newName);}
 
-    //! Open the specified seed DgnDb.
-    //! @param relPath Identifies a seed DgnDb that was created for the group in the TC_SETUP function. Be sure to use forward slash (/) as a directory separator.
-    //! @param mode the file open mode
-    //! @return a pointer to the open DgnDb, or nullptr if the file does not exist
-    static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode);
+    static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode) {return DgnDbTestUtils::OpenDgnDb(relPath, mode);}
 
-    //! Create a subdirectory in the test output directory. 
-    //! If the directory already exists, that is an ERROR, indicating that two test groups are trying to use the same output directory.
-    //! Each test group should use its own group-specific, unique name for its subdirectory and/or seed DgnDbs.
-    //! @param relPath  The name of the subdirectory to create. Be sure to use forward slash (/) as a directory separator.
-    //! @note Normally, this should be called only in the TC_SETUP function, once for an entire test group
-    static BeFileNameStatus CreateSubDirectory(WCharCP relPath);
+    static BeFileNameStatus CreateSubDirectory(WCharCP relPath) {return DgnDbTestUtils::CreateSubDirectory(relPath);}
 
-    //! Empty a subdirectory in the test output directory. 
-    //! @param relPath  The name of the subdirectory to empty. Be sure to use forward slash (/) as a directory separator.
-    static void EmptySubDirectory(WCharCP relPath);
+    static void EmptySubDirectory(WCharCP relPath) {DgnDbTestUtils::EmptySubDirectory(relPath);}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

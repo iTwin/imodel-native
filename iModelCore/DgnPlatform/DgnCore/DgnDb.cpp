@@ -40,7 +40,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
-                 m_units(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
+                 m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
@@ -55,7 +55,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const { return m_eccrudWriteToken; }
+ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return m_eccrudWriteToken;}
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -70,7 +70,7 @@ extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                12/2016
 //---------------+---------------+---------------+---------------+---------------+------
-DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const { return m_dbSchemaModificationToken; }
+DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const {return m_dbSchemaModificationToken;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12
@@ -156,8 +156,8 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
         return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
 
-    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
-    m_units.Load();
+    Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
+    m_geoLocation.Load();
 
     return BE_SQLITE_OK;
     }
@@ -559,13 +559,13 @@ void DgnImportContext::ComputeGcsAndGOadjustment()
     if (!IsBetweenDbs())
         return;
 
-    DPoint3dCR sourceGO(m_sourceDb.Units().GetGlobalOrigin());
-    DPoint3dCR destGO(m_destDb.Units().GetGlobalOrigin());
+    DPoint3dCR sourceGO(m_sourceDb.GeoLocation().GetGlobalOrigin());
+    DPoint3dCR destGO(m_destDb.GeoLocation().GetGlobalOrigin());
 
     m_xyzOffset.DifferenceOf(destGO, sourceGO);
 
-    DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
-    DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
+    DgnGCS* sourceGcs = m_sourceDb.GeoLocation().GetDgnGCS();
+    DgnGCS* destGcs = m_destDb.GeoLocation().GetDgnGCS();
 
     if (nullptr == sourceGcs || nullptr == destGcs)
         {

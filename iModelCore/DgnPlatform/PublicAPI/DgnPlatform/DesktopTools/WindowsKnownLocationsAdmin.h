@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,8 +26,8 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     BeFileName m_executableDirectory;
     BeFileName m_assetsDirectory;
 
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tempDirectory;}
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_assetsDirectory;}
+    BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tempDirectory;}
+    BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_assetsDirectory;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems

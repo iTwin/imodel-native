@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DisplayFilter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -130,7 +130,7 @@ BooleanOperator (DisplayFilterHandlerId id, void const* pData, size_t dataSize) 
     memcpy (&m_data[sizeof(opSize)], pData, dataSize); 
     }
 
-virtual void    _GetData (bvector<Byte>& data) const override { data = m_data; }
+void    _GetData (bvector<Byte>& data) const override { data = m_data; }
 
 public:
 static  DisplayFilter::OperatorPtr    Create (DisplayFilterHandlerId id, void const* pData, size_t dataSize) { return new BooleanOperator (id, pData, dataSize); }

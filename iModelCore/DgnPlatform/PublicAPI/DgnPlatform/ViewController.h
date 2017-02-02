@@ -124,7 +124,7 @@ protected:
     bool m_defaultDeviceOrientationValid = false;
     bool m_noQuery = false;
     SpecialElements m_special;
-    ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
+    ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
     bmap<DgnModelId, TileTree::RootPtr> m_roots;
@@ -240,6 +240,7 @@ public:
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
+    virtual void _PickTerrain(PickContextR context) {}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -428,9 +429,9 @@ public:
 
     //! @name Active Volume
     //! @{
-    void AssignActiveVolume(ClipPrimitiveR volume) {m_activeVolume = &volume;}
+    void AssignActiveVolume(ClipVectorPtr volume) {m_activeVolume = volume;}
     void ClearActiveVolume() {m_activeVolume = nullptr;}
-    ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
+    ClipVectorPtr GetActiveVolume() const {return m_activeVolume;}
     //! @}
 
     // Get the set of special elements for this ViewController.
@@ -503,14 +504,14 @@ public:
     {
         BeSQLite::CachedStatementPtr m_viewStmt;
         SpecialElements const* m_special;
-        ClipPrimitiveCPtr m_activeVolume;
+        ClipVectorCPtr m_activeVolume;
         int m_idCol = 0;
         DGNPLATFORM_EXPORT bool TestElement(DgnElementId);
         bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
         bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
         bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
         DGNPLATFORM_EXPORT void Start(SpatialViewControllerCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the SpatialViewController supplied.
-        ElementsQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) {m_special = (special && !special->IsEmpty()) ? special : nullptr; m_activeVolume=activeVolume;}
+        ElementsQuery(SpecialElements const* special, ClipVectorCP activeVolume) {m_special = (special && !special->IsEmpty()) ? special : nullptr; m_activeVolume=activeVolume;}
     };
 
     //=======================================================================================
@@ -538,7 +539,7 @@ public:
         BeSQLite::RTreeMatchFunction::Within TestVolume(FrustumCR box, BeSQLite::RTree3dValCP);
         void Start(SpatialViewControllerCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the SpatialViewController supplied.
         void SetFrustum(FrustumCR);
-        SpatialQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) : ElementsQuery(special, activeVolume) {}
+        SpatialQuery(SpecialElements const* special, ClipVectorCP activeVolume) : ElementsQuery(special, activeVolume) {}
     };
 
     //=======================================================================================
@@ -563,7 +564,7 @@ public:
         UpdatePlan::Query const& m_plan;
         QueryResults* m_results;
 
-        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+        int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void AddAlwaysDrawn(SpatialViewControllerCR);
         void SetDepthFirst() {m_depthFirst=true;}
         void SetTestLOD(bool onOff) {m_testLOD=onOff;}
@@ -591,6 +592,7 @@ protected:
     void QueryModelExtents(FitContextR);
 
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
+    DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;

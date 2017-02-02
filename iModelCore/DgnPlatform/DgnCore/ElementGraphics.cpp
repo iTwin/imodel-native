@@ -586,7 +586,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
                 }
 
-            if (!includeFaceIso || nullptr == graphic.GetViewport() || graphic.IsForDisplay())
+            if (!includeFaceIso || nullptr == graphic.GetViewport() || !graphic.IsSimplifyGraphic())
                 return; // QVis handles cone silhouette display...
 
             Transform   worldToLocalTrans;
@@ -979,7 +979,7 @@ virtual ~RuleCollector() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
+bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
     if (m_curves.IsNull())
         m_curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
@@ -997,7 +997,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OutputGraphics(ViewContextR context) override
+void _OutputGraphics(ViewContextR context) override
     {
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
@@ -1222,6 +1222,7 @@ static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineS
         double            zDepth = (is3d ? 0.0 : lsContext.GetGeometryParams().GetNetDisplayPriority());
         ChainTangentInfo  currEnd, prevEnd, nextEnd, currStart, nextStart, chainStart;
         LineStyleSymb     lsSymb = lsSymbIn;
+        bool              treatAsSingleSegment = lsSymb.IsTreatAsSingleSegment(); // Save initial value as this gets changed by arc/bcurve strokers...
 
         if (isComplex) // Support start/end tangents for linestyle w/thickness...
             {
@@ -1291,7 +1292,9 @@ static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineS
                     }
                 }
 
+            lsSymb.SetTreatAsSingleSegment(treatAsSingleSegment); // Restore initial value in case arc/bcurve strokers changed it...
             lsSymb.SetTangents(pStartTangent, pEndTangent);
+            lsSymb.CheckContinuationData();
 
             switch (curve->GetCurvePrimitiveType())
                 {
@@ -1361,10 +1364,19 @@ bool ViewContext::_WantLineStyles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions) const
+static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions)
     {
     if (!lsSymb.GetUseStroker())
         return false;
+
+    if (builder.IsSimplifyGraphic())
+        {
+        Graphic& graphic = builder;
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
+
+        BeAssert(nullptr != sGraphic);
+        return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
+        }
 
     double pixelSize = builder.GetPixelSize();
 
@@ -1382,10 +1394,6 @@ bool ViewContext::_UseLineStyleStroker(Render::GraphicBuilderR builder, LineStyl
 
         builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
         }
-
-    // NOTE: Need a fairly small angle for QVis since we're not always re-stroking to a view tolerance...
-    facetOptions = IFacetOptions::CreateForCurves();
-    facetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
 
     return true; // Width discernable...
     }
@@ -1406,7 +1414,7 @@ void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveV
         {
         IFacetOptionsPtr facetOptions;
         LineStyleSymbCR  lsSymb = lsInfo->GetLineStyleSymb();
-        ILineStyleCP     currLStyle = (_UseLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
+        ILineStyleCP     currLStyle = (useLineStyleStroker(graphic, lsSymb, facetOptions) ? lsSymb.GetILineStyle() : nullptr);
 
         if (nullptr != currLStyle)
             {

@@ -62,12 +62,13 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override;
 
-    virtual bool _IsOpen() const override { return m_isOpen; }
-    virtual StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
-    virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
+    bool _IsSimplifyGraphic() const override {return true;}
+    bool _IsOpen() const override {return m_isOpen;}
+    StatusInt _Close() override {m_isOpen = false; return SUCCESS;}
+    StatusInt _EnsureClosed() override {return m_isOpen ? _Close() : SUCCESS;}
 
-    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
-    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
+    GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
+    void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
 
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
@@ -113,7 +114,6 @@ public:
     DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
     ClipVectorCP GetCurrentClip() const {return nullptr;}
-
     DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);
     DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);
@@ -122,10 +122,12 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
+
     DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
     GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;} // Direct access from PickContext without making builder...
+    IGeometryProcessorR GetGeometryProcesor() const {return m_processor;}
 
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range) const;
     DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range) const;
@@ -174,10 +176,10 @@ virtual DrawPurpose _GetProcessPurpose() const {return DrawPurpose::CaptureGeome
 virtual bool _DoClipping() const {return false;}
 
 //! Whether to drop patterns and process as geometric primitives.
-virtual bool _DoPatternStroke() const {return false;}
+virtual bool _DoPatternStroke(PatternParamsCR, SimplifyGraphic&) const {return false;}
 
 //! Whether to drop linestyles and process as geometric primitives.
-virtual bool _DoLineStyleStroke(Render::GraphicBuilderR, Render::LineStyleSymbCR, IFacetOptionsPtr&) const {return false;}
+virtual bool _DoLineStyleStroke(Render::LineStyleSymbCR, IFacetOptionsPtr&, SimplifyGraphic&) const {return false;}
 
 //! Allow processor to override the default facet options.
 //! @return A pointer to facet option structure to use or nullptr to use default options.
