@@ -10,8 +10,6 @@ RelationshipClassTests.RelationshipClassAbstractness
 RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition
 RelationshipClassTests.CyclicRelationships
 ClassTests.CheckAbstractness
-ClassTests.CheckClassTypeForStandAloneInstances
-ClassTests.DerivedClassTypesOfAbstractClass
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -27,8 +25,6 @@ UnitsTest.TestConvertingUnitSpecifications
 UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
 
-# NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole
-
 # DgnDb0601, x64, NDEBUG, PRG
 # <build output no longer provides failure details, and cannot access log files in PRG>
 AdhocPropertyTest.AddPropertyWithOptionalMetadata
@@ -38,6 +34,7 @@ AdhocPropertyTest.InvalidCases
 AdhocPropertyTest.SwapAdhocProperties
 
 #SchemaConverter doesn't support string enums correctly
+# TFS#615758
 StandardValueToEnumConversionTest.CAConversionTest
 
 #Base64 conversion appears to have been busted for a long time
