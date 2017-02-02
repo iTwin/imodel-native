@@ -6888,6 +6888,46 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     2/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyEnumType_IntToString)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='True'>"
+        "        <ECEnumerator value = 'val1' displayLabel = 'txt' />"
+        "        <ECEnumerator value = 'val2' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(editedSchemaXml, filePath, { false, false }, "Changing Enum Type is not supported");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
