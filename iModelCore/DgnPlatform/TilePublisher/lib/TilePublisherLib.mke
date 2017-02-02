@@ -27,6 +27,8 @@ $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(Src
 
 $(o)TileReader$(oext) : $(SrcDir)TileReader.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 
+$(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h $(SrcDir)CesiumPublisher.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
@@ -40,6 +42,7 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BeJsonCpp.lib         \
                       $(SubpartLibs)BaseGeoCoord.lib      \
                       $(SubpartLibs)ThreeMx.lib           \
+                      $(SubpartLibs)PointCloud.lib        \
                       $(SubpartLibs)BeFolly.lib           \
                       $(SubpartLibs)Crunch.lib            
 
