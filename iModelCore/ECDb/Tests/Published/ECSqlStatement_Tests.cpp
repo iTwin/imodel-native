@@ -406,7 +406,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ASSERT_EQ(0, structArrayVal.GetArrayLength());
         }
 
-    //*** array with one null element
+    //*** array with two null elements
     for (Utf8CP testClassName : testClassNames)
         {
         Utf8String ecsql;
@@ -418,6 +418,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         for (int i = 1; i <= 4; i++)
             {
             IECSqlBinder& arrayBinder = stmt.GetBinder(i);
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
             ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
             }
 
@@ -435,18 +436,20 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
             IECSqlValue const& val = stmt.GetValue(i);
             ASSERT_FALSE(val.IsNull()) << i << " " << stmt.GetECSql();
             IECSqlArrayValue const& arrayVal = val.GetArray();
-            ASSERT_EQ(1, arrayVal.GetArrayLength());
-            IECSqlValue const* elementVal = *arrayVal.begin();
-            ASSERT_TRUE(elementVal != nullptr) << i << " " << stmt.GetECSql();
-            ASSERT_TRUE(elementVal->IsNull()) << i << " " << stmt.GetECSql();
-
-            if (val.GetColumnInfo().GetDataType().IsStructArray())
+            ASSERT_EQ(2, arrayVal.GetArrayLength());
+            for (IECSqlValue const* elementVal : arrayVal)
                 {
-                IECSqlStructValue const& structVal = elementVal->GetStruct();
-                ASSERT_EQ(val.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
-                for (int j = 0; j < structVal.GetMemberCount(); j++)
+                ASSERT_TRUE(elementVal != nullptr) << i << " " << stmt.GetECSql();
+                ASSERT_TRUE(elementVal->IsNull()) << i << " " << stmt.GetECSql();
+
+                if (val.GetColumnInfo().GetDataType().IsStructArray())
                     {
-                    ASSERT_TRUE(structVal.GetValue(j).IsNull());
+                    IECSqlStructValue const& structVal = elementVal->GetStruct();
+                    ASSERT_EQ(val.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
+                    for (int j = 0; j < structVal.GetMemberCount(); j++)
+                        {
+                        ASSERT_TRUE(structVal.GetValue(j).IsNull());
+                        }
                     }
                 }
             }
