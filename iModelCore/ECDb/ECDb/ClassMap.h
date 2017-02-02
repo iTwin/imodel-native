@@ -100,18 +100,14 @@ struct ClassMap : RefCountedBase
             private:
                 SchemaImportContext& m_importCtx;
                 ClassMappingInfo const& m_classMappingInfo;
-                bool m_createSharedColumnsAfterMappingProperties;
 
             public:
                 ClassMappingContext(SchemaImportContext& importCtx, ClassMappingInfo const& classMappingInfo)
-                    : m_importCtx(importCtx), m_classMappingInfo(classMappingInfo), m_createSharedColumnsAfterMappingProperties(false)
+                    : m_importCtx(importCtx), m_classMappingInfo(classMappingInfo)
                 {}
 
                 SchemaImportContext& GetImportCtx() const { return m_importCtx; }
                 ClassMappingInfo const& GetClassMappingInfo() const { return m_classMappingInfo; }
-
-                bool IsCreateSharedColumnsAfterMappingProperties() const { return m_createSharedColumnsAfterMappingProperties; }
-                void SetCreateSharedColumnsAfterMappingProperties() { m_createSharedColumnsAfterMappingProperties = true; }
             };
 
     private:

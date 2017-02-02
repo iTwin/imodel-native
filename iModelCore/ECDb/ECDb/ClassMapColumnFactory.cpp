@@ -322,7 +322,7 @@ DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR pro
     if (TryFindReusableSharedDataColumn(reusableColumn))
         return const_cast<DbColumn*>(reusableColumn);
 
-    DbColumn* col = GetTable().CreateOverflowSlaveColumn(colType);
+    DbColumn* col = GetTable().CreateSharedColumn(colType);
     if (col == nullptr)
         {
         BeAssert(false);

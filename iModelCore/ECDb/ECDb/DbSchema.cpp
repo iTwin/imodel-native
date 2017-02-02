@@ -1315,31 +1315,14 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
+DbColumn* DbTable::CreateSharedColumn(DbColumn::Type colType)
     {
-    if (m_overflowColumn != nullptr)
-        {
-        BeAssert(false && "CreateSharedColumns should not be called twice");
-        return SUCCESS; //overflow already evaluated. WIP: Why is this called twice at all?
-        }
+    Utf8String generatedName;
+    m_sharedColumnNameGenerator.Generate(generatedName);
+    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
 
-    //the shared column count is the count of shared columns to be created including the overflow column
-    BeAssert(tphInfo.GetSharedColumnCount() > 0);
-    for (int i = 0; i < tphInfo.GetSharedColumnCount() - 1; i++)
-        {
-        Utf8String generatedName;
-        m_sharedColumnNameGenerator.Generate(generatedName);
-        BeAssert(FindColumn(generatedName.c_str()) == nullptr);
-        if (nullptr == CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical))
-            return ERROR;
-        }
+    return CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical);
 
-    //the overflow column will hold its data as JSON. So the column data type is TEXT.
-    Utf8StringCR customOverflowColname = tphInfo.GetOverflowColumnName();
-    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::PhysicalOverflow, PersistenceType::Physical))
-        return ERROR;
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1644,36 +1627,6 @@ Utf8CP DbColumn::TypeToSql(DbColumn::Type colType)
 
             default:
                 BeAssert(false && "Adjust ColumnTypeToSql for new column type");
-                return nullptr;
-        }
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP DbColumn::KindToString(Kind columnKind)
-    {
-    switch (columnKind)
-        {
-            case Kind::ECInstanceId:
-                return "ECInstanceId";
-            case Kind::ECClassId:
-                return "ECClassId";
-            case Kind::SourceECInstanceId:
-                return "SourceECInstanceId";
-            case Kind::SourceECClassId:
-                return "SourceECClassId";
-            case Kind::TargetECInstanceId:
-                return "TargetECInstanceId";
-            case Kind::TargetECClassId:
-                return "TargetECClassId";
-            case Kind::DataColumn:
-                return "DataColumn";
-            case Kind::SharedDataColumn:
-                return "SharedDataColumn";
-            default:
                 return nullptr;
         }
     }

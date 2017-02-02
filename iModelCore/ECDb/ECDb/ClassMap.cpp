@@ -93,37 +93,6 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
 
-    //shared columns evaluation
-    //Shared columns are created if ApplyToSubclassesOnly is true and if the subclasses are mapped to this table.
-    //Reason: For a given table under shared columns regime the DB layout of the table must not change in later schema imports.
-    if (!isTph || tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::No ||
-        (tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable))
-        return ClassMappingStatus::Success;
-
-    if (tphBaseClassMap != nullptr)
-        {
-        TablePerHierarchyInfo const& baseTphInfo = tphBaseClassMap->GetMapStrategy().GetTphInfo();
-        //if shared columns mode already enabled in base class but the base class is not the parent of a joined table
-        //shared columns are already created in this table (s. above)
-        if (baseTphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::No &&
-            baseTphInfo.GetJoinedTableInfo() != JoinedTableInfo::ParentOfJoinedTable)
-            return ClassMappingStatus::Success;
-        }
-
-    if (tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly)
-        {
-        //Shared cols are only used by subclasses. So all props of this class should get columns before the shared columns
-        ctx.SetCreateSharedColumnsAfterMappingProperties();
-        }
-    else
-        {
-        if (SUCCESS != GetJoinedTable().CreateSharedColumns(tphInfo))
-            {
-            Issues().Report("Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
-            return ClassMappingStatus::Error;
-            }
-        }
-
     return ClassMappingStatus::Success;
     }
 
@@ -357,18 +326,6 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
         }
 
-    //create shared columns if it was delayed to after the mapping of props
-    if (ctx.IsCreateSharedColumnsAfterMappingProperties())
-        {
-        BeAssert(ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().IsValid());
-        if (SUCCESS != GetJoinedTable().CreateSharedColumns(ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo()))
-            {
-            Issues().Report("Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
-            return ClassMappingStatus::Error;
-            }
-        }
-
-    //GetColumnFactory().Debug();
     return ClassMappingStatus::Success;
     }
 

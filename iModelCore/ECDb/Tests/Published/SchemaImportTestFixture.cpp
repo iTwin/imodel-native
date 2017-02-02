@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/SchemaImportTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SchemaImportTestFixture.h"
@@ -198,7 +198,7 @@ void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName,
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, OverflowColumnName, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, SharedColumnCountPerOverflowTable, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
@@ -211,9 +211,7 @@ bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, E
         parameterIx++;
         stratInfo.m_tphInfo.m_sharedColumnCount = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
         parameterIx++;
-        if (!stmt->IsColumnNull(parameterIx))
-            stratInfo.m_tphInfo.m_overflowColumnName.assign(stmt->GetValueText(parameterIx));
-
+        stratInfo.m_tphInfo.m_sharedColumnCountPerOverflowTable = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
         parameterIx++;
         stratInfo.m_tphInfo.m_joinedTableInfo = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::JoinedTableInfo::None : (MapStrategyInfo::JoinedTableInfo) stmt->GetValueInt(parameterIx);
         return true;

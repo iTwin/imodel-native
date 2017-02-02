@@ -206,7 +206,6 @@ public:
 
     static Utf8CP TypeToSql(DbColumn::Type);
     static bool IsCompatible(Type lhs, Type rhs);
-    static Utf8CP KindToString(Kind);
     };
 
 
@@ -410,7 +409,7 @@ public:
     ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
-    BentleyStatus CreateSharedColumns(TablePerHierarchyInfo const&);
+    DbColumn* CreateSharedColumn(DbColumn::Type);
     DbColumn* CreateOverflowSlaveColumn(DbColumn::Type);
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }

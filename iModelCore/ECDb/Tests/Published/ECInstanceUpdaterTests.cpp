@@ -564,7 +564,6 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
                             "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                             "            </ClassMap>"
                             "           <ShareColumns xmlns='ECDbMap.02.00'>"
-                            "              <SharedColumnCount>1</SharedColumnCount>"
                             "           </ShareColumns>"
                             "        </ECCustomAttributes>"
                             "%s"
@@ -578,7 +577,6 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
                             "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                             "            </ClassMap>"
                             "           <ShareColumns xmlns='ECDbMap.02.00'>"
-                            "              <SharedColumnCount>1</SharedColumnCount>"
                             "           </ShareColumns>"
                             "        </ECCustomAttributes>"
                             "        <ECStructProperty propertyName='MyStructProp' typeName='LargeStruct'/>"
@@ -619,12 +617,6 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
         stmt.Finalize();
 
         ECInstanceUpdater classWithStructUpdater(GetECDb(), *classWithStruct, nullptr);
-        if (propCount > 63)
-            {
-            ASSERT_FALSE(classWithStructUpdater.IsValid()) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount << GetECDb().GetLastError().c_str();
-            return;
-            }
-
         instance = classWithStruct->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithStructKey.GetECInstanceId().ToString().c_str())) << "ECClass: " << classWithStruct->GetName().c_str() << " Prop count: " << propCount;
 
