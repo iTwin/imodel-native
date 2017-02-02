@@ -145,7 +145,6 @@ struct Session final
 struct BimConsole final : Dgn::DgnPlatformLib::Host
     {
     private:
-        static const Utf8Char ECSQLSTATEMENT_DELIMITER = ';';
         static const Utf8Char COMMAND_PREFIX = '.';
 
         Session m_session;
