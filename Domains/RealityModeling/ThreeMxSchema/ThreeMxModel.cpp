@@ -205,7 +205,6 @@ void ThreeMxModel::Load(SystemP renderSys) const
     m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,13 +267,15 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called whenever the camera moves. Must be fast.
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
     {
-    if (m_scene.IsValid())
-        m_scene->Pick(context, m_scene->GetLocation(), m_clip.get());
+    if (!m_scene.IsValid())
+        return;
+    
+    PickContext::ActiveDescription descr(context, GetName());
+    m_scene->Pick(context, m_scene->GetLocation(), m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
