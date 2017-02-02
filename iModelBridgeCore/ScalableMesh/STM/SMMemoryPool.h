@@ -382,6 +382,13 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
                 }                                    
             }
 
+#ifdef VANCOUVER_API
+        static SMStoredMemoryPoolMultiItems* CreateItem(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType compositeDataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolMultiItems(dataStore, nodeId, compositeDataType, smId);
+            }
+#endif
+
         virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) override
             {            
             HPMBlockID blockID(m_nodeId);

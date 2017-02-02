@@ -200,7 +200,11 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
         {
 #ifndef NDEBUG
         BeFileName file(url.c_str());
+#ifndef VANCOUVER_API
         assert(false == file.DoesPathExist()); // file should not exist
+#else
+        assert(false == BeFileName::DoesPathExist(url.c_str()));
+#endif
 #endif
         url = L"file:///" + url;
         }
