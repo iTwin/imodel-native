@@ -222,7 +222,7 @@ struct  BeThreadUtilities
     //! Suspend the current thread for a specified number of milliseconds
     //! @param[in] millis number of milliseconds to sleep 
     //! @note this method is deprecated. Use BeDuration::Sleep
-    static void BeSleep(uint32_t millis){BeDuration::FromMilliSeconds(millis).Sleep();}
+    static void BeSleep(uint32_t millis){BeDuration::FromMilliseconds(millis).Sleep();}
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();

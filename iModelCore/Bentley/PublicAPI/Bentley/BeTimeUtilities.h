@@ -134,13 +134,15 @@ struct BeTimeUtilities
 struct BeDuration : std::chrono::steady_clock::duration
 {
     DEFINE_T_SUPER(std::chrono::steady_clock::duration)
-    typedef std::chrono::nanoseconds NanoSeconds;
-    typedef std::chrono::milliseconds MilliSeconds;
+    typedef std::chrono::nanoseconds Nanoseconds;
+    typedef std::chrono::milliseconds Milliseconds;
     typedef std::chrono::seconds Seconds;
 
+    constexpr BeDuration() : T_Super(0) {}    //!< construct a BeDuration with 0 seconds
     constexpr BeDuration(Seconds val) : T_Super(val) {} // allow implicit conversion
-    constexpr BeDuration(MilliSeconds val) : T_Super(val) {} // allow implicit conversion
-    constexpr BeDuration(NanoSeconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(Milliseconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(Nanoseconds val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(std::chrono::duration<double,BeDuration::period> val) : T_Super(std::chrono::duration_cast<T_Super>(val)) {}
     BeDuration(int) = delete; // Note: you must specifiy units!
     BeDuration(double) = delete; // Note: you must specifiy units!
 
@@ -148,10 +150,7 @@ struct BeDuration : std::chrono::steady_clock::duration
     constexpr static BeDuration FromSeconds(double val) {return BeDuration(std::chrono::duration_cast<T_Super>(std::chrono::duration<double>(val)));}
 
     //! construct a BeDuration from int milliseconds
-    constexpr static BeDuration FromMilliSeconds(int64_t val) {return BeDuration(MilliSeconds(val));}
-
-    //! construct a BeDuration with 0 seconds
-    constexpr BeDuration() : T_Super() {}
+    constexpr static BeDuration FromMilliseconds(int64_t val) {return BeDuration(Milliseconds(val));}
     
     //! cast this BeDuration to a double number of *seconds* (not nanoseconds!)
     constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();}
@@ -159,7 +158,7 @@ struct BeDuration : std::chrono::steady_clock::duration
     //! get this duration in seconds
     constexpr double ToSeconds() const {return (double) *this;}
 
-    constexpr operator MilliSeconds() const {return std::chrono::duration_cast<MilliSeconds>(*this);}
+    constexpr operator Milliseconds() const {return std::chrono::duration_cast<Milliseconds>(*this);}
     constexpr operator Seconds() const {return std::chrono::duration_cast<Seconds>(*this);}
 
     //! Determine whether this BeDuration is zero seconds
@@ -196,11 +195,18 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
     //! @param[in] val the duration before now
     static BeTimePoint BeforeNow(BeDuration val) {return Now()-val;}
 
-    //! Determine whether this BeTimePoint is valid (non-zero)
-    bool IsValid() const {return 0 != time_since_epoch().count();}
+    BeTimePoint::rep GetTicks() const {return time_since_epoch().count();}
 
-    //! Determine whether this BeTimePoint is in the future from the time this method is called (it calls Now()!)
+    //! Determine whether this BeTimePoint is valid (non-zero)
+    bool IsValid() const {return 0 != GetTicks();}
+                                              
+    //! return true if this BeTimePoint is a valid time in the future from the time this method is called (it calls Now()!)
+    //! @note always returns false and does not call Now() if this is not a valid BeTimePoint
     bool IsInFuture() const {return IsValid() && (Now() < *this);}
+
+    //! return true if this BeTimePoint was a valid time that has past before the time this method is called (it calls Now()!)
+    //! @note always returns false and does not call Now() if this is not a valid BeTimePoint
+    bool IsInPast() const {return IsValid() && (Now() > *this);}
 };
 
 /*=================================================================================**//**

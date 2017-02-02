@@ -65,6 +65,7 @@
     <NMakeOutput>Bentley.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(OutRoot)Winx64\BuildContexts\Bentley\VendorAPI\;$(OutRoot)Winx64\BuildContexts\Bentley\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(LOCALAPPDATA)\temp\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>Bentley.exe</NMakeOutput>
