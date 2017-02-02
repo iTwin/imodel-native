@@ -320,12 +320,6 @@
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
 
-    ## Features supported but not enforced
-    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipMultiplicity "ECRelationshipConstraint multiplicities" 
-    common to databases: (0..1), (1..1), (0..*), (1..*).
-    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
-    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
-    
     ## ECRelationshipClass Definition Consistency
     Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
     values for cardinality, strength and strength direction. The table shows what is actually allowed.
@@ -344,6 +338,14 @@
     <b>Foreign Key</b> mapping, because this type is more performant and less complex.
     For those cases where a Foreign Key mapping is not possible (because a Link Table is required), 
     ECDb chooses the <b>Link Table</b> mapping.
+
+    Two flavors of Foreign Key mapping exist:
+    If the ECRelationshipClass has the @b ForeignKeyConstraint custom attribute:
+    - b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
+    If the custom attribute is not present:
+    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
+    @note Cardinality is not enforced either in that case.  
+    
     
     @b Rule:
     <b>Link Table</b> mapping is chosen if
@@ -351,16 +353,18 @@
     - ECProperties are defined for the ECRelationshipClass
     - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref CustomRelationshipMapDescription)
 
-    Otherwise, the <b>Foreign Key</b> mapping is chosen.
+    Otherwise, the <b>Foreign Key</b> mapping is chosen:
+    - <b>Physical Foreign Key</b> mapping if the @b ForeignKeyConstraint custom attribute exists on the ECRelationshipClass. 
+    - <b>Logical Foreign Key</b> mapping otherwise.
 
     The ECRelationshipClass is rejected
     - if it evaluates to <b>Link Table</b> mapping and
         - has the strength @em Embedding
-        - has the @b ForeignKeyRelationshipMap custom attribute (see also @ref CustomRelationshipMapDescription)
-    - if it evaluates to <b>Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
+        - has the @b ForeignKeyConstraint custom attribute (see also @ref CustomRelationshipMapDescription)
+    - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
     (see @ref CustomClassMapDescription) and 
-            - in the @b ForeignKeyRelationshipMap custom attribute the property @b OnDeleteAction is set to @b Cascade or
-            - the @b ForeignKeyRelationshipMap custom attribute is not present and the strength is @b Embedding
+            - in the @b ForeignKeyConstraint custom attribute the property @b OnDeleteAction is set to @b Cascade or
+            - the strength is @b Embedding
 
     ## Mapping Rules
     The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
@@ -396,18 +400,17 @@
     each class of the constraint. See @ref CustomClassMapDescription for details.
     - If the <i>TablePerHierarchy</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
     ECRelationshipClasses.
-    
-    ## Referential Integrity
-    ECDb enforces referential integrity via foreign key and not null constraints.
-    
-    ####Exceptions
-    For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
+       
+    ## Features supported but not enforced
+    - %ECDb generally only enforces the @ref BentleyApi::ECN::RelationshipMultiplicity "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..*), (1..*) (see exceptions above)
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+    - For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
     @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
     does not delete the actual orphaned instances automatically because there are different ways to interpret and implement the strength 
     @ref BentleyApi::ECN::Holding "Holding". Consequently, <b>%ECDb treats Holding relationships as Referencing relationships</b>.
-    
-    Column sharing generally cannot be combined with per-column constraints.
-
+        
     @see @ref ECDbOverview
     */
 
