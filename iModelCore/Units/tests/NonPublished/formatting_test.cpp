@@ -10,10 +10,6 @@
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
-
-
-//#include "UnitsPCH.h"
-//#include "StandardNames.h"
 #include <Units/UnitRegistry.h>
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
@@ -21,7 +17,6 @@
 //#define FORMAT_DEBUG_PRINT
 
 #undef LOG
-//#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 using namespace BentleyApi::Units;
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
@@ -59,30 +54,11 @@ TEST(FormattingTest, FormattingUOM)
     atr.SetLowUnitLabel(u8"\"");
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
-
-    //LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::StdFormatQuantity(*ang, degUOM, "fract").c_str());
-    //LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("_", 4).c_str());
     atr.SetTopUnitLabel(u8"°");
     atr.SetMidUnitLabel(u8"'");
     atr.SetLowUnitLabel(u8"\"");
-    //LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("", 4).c_str());
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
-    //LOG.infov(u8"135.45° = %s", NumericFormatSpec::StdFormatQuantityTriad(&atr, "fract32", "").c_str());
-
-    QuantityPtr tmp = Quantity::Create(36.6, "CELSIUS");
-    UnitCP farhUOM = UnitRegistry::Instance().LookupUnit("FAHRENHEIT");
-    //LOG.infov(u8"36.6°C = %s (real2)", NumericFormatSpec::StdFormatQuantity(*tmp, farhUOM, "real2").c_str());
-    
-   /* double cels = -40.0;
-    while (cels < 250.0)
-        {
-        LOG.infov(u8"%.2f °C = %s (real4)", cels, NumericFormatSpec::StdFormatPhysValue(cels, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-        cels += 4.0;
-        }*/
-    /*LOG.infov(u8"100.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(100.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    LOG.infov(u8"0.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(0.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-*/
     EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue(36.6, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
     EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue(100, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
 
@@ -104,187 +80,18 @@ TEST(FormattingTest, FormattingUOM)
     EXPECT_STREQ (u8"14.0°F",  NumericFormatSpec::StdFormatPhysValue(-10.0,  "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
     EXPECT_STREQ (u8"23.0°F",  NumericFormatSpec::StdFormatPhysValue(-5.0,   "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
 
-
-
-    /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
-    reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);*/
-
-#if defined FORMAT_DEBUG_PRINT
-
-    LOG.infov("22.7 M = %s FT", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
-    LOG.infov("22.7 M = %s YRD", NumericFormat::StdFormatQuantity(*len, yardUOM, "fract8").c_str());
-    LOG.infov("22.7 M = %s FT(16)", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract16").c_str());
-    LOG.infov("22.7 M = %s FT(32)", NumericFormat::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
-
-    UnitCP mileUOM = UnitRegistry::Instance().LookupUnit("MILE");
-    if (nullptr != mileUOM && nullptr != yrdUOM)
-        {
-        double fact = mileUOM->Convert(1.0, yrdUOM);
-        LOG.infov("There are %.4f %s in %s", fact, yrdUOM->GetName(), mileUOM->GetName());
-        size_t rat = QuantityTriad::UnitRatio(mileUOM, yrdUOM);
-        LOG.infov("ratio of  %s/%s is %d", mileUOM->GetName(), yrdUOM->GetName(), rat);
-        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
-        LOG.infov("ratio of  %s/%s is %d", yrdUOM->GetName(), mileUOM->GetName(), rat);
-
-        rat = QuantityTriad::UnitRatio(yrdUOM, ftUOM);
-        LOG.infov("ratio of  %s/%s is %d", yrdUOM->GetName(), ftUOM->GetName(), rat);
-        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
-        LOG.infov("ratio of  %s/%s is %d", ftUOM->GetName(), yrdUOM->GetName(), rat);
-
-        rat = QuantityTriad::UnitRatio(ftUOM, inUOM);
-        LOG.infov("ratio of  %s/%s is %d", ftUOM->GetName(), inUOM->GetName(), rat);
-        rat = QuantityTriad::UnitRatio(yrdUOM, mileUOM);
-        LOG.infov("ratio of  %s/%s is %d", inUOM->GetName(), ftUOM->GetName(), rat);
-        }
-    else 
-        LOG.info("Units not found");
-    if (qtr.IsProblem())
-        LOG.info("22.7 M conversion failed");
-    else
-        LOG.infov("22.7 M = %s", qtr.FormatQuantTriad("_", false).c_str());
-#endif
     }
 
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
     double fval = sqrt(2.0);
-    ////  demo print
-#if defined FORMAT_DEBUG_PRINT
-    LOG.infov("There are %d prime factors", FactorizedNumber::GetPrimeCount());
-    int ival = 128;
-    LOG.infov("size of int %d ", sizeof(int));
-    LOG.infov("size of size_t %d ", sizeof(size_t));
-    FactorizedNumber fan = FactorizedNumber(ival);
-    LOG.infov("Value %d  (factors) %s ", ival, fan.ToText().c_str());
-    LOG.infov("%s", FactorizedNumber(75).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(11925).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(117).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(119).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(113).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(219).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(218).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(211).DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(32*25*9*121).DebugText().c_str());
-
-    FactorizedNumber fz1 = FactorizedNumber(32 * 25 * 9 * 121);
-    FactorizedNumber fz2 = FactorizedNumber(8 * 125 * 81 * 11);
-    size_t gcf = fz1.GetGreatestCommonFactor(fz2);
-    LOG.infov("GreatestCommonFactor of %d and %d = %d", fz1.GetValue(), fz2.GetValue(), gcf);
-
-    LOG.infov("%s", fz1.DebugText().c_str());
-    LOG.infov("%s", fz2.DebugText().c_str());
-    LOG.infov("%s", FactorizedNumber(gcf).DebugText().c_str());
-
-
-
-    FractionalNumeric fn = FractionalNumeric(fval, 4);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-    fval *= 3.5;
-
-    fn = FractionalNumeric(fval, 16);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 32);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 8);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 3);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 7);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 16);
-    LOG.infov("Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fval = 15.0 + (32.0*25.0*3.0) / (64.0*125.0*3.0);
-    fn = FractionalNumeric(fval, 256);
-    LOG.infov("Fractional Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fval = 15.0 + 14.0 / 16.0;
-    fn = FractionalNumeric(fval, 256);
-    LOG.infov("Fractional Value %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 2, 0.005);
-    LOG.infov("Fractional Value(2) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 7, 0.005);
-    LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-
-    fn = FractionalNumeric(fval, 7, 0.1);
-    LOG.infov("Fractional Value(7) %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-#endif
-
-#if defined FORMAT_DEBUG_PRINT
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real").c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 2).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 1).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 0).c_str());
-
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4, 5.0).c_str());
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3, 5.0).c_str());
-    LOG.info("Scientific");
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(testV, "sci", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(testV, "sciN", 5).c_str());
-
-    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::StdFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::StdFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::StdFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
-    LOG.info("Scientific");
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "sci", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "sciN", 5).c_str());
-#endif
-    /////  end of demo print
-        /*Value 1.414214  (denom 4) 1 1 / 2
-        Value 4.949747  (denom 16) 4 15 / 16
-        Value 4.949747  (denom 32) 4 15 / 16
-        Value 4.949747  (denom 8) 5 (0 / 8)
-        Value 4.949747  (denom 3) 5 (0 / 3)
-        Value 4.949747  (denom 7) 5 (0 / 7)
-        Value 4.949747  (denom 16) 4 15 / 16
-        Fractional Value 15.100000  (denom 256) 15 13 / 128
-        Fractional Value 15.875000  (denom 256) 15 7 / 8
-        Fractional Value(2) 15.875000  (denom 256) 15 7 / 8
-        Fractional Value(7) 15.875000  (denom 343) 15 300 / 343
-        Fractional Value(7) 15.875000  (denom 49) 15 43 / 49*/
-
-    fval = sqrt(2.0);
-
-#if defined FORMAT_DEBUG_PRINT
-    fn = FractionalNumeric(fval, 128);
-    LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fract").c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fractSign").c_str());
-#endif
 
     EXPECT_STREQ ("1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
     EXPECT_STREQ ("+1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
     EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fract").c_str());
     EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fractSign").c_str());
     fval  *= 3.5;
-
-#if defined FORMAT_DEBUG_PRINT
-    fn = FractionalNumeric(fval, 128);
-    LOG.infov("FractDirect %.6f  (denom %d) %s ", fval, fn.GetDenominator(), fn.ToTextDefault(true).c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fract").c_str());
-    LOG.infov("FractStd %.6f  %s ", fval, NumericFormat::StdFormatDouble(fval, "fractSign").c_str());
-#endif
 
     EXPECT_STREQ ("4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
     EXPECT_STREQ ("+4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
@@ -328,18 +135,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("12,727.9000", fmtP->FormatDouble(9.0*testV, 4, 0.05).c_str());
     EXPECT_STREQ ("2,828.450", fmtP->FormatDouble(2.0*testV, 3, 0.05).c_str());
 
-    ///////////////////////////////////////
-#if defined FORMAT_DEBUG_PRINT
-    LOG.info("With Separator and trailing zeroes");
-    LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05).c_str());
-    LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05).c_str());
-    LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->FormatDouble(3.0*testV, 6, 0.05).c_str());
-    LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->FormatDouble(7.0*testV, 5, 0.05).c_str());
-    LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->FormatDouble(9.0*testV, 4, 0.05).c_str());
-    LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->FormatDouble(2.0*testV, 3, 0.05).c_str());
-#endif
-    ///////////////////////////////////////
-
     fmtP->SetKeepTrailingZeroes(false);
     fmtP->SetUse1000Separator(false);
 
@@ -349,42 +144,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-9899.5", fmtP->FormatDouble(-7.0*testV, 5, 0.05).c_str());
     EXPECT_STREQ ("-12727.9", fmtP->FormatDouble(-9.0*testV, 4, 0.05).c_str());
     EXPECT_STREQ ("-2828.45", fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
-
-    ///////////////////////////
-#if defined FORMAT_DEBUG_PRINT
-    LOG.info("With Separator and trailing zeroes turnes off again");
-    LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05).c_str());
-    LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->FormatDouble(-5.0*testV, 7, 0.05).c_str());
-    LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->FormatDouble(-3.0*testV, 6, 0.05).c_str());
-    LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05).c_str());
-    LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05).c_str());
-    LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
-
-    ///////////////////////////
-
-    int repet = 1000000;
-    double rval = -9.0*testV;
-    FormatStopWatch* sw = new FormatStopWatch();
-    Utf8String repStr;
-    for (int i = 0; i < repet; i++)
-        {
-        repStr = fmtP->FormatDouble(rval, 4, 0.05);
-        }
-    LOG.info("Tested fmtP->FormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
-    LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
-
-    for (int i = 0; i < repet; i++)
-        {
-        repStr = NumericFormat::StdFormatDouble(testV, "real", 8, 0.05).c_str();
-        }
-    LOG.info("Tested StdFormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
-    LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
-
-    //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
-    //fmtD.SetKeepTrailingZeroes(true);
-#endif
 
     FormatDictionary fd = FormatDictionary();
     NumericFormatSpec numFmt = NumericFormatSpec("Default");
@@ -425,14 +184,6 @@ TEST(FormattingTest, Simple)
     dnum = -0.003415;
     fract = modf(dnum, &ingr);
 
-#if defined FORMAT_DEBUG_PRINT
-    LOG.infov("fract = %f  ingr = %f  num = %e", fract, ingr, dnum);
-
-    //LOG.infov("Sizeof wchar_T is %d", sizeof(wchar_t));
-    LOG.infov("FormatDescr1 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
-    LOG.infov("UseSeparator = %s", numFmt.IsUse1000Separator() ? "true" : "false");
-    LOG.infov("Expect: 3456.0000000000   actual %s", numFmt.FormatDouble(dval1).c_str());
-#endif
     double valR[4] = { 31415.9265359, 314.159265359, 3.14159265359, 314159.265359 };
     double rnd[9] = { 0.0, 1.0, 0.5, 0.01, 0.001, 10.0, 100.0, 1.0 / 3.0, 0.25 };
     double resultRnd[36] = { 31415.926536, 31416.0, 31416.0, 31415.930, 31415.927, 31420.0, 31400.0, 31416.0, 31416.0, 
@@ -471,8 +222,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-0.2718281828e-2", numFmt.FormatDouble(-0.0027182818284590).c_str());
     numFmt.SetExponentZero(true);
     EXPECT_STREQ ("-0.2718281828e-02", numFmt.FormatDouble(-0.0027182818284590).c_str());
-    //LOG.infov("Expected -0.2718281828e-02  actual %s", numFmt.FormatDouble(-0.0027182818284590).c_str());
-
 
     EXPECT_STREQ ("-0.2718281828", numFmt.FormatDouble(-0.2718281828459045).c_str());
     numFmt.SetPresentationType(PresentationType::ScientificNorm);
@@ -480,10 +229,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-2.7182818285e-01", numFmt.FormatDouble(-0.2718281828459045).c_str());
     EXPECT_STREQ ("-0.2718281828e+04", numFmt.FormatDouble(-2718.2818284590).c_str());
     EXPECT_STREQ ("0.2718281828e+04", numFmt.FormatDouble(2718.2818284590).c_str());
-#if defined FORMAT_DEBUG_PRINT
-    LOG.infov("Expected -0.2718281828e+04  actual %s", numFmt.FormatDouble(-2718.2818284590).c_str());
-    LOG.infov("Expected  0.2718281828e+04  actual %s", numFmt.FormatDouble(2718.2818284590).c_str());
-#endif
+
     EXPECT_STREQ ("01000001", numFmt.ByteToBinaryText('A').c_str());
     EXPECT_STREQ ("01100110", numFmt.ByteToBinaryText('f').c_str());
     numFmt.SetThousandSeparator(' ');
@@ -515,8 +261,6 @@ TEST(FormattingTest, Simple)
         EXPECT_EQ(fp, fp1);
         EXPECT_EQ(fp, fp2);
         }
-
-    //LOG.infov("FormatDescr2 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
 
     const char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);   // just a core scanner
@@ -551,23 +295,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", 2).c_str());
     EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", 2).c_str());
 
-#if defined FORMAT_DEBUG_PRINT
-    size_t ucode = curs.GetNextSymbol();
-    size_t scanned = curs.GetLastScanned();
-    while (ucode != 0)
-        {
-        LOG.infov("Scanned %d chars  unicode %0x   %s", scanned, ucode, curs.IsASCII() ? "ASCII" : "Unicode");
-        ucode = curs.GetNextSymbol();
-        scanned = curs.GetLastScanned();
-        }
-
-    LOG.info("testing Triads");
-
-
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
-#endif
     }
 
 
@@ -635,165 +362,8 @@ TEST(FormattingTest, DictionaryValidation)
     EXPECT_STREQ(FormatConstant::FPN_RightAlign().c_str(), dict.CodeToName(ParameterCode::RightAlign).c_str());
     EXPECT_STREQ(FormatConstant::FPN_MapName().c_str(), dict.CodeToName(ParameterCode::MapName).c_str());
 
-#if defined FORMAT_DEBUG_PRINT
-    std::time_t result = std::time(nullptr);
-    LOG.infov("Formatting test End %s", std::ctime(&result));
-#endif
     }
 
 
 END_BENTLEY_FORMATTING_NAMESPACE
 
-#ifdef DFR_DEBUG
-
-/*
-LOG.infov("source size %d rnd size %d", sizeof(valR) / sizeof(double), sizeof(rnd) / sizeof(double));
-for (int n = 0; n < 4; n++)
-{
-for (int m = 0; m < 9; m++)
-{
-LOG.infov("Value %.6f rounding %.4f rounded %.6f", valR[n], rnd[m], NumericFormat::RoundDouble(valR[n], rnd[m]));
-}
-}
-*/
-
-LOG.infov("Formatting test Start");
-LOG.infov("Testing Double Formats ===================");
-double tnum = 123.0004567;
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-tnum = 0.000012345;
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-numFmt.SetKeepTrailingZeroes(true);
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-tnum = 3456.0;
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-numFmt.SetKeepTrailingZeroes(false);
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-numFmt.SetKeepSingleZero(false);
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-numFmt.SetKeepDecimalPoint(false);
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-numFmt.SetSignOption(ShowSignOption::NegativeParentheses);
-LOG.infov("Tnum %.10f = %s", tnum, numFmt.FormatDouble(tnum).c_str());
-LOG.infov("Tnum %.10f = %s", -tnum, numFmt.FormatDouble(-tnum).c_str());
-double dval2 = -0.0027182818284590;
-int repet = 1000000;
-FormatStopWatch* sw = new FormatStopWatch();
-Utf8String repStr;
-for (int i = 0; i < repet; i++)
-{
-    repStr = numFmt.FormatDouble(-tnum);
-}
-LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
-LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
-LOG.infov("End of Testing Double Formats =================");
-
-sw = new FormatStopWatch();
-char dbuf[128];
-for (int i = 0; i < repet; i++)
-{
-    //repStr = numFmt.FormatDouble(dval2);
-    numFmt.FormatDouble(dval2, dbuf, sizeof(dbuf));
-}
-LOG.infov("Metrics for %s    %s", dbuf, sw->LastIntervalMetrics(repet));
-
-
-sw = new FormatStopWatch();
-for (int i = 0; i < repet; i++)
-{
-    sprintf(dbuf, "sprintf %.10e", dval2);
-    //repStr = dbuf;
-}
-
-LOG.infov("Metrics for %s    %s", dbuf, sw->LastIntervalMetrics(repet));
-
-repet = 100000000; //100 000 000;
-                   /*FormatStopWatch* w1 = new FormatStopWatch();
-                   double x = 2.0;
-                   for (int i = 0; i < repet; i++) { x = sqrt(x);  x = (x + 0.0001)*x;  }*/
-                   //Utf8String strEl = w1->LastIntervalMicro();
-                   //Utf8String strEl = w1->LastIntervalMetrics(repet);
-                   /*const char* t = strEl.c_str();
-                   char tt[256];
-                   strcpy(tt, t);
-                   LOG.infov("Time elapsed %s for %d reps", tt, repet);*/
-                   //LOG.infov(strEl.c_str());
-                   //LOG.infov("x=%.6f",  x, repet);
-
-for (int i = 0; i < 10; i++)
-{
-    LOG.infov("[%0d] %0x    BIN:%s", i, uni[i], numFmt.ByteToBinaryText(uni[i]).c_str());
-}
-
-size_t ucode = curs.GetNextSymbol();
-size_t scanned = curs.GetLastScanned();
-
-while (ucode != 0)
-{
-    LOG.infov("Scanned %d chars  unicode %0x   %s", scanned, ucode, curs.IsASCII() ? "ASCII" : "Unicode");
-    ucode = curs.GetNextSymbol();
-    scanned = curs.GetLastScanned();
-}
-
-repet = 1000000;
-//01234567890123456789012345678901234567890123456789
-uni = u8"ЯABГCDE型号sautéςερτcañónЯABГCDE型号sautéςερτcañón";
-curs = FormattingScannerCursor(uni, -1);
-sw = new FormatStopWatch();
-for (int i = 0; i < repet; i++)
-{
-    curs.Rewind();
-    ucode = curs.GetNextSymbol();
-    while (ucode != 0)
-    {
-        ucode = curs.GetNextSymbol();
-    }
-}
-LOG.infov("Processed string %s", sw->LastIntervalMetrics(repet));
-
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real"));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 2));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 1));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 0));
-
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 7, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 6, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 5, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 4, 5.0));
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 3, 5.0));
-
-//LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::StdFormatDouble(testV, "real", 8, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::StdFormatDouble(5.0*testV, "real", 7, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::StdFormatDouble(3.0*testV, "real", 6, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::StdFormatDouble(7.0*testV, "real", 5, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::StdFormatDouble(9.0*testV, "real", 4, 0.05));
-//LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::StdFormatDouble(2.0*testV, "real", 3, 0.05));
-//LOG.info("With Separator and trailing zeroes");
-//LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05));
-//LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05));
-//LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->FormatDouble(3.0*testV, 6, 0.05));
-//LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->FormatDouble(7.0*testV, 5, 0.05));
-//LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->FormatDouble(9.0*testV, 4, 0.05));
-//LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->FormatDouble(2.0*testV, 3, 0.05));
-//LOG.info("With Separator and trailing zeroes turnes off again");
-//LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05));
-//LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->FormatDouble(-5.0*testV, 7, 0.05));
-//LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->FormatDouble(-3.0*testV, 6, 0.05));
-//LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05));
-//LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05));
-//LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05));
-#endif
