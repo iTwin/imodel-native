@@ -1392,38 +1392,45 @@ TEST(DVec3d, CheckSector)
     Check::True(resultant.IsVectorInCCWXYSector(vecBoundary2, vecBoundary1));
     }
 
+void test_DVec3dRotate90TowardsVector(DVec3dCR target, DVec3dCR vector) 
+    {
+    DVec3d result = vector;
+    double theta = target.AngleTo(vector);
+    for (int i = 0; i < 2; i++)
+        {
+        DVec3d normal0 = DVec3d::FromCrossProduct (target, result);
+        result = DVec3d::FromRotate90Towards(result, target);
+        Check::Near(result.Magnitude(), vector.Magnitude(), "rotate90TowardsTarget maintains magnitude");
+        DVec3d normal1 = DVec3d::FromCrossProduct (target, result);
+
+        normal1.Negate();
+        Check::Parallel (normal0, normal1, "parallel negated normal");
+        }
+    Check::Near (theta, target.AngleTo (result), "maintain the original angle with target");
+    Check::Near(result, vector);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    01/17
 //---------------------------------------------------------------------------------------
 TEST(DVec3d, RotateVectorTowardsTarget)
     {
     DVec3d vector = DVec3d::From(15, 8, 9);
-    DVec3d axis = DVec3d::From(1, 6, 8);
 
-    DVec3d result = DVec3d::FromRotate90Towards(vector, axis);
-    Check::Near(result.Magnitude(), vector.Magnitude());
-    result = DVec3d::FromRotate90Towards(result, axis);
-    Check::Near(result.Magnitude(), vector.Magnitude());
-    result = DVec3d::FromRotate90Towards(result, axis);
-    Check::Near(result.Magnitude(), vector.Magnitude());
-    result = DVec3d::FromRotate90Towards(result, axis);
-    Check::Near(result.Magnitude(), vector.Magnitude());
+    test_DVec3dRotate90TowardsVector(DVec3d::From(1, 6, 8), vector);
+    test_DVec3dRotate90TowardsVector(DVec3d::From(1, 24, 8), vector);
+    test_DVec3dRotate90TowardsVector(DVec3d::From(1, 0, 9.2), vector);
+    test_DVec3dRotate90TowardsVector(DVec3d::From(11.3, 0.7, 12.4), vector);
+    test_DVec3dRotate90TowardsVector(DVec3d::From(23.3, 18.2, 21.004), vector);
 
-    Check::Near(result, vector);
+    //Check::Near(result, vector);
     /*DVec3d target = DVec3d::From(0, 8, 10);
     */
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Farhad.Kabir                    01/17
-//---------------------------------------------------------------------------------------
-TEST(DVec3d, RotateVectorAroundAxis)
+void test_DVec3dRotate90AroundVector(DVec3dCR axis, DVec3dCR vector) 
     {
-    DVec3d vector = DVec3d::From(15, 8, 9);
-    DVec3d axis = DVec3d::From(0, 1, 0);
-    double theta = axis.AngleTo(vector);
     DVec3d result = vector;
-
+    double theta = axis.AngleTo(vector);
     for (int i = 0; i < 4; i++)
         {
         DVec3d normal0 = DVec3d::FromCrossProduct (axis, result);
@@ -1435,4 +1442,20 @@ TEST(DVec3d, RotateVectorAroundAxis)
         }
     Check::Near(result, vector);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
+TEST(DVec3d, RotateVectorAroundAxis)
+    {
+    DVec3d vector = DVec3d::From(15, 8, 9);
+
+    test_DVec3dRotate90AroundVector(DVec3d::From(0, 0, 1), vector);
+    test_DVec3dRotate90AroundVector(DVec3d::From(0, 1, 0), vector);
+    test_DVec3dRotate90AroundVector(DVec3d::From(1, 0, 0), vector);
+    test_DVec3dRotate90AroundVector(DVec3d::From(0.3, 0.2, 1.4), vector);
+    test_DVec3dRotate90AroundVector(DVec3d::From(0.3, 0.2, 1.4), vector);
+    }
+
+
 //END_BENTLEY_NAMESPACE
