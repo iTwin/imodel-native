@@ -398,6 +398,8 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
 
     for (uint32_t i = 0; i < arrayLength; i++)
         {
+        IECSqlBinder& arrayElementBinder = binder.AddArrayElement();
+
         ECValue elementValue;
         //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
         //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
@@ -405,7 +407,8 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
         if (ECObjectsStatus::Success != instance.GetValue(elementValue, arrayPropIndex, i))
             return ERROR;
 
-        IECSqlBinder& arrayElementBinder = binder.AddArrayElement();
+        if (elementValue.IsNull())
+            continue; //bind null in that case
 
         if (!valueBindingInfo.IsStructArray())
             {
@@ -418,6 +421,9 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
             BeAssert(elementValue.IsStruct());
             BeAssert(arrayInfo.IsStructArray());
             IECInstancePtr structInstance = elementValue.GetStruct();
+            if (structInstance == nullptr)
+                continue; //bind null (extra check seems necessary as ECValue::IsNull always returns false for structs
+
             if (SUCCESS != BindStructValue(arrayElementBinder, ECInstanceInfo(*structInstance, false), valueBindingInfo.GetStructArrayElementBindingInfo()))
                 return ERROR;
             }
