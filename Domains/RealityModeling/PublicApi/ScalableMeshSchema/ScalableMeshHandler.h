@@ -84,6 +84,11 @@ public :
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   
     };
 
+enum class ClipMode
+    {
+    Clip = 0,
+    Mask
+    };
 
 //=======================================================================================
 // @bsiclass                                                  
@@ -107,9 +112,19 @@ struct ScalableMeshModel : IMeshSpatialModel
         bset<uint64_t>                          m_activeClips;
 
         BeFileName                              m_path;
-        bool                                    m_isProgressiveDisplayOn;     
-        bool                                    m_isInsertingClips;        
-        
+        bool                                    m_isProgressiveDisplayOn;    
+        bool                                    m_isInsertingClips;
+
+        bvector<ScalableMeshModel*>             m_terrainParts;
+        bmap<uint64_t, bpair<ClipMode, bool>>                m_currentClips;
+
+        bool  m_subModel;
+        ScalableMeshModel* m_parentModel;
+        uint64_t m_associatedRegion;
+
+        bool m_loadedAllModels;
+        BeFileName m_basePath;
+
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
                        
@@ -146,6 +161,10 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual DgnDbStatus _OnDelete() override;
 
         SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
+
+        void RefreshClips();
+
+
     public:
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
@@ -174,6 +193,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
 
+        SCALABLEMESH_SCHEMA_EXPORT void GetActiveClipSetIds(bset<uint64_t>& allShownIds);
+
         SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
         SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
@@ -185,7 +206,15 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
 
         static BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
+        SCALABLEMESH_SCHEMA_EXPORT void ActivateClip(uint64_t id, ClipMode clip = ClipMode::Mask);
 
+        SCALABLEMESH_SCHEMA_EXPORT void DeactivateClip(uint64_t clipId);
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetDefaultClipsActive();
+
+        SCALABLEMESH_SCHEMA_EXPORT void AddTerrainRegion(uint64_t id, ScalableMeshModel* terrainModel, const bvector<DPoint3d> region);
+
+        
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
