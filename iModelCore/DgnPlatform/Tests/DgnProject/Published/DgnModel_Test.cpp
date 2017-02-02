@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnModel_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -552,3 +552,29 @@ TEST_F(DgnModelTests, CodeUniqueness)
     ASSERT_FALSE(ele->Update(&stat).IsValid());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, DefinitionModelCreation)
+    {
+    // TODO how to create DefinitionElement and insert
+    SetupSeedProject();
+    DefinitionPartitionCPtr defp = DefinitionPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement", "This is new DefinitionPartition");
+    ASSERT_TRUE(defp.IsValid());
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "DefinitionPartitionElement"));
+    DefinitionModelPtr defmodel = DefinitionModel::CreateAndInsert(*defp);
+    ASSERT_TRUE(defmodel.IsValid());
+    ASSERT_EQ(defmodel->GetModeledElementId(), defp->GetElementId());
+    DefinitionModelPtr defmodelt = DefinitionModel::CreateAndInsert(*defp);
+    ASSERT_FALSE(defmodelt.IsValid());
+
+    DefinitionPartitionPtr defp_c = DefinitionPartition::Create(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement2", "This is second DefinitionPartition");
+    DefinitionPartitionCPtr defp2 = m_db->Elements().Insert<DefinitionPartition>(*defp_c);
+    ASSERT_TRUE(defp2.IsValid());
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "DefinitionPartitionElement2"));
+    DefinitionModelPtr defmodel2c=DefinitionModel::Create(*defp2);
+    ASSERT_TRUE(defmodel2c.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success ,defmodel2c->Insert());
+    ASSERT_EQ(defmodel2c->GetModeledElementId(), defp2->GetElementId());
+    ASSERT_EQ(defmodel->DictionaryId(), defmodel2c->DictionaryId());
+    }
