@@ -687,6 +687,8 @@ WCharCP Country_Code
     if (Status != nullptr) propertiesJson["Status"] = *Status;
     if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
     if (Country_Code != nullptr) propertiesJson["Country_Code"] = Utf8String(Country_Code);
+    //rbac
+    propertiesJson["IsRbacEnabled"] = true;
     if (propertiesJson.size() == 0)
         {
         api->SetStatusMessage("Invalid parameter passed to function");
