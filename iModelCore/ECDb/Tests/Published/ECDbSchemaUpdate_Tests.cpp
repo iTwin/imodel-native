@@ -2311,7 +2311,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 8));
+    testItems.push_back(std::make_pair("ts_Parent", 4));
     AssertColumnCount(GetECDb(), testItems, "SharedColumnCountForSubClasses");
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -2394,7 +2394,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 7));
+    testItems.push_back(std::make_pair("ts_Sub1", 3));
     AssertColumnCount(GetECDb(), testItems, "SharedColumnCountWithJoinedTable");
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -3081,8 +3081,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3108,7 +3108,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>", true, "Delete derived class should be successfull");
+        "</ECSchema>", true, "Delete derived class should be successful");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), deleteFoo);
     ASSERT_FALSE(asserted);
@@ -3123,8 +3123,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //verify number of columns
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "After deleting subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3179,8 +3179,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify Column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "After deleting all classes and readding base class");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3227,8 +3227,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "After readding subclass");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3283,7 +3283,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "TPH_SharedColumns_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3325,7 +3325,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "TPH_SharedColumns_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3380,8 +3380,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 
     //Verify Column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "TPH_SharedColumns_SharedColumnCount");
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "after deleting base class and readding it");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3429,8 +3429,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 
     //Verify column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "TPH_SharedColumns_SharedColumnCount");
+    testItems.push_back(std::make_pair("ts_Goo", 10));
+    AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3771,8 +3771,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3821,7 +3821,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
 
     //Verify Number of columns
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3860,7 +3860,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //Verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "after deleting subclass Goo");
 
     //Delete Parent ===================================================================================================
     //Deleting Class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported
@@ -3908,7 +3908,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //Verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "after deleting and readding base class Parent");
 
     //Add Goo Again===================================================================================================
     //Added Derived class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses on base class is expected to be supported
@@ -3949,8 +3949,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "after readding subclass Goo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -4006,8 +4006,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -4072,7 +4072,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -4121,7 +4121,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
 
     //Verify Number of columns
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -4160,7 +4160,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     //Verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "after deleting subclass Goo");
 
     //Delete Parent ===================================================================================================
     //Deleting Class with CA  JoinedTablePerDirectSubclass_SharedColumnCount is expected to be supported
@@ -4208,7 +4208,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     //Verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "after deleting and readding base class Parent");
 
     //Add Goo Again===================================================================================================
     //Added Derived class with CA JoinedTablePerDirectSubclass_MinimumSharedColumnCount on base class is expected to be supported
@@ -4249,8 +4249,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "after readding subclass Goo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -4307,8 +4307,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_SharedColumnCount");
+    testItems.push_back(std::make_pair("ts_Goo", 10));
+    AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
