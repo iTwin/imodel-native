@@ -60,29 +60,29 @@ TEST(FormattingTest, FormattingUOM)
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
 
-    LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::StdFormatQuantity(*ang, degUOM, "fract").c_str());
-    LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("_", 4).c_str());
+    //LOG.infov(u8"135.45° = %s  (fract32)", NumericFormatSpec::StdFormatQuantity(*ang, degUOM, "fract").c_str());
+    //LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("_", 4).c_str());
     atr.SetTopUnitLabel(u8"°");
     atr.SetMidUnitLabel(u8"'");
     atr.SetLowUnitLabel(u8"\"");
-    LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("", 4).c_str());
+    //LOG.infov(u8"135.45° = %s", atr.FormatQuantTriad("", 4).c_str());
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
-    LOG.infov(u8"135.45° = %s", NumericFormatSpec::StdFormatQuantityTriad(&atr, "fract32", "").c_str());
+    //LOG.infov(u8"135.45° = %s", NumericFormatSpec::StdFormatQuantityTriad(&atr, "fract32", "").c_str());
 
     QuantityPtr tmp = Quantity::Create(36.6, "CELSIUS");
     UnitCP farhUOM = UnitRegistry::Instance().LookupUnit("FAHRENHEIT");
-    LOG.infov(u8"36.6°C = %s (real2)", NumericFormatSpec::StdFormatQuantity(*tmp, farhUOM, "real2").c_str());
+    //LOG.infov(u8"36.6°C = %s (real2)", NumericFormatSpec::StdFormatQuantity(*tmp, farhUOM, "real2").c_str());
     
-    double cels = -40.0;
+   /* double cels = -40.0;
     while (cels < 250.0)
         {
         LOG.infov(u8"%.2f °C = %s (real4)", cels, NumericFormatSpec::StdFormatPhysValue(cels, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
         cels += 4.0;
-        }
-    LOG.infov(u8"100.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(100.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+        }*/
+    /*LOG.infov(u8"100.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(100.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
     LOG.infov(u8"0.0°C = %s (real4)", NumericFormatSpec::StdFormatPhysValue(0.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-
+*/
     EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue(36.6, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
     EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue(100, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
 
@@ -106,68 +106,6 @@ TEST(FormattingTest, FormattingUOM)
 
 
 
-    /*-40.00 °C = -40.0°F (real4)
-        - 35.00 °C = -31.0°F (real4)
-        - 30.00 °C = -22.0°F (real4)
-        - 25.00 °C = -13.0°F (real4)
-        - 20.00 °C = -4.0°F (real4)
-        - 15.00 °C = 5.0°F (real4)
-        - 10.00 °C = 14.0°F (real4)
-        - 5.00 °C = 23.0°F (real4)
-        0.00 °C = 32.0°F (real4)
-        5.00 °C = 41.0°F (real4)
-        10.00 °C = 50.0°F (real4)
-        15.00 °C = 59.0°F (real4)
-        20.00 °C = 68.0°F (real4)
-        25.00 °C = 77.0°F (real4)
-        30.00 °C = 86.0°F (real4)
-        35.00 °C = 95.0°F (real4)
-        40.00 °C = 104.0°F (real4)
-        45.00 °C = 113.0°F (real4)
-        50.00 °C = 122.0°F (real4)
-        55.00 °C = 131.0°F (real4)
-        60.00 °C = 140.0°F (real4)
-        65.00 °C = 149.0°F (real4)
-        70.00 °C = 158.0°F (real4)
-        75.00 °C = 167.0°F (real4)
-        80.00 °C = 176.0°F (real4)
-        85.00 °C = 185.0°F (real4)
-        90.00 °C = 194.0°F (real4)
-        95.00 °C = 203.0°F (real4)
-        100.00 °C = 212.0°F (real4)
-        105.00 °C = 221.0°F (real4)
-        110.00 °C = 230.0°F (real4)
-        115.00 °C = 239.0°F (real4)
-        120.00 °C = 248.0°F (real4)
-        125.00 °C = 257.0°F (real4)
-        130.00 °C = 266.0°F (real4)
-        135.00 °C = 275.0°F (real4)
-        140.00 °C = 284.0°F (real4)
-        145.00 °C = 293.0°F (real4)
-        150.00 °C = 302.0°F (real4)
-        155.00 °C = 311.0°F (real4)
-        160.00 °C = 320.0°F (real4)
-        165.00 °C = 329.0°F (real4)
-        170.00 °C = 338.0°F (real4)
-        175.00 °C = 347.0°F (real4)
-        180.00 °C = 356.0°F (real4)
-        185.00 °C = 365.0°F (real4)
-        190.00 °C = 374.0°F (real4)
-        195.00 °C = 383.0°F (real4)
-        200.00 °C = 392.0°F (real4)
-        205.00 °C = 401.0°F (real4)
-        210.00 °C = 410.0°F (real4)
-        215.00 °C = 419.0°F (real4)
-        220.00 °C = 428.0°F (real4)
-        225.00 °C = 437.0°F (real4)
-        230.00 °C = 446.0°F (real4)
-        235.00 °C = 455.0°F (real4)
-        240.00 °C = 464.0°F (real4)
-        245.00 °C = 473.0°F (real4)*/
-       
-
-
-    
     /*  reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
     reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);*/
 
