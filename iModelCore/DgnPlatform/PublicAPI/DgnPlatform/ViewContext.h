@@ -48,6 +48,20 @@ struct  ILineStyle
 };
 
 //=======================================================================================
+//! A description of a "hit" generated from picking logic. This is merely a RefCounted string.
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct HitDescription : RefCountedBase
+{
+private:
+    Utf8String m_descr;
+
+public:
+    HitDescription(Utf8StringCR descr) : m_descr(descr) {}
+    Utf8String GetDescription() const {return m_descr;}
+};
+
+//=======================================================================================
 //! Interface to supply additional topology information to describe subsequent geometry.
 //! The current IElemTopology will be cloned and saved as part of the HitDetail
 //! when picking. Can be used to make transient geometry locatable; call _SetElemTopology
@@ -69,8 +83,6 @@ struct IElemTopology : IRefCounted
     //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
     virtual IEditManipulatorPtr _GetTransientManipulator(HitDetailCR) const {return nullptr;}
 };
-
-DEFINE_REF_COUNTED_PTR(IElemTopology)
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext

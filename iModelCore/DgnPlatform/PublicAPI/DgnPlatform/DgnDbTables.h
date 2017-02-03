@@ -59,8 +59,8 @@
 #define BIS_CLASS_IModellableElement        "IModellableElement"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
-#define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
+#define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_LightDefinition           "LightDefinition"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"
@@ -103,13 +103,14 @@
 #define BIS_REL_BaseModelForView2d                  "BaseModelForView2d"
 #define BIS_REL_CategoryOwnsSubCategories           "CategoryOwnsSubCategories"
 #define BIS_REL_ElementDrivesElement                "ElementDrivesElement"
-#define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_ElementGroupsMembers                "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements            "ElementOwnsChildElements"
 #define BIS_REL_ElementOwnsExternalKeys             "ElementOwnsExternalKeys"
-#define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
+#define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
+#define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
+#define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
 #define BIS_REL_ModelContainsElements               "ModelContainsElements"
@@ -674,7 +675,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
-struct DgnUnits 
+struct DgnUnits
 {
     static double const OneMeter() {return 1.0;}
     static double const OneKilometer() {return 1000.0 * OneMeter();}
