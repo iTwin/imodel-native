@@ -1695,7 +1695,8 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
     bool resolveConflicts = ecXmlVersionMajor == 2 ? true : false;
     if (nullptr != conversionSchema)
         {
-        resolveConflicts = conversionSchema->IsDefined("ResolvePropertyNameConflicts");
+        if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
+            resolveConflicts = true;
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
         if (nullptr != conversionClass)
             {
