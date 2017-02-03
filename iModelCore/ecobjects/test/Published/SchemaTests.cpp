@@ -1114,6 +1114,17 @@ TEST_F(SchemaReferenceTest, FindClassInReferenceList)
     EXPECT_TRUE(refList.FindClassP(SchemaNameClassNamePair("RefSchema", "Source")) != NULL);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+
+    ASSERT_NE(ECObjectsStatus::Success, schema->AddReferencedSchema(*schema)) << "Schema was able to reference itself which isn't allowed.";
+    }
+
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
