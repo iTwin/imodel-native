@@ -69,6 +69,7 @@ enum DTMAnalysisType
 enum SMCloudServerType
     {
     LocalDisk = 0,
+    LocalDiskCURL,
     Azure,
     WSG
     };
@@ -188,6 +189,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
+        virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
@@ -411,6 +413,13 @@ struct IScalableMesh abstract:  IRefCounted
                                                                 bool                    openShareable,
                                                                 StatusInt&              status);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                   needsNeighbors,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
+
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable);
@@ -420,7 +429,12 @@ struct IScalableMesh abstract:  IRefCounted
                                                                 bool                    openReadOnly,
                                                                 bool                    openShareable);
 
-
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                bool                  needsNeighbors,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
+                                                                
         BENTLEY_SM_EXPORT  IScalableMeshPtr             GetGroup ();
 
         BENTLEY_SM_EXPORT void                          AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0);
@@ -428,6 +442,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                          RemoveFromGroup(IScalableMeshPtr& sMesh);
 #ifdef SCALABLE_MESH_ATP
+        BENTLEY_SM_EXPORT int                     ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;

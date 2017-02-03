@@ -52,3 +52,23 @@ DataSourceBuffer::Timeout DataSourceServiceAzure::getDefaultTimeout(void)
     return defaultTimeout;
     }
 
+DataSourceServiceAzureCURL::DataSourceServiceAzureCURL(DataSourceManager & manager, const ServiceName & service)
+    : Super(manager, service)
+    {
+    }
+
+DataSourceAccount * DataSourceServiceAzureCURL::createAccount(const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey & key)
+    {
+    DataSourceAccountAzureCURL *    accountAzure;
+                                                            // Create an Azure account with credentials
+    if ((accountAzure = new DataSourceAccountAzureCURL(account, identifier, key)) == nullptr)
+        return accountAzure;
+                                                            // Set up account's default timeout for this type of service
+    accountAzure->setDefaultTimeout(getDefaultTimeout());
+                                                            // Set up account's default segment size for this type of service
+    accountAzure->setDefaultSegmentSize(getDefaultSegmentSize());
+                                                            // Inform Service base classes
+    DataSourceService::createAccount(getDataSourceManager(), *accountAzure);
+                                                            // Add new account to management
+    return Manager<DataSourceAccount,true>::create(account, accountAzure);
+    }

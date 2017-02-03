@@ -22,14 +22,25 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMStoreDataType compositeDataType) 
     {
-    if (compositeDataType == SMStoreDataType::PointAndTriPtIndices)
+    switch (compositeDataType)
         {
-        dataTypes.push_back(SMStoreDataType::Points);
-        dataTypes.push_back(SMStoreDataType::TriPtIndices);
-        return; 
-        }
-
-    assert(!"Unknown composite data type");
+        case SMStoreDataType::Cesium3DTiles:
+            {
+            dataTypes.push_back(SMStoreDataType::UvCoords);
+            dataTypes.push_back(SMStoreDataType::Texture);
+            }
+        case SMStoreDataType::PointAndTriPtIndices:
+            {
+            dataTypes.push_back(SMStoreDataType::Points);
+            dataTypes.push_back(SMStoreDataType::TriPtIndices);
+            break;
+            }
+        default:
+            {
+            assert(!"Unknown composite data type");
+            break;
+            }
+        };
     }
 
 SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType)

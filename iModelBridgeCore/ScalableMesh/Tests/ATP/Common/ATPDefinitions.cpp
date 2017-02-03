@@ -1667,7 +1667,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, mode(L"normal"), result;
+    WString scmFileName, outputDir, strategy(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1679,21 +1679,29 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
-    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(strategy, "strategy") != BEXML_Success)
         {
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
 
+    BeFileName baseFiles(outputDir);
+    baseFiles.PopDir(); // remove //g
+    baseFiles.PopDir(); // remove //headers
+    Utf8String baseFilesDir(baseFiles.GetName());
     double t = clock();
 
     short groupMode = -1;
-    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
-        {
-        groupMode = 0;
-        }
-    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+    if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"normal"))
         {
         groupMode = 1;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"virtual"))
+        {
+        groupMode = 2;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"cesium"))
+        {
+        groupMode = 3;
         }
     else
         {
@@ -1703,7 +1711,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), baseFilesDir, false, false, false, status);
 
     if (scmFile != 0 && status == SUCCESS)
         {
@@ -4645,8 +4653,9 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString smFileName, cloudContainer, cloudName, result;
-    bool uploadToAzure = false;
+    WString smFileName, cloudContainer, cloudName, server_type, result;
+    SMCloudServerType server(SMCloudServerType::LocalDisk);
+
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
@@ -4654,11 +4663,22 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
-    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
         {
-        printf("Saving cloud format to local directory ");
+        printf("Saving cloud format to local directory... \n");
         }
-    if (uploadToAzure)
+    else
+        {
+        if (server_type == L"azure")
+            {
+            server = SMCloudServerType::Azure;
+            }
+        else if (server_type == L"wsg")
+            {
+            server = SMCloudServerType::WSG;
+            }
+        }
+    if (server == SMCloudServerType::Azure || server == SMCloudServerType::WSG)
         {
         if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
             {
@@ -4670,7 +4690,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             printf("ERROR : name attribute not found\r\n");
             return;
             }
-        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
+        printf("Saving to server type (%ls)... container: %ls  name: %ls\n", server_type.c_str(), cloudContainer.c_str(), cloudName.c_str());
         }
     else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
@@ -4679,6 +4699,14 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
+
+    double geometricError = std::numeric_limits<double>::max();
+    bool   changeGeometricError = false;
+    if (pTestNode->GetAttributeDoubleValue(geometricError, "geometric_error") == BEXML_Success)
+        {
+        changeGeometricError = true;
+        }
+
     // remove trailing slashes if any
     size_t position;
     if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
@@ -4689,12 +4717,19 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
 
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
+        if (changeGeometricError)
+            {
+            status = smFile->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
+            }
+        else
+            {
+            status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+            }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
