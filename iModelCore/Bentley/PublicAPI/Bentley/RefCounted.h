@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/RefCounted.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -101,6 +101,9 @@ protected:
     virtual ~RefCounted() {}    // force virtual destructor for subclasses
 
 public:
+    using Base::Base;
+
+    RefCounted(Base&& base) : Base(base), m_refCount(0) {}
     RefCounted() : m_refCount(0) {}
     RefCounted(RefCounted const& rhs) {m_refCount.store(0);} // Initialize my ref count to zero. Adopting rhs' data does not add a *reference* to me.
     RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Copying rhs' data to me does not add a *reference* to me.
