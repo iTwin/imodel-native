@@ -26,22 +26,6 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 TEST(FormattingTest, PhysValues)
     {
-
-    //return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
-    //    
-    //    || std::abs(x - y) < std::numeric_limits<T>::min();
-
-    NumericFormatSpec tstFmt = NumericFormatSpec("Default");
-    double mval = std::numeric_limits<double>::min();
-    double x = 100000.0, y = 100000.0003;
-    double delta = std::numeric_limits<double>::epsilon() * std::abs(x + y) * 1000;
-    LOG.infov("diff %.15f vs delta %.15f ", std::abs(x - y), delta);
-
-    LOG.infov("minV %s ", tstFmt.DoubleToBinaryText(mval, true).c_str());
-    LOG.infov("MillminV %s ", tstFmt.DoubleToBinaryText(1.0e32*mval, true).c_str());
-    LOG.infov("min %.15f ", 1.0e32*mval);
-
-
     UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
     UnitRegistry::Instance().AddSynonym("YRD", "YARD");
     UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
@@ -113,7 +97,8 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "KM/HR", "MPH", " mph", nullptr).c_str()); 
 
     EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
-
+    EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
+    
     }
 
 
