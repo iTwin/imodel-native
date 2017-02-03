@@ -5179,7 +5179,6 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-// static
 ZipErrors LzmaUtility::CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progressTracker, uint32_t dictionarySize, bool supportRandomAccess)
     {
     if (!BeFileName::DoesPathExist(sourceFile.GetName()))
@@ -5206,7 +5205,6 @@ ZipErrors LzmaUtility::CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-// static
 ZipErrors LzmaUtility::DecompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress)
     {
     BeFileLzmaInStream  inStream;
@@ -5235,7 +5233,6 @@ ZipErrors LzmaUtility::DecompressDb(BeFileNameCR targetFile, BeFileNameCR source
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-// static
 ZipErrors LzmaUtility::DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize)
     {
     MemoryLzmaInStream  inStream(inputBuffer, inputSize);
