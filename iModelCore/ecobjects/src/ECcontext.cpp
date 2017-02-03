@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -50,6 +50,11 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
+    // Temporary(?) fix to also look in the ECDb delivery directory
+    BeFileName ecdbPath = rootDir;
+    ecdbPath.AppendToPath(L"ECDb");
+    ecdbPath.AppendSeparator();
+    searchPaths.push_back(ecdbPath.GetName());
     return true;
     }
 
