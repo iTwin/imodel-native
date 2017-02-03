@@ -106,24 +106,6 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
 static Utf8CP const  STANDARDVALUES_SCHEMANAME = "EditorCustomAttributes";
 
-//---------------------------------------------------------------------------------------
-// Implements IECCustomAttributeConverter to convert UnitSpecification Custom Attribute to KindOfQuantity
-// @bsistruct                                                    Robert.Schili   03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-struct UnitSpecificationConverter : IECCustomAttributeConverter
-    {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
-    };
-
-//---------------------------------------------------------------------------------------
-// Implements IECCustomAttributeConverter to convert UnitSpecifications Custom Attribute to KindOfQuantity
-// @bsistruct                                                    Robert.Schili   03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-struct UnitSpecificationsConverter : IECCustomAttributeConverter
-    {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
-    };
-
 static Utf8CP const  UNIT_ATTRIBUTES                = "Unit_Attributes";
 static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
 static Utf8CP const  DIMENSION_NAME                 = "DimensionName";
@@ -151,44 +133,6 @@ struct UnitSpecification
         
         return false;
         }
-    };
-
-struct CustomAttributeReplacement
-    {
-    Utf8String oldSchemaName;
-    Utf8String oldCustomAttributeName;
-
-    Utf8String newSchemaName;
-    Utf8String newCustomAttributeName;
-
-    CustomAttributeReplacement(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName)
-        : oldSchemaName(oSchema), oldCustomAttributeName(oName), newSchemaName(nSchema), newCustomAttributeName(nName)
-        { }
-    CustomAttributeReplacement()
-        {
-        }
-    };
-
-//---------------------------------------------------------------------------------------
-// Implements IECCustomAttributeConverter to convert the schema references of certain Custom Attributes.
-// Which attributes will be handled depends which CustomATtributeEntries will returned from the
-// StandardCustomAttributeReferencesConverter::GetCustomAttributesToConvert method.
-// @bsistruct                                                     Stefan.Apfel   04/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
-    {
-    private:
-        static bool s_isInitialized;
-        static bmap<Utf8String, CustomAttributeReplacement> s_entries;
-
-        static ECObjectsStatus AddMapping(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName);
-
-    public:
-        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
-        static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
-        ECObjectsStatus ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR oldCustomAttribute, IECInstanceR newCustomAttribute);
-        ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
-        Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };
 
 //---------------------------------------------------------------------------------------
