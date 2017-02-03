@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/app/handlerAppManaged.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma unmanaged
@@ -49,6 +49,8 @@ END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 #using <ustation.dll>
 #using <bentley.terrainmodelNET.Element.dll>
 #using <bentley.microstation.templates.support.dll>
+#using <bentley.RuleDrivenPresentationECPlugin.PresentationRules.dll>
+#using <bentley.RuleDrivenPresentationECPlugin.dll>
 
 namespace   SWFD = System::Windows::Forms::Design;
 namespace   SCM = System::ComponentModel;
@@ -493,6 +495,41 @@ ref class TMDgnElementColorStructTypeConverter : Bentley::MstnPlatformNET::Templ
 
 
 }}
+
+/*---------------------------------------------------------------------------------------
+* @bsiclass                        Andy.Farr                             07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+[ECSystem::Extensibility::ECExtensionAttribute()]
+public ref class TMPlatformResourceRuleSetLocater : RuleDrivenPresentationECPlugin::ResourceRuleSetLocater
+    {
+    public:
+        TMPlatformResourceRuleSetLocater()
+            {
+            }
+
+        /*---------------------------------------------------------------------------------------
+        * @bsimethod                        Andy.Farr                             07/13
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        property System::Reflection::Assembly^ Assembly
+            {
+            virtual System::Reflection::Assembly^ get() override
+                {
+                return this->GetType()->Assembly;
+                }
+            }
+
+        /*---------------------------------------------------------------------------------------
+        * @bsimethod                        Andy.Farr                             07/13
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        property int Priority
+            {
+            virtual int get() override
+                {
+                return 9999;
+                }
+            }
+    };
+
 
 using namespace Bentley::TerrainModelNET;
 

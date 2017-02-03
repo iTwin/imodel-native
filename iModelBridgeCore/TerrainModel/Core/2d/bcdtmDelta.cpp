@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmDelta.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1518,10 +1518,11 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,
 */
 {
  long    Tin1Voids,Tin2Voids,ofs,npoly=0,tag  ;
- long    *TagList=NULL,NumTags ;
+ long    NumTags ;
  long    Utag1,Utag2,Utag3,Utag4;
  DTM_POLYGON_LIST  *pl ;
- TAGOBJ  *IntTag=NULL ;
+ TAGOBJ  *IntTag=nullptr ;
+ TagValue*TagList = nullptr;
 /*
 ** Check For Polygons In Polygon Object
 */
@@ -1568,7 +1569,7 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,
       {
        if( *TagList % 10 == 2 )
          { 
-          tag = *TagList ;
+          tag = (long)*TagList ;
           bcdtmPolygon_getTagListFromTagObject(IntTag,pl->s1,&TagList,&NumTags,&Utag1,&Utag2,&Utag3,&Utag4) ;
           if( NumTags == 1 && *TagList % 10 == 1 && tag / 10 == *TagList / 10 ) pl->userTag = 2 ;
          }

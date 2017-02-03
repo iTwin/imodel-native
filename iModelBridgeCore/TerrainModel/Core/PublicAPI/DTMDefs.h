@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMDefs.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -303,6 +303,7 @@ struct DTM_POLYGON_OBJ
 ** Typedef Structure For Tag Header List
 */
 struct TAGLIST {long FTAG,LTAG,UTAG[4];} ;
+typedef int64_t TagValue;
 /*
 **  Typedef Structure For Tag Objects
 */
@@ -311,7 +312,7 @@ struct TAGOBJ
  long     NTAG,MTAG,SMTAG,IMTAG  ;
  long     NVAL,MVAL,SMVAL,IMVAL  ;
  TAGLIST  *PTAG ;
- long     *PVAL ;
+ TagValue  *PVAL ;
 };
 /*-------------------------------------------------------------------+
 |                                                                    |

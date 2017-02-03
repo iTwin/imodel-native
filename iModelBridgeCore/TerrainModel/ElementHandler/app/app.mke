@@ -2,7 +2,7 @@
 #
 #     $Source: ElementHandler/app/app.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 baseDir         = $(_MakeFilePath)
@@ -118,6 +118,11 @@ $(o)handlerAppManaged$(oext)              : $(basedir)handlerAppManaged.cpp $(de
 #----------------------------------------------------------------------
 $(o)handlerApp$(oext)                   : $(baseDir)handlerApp.cpp             $(depends)
 
+# include ruleset resource file
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+ASSEMBLY_RES_TO_ADD_FILENAME  = DgnGlobalSelection.PresentationRuleSet.xml
+
+%include assemblyResourceAppend.mki
 
 appObjects = \
     $(o)handlerApp$(oext) \
