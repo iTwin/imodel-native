@@ -14,7 +14,7 @@
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/Units.h>
-#include <limits>
+
 //#define FORMAT_DEBUG_PRINT
 
 #undef LOG
@@ -98,7 +98,10 @@ TEST(FormattingTest, PhysValues)
 
     EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
     EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
-    
+    EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4", 543.67, "GALLON", "LITRE", "L", " ").c_str());
+
+    EXPECT_STREQ ("327.7853 ACRE", NumericFormatSpec::StdFormatPhysValue("real4", 132.65, "HECTARE", "ACRE", nullptr, " ").c_str());
+
     }
 
 
