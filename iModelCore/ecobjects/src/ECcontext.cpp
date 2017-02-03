@@ -50,11 +50,6 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
-    // Temporary(?) fix to also look in the ECDb delivery directory
-    BeFileName ecdbPath = rootDir;
-    ecdbPath.AppendToPath(L"ECDb");
-    ecdbPath.AppendSeparator();
-    searchPaths.push_back(ecdbPath.GetName());
     return true;
     }
 
