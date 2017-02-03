@@ -606,6 +606,7 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     WString schemaPath = BeFileName::GetDirectoryName(ecSchemaPath);
     schemaContext->AddSchemaPath(schemaPath.c_str());
 
