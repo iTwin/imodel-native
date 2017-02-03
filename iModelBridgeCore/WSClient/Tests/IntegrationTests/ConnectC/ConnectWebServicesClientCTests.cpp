@@ -427,13 +427,16 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
     }
 
 
-#ifdef WIP_MERGE_Vincas
+//#ifdef WIP_MERGE_Vincas
 
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
+    //NOTE: If Fiddler is running, and has been running for previous tests, this test will probably fail.
+    //      To successfully run this test, restart Fiddler AND make sure to Require Proxy Authentication!
+    //This test is meant to ensure that a proxy, requiring authentication, will only successfully complete if authentication is correct.
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+    (   m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str() ,
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -468,9 +471,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
-    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
-    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
-    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -479,6 +484,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
+    
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
                                             UltimateRefId.c_str(),
                                             Name.c_str(),
@@ -511,24 +517,29 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     EXPECT_TRUE (status == SUCCESS);
 
     BeGuid newGuid(true);
-    WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
+    WString newGuidStr;
+    BeStringUtilities::Utf8ToWChar(newGuidStr, newGuid.ToString().c_str());
+    WPrintfString NewName(L"CWSCCTest%s", newGuidStr.c_str());
+    WString dataLocationGuid = L"99999999-9999-9999-9999-999999999999";
+    WString countryCode = L"US";
     status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
+                                                      UltimateRefId.c_str(),
                                                       NewName.c_str(),
                                                       Number.c_str(),
-                                                      nullptr,
-                                                      nullptr,
                                                       Industry.c_str(),
                                                       AssetType.c_str (),
                                                       nullptr,
+                                                      nullptr,                                                      
                                                       nullptr,
                                                       nullptr,
                                                       nullptr,
                                                       nullptr,
                                                       nullptr,
                                                       nullptr,
-                                                      nullptr,
-                                                      nullptr);
+                                                      dataLocationGuid.c_str(),
+                                                      countryCode.c_str()
+                                                       );
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject_V4 (api, wInstanceId.c_str ());
@@ -541,8 +552,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -577,9 +588,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
     BeGuid guid(true);
-    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
-    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
-    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
     WString OrgId = L"1001389117";
     WString Industry = L"8";
     WString AssetType = L"11";
@@ -622,12 +635,14 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     EXPECT_TRUE (status == SUCCESS);
 
     BeGuid newGuid(true);
-    WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
+    WString newGuidStr;
+    BeStringUtilities::Utf8ToWChar(newGuidStr, newGuid.ToString().c_str());
+    WPrintfString NewName(L"CWSCCTest%s", newGuidStr.c_str());
     status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
+                                                      UltimateRefId.c_str(),
                                                       NewName.c_str(),
                                                       Number.c_str(),
-                                                      nullptr,
                                                       Industry.c_str(),
                                                       AssetType.c_str (),
                                                       nullptr,
@@ -687,7 +702,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
     //auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
     //ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
-    WString wInstanceId = L"1001389117";
+    WString wInstanceId = L"d3d7c3a8-10f1-4078-b686-cb24f4dca997"; //BentleyCONNECTQA3
     CWSCCDATABUFHANDLE organization;
     CallStatus status = ConnectWebServicesClientC_ReadOrganization_V2 (api, wInstanceId.c_str (), &organization);
     ASSERT_TRUE (status == SUCCESS);
@@ -702,8 +717,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -738,9 +753,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
-    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
-    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
-    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -798,8 +815,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -834,9 +851,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
-    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
-    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
-    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());    
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -913,8 +932,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_pmUsername.c_str (),
-        m_pmPassword.c_str (),
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -949,9 +968,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
-    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
-    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
-    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString guidstr;
+    BeStringUtilities::Utf8ToWChar(guidstr, guid.ToString().c_str());    
+    WPrintfString UltimateRefId(L"%s", guidstr.c_str());
+    WPrintfString Name(L"CWSCCTest%s", guidstr.c_str());
+    WPrintfString Number(L"CWSCCTest%s", guidstr.c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -1012,6 +1033,6 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     ASSERT_TRUE (status == SUCCESS);
     }
 
-#endif
+//#endif
 
     
