@@ -42,7 +42,7 @@ TEST(DRange2d, IntersectionOfRanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    01/17
 //---------------------------------------------------------------------------------------
-TEST(DRange2d, BoxFromIntersection) 
+TEST(DRange2d, BoxFromIntersection)
     {
     DRange2d range1 = DRange2d::From(DPoint2d::From(1, 1), DPoint2d::From(7, 7));
     DRange2d range2 = DRange2d::From(DPoint2d::From(4.5, 6), DPoint2d::From(7, 7));
@@ -53,4 +53,30 @@ TEST(DRange2d, BoxFromIntersection)
     boxIntersection.IntersectionOf(range1, range2);
     Check::Near(boxIntersection.Area(), range2.Area());
     Check::Near(boxIntersection, range2);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
+TEST(DRange2d, FractionalPointMapping)
+    {
+    DRange2d rangeFractional = DRange2d::From(DPoint2d::From(2, 3), DPoint2d::From(5, 5));
+    DPoint2d fractions = DPoint2d::From(0.2, 0.3);
+    DPoint2d xy;
+    Check::True(rangeFractional.TryFractionsToRangePoint(fractions, xy));
+    DPoint2d fractions2;
+    Check::True(rangeFractional.TryRangePointToFractions(xy, fractions2));
+    Check::Near(fractions, fractions2);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
+TEST(DRange2d, SquaredIntersectionofRanges) 
+    {
+    DRange2d range1 = DRange2d::From(DPoint2d::From(2, 3), DPoint2d::From(5, 5));
+    DRange2d range2 = DRange2d::From(DPoint2d::From(3, 4), DPoint2d::From(6, 5));
+    DRange2d rangeExp;
+    double received = range1.IntersectionExtentSquared(range2);
+    rangeExp.IntersectionOf(range1, range2);
+    double expected = rangeExp.ExtentSquared();
+    Check::Near(expected, received);
     }

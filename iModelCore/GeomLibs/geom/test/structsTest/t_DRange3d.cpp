@@ -246,3 +246,59 @@ TEST(DRange3d,Diagonal)
     Check::Near (diagonalA.z, range0.ZLength ());
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, BoxVolumes)
+    {
+    DRange3d range0 = DRange3d::From(DPoint3d::From(1, 4.5, 2), DPoint3d::From(6, 3, 7));
+    DRange3d range1 = DRange3d::From(DPoint3d::From(2, 4, 2.1), DPoint3d::From(6, 3, 7));
+    DRange3d intersectionRange = DRange3d::FromIntersection(range0, range1);
+    Check::True(range1.IsContained(range0));
+    Check::True(intersectionRange.Volume() <= range0.Volume());
+    Check::True(intersectionRange.Volume() <= range1.Volume());
+    range1.Extend(DPoint3d::From(2, 5, 2.1));
+    Check::False(range1.IsContained(range0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, StrictlyContained)
+    {
+    DRange3d range0 = DRange3d::From(DPoint3d::From(1, 6.5, 2), DPoint3d::From(6, 3, 7));
+    DRange3d range1 = DRange3d::From(DPoint3d::From(2, 4, 2), DPoint3d::From(5.5, 6, 7));
+    Check::True(range1.IsStrictlyContainedXY(range0));
+    range1.Extend(DPoint3d::From(6, 6.5, 7));
+    Check::False(range1.IsStrictlyContainedXY(range0));
+    }
+
+void squareDistanceOfRanges(DRange3d range0, DRange3d range1) 
+    {
+    double squaredDist = range0.DistanceSquaredTo(range1);
+    if (range0.IntersectsWith(range1))
+        {
+        printf("ranges overlap\n");
+        Check::True(squaredDist == 0);
+        }
+    else
+        {
+        printf("ranges do not overlap\n");
+        Check::True(squaredDist > 0);
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, SquaredDistance)
+    {
+    squareDistanceOfRanges(DRange3d::From(DPoint3d::From(1, 6.5, 2), DPoint3d::From(6, 3, 7)),
+                           DRange3d::From(DPoint3d::From(2, 4, 2), DPoint3d::From(5.5, 6, 7)));
+    squareDistanceOfRanges(DRange3d::From(DPoint3d::From(1, 2, 2), DPoint3d::From(5, 6, 7)),
+                           DRange3d::From(DPoint3d::From(1.1, 6, 2.01), DPoint3d::From(9, 6.1, 7.2)));
+    squareDistanceOfRanges(DRange3d::From(DPoint3d::From(1, 1, 1), DPoint3d::From(2, 2, 2)),
+                           DRange3d::From(DPoint3d::From(4, 4, 4), DPoint3d::From(5, 5, 5)));
+    squareDistanceOfRanges(DRange3d::From(DPoint3d::From(0.1, 6.5, 2), DPoint3d::From(6, 3, 7)),
+                           DRange3d::From(DPoint3d::From(2, 4, 2.3), DPoint3d::From(5.5, 6, 7.1)));
+    }
