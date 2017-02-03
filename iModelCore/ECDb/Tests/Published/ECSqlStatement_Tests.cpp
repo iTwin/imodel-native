@@ -3924,7 +3924,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                             Muhammad Hassan                         05/15
+* @bsimethod                             Muhammad Hassan                         05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     {
@@ -4527,6 +4527,49 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
         ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop2_Overflow", key.GetECInstanceId(), true)) << "IGeometry property mapped to overflow table";
         }
     }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
+    {
+    auto assertECSql = [] (Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::Success, DbResult dbResult = DbResult::BE_SQLITE_DONE)
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(sqlStatus, statement.Prepare(ecdb, ecsql));
+        ASSERT_EQ(dbResult, statement.Step());
+        };
+
+    SetupECDb("ecsqlonabstractclasswithorderbyclause.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                       "<ECSchema schemaName='TestSchema' alias='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                       "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                                                       "        <ECProperty propertyName='P0' typeName='String' />"
+                                                                       "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                       "    </ECEntityClass>"
+                                                                       "    <ECEntityClass typeName='GeometricElement' >"
+                                                                       "         <BaseClass>Element</BaseClass>"
+                                                                       "    </ECEntityClass>"
+                                                                       "</ECSchema>", true));
+
+    assertECSql("INSERT INTO TestSchema.GeometricElement(P0, P1) VALUES ('World ', 2)", GetECDb());
+    assertECSql("INSERT INTO TestSchema.GeometricElement(P0, P1) VALUES ('Hello ', 1)", GetECDb());
+    assertECSql("INSERT INTO TestSchema.GeometricElement(P0, P1) VALUES ('!!!', 3)", GetECDb());
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P0 FROM TestSchema.Element ORDER BY P1"));
+    //printf(statement.GetNativeSql());
+    int rowCount = 0;
+    Utf8CP expectedValues = "Hello World !!!";
+    Utf8String actualValues;
+    while (statement.Step() != BE_SQLITE_DONE)
+        {
+        actualValues.append(statement.GetValueText(0));
+        rowCount++;
+        }
+    ASSERT_STREQ(expectedValues, actualValues.c_str()) << statement.GetECSql();
+    ASSERT_EQ(3, rowCount);
+    statement.Finalize();
     }
 
 END_ECDBUNITTESTS_NAMESPACE
