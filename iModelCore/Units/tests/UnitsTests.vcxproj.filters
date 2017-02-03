@@ -39,6 +39,9 @@
     <ClCompile Include="NonPublished\UnitsTests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\formatting_test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\QuantityTestFixture.h">
@@ -50,5 +53,7 @@
     <ClInclude Include="NonPublished\UnitsTests.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
+    <ClInclude Include="Formatting\FormattingDefinitions.h" />
+    <ClInclude Include="Formatting\formatting.h" />
   </ItemGroup>
 </Project>
