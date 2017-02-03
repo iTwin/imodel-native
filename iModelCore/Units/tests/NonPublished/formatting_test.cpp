@@ -34,8 +34,8 @@ TEST(FormattingTest, PhysValues)
     NumericFormatSpec tstFmt = NumericFormatSpec("Default");
     double mval = std::numeric_limits<double>::min();
     double x = 100000.0, y = 100000.0003;
-    double delta = std::numeric_limits<double>::epsilon() * std::abs(x + y) * 1000;
-    LOG.infov("diff %.15f vs delta %.15f ", std::abs(x - y), delta);
+    double delta = std::numeric_limits<double>::epsilon() * fabs(x + y) * 1000;
+    LOG.infov("diff %.15f vs delta %.15f ", fabs(x - y), delta);
 
     LOG.infov("minV %s ", tstFmt.DoubleToBinaryText(mval, true).c_str());
     LOG.infov("MillminV %s ", tstFmt.DoubleToBinaryText(1.0e32*mval, true).c_str());
