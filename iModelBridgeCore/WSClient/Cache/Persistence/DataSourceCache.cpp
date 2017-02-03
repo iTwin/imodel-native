@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/DataSourceCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -353,7 +353,7 @@ BentleyStatus DataSourceCache::Reset()
     ignoreClasses.insert(m_db.Schemas().GetECClass("Bentley_Standard_Classes", "InstanceCount"));
 
     bset<ECSchemaCP> ignoreSchemas;
-    ignoreSchemas.insert(m_db.Schemas().GetECSchema("ECDb_System"));
+    ignoreSchemas.insert(m_db.Schemas().GetECSchema("ECDbSystem"));
     ignoreSchemas.insert(m_db.Schemas().GetECSchema("MetaSchema"));
 
     for (ECSchemaCP ecSchema : ecSchemas)
