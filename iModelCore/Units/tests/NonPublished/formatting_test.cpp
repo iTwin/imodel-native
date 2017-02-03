@@ -60,8 +60,11 @@ TEST(FormattingTest, PhysValues)
     atr.SetTopUnitLabel(u8"°");
     atr.SetMidUnitLabel(u8"'");
     atr.SetLowUnitLabel(u8"\"");
+
+    // Arc Angles
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
+    // Temperature
     EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
     EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue("real4", 100, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
 
@@ -92,16 +95,25 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ (u8"524.07°R", NumericFormatSpec::StdFormatPhysValue("real4", 18.0,  "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
     EXPECT_STREQ (u8"557.604°R",NumericFormatSpec::StdFormatPhysValue("real4", 36.63, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
 
+    // Velocity
     EXPECT_STREQ ("10.0 m/s", NumericFormatSpec::StdFormatPhysValue("real4", 36.0, "KM/HR", "M/SEC", " m/s", nullptr).c_str());
     EXPECT_STREQ ("2905.76 cm/s", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "MPH", "CM/SEC", " cm/s", nullptr).c_str());
     EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "KM/HR", "MPH", " mph", nullptr).c_str()); 
 
+    // Volumes
     EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
     EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
     EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4", 543.67, "GALLON", "LITRE", "L", " ").c_str());
 
+    // Areas
     EXPECT_STREQ ("327.7853 ACRE", NumericFormatSpec::StdFormatPhysValue("real4", 132.65, "HECTARE", "ACRE", nullptr, " ").c_str());
 
+    // Pressure
+    EXPECT_STREQ ("99.974 KP", NumericFormatSpec::StdFormatPhysValue("real4", 14.5, "PSI", "KILOPASCAL", "KP", " ").c_str());
+    EXPECT_STREQ ("6701.3526 PSI", NumericFormatSpec::StdFormatPhysValue("real4", 456.0, "ATM", "PSI", nullptr, " ").c_str());
+
+    // mass
+    EXPECT_STREQ ("115.3485 KG", NumericFormatSpec::StdFormatPhysValue("real4", 254.3, "LBM", "KG", nullptr, " ").c_str());
     }
 
 
