@@ -5,10 +5,6 @@
 #Navigation properties are being reworked and only support the long primitive type at the moment
 NavigationECPropertyTests.InstanceWithNavProp_String
 
-# Not yet implemented
-RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition
-RelationshipClassTests.CyclicRelationships
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -22,18 +18,6 @@ UnitsTest.TestConvertingUnitSpecifications
 
 UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
-
-# DgnDb0601, x64, NDEBUG, PRG
-# <build output no longer provides failure details, and cannot access log files in PRG>
-AdhocPropertyTest.AddPropertyWithOptionalMetadata
-AdhocPropertyTest.VerifyReadOnlyAdhocProperty
-AdhocPropertyTest.GetAdhocPropertyUsingECValueAccessor
-AdhocPropertyTest.InvalidCases
-AdhocPropertyTest.SwapAdhocProperties
-
-#SchemaConverter doesn't support string enums correctly
-# TFS#615758
-StandardValueToEnumConversionTest.CAConversionTest
 
 #Base64 conversion appears to have been busted for a long time
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty

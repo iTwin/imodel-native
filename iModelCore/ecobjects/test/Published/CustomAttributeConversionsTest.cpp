@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeConversionsTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -11,6 +11,12 @@
 using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+
+struct StandardCustomAttributeConversionTests : ECTestFixture 
+    {
+    Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1753,16 +1759,97 @@ TEST_F(StandardValueToEnumConversionTest, PrimitiveArraySupport)
     CheckTypeName("TestClass_testArray", *m_schema, "testProp", {"TestClass2"});
     }
 
-Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String name)
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, UseBasePropertyStandardValueIfSubset)
     {
-    ECPropertyP propertyP = instancePtr->GetClass().GetPropertyP(name);
-    
-    ECValue value;
-    instancePtr->GetValue(value, propertyP->GetName().c_str());
-    EXPECT_EQ(true, value.IsString()) << "Property: " << propertyP->GetName() << " is supposed to be a string";
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='test' version='1.0' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECClass typeName='TestClass' isDomainClass='True'>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>2</Value>"
+        "                           <DisplayString>value2</DisplayString>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='DerivedClassWithSubset' isDomainClass='True'>"
+        "       <BaseClass>TestClass</BaseClass>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                   <MustBeFromList>False</MustBeFromList>"
+        "                   <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='DerivedClassWithExact' isDomainClass='True'>"
+        "       <BaseClass>TestClass</BaseClass>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                   <MustBeFromList>False</MustBeFromList>"
+        "                   <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>2</Value>"
+        "                           <DisplayString>value2</DisplayString>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
 
-    if (value.IsNull())
-        return Utf8String();
+    ReadSchema(schemaXML);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+
+    ASSERT_EQ(1, m_schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+
+    CheckTypeName("TestClass_testProp", *m_schema, "testProp", {"TestClass", "DerivedClassWithSubset", "DerivedClassWithExact"});
+    }
+
+Utf8String StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name)
+    {
+    ECValue value;
+    instancePtr->GetValue(value, name);
+    EXPECT_FALSE(value.IsNull()) << "The value of the property, '" << name << "', is null when it shouldn't be.";
+    EXPECT_TRUE(value.IsString()) << "Property: " << name << " is supposed to be a string";
 
     return value.GetUtf8CP();
     }
@@ -1770,28 +1857,19 @@ Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String n
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Andreas.Kurka                 04 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardValueToEnumConversionTest, CAConversionTest)
+TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTimeStampPropertyConversion)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    bool result = ECSchemaConverter::Convert(*schema);
-    ASSERT_EQ(true, result);
+    ASSERT_EQ(true, ECSchemaConverter::Convert(*schema)) << "Failed to convert " << schema->GetFullSchemaName().c_str() << ".";
 
-    // Test that the CoreCustomAttributesSchema is referenced
-    bool found = false;
-    for (auto it : schema->GetReferencedSchemas())
-        {
-        Utf8String name = it.second->GetName();
-        if (BeStringUtilities::Stricmp("CoreCustomAttributes", name.c_str()) == 0)
-            {
-            found = true;
-            }
-        }
-    EXPECT_TRUE(found) << "Converted schema is missing schema reference to CoreCustomAttributes";
-
+    SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
+    ASSERT_TRUE(schema->GetReferencedSchemas().end() != schema->GetReferencedSchemas().Find(coreCAKey, SchemaMatchType::Exact))
+                    << "Converted schema is missing schema reference to CoreCustomAttributes";
+    
     ECClassP classAP = schema->GetClassP("TestClassA");
     EXPECT_TRUE(classAP != nullptr) << "Could not find TestClassA in schema";
     ECClassP classBP = schema->GetClassP("TestClassB");
@@ -1807,26 +1885,23 @@ TEST_F(StandardValueToEnumConversionTest, CAConversionTest)
 
     IECInstancePtr dateTimeInfoAPtr = lastModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoAPtr != nullptr) << "Could not find DateTimeInfo on LastMod property of TestClassA";
+    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << lastModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_STREQ("Utc", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassA does not have expected value.";
+    EXPECT_STREQ("DateTime", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassA does not have expected value.";
 
     IECInstancePtr dateTimeInfoBPtr = nextModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoBPtr != nullptr) << "Could not find DateTimeInfo on NextMod property of TestClassB";
-
-    Utf8String lastModDateTimeKind = GetDateTimeInfoValueAsString(dateTimeInfoAPtr, "DateTimeKind");
-    EXPECT_EQ("2", lastModDateTimeKind) << "DateTimeKind of TestClassA has wrong value";
-    Utf8String  lastModDateTimeComponent= GetDateTimeInfoValueAsString(dateTimeInfoAPtr, "DateTimeComponent");
-    EXPECT_EQ("0", lastModDateTimeComponent) << "DateTimeComponent of TextClassA has wrong value";
-
-    Utf8String nextModDateTimeKind = GetDateTimeInfoValueAsString(dateTimeInfoBPtr, "DateTimeKind" );
-    EXPECT_EQ("0", nextModDateTimeKind) << "DateTimeKind of TestClassB has wrong value";
-    Utf8String  nextModDateTimeComponent = GetDateTimeInfoValueAsString(dateTimeInfoBPtr, "DateTimeComponent");
-    EXPECT_EQ("1", nextModDateTimeComponent) << "DateTimeComponent of TextClassB has wrong value";
+    EXPECT_EQ(coreCAKey, dateTimeInfoBPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << nextModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_STREQ("Unspecified", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassB does not have expected value.";
+    EXPECT_STREQ("Date", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassB does not have expected value.";
 
     IECInstancePtr timeStampInstancePtr = classCP->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
     EXPECT_TRUE(timeStampInstancePtr != nullptr) << "Could not get ClassHasCurrentTimeStampProperty CA from TestClassC";
-
-    // For debugging enable that so see the created schema file
-    //SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"CAConversionTestSchema.01.00.ecschema-out.xml").c_str());
-    //EXPECT_EQ(SchemaWriteStatus::Success, status2);
+    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, ClassHasCurrentTimeStampProperty, on class " << classCP->GetFullName() << " was not converted to use the new CoreCA custom attribute";
+    ECValue checkValue;
+    timeStampInstancePtr->GetValue(checkValue, "PropertyName");
+    EXPECT_TRUE(checkValue.IsString()) << "The value in the property PropertyName of CustomAttribute ClassHasCurrentTimeStampProperty is not of the expected type";
+    EXPECT_STREQ("TimeStampProp", checkValue.GetUtf8CP()) << "The value of CustomAttribute ClassHasCurrentTimeStampProperty.PropertyName is not as expected.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

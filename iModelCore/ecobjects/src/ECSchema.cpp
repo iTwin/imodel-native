@@ -834,7 +834,7 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
         this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
 
     auto& appliesToClassSchema = appliesTo.GetSchema();
-    if (!ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
+    if ((GetSchemaKey() != appliesToClassSchema.GetSchemaKey()) && !ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
         {
         status = this->AddReferencedSchema(const_cast<ECSchemaR>(appliesToClassSchema));
         if (ECObjectsStatus::Success != status)
@@ -1373,6 +1373,10 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
     {
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
+
+    if (GetSchemaKey() == refSchemaKey)
+        return ECObjectsStatus::SchemaHasReferenceCycle;
+
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
         return ECObjectsStatus::NamedItemAlreadyExists;
 

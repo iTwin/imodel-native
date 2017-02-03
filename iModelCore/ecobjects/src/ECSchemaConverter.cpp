@@ -2,39 +2,11 @@
 |
 |     $Source: src/ECSchemaConverter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-//-------------------------------------------------------------------------------------
-// Data of standard values and the property that it is attached to
-// @bsistruct                                                    Basanta.Kharel   12/2015
-//---------------+---------------+---------------+---------------+---------------+------
-struct StandardValueInfo
-    {
-    friend struct StandardValuesConverter;
-private: 
-    bmap<int, Utf8String> m_valuesMap;
-    bool m_mustBeFromList;
-
-public:
-    bool Equals(const StandardValueInfo& sd) const;
-    bool Contains(const StandardValueInfo& sd) const;
-
-    StandardValueInfo(ECEnumerationP& ecEnum);
-    StandardValueInfo() {};
-
-    //--------------------------------------------------------------------------------------
-    // Extracts Standard Values Instance data from the instance
-    //! @param[in]  instance    The instance of StandValues customattribute
-    //! @param[out] sdInfo      Extracted data 
-    //---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo);
-
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
@@ -57,7 +29,7 @@ bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer                  09/2016
+// @bsimethod                                    Caleb.Shafer                   09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
     {
@@ -81,7 +53,16 @@ StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
     }
 
 //---------------------------------------------------------------------------------------
-// Extracts Standard Values Instance data from the instance
+// @bsimethod                                    Caleb.Shafer                   02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+StandardValueInfo::StandardValueInfo(ECEnumerationCR ecEnum)
+    {
+    m_mustBeFromList = ecEnum.GetIsStrict();
+    for (auto const& enumerator : ecEnum.GetEnumerators())
+        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo)
@@ -124,86 +105,6 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
 
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
 static Utf8CP const  STANDARDVALUES_SCHEMANAME = "EditorCustomAttributes";
-
-//---------------------------------------------------------------------------------------
-// Implements IECCustomAttributeConverter to convert Standard Values Custom Attribute to ECEnumeration
-// @bsistruct                                                    Basanta.Kharel   12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-struct StandardValuesConverter : IECCustomAttributeConverter
-    {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
-    
-private:
-
-    //---------------------------------------------------------------------------------------
-    // And checks if the standard values conflict inbetween inherited properties
-    // Also returns list of classNames that have this property
-    // @bsimethod                                    Basanta.Kharel                  01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus CheckForConflict(ECPropertyP standardValueProperty, ECSchemaR schema,StandardValueInfo& sdInfo, Utf8String& classes);
-
-    //---------------------------------------------------------------------------------------
-    // Sets strictness of the enum. 
-    // If the rootClass that has this property has no CA, it will be false
-    // Otherwise it will be the same as what the mustbefromlist value it has. default is true
-    // @bsimethod                                    Basanta.Kharel                  01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static void SetStrictness(ECPropertyP standardValueProperty, ECSchemaR schema,StandardValueInfo& sdInfo);
-
-    //---------------------------------------------------------------------------------------
-    // Gives name to enumeration, based on className and propertyName 
-    // Usually is (baseClassName+propertyName)
-    // returns rootClass i.e. baseclass
-    // @bsimethod                                    Basanta.Kharel                  01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
-
-    //---------------------------------------------------------------------------------------
-    // Append number to string : returns name_number
-    // @bsimethod                                    Basanta.Kharel                  01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static Utf8String AppendNumberToString(Utf8CP name, int number);
-
-    //---------------------------------------------------------------------------------------
-    // Trys to merge the sdInfo into the enumeration
-    // @bsimethod                                    Caleb.Shafer                    09/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
-
-    //---------------------------------------------------------------------------------------
-    // Finds enumeration in schema that matches sdInfo
-    // @bsimethod                                    Basanta.Kharel                  12/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
-
-    //---------------------------------------------------------------------------------------
-    // Creates enumeration in schema : given enumName, sdInfo
-    // @bsimethod                                    Basanta.Kharel                  12/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    static ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
-
-    //! Converts primitive property type to enum type
-    //! @param[in] primitiveEcProperty      The primitive property whose type is being changed
-    //! @param[in] ecSchema                 The schema the ecProperty belongs to
-    //! @param[in] enumeration              The enumeration to be set to the primitiveEcProperty
-    static ECObjectsStatus ConvertToEnumType(ECPropertyP& primitiveEcProperty, ECSchemaR ecSchema, ECEnumerationP& enumeration);
-
-    //! Converts all derived class's properties to the given enum
-    //! @param[in] rootClass                The class started with for conversion
-    //! @param[in] currentClass             The class currently being converted
-    //! @param[in] propName                 The name of the property to be converted
-    //! @param[in] enumeration              The enumeration to be converted to.
-    //! @param[in] sdInfo                   The standard value info of the enumeration
-    static ECObjectsStatus ConvertToEnum (ECClassP rootClass, ECClassP currentClass, Utf8CP propName, ECEnumerationP enumeration, StandardValueInfo sdInfo);
-
-    //! Tries to merge the current property's StandardValue info with the existing enumeration/sdInfo
-    //! @param[in] ecProperty               The property with the standard value to merge
-    //! @param[in] sdInfo                   The standard value info to of the enumeration to merge with
-    //! @param[in] enumeration              The enumeration to merge with
-    static ECObjectsStatus Merge (ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
-        
-    };
-
 
 //---------------------------------------------------------------------------------------
 // Implements IECCustomAttributeConverter to convert UnitSpecification Custom Attribute to KindOfQuantity
@@ -287,7 +188,6 @@ struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
         static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
         ECObjectsStatus ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR oldCustomAttribute, IECInstanceR newCustomAttribute);
         ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
-        int FindEnumerationValue(ECEnumerationCR enumeration, Utf8CP displayName);
         Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };
 
@@ -363,50 +263,6 @@ ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR customAttributeKey,
     return ECObjectsStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR schemaName, Utf8StringCR customAttributeName)
-    {
-    auto propertyProcessor = [&customAttributeName, &schemaName](ECPropertyP localProp)
-        {
-        IECInstancePtr currentInstance = localProp->GetCustomAttributeLocal(schemaName, customAttributeName);
-        if (currentInstance.IsValid())
-            {
-            bool removed = localProp->RemoveCustomAttribute(schemaName, customAttributeName);
-            removed |= localProp->RemoveSupplementedCustomAttribute(schemaName, customAttributeName);
-            if (!removed)
-                {
-                LOG.errorv("Error removing %s CustomAttribute for %s.%s", customAttributeName.c_str(), localProp->GetClass().GetFullName(), localProp->GetName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            LOG.debugv("Removed %s CustomAttribute for %s.%s", customAttributeName.c_str(), localProp->GetClass().GetFullName(), localProp->GetName().c_str());
-            }
-        return ECObjectsStatus::Success;
-        };
-    
-    return TraverseProperty(ecProperty, ecSchema, propertyProcessor);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::TraverseProperty(ECPropertyP ecProperty, ECSchemaR ecSchema,ECPropertyProcessor propertyProcessor)
-    {
-    Utf8String propertyName = ecProperty->GetName();
-    auto classProcessor = [&propertyProcessor, &propertyName](ECClassP ecClass)
-        {
-        ECPropertyP prop = ecClass->GetPropertyP(propertyName, false);
-        if (nullptr != prop)
-            return propertyProcessor(prop);
-
-        return ECObjectsStatus::Success;
-        };
-    ECClassP classP = &const_cast<ECClassR>(ecProperty->GetClass());
-    return TraverseClass(classP, classProcessor);
-    }
-
 void GatherRootBaseClasses(ECClassCP ecClass, Utf8CP propertyName, bvector<ECClassP>& rootBaseClasses)
     {
     ECPropertyP ecProperty = ecClass->GetPropertyP(propertyName, false);
@@ -423,35 +279,6 @@ void GatherRootBaseClasses(ECClassCP ecClass, Utf8CP propertyName, bvector<ECCla
 void ECSchemaConverter::FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses)
     {
     GatherRootBaseClasses(&ecProperty->GetClass(), ecProperty->GetName().c_str(), rootClasses);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::TraverseClass(ECClassP ecClass, ECClassProcessor classProcessor)
-    {
-    bmap<Utf8CP, ECClassCP> visited;
-    bvector<ECClassP> classes;
-    classes.push_back(ecClass);
-    ECObjectsStatus status = ECObjectsStatus::Success;
-
-    while (0 != classes.size())
-        {
-        ECClassP nodeClass = classes.back();
-        classes.pop_back();
-        visited.Insert(nodeClass->GetFullName(), nodeClass);
-        status = classProcessor(nodeClass);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        for (auto const& i : GetDerivedAndBaseClasses(*nodeClass))
-            {
-            auto iter = visited.Insert(i->GetFullName(), i);
-            bool notVisited = iter.second;
-            if (notVisited)
-                classes.push_back(i);
-            }
-        }
-    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -503,16 +330,7 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
             else    
                 LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
-        
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertSchemaLevel(ECSchemaR schema)
-    {
-    ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -553,12 +371,9 @@ void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     }
 
 //---------------------------------------------------------------------------------------
-// @remarks      sorts classes first by name(ascending) then by hierarchy (descending) in order
-//               if reverse is set it will reverse after sorting name and hierarchy in order
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-template <typename T>
-void ECSchemaConverter::SortClassesByNameAndHierarchy(bvector<T>& ecClasses, bool reverse)
+void ECSchemaConverter::SortClassesByNameAndHierarchy(bvector<ECClassP>& ecClasses, bool reverse)
     {
     SortClassesByName(ecClasses, true);
     SortClassesByHierarchy(ecClasses);
@@ -567,8 +382,7 @@ void ECSchemaConverter::SortClassesByNameAndHierarchy(bvector<T>& ecClasses, boo
         std::reverse(ecClasses.begin(), ecClasses.end());
     }
 
-template <typename T>
-void AddClassesRootsFirst(bvector<T>& classList, const bvector<T>& classesToAdd, bmap<Utf8CP, T>& visitedClasses)
+void AddClassesRootsFirst(bvector<ECClassP>& classList, const bvector<ECClassP>& classesToAdd, bmap<Utf8CP, ECClassP>& visitedClasses)
     {
     for (auto const& ecClass : classesToAdd)
         {
@@ -593,34 +407,29 @@ void AddClassesRootsFirst(bvector<T>& classList, const bvector<T>& classesToAdd,
     }
 
 //---------------------------------------------------------------------------------------
-// @remarks      sorts classes based on inheritance where base class comes before child class
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-template <typename T>
-void ECSchemaConverter::SortClassesByHierarchy(bvector<T>& ecClasses)
+void ECSchemaConverter::SortClassesByHierarchy(bvector<ECClassP>& ecClasses)
     {
-    bvector<T> classes;
-    bmap<Utf8CP, T> visited;
+    bvector<ECClassP> classes;
+    bmap<Utf8CP, ECClassP> visited;
     AddClassesRootsFirst(classes, ecClasses, visited);
     
     ecClasses.assign(classes.begin(), classes.end());
     }
 
 //---------------------------------------------------------------------------------------
-// @remarks      sorts the classes by className (ignoring case), default order is ascending
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-template <typename T>
-void ECSchemaConverter::SortClassesByName(bvector<T>& ecClasses, bool ascending)
+void ECSchemaConverter::SortClassesByName(bvector<ECClassP>& ecClasses, bool ascending)
     {
-    auto classComparer = [](T ecClass1, T ecClass2)
+    auto classComparer = [](ECClassP ecClass1, ECClassP ecClass2)
         {
         return BeStringUtilities::StricmpAscii(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
         };
     std::sort(ecClasses.begin(), ecClasses.end(), classComparer);
     if (!ascending)
         std::reverse(ecClasses.begin(), ecClasses.end());
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -671,12 +480,12 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
     // They are the same, no reason to try and merge
     if (sdInfo->Equals(localInfo))
         return ECObjectsStatus::Success;
-    
-    // Check if there are any conflicts and also build up a list of non-conflicting items
-    bmap<int, Utf8String> nonConflictingValues;
+
     if (sdInfo->m_mustBeFromList || localInfo.m_mustBeFromList)
         return ECObjectsStatus::DataTypeMismatch;
 
+    // Check if there are any conflicts and also build up a list of non-conflicting items
+    bmap<int, Utf8String> nonConflictingValues;
     for (auto const& pair : localInfo.m_valuesMap)
         {
         auto it = sdInfo->m_valuesMap.find(pair.first);
@@ -719,9 +528,35 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
 
         if (ECObjectsStatus::Success != (status = Merge(prop, &sdInfo, enumeration)))
             {
-            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s has a StandardValues attribute that does not match the base property from class %s.",
-                       currentClass->GetFullName(), propName, rootClass->GetFullName());
-            return status;
+            // If the current class is derived from the root class check if the derived standard value is a subset of the base.
+            if (ECClass::ClassesAreEqualByName(rootClass, currentClass) || !currentClass->Is(rootClass))
+                {
+                LOG.errorv("Failed to convert to enumeration because the derived property %s.%s has a StandardValues attribute that does not match the base property from class %s.",
+                           currentClass->GetFullName(), propName, rootClass->GetFullName());
+                return status;
+                }
+                
+            IECInstancePtr currentInstance = prop->GetCustomAttributeLocal(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            if (!currentInstance.IsValid())
+                return ECObjectsStatus::Success;
+
+            StandardValueInfo localInfo;
+            StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo);
+            // Check if the localInfo is just a subset before testing if it should be strict.
+            // This is to get around the issue where a derived property has less standard values, but all of the ones it has are the same as the base class.
+            // Therefore, we just set the derived property to the base property's Enumeration.
+            if (!sdInfo.Contains(localInfo))
+                {
+                LOG.errorv("Failed to convert to enumeration because the derived property %s.%s has a StandardValues attribute that does not match the base property from class %s.",
+                            currentClass->GetFullName(), propName, rootClass->GetFullName());
+                return status;
+                }
+            else
+                {
+                LOG.warningv("The property %s.%s has a StandardValues attribute that is a subset of its base property %s.%s. Using the enumeration, %s, even though it isn't an exact match.",
+                             currentClass->GetFullName(), propName, rootClass->GetFullName(), propName, enumeration->GetFullName().c_str());
+                status = ECObjectsStatus::Success;
+                }
             }
         }
 
@@ -742,11 +577,11 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
             status = (nullptr != primitive) ? primitive->SetType(*enumeration) : primitiveArray->SetType(*enumeration);
         else if (primitiveEnumeration != enumeration)
             {
-            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s",
-                       currentClass->GetFullName(), propName, primitiveEnumeration->GetFullName().c_str(), enumeration->GetFullName().c_str(), rootClass->GetFullName());
+            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s.%s",
+                       currentClass->GetFullName(), propName, primitiveEnumeration->GetFullName().c_str(), enumeration->GetFullName().c_str(), rootClass->GetFullName(), propName);
             return ECObjectsStatus::DataTypeMismatch;
             }
-
+        
         prop->RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         prop->RemoveSupplementedCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         }
@@ -774,6 +609,25 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
         {
         LOG.errorv("Unable to extract '%s' Standard Value. Status %d", prop->GetName().c_str(), status);
         return status;
+        }
+
+    // Probably is not the best way to do this, but need to check if the property has been previously converted.
+    // Run into the issue where a supplemental schema wasn't previously present when the property was converted if the property was not
+    // in the primary schema initially
+    PrimitiveArrayECPropertyP primArrProp = prop->GetAsPrimitiveArrayPropertyP();
+    PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
+    ECEnumerationCP existingEnum = (nullptr == primArrProp) ? primProp->GetEnumeration() : primArrProp->GetEnumeration();
+    if (nullptr != existingEnum)
+        {
+        StandardValueInfo existingEnumSdInfo(*existingEnum);
+        if ((sdInfo.m_mustBeFromList && sdInfo.Equals(existingEnumSdInfo))
+            || (existingEnumSdInfo.Contains(sdInfo)))
+            {
+            // Already successfully converted
+            prop->RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            prop->RemoveSupplementedCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            return ECObjectsStatus::Success; 
+            }
         }
     
     // We traverse from most base to most derived class so if we come across a property with a StandardValues CA AND a base prop we must 
@@ -851,13 +705,11 @@ Utf8String StandardValuesConverter::AppendNumberToString(Utf8CP name, int number
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo)
     {
-    // Check for conflicts within the
     for (auto const& pair : sdInfo.m_valuesMap)
         {
         ECEnumeratorP enumerator = enumeration->FindEnumerator(pair.first);
         if (enumerator == nullptr)
             {
-            // create the value in the enumeration
             enumeration->CreateEnumerator(enumerator, pair.first);
             enumerator->SetDisplayLabel(pair.second.c_str());
             }
@@ -873,19 +725,15 @@ ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumer
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo)
     {
-    auto enumSize = sdInfo.m_valuesMap.size();
     for (auto ecEnum : schema.GetEnumerations())
         {
         if ((PrimitiveType::PRIMITIVETYPE_Integer != ecEnum->GetType())
             || (sdInfo.m_mustBeFromList != ecEnum->GetIsStrict()))
             continue;
 
-        if (sdInfo.m_mustBeFromList && (enumSize != ecEnum->GetEnumeratorCount()))
-            continue;
-
         StandardValueInfo enumSdInfo(ecEnum);
         if ((sdInfo.m_mustBeFromList && sdInfo.Equals(enumSdInfo))
-            || (!sdInfo.m_mustBeFromList && enumSdInfo.Contains(sdInfo)))
+            || (enumSdInfo.Contains(sdInfo)))
             {
             enumeration = ecEnum;
             return ECObjectsStatus::Success;
@@ -921,30 +769,6 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
         enumerator->SetDisplayLabel(pair.second.c_str());
         }
     return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardValuesConverter::ConvertToEnumType(ECPropertyP& primitiveEcProperty, ECSchemaR ecSchema, ECEnumerationP& enumeration)
-    {
-    auto propertyProcessor = [&enumeration](ECPropertyP localProp)
-        {
-        if (!localProp->GetIsPrimitive())
-            return ECObjectsStatus::DataTypeMismatch;
-
-        ECObjectsStatus status = ECObjectsStatus::Success;
-        PrimitiveECPropertyP primitive = localProp->GetAsPrimitivePropertyP();
-
-        if (nullptr == primitive->GetEnumeration())
-            status = primitive->SetType(*enumeration);
-        else if (primitive->GetEnumeration() != enumeration)
-            return ECObjectsStatus::DataTypeMismatch;
-
-        return status;
-        };
-
-    return ECSchemaConverter::TraverseProperty(primitiveEcProperty, ecSchema, propertyProcessor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1064,14 +888,9 @@ bool StandardCustomAttributeReferencesConverter::s_isInitialized = false;
 ECSchemaReadContextPtr schemaContext = NULL;
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert
-(
-ECSchemaR schema,
-IECCustomAttributeContainerR container,
-IECInstanceR sourceCustomAttribute
-)
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR sourceCustomAttribute)
     {
     auto sourceCustomAttributeClass = &sourceCustomAttribute.GetClass();
     auto sourceCustomAttributeKey = ECSchemaConverter::GetQualifiedClassName(sourceCustomAttributeClass->GetSchema().GetName(), sourceCustomAttributeClass->GetName());
@@ -1119,10 +938,9 @@ IECInstanceR sourceCustomAttribute
     return ECObjectsStatus::Success;
     }
 
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping()
     {
     if (!s_isInitialized)
@@ -1140,15 +958,9 @@ bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeRefer
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::AddMapping
-(
-Utf8CP oSchema, 
-Utf8CP oName, 
-Utf8CP nSchema, 
-Utf8CP nName
-)
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardCustomAttributeReferencesConverter::AddMapping(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName)
     {
     Utf8String qualifiedName = ECSchemaConverter::GetQualifiedClassName(oSchema, oName);
     s_entries[qualifiedName] = CustomAttributeReplacement(oSchema, oName, nSchema, nName);
@@ -1157,12 +969,9 @@ Utf8CP nName
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-Utf8String StandardCustomAttributeReferencesConverter::GetContainerName
-(
-IECCustomAttributeContainerR container
-) const
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StandardCustomAttributeReferencesConverter::GetContainerName(IECCustomAttributeContainerR container) const
     {
     ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
     if (containerAsSchema == nullptr)
@@ -1180,14 +989,9 @@ IECCustomAttributeContainerR container
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue
-(
-Utf8StringCR propertyName,
-IECInstanceR sourceCustomAttribute,
-IECInstanceR targetCustomAttribute
-)
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR sourceCustomAttribute, IECInstanceR targetCustomAttribute)
     {
     ECObjectsStatus status;
 
@@ -1225,52 +1029,39 @@ IECInstanceR targetCustomAttribute
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnum
-(
-Utf8StringCR propertyName,
-ECEnumerationCR enumeration,
-IECInstanceR targetCustomAttribute,
-ECValueR targetValue,
-ECValueR sourceValue
-)
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue)
     {
-    auto enumerationValue = FindEnumerationValue(enumeration, sourceValue.GetUtf8CP());
-    if (enumerationValue == -1)
-        {
-        LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", sourceValue.GetUtf8CP(), enumeration.GetName().c_str());
-        return ECObjectsStatus::ParseError;
-        }
+    ECEnumeratorCP targetEnumerator = nullptr;
+    if (sourceValue.IsString())
+        targetEnumerator = enumeration.FindEnumerator(sourceValue.GetUtf8CP());
+    else if (sourceValue.IsInteger())
+        targetEnumerator = enumeration.FindEnumerator(sourceValue.GetInteger());
 
-    if (!targetValue.IsInteger() || targetValue.SetInteger(enumerationValue) != BentleyStatus::SUCCESS)
+    if (nullptr == targetEnumerator)
+        return ECObjectsStatus::EnumeratorNotFound;
+
+    BentleyStatus beStatus = BentleyStatus::ERROR;
+    if (targetValue.IsInteger() && targetEnumerator->IsInteger())
+        beStatus = targetValue.SetInteger(targetEnumerator->GetInteger());
+    else if (targetValue.IsString() && targetEnumerator->IsString())
+        beStatus = targetValue.SetUtf8CP(targetEnumerator->GetString().c_str());
+
+    if (BentleyStatus::SUCCESS != beStatus)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %s", propertyName.c_str(), targetEnumerator->GetDisplayLabel().c_str());
         return ECObjectsStatus::Error;
         }
 
-    if (targetCustomAttribute.SetValue(propertyName.c_str(), targetValue) != ECObjectsStatus::Success)
+    ECObjectsStatus status = targetCustomAttribute.SetValue(propertyName.c_str(), targetValue);
+    if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %s", propertyName.c_str(), targetEnumerator->GetDisplayLabel().c_str());
         return ECObjectsStatus::Error;
         }
 
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     
-//---------------------------------------------------------------------------------
-int StandardCustomAttributeReferencesConverter::FindEnumerationValue(ECEnumerationCR enumeration, Utf8CP displayName)
-    {
-    for (auto enumerator : enumeration.GetEnumerators())
-        {
-        if (enumerator->GetDisplayLabel() == displayName)
-            {
-            return enumerator->GetInteger();
-            }
-        }
-    return -1;
+    return status;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchemaConverter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,7 +35,7 @@ struct ECSchemaConverter
     {
 /*__PUBLISH_SECTION_END__*/
 private:
-    ECSchemaConverter() { }
+    ECSchemaConverter() {}
     ECSchemaConverter(const ECSchemaConverter & rhs) = delete;
     ECSchemaConverter & operator= (const ECSchemaConverter & rhs) = delete;
 
@@ -44,7 +44,7 @@ private:
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
-    void ConvertSchemaLevel(ECSchemaR schema);
+    void ConvertSchemaLevel(ECSchemaR schema) {ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());}
     void ConvertClassLevel(bvector<ECClassP>& classes);
     void ConvertPropertyLevel(bvector<ECClassP>& classes);
     IECCustomAttributeConverterP GetConverter(Utf8StringCR converterName);
@@ -54,22 +54,19 @@ private:
     //               if reverse is set it will reverse after sorting name and hierarchy in order
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //---------------+---------------+---------------+---------------+---------------+------
-    template<typename T>
-    static void SortClassesByNameAndHierarchy(bvector<T>& ecClasses, bool reverse = false);
+    static void SortClassesByNameAndHierarchy(bvector<ECClassP>& ecClasses, bool reverse = false);
 
     //---------------------------------------------------------------------------------------
     // @remarks      sorts the classes by className (ignoring case), default order is ascending
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //+---------------+---------------+---------------+---------------+---------------+------/
-    template<typename T>
-    static void SortClassesByName(bvector<T>& ecClasses, bool ascending = true);
+    static void SortClassesByName(bvector<ECClassP>& ecClasses, bool ascending = true);
 
     //---------------------------------------------------------------------------------
     // @remarks      sorts classes based on inheritance where base class comes before child class
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //---------------+---------------+---------------+---------------+---------------+------/
-    template<typename T>
-    static void SortClassesByHierarchy(bvector<T>& ecClasses);
+    static void SortClassesByHierarchy(bvector<ECClassP>& ecClasses);
 
     static bvector<ECClassP> GetDerivedAndBaseClasses(ECClassCR ecClass);
 
@@ -92,37 +89,12 @@ public:
     //! @remarks   Overwrites converter if key already exists. 
     ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
-    //! Removes a custom attribute from the ecProperty including its base and child ecProperties
-    //! @param[in] ecProperty               The ecProperty whose custom attribute is being removed
-    //! @param[in] ecSchema                 The schema the ecProperty belongs to
-    //! @param[in] schemaName               The schema name the custom attribute is defined in
-    //! @param[in] customAttributeName      The name of the cutomAtrribute being removed
-    //! @remarks   Traverse the ecProperty hierarchy to remove customattribute from all of them
-    ECOBJECTS_EXPORT static ECObjectsStatus RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR schemaName, Utf8StringCR customAttributeName);
-
     //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
     //! @param[in] schema           The schema whose classes are to be sorted
     //! @returns bvector<ECClassP>  the hierarchically sorted list in descending order
     //! @remarks   First sorts the classes by className in ascending order(ignoring case)
     //!            EC 2.0 does this by default but doesnot ignore cases. 3.0 should fix that
     ECOBJECTS_EXPORT static bvector<ECClassP> GetHierarchicallySortedClasses(ECSchemaR schema);
-
-    //! Traveses ecClass up and down the class hierarchy and calls classProcessor 
-    //! @param[in] ecClass           The ecClass to traverse
-    //! @param[in] classProcessor    The function that is called on each traversed ecClass 
-    //! @returns ECObjectsStatus     If any call to classProcessor is not success returns immediately 
-    //!                              with that status. Otherwise returns success after traversing all
-    //! @remarks It also calls the classProcessor for the ecClass passed in
-    ECOBJECTS_EXPORT static ECObjectsStatus TraverseClass(ECClassP ecClass, ECClassProcessor classProcessor);
-
-    //! Traveses property up and down the class hierarchy and calls propertyProcessor 
-    //! @param[in] ecProperty           The ecProperty to traverse
-    //! @param[in] ecSchema             The schema the ecProperty belongs to
-    //! @param[in] propertyProcessor    The function that is called on each traversed ecProperty 
-    //! @returns ECObjectsStatus        If any call to propertyProcessor is not success returns immediately 
-    //!                                 with that status. Otherwise returns success after traversing all
-    //! @remarks It also calls the propertyProcessor for the ecProperty passed in
-    ECOBJECTS_EXPORT static ECObjectsStatus TraverseProperty(ECPropertyP ecProperty, ECSchemaR ecSchema, ECPropertyProcessor propertyProcessor);
 
     //! Finds the root base classes for the property
     //! @param[in] ecProperty The ecProperty 
@@ -133,6 +105,78 @@ public:
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
+
+/*__PUBLISH_SECTION_END__*/
+
+//-------------------------------------------------------------------------------------
+// Data of standard values and the property that it is attached to
+// @bsistruct                                                    Basanta.Kharel   12/2015
+//---------------+---------------+---------------+---------------+---------------+------
+struct StandardValueInfo
+    {
+    friend struct StandardValuesConverter;
+private: 
+    bmap<int, Utf8String> m_valuesMap;
+    bool m_mustBeFromList;
+
+public:
+    bool Equals(const StandardValueInfo& sd) const;
+    bool Contains(const StandardValueInfo& sd) const;
+
+    StandardValueInfo(ECEnumerationP& ecEnum);
+    StandardValueInfo(ECEnumerationCR ecEnum);
+    StandardValueInfo() {};
+
+    //--------------------------------------------------------------------------------------
+    // Extracts Standard Values Instance data from the instance
+    //! @param[in]  instance    The instance of StandValues customattribute
+    //! @param[out] sdInfo      Extracted data 
+    //---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo);
+    };
+
+//---------------------------------------------------------------------------------------
+// Implements IECCustomAttributeConverter to convert Standard Values Custom Attribute to ECEnumeration
+// @bsistruct                                                    Basanta.Kharel   12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+struct StandardValuesConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    
+private:
+    //! Gives name to enumeration, based on className and propertyName 
+    //! Usually is (baseClassName+propertyName)
+    //! returns rootClass i.e. baseclass
+    static Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
+
+    //! Append number to string : returns name_number
+    static Utf8String AppendNumberToString(Utf8CP name, int number);
+
+    //! Attempts to merge the StandardValueInfo into the ECEnumeration
+    static ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+
+    //! Finds enumeration in schema that matches sdInfo
+    static ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+
+    //! Creates enumeration in schema : given enumName, sdInfo
+    static ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
+
+    //! Converts all derived class's properties to the given enum
+    //! @param[in] rootClass                The class started with for conversion
+    //! @param[in] currentClass             The class currently being converted
+    //! @param[in] propName                 The name of the property to be converted
+    //! @param[in] enumeration              The enumeration to be converted to.
+    //! @param[in] sdInfo                   The standard value info of the enumeration
+    static ECObjectsStatus ConvertToEnum (ECClassP rootClass, ECClassP currentClass, Utf8CP propName, ECEnumerationP enumeration, StandardValueInfo sdInfo);
+
+    //! Tries to merge the current property's StandardValue info with the existing enumeration/sdInfo
+    //! @param[in] ecProperty               The property with the standard value to merge
+    //! @param[in] sdInfo                   The standard value info to of the enumeration to merge with
+    //! @param[in] enumeration              The enumeration to merge with
+    static ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
+    };
+
+/*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

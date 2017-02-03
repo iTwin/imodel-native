@@ -257,9 +257,11 @@ struct RelationshipClassTests : ECTestFixture
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "    </ECClass>"
             "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
+            "        <BaseClass>RegularClass</BaseClass>"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "    </ECClass>"
             "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
+            "        <BaseClass>RegularClass</BaseClass>"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "        <ECProperty propertyName=\"Property2\" typeName=\"int\" />"
             "    </ECClass>"
@@ -296,6 +298,7 @@ struct RelationshipClassTests : ECTestFixture
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXMLString(), *schemaContext))
                << "Failed to read the test schema from xml string";
         ASSERT_TRUE(m_schema.IsValid()) << "Test Schema is not valid";
+        ASSERT_TRUE(m_schema->IsECVersion(ECVersion::Latest)) << "Test Schema is not the latest ECVersion, " << ECSchema::GetECVersionString(ECVersion::Latest) << ".";
         }
     };
 
@@ -476,7 +479,8 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_NE(SchemaReadStatus::Success, status) << "Schema must have well-defined constraints for RelationshipClass";
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Schema could not be deserialized.";
+    ASSERT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "Schema must have well-defined constraints for RelationshipClass";
 
     CreateTestSchema();
 
@@ -504,87 +508,11 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
                  << "'RealtioshipConstraint classes may only be Domain or Abstract";
         }
 
+    // Need to set the abstract constraint to regular class before it can be set. Otherwise, the target constraint is too narrow
+    ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().SetAbstractConstraint(*regularClass))
+           <<  "Cannot set the abstract constraint of the Target-Constraint on " << relClass1->GetFullName() << ".";
     ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().AddClass(*regularClass))
            << "Regular class cannot be added to RelationshipConstraint";
-    ASSERT_NE(ECObjectsStatus::Success, relClass1->GetTarget().AddClass(*relClass2))
-           << "RelationshipClass may not be added to RelationshipConstraint";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that cyclic holding and embedding relationships are not allowed
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, CyclicRelationships)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"Property2\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipA\" displayLabel=\"Source contains Target\" strength=\"embedding\">"
-        "        <Source cardinality=\"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipB\" displayLabel=\"Target contains Source\" strength=\"embedding\">"
-        "        <Source cardinality = \"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipC\" displayLabel=\"Target contains Source\" strength=\"holding\">"
-        "        <Source cardinality = \"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "    <ECRelationshipClass typeName=\"RelationshipD\" displayLabel=\"Target contains Source\" strength=\"holding\">"
-        "        <Source cardinality = \"(1,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\" />"
-        "        </Source>"
-        "        <Target cardinality=\"(1,1)\" roleLabel=\"is contained by\" polymorphic=\"True\">"
-        "            <Class class=\"TargetClass\" />"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_NE(SchemaReadStatus::Success, status) << "Schema may not have cyclic holding and embedding relationships";
-
-    CreateTestSchema();
-
-    ECRelationshipClassP relClass1 = m_schema->GetClassP("RelationshipA")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass1) << "Could not find 'RelationshipA' in the test schema";
-    ECRelationshipClassP relClass2 = m_schema->GetClassP("RelationshipB")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass2) << "Could not find 'RelationshipB' in the test schema";
-
-    ASSERT_FALSE(StrengthType::Embedding == relClass1->GetStrength() && StrengthType::Embedding == relClass2->GetStrength())
-              << "Cyclic relationship encountered in the test schema";
-    
-    ASSERT_FALSE(StrengthType::Holding == relClass1->GetStrength() && StrengthType::Holding == relClass2->GetStrength())
-              << "Cyclic relationship encountered in the test schema";
-    
-    ASSERT_NE(ECObjectsStatus::Success, relClass2->SetStrength(StrengthType::Embedding))
-           << "Cyclic Embedding relationship encountered";
-
-    ASSERT_EQ(ECObjectsStatus::Success, relClass1->SetStrength(StrengthType::Holding))
-           << "Cannot change the strength of 'RelationshipA' in test schema";
-
-    ASSERT_NE(ECObjectsStatus::Success, relClass2->SetStrength(StrengthType::Holding))
-           << "Cyclic Holding relationship encountered";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
