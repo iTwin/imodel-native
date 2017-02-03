@@ -26,3 +26,6 @@ ECDbMappingTestFixture.DiamondProblem_Case2
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
+
+#TFS 657660
+ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
