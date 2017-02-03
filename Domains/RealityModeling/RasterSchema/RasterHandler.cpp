@@ -22,25 +22,6 @@ HANDLER_DEFINE_MEMBERS(RasterModelHandler)
 //----------------------------------------------------------------------------------------
 struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     {
-    struct ElemTopology : RefCounted<IElemTopology>
-        {
-        protected:
-            RefCountedPtr<RasterBorderGeometrySource> m_source;
-
-            virtual IElemTopologyP _Clone() const override { return new ElemTopology(*this); }
-            virtual bool _IsEqual(IElemTopologyCR rhs) const override { return _ToGeometrySource() == rhs._ToGeometrySource(); }
-            virtual GeometrySourceCP _ToGeometrySource() const override { return m_source.get(); }
-            IEditManipulatorPtr _GetTransientManipulator(HitDetailCR hit) const override{ return nullptr; /*TODO*/ }
-
-            ElemTopology(RasterBorderGeometrySource& source) { m_source = &source; }
-            ElemTopology(ElemTopology const& from) { m_source = from.m_source; }
-
-        public:
-
-            static RefCountedPtr<ElemTopology> Create(RasterBorderGeometrySource& source) { return new ElemTopology(source); }
-
-        }; // ElemTopology
-
     RasterBorderGeometrySource(DPoint3dCP corners, RasterModel& model);
 
     virtual DgnDbR _GetSourceDgnDb() const override { return m_dgnDb; }
@@ -49,7 +30,6 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     virtual Render::GraphicSet& _Graphics() const override { return m_graphics; };
     virtual DgnElement::Hilited _IsHilited() const override { return m_hilited; }
-    virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const override { descr = m_infoString; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
     virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
@@ -61,7 +41,6 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     DgnCategoryId               m_categoryId;
     Placement3d                 m_placement;
     GeometryStream              m_geom;
-    Utf8String                  m_infoString;
     mutable Render::GraphicSet  m_graphics;
     mutable DgnElement::Hilited m_hilited;
     };
@@ -85,12 +64,8 @@ static DgnCategoryId getDefaultCategoryId(DgnDbR db)
 RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, RasterModel& model)
     :m_dgnDb(model.GetDgnDb()),
     m_categoryId(getDefaultCategoryId(model.GetDgnDb())),
-    m_hilited(DgnElement::Hilited::None),
-    m_infoString(model.GetName())
+    m_hilited(DgnElement::Hilited::None)
     {
-    if (m_infoString.empty())
-        m_infoString = model.GetName();
-
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     Render::GeometryParams geomParams;
     geomParams.SetCategoryId(GetCategoryId());
