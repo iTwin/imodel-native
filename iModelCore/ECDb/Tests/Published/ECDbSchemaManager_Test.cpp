@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -380,7 +379,7 @@ TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDb_System", "PrimitiveArray");
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDbSystem", "PrimitiveArray");
     ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('ECDbSystem', 'PrimitiveArray') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
@@ -420,8 +419,8 @@ TEST_F(ECDbSchemaManagerTests, CasingTests)
     ECDbCR ecdb = SetupECDb("schemamanagercasingtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDB_FILEinfo");
-    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDb_FileInfo"));
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDBFILEinfo");
+    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
 
     schema = ecdb.Schemas().GetECSchema("ecsqltest");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECSqlTest"));
@@ -500,7 +499,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     {
     ECDbCR ecdb = SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                     "<ECSchemaReference name='ECDb_FileInfo' version='02.00.00' prefix='ecdbf' />"
+                                     "<ECSchemaReference name='ECDbFileInfo' version='02.00.00' prefix='ecdbf' />"
                                      "  <ECEntityClass typeName='Foo' >"
                                      "    <ECProperty propertyName='Folder' typeName='ecdbf:StandardRootFolderType' />"
                                      "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
@@ -515,7 +514,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDb_FileInfo", "StandardRootFolderType");
+    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDbFileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
@@ -524,10 +523,10 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDb_FileInfo", "ExternalFileInfo");
+    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("RootFolder");
@@ -547,7 +546,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
     ECClassCP classWithEnum = ecdb.Schemas().GetECClass("TestSchema", "Foo");
@@ -570,7 +569,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", true);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", true);
     ASSERT_TRUE(schema != nullptr);
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
@@ -779,22 +778,20 @@ TEST_F(ECDbSchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
     {
-    ECDbTestFixture::Initialize();
+    ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"ecschemamanagertest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    ECSchemaPtr schemaPtr1 = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr1 != NULL);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
+    ASSERT_TRUE(schemaPtr != nullptr);
+    context = nullptr;
+    ECSchemaPtr schemaPtr1 = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
+    ASSERT_TRUE(schemaPtr1 != nullptr);
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     ASSERT_EQ(ECObjectsStatus::Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
     ASSERT_EQ(ECObjectsStatus::DuplicateSchema, schemacache->AddSchema(*schemaPtr1));
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "could not import test ecschema.";
-    ecdb.SaveChanges();
 
     ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
     EXPECT_TRUE(ecclass != NULL) << "ecclass with the specified name does not exist";
@@ -807,7 +804,8 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     {
     ECDbR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"BaseSchemaA.01.00.ecschema.xml"), 3);
 
-    ECSchemaPtr schema = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schema = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
     ASSERT_TRUE(schema != nullptr);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
@@ -820,31 +818,6 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportingSchemaInDifferentECDB)
-    {
-    ECDbTestFixture::Initialize();
-    ECDb ecdb, testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"testecdbSchema.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-    stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"testecdbSchema1.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-
-    ECSchemaCachePtr Schemacache = ECSchemaCache::Create();
-    Schemacache->AddSchema(*schemaPtr);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(Schemacache->GetSchemas())) << "could not import test ecschema.";
-    ecdb.SaveChanges();
-
-    ASSERT_EQ(ERROR, testecdb.Schemas().ImportECSchemas(Schemacache->GetSchemas())) << "could not import test ecschema in the 2nd ecdb file.";
-    testecdb.SaveChanges();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
@@ -852,17 +825,13 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+    ECSchemaReadContextPtr context = nullptr;
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
-    ECSchemaPtr supple1;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml", nullptr);
+    ECSchemaPtr supple1 = ReadECSchemaFromDisk(context, ecdb, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
     ASSERT_TRUE(supple1 != NULL);
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
@@ -911,21 +880,18 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(testecdb.IsDbOpen());
     ECSchemaReadContextPtr  context = nullptr;
 
-    ECSchemaPtr schemaPtr;
+    
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
 
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml", nullptr);
+    schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
     schemaCache->AddSchema(*schemaPtr);
-
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas())) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
@@ -938,25 +904,21 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
  //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ECSchemaReadContextPtr context = nullptr;
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supplementalSchemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(supplementalSchemaptr, context, L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml", nullptr);
+    ECSchemaPtr supplementalSchemaptr= ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
     ASSERT_TRUE(supplementalSchemaptr != NULL);
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
     schemacache->AddSchema(*supplementalSchemaptr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
     }
 
@@ -985,31 +947,26 @@ TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
 // A primary schema should be supplemented with the latest available supplemental schema
 TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml", nullptr);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1030,30 +987,26 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 //supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
 TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml", nullptr);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1127,10 +1080,8 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
 
-    ECSchemaReadContextPtr  context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaptr= ReadECSchemaFromDisk(context, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
@@ -1317,27 +1268,23 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidCla
 //supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
 TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(testecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.69.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaptr != NULL);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.69.ecschema.xml"));
+    ASSERT_TRUE(schemaptr != nullptr);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml"));
+    ASSERT_TRUE(supple != nullptr);
     schemacache->AddSchema(*supple);
 
     //With new supplementation Behaviour, this one will not be ignored though it is not targeting the primary schema's exact version.
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
+    ASSERT_TRUE(supple != nullptr);
     schemacache->AddSchema(*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
@@ -1414,8 +1361,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         activityKey = newKey;
         };
 
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema1.ecdb");
+    ECDbR ecdb = SetupECDb("importschemawithsubclassestoexistingschema1.ecdb");
 
     ECInstanceKey activityKey;
     setup(activityKey, ecdb);
@@ -1594,8 +1540,6 @@ TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
     {
-
-
     Utf8CP stdXml = 
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"

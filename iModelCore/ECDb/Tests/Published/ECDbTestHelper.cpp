@@ -234,10 +234,11 @@ BeFileName ECSqlStatementHelper::SearchPath(BeFileName schemaName)
 //! Reads the schema from the path.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaReadStatus ECSqlStatementHelper::ReadXml(BeFileName SchemaDir)
+SchemaReadStatus ECSqlStatementHelper::ReadXml(ECDbCR ecdb, BeFileName SchemaDir)
     {
     ECSchemaPtr schemaPtr;
     context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schemaPtr, SchemaDir, *context);
     return status;
     }
@@ -246,7 +247,7 @@ SchemaReadStatus ECSqlStatementHelper::ReadXml(BeFileName SchemaDir)
 //! Creates a test project,reads the schema from the specified path and imports it.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementHelper::SetUpTest(Utf8String TestName, Utf8CP schema, WCharCP ecdbFileName)
+void ECSqlStatementHelper::SetUpTest(Utf8String TestName, Utf8CP schema, Utf8CP ecdbFileName)
     {
     m_item = testItem[TestName];
     m_item.path = schema;
@@ -256,12 +257,12 @@ void ECSqlStatementHelper::SetUpTest(Utf8String TestName, Utf8CP schema, WCharCP
     SearchPath(schemaDir);
     ASSERT_EQ(true, schemaDir.DoesPathExist()) << "Invalid schema name/search path.";
 
-    //Read Schema
-    EXPECT_EQ(SchemaReadStatus::Success, ReadXml(schemaDir));
-
     //Creates a project
-    EXPECT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, ecdbFileName));
+    EXPECT_EQ(BE_SQLITE_OK, ECDbTestFixture::CreateECDb(ecdb, ecdbFileName));
     EXPECT_TRUE(ecdb.IsDbOpen());
+
+    //Read Schema
+    EXPECT_EQ(SchemaReadStatus::Success, ReadXml(ecdb, schemaDir));
 
     //Imports schemas and cross checks.
     EXPECT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()));

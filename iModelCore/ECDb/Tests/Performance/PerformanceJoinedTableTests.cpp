@@ -35,7 +35,7 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                 {
                 seedFileName.Sprintf("performance_joinedtable_seed_%d.ecdb", DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-                BeFileName seedPath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+                BeFileName seedPath = BuildECDbPath(seedFileName.c_str());
                 //if seed file exists on disk, we reuse it. This is risky if other tests happen to create file with same name
                 //but we add the current day of the year to the file name, to make sure it would never be reused after 24h.
                 if (seedPath.DoesPathExist())

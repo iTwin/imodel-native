@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlSelectTests, Select)
     {
-    ECTEST_SETUP ("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Select.ecdb");
+    ECTEST_SETUP ("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Select.ecdb");
 
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John Snow','England',12345)");
     STATEMENT_EXECUTE_SUCCESS ();
@@ -32,7 +32,7 @@ TEST (ECSqlSelectTests, Select)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlSelectTests, CountWithDistinctClause)
     {
-    ECTEST_SETUP ("CountWithDistinctClause", "ECSqlStatementTests.01.00.ecschema.xml", L"CountWithDistinctClause.ecdb");
+    ECTEST_SETUP ("CountWithDistinctClause", "ECSqlStatementTests.01.00.ecschema.xml", "CountWithDistinctClause.ecdb");
 
     ADD_QUERY ("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Tom Hardy','France',012)");
     ADD_QUERY ("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John','UK',234)");
@@ -51,7 +51,7 @@ TEST (ECSqlSelectTests, CountWithDistinctClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlSelectTests, RelationalOperatorsOnPointProperties)
     {
-    ECTEST_SETUP ("RelationalOperatorsOnPointProperties", "ECSqlTest.01.00.ecschema.xml", L"RelationalOperatorsOnPointProperties.ecdb");
+    ECTEST_SETUP ("RelationalOperatorsOnPointProperties", "ECSqlTest.01.00.ecschema.xml", "RelationalOperatorsOnPointProperties.ecdb");
 
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.P (I, P2D, P3D) VALUES (123, ?, ?)");
     BIND_POINT2D (1, DPoint2d::From (1, 2));

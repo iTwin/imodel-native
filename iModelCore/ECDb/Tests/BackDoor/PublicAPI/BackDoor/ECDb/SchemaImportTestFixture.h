@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/SchemaImportTestFixture.h $
+|     $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "ECDbPublishedTests.h"
+#include "ECDbTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

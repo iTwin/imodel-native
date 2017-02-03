@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbFileInfoTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-#define ECDB_FILEINFO_SCHEMA_NAME "ECDb_FileInfo"
+#define ECDB_FILEINFO_SCHEMA_NAME "ECDbFileInfo"
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/15
@@ -33,7 +33,7 @@ TEST_F(ECDbFileInfoTests, EmptyECDbHasFileInfoSchema)
     auto const& schemaManager = ecdb.Schemas();
 
     ECSchemaCP fileinfoSchema = schemaManager.GetECSchema(ECDB_FILEINFO_SCHEMA_NAME, false);
-    ASSERT_TRUE(fileinfoSchema != nullptr) << "Empty ECDb file is expected to contain the ECDb_FileInfo ECSchema.";
+    ASSERT_TRUE(fileinfoSchema != nullptr) << "Empty ECDb file is expected to contain the ECDbFileInfo ECSchema.";
 
     ECClassCP ecClass = schemaManager.GetECClass(ECDB_FILEINFO_SCHEMA_NAME, "FileInfo");
     ASSERT_TRUE(ecClass != nullptr);
@@ -491,7 +491,7 @@ TEST_F(ECDbFileInfoTests, Purge)
     stmt.Finalize();
 
     //EmbeddedFileInfos
-    ECClassId embeddedFileInfoClassId = ecdb.Schemas().GetECClassId("ECDb_FileInfo", "EmbeddedFileInfo");
+    ECClassId embeddedFileInfoClassId = ecdb.Schemas().GetECClassId("ECDbFileInfo", "EmbeddedFileInfo");
     ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
 
     Utf8CP testFileName = "StartupCompany.json";

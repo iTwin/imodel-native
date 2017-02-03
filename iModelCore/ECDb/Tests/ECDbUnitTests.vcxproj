@@ -24,8 +24,8 @@
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
-    <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
+    <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
@@ -45,7 +45,6 @@
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
-    <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
     <ClCompile Include="Published\ECDbInstances_Test.cpp" />
@@ -54,16 +53,13 @@
     <ClCompile Include="Published\ECDbProfile_Test.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
-    <ClCompile Include="Published\ECDbRelationshipTests.cpp" />
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaRules_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaUpdate_Tests.cpp" />
-    <ClCompile Include="Published\ECDbSql_Test.cpp" />
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
     <ClCompile Include="Published\ECDbTestHelper.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
-    <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
     <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp" />
@@ -87,7 +83,6 @@
     <ClCompile Include="Published\ECSqlTestFrameworkHelper.cpp" />
     <ClCompile Include="Published\ECSqlTestFramework_Tests.cpp" />
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp" />
-    <ClCompile Include="Published\FieldEngineer_Test.cpp" />
     <ClCompile Include="Published\FSRTests.cpp" />
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />
     <ClCompile Include="Published\JsonInserterTests.cpp" />
@@ -97,14 +92,13 @@
     <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp" />
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
-    <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
     <ClCompile Include="Published\ThreadSafetyTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\SchemaImportTestFixture.h" />
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
@@ -124,7 +118,6 @@
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h" />
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
     <ClInclude Include="Published\RandomECInstanceGenerator.h" />
-    <ClInclude Include="Published\SchemaImportTestFixture.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{739F36F2-2002-4DD7-8C46-97AF109867D3}</ProjectGuid>

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlInsertTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 TEST(ECSqlInsertTests, Insert)
     {
             {
-            ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Insert.ecdb");
+            ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Insert.ecdb");
 
             STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Product(ProductAvailable,ProductName,UnitPrice) VALUES(?,?,?)");
             BIND_BOOLEAN(1, true);
@@ -32,7 +32,7 @@ TEST(ECSqlInsertTests, Insert)
             }
 
             {
-            ECTEST_SETUP("Test2", "NestedStructArrayTest.01.00.ecschema.xml", L"Insert1.ecdb");
+            ECTEST_SETUP("Test2", "NestedStructArrayTest.01.00.ecschema.xml", "Insert1.ecdb");
 
             STATEMENT_PREPARE_SUCCESS("INSERT INTO nsat.ClassA(I,T) VALUES(8,'testVal')");
             STATEMENT_EXECUTE_SUCCESS();
@@ -44,7 +44,7 @@ TEST(ECSqlInsertTests, Insert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, Update)
     {
-    ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Update.ecdb");
+    ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Update.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country) VALUES('John Snow','England')");
     STATEMENT_EXECUTE_SUCCESS();
@@ -62,7 +62,7 @@ TEST(ECSqlInsertTests, Update)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, Delete)
     {
-    ECTEST_SETUP("ECSqlStatementTests", "NestedStructArrayTest.01.00.ecschema.xml", L"Delete.ecdb");
+    ECTEST_SETUP("ECSqlStatementTests", "NestedStructArrayTest.01.00.ecschema.xml", "Delete.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO nsat.ClassA(I,T) VALUES(8,'testVal')");
     STATEMENT_EXECUTE_SUCCESS();
@@ -77,7 +77,7 @@ TEST(ECSqlInsertTests, Delete)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, ParameterAdvancedTests)
     {
-    ECTEST_SETUP("ParameterAdvancedTests", "ECSqlTest.01.00.ecschema.xml", L"ParameterAdvancedTests.ecdb");
+    ECTEST_SETUP("ParameterAdvancedTests", "ECSqlTest.01.00.ecschema.xml", "ParameterAdvancedTests.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, S) VALUES (123, ?)");
     BIND_TEXT(1, "hello", IECSqlBinder::MakeCopy::No);
@@ -208,7 +208,7 @@ TEST(ECSqlInsertTests, ParameterAdvancedTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, ArrayTests)
     {
-    ECTEST_SETUP("ArrayTests", "ECSqlTest.01.00.ecschema.xml", L"ArrayTests.ecdb");
+    ECTEST_SETUP("ArrayTests", "ECSqlTest.01.00.ecschema.xml", "ArrayTests.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.PSA (Dt_Array, B) VALUES (NULL, true)");
     STATEMENT_EXECUTE_SUCCESS();
@@ -222,7 +222,7 @@ TEST(ECSqlInsertTests, ArrayTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, CommonGeometryTests)
     {
-    ECTEST_SETUP("CommonGeometryTests", "ECSqlTest.01.00.ecschema.xml", L"CommonGeometryTests.ecdb");
+    ECTEST_SETUP("CommonGeometryTests", "ECSqlTest.01.00.ecschema.xml", "CommonGeometryTests.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, NULL)");
     STATEMENT_EXECUTE_SUCCESS();
@@ -250,7 +250,7 @@ TEST(ECSqlInsertTests, CommonGeometryTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, DateTimeTests)
     {
-    ECTEST_SETUP("DateTimeTests", "ECSqlTest.01.00.ecschema.xml", L"DateTimeTests.ecdb");
+    ECTEST_SETUP("DateTimeTests", "ECSqlTest.01.00.ecschema.xml", "DateTimeTests.ecdb");
 
     //Inserting into date time prop without DateTimeInfo CA
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (Dt) VALUES (TIMESTAMP '2012-01-18 13:02:55')");
@@ -392,7 +392,7 @@ TEST(ECSqlInsertTests, DateTimeTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, IntoTests)
     {
-    ECTEST_SETUP("IntoTests", "ECSqlTest.01.00.ecschema.xml", L"IntoTests.ecdb");
+    ECTEST_SETUP("IntoTests", "ECSqlTest.01.00.ecschema.xml", "IntoTests.ecdb");
 
     //******************************************************************
     // Inserting into classes which map to tables with ECClassId columns
@@ -468,7 +468,7 @@ TEST(ECSqlInsertTests, IntoTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, MiscTests)
     {
-    ECTEST_SETUP("MiscTests", "ECSqlTest.01.00.ecschema.xml", L"MiscTests.ecdb");
+    ECTEST_SETUP("MiscTests", "ECSqlTest.01.00.ecschema.xml", "MiscTests.ecdb");
 
     //*******************************************************
     // Syntactically incorrect statements 
@@ -624,7 +624,7 @@ TEST(ECSqlInsertTests, MiscTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECSqlInsertTests, StructTests)
     {
-    ECTEST_SETUP("StructTests", "ECSqlTest.01.00.ecschema.xml", L"StructTests.ecdb");
+    ECTEST_SETUP("StructTests", "ECSqlTest.01.00.ecschema.xml", "StructTests.ecdb");
 
     ADD_QUERY("INSERT INTO ecsql.PSA (PStructProp, B) VALUES (NULL, true)");
     ADD_QUERY("INSERT INTO ecsql.PSA (PStructProp, B) VALUES (?, true)");
@@ -639,7 +639,7 @@ TEST(ECSqlInsertTests, StructTests)
 
 TEST(ECSqlInsertTests, NamedParameterTest)
     {
-    ECTEST_SETUP("NamedParameterTest", "ECSqlTest.01.00.ecschema.xml", L"NamedParameterTest.ecdb");
+    ECTEST_SETUP("NamedParameterTest", "ECSqlTest.01.00.ecschema.xml", "NamedParameterTest.ecdb");
 
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.PSA(S,B) VALUES ('lalala', true)");
     STATEMENT_EXECUTE_SUCCESS();

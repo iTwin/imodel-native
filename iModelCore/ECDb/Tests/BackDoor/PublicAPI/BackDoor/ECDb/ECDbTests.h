@@ -84,17 +84,6 @@ struct ECDbTestUtility
         static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
 
     public:
-        static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
-
-        static DbResult CreateECDb(ECDbR ecdb, BeFileNameP ecdbFullPath, WCharCP ecdbFileName);
-        static DbResult CloneECDb(ECDbR clone, WCharCP cloneFileName, BeFileNameCR seedFilePath, Db::OpenParams openParams);
-        static ECN::ECSchemaPtr ReadECSchemaFromDisk(WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
-        static void     ReadECSchemaFromDisk(ECN::ECSchemaPtr& ecSchema, ECN::ECSchemaReadContextPtr& ecSchemaContext, WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
-        static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr& schemaContext, Utf8CP ecschemaXmlString);
-        static ECN::ECSchemaCachePtr ReadECSchemaFromString(Utf8CP ecschemaXmlString);
-
-        // If file name is not supplied, constructs one from the schema name
-        static void     WriteECSchemaToDisk(ECN::ECSchemaCR ecSchema, WCharCP filenameNoVerExt = nullptr);
         static bool     CompareECInstances(ECN::IECInstanceCR a, ECN::IECInstanceCR b);
         static int64_t  ReadCellValueAsInt64(BeSQLite::DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
         static bool     CompareJsonWithECInstance(const Json::Value& json, ECN::IECInstanceCR referenceInstance);
@@ -103,8 +92,6 @@ struct ECDbTestUtility
         static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 
         static void     AssertECDateTime(ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
-
-        static BentleyStatus SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId instanceId);
 
         static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);
         static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);

@@ -4128,6 +4128,20 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     stmt.Finalize();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Umer Sufyan                   07/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, AmbiguousJoin)
+    {
+    ECDbCR ecdb = SetupECDb("ambiguousjoin.ecdb", BeFileName(L"Computers.01.00.ecschema.xml"));
+    ECSqlStatement stmt;
+
+    auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.Laptop JOIN TR.Laptop USING TR.LaptopHasLaptop FORWARD");
+
+    ASSERT_NE(ECSqlStatus::Success, stat);
+    stmt.Finalize();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Maha Nasir                 10/15
 //+---------------+---------------+---------------+---------------+---------------+------

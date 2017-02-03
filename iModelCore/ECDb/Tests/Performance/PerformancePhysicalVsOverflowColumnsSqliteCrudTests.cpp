@@ -662,7 +662,7 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::SetupTestDb(Db& 
     fileName.Sprintf("perf_%s_colcount%d_initialrowcount%d_%d.db", scenario == Scenario::Overflow ? "overflow" : "physical", colCount, s_initialRowCount,
                      DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName filePath = ECDbTestUtility::BuildECDbPath(fileName.c_str());
+    BeFileName filePath = BuildECDbPath(fileName.c_str());
 
     if (!filePath.DoesPathExist())
         {

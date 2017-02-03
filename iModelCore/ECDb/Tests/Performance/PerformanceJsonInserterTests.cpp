@@ -6,18 +6,20 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct PerformanceJsonInserter : ECDbTestFixture
+    {};
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
+TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     {
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create("performancejsoninserter.ecdb", L"JsonTests.01.00.ecschema.xml", false);
+    ECDbR ecdb = SetupECDb("performancejsoninserter.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -58,10 +60,10 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
+TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     {
-    ECDbTestProject testProject;
-    auto& ecdb = testProject.Create("performancejsoninserter.ecdb", L"JsonTests.01.00.ecschema.xml", false);
+    ECDbR ecdb = SetupECDb("performancejsoninserter.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;

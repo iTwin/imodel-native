@@ -1104,7 +1104,7 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
     Utf8String seedFileName;
     seedFileName.Sprintf("%s_seed_%d.ecdb", fileNameNoExt.c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedPath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+    BeFileName seedPath = BuildECDbPath(seedFileName.c_str());
     if (!seedPath.DoesPathExist())
         {
         ECDbR ecdb = SetupECDb(seedFileName.c_str());

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceCRUDTestsHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
@@ -566,7 +566,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
     Utf8String seedFileName;
     seedFileName.Sprintf("ecsqlvssqlite_%d_seed%d.ecdb", m_propertiesPerClass, DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+    BeFileName seedFilePath = BuildECDbPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
         {

@@ -17,10 +17,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   12/16
 //=======================================================================================
-struct ChangeSummaryTestFixture : public ECDbTestFixture
+struct ChangeSummaryTestFixture : public SchemaImportTestFixture
     {
     protected:
-        BentleyStatus ImportSchemas(ECDbR ecdb, SchemaItem const& schemaItem);
         void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
         bool ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
     };
@@ -52,26 +51,6 @@ struct TestChangeTracker : BeSQLite::ChangeTracker
         return OnCommitStatus::Continue;
         }
     };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/17
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryTestFixture::ImportSchemas(ECDbR ecdb, SchemaItem const& schemaItem)
-    {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-
-    for (Utf8StringCR schemaXml : schemaItem.m_schemaXmlList)
-        {
-        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
-            return ERROR;
-        }
-
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
-        return ERROR;
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/17
@@ -117,27 +96,29 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     tracker.EnableTracking(true);
 
     DbResult result = ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue");
-    EXPECT_EQ(BE_SQLITE_OK, result);
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     TestChangeSet changeSet;
     result = changeSet.FromChangeTrack(tracker);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     ChangeSummary changeSummary(ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeSet);
-    ASSERT_TRUE(SUCCESS == status);
+    ASSERT_EQ(SUCCESS, status);
 
     // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
 
-    status = ImportSchemas(ecdb, SchemaItem(
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "</ECSchema>"));
+    ASSERT_FALSE(asserted) << "Schema import failed";
 
     changeSet.Free();
     result = changeSet.FromChangeTrack(tracker);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     changeSummary.Free();
     BeTest::SetFailOnAssert(false);
@@ -738,7 +719,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
     ECDb& ecdb = SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-
+    ASSERT_TRUE(ecdb.IsDbOpen());
     TestChangeTracker tracker(ecdb);
     tracker.EnableTracking(true);
 

@@ -34,6 +34,7 @@
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
+    <ClCompile Include="ECDbMapSchemaHelper.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
     <ClInclude Include="ECDbMap.h" />
+    <ClInclude Include="ECDbMapSchemaHelper.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
     <ClInclude Include="ECDbSchemaPersistenceHelper.h" />
@@ -251,9 +253,8 @@
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1B1D0762-AF1F-447F-BBE6-749055F1C200}</ProjectGuid>

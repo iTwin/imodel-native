@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 
-#include "ECDbTests.h"
+#include "ECDbPublishedTests.h"
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -232,10 +233,10 @@ struct ECSqlStatementHelper
     BeFileName SearchPath (BeFileName schemaName);
 
     //Reads the schema from the path.
-    SchemaReadStatus ReadXml (BeFileName SchemaDir);
+    SchemaReadStatus ReadXml (ECDbCR, BeFileName SchemaDir);
 
     //Creates a test project,reads the schema from the specified path and imports it.
-    void SetUpTest (Utf8String TestName, Utf8CP schema, WCharCP ecdbFileName);
+    void SetUpTest (Utf8String TestName, Utf8CP schema, Utf8CP ecdbFileName);
 
     //! Prepares the statement with the specified ECSQL and compares the status returned by Prepare method and the status specified by the user.
     ECSqlStatus PrepareStatement (Utf8String query, ECSqlStatus expectedStatus = ECSqlStatus::Success);

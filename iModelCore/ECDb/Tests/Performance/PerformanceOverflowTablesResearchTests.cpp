@@ -30,7 +30,7 @@ protected:
 
     void Setup(Db& db, BeFileName const& fileName, Scenario const& scenario)
         {
-        BeFileName filePath = ECDbTestUtility::BuildECDbPath(fileName.GetNameUtf8().c_str());
+        BeFileName filePath = BuildECDbPath(fileName.GetNameUtf8().c_str());
         ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(filePath));
 
         for (int i = 0; i < scenario.m_primaryTableCount; i++)

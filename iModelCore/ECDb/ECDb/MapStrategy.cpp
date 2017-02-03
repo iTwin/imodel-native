@@ -83,7 +83,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         {
         //if it says that it should only apply to subclasses set column sharing to false for this class
         bool applyToSubclassesOnly = false;
-        if (ECObjectsStatus::Success != shareColumnsCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly))
+        if (SUCCESS != shareColumnsCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly))
             return ERROR;
 
         if (applyToSubclassesOnly)
@@ -92,7 +92,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             m_shareColumnsMode = ShareColumnsMode::Yes;
 
         int customShareColCount = 0; //default is 0 if not set in the CA
-        if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
+        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
             return ERROR;
 
         if (customShareColCount < 0)
@@ -106,7 +106,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
 
 
         int customShareColCountPerOverflowTable = 32; //default is 32 if not set in the CA
-        if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCountPerOverflowTable(customShareColCountPerOverflowTable))
+        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCountPerOverflowTable(customShareColCountPerOverflowTable))
             return ERROR;
 
         if (customShareColCountPerOverflowTable <= 0)
@@ -158,7 +158,7 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
     if (ECDbMapCustomAttributeHelper::TryGetClassMap(m_classMapCA, ecClass))
         {
         Utf8String mapStrategyStr;
-        if (ECObjectsStatus::Success != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
+        if (SUCCESS != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
             return ERROR;
 
         if (mapStrategyStr.empty())

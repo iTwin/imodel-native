@@ -58,6 +58,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbProfileManager.h \
                 $(baseDir)ECDbProfileUpgrader.h \
                 $(baseDir)ECDbSystemSchemaHelper.h \
+                $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)ECDbPolicyManager.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
@@ -211,6 +212,8 @@ $(o)ECDbProfileManager$(oext):                                $(baseDir)ECDbProf
 $(o)ECDbProfileUpgrader$(oext):                               $(baseDir)ECDbProfileUpgrader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSystemSchemaHelper$(oext):                            $(baseDir)ECDbSystemSchemaHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbMapSchemaHelper$(oext):                               $(baseDir)ECDbMapSchemaHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -462,7 +465,10 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
 #----------------------------------------------------------------------
 # Deploy ECSchemas clients can use/import if they want
 #----------------------------------------------------------------------
-$(BuildContext)ECSchemas/ECDb/ECDb_FileInfo.02.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDb_FileInfo.02.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbFileInfo.02.00.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------
@@ -477,12 +483,10 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 #----------------------------------------------------------------------------------------
 # Deploy documentation raw material for input into PublishApi+Doxygen by consuming SDKs
 #----------------------------------------------------------------------------------------
-# for the name of the latest version of the ECDbMap ECSchema
-%include $(BuildContext)SubParts/mki/StandardSchemasV3.delivery.mki
 
 always:
     ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
     @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
-    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/Standard/$(ECDbMapSchemaName)"
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
   

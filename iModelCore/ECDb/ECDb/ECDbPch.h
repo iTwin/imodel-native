@@ -23,6 +23,7 @@
 #include "ECDbProfileManager.h"
 #include "ECDbProfileUpgrader.h"
 #include "ECDbSystemSchemaHelper.h"
+#include "ECDbMapSchemaHelper.h"
 #include "ECDbPolicyManager.h"
 
 #include "ECDbSqlFunctions.h"

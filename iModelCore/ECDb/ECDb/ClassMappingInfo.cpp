@@ -312,7 +312,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 
     if (classMap.IsValid())
         {
-        if (ECObjectsStatus::Success != classMap.TryGetTableName(m_tableName))
+        if (SUCCESS != classMap.TryGetTableName(m_tableName))
             return ERROR;
 
         MapStrategy strategy = caCache.GetStrategy();
@@ -335,7 +335,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
                 }
             }
 
-        if (ECObjectsStatus::Success != classMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
+        if (SUCCESS != classMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
             return ERROR;
 
         if (strategy == MapStrategy::ExistingTable && m_ecInstanceIdColumnName.empty())
@@ -586,11 +586,11 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             }
 
         Utf8String onDeleteActionStr;
-        if (ECObjectsStatus::Success != foreignKeyConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
+        if (SUCCESS != foreignKeyConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
         Utf8String onUpdateActionStr;
-        if (ECObjectsStatus::Success != foreignKeyConstraintCA.TryGetOnUpdateAction(onUpdateActionStr))
+        if (SUCCESS != foreignKeyConstraintCA.TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
         const ForeignKeyDbConstraint::ActionType onDeleteAction = ForeignKeyDbConstraint::ToActionType(onDeleteActionStr.c_str());
@@ -612,15 +612,15 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         }
 
     Utf8String sourceIdColName;
-    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
+    if (SUCCESS != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
         return ERROR;
 
     Utf8String targetIdColName;
-    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+    if (SUCCESS != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
         return ERROR;
 
     bool allowDuplicateRelationships = false;
-    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
+    if (SUCCESS != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
         return ERROR;
 
     m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
@@ -1008,7 +1008,7 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
     if (dbIndexListCA.IsValid())
         {
         bvector<DbIndexList::DbIndex> indices;
-        if (ECObjectsStatus::Success != dbIndexListCA.GetIndexes(indices))
+        if (SUCCESS != dbIndexListCA.GetIndexes(indices))
             return ERROR;
 
         for (DbIndexList::DbIndex const& index : indices)

@@ -2527,23 +2527,11 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"DSCacheSchema.01.03.ecschema.xml");
+    ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
+    ASSERT_TRUE(ecSchema != nullptr);
     BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(ERROR, schemaStatus);
-    /*
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
-    schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(SUCCESS, schemaStatus);
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"RSComponents.02.00.ecschema.xml");
-    ecSchema->SetVersionMajor(1);
-    ecSchema->SetVersionMinor(22);
-    schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(SUCCESS, schemaStatus);
-    */
     }
 
 //---------------------------------------------------------------------------------------

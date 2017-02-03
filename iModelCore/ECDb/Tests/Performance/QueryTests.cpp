@@ -17,20 +17,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct PopulateKitchenSinkDb : ECDbTestFixture
     {
     protected:
-        void PopulateDb(ECDbR ecdb)
+        void PopulateDb()
             {
-            ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"KitchenSink.01.00.ecschema.xml", nullptr);
-            ASSERT_TRUE(schemaPtr != NULL);
-
-            ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-            ASSERT_EQ(ECObjectsStatus::Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
-            ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "Couldn't import test ecschema.";
-            ecdb.SaveChanges();
-
             ECSqlStatement stmt;
 
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ks.Folder(Name, SomeNumber, UpdateTime) VALUES(?, ?, ?)"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ks.Folder(Name, SomeNumber, UpdateTime) VALUES(?, ?, ?)"));
             Utf8String nameValue;
             for (int i = 0; i < 100; i++)
                 {
@@ -46,7 +38,7 @@ struct PopulateKitchenSinkDb : ECDbTestFixture
             }
 
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ks.Document(DifferentNumber,FileName,Name,Size,UpdateTime) VALUES(?, ?, ?, ?, ?)"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ks.Document(DifferentNumber,FileName,Name,Size,UpdateTime) VALUES(?, ?, ?, ?, ?)"));
             Utf8String fileName, name;
             for (int i = 0; i < 100; i++)
                 {
@@ -65,7 +57,7 @@ struct PopulateKitchenSinkDb : ECDbTestFixture
             }
 
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ks.Test2Class(Test2StringMember) VALUES(?)"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ks.Test2Class(Test2StringMember) VALUES(?)"));
             Utf8String stringVal;
             for (int i = 0; i < 100; i++)
                 {
@@ -79,7 +71,7 @@ struct PopulateKitchenSinkDb : ECDbTestFixture
             }
 
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ks.TestClass(BaseClassMember,BooleanMember,CustomFormatInt,DateArray,DateTimeMember,DoubleMember,EmbeddedStruct,EmptyIntArray,EndPoint,FormattedArray,FormattedStruct,IntArray,IntegerMember,LongMember,NegativeMember,OneMemberIntArray,PointArray,SecondEmbeddedStruct,SmallIntArray,StartPoint,StringArray,StringMember,StructArray) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ks.TestClass(BaseClassMember,BooleanMember,CustomFormatInt,DateArray,DateTimeMember,DoubleMember,EmbeddedStruct,EmptyIntArray,EndPoint,FormattedArray,FormattedStruct,IntArray,IntegerMember,LongMember,NegativeMember,OneMemberIntArray,PointArray,SecondEmbeddedStruct,SmallIntArray,StartPoint,StringArray,StringMember,StructArray) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
             int arraySize = 10;
             Utf8String ColorMember, StringArray, StringMember, StringVal;
             double val = 100.25;
@@ -205,7 +197,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
         void ExecuteSql(Utf8StringR ecSql, Utf8StringR timerName, int expectedNumberOfResults, double &overAllTime)
             {
             ECSqlStatement ecStatement;
-            ecStatement.Prepare(m_testDb, ecSql.c_str());
+            ecStatement.Prepare(GetECDb(), ecSql.c_str());
 
             ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
 
@@ -267,13 +259,11 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
             }
 
     public:
-        ECDb m_testDb;
         void ConnectToDb()
             {
-            ECDbTestFixture::Initialize();
-            ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(m_testDb, nullptr, L"KitchenSinkDbWithInstances.ecdb"));
-            PopulateKitchenSinkDb::PopulateDb(m_testDb);
-            ASSERT_TRUE(m_testDb.IsDbOpen());
+            ECDbCR ecdb = SetupECDb("KitchenSinkDbWithInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            PopulateDb();
             }
 
         void LoadByInstanceId()
@@ -283,7 +273,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
             LoadByInstanceId("251", "Test2Class", 1);
             LoadByInstanceId("99", "Folder", 1);
             LoadByInstanceId("199", "Document", 1);
-            m_testDb.CloseDb();
+            GetECDb().CloseDb();
             }
 
         void QueryAllInstances()
@@ -294,7 +284,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
             QueryAllInstancesByClass("Test2Class", results, 100);
             QueryAllInstancesByClass("Folder", results, 100);
             QueryAllInstancesByClass("Document", results, 100);
-            m_testDb.CloseDb();
+            GetECDb().CloseDb();
             }
 
         void QueryAllInstancesWithOrderBy()
@@ -304,32 +294,17 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
             QueryAllInstancesByClassWithOrderBy("TestClass", "BaseClassMember", results, 100);
             QueryAllInstancesByClassWithOrderBy("Folder", "Name", results, 100);
             QueryAllInstancesByClassWithOrderBy("Document", "Name", results, 100);
-            m_testDb.CloseDb();
+            GetECDb().CloseDb();
             }
     };
 
-//---------------------------------------------------------------------------------------
-// @bsiClass                                     Muhammad Hassan                  10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceQueryECInstanceECSqlSelectAdapterTests : public PopulateKitchenSinkDb
+TEST_F(PerformanceQueryTests, SelectFromComplexClass)
     {
-    public:
-        ECDb m_testDb;
-        void SetUpDb()
-            {
-            ECDbTestFixture::Initialize();
-            ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(m_testDb, nullptr, L"KitchenSinkDbWithInstances.ecdb"));
-            PopulateKitchenSinkDb::PopulateDb(m_testDb);
-            ASSERT_TRUE(m_testDb.IsDbOpen());
-            }
-    };
+    ConnectToDb();
 
-TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
-    {
-    SetUpDb();
     //printf ("Please attach to profiler and press any key...\r\n"); getchar ();
     ECSqlStatement ecStatement;
-    ECSqlStatus prepareStatus = ecStatement.Prepare(m_testDb, "SELECT c0.* FROM ONLY [KitchenSink].[TestClass] c0");
+    ECSqlStatus prepareStatus = ecStatement.Prepare(GetECDb(), "SELECT c0.* FROM ONLY [KitchenSink].[TestClass] c0");
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
 
     const int expectedRowCount = 100;
@@ -357,8 +332,10 @@ TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
+TEST_F(PerformanceQueryTests, SelectFromComplexClass_WithoutAdapter)
     {
+    ConnectToDb();
+
     std::function<void(IECSqlValue const&)> processECSqlValue;
     processECSqlValue = [&processECSqlValue] (IECSqlValue const& ecsqlValue)
         {
@@ -418,11 +395,10 @@ TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass
             }
         };
 
-    SetUpDb();
     //printf ("Please attach to profiler and press any key...\r\n"); getchar ();
 
     ECSqlStatement ecStatement;
-    ECSqlStatus prepareStatus = ecStatement.Prepare(m_testDb, "SELECT c0.* FROM ONLY [KitchenSink].[TestClass] c0");
+    ECSqlStatus prepareStatus = ecStatement.Prepare(GetECDb(), "SELECT c0.* FROM ONLY [KitchenSink].[TestClass] c0");
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     const int expectedRowCount = 100;
     const int repetitionCount = 100;
