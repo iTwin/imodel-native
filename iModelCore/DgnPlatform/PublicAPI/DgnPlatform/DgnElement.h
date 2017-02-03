@@ -1399,6 +1399,13 @@ protected:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
+    //! Provide a description of this element to display in the "info balloon" that appears when the element is under the cursor.
+    //! @param delimiter Put this string to break lines of the desciption.
+    //! @return The information to display in the info balloon.
+    //! @note If you override this method, you may decide whether to call your superclass' implementation or not (it is not required).
+    //! The default implementation shows display label, category and model.
+    DGNPLATFORM_EXPORT virtual Utf8String _GetInfoString(Utf8CP delimiter) const;
+
     virtual bool _SupportsCodeSpec(CodeSpecCR) const {return true;}
     DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const;
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
@@ -1448,6 +1455,7 @@ public:
 
     bool IsCustomHandledProperty(Utf8CP) const;
     bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
+    Utf8String GetInfoString(Utf8CP delimiter) const {return _GetInfoString(delimiter);}
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
@@ -2410,7 +2418,7 @@ protected:
     AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
     explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) {}
-}; // AnnotationElement2d
+};
 
 //=======================================================================================
 //! A 2-dimensional geometric element used in drawings
@@ -2421,15 +2429,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : GraphicalElement2d
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, GraphicalElement2d)
     friend struct dgn_ElementHandler::DrawingGraphic;
+protected:
+    DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
+    DGNPLATFORM_EXPORT Utf8String _GetInfoString(Utf8CP delimiter) const override;
+    explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
+
 public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
-protected:
-    DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
-
-    explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
-
-}; // DrawingGraphic
+    DGNPLATFORM_EXPORT DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const;
+};
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship

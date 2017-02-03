@@ -290,6 +290,48 @@ DgnDbStatus DgnElement::_OnInsert()
     return GetModel()->_OnInsertElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
+    {
+    Utf8String out = GetDisplayLabel() + delimiter;
+
+    auto geom = ToGeometrySource();
+    if (geom)
+        {
+        DgnCategoryCPtr category = DgnCategory::Get(GetDgnDb(), geom->GetCategoryId());
+        if (category.IsValid())
+            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue() + delimiter;
+        }
+
+    return out + DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + GetModel()->GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
+    {
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_GraphicDerivedFromElement) " WHERE SourceECInstanceId=?");
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    statement->BindId(1, GetElementId());
+    return BE_SQLITE_ROW == statement->Step() ? GetDgnDb().Elements().GetElement(statement->GetValueId<DgnElementId>(0)) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const 
+    {
+    auto source = GetDerivedFromElement();
+    return source.IsValid() ? source->GetInfoString(delimiter) : T_Super::_GetInfoString(delimiter);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

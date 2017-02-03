@@ -430,10 +430,7 @@ DgnModelP HitDetail::GetDgnModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr HitDetail::GetElement() const
     {
-    if (!m_elementId.IsValid())
-        return nullptr;
-
-    return GetDgnDb().Elements().FindLoadedElement(m_elementId);
+    return GetDgnDb().Elements().GetElement(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -508,6 +505,22 @@ bool HitDetail::_IsSameHit(HitDetailCP otherHit) const
         return false;
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HitDetail::GetInfoString(Utf8CP delimiter) const
+    {
+    Utf8String out;
+    if (m_hitDescription.IsValid())
+        out = m_hitDescription->GetDescription() + delimiter;
+
+    auto el = GetElement();
+    if (el.IsValid())
+        out += el->GetInfoString(delimiter);
+
+    return out.Trim();
     }
 
 /*---------------------------------------------------------------------------------**//**

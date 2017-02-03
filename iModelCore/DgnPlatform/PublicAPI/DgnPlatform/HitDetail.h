@@ -177,7 +177,6 @@ protected:
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
     virtual void _Draw(ViewContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
-    virtual Utf8String _GetInfoString(Utf8CP delimiter) const;
 
 public:
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, Sheet::Attachment::ViewportP attachVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
@@ -191,7 +190,7 @@ public:
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     void Draw(ViewContextR context) const {_Draw(context);}
-    Utf8String GetInfoString(Utf8CP delimiter) const {return _GetInfoString(delimiter);}
+    DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
