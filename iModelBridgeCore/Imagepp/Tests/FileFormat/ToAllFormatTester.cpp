@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/FileFormat/ToAllFormatTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -312,7 +312,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                             FAIL() << "Baseline info file is missing : " << baselineInfo.GetInfoFilename().c_str();
 
                         if(config.DoMd5())
-                            ASSERT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed";
+                            EXPECT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed: " << outFilename.c_str();
 
                         if (config.ValidateExportDuration())
                             {
@@ -323,7 +323,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                                 {
                                 double exportDelta = (double) outputInfo.GetExportDuration() - (double) baselineInfo.GetExportDuration();
                                 double exportRatio = exportDelta / baselineInfo.GetExportDuration();
-                                ASSERT_LE(exportRatio, config.GetToleranceRatio())
+                                EXPECT_LE(exportRatio, config.GetToleranceRatio())
                                     << "Base time: " << baselineInfo.GetExportDuration() << "ms New time: " << outputInfo.GetExportDuration() << "ms";
                                 }
                             }
