@@ -554,7 +554,7 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
             else
                 {
                 LOG.warningv("The property %s.%s has a StandardValues attribute that is a subset of its base property %s.%s. Using the enumeration, %s, even though it isn't an exact match.",
-                             currentClass->GetFullName(), propName, rootClass->GetFullName(), propName, enumeration->GetFullName());
+                             currentClass->GetFullName(), propName, rootClass->GetFullName(), propName, enumeration->GetFullName().c_str());
                 status = ECObjectsStatus::Success;
                 }
             }
