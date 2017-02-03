@@ -223,13 +223,15 @@ uint32_t        PropertyLayout::GetSizeInFixedSection () const
     if (!IsFixedSized())
         return sizeof(SecondaryOffset);
 
-    if (m_typeDescriptor.IsPrimitive())        
+    if (m_typeDescriptor.IsPrimitive())
         return ECValue::GetFixedPrimitiveValueSize(m_typeDescriptor.GetPrimitiveType());
     else if (m_typeDescriptor.IsPrimitiveArray())
         {
         uint32_t fixedCount = m_modifierData;
-        return CalculateFixedArrayPropertySize (fixedCount, m_typeDescriptor.GetPrimitiveType());
+        return CalculateFixedArrayPropertySize(fixedCount, m_typeDescriptor.GetPrimitiveType());
         }
+    else if (m_typeDescriptor.IsNavigation())
+        return ECValue::GetNavigationValueSize(m_typeDescriptor.GetPrimitiveType());
         
     DEBUG_FAIL("Can not determine size in fixed section for datatype");
     return 0;
