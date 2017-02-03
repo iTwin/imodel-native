@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct StandardCustomAttributeConversionTests : ECTestFixture 
     {
-    Utf8CP GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
+    Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
     };
 
 //---------------------------------------------------------------------------------------
@@ -1844,7 +1844,7 @@ TEST_F(StandardValueToEnumConversionTest, UseBasePropertyStandardValueIfSubset)
     CheckTypeName("TestClass_testProp", *m_schema, "testProp", {"TestClass", "DerivedClassWithSubset", "DerivedClassWithExact"});
     }
 
-Utf8CP StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name)
+Utf8String StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name)
     {
     ECValue value;
     instancePtr->GetValue(value, name);
@@ -1864,7 +1864,7 @@ TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTim
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    ASSERT_EQ(true, ECSchemaConverter::Convert(*schema)) << "Failed to convert " << schema->GetFullSchemaName() << ".";
+    ASSERT_EQ(true, ECSchemaConverter::Convert(*schema)) << "Failed to convert " << schema->GetFullSchemaName().c_str() << ".";
 
     SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
     ASSERT_TRUE(schema->GetReferencedSchemas().end() != schema->GetReferencedSchemas().Find(coreCAKey, SchemaMatchType::Exact))
@@ -1886,18 +1886,18 @@ TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTim
     IECInstancePtr dateTimeInfoAPtr = lastModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoAPtr != nullptr) << "Could not find DateTimeInfo on LastMod property of TestClassA";
     EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << lastModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
-    EXPECT_STREQ("Utc", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeKind")) << "DateTimeKind of TestClassA does not have expected value.";
-    EXPECT_STREQ("DateTime", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeComponent")) << "DateTimeComponent of TestClassA does not have expected value.";
+    EXPECT_STREQ("Utc", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassA does not have expected value.";
+    EXPECT_STREQ("DateTime", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassA does not have expected value.";
 
     IECInstancePtr dateTimeInfoBPtr = nextModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoBPtr != nullptr) << "Could not find DateTimeInfo on NextMod property of TestClassB";
     EXPECT_EQ(coreCAKey, dateTimeInfoBPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << nextModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
-    EXPECT_STREQ("Unspecified", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeKind")) << "DateTimeKind of TestClassB does not have expected value.";
-    EXPECT_STREQ("Date", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeComponent")) << "DateTimeComponent of TestClassB does not have expected value.";
+    EXPECT_STREQ("Unspecified", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassB does not have expected value.";
+    EXPECT_STREQ("Date", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassB does not have expected value.";
 
     IECInstancePtr timeStampInstancePtr = classCP->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
     EXPECT_TRUE(timeStampInstancePtr != nullptr) << "Could not get ClassHasCurrentTimeStampProperty CA from TestClassC";
-    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, ClassHasCurrentTimeStampProperty, on property " << lastModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, ClassHasCurrentTimeStampProperty, on class " << classCP->GetFullName() << " was not converted to use the new CoreCA custom attribute";
     ECValue checkValue;
     timeStampInstancePtr->GetValue(checkValue, "PropertyName");
     EXPECT_TRUE(checkValue.IsString()) << "The value in the property PropertyName of CustomAttribute ClassHasCurrentTimeStampProperty is not of the expected type";
