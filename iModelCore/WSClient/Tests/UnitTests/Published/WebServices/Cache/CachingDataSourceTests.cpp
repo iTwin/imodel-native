@@ -4878,6 +4878,46 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesPathToChild_
     EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesChildAndPathToIt_ChildInstanceIsRemovedAndNotCached)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    ObjectId objectIdA("TestSchema.TestClass", "A");
+    ObjectId objectIdB("TestSchema.TestClass", "B");
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instances;
+    instances.Add(objectIdA);
+    CachedResponseKey responseKeyA(txn.GetCache().FindOrCreateRoot(nullptr), nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyA, instances.ToWSObjectsResponse()));
+    auto instanceKeyA = txn.GetCache().FindInstance(objectIdA);
+    ASSERT_TRUE(instanceKeyA.IsValid());
+
+    instances.Clear();
+    instances.Add(objectIdB);
+    CachedResponseKey responseKeyB(instanceKeyA, nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyB, instances.ToWSObjectsResponse()));
+    auto instanceKeyB = txn.GetCache().FindInstance(objectIdB);
+    ASSERT_TRUE(instanceKeyB.IsValid());
+    txn.Commit();
+
+    IQueryProvider::Query query(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).Times(2)
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(objectIdB, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::Id::InstanceNotFound))));
+
+    auto result = ds->SyncCachedData(StubBVector({instanceKeyB}), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), SizeIs(1));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_DownloadsAndCachesFileToSetupAutoLocation)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
