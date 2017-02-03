@@ -5,9 +5,6 @@
 #Navigation properties are being reworked and only support the long primitive type at the moment
 NavigationECPropertyTests.InstanceWithNavProp_String
 
-# Not yet implemented
-RelationshipClassTests.CyclicRelationships
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
