@@ -91,12 +91,6 @@
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RealityDbECPlugin\IndexECPlugin.csproj">
-      <Project>{7b23aea6-9095-44d4-828e-3da7bfec58d1}</Project>
-      <Name>IndexECPlugin</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -37,14 +37,14 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEBTest ()
+        public void SETest ()
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
             string connectionString = null;
 
-            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSEB(true, m_schema) };
-            IECInstance overrideInstance = SetupHelpers.CreateSEB(true, m_schema);
+            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSE(true, m_schema) };
+            IECInstance overrideInstance = SetupHelpers.CreateSE(true, m_schema);
 
 
             string overridenFootprint = "OverridenFootprint";
@@ -53,20 +53,11 @@ namespace IndexECPlugin.Tests
             string overridenName = "OverridenName";
             overrideInstance["Name"].StringValue = overridenName;
 
-            string overridenKeywords = "OverridenKeywords";
-            overrideInstance["Keywords"].StringValue = overridenKeywords;
-
-            string overridenAssociateFile = "OverridenAssociateFile";
-            overrideInstance["AssociateFile"].StringValue = overridenAssociateFile;
-
-            string overridenProcessingDescription = "OverridenProcessingDescription";
-            overrideInstance["ProcessingDescription"].StringValue = overridenProcessingDescription;
-
             string overridenDTA = "OverridenDTA";
             overrideInstance["DataSourceTypesAvailable"].StringValue = overridenDTA;
 
-            string overridenARD = "OverridenARD";
-            overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
+            string overridenAIM = "OverridenAIM";
+            overrideInstance["AccuracyInMeters"].StringValue = overridenAIM;
 
             string overridenResolutionInMeters = "OverridenResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
@@ -109,11 +100,8 @@ namespace IndexECPlugin.Tests
 
                 Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
-                Assert.AreEqual(overridenKeywords, modifiedInstance["Keywords"].StringValue);
-                Assert.AreEqual(overridenAssociateFile, modifiedInstance["AssociateFile"].StringValue);
-                Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
-                Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
+                Assert.AreEqual(overridenAIM, modifiedInstance["AccuracyInMeters"].StringValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
@@ -133,13 +121,6 @@ namespace IndexECPlugin.Tests
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateMetadata(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateMetadata(true, m_schema);
-
-
-            string overridenRawMetadata = "OverridenRawMetadata";
-            overrideInstance["RawMetadata"].StringValue = overridenRawMetadata;
-
-            string overridenRawMetadataFormat = "OverridenRawMetadataFormat";
-            overrideInstance["RawMetadataFormat"].StringValue = overridenRawMetadataFormat;
 
             string overridenMetadataURL = "OverridenMetadataURL";
             overrideInstance["MetadataURL"].StringValue = overridenMetadataURL;
@@ -189,8 +170,6 @@ namespace IndexECPlugin.Tests
 
                 instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
-                Assert.AreEqual(overridenRawMetadata, modifiedInstance["RawMetadata"].StringValue);
-                Assert.AreEqual(overridenRawMetadataFormat, modifiedInstance["RawMetadataFormat"].StringValue);
                 Assert.AreEqual(overridenDisplayStyle, modifiedInstance["DisplayStyle"].StringValue);
                 Assert.AreEqual(overridenDescription, modifiedInstance["Description"].StringValue);
                 Assert.AreEqual(overridenContactInformation, modifiedInstance["ContactInformation"].StringValue);
@@ -563,12 +542,12 @@ namespace IndexECPlugin.Tests
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
             string connectionString = null;
 
-            IECInstance sebInstance = SetupHelpers.CreateSEB(true, m_schema);
+            IECInstance sebInstance = SetupHelpers.CreateSE(true, m_schema);
             IECInstance metadataInstance = SetupHelpers.CreateMetadata(true, m_schema);
-            ((IECRelationshipClass) m_schema.GetClass("SpatialEntityBaseToMetadata")).CreateRelationship(sebInstance, metadataInstance);
+            ((IECRelationshipClass) m_schema.GetClass("SpatialEntityToMetadata")).CreateRelationship(sebInstance, metadataInstance);
 
             List<IECInstance> instances = new List<IECInstance>() { sebInstance };
-            IECInstance sebOverrideInstance = SetupHelpers.CreateSEB(true, m_schema);
+            IECInstance sebOverrideInstance = SetupHelpers.CreateSE(true, m_schema);
 
             string sebOverridenName = "sebOverridenName";
 
@@ -613,265 +592,6 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(sebOverridenName, modifiedInstance["Name"].StringValue);
                 Assert.AreEqual(metadataOverridenLegal, modifiedRelInstance["Legal"].StringValue);
 
-                }
-            }
-
-        [Test]
-        public void SpatialEntityTest ()
-            {
-
-            InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            string connectionString = null;
-
-            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSpatialEntity(true, m_schema) };
-            IECInstance overrideInstance = SetupHelpers.CreateSpatialEntity(true, m_schema);
-
-
-            string overridenFootprint = "OverridenFootprint";
-            overrideInstance["Footprint"].StringValue = overridenFootprint;
-
-            string overridenName = "OverridenName";
-            overrideInstance["Name"].StringValue = overridenName;
-
-            string overridenKeywords = "OverridenKeywords";
-            overrideInstance["Keywords"].StringValue = overridenKeywords;
-
-            string overridenAssociateFile = "OverridenAssociateFile";
-            overrideInstance["AssociateFile"].StringValue = overridenAssociateFile;
-
-            string overridenProcessingDescription = "OverridenProcessingDescription";
-            overrideInstance["ProcessingDescription"].StringValue = overridenProcessingDescription;
-
-            string overridenDTA = "OverridenDTA";
-            overrideInstance["DataSourceTypesAvailable"].StringValue = overridenDTA;
-
-            string overridenARD = "OverridenARD";
-            overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
-
-            double overridenCC = 12.3;
-            overrideInstance["Occlusion"].DoubleValue = overridenCC;
-
-            string overridenResolutionInMeters = "ResolutionInMeters";
-            overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
-
-            string overridenDataProvider = "DataProvider";
-            overrideInstance["DataProvider"].StringValue = overridenDataProvider;
-
-            string overridenDataProviderName = "DataProviderName";
-            overrideInstance["DataProviderName"].StringValue = overridenDataProviderName;
-
-            string overridenDataset = "OverridenDataset";
-            overrideInstance["Dataset"].StringValue = overridenDataset;
-
-            DateTime overridenDate = new DateTime(2016, 10, 31);
-            overrideInstance["Date"].NativeValue = overridenDate;
-
-            string overridenClassification = "OverridenClassification";
-            overrideInstance["Classification"].StringValue = overridenClassification;
-
-
-
-            List<IECInstance> overrideInstances = new List<IECInstance>() { overrideInstance };
-
-            using ( m_mock.Record() )
-                {
-                Expect.Call(m_querierMock.QueryDbForInstances(Arg<string>.Is.Anything,
-                                                              Arg<DataReadingHelper>.Is.Anything,
-                                                              Arg<IParamNameValueMap>.Is.Anything,
-                                                              Arg<IECClass>.Is.Anything,
-                                                              Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<string>.Is.Anything,
-                                                              Arg<IEnumerable<string>>.Is.Anything,
-                                                              Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
-                }
-            using ( m_mock.Playback() )
-                {
-                IECInstance modifiedInstance = instances.First();
-
-                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
-
-                Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue);
-                Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
-                Assert.AreEqual(overridenKeywords, modifiedInstance["Keywords"].StringValue);
-                Assert.AreEqual(overridenAssociateFile, modifiedInstance["AssociateFile"].StringValue);
-                Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
-                Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
-                Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
-                Assert.AreEqual(overridenCC, modifiedInstance["Occlusion"].DoubleValue);
-                Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
-                Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
-                Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
-                Assert.AreEqual(overridenDataset, modifiedInstance["Dataset"].StringValue);
-                Assert.AreEqual(overridenDate, modifiedInstance["Date"].NativeValue);
-                Assert.AreEqual(overridenClassification, modifiedInstance["Classification"].StringValue);
-
-                }
-            }
-
-        [Test]
-        public void SpatialEntityDatasetTest ()
-            {
-
-            InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            string connectionString = null;
-
-            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateParentSED(m_schema) };
-            IECInstance overrideInstance = SetupHelpers.CreateParentSED(m_schema);
-
-
-            string overridenFootprint = "OverridenFootprint";
-            overrideInstance["Footprint"].StringValue = overridenFootprint;
-
-            string overridenName = "OverridenName";
-            overrideInstance["Name"].StringValue = overridenName;
-
-            string overridenKeywords = "OverridenKeywords";
-            overrideInstance["Keywords"].StringValue = overridenKeywords;
-
-            string overridenAssociateFile = "OverridenAssociateFile";
-            overrideInstance["AssociateFile"].StringValue = overridenAssociateFile;
-
-            string overridenProcessingDescription = "OverridenProcessingDescription";
-            overrideInstance["ProcessingDescription"].StringValue = overridenProcessingDescription;
-
-            string overridenDTA = "OverridenDTA";
-            overrideInstance["DataSourceTypesAvailable"].StringValue = overridenDTA;
-
-            string overridenARD = "OverridenARD";
-            overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
-
-            string overridenResolutionInMeters = "ResolutionInMeters";
-            overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
-
-            string overridenDataProvider = "DataProvider";
-            overrideInstance["DataProvider"].StringValue = overridenDataProvider;
-
-            string overridenDataProviderName = "DataProviderName";
-            overrideInstance["DataProviderName"].StringValue = overridenDataProviderName;
-
-            string overridenDataset = "OverridenDataset";
-            overrideInstance["Dataset"].StringValue = overridenDataset;
-
-            DateTime overridenDate = new DateTime(2016, 10, 31);
-            overrideInstance["Date"].NativeValue = overridenDate;
-
-            string overridenClassification = "OverridenClassification";
-            overrideInstance["Classification"].StringValue = overridenClassification;
-
-            bool overridenProcessable = true;
-            overrideInstance["Processable"].NativeValue = overridenProcessable;
-
-
-            List<IECInstance> overrideInstances = new List<IECInstance>() { overrideInstance };
-
-            using ( m_mock.Record() )
-                {
-                Expect.Call(m_querierMock.QueryDbForInstances(Arg<string>.Is.Anything,
-                                                              Arg<DataReadingHelper>.Is.Anything,
-                                                              Arg<IParamNameValueMap>.Is.Anything,
-                                                              Arg<IECClass>.Is.Anything,
-                                                              Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<string>.Is.Anything,
-                                                              Arg<IEnumerable<string>>.Is.Anything,
-                                                              Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
-                }
-            using ( m_mock.Playback() )
-                {
-                IECInstance modifiedInstance = instances.First();
-
-                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
-
-                Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue, "Footprints are not equal");
-                Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue, "Names are not equal");
-                Assert.AreEqual(overridenKeywords, modifiedInstance["Keywords"].StringValue, "Keywords are not equal");
-                Assert.AreEqual(overridenAssociateFile, modifiedInstance["AssociateFile"].StringValue, "AssociateFiles are not equal");
-                Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue, "ProcessingDescriptions are not equal");
-                Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue, "DataSourceTypesAvailables are not equal");
-                Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue, "AccuracyResolutionDensities are not equal");
-                Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
-                Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
-                Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
-                Assert.AreEqual(overridenDataset, modifiedInstance["Dataset"].StringValue);
-                Assert.AreEqual(overridenDate, modifiedInstance["Date"].NativeValue, "Date are not equal");
-                Assert.AreEqual(overridenClassification, modifiedInstance["Classification"].StringValue, "Classification are not equal");
-                Assert.AreEqual(overridenProcessable, modifiedInstance["Processable"].NativeValue, "Processable are not equal");
-                }
-            }
-
-        [Test]
-        public void ThumbnailTest ()
-            {
-
-            InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            string connectionString = null;
-
-            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateThumbnail(true, m_schema) };
-            IECInstance overrideInstance = SetupHelpers.CreateThumbnail(true, m_schema);
-
-
-            string overridenProvenance = "OverridenProvenance";
-            overrideInstance["ThumbnailProvenance"].StringValue = overridenProvenance;
-
-            string overridenFormat = "OverridenFormat";
-            overrideInstance["ThumbnailFormat"].StringValue = overridenFormat;
-
-            string overridenWidth = "OverridenWidth";
-            overrideInstance["ThumbnailWidth"].StringValue = overridenWidth;
-
-            string overridenHeight = "OverridenHeight";
-            overrideInstance["ThumbnailHeight"].StringValue = overridenHeight;
-
-            string overridenStamp = "OverridenStamp";
-            overrideInstance["ThumbnailStamp"].StringValue = overridenStamp;
-
-            string overridenGenerationDetails = "OverridenGenerationDetails";
-            overrideInstance["ThumbnailGenerationDetails"].StringValue = overridenGenerationDetails;
-
-            Stream originalStream = new MemoryStream();
-            byte[] originalBytes = System.Text.Encoding.UTF8.GetBytes("OriginalStream");
-            originalStream.Write(originalBytes, 0, originalBytes.Length);
-            Stream overridenStream = new MemoryStream();
-            string overridenStreamString = "OverridenStream";
-            byte[] overridenBytes = System.Text.Encoding.UTF8.GetBytes(overridenStreamString);
-            overridenStream.Write(overridenBytes, 0, overridenBytes.Length);
-
-            StreamBackedDescriptor originalSBD = new StreamBackedDescriptor(originalStream);
-            StreamBackedDescriptorAccessor.SetIn(instances.First(), originalSBD);
-
-            StreamBackedDescriptor overridenSBD = new StreamBackedDescriptor(overridenStream);
-            StreamBackedDescriptorAccessor.SetIn(overrideInstance, overridenSBD);
-
-            List<IECInstance> overrideInstances = new List<IECInstance>() { overrideInstance };
-
-            using ( m_mock.Record() )
-                {
-                Expect.Call(m_querierMock.QueryDbForInstances(Arg<string>.Is.Anything,
-                                                              Arg<DataReadingHelper>.Is.Anything,
-                                                              Arg<IParamNameValueMap>.Is.Anything,
-                                                              Arg<IECClass>.Is.Anything,
-                                                              Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<string>.Is.Anything,
-                                                              Arg<IEnumerable<string>>.Is.Anything,
-                                                              Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
-                }
-            using ( m_mock.Playback() )
-                {
-                IECInstance modifiedInstance = instances.First();
-
-                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
-
-                Assert.AreEqual(overridenProvenance, modifiedInstance["ThumbnailProvenance"].StringValue, "ThumbnailProvenances are not equal");
-                Assert.AreEqual(overridenFormat, modifiedInstance["ThumbnailFormat"].StringValue, "ThumbnailFormats are not equal");
-                Assert.AreEqual(overridenWidth, modifiedInstance["ThumbnailWidth"].StringValue, "ThumbnailWidths are not equal");
-                Assert.AreEqual(overridenHeight, modifiedInstance["ThumbnailHeight"].StringValue, "ThumbnailHeights are not equal");
-                Assert.AreEqual(overridenStamp, modifiedInstance["ThumbnailStamp"].StringValue, "ThumbnailStamps are not equal");
-                Assert.AreEqual(overridenGenerationDetails, modifiedInstance["ThumbnailGenerationDetails"].StringValue, "ThumbnailGenerationDetails are not equal");
-
-                StreamBackedDescriptor testSBD = StreamBackedDescriptorAccessor.GetFrom(modifiedInstance);
-                StreamReader reader = new StreamReader(testSBD.Stream, System.Text.Encoding.UTF8);
-                testSBD.Stream.Position = 0;
-                string testStreamString = reader.ReadToEnd();
-                Assert.AreEqual(overridenStreamString, testStreamString, "Thumbnail Datas are not equal.");
                 }
             }
 
@@ -1168,14 +888,11 @@ namespace IndexECPlugin.Tests
             string overridenTermsOfUse = "OverridenTermsOfUse";
             overrideInstance["TermsOfUse"].StringValue = overridenTermsOfUse;
 
-            string overridenProcessingDescription = "OverridenProcessingDescription";
-            overrideInstance["ProcessingDescription"].StringValue = overridenProcessingDescription;
-
             string overridenDataSourceType = "OverridenDataSourceType";
             overrideInstance["DataSourceType"].StringValue = overridenDataSourceType;
 
-            string overridenARD = "OverridenARD";
-            overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
+            string overridenAIM = "OverridenAIM";
+            overrideInstance["AccuracyInMeters"].StringValue = overridenAIM;
 
             double overridenCC = 12.3;
             overrideInstance["Occlusion"].DoubleValue = overridenCC;
@@ -1227,9 +944,8 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenKeywords, modifiedInstance["Keywords"].StringValue);
                 Assert.AreEqual(overridenLegal, modifiedInstance["Legal"].StringValue);
                 Assert.AreEqual(overridenTermsOfUse, modifiedInstance["TermsOfUse"].StringValue);
-                Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDataSourceType, modifiedInstance["DataSourceType"].StringValue);
-                Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
+                Assert.AreEqual(overridenAIM, modifiedInstance["AccuracyInMeters"].StringValue);
                 Assert.AreEqual(overridenCC, modifiedInstance["Occlusion"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);

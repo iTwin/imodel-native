@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/SourceStringMap.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,26 @@ namespace IndexECPlugin.Source.Helpers
     {
     internal static class SourceStringMap
         {
+
+        public static bool IsValidId (DataSource source, string id)
+            {
+            switch ( source )
+                {
+                case DataSource.Index:
+                    int num;
+                    return int.TryParse(id, out num);
+                case DataSource.USGS:
+                    return (id.Length == IndexConstants.USGSIdLenght);
+                case DataSource.RDS:
+                    Guid guid;
+                    return Guid.TryParse(id, out guid);
+                case DataSource.All:
+                    return true;
+                default:
+                    throw new NotImplementedException("This source is not implemented yet");
+                }
+            }
+
         public static string SourceToString (DataSource source)
             {
             switch ( source )
@@ -24,6 +44,8 @@ namespace IndexECPlugin.Source.Helpers
                     return "index";
                 case DataSource.USGS:
                     return "usgsapi";
+                case DataSource.RDS:
+                    return "rds";
                 case DataSource.All:
                     return "all";
                 default:
@@ -39,6 +61,8 @@ namespace IndexECPlugin.Source.Helpers
                     return DataSource.Index;
                 case "usgsapi":
                     return DataSource.USGS;
+                case "rds":
+                    return DataSource.RDS;
                 case "all":
                     return DataSource.All;
                 default:
@@ -56,7 +80,7 @@ namespace IndexECPlugin.Source.Helpers
             //return result.TrimEnd(' ', ',');
 
             //I hard coded it, because I feared that the commented method could throw exceptions if the map was not updated at the same time as the Source enum.
-            return "\"index\", \"usgsAPI\" and \"all\"";
+            return "\"index\", \"usgsAPI\", \"rds\" and \"all\"";
             }
         }
 
@@ -73,6 +97,10 @@ namespace IndexECPlugin.Source.Helpers
         /// The USGS API datasource
         /// </summary>
         USGS,
+        /// <summary>
+        /// The Reality Data Service datasource
+        /// </summary>
+        RDS,
         /// <summary>
         /// Represents all datasources
         /// </summary>

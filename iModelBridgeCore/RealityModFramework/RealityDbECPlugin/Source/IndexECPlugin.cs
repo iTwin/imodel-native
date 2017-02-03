@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/IndexECPlugin.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -38,12 +38,20 @@ using System.Reflection;
 using Bentley.ECSystem.Configuration;
 using System.Data.Common;
 using System.Data;
+using System.Security.Claims;
 using System.Threading;
+//using System.Net;
 
 #if !IMSOFF
-using Microsoft.IdentityModel.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Web;
+using System.IdentityModel.Configuration;
+using System.IdentityModel.Services;
+using System.IdentityModel.Services.Configuration;
+using System.IdentityModel.Tokens;
+#endif
+
+#if CONNECTENV
+using Bentley.SelectServer.SaaS.Client;
+using Bentley.SelectServer.SaaS.Client.FeatureTracking;
 #endif
 
 namespace IndexECPlugin.Source
@@ -73,6 +81,44 @@ namespace IndexECPlugin.Source
         /// </summary>
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
+
+#if CONNECTENV
+
+        private static IUsageTrackingContext m_usageTrackingContext = null;
+        private static IUsageTrackingSender m_usageTrackingSender = null;
+
+        
+
+        /// <summary>
+        /// Usage tracking context
+        /// </summary>
+        public static IUsageTrackingContext UsageTrackingContext
+            {
+            get
+                {
+                if ( null == m_usageTrackingContext )
+                    {
+                    m_usageTrackingContext = UsageTrackingContextFactory.Current.CreateContext(typeof(IndexECPlugin).Assembly.GetName().Version.ToString(), Environment.MachineName, IndexConstants.ProductId);
+                    }
+                return m_usageTrackingContext;
+                }
+            }
+
+        /// <summary>
+        /// Usage tracking sender
+        /// </summary>
+        public static IUsageTrackingSender UsageTrackingSender
+            {
+            get
+                {
+                string ftConnectionString = ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString");
+                if ( null == m_usageTrackingSender && ftConnectionString != null)
+                    m_usageTrackingSender = new FeatureSender(ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString"));
+                return m_usageTrackingSender;
+                }
+            }
+
+#endif
 
         private string ConnectionString
             {
@@ -212,62 +258,38 @@ namespace IndexECPlugin.Source
 
                         }
 
-                    
+
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
                         {
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                         }
 
-                    string source;
+                    string[] sources;
 
                     if ( query.ExtendedData.ContainsKey("source") )
                         {
-                        source = query.ExtendedData["source"].ToString();
+                        sources = query.ExtendedData["source"].ToString().Split('&');
                         }
                     else
                         {
                         //TODO : We should rename queryType, as it has taken the role of a default parameter
-                        source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
+                        sources = new string[] { searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue };
                         }
 
-                    using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
+                    List<DataSource> sourcesList = new List<DataSource>();
+                    foreach ( string source in sources )
                         {
-                        switch ( source.ToLower() )
+                        try
                             {
-                            case "index":
-                                    {
-                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
-                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    //instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
-                                    //instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
-                                    return instances;
-                                    }
-
-                            case "usgsapi":
-                                    {
-                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
-                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    //instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
-                                    //instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
-                                    return instances;
-                                    }
-                            case "all":
-                                    {
-
-                                    return QueryAllSources(query, querySettings, schema);
-
-                                    }
-                            default:
-                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                                throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                            sourcesList.Add(SourceStringMap.StringToSource(source));
+                            }
+                        catch ( NotImplementedException )
+                            {
+                            throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
                             }
                         }
+                    return QueryMultipleSources(query, querySettings, schema, sourcesList, Convert.ToBase64String(Encoding.UTF8.GetBytes(connection.ConnectionInfo.GetField("Token").Value)));
                     }
                 }
             catch ( Exception e )
@@ -278,8 +300,8 @@ namespace IndexECPlugin.Source
                         {
                         var sqlEx = e as SqlException;
                         Log.Logger.error(String.Format("Query {0} aborted. SqlException number : {3}. SqlException message : {1}. Stack Trace : {2}", query.ID, sqlEx.Message, sqlEx.StackTrace, sqlEx.Number));
-                        if(sqlEx.Number == 10928 || sqlEx.Number == 10929)
-                        throw new EnvironmentalException(String.Format("The server is currently busy. Please try again later"));
+                        if ( sqlEx.Number == 10928 || sqlEx.Number == 10929 )
+                            throw new EnvironmentalException(String.Format("The server is currently busy. Please try again later"));
                         }
                     else
                         {
@@ -298,6 +320,10 @@ namespace IndexECPlugin.Source
                     {
                     throw;
                     }
+                if ( e is EnvironmentalException )
+                    {
+                    throw;
+                    }
                 else
                     {
                     throw new Exception("Internal Error.");
@@ -305,65 +331,138 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private IEnumerable<IECInstance> QueryAllSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema)
+        private IEnumerable<IECInstance> QueryMultipleSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema, IEnumerable<DataSource> sources, string token)
             {
             List<IECInstance> instanceList = new List<IECInstance>();
 
             IEnumerable<IECInstance> indexInstances = null;
             List<Exception> exceptions = new List<Exception>();
             Object exceptionsLock = new Object();
-            Thread indexQuery = new Thread(() =>
-            {
-                try
-                    {
-                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
-                    indexInstances = helper.CreateInstanceList().ToList();
-                    //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
-                    //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
-                    }
-                catch ( Exception e )
-                    {
-                    indexInstances = new List<IECInstance>();
-                    lock ( exceptionsLock )
-                        {
-                        exceptions.Add(e);
-                        Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
-                        }
-                    }
-            });
 
+    //        ServicePointManager.ServerCertificateValidationCallback +=
+    //(sender, cert, chain, sslPolicyErrors) => true;
+
+            Thread indexQuery = null;
+            if ( sources.Contains(DataSource.Index) || sources.Contains(DataSource.All) )
+                {
+                indexQuery = new Thread(() =>
+                {
+                    try
+                        {
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
+                        indexInstances = helper.CreateInstanceList().ToList();
+                        //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
+                        //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
+                        }
+                    catch ( Exception e )
+                        {
+                        indexInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
+                }
             IEnumerable<IECInstance> usgsInstances = null;
-            Thread usgsQuery = new Thread(() =>
-            {
-                try
-                    {
-                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
-                    usgsInstances = helper.CreateInstanceList();
-                    //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
-                    //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
-                    }
-                catch ( Exception e )
-                    {
-                    usgsInstances = new List<IECInstance>();
-                    lock ( exceptionsLock )
+            Thread usgsQuery = null;
+            if ( sources.Contains(DataSource.USGS) || sources.Contains(DataSource.All) )
+                {
+
+                usgsQuery = new Thread(() =>
+                {
+                    try
                         {
-                        exceptions.Add(e);
-                        Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                        usgsInstances = helper.CreateInstanceList();
+                        //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                        //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
                         }
-                    }
-            });
-            indexQuery.Start();
-            usgsQuery.Start();
+                    catch ( Exception e )
+                        {
+                        usgsInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
 
-            indexQuery.Join();
-            usgsQuery.Join();
+                }
 
-            instanceList.AddRange(indexInstances);
-            instanceList.AddRange(usgsInstances);
+            IEnumerable<IECInstance> rdsInstances = null;
+            Thread rdsQuery = null;
+            if ( sources.Contains(DataSource.RDS) || sources.Contains(DataSource.All) )
+                {
+
+                rdsQuery = new Thread(() =>
+                {
+                    try
+                        {
+                        //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                        //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, ConnectionString, schema, token);
+                        rdsInstances = helper.CreateInstanceList();
+                        //instanceOverrider.Modify(usgsInstances, DataSource.RDS, ConnectionString);
+                        //instanceComplement.Modify(usgsInstances, DataSource.RDS, ConnectionString);
+                        }
+                    catch ( Exception e )
+                        {
+                        rdsInstances = new List<IECInstance>();
+                        lock ( exceptionsLock )
+                            {
+                            exceptions.Add(e);
+                            Log.Logger.error(String.Format("RDS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            }
+                        }
+                });
+
+                }
+            if ( indexQuery != null )
+                {
+                indexQuery.Start();
+                }
+            if ( usgsQuery != null )
+                {
+                usgsQuery.Start();
+                }
+            if ( rdsQuery != null )
+                {
+                rdsQuery.Start();
+                }
+
+            if ( indexQuery != null )
+                {
+                indexQuery.Join();
+                }
+            if ( usgsQuery != null )
+                {
+                usgsQuery.Join();
+                }
+            if ( rdsQuery != null )
+                {
+                rdsQuery.Join();
+                }
+
+            if ( indexInstances != null )
+                {
+                instanceList.AddRange(indexInstances);
+                }
+
+            if ( usgsInstances != null )
+                {
+                instanceList.AddRange(usgsInstances);
+                }
+            if ( rdsInstances != null )
+                {
+                instanceList.AddRange(rdsInstances);
+                }
 
             if ( exceptions.Count != 0 )
                 {
@@ -574,13 +673,28 @@ namespace IndexECPlugin.Source
                 {
                 //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
-#if !IMSOFF
+//#if !IMSOFF
                 new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
-#endif
+//#endif
                 }.ToArray();
             }
 
 #if !IMSOFF
+
+        private readonly Lazy<FederationConfiguration> m_federationConfiguration =
+    new Lazy<FederationConfiguration>(() => FederatedAuthentication.FederationConfiguration);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private FederationConfiguration FederationConfiguration
+            {
+            get
+                {
+                return m_federationConfiguration.Value;
+                }
+            }
+
         private void OpenConnection (ConnectionModule sender,
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
@@ -594,10 +708,15 @@ namespace IndexECPlugin.Source
 
                 using ( var reader = XmlReader.Create(new StringReader(serializedToken)) )
                     {
-                    var bootstrapToken = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers.ReadToken(reader);
-                    SecurityTokenHandler handler = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers[bootstrapToken];
+                    var bootstrapToken = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers.ReadToken(reader);
+                    SecurityTokenHandler handler = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers[bootstrapToken];
 
                     var cic = handler.ValidateToken(bootstrapToken);
+                    var cp = new ClaimsPrincipal(cic);
+                    System.Web.HttpContext.Current.User = cp;
+                    System.Threading.Thread.CurrentPrincipal = cp;
+
+                    Log.Logger.debug("TokenAuthenticator: authenticated with user: {0}, ", cp.Identity == null ? "null" : cp.Identity.Name);
                     }
                 }
             catch ( Exception )
@@ -614,6 +733,110 @@ namespace IndexECPlugin.Source
             {
             }
 #endif
+
+#if CONNECTENV
+        private static string GetClaimValue (string claimType)
+            {
+            var user = (ClaimsPrincipal) System.Web.HttpContext.Current.User;
+            if ( user == null )
+                {
+                return null;
+                }
+            var claimsIdentity = (ClaimsIdentity) user.Identity;
+            if ( claimsIdentity.Claims == null )
+                {
+                return null;
+                }
+            var claim = claimsIdentity.Claims.FirstOrDefault(c => c.Type == claimType);
+            if ( null == claim )
+                return null;
+            return claim.Value;
+            }
+
+        /// <summary>
+        /// Mark a feature for usage tracking purpose
+        /// </summary>
+        /// <param name="featureGuid">The unique GUID associated to the feature</param>
+        /// <param name="additionalProperties">User defined properties to be included in the feature marking</param>
+        public static void MarkFeature (Guid featureGuid, IEnumerable<KeyValuePair<string, object>> additionalProperties = null)
+            {
+
+            IUsageTrackingContext eventContext = UsageTrackingContext.AsVolatile();
+            IUsageTrackingSender eventSender = UsageTrackingSender;
+            if ( null == eventContext || eventSender == null)
+                return;
+
+            string userId = GetClaimValue("http://schemas.bentley.com/ws/2011/03/identity/claims/userid");
+
+            string ipAddress = System.Web.HttpContext.Current.Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+            if ( string.IsNullOrEmpty(ipAddress) )
+                {
+                ipAddress = System.Web.HttpContext.Current.Request.UserHostAddress;
+                }
+            else
+                {
+                ipAddress = ipAddress.Split(',')[0];
+                }
+
+            eventContext.UserImsId = new Guid(userId);
+            eventContext.FeatureId = featureGuid;
+            eventContext.ProjectId = Guid.Empty;
+            eventContext.ClientId = ipAddress;
+
+            // Add additional arbitrary properties.
+            if ( additionalProperties != null )
+                {
+                foreach ( KeyValuePair<string, object> additionalProperty in additionalProperties )
+                    {
+                    eventContext.Properties.Add(additionalProperty);
+                    }
+                }
+
+            eventSender.MarkFeature(eventContext.AsMarkEvent());
+            }
+
+#endif
+        /// <summary>
+        /// Get email address of the caller from the connection
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns></returns>
+        public static string GetEmailFromConnection
+        (
+            RepositoryConnection connection
+        )
+            {
+            try
+                {
+                //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                if ( !isAuth )
+                    {
+                    throw (new Exception());
+                    }
+                else
+                    {
+                    //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+
+                    IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                    Claim organizationClaim = claims.Where(c => c.Type == "http://schemas.bentley.com/ws/2011/03/identity/claims/organizationid").FirstOrDefault();
+                    Claim emailClaim = claims.Where(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress").FirstOrDefault();
+                    return emailClaim.Value.ToLower();
+                    }
+                }
+            catch
+                {
+                //if on connect environment use this
+                string token = connection.ConnectionInfo.GetField("Token").Value;
+                string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+                var xml = new XmlDocument();
+                xml.LoadXml(serializedToken);
+                var nsmgr = new XmlNamespaceManager(xml.NameTable);
+                nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+
+                return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='emailaddress']", nsmgr).InnerText.ToLower();
+                }
+            }
 
         }
 

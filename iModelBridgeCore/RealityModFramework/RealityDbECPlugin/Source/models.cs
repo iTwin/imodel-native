@@ -273,6 +273,15 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
+        public bool ParameterizedURI
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public string Type
             {
             get;

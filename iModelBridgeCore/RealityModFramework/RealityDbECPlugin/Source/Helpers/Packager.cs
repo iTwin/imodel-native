@@ -25,6 +25,10 @@ namespace IndexECPlugin.Source.Helpers
         private string m_connectionString;
         private EnumerableBasedQueryHandler m_executeQuery;
         bool m_osm;
+        List<double> m_selectedRegion;
+        BBox m_selectedBBox;
+        string m_coordinateSystem;
+        string m_email;
 
         public Packager(string connectionString, EnumerableBasedQueryHandler executeQuery)
             {
@@ -34,7 +38,6 @@ namespace IndexECPlugin.Source.Helpers
 
         public string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule, int major, int minor, string requestor, string requestorVersion)
             {
-            string coordinateSystem = null;
 
             string name = Guid.NewGuid().ToString();
             instance.InstanceId = name + ".xrdp";
@@ -45,7 +48,7 @@ namespace IndexECPlugin.Source.Helpers
 
             if ( (csPropValue != null) && (!csPropValue.IsNull) )
                 {
-                coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
+                m_coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
                 }
 
             var osmPropValue = instance.GetPropertyValue("OSM");
@@ -70,13 +73,13 @@ namespace IndexECPlugin.Source.Helpers
                 }
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> indexRequestedEntities = new List<RequestedEntity>();
-            List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> subAPIRequestedEntities = new List<RequestedEntity>();
             for ( int i = 0; i < requestedEntitiesECArray.Count; i++ )
                 {
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
 
-                if ( requestedEntity.ID.Length != IndexConstants.USGSIdLenght )
+                if (!SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID))
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
                         {
@@ -91,49 +94,71 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID) )
                         {
-                        usgsRequestedEntities.Add(requestedEntity);
+                        subAPIRequestedEntities.Add(requestedEntity);
                         }
                     }
                 }
 
             // Create package bounding box (region of interest).
-            List<double> selectedRegion = new List<double>();
+            m_selectedRegion = new List<double>();
+            m_selectedBBox = new BBox();
+            m_selectedBBox.minX = 90.0;
+            m_selectedBBox.maxX = -90.0;
+            m_selectedBBox.minY = 180.0;
+            m_selectedBBox.maxY = -180.0;
 
             string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
 
             try
                 {
-                selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
+                m_selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
                 }
             catch ( System.FormatException )
                 {
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
-            if((selectedRegion.Count % 2) != 0 || selectedRegion.Count < 6)
+            if ( (m_selectedRegion.Count % 2) != 0 || m_selectedRegion.Count < 6 )
                 {
                 //We need an even number of coordinates
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
-            for(int i = 0; i < selectedRegion.Count; i = i+2)
+            for ( int i = 0; i < m_selectedRegion.Count; i = i + 2 )
                 {
                 //We verify if the lat/long bounds are correct.
-                if(selectedRegion[i] < -180.0 || selectedRegion[i] > 180.0 || selectedRegion[i + 1] < -90.0 || selectedRegion[i + 1] > 90.0)
+                if ( m_selectedRegion[i] < -180.0 || m_selectedRegion[i] > 180.0 || m_selectedRegion[i + 1] < -90.0 || m_selectedRegion[i + 1] > 90.0 )
                     {
                     throw new UserFriendlyException("The given polygon's format was not correct.");
                     }
+                
+                //We also extract the bbox
+                //x
+                double temp = m_selectedRegion[i];
+                if ( m_selectedBBox.minX > temp )
+                    m_selectedBBox.minX = temp;
+                if ( m_selectedBBox.maxX < temp )
+                    m_selectedBBox.maxX = temp;
+                //y
+                temp = m_selectedRegion[i + 1];
+                if ( m_selectedBBox.minY > temp )
+                    m_selectedBBox.minY = temp;
+                if ( m_selectedBBox.maxY < temp )
+                    m_selectedBBox.maxY = temp;
                 }
+
+            m_email = IndexECPlugin.GetEmailFromConnection(connection);
+        
 
             // Create data source.
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
 
 
-            List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem, major);
+            List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, m_coordinateSystem, major);
 
-            realityDataNetList.AddRange(UsgsPackager(sender, connection, queryModule, usgsRequestedEntities));
+            realityDataNetList.AddRange(SubAPIPackager(sender, connection, queryModule, subAPIRequestedEntities));
 
             //List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
             if ( m_osm )
-                realityDataNetList.Add(OsmPackager(sender, connection, queryModule, selectedRegion));
+                realityDataNetList.Add(OsmPackager(sender, connection, queryModule));
 
             // Create data group and package.
             List<ImageryDataNet> imgGroup = new List<ImageryDataNet>();
@@ -148,7 +173,7 @@ namespace IndexECPlugin.Source.Helpers
             RealityDataPackageNet package = RealityDataPackageNet.Create(name);
             package.SetDescription("");
             package.SetCopyright("");
-            package.SetBoundingPolygon(selectedRegion);
+            package.SetBoundingPolygon(m_selectedRegion);
             package.SetId(name);
             package.SetMajorVersion(major);
             package.SetMinorVersion(minor);
@@ -184,6 +209,17 @@ namespace IndexECPlugin.Source.Helpers
 
             UploadPackageInDatabase(instance, version, requestor, requestorVersion);
 
+#if CONNECTENV
+            string regionString = String.Join(" ", m_selectedRegion.Select(d => Convert.ToString(d)));
+
+            Dictionary<string, object> additionalProperties = new Dictionary<string, object>();
+            additionalProperties.Add("Polygon", regionString);
+
+
+            IndexECPlugin.MarkFeature(new Guid(IndexConstants.PackageFeatureGuid), additionalProperties);
+
+#endif
+
             Log.Logger.info("Created the package file " + instance.InstanceId + ". Region selected : " + selectedRegionStr);
             return instance.InstanceId;
             }
@@ -196,7 +232,7 @@ namespace IndexECPlugin.Source.Helpers
                 return RDNList;
                 }
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), false);
 
@@ -240,6 +276,7 @@ namespace IndexECPlugin.Source.Helpers
             dataSourceRelCrit.SelectAllProperties = false;
             dataSourceRelCrit.SelectedProperties = new List<IECProperty>();
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "ParameterizedURL"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "NoDataValue"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
@@ -421,6 +458,11 @@ namespace IndexECPlugin.Source.Helpers
                     //This is a generic source, not needing any special treatment.
 
                     GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
+                    if(genericInfo.ParameterizedURI)
+                        {
+                        SetParameterizedURL(genericInfo, m_selectedBBox, m_email, m_coordinateSystem);
+                        }
+
                     RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 
                     SetRdsnFields(rdsn, genericInfo);
@@ -444,6 +486,17 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 }
             return RDNList;
+            }
+
+        private void SetParameterizedURL (GenericInfo genericInfo, BBox bbox, string email, string coordinateSystem)
+            {
+            string modifiedURI = genericInfo.URI.Replace("$(MINLONG)", bbox.minX.ToString("#.##########"));
+            modifiedURI = modifiedURI.Replace("$(MAXLONG)", bbox.maxX.ToString("#.##########"));
+            modifiedURI = modifiedURI.Replace("$(MINLAT)", bbox.minY.ToString("#.##########"));
+            modifiedURI = modifiedURI.Replace("$(MAXLAT)", bbox.maxY.ToString("#.##########"));
+            modifiedURI = modifiedURI.Replace("$(EMAIL_ADDRESS)", email);
+            modifiedURI = modifiedURI.Replace("$(TARGET_GCS)", coordinateSystem);
+            genericInfo.URI = modifiedURI;
             }
 
         private static void SetRdsnFields (RealityDataSourceNet rdsn, GenericInfo genericInfo)
@@ -484,7 +537,7 @@ namespace IndexECPlugin.Source.Helpers
         {
         GenericInfo genericInfo = new GenericInfo();
 
-        IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+        IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToMetadata");
         IECInstance firstMetadata = firstMetadataRel.Target;
 
         IECRelationshipInstance dataSourceRel;
@@ -513,6 +566,7 @@ namespace IndexECPlugin.Source.Helpers
         long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
         genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
         genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+        genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
         genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
         genericInfo.Copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
         genericInfo.TermsOfUse = (firstMetadata.GetPropertyValue("TermsOfUse") == null || firstMetadata.GetPropertyValue("TermsOfUse").IsNull) ? null : firstMetadata.GetPropertyValue("TermsOfUse").StringValue;
@@ -679,7 +733,7 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private RealityDataNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
+        private RealityDataNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule)
             {
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
 
@@ -693,7 +747,7 @@ namespace IndexECPlugin.Source.Helpers
             dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "AlternateURL2"));
             dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "CoordinateSystem"));
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
             metadataRelCrit.SelectAllProperties = false;
@@ -727,7 +781,7 @@ namespace IndexECPlugin.Source.Helpers
             string alternateURL2 = (spatialDataSource.GetPropertyValue("AlternateURL2") == null || spatialDataSource.GetPropertyValue("AlternateURL2").IsNull) ? null : spatialDataSource.GetPropertyValue("AlternateURL2").StringValue;
             string cs = (spatialDataSource.GetPropertyValue("CoordinateSystem") == null || spatialDataSource.GetPropertyValue("CoordinateSystem").IsNull) ? null : spatialDataSource.GetPropertyValue("CoordinateSystem").StringValue;
 
-            relInst = spatialEntity.GetRelationshipInstances().First(x => x.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+            relInst = spatialEntity.GetRelationshipInstances().First(x => x.ClassDefinition.Name == "SpatialEntityToMetadata");
             IECInstance metadata = relInst.Target;
 
             string legal = metadata.GetPropertyValue("Legal").StringValue;
@@ -742,37 +796,9 @@ namespace IndexECPlugin.Source.Helpers
                 alternateUrls.Add(alternateURL2);
                 }
 
-            IEnumerator<double> pointsIt = regionOfInterest.GetEnumerator();
-            double minX = 90.0;
-            double maxX = -90.0;
-            double minY = 180.0;
-            double maxY = -180.0;
-            double temp = 0.0;
-            while ( pointsIt.MoveNext() )
-                {
-                //x
-                temp = pointsIt.Current;
-                if ( minX > temp )
-                    minX = temp;
-                if ( maxX < temp )
-                    maxX = temp;
+            OsmDataSourceNet odsn = OsmDataSourceNet.Create(mainURL, m_selectedBBox.minX, m_selectedBBox.minY, m_selectedBBox.maxX, m_selectedBBox.maxY);
 
-                if(!pointsIt.MoveNext())
-                    {
-                    throw new ProgrammerException("The number of points of the regionOfInterest should be even");
-                    }
-
-                //y
-                temp = pointsIt.Current;
-                if ( minY > temp )
-                    minY = temp;
-                if ( maxY < temp )
-                    maxY = temp;
-                }
-
-            OsmDataSourceNet odsn = OsmDataSourceNet.Create(mainURL, minX, minY, maxX, maxY);
-
-            List<double> bbox = new List<double>() {minX, minY, maxX, maxY};
+            List<double> bbox = new List<double>() { m_selectedBBox.minX, m_selectedBBox.minY, m_selectedBBox.maxX, m_selectedBBox.maxY };
 
             OsmResourceNet osmResource = OsmResourceNet.Create(bbox);
             osmResource.SetAlternateUrlList(alternateUrls);
@@ -798,11 +824,11 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private List<RealityDataNet> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        private List<RealityDataNet> SubAPIPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities)
             {
             List<RealityDataNet> usgsSourceNetList = new List<RealityDataNet>();
 
-            if ( usgsRequestedEntities.Count == 0 )
+            if ( subAPIRequestedEntities.Count == 0 )
                 {
                 return usgsSourceNetList;
                 }
@@ -813,7 +839,7 @@ namespace IndexECPlugin.Source.Helpers
             IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
@@ -822,18 +848,18 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds"));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
 
             foreach ( var entity in queriedSpatialEntities )
                 {
-                IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
-                IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
+                //IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
+                //IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
-                GenericInfo genericInfo = ExtractGenericInfo(entity, usgsRequestedEntities.First(e => e.ID == entity.InstanceId));
+                GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
 
                 RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 

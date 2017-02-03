@@ -32,20 +32,20 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEBQuery()
+        public void SEQuery()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
             List<string> IdsList = new List<string>(){"1","2","3"};
 
             DataReadingHelper dataReadingHelper;
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-            string idColumnString = sebClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string idColumnString = seClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
 
-            //SELECT tab0.IdStr, tab0.Footprint.STAsText(), tab0.Footprint.STSrid, tab0.Name, tab0.Keywords, tab0.AssociateFile, tab0.ProcessingDescription, tab0.DataSourceTypesAvailable, tab0.AccuracyResolutionDensity, tab0.Date, tab0.Classification FROM dbo.CacheSpatialEntityBases tab0  WHERE tab0.IdStr IN (@param0,@param1,@param2) AND tab0.SubAPI =@param3  ;
-            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLQuery(DataSource.USGS, IdsList, sebClass, sebClass, out dataReadingHelper, out paramNameValueMap);
+            //SELECT tab0.IdStr, tab0.Footprint.STAsText(), tab0.Footprint.STSrid, tab0.Name, tab0.Keywords, tab0.AssociateFile, tab0.ProcessingDescription, tab0.DataSourceTypesAvailable, tab0.AccuracyResolutionDensity, tab0.Date, tab0.Classification FROM dbo.CacheSpatialEntity tab0  WHERE tab0.IdStr IN (@param0,@param1,@param2) AND tab0.SubAPI =@param3  ;
+            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLQuery(DataSource.USGS, IdsList, seClass, seClass, out dataReadingHelper, out paramNameValueMap);
 
             GenericParamNameValueMap genericMap = paramNameValueMap as GenericParamNameValueMap;
 
@@ -53,7 +53,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + @".* FROM .*" + Regex.Escape(tableString) + @".*WHERE.*" + Regex.Escape(idColumnString) + @".*SubAPI.*");
             Assert.IsTrue(reg.IsMatch(sqlQuery), "The query does not have the required form.");
-            foreach(IECProperty prop in sebClass)
+            foreach(IECProperty prop in seClass)
                 {
                 if ( prop.GetCustomAttributes("MimicDBColumn") != null && prop.GetCustomAttributes("MimicDBColumn")["CacheColumnName"] != null )
                     {
@@ -70,22 +70,22 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEBSpatialQuery ()
+        public void SESpatialQuery ()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
 
             DataReadingHelper dataReadingHelper;
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-            string idColumnString = sebClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string idColumnString = seClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
 
             PolygonDescriptor polygonDescriptor = new PolygonDescriptor();
             polygonDescriptor.WKT = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))";
             polygonDescriptor.SRID = 4326;
 
-            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, sebClass, sebClass, out dataReadingHelper, out paramNameValueMap);
+            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, seClass, seClass, out dataReadingHelper, out paramNameValueMap);
 
             GenericParamNameValueMap genericMap = paramNameValueMap as GenericParamNameValueMap;
 
@@ -96,7 +96,7 @@ namespace IndexECPlugin.Tests
             Regex reg = new Regex(@".*SELECT .*" + @".* FROM .*" + Regex.Escape(tableString) +  @".*WHERE.*STIntersects.*\('POLYGON \(\(30 10, 40 40, 20 40, 10 20, 30 10\)\)',4326\).*" + @".*SubAPI.*");
 #endif
             Assert.IsTrue(reg.IsMatch(sqlQuery), "The query does not have the required form.");
-            foreach ( IECProperty prop in sebClass )
+            foreach ( IECProperty prop in seClass )
                 {
                 if ( prop.GetCustomAttributes("MimicDBColumn") != null && prop.GetCustomAttributes("MimicDBColumn")["CacheColumnName"] != null )
                     {
@@ -110,38 +110,38 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEBNonInstanceDataQuery ()
+        public void SENonInstanceDataQuery ()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
             List<string> IdsList = new List<string>() { "1" };
 
             DataReadingHelper dataReadingHelper;
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-            string idColumnString = sebClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string idColumnString = seClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
 
             List<IECProperty> emptyList = new List<IECProperty>();
             List<string> nonInstanceColumnList = new List<string>(){"testCol1234"};
 
-            //SELECT tab0.IdStr, tab0.Footprint.STAsText(), tab0.Footprint.STSrid, tab0.Name, tab0.Keywords, tab0.AssociateFile, tab0.ProcessingDescription, tab0.DataSourceTypesAvailable, tab0.AccuracyResolutionDensity, tab0.Date, tab0.Classification FROM dbo.CacheSpatialEntityBases tab0  WHERE tab0.IdStr IN (@param0,@param1,@param2) AND tab0.SubAPI =@param3  ;
-            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLQuery(DataSource.USGS, IdsList, sebClass, emptyList, out dataReadingHelper, out paramNameValueMap, nonInstanceColumnList);
+            //SELECT tab0.IdStr, tab0.Footprint.STAsText(), tab0.Footprint.STSrid, tab0.Name, tab0.Keywords, tab0.AssociateFile, tab0.ProcessingDescription, tab0.DataSourceTypesAvailable, tab0.AccuracyResolutionDensity, tab0.Date, tab0.Classification FROM dbo.CacheSpatialEntity tab0  WHERE tab0.IdStr IN (@param0,@param1,@param2) AND tab0.SubAPI =@param3  ;
+            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLQuery(DataSource.USGS, IdsList, seClass, emptyList, out dataReadingHelper, out paramNameValueMap, nonInstanceColumnList);
 
             Assert.IsTrue(sqlQuery.Contains("testCol1234"), "The additionnal column was not added in the query.");
             }
 
         [Test]
-        public void SEBSpatialNonInstanceDataQuery ()
+        public void SESpatialNonInstanceDataQuery ()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
 
             DataReadingHelper dataReadingHelper;
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-            string idColumnString = sebClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string idColumnString = seClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
 
             List<IECProperty> emptyList = new List<IECProperty>();
             List<string> nonInstanceColumnList = new List<string>() { "testCol1234" };
@@ -150,26 +150,26 @@ namespace IndexECPlugin.Tests
             polygonDescriptor.WKT = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))";
             polygonDescriptor.SRID = 4326;
 
-            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, sebClass, emptyList, out dataReadingHelper, out paramNameValueMap, nonInstanceColumnList);
+            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, seClass, emptyList, out dataReadingHelper, out paramNameValueMap, nonInstanceColumnList);
 
             Assert.IsTrue(sqlQuery.Contains("testCol1234"), "The additionnal column was not added in the query.");
             }
 
         [Test]
-        public void SEBSpatialWhereCriteriaQuery ()
+        public void SESpatialWhereCriteriaQuery ()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
 
             DataReadingHelper dataReadingHelper;
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-            string idColumnString = sebClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string idColumnString = seClass["Id"].GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
 
             List<IECProperty> emptyList = new List<IECProperty>();
             SingleWhereCriteriaHolder criteria = new SingleWhereCriteriaHolder();
-            criteria.Property = sebClass["Id"];
+            criteria.Property = seClass["Id"];
             criteria.Operator = Bentley.EC.Persistence.Query.RelationalOperator.EQ;
             criteria.Value = "testValue12345";
             List<SingleWhereCriteriaHolder> criteriaList = new List<SingleWhereCriteriaHolder>(){criteria};
@@ -178,7 +178,7 @@ namespace IndexECPlugin.Tests
             polygonDescriptor.WKT = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))";
             polygonDescriptor.SRID = 4326;
 
-            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, sebClass, emptyList, out dataReadingHelper, out paramNameValueMap, null, criteriaList);
+            string sqlQuery = m_mimicTableAccessor.CreateMimicSQLSpatialQuery(DataSource.USGS, polygonDescriptor, seClass, emptyList, out dataReadingHelper, out paramNameValueMap, null, criteriaList);
 
             GenericParamNameValueMap genericMap = paramNameValueMap as GenericParamNameValueMap;
 

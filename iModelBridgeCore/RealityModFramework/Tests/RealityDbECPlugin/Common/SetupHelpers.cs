@@ -29,36 +29,12 @@ namespace IndexECPlugin.Tests.Common
             instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
 
             instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
             instance.ExtendedDataValueSetter.Add("Complete", complete);
 
             return instance;
             }
 
-        static public IECInstance CreateSEB (bool complete, IECSchema schema)
-            {
-            IECClass ecClass = schema.GetClass("SpatialEntityBase");
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-
-            InitializePropertiesToNull(instance, ecClass);
-
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
-            instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
-            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
-            instance["DataSourceTypesAvailable"].StringValue = "IMG";
-            instance["DataProvider"].StringValue = "USGS";
-            instance["DataProviderName"].StringValue = "United States Geological Survey";
-            instance["Classification"].StringValue = "Terrain";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        static public IECInstance CreateSpatialEntity (bool complete, IECSchema schema)
+        static public IECInstance CreateSE (bool complete, IECSchema schema)
             {
             IECClass ecClass = schema.GetClass("SpatialEntity");
             IECInstance instance = ecClass.CreateInstance();
@@ -68,34 +44,17 @@ namespace IndexECPlugin.Tests.Common
 
             instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
             instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
+            instance["ApproximateFootprint"].NativeValue = false;
             instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
-            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
             instance["DataSourceTypesAvailable"].StringValue = "IMG";
-            //instance["Occlusion"].DoubleValue = 0;
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
             instance["Classification"].StringValue = "Terrain";
+            instance["ThumbnailURL"].StringValue = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg";
+            instance["Dataset"].StringValue = "Digital Elevation Model (DEM) 1 meter";
 
             instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
             instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        static public IECInstance CreateParentSED (IECSchema schema)
-            {
-            IECClass ecClass = schema.GetClass("SpatialEntityDataset");
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
-
-            InitializePropertiesToNull(instance, ecClass);
-
-            instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
-            instance.ExtendedDataValueSetter.Add("Complete", true);
-
             return instance;
             }
 
@@ -108,26 +67,9 @@ namespace IndexECPlugin.Tests.Common
             InitializePropertiesToNull(instance, ecClass);
 
             instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["RawMetadataFormat"].StringValue = "FGDC";
             instance["Description"].StringValue = "CachedValueTest";
             instance["Keywords"].StringValue = "CachedValueTest";
             instance["Legal"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        static public IECInstance CreateThumbnail (bool complete, IECSchema schema)
-            {
-            IECClass ecClass = schema.GetClass("Thumbnail");
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-
-            InitializePropertiesToNull(instance, ecClass);
-
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["ThumbnailFormat"].StringValue = "jpg";
 
             instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
             instance.ExtendedDataValueSetter.Add("Complete", complete);

@@ -117,11 +117,6 @@ namespace IndexECPlugin.Source.Helpers
             additionalColumns.Add("Complete");
             additionalColumns.Add("DateCacheCreated");
 
-            if ( baseECClass.Name == "SpatialEntityBase" || baseECClass.Name == "SpatialEntityWithDetailsView" )
-                {
-                additionalColumns.Add("ParentDatasetIdStr");
-                }
-
             if((m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None))
                 {
                 m_mimicTableWriter.GetStream = true;
@@ -200,12 +195,6 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 additionalColumns.Add("DateCacheCreated");
                 }
-
-            if ( !additionalColumns.Contains("ParentDatasetIdStr") && (baseECClass.Name == "SpatialEntityBase" || baseECClass.Name == "SpatialEntityWithDetailsView") )
-                {
-                additionalColumns.Add("ParentDatasetIdStr");
-                }
-
             if ( baseECClass.Name == "SpatialEntityWithDetailsView" )
                 {
                 if ( !additionalColumns.Contains("MetadataComplete") )
@@ -349,7 +338,7 @@ namespace IndexECPlugin.Source.Helpers
             int numberOfParamsPerInstance = PrepareArgs(ecClass, additionalColumns, out modifiedAddColumns);
 
             //We add a loop to divide this operation for large sets of instances. This is because the maximum number of parameters for SQL server is 2100,
-            //and for SpatialEntityBase, this means that around 100 instances will break that limit.
+            //and for SpatialEntity, this means that around 100 instances will break that limit.
 
             int addedCount = 0;
             int step = 1800 / numberOfParamsPerInstance;

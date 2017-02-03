@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/MimicTableAccessor.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #define BBOXQUERY
@@ -296,6 +296,12 @@ namespace IndexECPlugin.Source.Helpers
                     string maxYCol = spatialBBox["MaxYColumnName"].StringValue;
                     sqlQueryBuilder.AddBBoxIntersectsWhereClause(propertyTable.Alias, minXCol, maxXCol, minYCol, maxYCol, DbGeometryHelpers.ExtractBboxFromWKTPolygon(polygonDescriptor.WKT));
 #else
+                    IECPropertyValue indexProp = dbColumn.GetPropertyValue("SpatialIndexName");
+                    string spatialIndexName = null;
+                    if( indexProp != null )
+                        {
+                        spatialIndexName = indexProp.StringValue;
+                        }
                     sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, polygonDescriptor.WKT, polygonDescriptor.SRID);
 #endif
                     return;

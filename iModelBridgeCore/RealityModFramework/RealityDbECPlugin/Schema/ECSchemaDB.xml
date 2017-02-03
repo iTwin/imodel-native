@@ -88,17 +88,17 @@
                 ALTER TABLE dbo.WMSSources
                 ADD IdStr as CAST(ID AS nvarchar(50)) PERSISTED              -->
     
-    <ECClass typeName="SpatialEntityBase" isDomainClass="true">
+    <ECClass typeName="SpatialEntity" isDomainClass="true">
         <ECCustomAttributes>
             <QueryType>
                 <QueryType>all</QueryType>
             </QueryType>
             <SQLEntity>
-                <FromTableName>dbo.SpatialEntityBases</FromTableName>
+                <FromTableName>dbo.SpatialEntities</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
-                <OverrideTableName>dbo.OverrideSpatialEntityBases</OverrideTableName>
+                <OverrideTableName>dbo.OverrideSpatialEntities</OverrideTableName>
                 <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
-                <CacheTableName>dbo.CacheSpatialEntityBases</CacheTableName>
+                <CacheTableName>dbo.CacheSpatialEntities</CacheTableName>
                 <!-- <CacheTableUniqueIdColumn>UniqueId</CacheTableUniqueIdColumn> -->
             </SQLEntity>
         </ECCustomAttributes>
@@ -120,6 +120,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -134,6 +135,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="ApproximateFootprint" typeName="boolean">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ApproximateFootprint</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ApproximateFootprint</OverrideColumnName>
+                    <CacheColumnName>ApproximateFootprint</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -142,42 +155,6 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Name</OverrideColumnName>
                     <CacheColumnName>Name</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="Keywords" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>Keywords</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>Keywords</OverrideColumnName>
-                    <CacheColumnName>Keywords</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="AssociateFile" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>AssociateFile</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>AssociateFile</OverrideColumnName>
-                    <CacheColumnName>AssociateFile</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ProcessingDescription" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ProcessingDescription</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ProcessingDescription</OverrideColumnName>
-                    <CacheColumnName>ProcessingDescription</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -194,14 +171,14 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="AccuracyResolutionDensity" typeName="string">
+        <ECProperty propertyName="AccuracyInMeters" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
-                    <ColumnName>AccuracyResolutionDensity</ColumnName>
+                    <ColumnName>AccuracyInMeters</ColumnName>
                 </DBColumn>
                 <MimicDBColumn>
-                    <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
-                    <CacheColumnName>AccuracyResolutionDensity</CacheColumnName>
+                    <OverrideColumnName>AccuracyInMeters</OverrideColumnName>
+                    <CacheColumnName>AccuracyInMeters</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -218,6 +195,30 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="ThumbnailURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ThumbnailURL</OverrideColumnName>
+                    <CacheColumnName>ThumbnailURL</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="ThumbnailLoginKey" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailLoginKey</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ThumbnailLoginKey</OverrideColumnName>
+                    <CacheColumnName>ThumbnailLoginKey</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="DataProvider" typeName="string"> 
             <ECCustomAttributes>
                 <DBColumn>
@@ -278,32 +279,6 @@
             </ECCustomAttributes>
         </ECProperty>        
         
-    </ECClass>
-    
-    <ECClass typeName="SpatialEntity" isDomainClass="true" baseClass="SpatialEntityBase">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>all</QueryType>
-            </QueryType>
-            <SQLEntity>
-                <FromTableName>dbo.SpatialEntities</FromTableName>
-                <InstanceIDProperty>Id</InstanceIDProperty>
-                <OverrideTableName>dbo.OverrideSpatialEntities</OverrideTableName>
-                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
-            </SQLEntity>
-        </ECCustomAttributes>
-        
-        <ECProperty propertyName="Id" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>IdStr</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
         <ECProperty propertyName="Occlusion" typeName="double">
             <ECCustomAttributes>
                 <DBColumn>
@@ -311,182 +286,11 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Occlusion</OverrideColumnName>
+					<CacheColumnName>Occlusion</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-        
-    </ECClass>
-    
-    <ECClass typeName="SpatialEntityDataset" isDomainClass="true" baseClass="SpatialEntityBase">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>all</QueryType>
-            </QueryType>
-            <SQLEntity>
-                <FromTableName>dbo.SpatialEntityDatasets</FromTableName>
-                <InstanceIDProperty>Id</InstanceIDProperty>
-                <OverrideTableName>dbo.OverrideSpatialEntityDatasets</OverrideTableName>
-                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
-            </SQLEntity>
-        </ECCustomAttributes>
-        
-        <ECProperty propertyName="Id" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>IdStr</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="Processable" typeName="boolean">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>Processable</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>Processable</OverrideColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>    
-
-        <!--<ECProperty propertyName="AlternateDatasetId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>AlternateDataset_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>            -->
-        
-    </ECClass>
-    
-    <ECClass typeName="Thumbnail" isDomainClass="true">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>all</QueryType>
-            </QueryType>
-            <SQLEntity>
-                <FromTableName>dbo.Thumbnails</FromTableName>
-                <InstanceIDProperty>Id</InstanceIDProperty>
-                <OverrideTableName>dbo.OverrideThumbnails</OverrideTableName>
-                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
-                <CacheTableName>dbo.CacheThumbnails</CacheTableName>
-                <!-- <CacheTableUniqueIdColumn>UniqueId</CacheTableUniqueIdColumn> -->
-            </SQLEntity>
-            <FileHolder>
-                <Type>SQLThumbnail</Type>
-                <LocationHoldingColumn>ThumbnailData</LocationHoldingColumn>
-                <LocationHoldingColumnCache>ThumbnailData</LocationHoldingColumnCache>
-            </FileHolder>
-        </ECCustomAttributes>
-        
-        
-        
-        <ECProperty propertyName="Id" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>IdStr</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>IdStr</OverrideColumnName>
-                    <CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>    
-        
-        <ECProperty propertyName="ThumbnailProvenance" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailProvenance</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailProvenance</OverrideColumnName>
-                    <CacheColumnName>ThumbnailProvenance</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ThumbnailFormat" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailFormat</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailFormat</OverrideColumnName>
-                    <CacheColumnName>ThumbnailFormat</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ThumbnailWidth" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailWidth</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailWidth</OverrideColumnName>
-                    <CacheColumnName>ThumbnailWidth</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ThumbnailHeight" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailHeight</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailHeight</OverrideColumnName>
-                    <CacheColumnName>ThumbnailHeight</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ThumbnailStamp" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailStamp</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailStamp</OverrideColumnName>
-                    <CacheColumnName>ThumbnailStamp</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <!--ECProperty propertyName="ThumbnailData" typeName="binary">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailData</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty-->
-        
-        <ECProperty propertyName="ThumbnailGenerationDetails" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailGenerationDetails</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailGenerationDetails</OverrideColumnName>
-                    <CacheColumnName>ThumbnailGenerationDetails</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ThumbnailURL" typeName="string" >
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ThumbnailURL</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ThumbnailURL</OverrideColumnName>
-                    <CacheColumnName>ThumbnailURL</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>       
-        </ECProperty>
+		
     </ECClass>
     
      <ECClass typeName="Metadata" isDomainClass="true">
@@ -515,30 +319,6 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
-        
-        <ECProperty propertyName="RawMetadata" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>RawMetadata</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>RawMetadata</OverrideColumnName>
-                    <CacheColumnName>RawMetadata</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="RawMetadataFormat" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>RawMetadataFormat</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>RawMetadataFormat</OverrideColumnName>
-                    <CacheColumnName>RawMetadataFormat</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
         
         <ECProperty propertyName="MetadataURL" typeName="string">
             <ECCustomAttributes>
@@ -692,6 +472,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+		
+        <ECProperty propertyName="ParameterizedURL" typeName="boolean">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ParameterizedURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ParameterizedURL</OverrideColumnName>
+                    <ComplementColumnName>ParameterizedURL</ComplementColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
         
         <ECProperty propertyName="CompoundType" typeName="string">
             <ECCustomAttributes>
@@ -779,6 +571,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="Streamed" typeName="boolean" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Streamed</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Streamed</OverrideColumnName>
+                    <CacheColumnName>Streamed</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="Metadata" typeName="string" >
             <!--ECCustomAttributes>
                 <MimicDBColumn>
@@ -859,27 +663,6 @@
         
     </ECClass>    
     
-    <!--<ECClass typeName="OtherSource" isDomainClass="true" baseClass="SpatialDataSource">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>all</QueryType>
-            </QueryType>
-            <SQLEntity>
-                <FromTableName>dbo.OtherSources</FromTableName>
-                <InstanceIDProperty>Id</InstanceIDProperty>
-            </SQLEntity>
-        </ECCustomAttributes>    
-        
-        <ECProperty propertyName="Id" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>IdStr</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>   
-        
-    </ECClass>   -->
-    
     <ECClass typeName="OsmSource" isDomainClass="true" baseClass="SpatialDataSource">
         <ECCustomAttributes>
             <QueryType>
@@ -956,17 +739,6 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
-        
-        <ECProperty propertyName="OriginalId" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>OriginalId</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>OriginalId</OverrideColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
         
         <ECProperty propertyName="RedBandURL" typeName="string">
             <ECCustomAttributes>
@@ -1141,6 +913,66 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="Streamed" typeName="boolean" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Streamed</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Streamed</OverrideColumnName>
+                    <CacheColumnName>Streamed</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="LoginKey" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>LoginKey</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>LoginKey</OverrideColumnName>
+                    <CacheColumnName>LoginKey</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
+        <ECProperty propertyName="LoginMethod" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>LoginMethod</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>LoginMethod</OverrideColumnName>
+                    <CacheColumnName>LoginMethod</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="RegistrationPage" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RegistrationPage</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>RegistrationPage</OverrideColumnName>
+                    <CacheColumnName>RegistrationPage</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
+        <ECProperty propertyName="OrganisationPage" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>OrganisationPage</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>OrganisationPage</OverrideColumnName>
+                    <CacheColumnName>OrganisationPage</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1474,6 +1306,7 @@
                 <DBColumn>
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1532,6 +1365,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
+					<SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1546,6 +1380,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="ApproximateFootprint" typeName="boolean">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ApproximateFootprint</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ApproximateFootprint</OverrideColumnName>
+                    <CacheColumnName>ApproximateFootprint</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1618,18 +1464,6 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="ProcessingDescription" typeName="string">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ProcessingDescription</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>ProcessingDescription</OverrideColumnName>
-                    <CacheColumnName>ProcessingDescription</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
         <ECProperty propertyName="DataSourceType" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1642,14 +1476,14 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="AccuracyResolutionDensity" typeName="string">
+        <ECProperty propertyName="AccuracyInMeters" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
-                    <ColumnName>AccuracyResolutionDensity</ColumnName>
+                    <ColumnName>AccuracyInMeters</ColumnName>
                 </DBColumn>
                 <MimicDBColumn>
-                    <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
-                    <CacheColumnName>AccuracyResolutionDensity</CacheColumnName>
+                    <OverrideColumnName>AccuracyInMeters</OverrideColumnName>
+                    <CacheColumnName>AccuracyInMeters</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1689,6 +1523,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+		
+        <ECProperty propertyName="Streamed" typeName="boolean" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Streamed</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Streamed</OverrideColumnName>
+                    <CacheColumnName>Streamed</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
 
         <ECProperty propertyName="SpatialDataSourceId" typeName="string" >
             <ECCustomAttributes>
@@ -1714,6 +1560,18 @@
             </ECCustomAttributes>
         </ECProperty>
 
+        <ECProperty propertyName="ThumbnailURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ThumbnailURL</OverrideColumnName>
+                    <CacheColumnName>ThumbnailURL</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string">
             <ECCustomAttributes>
@@ -1762,7 +1620,6 @@
             </ECCustomAttributes>
         </ECProperty>
             
-        <ECProperty propertyName="ThumbnailURL" typeName="string" />
         <ECProperty propertyName="MetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataFormat" typeName="string" />
@@ -1770,147 +1627,21 @@
         
     </ECClass>
     
-    <ECRelationshipClass 
-      typeName="SpatialEntityDatasetToSpatialEntityBase" 
-      description="Link between SpatialEntityDataset and the SpatialEntityBases it contains." 
-      strength="embedding" 
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
-                <ContainerKey>Id</ContainerKey>
-                <ContainedClassName>SpatialEntityBase</ContainedClassName>
-                <ContainedKey>ParentDataset_Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
-            <Class class="SpatialEntityDataset" />
-        </Source>
-        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="True">
-            <Class class="SpatialEntityBase" />
-        </Target>
-    </ECRelationshipClass>
-    
-    <ECRelationshipClass 
-      typeName="DetailsViewToChildren" 
-      description="Link between SpatialEntityDataset (view version) and the SpatialEntityBases (view version) it contains." 
-      strength="embedding" 
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityWithDetailsView</ContainerClassName>
-                <ContainerKey>Id</ContainerKey>
-                <ContainedClassName>SpatialEntityWithDetailsView</ContainedClassName>
-                <ContainedKey>ParentDataset_Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
-            <Class class="SpatialEntityWithDetailsView" />
-        </Source>
-        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="False">
-            <Class class="SpatialEntityWithDetailsView" />
-        </Target>
-    </ECRelationshipClass>
-    
-    <ECRelationshipClass 
-      typeName="SpatialEntityDatasetToView" 
-      description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 
-      strength="embedding" 
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
-                <ContainerKey>Id</ContainerKey>
-                <ContainedClassName>SpatialEntityWithDetailsView</ContainedClassName>
-                <ContainedKey>ParentDataset_Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
-            <Class class="SpatialEntityDataset" />
-        </Source>
-        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="False">
-            <Class class="SpatialEntityWithDetailsView" />
-        </Target>
-    </ECRelationshipClass>
-    
-<!--    <ECRelationshipClass 
-      typeName="SpatialEntityDatasetToChildrenView" 
-      description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 
-      strength="embedding" 
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
-                <ContainerKey>Id</ContainerKey>
-                <ContainedClassName>SpatialEntityWithDetailsView</ContainedClassName>
-                <ContainedKey>ParentDataset_Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
-            <Class class="SpatialEntityDataset" />
-        </Source>
-        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="False">
-            <Class class="SpatialEntityWithDetailsView" />
-        </Target>
-    </ECRelationshipClass> -->
-    
-    <ECRelationshipClass 
-      typeName="SpatialEntityDatasetToAlternateDataset" 
-      description="Link between SpatialEntityDataset and an alternate dataset." 
-      strength="referencing" 
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
-                <ContainerKey>AlternateDataset_Id</ContainerKey>
-                <ContainedClassName>SpatialEntityDataset</ContainedClassName>
-                <ContainedKey>Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="References" polymorphic="False">
-            <Class class="SpatialEntityDataset" />
-        </Source>
-        <Target cardinality="(0,1)" roleLabel="Referenced by" polymorphic="False">
-            <Class class="SpatialEntityDataset" />
-        </Target>
-    </ECRelationshipClass>
-    
     <ECRelationshipClass
-      typeName="SpatialEntityBaseToThumbnail"
-      description="Link between SpatialEntityBase and the thumbnail assigned to it"
+      typeName="SpatialEntityToMetadata"
+      description="Link between SpatialEntity and the metadata describing it"
       strength="holding"
       strengthDirection="forward">
         <ECCustomAttributes>
             <RelationshipKeys>
-                <ContainerClassName>SpatialEntityBase</ContainerClassName>
-                <ContainerKey>Thumbnail_Id</ContainerKey>
-                <ContainedClassName>Thumbnail</ContainedClassName>
-                <ContainedKey>Id</ContainedKey>
-            </RelationshipKeys>
-        </ECCustomAttributes>
-        <Source cardinality="(0,n)" roleLabel="holding" polymorphic="True">
-            <Class class="SpatialEntityBase" />
-        </Source>
-        <Target cardinality="(0,1)" roleLabel="held by" polymorphic="False">
-            <Class class="Thumbnail" />
-        </Target>
-    </ECRelationshipClass>
-    
-    <ECRelationshipClass
-      typeName="SpatialEntityBaseToMetadata"
-      description="Link between SpatialEntityBase and the metadata describing it"
-      strength="holding"
-      strengthDirection="forward">
-        <ECCustomAttributes>
-            <RelationshipKeys>
-                <ContainerClassName>SpatialEntityBase</ContainerClassName>
+                <ContainerClassName>SpatialEntity</ContainerClassName>
                 <ContainerKey>Metadata_Id</ContainerKey>
                 <ContainedClassName>Metadata</ContainedClassName>
                 <ContainedKey>Id</ContainedKey>
             </RelationshipKeys>
         </ECCustomAttributes>
-        <Source cardinality="(0,n)" roleLabel="holding" polymorphic="True">
-            <Class class="SpatialEntityBase" />
+        <Source cardinality="(0,n)" roleLabel="holding" polymorphic="False">
+            <Class class="SpatialEntity" />
         </Source>
         <Target cardinality="(0,1)" roleLabel="held by" polymorphic="False">
             <Class class="Metadata" />
@@ -1923,22 +1654,20 @@
       strength="holding"
       strengthDirection="forward">
         <ECCustomAttributes>
-            <ManyToManyRelationshipKeys>
-                <IntermediateTableName>dbo.SpatialEntitySpatialDataSources</IntermediateTableName>
-                <ContainerClassName>SpatialEntity</ContainerClassName>
+            <RelationshipKeys>
+			    <ContainerClassName>SpatialEntity</ContainerClassName>
                 <ContainerKey>Id</ContainerKey>
-                <IntermediateContainerKey>SpatialEntity_Id</IntermediateContainerKey>
-                <IntermediateContainedKey>SpatialDataSource_Id</IntermediateContainedKey>
                 <ContainedClassName>SpatialDataSource</ContainedClassName>
-                <ContainedKey>Id</ContainedKey>
-            </ManyToManyRelationshipKeys>
+                <ContainedKey>SpatialEntity_Id</ContainedKey>
+            </RelationshipKeys>
         </ECCustomAttributes>
-        <Source cardinality="(1,n)" roleLabel="referencing" polymorphic="False">
+        <Source cardinality="(1,1)" roleLabel="referenced" polymorphic="False">
             <Class class="SpatialEntity" />
         </Source>
-        <Target cardinality="(1,n)" roleLabel="referenced" polymorphic="True">
+        <Target cardinality="(1,n)" roleLabel="referencing" polymorphic="True">
             <Class class="SpatialDataSource" />
         </Target>
+
     </ECRelationshipClass>
         
     <ECRelationshipClass

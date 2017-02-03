@@ -15,6 +15,7 @@
 #include <sql.h>
 #include <sqlext.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -178,6 +179,45 @@ protected:
     mutable HttpRequestType m_requestType;
     };
 
+struct NavNode
+{
+public:
+    REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetClassName();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootId();
+
+private:
+    NavNode();
+    Utf8String m_navString;
+    Utf8String m_typeSystem;
+    Utf8String m_schemaName;
+    Utf8String m_className;
+    Utf8String m_instanceId;
+
+    Utf8String m_rootNode;
+    Utf8String m_rootId;
+};
+
+struct WSGServer; //forward declaration
+
+struct NodeNavigator
+    {
+    static NodeNavigator* s_nnInstance;
+
+public:
+    REALITYDATAPLATFORM_EXPORT static NodeNavigator& GetInstance();
+    NodeNavigator();
+
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode);
+    };
+
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
 //! WSGNavNodeRequest
@@ -216,7 +256,7 @@ protected:
 struct WSGObjectRequest: public WSGURL
     {
 public:
-    REALITYDATAPLATFORM_EXPORT WSGObjectRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className, Utf8String objectId);
+    REALITYDATAPLATFORM_EXPORT WSGObjectRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId);
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -229,7 +269,7 @@ protected:
 struct WSGObjectContentRequest: public WSGURL
     {
 public:
-    REALITYDATAPLATFORM_EXPORT WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className, Utf8String objectId);
+    REALITYDATAPLATFORM_EXPORT WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId);
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -265,7 +305,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint16_t)(page * m_pageSize);}
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
 
     uint16_t m_startIndex;
     uint8_t m_pageSize;
@@ -342,8 +382,8 @@ public:
     WSGRequest();
 
     //! General method. Performs a WSG request and returns de result code in result and
-    //! the body in the returned string.
-    REALITYDATAPLATFORM_EXPORT  Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1) const;
+    //! the body in the returned string. If a FILE is provided, the result will be written to a file
+    REALITYDATAPLATFORM_EXPORT  Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr) const;
     };
 
 

@@ -9,7 +9,7 @@ using Bentley.ECObjects.Schema;
 namespace IndexECPlugin.Source
     {
     /// <summary>
-    /// Contains extension methods for IECInstance
+    /// Contains extension methods for IECProperty
     /// </summary>
     public static class IECPropertyExtension
         {

@@ -58,6 +58,7 @@ namespace UsageDataExtractor
                                             string lowerPartitionKey = time.ToString("yyyy-MM-dd:HH");
                                             string upperPartitionKey = time.AddHours(1).ToString("yyyy-MM-dd:HH");
 
+                                            Console.Out.WriteLine(String.Format("Day: {0}, hour: {1}", day, hour));
                                             FetchResults(file, tableName, lowerPartitionKey, upperPartitionKey);
                                             }
                                         catch ( ArgumentOutOfRangeException )
@@ -133,7 +134,7 @@ namespace UsageDataExtractor
             CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
             CloudTable logTable = tableClient.GetTableReference(tableName);
             //string condition = TableQuery.GenerateFilterCondition("ProductShortName", QueryComparisons.Equal, "ContextServices") + " and " +;
-            string condition = "PartitionKey ge '" + lowerPartitionKey + "' and PartitionKey lt '" + upperPartitionKey + "' and ProductShortName eq 'ContextServices' and HttpMethod eq 'GET' and Content gt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackag' and Content lt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackah'";
+            string condition = "PartitionKey ge '" + lowerPartitionKey + "' and PartitionKey lt '" + upperPartitionKey + "' and RowKey gt 'INFO_ContextServicesWeb' and RowKey lt 'INFO_ContextServicesWec' and ProductShortName eq 'ContextServices' and HttpMethod eq 'GET' and Content gt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackag' and Content lt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackah'";
             TableQuery<DynamicTableEntity> query = new TableQuery<DynamicTableEntity>().Where(condition).Select(new string[] { "Content", "User" });
 
             IEnumerable<DynamicTableEntity> results = logTable.ExecuteQuery(query);
@@ -168,11 +169,12 @@ namespace UsageDataExtractor
                 {
                 using ( StreamWriter fileToWrite = new System.IO.StreamWriter(baseResultName + ".txt") )
                     {
-                    fileToWrite.WriteLine("PackageId, Date, Email, Country, Polygon");
+                    //fileToWrite.WriteLine("PackageId, Date, Email, Country, Polygon");
+                    fileToWrite.WriteLine("PackageId, Email, Country, Polygon");
                     while ( (line = file.ReadLine()) != null )
                         {
 
-                        if ( line.IndexOf("@bentley.com", StringComparison.OrdinalIgnoreCase) == -1 )
+                        if ( line.IndexOf("bentley.com", StringComparison.OrdinalIgnoreCase) == -1 && line.IndexOf("@mailinator.com", StringComparison.OrdinalIgnoreCase) == -1 )
                             {
                             if ( (DateTime.Now - lastTokenTime) > limitSpan )
                                 {
@@ -181,8 +183,16 @@ namespace UsageDataExtractor
                                 }
                             var split = line.Split(' ');
                             string packageId = line.Split(' ').First();
-                            string date;
-                            string poly = GetPolygon(packageId, serverURL, base64Token, baseResultName, out date);
+                            //string date;
+                            string poly;
+                            try
+                                {
+                                poly = GetPolygon(packageId, serverURL, base64Token, baseResultName/*, out date*/);
+                                }
+                            catch (Exception)
+                                {
+                                continue;
+                                }
                             string email = line.Split(' ')[1];
 
                             if ( String.IsNullOrWhiteSpace(email) )
@@ -200,7 +210,7 @@ namespace UsageDataExtractor
                                 CountryCounter[country] = 1;
                                 }
 
-                            fileToWrite.WriteLine(line.Split(' ').First() + ", " + date.Substring(0, 10) + ", " + email + ", " + country + ", " + poly);
+                            fileToWrite.WriteLine(line.Split(' ').First() + /*", " + date.Substring(0, 10) + */", " + email + ", " + country + ", " + poly);
 
                             }
                         }
@@ -312,7 +322,7 @@ namespace UsageDataExtractor
             return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
             }
 
-        private static string GetPolygon (string packageId, string serverURL, string base64Token, string baseResultName, out string date)
+        private static string GetPolygon (string packageId, string serverURL, string base64Token, string baseResultName/*, out string date*/)
             {
 
             using ( HttpClient client = new HttpClient() )
@@ -340,7 +350,7 @@ namespace UsageDataExtractor
                             var document = XDocument.Parse(xrdpPackage);
                             XNamespace ns = "http://www.bentley.com/RealityDataServer/v1";
 
-                            date = document.Root.Element(ns + "CreationDate").Value;
+                            //date = document.Root.Element(ns + "CreationDate").Value;
 
                             return document.Root.Element(ns + "BoundingPolygon").Value;
                             //XmlDocument xmlDoc = new XmlDocument();

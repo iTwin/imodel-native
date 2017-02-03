@@ -181,17 +181,17 @@
     	<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
             <Assemblies>Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
+    <!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64"> -->
+	<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
+	    <SubPart PartName="FeatureTrackingNuGetPackages"/>
     	<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
             <Assemblies>Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
         </Bindings>
@@ -207,6 +207,17 @@
         </Bindings>
     </Part>
     
+	<Part Name="FeatureTrackingNuGetPackages" BentleyBuildMakeFile="FeatureTrackingNuGets.prewire.mke">
+		<NuGetPackage targetFramework=".NETFramework4.5">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
+	    <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
+	    <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
+		<Bindings>
+			<Assemblies>Delivery/Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
+			<Assemblies>Delivery/Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
+			<Assemblies>Delivery/Microsoft.ServiceBus.dll</Assemblies> 
+		</Bindings>
+	</Part>
+	
     <Part Name="RequiredNugets" BentleyBuildMakeFile="RequiredNugets.prewire.mke">
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>

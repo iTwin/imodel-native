@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -43,6 +43,14 @@ namespace IndexECPlugin.Source
 
             string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
 
+            string completeTableHint = "";
+
+            if(!String.IsNullOrWhiteSpace(m_tableHint))
+                {
+                completeTableHint = " WITH(INDEX(" + m_tableHint + ")) ";
+                }
+                
+
             //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
             string completeLeftJoinClause = "";
             foreach ( var table in m_sqlLeftJoinClause )
@@ -69,7 +77,7 @@ namespace IndexECPlugin.Source
 
             dataReadingHelper = m_dataReadingHelper;
 
-            return completeSelectStr + completeFromStr + completeLeftJoinClause + completeWhereClause + completeOrderByClause + ";";
+            return completeSelectStr + completeFromStr + completeTableHint + completeLeftJoinClause + completeWhereClause + completeOrderByClause + ";";
             }
         }
     }

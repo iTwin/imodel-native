@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: RealityDbECPlugin/RealityDbECPlugin.mke $
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
@@ -14,17 +14,21 @@ appName     = RealityDbECPluginC
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 always:
     ~mkdir $(o)
-
+	
 %ifdef IMSOFF
-    CSCOpt = \/define:IMSOFF
+    CSCOpt = \/define:IMSOFF 
+	%ifdef CONNECTENV
+		CSCOpt +% \/define:CONNECTENV
+	%endif
 %endif
     
+
+
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)RealityServicesNet.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
@@ -51,8 +55,6 @@ ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging.log4net-2.0.
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
 %include csrefapnd.mki
-ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.IdentityModel.dll
-%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.DataAnnotations.dll
@@ -60,6 +62,8 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.Da
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Core.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.services.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.dll
 %include csrefapnd.mki
@@ -79,6 +83,15 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.Entity.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
 %include csrefapnd.mki
+
+%ifdef CONNECTENV
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.SelectServer.SaaS.Client.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.ServiceBus.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.WindowsAzure.Configuration.dll
+%include csrefapnd.mki
+%endif
 
 #-----------------------------------------------------------------------
 # Define default assembly meta-data attributes
@@ -132,6 +145,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/InstanceComplement.cs \
             $(baseDir)Source/Helpers/InstanceModifier.cs \
             $(baseDir)Source/Helpers/InstanceOverrider.cs \
+			$(baseDir)Source/Helpers/IRDSDataFetcher.cs \
             $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
             $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
@@ -141,6 +155,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
+			$(baseDir)Source/IECInstanceExtension.cs \
             $(baseDir)Source/FileRetrievalControllers/DRStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageStreamRetrievalController.cs \
@@ -148,7 +163,9 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
             $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
             $(baseDir)Source/QueryProviders/SqlQueryProvider.cs \
-            $(baseDir)Source/QueryProviders/UsgsAPIQueryProvider.cs \
+			$(baseDir)Source/QueryProviders/SubAPIQueryProvider.cs \
+			$(baseDir)Source/QueryProviders/RdsAPIQueryProvider.cs \
+			$(baseDir)Source/QueryProviders/UsgsSubAPIQueryProvider.cs \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \
@@ -165,10 +182,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/IndexPolicyHandler.cs \
             $(baseDir)Source/JTokenExtension.cs \
             $(baseDir)Source/Log.cs \
-            $(baseDir)Source/models.cs 
-            
-            
-             
+            $(baseDir)Source/models.cs
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
 #ASSEMBLY_RES_TO_ADD = LocalizableStrings

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -74,6 +74,13 @@ namespace IndexECPlugin.Source
 
             string innerFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
 
+            string innerTableHint = "";
+
+            if(!String.IsNullOrWhiteSpace(m_tableHint))
+                {
+                innerTableHint = " WITH(INDEX(" + m_tableHint + ")) ";
+                }
+
             //string innerLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray()) + " ";
             string innerLeftJoinClause = "";
             foreach ( var table in m_sqlLeftJoinClause )
@@ -89,7 +96,7 @@ namespace IndexECPlugin.Source
                 innerWhereClause = "WHERE " + m_sqlWhereClause + " ";
                 }
 
-            string completeInnerString = innerSelectString + innerFromStr + innerLeftJoinClause + innerWhereClause;
+            string completeInnerString = innerSelectString + innerFromStr + innerTableHint + innerLeftJoinClause + innerWhereClause;
 
             string outerSelect = "";
             foreach ( string alias in m_aliasList )

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/SQLQueryBuilder/SQLQueryBuilder.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -42,6 +42,11 @@ namespace IndexECPlugin.Source
         //TODO : Simplify the use of the whereClause Part of the builder. 
         //       It is the most complex and low level part. It would be nice
         //       to have a way to manage automatically the inner clauses
+
+        /// <summary>
+        /// The table hint indicating which index to use
+        /// </summary>
+        protected string m_tableHint;
 
         /// <summary>
         /// The Where clause of the SQLQuery
@@ -293,14 +298,24 @@ namespace IndexECPlugin.Source
         /// <param name="columnName">Name of the column used in the condition. Must be a sys.geometry column</param>
         /// <param name="polygonWKT">The WKT polygon</param>
         /// <param name="polygonSRID">The SRID of the polygon</param>
-        public void AddSpatialIntersectsWhereClause (string tableName, string columnName, string polygonWKT, int polygonSRID)
+        /// <param name="tableHint">Indicates which index to use for the spatial query.</param>
+        public void AddSpatialIntersectsWhereClause (string tableName, string columnName, string polygonWKT, int polygonSRID, string tableHint = null)
             {
+            if( !String.IsNullOrWhiteSpace(tableHint) )
+                {
+                if ( !String.IsNullOrWhiteSpace(m_tableHint) )
+                    {
+                    throw new NotImplementedException("Multiple table hints are not accepted yet");
+                    }
+                m_tableHint = tableHint;
+                }
+
             if ( !String.IsNullOrWhiteSpace(tableName) )
                 {
                 m_sqlWhereClause += AddBrackets(tableName) + ".";
                 }
 
-            m_sqlWhereClause += AddBrackets(columnName) + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 'true'";
+            m_sqlWhereClause += AddBrackets(columnName) + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 1";
             }
 
         /// <summary>
