@@ -22,14 +22,12 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-		<ECClass typeName="TestClassC" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
-			<ECCustomAttributes>
-					<ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
-							<PropertyName>TimeStampProp</PropertyName>
-					</ClassHasCurrentTimeStampProperty>
-			</ECCustomAttributes>
-      <ECProperty propertyName="TimeStampProp" typeName="dateTime"/>
+    <ECClass typeName="TestClassC" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <ECCustomAttributes>
+            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyName>TimeStampProp</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TimeStampProp" typeName="dateTime"/>
     </ECClass>
-
-
 </ECSchema>

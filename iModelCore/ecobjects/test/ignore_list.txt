@@ -27,9 +27,5 @@ AdhocPropertyTest.GetAdhocPropertyUsingECValueAccessor
 AdhocPropertyTest.InvalidCases
 AdhocPropertyTest.SwapAdhocProperties
 
-#SchemaConverter doesn't support string enums correctly
-# TFS#615758
-StandardValueToEnumConversionTest.CAConversionTest
-
 #Base64 conversion appears to have been busted for a long time
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty

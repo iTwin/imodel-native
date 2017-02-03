@@ -188,7 +188,6 @@ struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
         static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
         ECObjectsStatus ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR oldCustomAttribute, IECInstanceR newCustomAttribute);
         ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
-        int FindEnumerationValue(ECEnumerationCR enumeration, Utf8CP displayName);
         Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };
 
@@ -1034,41 +1033,35 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue)
     {
-    auto enumerationValue = FindEnumerationValue(enumeration, sourceValue.GetUtf8CP());
-    if (enumerationValue == -1)
-        {
-        LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", sourceValue.GetUtf8CP(), enumeration.GetName().c_str());
-        return ECObjectsStatus::ParseError;
-        }
+    ECEnumeratorCP targetEnumerator = nullptr;
+    if (sourceValue.IsString())
+        targetEnumerator = enumeration.FindEnumerator(sourceValue.GetUtf8CP());
+    else if (sourceValue.IsInteger())
+        targetEnumerator = enumeration.FindEnumerator(sourceValue.GetInteger());
 
-    if (!targetValue.IsInteger() || targetValue.SetInteger(enumerationValue) != BentleyStatus::SUCCESS)
+    if (nullptr == targetEnumerator)
+        return ECObjectsStatus::EnumeratorNotFound;
+
+    BentleyStatus beStatus = BentleyStatus::ERROR;
+    if (targetValue.IsInteger() && targetEnumerator->IsInteger())
+        beStatus = targetValue.SetInteger(targetEnumerator->GetInteger());
+    else if (targetValue.IsString() && targetEnumerator->IsString())
+        beStatus = targetValue.SetUtf8CP(targetEnumerator->GetString().c_str());
+
+    if (BentleyStatus::SUCCESS != beStatus)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %s", propertyName.c_str(), targetEnumerator->GetDisplayLabel().c_str());
         return ECObjectsStatus::Error;
         }
 
-    if (targetCustomAttribute.SetValue(propertyName.c_str(), targetValue) != ECObjectsStatus::Success)
+    ECObjectsStatus status = targetCustomAttribute.SetValue(propertyName.c_str(), targetValue);
+    if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %s", propertyName.c_str(), targetEnumerator->GetDisplayLabel().c_str());
         return ECObjectsStatus::Error;
         }
 
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-int StandardCustomAttributeReferencesConverter::FindEnumerationValue(ECEnumerationCR enumeration, Utf8CP displayName)
-    {
-    for (auto enumerator : enumeration.GetEnumerators())
-        {
-        if (enumerator->GetDisplayLabel() == displayName)
-            {
-            return enumerator->GetInteger();
-            }
-        }
-    return -1;
+    return status;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
