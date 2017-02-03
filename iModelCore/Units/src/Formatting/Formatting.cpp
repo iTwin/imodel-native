@@ -716,7 +716,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
-Utf8String NumericFormatSpec::StdFormatDouble(double dval, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -726,7 +726,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(double dval, Utf8P stdName, int pr
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::StdFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -738,8 +738,13 @@ Utf8String NumericFormatSpec::StdFormatQuantity(QuantityCR qty, UnitCP useUnit, 
     QuantityPtr temp = qty.ConvertTo(useUOM);
     return fmtP->FormatDouble(temp->GetMagnitude(), prec, round);
     }
- 
-Utf8String NumericFormatSpec::StdFormatPhysValue(double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8P stdName, int prec, double round)
+
+//---------------------------------------------------------------------------------------
+//  arg 'space' contains a separator between value and the unit name It also is an indicator
+//   that the caller needs to append the unit name to the value
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
       QuantityPtr qty = Quantity::Create(dval, fromUOM);
       UnitCP toUnit = UnitRegistry::Instance().LookupUnit(toUOM);
@@ -754,7 +759,13 @@ Utf8String NumericFormatSpec::StdFormatPhysValue(double dval, Utf8CP fromUOM, Ut
           txt +=toUnit->GetName();
           return txt;
           }
-      Utf8String str = StdFormatQuantity(*qty, toUnit, stdName, prec, round);
+      Utf8String str = StdFormatQuantity(stdName, *qty, toUnit, prec, round);
+      if (nullptr != space)
+          {
+          str += space;
+          if (nullptr == toLabel)
+              str += toUnit->GetName();
+          }
       if (nullptr != toLabel)
           str += toLabel;
       return str;
@@ -762,7 +773,7 @@ Utf8String NumericFormatSpec::StdFormatPhysValue(double dval, Utf8CP fromUOM, Ut
 
 
 
-Utf8String NumericFormatSpec::StdFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -1156,8 +1167,8 @@ void StdFormatSet::StdInit()
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     AddFormat(new NumericFormatSpec("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
     AddFormat(new NumericFormatSpec("Real2", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real2");
-    AddFormat(new NumericFormatSpec("Real3", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real3");
-    AddFormat(new NumericFormatSpec("Real4", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real4");
+    AddFormat(new NumericFormatSpec("Real3", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3))->SetAlias("real3");
+    AddFormat(new NumericFormatSpec("Real4", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4))->SetAlias("real4");
     AddFormat(new NumericFormatSpec("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
     AddFormat(new NumericFormatSpec("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
     AddFormat(new NumericFormatSpec("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");

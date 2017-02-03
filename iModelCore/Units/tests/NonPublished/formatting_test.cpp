@@ -14,6 +14,7 @@
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/Units.h>
+#include <limits>
 //#define FORMAT_DEBUG_PRINT
 
 #undef LOG
@@ -21,8 +22,26 @@
 using namespace BentleyApi::Units;
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-TEST(FormattingTest, FormattingUOM)
+
+
+TEST(FormattingTest, PhysValues)
     {
+
+    //return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
+    //    
+    //    || std::abs(x - y) < std::numeric_limits<T>::min();
+
+    NumericFormatSpec tstFmt = NumericFormatSpec("Default");
+    double mval = std::numeric_limits<double>::min();
+    double x = 100000.0, y = 100000.0003;
+    double delta = std::numeric_limits<double>::epsilon() * std::abs(x + y) * 1000;
+    LOG.infov("diff %.15f vs delta %.15f ", std::abs(x - y), delta);
+
+    LOG.infov("minV %s ", tstFmt.DoubleToBinaryText(mval, true).c_str());
+    LOG.infov("MillminV %s ", tstFmt.DoubleToBinaryText(1.0e32*mval, true).c_str());
+    LOG.infov("min %.15f ", 1.0e32*mval);
+
+
     UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
     UnitRegistry::Instance().AddSynonym("YRD", "YARD");
     UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
@@ -40,11 +59,11 @@ TEST(FormattingTest, FormattingUOM)
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract").c_str());
-    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract16").c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity(*len, ftUOM, "fract32").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity(*len, yardUOM, "fract8").c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity(*len, yrdsdUOM, "fract8").c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract", *len, ftUOM).c_str());
+    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity("fract16", *len, ftUOM).c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract32", *len, ftUOM).c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yardUOM).c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yrdsdUOM).c_str());
 
     QuantityPtr ang = Quantity::Create(135.0 + 23.0/120.0, "ARC_DEG");
 
@@ -59,70 +78,86 @@ TEST(FormattingTest, FormattingUOM)
     atr.SetLowUnitLabel(u8"\"");
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
 
-    EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue(36.6, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue(100, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue("real4", 100, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
 
-    EXPECT_STREQ (u8"-40.0°C", NumericFormatSpec::StdFormatPhysValue(-40.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-35.0°C", NumericFormatSpec::StdFormatPhysValue(-31.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-30.0°C", NumericFormatSpec::StdFormatPhysValue(-22.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-25.0°C", NumericFormatSpec::StdFormatPhysValue(-13.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-20.0°C", NumericFormatSpec::StdFormatPhysValue(-4.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-15.0°C", NumericFormatSpec::StdFormatPhysValue(5.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-10.0°C", NumericFormatSpec::StdFormatPhysValue(14.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
-    EXPECT_STREQ (u8"-5.0°C", NumericFormatSpec::StdFormatPhysValue(23.0, "FAHRENHEIT", "CELSIUS", u8"°C", "real4").c_str());
+    EXPECT_STREQ (u8"-40.0°C", NumericFormatSpec::StdFormatPhysValue("real4", -40.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-35.0°C", NumericFormatSpec::StdFormatPhysValue("real4", -31.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-30.0°C", NumericFormatSpec::StdFormatPhysValue("real4", -22.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-25.0°C", NumericFormatSpec::StdFormatPhysValue("real4", -13.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-20.0°C", NumericFormatSpec::StdFormatPhysValue("real4",  -4.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-15.0°C", NumericFormatSpec::StdFormatPhysValue("real4",   5.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-10.0°C", NumericFormatSpec::StdFormatPhysValue("real4",  14.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-5.0°C",  NumericFormatSpec::StdFormatPhysValue("real4",  23.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
 
-    EXPECT_STREQ (u8"-40.0°F", NumericFormatSpec::StdFormatPhysValue(-40.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"-31.0°F", NumericFormatSpec::StdFormatPhysValue(-35.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"-22.0°F", NumericFormatSpec::StdFormatPhysValue(-30.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"-13.0°F", NumericFormatSpec::StdFormatPhysValue(-25.0, "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"-4.0°F",  NumericFormatSpec::StdFormatPhysValue(-20.0,  "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"5.0°F",   NumericFormatSpec::StdFormatPhysValue(-15.0,   "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"14.0°F",  NumericFormatSpec::StdFormatPhysValue(-10.0,  "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
-    EXPECT_STREQ (u8"23.0°F",  NumericFormatSpec::StdFormatPhysValue(-5.0,   "CELSIUS", "FAHRENHEIT", u8"°F", "real4").c_str());
+    EXPECT_STREQ (u8"-40.0°F", NumericFormatSpec::StdFormatPhysValue("real4", -40.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"-31.0°F", NumericFormatSpec::StdFormatPhysValue("real4", -35.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"-22.0°F", NumericFormatSpec::StdFormatPhysValue("real4", -30.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"-13.0°F", NumericFormatSpec::StdFormatPhysValue("real4", -25.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"-4.0°F",  NumericFormatSpec::StdFormatPhysValue("real4", -20.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"5.0°F",   NumericFormatSpec::StdFormatPhysValue("real4", -15.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"14.0°F",  NumericFormatSpec::StdFormatPhysValue("real4", -10.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"23.0°F",  NumericFormatSpec::StdFormatPhysValue("real4", -5.0,  "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    
+    EXPECT_STREQ (u8"415.53°R", NumericFormatSpec::StdFormatPhysValue("real4", -42.3, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"450.27°R", NumericFormatSpec::StdFormatPhysValue("real4", -23.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"468.27°R", NumericFormatSpec::StdFormatPhysValue("real4", -13.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"481.77°R", NumericFormatSpec::StdFormatPhysValue("real4", -5.5,  "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"491.67°R", NumericFormatSpec::StdFormatPhysValue("real4", 0.0,   "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"498.996°R",NumericFormatSpec::StdFormatPhysValue("real4", 4.07,  "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"524.07°R", NumericFormatSpec::StdFormatPhysValue("real4", 18.0,  "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"557.604°R",NumericFormatSpec::StdFormatPhysValue("real4", 36.63, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+
+    EXPECT_STREQ ("10.0 m/s", NumericFormatSpec::StdFormatPhysValue("real4", 36.0, "KM/HR", "M/SEC", " m/s", nullptr).c_str());
+    EXPECT_STREQ ("2905.76 cm/s", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "MPH", "CM/SEC", " cm/s", nullptr).c_str());
+    EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "KM/HR", "MPH", " mph", nullptr).c_str()); 
+
+    EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
 
     }
+
 
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
     double fval = sqrt(2.0);
 
-    EXPECT_STREQ ("1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+1 27/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("1 27/64", NumericFormatSpec::StdFormatDouble("fract", fval).c_str());
+    EXPECT_STREQ ("+1 27/64", NumericFormatSpec::StdFormatDouble("fractSign", fval).c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble("fract", -fval).c_str());
+    EXPECT_STREQ ("-1 27/64", NumericFormatSpec::StdFormatDouble("fractSign", -fval).c_str());
     fval  *= 3.5;
 
-    EXPECT_STREQ ("4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fract").c_str());
-    EXPECT_STREQ ("+4 61/64", NumericFormatSpec::StdFormatDouble(fval, "fractSign").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble(-fval, "fract").c_str());
-    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble(-fval, "fractSign").c_str());
+    EXPECT_STREQ ("4 61/64", NumericFormatSpec::StdFormatDouble("fract", fval).c_str());
+    EXPECT_STREQ ("+4 61/64", NumericFormatSpec::StdFormatDouble("fractSign", fval).c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble("fract", -fval).c_str());
+    EXPECT_STREQ ("-4 61/64", NumericFormatSpec::StdFormatDouble("fractSign", -fval).c_str());
     EXPECT_STREQ ("15 7/8", FractionalNumeric(15.0 + 14.0 / 16.0, 256).ToTextDefault(true).c_str());
 
-    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble(testV, "real").c_str());
-    EXPECT_STREQ ("1414.21356237", NumericFormatSpec::StdFormatDouble(testV, "real", 8).c_str());
-    EXPECT_STREQ ("1414.2135624", NumericFormatSpec::StdFormatDouble(testV, "real", 7).c_str());
-    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble(testV, "real", 6).c_str());
-    EXPECT_STREQ ("1414.21356", NumericFormatSpec::StdFormatDouble(testV, "real", 5).c_str());
-    EXPECT_STREQ ("1414.2136", NumericFormatSpec::StdFormatDouble(testV, "real", 4).c_str());
-    EXPECT_STREQ ("1414.214", NumericFormatSpec::StdFormatDouble(testV, "real", 3).c_str());
-    EXPECT_STREQ ("1414.21", NumericFormatSpec::StdFormatDouble(testV, "real", 2).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble(testV, "real", 1).c_str());
-    EXPECT_STREQ ("1414.0", NumericFormatSpec::StdFormatDouble(testV, "real", 0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 8, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 7, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 6, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 5, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 4, 5.0).c_str());
-    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble(testV, "real", 3, 5.0).c_str());
-    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble(testV, "real", 8, 0.05).c_str());
-    EXPECT_STREQ ("7071.05", NumericFormatSpec::StdFormatDouble(5.0*testV, "real", 7, 0.05).c_str());
-    EXPECT_STREQ ("4242.65", NumericFormatSpec::StdFormatDouble(3.0*testV, "real", 6, 0.05).c_str());
-    EXPECT_STREQ ("9899.5", NumericFormatSpec::StdFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
-    EXPECT_STREQ ("12727.9", NumericFormatSpec::StdFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
-    EXPECT_STREQ ("2828.45", NumericFormatSpec::StdFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
-    EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble(2.0*testV, "sci", 5).c_str());
-    EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble(2.0*testV, "sciN", 5).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble("real", testV).c_str());
+    EXPECT_STREQ ("1414.21356237", NumericFormatSpec::StdFormatDouble("real", testV, 8).c_str());
+    EXPECT_STREQ ("1414.2135624", NumericFormatSpec::StdFormatDouble("real", testV, 7).c_str());
+    EXPECT_STREQ ("1414.213562", NumericFormatSpec::StdFormatDouble("real", testV, 6).c_str());
+    EXPECT_STREQ ("1414.21356", NumericFormatSpec::StdFormatDouble("real", testV, 5).c_str());
+    EXPECT_STREQ ("1414.2136", NumericFormatSpec::StdFormatDouble("real", testV, 4).c_str());
+    EXPECT_STREQ ("1414.214", NumericFormatSpec::StdFormatDouble("real", testV, 3).c_str());
+    EXPECT_STREQ ("1414.21", NumericFormatSpec::StdFormatDouble("real", testV, 2).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble("real", testV, 1).c_str());
+    EXPECT_STREQ ("1414.0", NumericFormatSpec::StdFormatDouble("real", testV, 0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 8, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 7, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 6, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 5, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 4, 5.0).c_str());
+    EXPECT_STREQ ("1415.0", NumericFormatSpec::StdFormatDouble("real", testV, 3, 5.0).c_str());
+    EXPECT_STREQ ("1414.2", NumericFormatSpec::StdFormatDouble("real", testV, 8, 0.05).c_str());
+    EXPECT_STREQ ("7071.05", NumericFormatSpec::StdFormatDouble("real", 5.0*testV, 7, 0.05).c_str());
+    EXPECT_STREQ ("4242.65", NumericFormatSpec::StdFormatDouble("real", 3.0*testV, 6, 0.05).c_str());
+    EXPECT_STREQ ("9899.5", NumericFormatSpec::StdFormatDouble("real", 7.0*testV, 5, 0.05).c_str());
+    EXPECT_STREQ ("12727.9", NumericFormatSpec::StdFormatDouble("real", 9.0*testV, 4, 0.05).c_str());
+    EXPECT_STREQ ("2828.45", NumericFormatSpec::StdFormatDouble("real", 2.0*testV, 3, 0.05).c_str());
+    EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble("sci", 2.0*testV, 5).c_str());
+    EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat("real");
     fmtP->SetKeepTrailingZeroes(true);

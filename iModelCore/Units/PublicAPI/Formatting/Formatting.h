@@ -334,7 +334,7 @@ public:
     static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
     static Utf8String FPN_RightAlign() { return "RightAlign"; }
     static Utf8String FPN_MapName() { return "MapName"; }
-    static const double FPV_MinTreshold() { return 1.0e-15; }  // format parameter default values
+    static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
     static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
     static const Utf8Char FPV_DecimalSeparator() { return '.'; }
     static const Utf8Char FPV_ThousandSeparator() { return ','; }
@@ -535,12 +535,12 @@ public:
     UNITS_EXPORT size_t FormatDouble(double dval, CharP buf, size_t bufLen, int prec = -1, double round = -1.0);
     //Utf8P
     
-    UNITS_EXPORT static Utf8String StdFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(QuantityCR qty, UnitCP useUnit, Utf8P stdName, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantityTriad(QuantityTriadSpecP qtr, Utf8CP stdName, Utf8CP space, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatDouble(Utf8P stdName, double dval, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatPhysValue(double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8P stdName, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
     //FormatDoubleStd
 
 
