@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityAdmin/ODBCSQLConnection.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,7 +63,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static ServerConnection& GetInstance();
     ServerConnection();
     REALITYDATAPLATFORM_EXPORT void SetStrings(const char* dbName, const char* pwszConnStr);
-    REALITYDATAPLATFORM_EXPORT bool IsDuplicate(Utf8CP file, Utf8CP dataset = NULL);
+    REALITYDATAPLATFORM_EXPORT bool IsDuplicate(Utf8CP file);
 
     SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
     REALITYDATAPLATFORM_EXPORT SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);

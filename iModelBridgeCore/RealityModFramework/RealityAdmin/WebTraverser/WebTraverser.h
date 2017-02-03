@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/WebTraverser/WebTraverser.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ public:
 
     WebTraversalObserver(bool dualMode, bool updateMode, const char* dbName, const char* pwszConnStr, bool verbose = true);
 
-    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file, Utf8CP dataset);
+    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
     virtual void OnFileDownloaded(Utf8CP file);
     virtual void OnDataExtracted(SpatialEntityCR data);
     };

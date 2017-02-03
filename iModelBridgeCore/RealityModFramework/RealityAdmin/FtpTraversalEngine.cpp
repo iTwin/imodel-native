@@ -33,9 +33,9 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
+FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP providerName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification, SpatialEntityMetadataCR metadataSeed)
     {
-    return new FtpClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification);
+    return new FtpClient(serverUrl, serverName, providerName, datasetName, filePattern, extractThumbnails, classification, metadataSeed);
     }
 
 //-------------------------------------------------------------------------------------
@@ -43,13 +43,13 @@ FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP da
 //-------------------------------------------------------------------------------------
 SpatialEntityPtr FtpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
-    return FtpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
+    return FtpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails, m_metadataSeed);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification) : SpatialEntityClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification)
+FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP providerName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification, SpatialEntityMetadataCR metadataSeed) : SpatialEntityClient(serverUrl, serverName, providerName, datasetName, filePattern, extractThumbnails, classification, metadataSeed)
     {}
 
 //-------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ SpatialEntityHandlerStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8Strin
             // &&AR ... Apply filePattern yet keep on adding ZIP files.
             // Process listed data.
             if (GetObserver() != NULL)
-                GetObserver()->OnFileListed(fileList, fileFullPath.c_str(), GetDataset().c_str());
+                GetObserver()->OnFileListed(fileList, fileFullPath.c_str());
             else
                 fileList.push_back(fileFullPath);
             }
@@ -153,7 +153,7 @@ FtpRequest::FtpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
+SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail, SpatialEntityMetadataCR metadataSeed)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -222,7 +222,7 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 
     // Metadata.    
     BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
+    SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str(), metadataSeed);
     if (pMetadata != NULL)
         pExtractedData->SetMetadata(pMetadata.get());
 
@@ -278,6 +278,8 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
         newDataSource->SetServer(pServer.get());
 
     pExtractedData->AddDataSource(*newDataSource);
+
+    pExtractedData->SetDataType(newDataSource->GetDataType().c_str());
 
     // Classification
     // &&AR Since we currently only process rasters the file is bound to be imagery

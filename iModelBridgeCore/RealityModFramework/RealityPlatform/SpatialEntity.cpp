@@ -250,7 +250,8 @@ SpatialEntity::SpatialEntity()
     m_footprint = bvector<GeoPoint2d>();
     m_footprintExtents = DRange2d();
     m_resolutionValueUpToDate = false;
-
+    m_approximateFileSize = 0;
+    m_approximateFootprint=false;
     }
 
 
@@ -315,9 +316,17 @@ SpatialEntityMetadataPtr SpatialEntityMetadata::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityMetadataPtr SpatialEntityMetadata::CreateFromFile(Utf8CP filePath)
+SpatialEntityMetadataPtr SpatialEntityMetadata::CreateFromFile(Utf8CP filePath, SpatialEntityMetadataCR metadataSeed)
     {
-    return new SpatialEntityMetadata(filePath);
+    return new SpatialEntityMetadata(filePath, metadataSeed);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert          	    01/2017
+//-------------------------------------------------------------------------------------
+SpatialEntityMetadataPtr SpatialEntityMetadata::CreateFromMetadata(SpatialEntityMetadataCR metadataSeed)
+    {
+    return new SpatialEntityMetadata(metadataSeed);
     }
 
 //-------------------------------------------------------------------------------------
@@ -334,6 +343,9 @@ void SpatialEntityMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; 
 
 Utf8StringCR SpatialEntityMetadata::GetLegal() const { return m_legal; }
 void SpatialEntityMetadata::SetLegal(Utf8CP legal) { m_legal = legal;  m_isEmpty = false;}
+
+Utf8StringCR SpatialEntityMetadata::GetTermsOfUse() const { return m_termsOfUse; }
+void SpatialEntityMetadata::SetTermsOfUse(Utf8CP termsOfUse) { m_termsOfUse = termsOfUse;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetFormat() const { return m_format; }
 void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format;  m_isEmpty = false;}
@@ -356,13 +368,25 @@ SpatialEntityMetadata::SpatialEntityMetadata() : m_isEmpty(true)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath) : m_isEmpty(false)
+SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath, SpatialEntityMetadataCR metadataSeed) : m_isEmpty(false)
     {
     BeFileName metadataFile(filePath);
     Utf8String provenance(metadataFile.GetFileNameAndExtension());
     m_provenance = provenance;
     Utf8String format(metadataFile.GetExtension());
     m_format = format;
+
+    if (metadataSeed.GetTermsOfUse().size() > 0)
+        m_termsOfUse = metadataSeed.GetTermsOfUse();
+
+    if (metadataSeed.GetDescription().size() > 0)
+        m_description = metadataSeed.GetDescription();
+
+    if (metadataSeed.GetLegal().size() > 0)
+        m_legal = metadataSeed.GetLegal();
+
+    if (metadataSeed.GetContactInfo().size() > 0)
+        m_contactInfo = metadataSeed.GetContactInfo();
 
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
@@ -378,6 +402,25 @@ SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath) : m_isEmpty(false)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+SpatialEntityMetadata::SpatialEntityMetadata(SpatialEntityMetadataCR metadataSeed) : m_isEmpty(metadataSeed.m_isEmpty)
+    {
+    m_provenance = metadataSeed.GetProvenance();
+
+    m_format = metadataSeed.GetFormat();
+
+    m_termsOfUse = metadataSeed.GetTermsOfUse();
+
+    m_description = metadataSeed.GetDescription();
+
+    m_legal = metadataSeed.GetLegal();
+
+    m_contactInfo = metadataSeed.GetContactInfo();
+
+    m_metadataUrl = metadataSeed.GetMetadataUrl();
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
