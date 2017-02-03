@@ -1,5 +1,18 @@
+#!Python
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ConnectC/Tools/pyCApiGen/Generator.py $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+import sys
 from xml.dom import minidom
+import os
+import optparse
 from openpyxl import load_workbook
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='openpyxl')
 
 from SchemaWriter.Helpers.Api import Api
 from SchemaWriter.Helpers.ECSchema import ECSchema
@@ -11,12 +24,6 @@ from SchemaWriter.HeaderWriters.SchemaBufferPublicHeaderWriter import SchemaBuff
 from SchemaWriter.SourceWriters.SchemaBufferSourceWriter import SchemaBufferSourceWriter
 from BufferHeaderWriter import BufferHeaderWriter
 from BufferSourceWriter import BufferSourceWriter
-
-###########################################################################################################
-# ------------------------------------------------------------------------------------------------------- #
-# -------------------------------------  pyCApiGen Configuration  --------------------------------------- #
-# ------------------------------------------------------------------------------------------------------- #
-###########################################################################################################
 
 #############################################
 # ------------- Status Codes -------------- #
@@ -47,97 +54,115 @@ status_codes = {
     'TO_MANY_BAD_LOGIN_ATTEMPTS': CallStatus(-215, 'To many unsuccessful login attempts have happened.'),
 }
 
-############################################
-# -------- Schemafile Parsing ------------ #
-############################################
-api = Api('CWSCC', 'ConnectWebServicesClientC')
-workbook = load_workbook(filename='autoGenClasses.xlsx', read_only=True)
-worksheet = workbook.get_sheet_by_name('autoGenClasses')
-unique_ecschemas = {}
-for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=2):
-    if row[0].value is None or row[1].value is None or row[2].value is None:
-        break
-    if row[0].value + row[1].value + row[2].value + row[3].value not in unique_ecschemas:
-        unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value] = \
-            ECSchema(row[0].value, row[1].value, row[2].value, row[3].value, api, status_codes)
-    unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value].add_ecclass(row)
-
-for ecschema in unique_ecschemas.values():
-    xmldoc = minidom.parse(ecschema.get_filename())
-    ecschemasXml = xmldoc.getElementsByTagName('ECSchema')
-    for ecschemaXml in ecschemasXml:
-        if ecschemaXml.attributes['schemaName'].value == ecschema.get_name():
-            if ecschemaXml.attributes['xmlns'].value != 'http://www.bentley.com/schemas/Bentley.ECXML.2.0':
-                raise IOError("{0} file's xmlns is not support. This tool only supports the "
-                              "'http://www.bentley.com/schemas/Bentley.ECXML.2.0' format"
-                              .format(ecschema.get_name()))
-            ecschema.init_xml(ecschemaXml)
+#-------------------------------------------------------------------------------------------
+# Parse the schema file
+# @bsimethod                                                        
+#-------------------------------------------------------------------------------------------
+def ParseSchemaFile(api, excelFile):
+    workbook = load_workbook(filename=excelFile, read_only=True)
+    worksheet = workbook.get_sheet_by_name('autoGenClasses')
+    unique_ecschemas = {}
+    for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=2):
+        if row[0].value is None or row[1].value is None or row[2].value is None:
             break
+        if row[0].value + row[1].value + row[2].value + row[3].value not in unique_ecschemas:
+            unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value] = \
+                ECSchema(row[0].value, row[1].value, row[2].value, row[3].value, api, status_codes)
+        unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value].add_ecclass(row)
 
-#############################################
-# ------------ Autogeneration ------------- #
-#############################################
-srcDir = "../../"
-publicApiDir = srcDir + "../PublicApi/WebServices/ConnectC/"
-for ecschema in unique_ecschemas.values():
-    ####################################################################
-    # -----------------------------------------------------------------#
-    # -----------------------SCHEMA-LEVEL------------------------------#
-    # ----------------------------API----------------------------------#
-    ####################################################################
-    schemaApiPublicHeaderWriter = SchemaApiPublicHeaderWriter(ecschema,
-                                                              publicApiDir + '{0}/{1}GenPublic.h'
-                                                              .format(ecschema.get_url_descriptor(), ecschema.get_name()),
-                                                              api,
-                                                              status_codes)
-    schemaApiPublicHeaderWriter.write_header()
+    for ecschema in unique_ecschemas.values():
+        filename = ecschema.get_filename()
+        if not os.path.isabs(filename):
+            filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
+        #load the schema xml
+        xmldoc = minidom.parse(filename)
+        ecschemasXml = xmldoc.getElementsByTagName('ECSchema')
+        for ecschemaXml in ecschemasXml:
+            if ecschemaXml.attributes['schemaName'].value == ecschema.get_name():
+                if ecschemaXml.attributes['xmlns'].value != 'http://www.bentley.com/schemas/Bentley.ECXML.2.0':
+                    raise IOError("{0} file's xmlns is not support. This tool only supports the "
+                                  "'http://www.bentley.com/schemas/Bentley.ECXML.2.0' format"
+                                  .format(ecschema.get_name()))
+                ecschema.init_xml(ecschemaXml)
+                break
+    return unique_ecschemas
 
-    schemaApiSourceWriter = SchemaApiSourceWriter(ecschema,
-                                                  srcDir + '{0}/{1}Gen.cpp'
-                                                  .format(ecschema.get_url_descriptor(), ecschema.get_name()),
-                                                  api,
-                                                  status_codes)
-    schemaApiSourceWriter.write_source()
+#-------------------------------------------------------------------------------------------
+# Schema Auto Generation
+# @bsimethod                                                        
+#-------------------------------------------------------------------------------------------
+def GenerateSchemaCode(srcDir, publicApiDir, api, schemas):
+    for ecschema in schemas.values():        
+        # SCHEMA-LEVEL-API
+        apiPublicHeaderFile = publicApiDir + '{0}/{1}GenPublic.h' .format(ecschema.get_url_descriptor(), ecschema.get_name())
+        schemaApiPublicHeaderWriter = SchemaApiPublicHeaderWriter(ecschema, apiPublicHeaderFile, api, status_codes)
+        schemaApiPublicHeaderWriter.write_header()
+        schemaApiSourceWriter = SchemaApiSourceWriter(ecschema, srcDir + '{0}/{1}Gen.cpp' .format(ecschema.get_url_descriptor(), ecschema.get_name()), api, status_codes)
+        schemaApiSourceWriter.write_source()
 
-    ####################################################################
-    # -----------------------------------------------------------------#
-    # -----------------------SCHEMA-LEVEL------------------------------#
-    # ---------------------------BUFFER--------------------------------#
-    ####################################################################
-    schemaBufferHeaderWriter = SchemaBufferHeaderWriter(ecschema,
-                                                        srcDir + '{0}/{1}BufferGen.h'
-                                                        .format(ecschema.get_url_descriptor(), ecschema.get_name()),
-                                                        api,
-                                                        status_codes)
-    schemaBufferHeaderWriter.write_header()
+        # SCHEMA-LEVEL - BUFFER
+        schemaBufferHeaderFile = srcDir + '{0}/{1}BufferGen.h' .format(ecschema.get_url_descriptor(), ecschema.get_name())
+        schemaBufferHeaderWriter = SchemaBufferHeaderWriter(ecschema, schemaBufferHeaderFile, api, status_codes)
+        schemaBufferHeaderWriter.write_header()
 
-    schemaBufferPublicHeaderWriter = SchemaBufferPublicHeaderWriter(ecschema,
-                                                                    publicApiDir + '{0}/{1}BufferGenPublic.h'
-                                                                    .format(ecschema.get_url_descriptor(), ecschema.get_name()),
-                                                                    api,
-                                                                    status_codes)
-    schemaBufferPublicHeaderWriter.write_header()
+        schemaBufferPublicHeaderFile = publicApiDir + '{0}/{1}BufferGenPublic.h' .format(ecschema.get_url_descriptor(), ecschema.get_name())
+        schemaBufferPublicHeaderWriter = SchemaBufferPublicHeaderWriter(ecschema, schemaBufferPublicHeaderFile, api, status_codes)
+        schemaBufferPublicHeaderWriter.write_header()
 
-    schemaBufferSourceWriter = SchemaBufferSourceWriter(ecschema,
-                                                        srcDir + '{0}/{1}BufferGen.cpp'
-                                                        .format(ecschema.get_url_descriptor(), ecschema.get_name()),
-                                                        api,
-                                                        status_codes)
-    schemaBufferSourceWriter.write_source()
+        schemaBufferSourceFile = srcDir + '{0}/{1}BufferGen.cpp' .format(ecschema.get_url_descriptor(), ecschema.get_name())            
+        schemaBufferSourceWriter = SchemaBufferSourceWriter(ecschema, schemaBufferSourceFile, api, status_codes)
+        schemaBufferSourceWriter.write_source()
 
-####################################################################
-# -----------------------------------------------------------------#
-# --------------------------API-LEVEL------------------------------#
-# -----------------------------------------------------------------#
-####################################################################
-bufferHeaderWriter = BufferHeaderWriter(unique_ecschemas.values(),
-                                        srcDir + '{0}BufferGen.h'.format(api.get_upper_api_acronym()),
-                                        api,
-                                        status_codes)
-bufferHeaderWriter.write_header()
+    # API-LEVEL    
+    apiBufferHeaderFile =  srcDir + '{0}BufferGen.h'.format(api.get_upper_api_acronym())
+    bufferHeaderWriter = BufferHeaderWriter(schemas.values(), apiBufferHeaderFile, api, status_codes)
+    bufferHeaderWriter.write_header()
+    
+    apiBufferSourceFile = srcDir + '{0}BufferGen.cpp'.format(api.get_upper_api_acronym())
+    bufferSourceWriter = BufferSourceWriter(schemas.values(), apiBufferSourceFile, api, status_codes)
+    bufferSourceWriter.write_source()
 
-bufferSourceWriter = BufferSourceWriter(unique_ecschemas.values(),
-                                        srcDir + '{0}BufferGen.cpp'.format(api.get_upper_api_acronym()),
-                                        api,
-                                        status_codes)
-bufferSourceWriter.write_source()
+#-------------------------------------------------------------------------------------------
+# @bsimethod                                                        Robert.Priest 2/2017
+#-------------------------------------------------------------------------------------------
+def main():
+    #defaults
+    defaultTargetSourceDir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../')
+    defaultTargetPublicApiDir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../PublicApi/WebServices/ConnectC/')
+    defaultExcelFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'autoGenClasses.xlsx')
+
+    #arguments
+    parser = optparse.OptionParser()
+    parser.add_option ("-a", "--apiAcronym", dest="acronym", action="store", help="set api acronym", default="CWSCC")
+    parser.add_option ("-n", "--apiName", dest="apiname", action="store", help="set api name", default="ConnectWebServicesClientC")
+    parser.add_option ("-f", "--excelGenFile", dest="excelgenfile", action="store", help="excel auto generation description file", default=defaultExcelFile)
+    parser.add_option ("-s", "--targetsourcedir", dest="targetsourcedir", action="store", help="target directory for source files", default=defaultTargetSourceDir)    
+    parser.add_option ("-p", "--targetpublicapidir", dest="targetpublicapidir", action="store", help="target directory for public api files", default=defaultTargetPublicApiDir)    
+    (options, args) = parser.parse_args()
+    
+    #parse the schema file and the excel sheet
+    schemas = None
+    try:
+        print 'Parsing schema file "{0}"...'.format(options.excelgenfile)
+        api = Api(options.acronym, options.apiname)
+        schemas = ParseSchemaFile(api, options.excelgenfile)
+    except Exception, ex:
+        print("{0}".format (ex))
+        return
+    
+    #generate the schema code.
+    try:
+        print 'Generating schema code...'
+        GenerateSchemaCode(options.targetsourcedir, options.targetpublicapidir,api, schemas)
+    except Exception, ex:
+        print("{0}".format (ex))
+        return
+
+    print "Done"
+
+#-------------------------------------------------------------------------------------------
+# @bsimethod                                                        Robert.Priest 2/2017
+#-------------------------------------------------------------------------------------------
+if __name__ == '__main__':
+    main()
+    
