@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -270,8 +270,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
-    Utf8String repositoryId = "eB.viltest2-5.bentley.com,eB_Mobile";
+    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
+    Utf8String repositoryId = "eB.viltest2-7.bentley.com,eB_Mobile_15.4";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -286,8 +286,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
-    Utf8String repositoryId = "pw.PW_Mobile_SS3";
+    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
+    Utf8String repositoryId = "pw.PW_Egde_10.00.01.71";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -302,9 +302,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
-    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fps_edge_sp_2010.bentley.com~2F";
-    Credentials creds("ps_edge_sp_2010.bentley.com\\Administrator", "Q!w2e3r4");
+    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fpw_edge_sp_2013.bentley.com~2F";
+    Credentials creds("ps_edge_sp_2013.bentley.com\\Administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -318,40 +318,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-5.bentley.com/ws22";
-    Utf8String repositoryId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws23";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24ProjectWisePluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
+    Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -367,7 +335,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG25ProjectWisePluginRepository_Suc
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -397,12 +365,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3AMobile_ATP";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -413,9 +381,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     ASSERT_FALSE(nullptr == ds);
     BentleyStatus status;
 
-    /* pw:\\VILTEST2-5.bentley.com:PW_Mobile_SS3\Documents\VRA\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
-    ObjectId uploadsFolderId{"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
-    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
+    /* pw:\\VILTEST2-5.bentley.com:Mobile_ATP\Documents\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
+    ObjectId uploadsFolderId{"PW_WSG", "Project", "62042ee9-c2de-4f0d-b80d-d8492702a70d"};
+    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "StandardDisplayItemTypes--PW_WSG.02.02-Project-62042ee9--c2de--4f0d--b80d--d8492702a70d"};
 
     if (true)
         {
@@ -430,6 +398,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
 
     if (true)
         {
+        // Cleanup folder content
         auto txn = ds->StartCacheTransaction();
         auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
         for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
@@ -520,12 +489,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
+TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
+    Utf8String repositoryId = "Bentley.PW--viltest2-10.bentley.com~3APW_Mobile_Geo";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -540,11 +509,11 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
     query->SetSelect("*,SpatialLocation.*");
     query->SetFilter("geo.intersects("
                      "SpatialLocation.Location,geometry'Polygon(("
-                     "20.896001+53.065279,"
-                     "20.896001+57.105292,"
-                     "26.872565+57.105292,"
-                     "26.872565+53.065279,"
-                     "20.896001+53.065279))')");
+                     "-90+10,"
+                     "20+90,"
+                     "80+90,"
+                     "80+10,"
+                     "-90+10))')");
     query->SetSkip(0);
     query->SetTop(100);
 
@@ -555,6 +524,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
     auto result = ds->GetObjects(resultsKey, *query, ICachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
+    ASSERT_NE(0, result.GetValue().GetJson().size());
     }
 
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
