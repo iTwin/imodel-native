@@ -9,9 +9,6 @@ NavigationECPropertyTests.InstanceWithNavProp_String
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamed                                      # Fails on Android
-CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamedFromFile                              # Fails on Android
-
 # Temp Disabled until we're ready to enable unit conversion on this branch.
 SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
 UnitsTest.TestConvertingUnitSpecifications
