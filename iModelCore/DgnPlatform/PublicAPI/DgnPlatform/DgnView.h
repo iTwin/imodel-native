@@ -519,6 +519,7 @@ public:
                 Generated = (uint8_t)DgnViewSource::Generated, //!< Include program-generated views
                 Private = (uint8_t)DgnViewSource::Private, //!< Include internally-defined views
                 All = User | Generated | Private, //!< Include views from all sources
+                ExcludingPrivate = User | Generated, //!< Include views from all sources except Private
             };
         private:
             Utf8String m_customECSql;
