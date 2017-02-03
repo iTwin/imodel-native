@@ -2245,9 +2245,9 @@ public:
 //! The in-memory representation of an ECRelationshipClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECEntityClass
+struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECClass
 {
-DEFINE_T_SUPER(ECEntityClass)
+DEFINE_T_SUPER(ECClass)
 friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;

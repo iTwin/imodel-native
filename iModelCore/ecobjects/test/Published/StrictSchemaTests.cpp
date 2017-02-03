@@ -257,9 +257,11 @@ struct RelationshipClassTests : ECTestFixture
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "    </ECClass>"
             "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
+            "        <BaseClass>RegularClass</BaseClass>"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "    </ECClass>"
             "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
+            "        <BaseClass>RegularClass</BaseClass>"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
             "        <ECProperty propertyName=\"Property2\" typeName=\"int\" />"
             "    </ECClass>"
@@ -296,6 +298,7 @@ struct RelationshipClassTests : ECTestFixture
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXMLString(), *schemaContext))
                << "Failed to read the test schema from xml string";
         ASSERT_TRUE(m_schema.IsValid()) << "Test Schema is not valid";
+        ASSERT_TRUE(m_schema->IsECVersion(ECVersion::Latest)) << "Test Schema is not the latest ECVersion, " << ECSchema::GetECVersionString(ECVersion::Latest) << ".";
         }
     };
 
@@ -476,7 +479,8 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_NE(SchemaReadStatus::Success, status) << "Schema must have well-defined constraints for RelationshipClass";
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Schema could not be deserialized.";
+    ASSERT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "Schema must have well-defined constraints for RelationshipClass";
 
     CreateTestSchema();
 
@@ -504,10 +508,11 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
                  << "'RealtioshipConstraint classes may only be Domain or Abstract";
         }
 
+    // Need to set the abstract constraint to regular class before it can be set. Otherwise, the target constraint is too narrow
+    ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().SetAbstractConstraint(*regularClass))
+           <<  "Cannot set the abstract constraint of the Target-Constraint on " << relClass1->GetFullName() << ".";
     ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().AddClass(*regularClass))
            << "Regular class cannot be added to RelationshipConstraint";
-    ASSERT_NE(ECObjectsStatus::Success, relClass1->GetTarget().AddClass(*relClass2))
-           << "RelationshipClass may not be added to RelationshipConstraint";
     }
 
 //---------------------------------------------------------------------------------------//

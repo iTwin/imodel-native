@@ -6,7 +6,6 @@
 NavigationECPropertyTests.InstanceWithNavProp_String
 
 # Not yet implemented
-RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition
 RelationshipClassTests.CyclicRelationships
 
 #----------------------------------------------------------------------------------------

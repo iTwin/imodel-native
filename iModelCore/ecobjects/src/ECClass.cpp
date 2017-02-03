@@ -3459,7 +3459,7 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass(ECN::ECSchemaCR schema, bool verify) : ECEntityClass(schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
+ECRelationshipClass::ECRelationshipClass(ECN::ECSchemaCR schema, bool verify) : ECClass(schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
     {
     m_source = new ECRelationshipConstraint(this, true, verify);
     m_target = new ECRelationshipConstraint(this, false, verify);
