@@ -5205,7 +5205,7 @@ TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalF
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
     Json::Value externalFileInfos;
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
     auto relativePath = externalFileInfos[0]["RelativePath"].asString();
@@ -5223,7 +5223,7 @@ TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFi
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
     Json::Value externalFileInfos;
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
     auto relativePath = externalFileInfos[0]["RelativePath"].asString();
@@ -5241,7 +5241,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFil
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
     Json::Value externalFileInfos;
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
     auto relativePath = externalFileInfos[0]["RelativePath"].asString();
@@ -5263,8 +5263,8 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCr
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
     Json::Value fileInfoOwnerships, externalFileInfos;
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(fileInfoOwnerships, cache->GetAdapter().GetECClass("ECDb_FileInfo.FileInfoOwnership")));
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(fileInfoOwnerships, cache->GetAdapter().GetECClass("ECDbFileInfo.FileInfoOwnership")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
 
     ASSERT_EQ(1, fileInfoOwnerships.size());
     ASSERT_EQ(1, externalFileInfos.size());

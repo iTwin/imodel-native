@@ -2,19 +2,19 @@
 |
 |     $Source: Cache/Persistence/Core/ECDbFileInfoSchema.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 //--------------------------------------------------------------------------------------+
-// Schema definitions for ECDb_FileInfo.02.00.ecschema.xml
+// Schema definitions for ECDbFileInfo.02.00.00.ecschema.xml
 //--------------------------------------------------------------------------------------+
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-#define SCHEMA_ECDbFileInfo                                 "ECDb_FileInfo"
+#define SCHEMA_ECDbFileInfo                                 "ECDbFileInfo"
 
 #define CLASS_FileInfo                                      "FileInfo"
 #define CLASS_FileInfo_PROPERTY_Name                        "Name"
