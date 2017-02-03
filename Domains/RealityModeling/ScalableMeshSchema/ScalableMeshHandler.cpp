@@ -214,7 +214,7 @@ struct SmCachedGraphics : TransientCachedGraphics
     void UnlinkQvElem()
         {
         m_qvElem = 0;
-        }
+        }    
 
     /*
     virtual void _Draw (ViewContextR context, TransformCP transform)
@@ -1231,8 +1231,11 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
 
-#if SM_ACTIVATE_UPLOADER == 1
+#if SM_ACTIVATE_UPLOADER == 1 || SM_ACTIVATE_LOAD_TEST == 1
     WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
+#endif
+
+#if SM_ACTIVATE_UPLOADER == 1
     if (projectName.Contains(WString(L"upload_to_cloud")))
         {
         if (projectName.Equals(WString(L"upload_to_cloud_wsg")))
@@ -1244,6 +1247,11 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             {
             WString container(L"scalablemeshtest"); // Azure container
             m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::Azure);
+            }
+        else if (projectName.Equals(WString(L"upload_to_cloud_local_curl")))
+            {
+            WString container(L"scalablemeshtest"); // local disk container
+            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDiskCURL);
             }
         else if (projectName.Equals(WString(L"upload_to_cloud_local")))
             {
@@ -1258,11 +1266,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 #endif
 
 #if SM_ACTIVATE_LOAD_TEST == 1
-    WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
     if (projectName.Contains(WString(L"load_test")))
         {
         size_t nbLoadedNodes = 0;
-        m_smPtr->LoadAllNodeHeaders(nbLoadedNodes, 6);
+        m_smPtr->LoadAllNodeData(nbLoadedNodes, 6);
         }
 #endif
 

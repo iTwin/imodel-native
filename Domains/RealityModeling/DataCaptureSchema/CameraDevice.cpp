@@ -535,6 +535,8 @@ void                    CameraDevice::SetAspectRatio(double val) { m_aspectRatio
 double                  CameraDevice::GetSkew() const { return m_skew; }
 void                    CameraDevice::SetSkew(double val) { m_skew = val; }
 
+double                  CameraDevice::GetPixelToMeterRatio() const { return m_pixelToMeterRatio;  };
+void                    CameraDevice::SetPixelToMeterRatio(double val) { m_pixelToMeterRatio = val; };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -877,6 +879,7 @@ DPoint2d CameraDevice::ComputeFieldOfView(CameraDeviceCR camDevice)
     //Everything must be in pixels
     fieldofView.x = atan2(camDevice.GetImageWidth(), 2 * camDevice.GetFocalLength());
     fieldofView.y = atan2(camDevice.GetImageHeight(), 2 * camDevice.GetFocalLength());
+
     return fieldofView;
     }
 
