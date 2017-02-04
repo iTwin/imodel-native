@@ -2437,7 +2437,7 @@ protected:
 public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
-    DGNPLATFORM_EXPORT DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const;
+    DGNPLATFORM_EXPORT DgnElementCPtr GetDerivedFromElement() const;
 };
 
 //=======================================================================================
