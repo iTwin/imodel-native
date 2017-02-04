@@ -23,7 +23,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 //----------------------------------------------------------------------------------------
 struct ImportTest : DgnDbTestFixture
 {
-    ImportTest() { }
+    ImportTest() {}
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
 };
@@ -31,12 +31,12 @@ struct ImportTest : DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
+static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
     {
-    RgbFactor red = { 1.0, 0.0, 0.0};
+    RgbFactor red = {1.0, 0.0, 0.0};
     uint32_t width, height;
    
-    JsonRenderMaterial renderMaterialAsset;
+    RenderingAsset renderMaterialAsset;
     renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
     renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
@@ -79,10 +79,10 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::Material::MapMode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
-    renderMaterialAsset.GetValueR()[RENDER_MATERIAL_Map] = mapsMap;
+    renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
     DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
-    material.SetRenderingAsset(renderMaterialAsset.GetValue());
+    material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
     return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
@@ -388,7 +388,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a Category for the elements. 
     DgnSubCategory::Appearance sourceAppearanceRequested = createAppearance(ColorDef(1, 2, 3, 0));
-    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", JsonRenderMaterial::TextureMap::Units::Relative));
+    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", RenderingAsset::TextureMap::Units::Relative));
 
     DgnCategoryId sourceCategoryId = DgnDbTestUtils::InsertSpatialCategory(*sourceDb, s_catName, sourceAppearanceRequested);
     ASSERT_TRUE( sourceCategoryId.IsValid() );
@@ -397,7 +397,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a custom SubCategory for one of the elements to use
     DgnSubCategory::Appearance sourceAppearance2 = createAppearance(ColorDef(2, 2, 3, 0));
-    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", JsonRenderMaterial::TextureMap::Units::Relative));
+    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", RenderingAsset::TextureMap::Units::Relative));
     DgnSubCategoryCPtr sourceSubCategory2;
         {
         DgnSubCategoryPtr s = new DgnSubCategory(DgnSubCategory::CreateParams(*sourceDb, sourceCategoryId, "SubCat2", sourceAppearance2));
@@ -415,7 +415,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
     Render::GeometryParams customParams;
     customParams.SetCategoryId(sourceCategoryId);
-    customParams.SetMaterialId(createTexturedMaterial(*sourceDb, "Texture3", L"", JsonRenderMaterial::TextureMap::Units::Relative));
+    customParams.SetMaterialId(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderingAsset::TextureMap::Units::Relative));
     DgnElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 

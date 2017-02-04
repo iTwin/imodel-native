@@ -46,7 +46,6 @@ struct  ThreadedLocalParasolidHandlerStorageMark
     ~ThreadedLocalParasolidHandlerStorageMark ();
 };
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
 *  Inner mark.   Included around code sections that should be rolled back in case
@@ -80,7 +79,6 @@ protected:
     ~ThreadedParasolidErrorHandlerOuterMark();
 };
     
-
 static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,11 +498,11 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     {
-    JsonRenderMaterial mat;
-    if (!m_materialId.IsValid() || SUCCESS != mat.Load(m_materialId, db))
+    RenderingAssetCP mat = RenderingAsset::Load(m_materialId, db);
+    if (nullptr == mat)
         return nullptr;
 
-    auto texMap = mat.GetPatternMap();
+    auto texMap = mat->GetPatternMap();
     DgnTextureId texId;
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
@@ -911,9 +909,9 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     if (includeParams &&
         !params.empty() &&
-        (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
+        (m_material || (nullptr != (m_material = RenderingAsset::Load(materialId, dgnDb)))))
         {
-        auto const&         patternMap = m_material.GetPatternMap();
+        auto const&  patternMap = m_material->GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid())
