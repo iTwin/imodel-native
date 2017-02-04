@@ -1400,7 +1400,7 @@ protected:
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
     //! Provide a description of this element to display in the "info balloon" that appears when the element is under the cursor.
-    //! @param delimiter Put this string to break lines of the desciption.
+    //! @param[in] delimiter Put this string to break lines of the desciption.
     //! @return The information to display in the info balloon.
     //! @note If you override this method, you may decide whether to call your superclass' implementation or not (it is not required).
     //! The default implementation shows display label, category and model.

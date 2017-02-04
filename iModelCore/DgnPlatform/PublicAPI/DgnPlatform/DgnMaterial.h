@@ -1,8 +1,4 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/DgnPlatform/DgnMaterial.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+/*--------------------------------------------------------------------------------------+ | | $Source: PublicAPI/DgnPlatform/DgnMaterial.h $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -103,8 +99,8 @@ public:
     DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnMaterial>(*this, status);} //!< Updates this material in the DgnDb and returns the updated persistent material
 
     //! Get an asset of the material as a Json value.
-    JsonValueCR DgnMaterial::GetAsset(Utf8CP asset) const {return m_assets[asset];}
-    JsonValueR DgnMaterial::GetAssetR(Utf8CP asset) {return m_assets[asset];}
+    JsonValueCR GetAsset(Utf8CP asset) const {return m_assets[asset];}
+    JsonValueR GetAssetR(Utf8CP asset) {return m_assets[asset];}
 
     //! Set an asset of material from a Json value.
     //! @param[in] name asset name -- "RenderMaterial", "Physical" etc.
