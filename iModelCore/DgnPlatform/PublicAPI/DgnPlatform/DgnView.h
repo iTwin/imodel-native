@@ -97,7 +97,7 @@ public:
     //! Remove a Style from this DisplayStyle.
     //! @param[in] name The name of the Style to remove
     //! @note  This only changes the Style in memory. It will be saved when/if the DisplayStyle is saved.
-    void RemoveStyle(Utf8CP name) {m_styles.removeMember(name);;}
+    void RemoveStyle(Utf8CP name) {m_styles.removeMember(name);}
 
     //! Get the background color for this DisplayStyle
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
@@ -139,7 +139,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
     friend struct ViewElementHandler::ViewDisplayStyle3d;
 
 public:
-    //! The "environment" Style for this DisplayStyle3d. The environment provides visuals cue of the orientation of the view relative to the earth.
+    //! The "environment" Style for this DisplayStyle3d. The environment provides a visual cue of the orientation of the view relative to the earth.
     struct EnvironmentDisplay
     {
         //! A circle drawn at a Z elevation, whose diameter is the the XY diagonal of the project extents
@@ -158,8 +158,8 @@ public:
             ColorDef m_nadirColor;  //!< if no jpeg file, the color of the nadir part of the ground gradient (shown when looking straight down.)
             ColorDef m_groundColor; //!< if no jpeg file, the color of the ground part of the ground gradient
             ColorDef m_skyColor;    //!< if no jpeg file, the color of the sky part of the sky gradient
-            double m_groundExponent=4.0; //!< the cutoff between ground and nadir
-            double m_skyExponent=4.0;    //!< the cutoff between sky and zenith
+            double m_groundExponent=4.0; //!< if no jpeg file, the cutoff between ground and nadir
+            double m_skyExponent=4.0;    //!< if no jpeg file, the cutoff between sky and zenith
         };
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
