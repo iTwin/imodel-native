@@ -166,13 +166,12 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
 
-        // NOTE: Temp disabled until we support KOQs in ECDb.
-        //IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
-        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
 
-        //IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
-        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
-        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
+        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
 
         // Iterates over the Custom Attributes classes that will be converted. This converter basically
         // handles Custom Attributes that moved into a new schema but with no content change.
