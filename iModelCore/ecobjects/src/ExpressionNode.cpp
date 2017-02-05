@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1709,6 +1709,9 @@ Utf8CP  PrimaryListNode::GetName(size_t index) const
         return NULL;
 
     NodeP   node = m_operators[index].get();
+    if (!node)
+        return NULL;
+
     ExpressionToken    nodeId = node->GetOperation();
     if (TOKEN_Ident == nodeId || TOKEN_Dot == nodeId)
         {
