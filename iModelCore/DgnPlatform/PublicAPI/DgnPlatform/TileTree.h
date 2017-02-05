@@ -617,7 +617,7 @@ struct Root : TileTree::Root
 {
     DEFINE_T_SUPER(TileTree::Root);
 
-    Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
+    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
 };
 
 //=======================================================================================
@@ -633,11 +633,13 @@ protected:
     bvector<Render::GraphicPtr> m_graphics;
 
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
+    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child) const;
+
 public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
     virtual bool _HasChildren() const override { return !m_isLeaf; }
-    virtual ChildTiles const* _GetChildren(bool load) const override;
-    virtual void _DrawGraphics(TileTree::DrawArgsR) const override;
+    DGNPLATFORM_EXPORT virtual ChildTiles const* _GetChildren(bool load) const override;
+    DGNPLATFORM_EXPORT virtual void _DrawGraphics(TileTree::DrawArgsR) const override;
     virtual Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     
     TileId GetTileId() const { return m_id; }

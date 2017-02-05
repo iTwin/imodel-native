@@ -722,7 +722,6 @@ public:
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     GeometryCollection GenerateGeometry(GeometryOptionsCR options, LoadContextCR context);
-    DRange3d ComputeChildRange(TileR child) const;
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
