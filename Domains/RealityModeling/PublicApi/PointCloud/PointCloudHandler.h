@@ -11,7 +11,7 @@
 #include <BePointCloud/BePointCloudApi.h>  //&&MM I would like to hide the dependency on BePointCloud and pointools
 #include <BePointCloud/PointCloudHandle.h>
 #include <BePointCloud/PointCloudScene.h>
-#include <DgnPlatform/MeshTile.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -19,14 +19,17 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PointCloudModel)
+
 struct PointCloudModelHandler;
 struct PtViewport;
+
 
 //=======================================================================================
 // Obtain and display point cloud data from POD files. 
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel,  Dgn::Render::IGenerateMeshTiles
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
 DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
@@ -107,7 +110,8 @@ protected:
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-    virtual TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
+    POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
+
 
 public:
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.

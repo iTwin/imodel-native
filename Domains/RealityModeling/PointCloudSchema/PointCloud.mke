@@ -95,7 +95,7 @@ $(o)PointCloudProgressiveDisplay$(oext) : $(SrcPointCloud)PointCloudProgressiveD
 
 $(o)PointCloudDomain$(oext)             : $(SrcPointCloud)PointCloudDomain.cpp               $(pointCloudDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudTilePublish$(oext)        : $(SrcPointCloud)PointCloudTilePublish.cpp               $(pointCloudDepends)  ${MultiCompileDepends} 
+$(o)PointCloudTileTree$(oext)           : $(SrcPointCloud)PointCloudTileTree.cpp             $(pointCloudDepends)  ${MultiCompileDepends} 
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

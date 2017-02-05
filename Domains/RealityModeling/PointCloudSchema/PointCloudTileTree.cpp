@@ -1,21 +1,23 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: PointCloudSchema/PointCloudTilePublish.cpp $
+|     $Source: PointCloudSchema/PointCloudTileTree.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 #include <PointCloud/PointCloudHandler.h>
+#include <PointCloud/PointCloudTileTree.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
-
-BEGIN_UNNAMED_NAMESPACE
+USING_NAMESPACE_POINTCLOUD_TILETREE
 
 static size_t                           s_maxTilePointCount = 2000000;
 
+#ifdef NOTYET
+BEGIN_UNNAMED_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     01/2017
@@ -201,4 +203,98 @@ TileGeneratorStatus PointCloudModel::_GenerateMeshTiles(TileNodePtr& rootTile, T
 
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
+
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
+    : T_Super(octRoot, id, parent, false)
+    {
+    static const double s_minToleranceRatio = 1000.0;
+
+    if (nullptr != parent)
+        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
+    else
+        m_range.Extend (*range);
+
+    m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr) 
+    {
+    return nullptr; // WIP.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId) const 
+    {
+    return nullptr; //WIP
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+double Tile::_GetMaximumSize() const 
+    {
+    return 0.0; // WIP
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::LoadRootTile(DRange3dCR tileRange)
+    {
+    m_rootTile = Tile::Create(*this, tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
+    : T_Super(model.GetDgnDb(), transform, "", &system), m_model(model), m_name(model.GetName())
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RootPtr Root::Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view)
+    {
+    DgnDb::VerifyClientThread();
+
+    DRange3d                    dgnRange;
+    model.GetRange(dgnRange, PointCloudModel::Unit::World);
+
+    // Translate world coordinates to center of range in order to reduce precision errors
+    DPoint3d    centroid = DPoint3d::FromInterpolate(dgnRange.low, 0.5, dgnRange.high);
+    Transform   transformFromTile = Transform::From(centroid), transformToTile;
+
+    transformToTile.InverseOf(transformFromTile);
+
+    RootPtr     root = new Root(model, transformFromTile, system, view);
+    DRange3d    tileRange;
+
+    transformToTile.Multiply(tileRange, dgnRange);
+    root->LoadRootTile(tileRange);
+
+    return root;
+    }
+
+
 

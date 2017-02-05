@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 #include <PointCloud/PointCloudHandler.h>
+#include <PointCloud/PointCloudTileTree.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUD
@@ -245,29 +246,6 @@ AxisAlignedBox3d PointCloudModel::_QueryModelRange() const
     return AxisAlignedBox3d(rangeWorld);
     }
 
-#if defined (NEEDS_WORK_POINT_CLOUD)
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::_AddTerrainGraphics(Dgn::TerrainContextR context) const
-    {
-    if (GetPointCloudSceneP() == nullptr || NULL == context.GetViewport() ||
-        !PointCloudProgressiveDisplay::ShouldDrawInContext(context))
-        return;
-
-    PtViewport* ptViewport = GetPtViewportP(context.GetViewportR());
-    if (nullptr == ptViewport)
-        {
-        ERROR_PRINTF("Error: no more pt viewport");
-        return;     // We ran out of viewport.
-        }
-
-    RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *ptViewport);
-    display->DrawView(context);
-    }
-#endif
-
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2016
 //----------------------------------------------------------------------------------------
@@ -334,3 +312,13 @@ void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
     T_Super::_ReadJsonProperties(val);
     m_properties.FromJson(val[JSON_PointCloudModel]);
     }
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
+    {
+    return PointCloudTileTree::Root::Create(*this, context.GetTargetR().GetSystem(), view);
+    }
+
