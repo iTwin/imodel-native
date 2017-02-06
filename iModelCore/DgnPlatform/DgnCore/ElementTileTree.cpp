@@ -245,35 +245,6 @@ static FPoint2d toFPoint2d(DPoint2dCR dpoint)
     return fpoint;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DRange3d bisectRange(DRange3dCR range, bool takeLow)
-    {
-    DVec3d diag = range.DiagonalVector();
-    DRange3d subRange = range;
-
-    double bisect;
-    double* replace;
-    if (diag.x > diag.y && diag.x > diag.z)
-        {
-        bisect = (range.low.x + range.high.x) / 2.0;
-        replace = takeLow ? &subRange.high.x : &subRange.low.x;
-        }
-    else if (diag.y > diag.z)
-        {
-        bisect = (range.low.y + range.high.y) / 2.0;
-        replace = takeLow ? &subRange.high.y : &subRange.low.y;
-        }
-    else
-        {
-        bisect = (range.low.z + range.high.z) / 2.0;
-        replace = takeLow ? &subRange.high.z : &subRange.low.z;
-        }
-
-    *replace = bisect;
-    return subRange;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -2846,21 +2817,6 @@ GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance
     return geometries;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Tile::ComputeChildRange(TileR child) const
-    {
-    // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
-    TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
-    BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
-
-    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
-    range = bisectRange(range, 0 == relativeId.m_j);
-    range = bisectRange(range, 0 == relativeId.m_k);
-
-    return range;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
