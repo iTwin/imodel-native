@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceLabelTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -15,12 +15,13 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct InstanceLabelTest      : ECTestFixture
+struct InstanceLabelTest : ECTestFixture
     {
-    StandaloneECEnablerP    m_customAttributeEnabler;
-    ECSchemaPtr             m_schema;
+    StandaloneECEnablerP m_customAttributeEnabler;
+    ECSchemaPtr m_schema;
+    Utf8Char m_className[2] = "A";
 
-    void                CreateSchema()
+    void CreateSchema()
         {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
@@ -32,7 +33,7 @@ struct InstanceLabelTest      : ECTestFixture
         m_schema->AddReferencedSchema (*customAttributesSchema);
         }
 
-    ECClassCP           CreateClass (Utf8CP className, bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName)
+    ECClassCP CreateClass (Utf8CP className, bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName)
         {
         ECEntityClassP ecClass;
         m_schema->CreateEntityClass (ecClass, className);
@@ -54,13 +55,11 @@ struct InstanceLabelTest      : ECTestFixture
         return ecClass;
         }
 
-    void                TestInstanceLabel (bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName, Utf8CP instanceLabelPropertyValue)
+    void TestInstanceLabel (bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName, Utf8CP instanceLabelPropertyValue)
         {
-        static Utf8Char s_className[2] = "A";
-
-        ECClassCP ecClass = CreateClass (s_className, hasInstanceLabelAttribute, instanceLabelPropertyName);
+        ECClassCP ecClass = CreateClass (m_className, hasInstanceLabelAttribute, instanceLabelPropertyName);
         IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        if (NULL != instanceLabelPropertyValue)
+        if (nullptr != instanceLabelPropertyValue)
             instance->SetValue (instanceLabelPropertyName, ECValue (instanceLabelPropertyValue, false));
 
         Utf8String displayLabel;
@@ -70,7 +69,7 @@ struct InstanceLabelTest      : ECTestFixture
         else
             EXPECT_TRUE (displayLabel.Equals (ecClass->GetDisplayLabel()));
 
-        ++s_className[0];
+        ++m_className[0];
         }
     };
 
@@ -82,12 +81,10 @@ TEST_F (InstanceLabelTest, TestLabels)
     CreateSchema();
 
     TestInstanceLabel (true, "InstanceLabelProperty", "MyLabel");
-    TestInstanceLabel (false, "DisplayLabel", NULL);   // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
+    TestInstanceLabel (false, "DisplayLabel", nullptr);   // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
     TestInstanceLabel (false, "NAME", "C");
     TestInstanceLabel (true, "NAME", "MyName");
-    TestInstanceLabel (false, "ThisIsNotAnInstanceLabel", NULL);
+    TestInstanceLabel (false, "ThisIsNotAnInstanceLabel", nullptr);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
-
-

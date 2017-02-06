@@ -108,10 +108,10 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
-//-------------------------------------------------------------------------------------
+//+===============+===============+===============+===============+===============+======
 // Data of standard values and the property that it is attached to
-// @bsistruct                                                    Basanta.Kharel   12/2015
-//---------------+---------------+---------------+---------------+---------------+------
+// @bsiclass                                                    Basanta.Kharel   12/2015
+//+===============+===============+===============+===============+===============+======
 struct StandardValueInfo
     {
     friend struct StandardValuesConverter;
@@ -135,10 +135,10 @@ public:
     static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo);
     };
 
-//---------------------------------------------------------------------------------------
+//+===============+===============+===============+===============+===============+======
 // Implements IECCustomAttributeConverter to convert Standard Values Custom Attribute to ECEnumeration
-// @bsistruct                                                    Basanta.Kharel   12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
+// @bsiclass                                                    Basanta.Kharel   12/2015
+//+===============+===============+===============+===============+===============+======
 struct StandardValuesConverter : IECCustomAttributeConverter
     {
     ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
@@ -174,6 +174,63 @@ private:
     //! @param[in] sdInfo                   The standard value info to of the enumeration to merge with
     //! @param[in] enumeration              The enumeration to merge with
     static ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
+    };
+
+//+===============+===============+===============+===============+===============+======
+// Implements IECCustomAttributeConverter to convert UnitSpecification Custom Attribute to KindOfQuantity
+// @bsiclass                                                    Robert.Schili   03/2016
+//+===============+===============+===============+===============+===============+======
+struct UnitSpecificationConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
+//+===============+===============+===============+===============+===============+======
+// Implements IECCustomAttributeConverter to convert UnitSpecifications Custom Attribute to KindOfQuantity
+// @bsiclass                                                    Robert.Schili   03/2016
+//+===============+===============+===============+===============+===============+======
+struct UnitSpecificationsConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
+//+===============+===============+===============+===============+===============+======
+//@bsiclass
+//+===============+===============+===============+===============+===============+======
+struct CustomAttributeReplacement
+    {
+    Utf8String oldSchemaName;
+    Utf8String oldCustomAttributeName;
+
+    Utf8String newSchemaName;
+    Utf8String newCustomAttributeName;
+
+    CustomAttributeReplacement(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName)
+        : oldSchemaName(oSchema), oldCustomAttributeName(oName), newSchemaName(nSchema), newCustomAttributeName(nName)
+        {}
+    CustomAttributeReplacement() {}
+    };
+
+//+===============+===============+===============+===============+===============+======
+// Implements IECCustomAttributeConverter to convert the schema references of certain Custom Attributes.
+// Which attributes will be handled depends which CustomATtributeEntries will returned from the
+// StandardCustomAttributeReferencesConverter::GetCustomAttributesToConvert method.
+// @bsiclass                                                     Stefan.Apfel   04/2016
+//+===============+===============+===============+===============+===============+======
+struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
+    {
+    private:
+        static bool s_isInitialized;
+        static bmap<Utf8String, CustomAttributeReplacement> s_entries;
+
+        static ECObjectsStatus AddMapping(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName);
+
+    public:
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+        static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
+        ECObjectsStatus ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR oldCustomAttribute, IECInstanceR newCustomAttribute);
+        ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
+        Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };
 
 /*__PUBLISH_SECTION_START__*/
