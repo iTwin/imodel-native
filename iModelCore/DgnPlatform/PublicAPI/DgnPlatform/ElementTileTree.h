@@ -443,6 +443,7 @@ protected:
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
     virtual GeomPartCPtr _GetPart() const { return nullptr; }
+    virtual void _SetInCache(bool inCache) { }
 
     void SetFacetCount(size_t numFacets);
 public:
@@ -465,6 +466,7 @@ public:
     bool DoVertexCluster() const { return _DoVertexCluster(); }
     StrokesList GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
     GeomPartCPtr GetPart() const { return _GetPart(); }
+    void SetInCache(bool inCache) { _SetInCache(inCache); }
 
     //! Create a Geometry for an IGeometry
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsR params, bool isCurved, DgnDbP db);
@@ -651,6 +653,7 @@ private:
     };
 
     typedef bmap<DgnGeometryPartId, GeomPartPtr> GeomPartMap;
+    typedef bmap<DgnElementId, GeometryList> GeomListMap;
 
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
@@ -661,8 +664,10 @@ private:
     mutable BeSQLite::BeDbMutex     m_dbMutex;
     mutable GeomPartMap             m_geomParts;
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
+    mutable GeomListMap             m_geomLists;
     bool                            m_is3d;
     bool                            m_debugRanges;
+    bool                            m_cacheGeometry;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
 
@@ -688,6 +693,10 @@ public:
     GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
     void AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const;
     GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId) const;
+
+    bool GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, DRange3dCR elementRange) const;
+    void AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, DRange3dCR elementRange) const;
+    bool WantCacheGeometry(DRange3dCR elementRange) const;
 };
 
 //=======================================================================================

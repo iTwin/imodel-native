@@ -557,6 +557,7 @@ struct PrimitiveGeometry : Geometry
 {
 private:
     IGeometryPtr        m_geometry;
+    bool                m_inCache;
 
     PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
         : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
@@ -565,6 +566,7 @@ private:
     StrokesList _GetStrokes (IFacetOptionsR facetOptions) override;
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
+    void _SetInCache(bool inCache) override { m_inCache = inCache; }
 public:
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
         {
@@ -1823,6 +1825,9 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     
     if (polyface.IsValid())
         {
+        if (m_inCache)
+            polyface = polyface->Clone();
+
         if (!HasTexture())
             polyface->ClearParameters(false);
 
@@ -2289,7 +2294,7 @@ BentleyStatus Loader::_LoadTile()
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
     m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_filter(view), m_is3d(model.Is3dModel()),
-    m_debugRanges(ELEMENT_TILE_DEBUG_RANGE)
+    m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(true)
     {
     //
     }
@@ -2435,6 +2440,60 @@ void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
     {
     BeMutexHolder lock(m_mutex);
     m_geomParts.Insert(partId, &geomPart);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::WantCacheGeometry(DRange3dCR range) const
+    {
+    if (!m_cacheGeometry)
+        return false;
+
+    // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
+    constexpr double rangeRatio = 0.25;
+    double diag = ComputeRange().DiagonalDistance();
+    if (0.0 == diag)
+        return false;
+
+    return range.DiagonalDistance() / diag >= rangeRatio;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, DRange3dCR range) const
+    {
+    if (!WantCacheGeometry(range))
+        return;
+
+    for (auto& geom : geometry)
+        geom->SetInCache(true);
+
+    BeMutexHolder lock(m_mutex);
+    m_geomLists.Insert(elementId, std::move(geometry));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, DRange3dCR range) const
+    {
+    // NB: Check the range so that we don't acquire the mutex for geometry too small to be in cache
+    if (!WantCacheGeometry(range))
+        return false;
+
+    BeMutexHolder lock(m_mutex);
+    auto iter = m_geomLists.find(elementId);
+    if (m_geomLists.end() == iter)
+        return false;
+
+    if (geometry.empty())
+        geometry = iter->second;
+    else
+        geometry.insert(geometry.end(), iter->second.begin(), iter->second.end());
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2847,11 +2906,18 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 #endif
 
         m_geometryListBuilder.Clear();
-        m_geometryListBuilder.SetElementId(elemId);
-        context.VisitElement(elemId, false);
+        bool haveCached = m_root.GetCachedGeometry(m_geometryListBuilder.GetGeometries(), elemId, dgnRange);
+        if (!haveCached)
+            {
+            m_geometryListBuilder.SetElementId(elemId);
+            context.VisitElement(elemId, false);
+            }
 
         for (auto& geom : m_geometryListBuilder.GetGeometries())
             PushGeometry(*geom);
+
+        if (!haveCached)
+            m_root.AddCachedGeometry(std::move(m_geometryListBuilder.GetGeometries()), elemId, dgnRange);
 
 #if defined(ELEMENT_TILE_REGENERATION)
         if (nullptr != elementState && 0 == elementState->GetFacetCount())    
