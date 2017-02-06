@@ -1125,6 +1125,43 @@ void PolylineOps::AddContinuationStartPoint (bvector<DPoint3d>&points, DPoint3dC
         points.push_back (_xyz);
         }
     }
+
+bool PolylineOps::AddStrokes
+(
+DEllipse3dCR arc,
+bvector <DPoint3d> & strokes, 
+IFacetOptionsCR options,
+bool includeStartPoint,
+double startFraction,
+double endFraction
+)
+    {
+    size_t n = options.EllipseStrokeCount (arc);
+    if (n < 1)
+        n = 1;
+    double df = 1.0 / n;
+    size_t i0 = includeStartPoint ? 0 : 1;
+    if (startFraction == 0.0 && endFraction == 1.0)
+        {
+        for (size_t i = i0; i <= n; i++)
+            {
+            double f = i * df;
+            strokes.push_back (arc.FractionToPoint (f));
+            }
+        }
+    else
+        {
+        for (size_t i = i0; i <= n; i++)
+            {
+            double f0 = i * df;
+            double f1 = DoubleOps::Interpolate (startFraction, f0, endFraction);
+            strokes.push_back (arc.FractionToPoint (f1));
+            }
+        }
+    return true;
+    }
+
+
 bool PolylineOps::AddStrokes
 (
 bvector <DPoint3d> const &points,
