@@ -130,6 +130,58 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     ASSERT_FALSE(inserter.IsValid());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
+    {
+    ECDbCR ecdb = SetupECDb("ecinstanceinserterstructarray.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECClassCP structClass = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(structClass != nullptr);
+
+    ECInstanceKey key;
+    {
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
+
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("PStruct_Array", 4));
+
+    //first element: set nullptr struct
+    ECValue structValue;
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(nullptr));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 0));
+
+    //second element: set empty struct
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    structValue.Clear();
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 1));
+
+    //third element: set struct with a single property value set
+    structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, structInstance->SetValue("i", ECValue(123)));
+    structValue.Clear();
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 2));
+
+    //fourth element: not set at all(just created by AddArrayElement call)
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *instance));
+    }
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT PStruct_Array FROM ecsqltest_PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String actualJson(stmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ("[null,null,{\"i\":123},null]", actualJson.c_str());
+    }
+
 TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)
     {
     InsertRelationshipInstances("FolderHasDocuments", "Folder", "Document", "KitchenSink", 1, 1);

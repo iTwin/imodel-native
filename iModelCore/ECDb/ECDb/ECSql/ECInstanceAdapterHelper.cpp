@@ -16,28 +16,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo(ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo(ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8StringCR propertyAccessString, int ecsqlParameterIndex)
     {
     if (ecProperty.GetIsStruct())
         {
         StructECPropertyCP structProp = ecProperty.GetAsStructProperty();
         BeAssert(structProp != nullptr);
         ECStructClassCR structType = structProp->GetType();
-        return StructECValueBindingInfo::Create(enabler, structType, propertyAccessString, ecsqlParameterIndex);
+        return StructECValueBindingInfo::Create(enabler, structType, &propertyAccessString, ecsqlParameterIndex);
         }
 
     uint32_t propIndex = 0;
-    if (ECObjectsStatus::Success != enabler.GetPropertyIndex(propIndex, propertyAccessString))
+    if (ECObjectsStatus::Success != enabler.GetPropertyIndex(propIndex, propertyAccessString.c_str()))
         return nullptr;
 
     if (ecProperty.GetIsPrimitive())
-        return PrimitiveECValueBindingInfo::Create(propIndex, ecsqlParameterIndex);
+        return PrimitiveECValueBindingInfo::Create(ecsqlParameterIndex, propIndex);
 
     if (ecProperty.GetIsArray())
-        return ArrayECValueBindingInfo::Create(ecProperty, propIndex, ecsqlParameterIndex);
+        return ArrayECValueBindingInfo::Create(ecProperty, ecsqlParameterIndex, propIndex);
 
     if (ecProperty.GetIsNavigation())
-        return NavigationECValueBindingInfo::Create(propIndex, ecsqlParameterIndex);
+        return NavigationECValueBindingInfo::Create(ecsqlParameterIndex, propIndex);
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
     return nullptr;
@@ -72,9 +72,9 @@ std::unique_ptr<ECSqlSystemPropertyBindingInfo> ECSqlSystemPropertyBindingInfo::
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create(uint32_t propertyIndex, int ecsqlParameterIndex)
+std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create(int ecsqlParameterIndex, uint32_t propertyIndex)
     {
-    return std::unique_ptr<PrimitiveECValueBindingInfo>(new PrimitiveECValueBindingInfo(propertyIndex, ecsqlParameterIndex));
+    return std::unique_ptr<PrimitiveECValueBindingInfo>(new PrimitiveECValueBindingInfo(ecsqlParameterIndex, propertyIndex));
     }
 
 
@@ -85,7 +85,7 @@ std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8StringCP parentPropertyAccessString, int ecsqlParameterIndex)
     {
     return std::unique_ptr<StructECValueBindingInfo>(new StructECValueBindingInfo(parentEnabler, structType, parentPropertyAccessString, ecsqlParameterIndex));
     }
@@ -96,27 +96,24 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::
 //static
 std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNestedStruct(ECN::ECStructClassCR structType)
     {
-    return Create(*structType.GetDefaultStandaloneEnabler(), structType, nullptr, UNSET_INDEX);
+    return Create(*structType.GetDefaultStandaloneEnabler(), structType, nullptr, UNSET_PARAMETERINDEX);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8StringCP parentPropertyAccessString, int ecsqlParameterIndex)
     : ECValueBindingInfo(Type::Struct, ecsqlParameterIndex)
     {
     for (ECPropertyCP memberProp : structType.GetProperties(true))
         {
         Utf8String memberAccessString;
-        if (!Utf8String::IsNullOrEmpty(parentPropertyAccessString))
-            {
-            memberAccessString = parentPropertyAccessString;
-            memberAccessString.append(".");
-            }
+        if (parentPropertyAccessString != nullptr && !parentPropertyAccessString->empty())
+            memberAccessString.append(*parentPropertyAccessString).append(".");
 
         memberAccessString.append(memberProp->GetName());
 
-        auto memberBinding = ECValueBindingInfoFactory::CreateBindingInfo(parentEnabler, *memberProp, memberAccessString.c_str(), UNSET_INDEX);
+        std::unique_ptr<ECValueBindingInfo> memberBinding = ECValueBindingInfoFactory::CreateBindingInfo(parentEnabler, *memberProp, memberAccessString, UNSET_PARAMETERINDEX);
         BeAssert(memberBinding != nullptr);
         m_memberBindingInfos[memberProp->GetId()] = std::move(memberBinding);
         }
@@ -131,16 +128,16 @@ StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnable
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create(ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex)
+std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create(ECN::ECPropertyCR prop, int ecsqlParameterIndex, uint32_t arrayPropIndex)
     {
-    return std::unique_ptr<ArrayECValueBindingInfo>(new ArrayECValueBindingInfo(prop, arrayPropIndex, ecsqlParameterIndex));
+    return std::unique_ptr<ArrayECValueBindingInfo>(new ArrayECValueBindingInfo(prop, ecsqlParameterIndex, arrayPropIndex));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex)
-    : ECValueBindingInfo(Type::Array, ecsqlParameterIndex), m_arrayPropIndex(arrayPropIndex)
+ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, int ecsqlParameterIndex, uint32_t arrayPropIndex)
+    : ECValueBindingInfo(Type::Array, ecsqlParameterIndex, arrayPropIndex)
     {
     StructArrayECPropertyCP structArrayProp = prop.GetAsStructArrayProperty();
     //if this is a struct array, generate bindings for the struct element type.
@@ -162,20 +159,15 @@ ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, int ecsqlParameterIndex)
     {
-    auto binding = ECValueBindingInfoFactory::CreateBindingInfo(*ecClass.GetDefaultStandaloneEnabler(), ecProperty, ecProperty.GetName().c_str(), ecsqlParameterIndex);
-    if (binding == nullptr)
-        return ERROR;
-
-    m_bindingInfos.push_back(std::move(binding));
-    return SUCCESS;
+    return AddBindingInfo(*ecClass.GetDefaultStandaloneEnabler(), ecProperty, ecProperty.GetName(), ecsqlParameterIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
+BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString, int ecsqlParameterIndex)
     {
-    auto binding = ECValueBindingInfoFactory::CreateBindingInfo(ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
+    std::unique_ptr<ECValueBindingInfo> binding = ECValueBindingInfoFactory::CreateBindingInfo(ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
     if (binding == nullptr)
         return ERROR;
 
@@ -188,11 +180,11 @@ BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECEnablerCR ecEn
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlSystemPropertyBindingInfo* ECValueBindingInfoCollection::AddBindingInfo(ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex)
     {
-    auto binding = ECValueBindingInfoFactory::CreateSystemBindingInfo(kind, ecsqlParameterIndex);
+    std::unique_ptr<ECValueBindingInfo> binding = ECValueBindingInfoFactory::CreateSystemBindingInfo(kind, ecsqlParameterIndex);
     if (binding == nullptr)
         return nullptr;
 
-    auto bindingP = (ECSqlSystemPropertyBindingInfo*) binding.get();
+    ECSqlSystemPropertyBindingInfo* bindingP = (ECSqlSystemPropertyBindingInfo*) binding.get();
     m_bindingInfos.push_back(std::move(binding));
     return bindingP;
     }
@@ -362,9 +354,22 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
 //static
 BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECInstanceInfo const& instance, StructECValueBindingInfo const& valueBindingInfo)
     {
+    if (!instance.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     for (auto const& kvPair : valueBindingInfo.GetMemberBindingInfos())
         {
         ECValueBindingInfo const& memberBinding = *kvPair.second;
+
+        if (memberBinding.HasPropertyIndex())
+            {
+            bool isNull = false;
+            if (ECObjectsStatus::Success != instance.GetInstance().IsPropertyNull(isNull, memberBinding.GetPropertyIndex()))
+                return ERROR;
+
+            if (isNull)
+                continue;
+            }
 
         if (SUCCESS != BindValue(binder[kvPair.first], instance, memberBinding))
             return ERROR;
@@ -384,7 +389,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
         return SUCCESS;
 
     IECInstanceCR instance = instanceInfo.GetInstance();
-    const uint32_t arrayPropIndex = valueBindingInfo.GetArrayPropertyIndex();
+    const uint32_t arrayPropIndex = valueBindingInfo.GetPropertyIndex();
     ECValue arrayValue;
     //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
