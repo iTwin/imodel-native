@@ -498,7 +498,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectV4_ValidProjectParameters_Pr
     WString Industry = L"8";
     WString AssetType = L"11";
     WString Location = L"Huntsville";
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                nullptr, Location.c_str(), nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SUCCESS);
 
@@ -664,7 +665,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProjectV4_OneProjectReturned_Projec
     WString Industry = L"9";
     WString AssetType = L"12";
     WString Location = L"Huntsville";
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SUCCESS);
 
@@ -1589,7 +1591,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsClassNotFou
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
     WString CountryCode = L"US";
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, CountryCode.c_str());
     ASSERT_TRUE(status == CLASS_NOT_FOUND);
 
@@ -1651,7 +1654,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSchemaNotFo
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SCHEMA_NOT_FOUND);
 
@@ -1713,7 +1717,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsRepositoryN
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == REPOSITORY_NOT_FOUND);
 
@@ -1775,7 +1780,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsPropertyNot
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == PROPERTY_NOT_FOUND);
 
@@ -1837,7 +1843,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsNotEnoughRi
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == NOT_ENOUGH_RIGHTS);
 
@@ -1899,7 +1906,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSslRequired
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, Name.c_str(), Number.c_str(), OrgId.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(),  Industry.c_str(), AssetType.c_str(),  
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SSL_REQUIRED);
 
@@ -1953,7 +1961,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsServerError
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == ERROR500);
 
     ASSERT_STREQ("Server error happened. Please contact your administrator", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2009,8 +2018,10 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsConflict_AP
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, Name.c_str(), Number.c_str(), OrgId.c_str(), Industry.c_str(), AssetType.c_str(),
-                                                                nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    WString DataLocationGUID = L"99999999-9999-9999-9999-999999999999";
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+                                                                nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, DataLocationGUID.c_str(), nullptr);
     ASSERT_TRUE(status == ERROR409);
 
     ASSERT_STREQ("Unknown error. Please contact your server administrator.", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2063,7 +2074,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsBadRequest_
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == ERROR400);
 
     ASSERT_STREQ("Unknown error. Please contact your server administrator.", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2624,7 +2636,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsClassNotFou
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == CLASS_NOT_FOUND);
 
@@ -2685,7 +2698,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSchemaNotFo
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SCHEMA_NOT_FOUND);
 
     ASSERT_STREQ("Resource not found", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2745,7 +2759,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsRepositoryN
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == REPOSITORY_NOT_FOUND);
 
     ASSERT_STREQ("Resource not found", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2805,7 +2820,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsPropertyNot
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == PROPERTY_NOT_FOUND);
 
     ASSERT_STREQ("Resource not found", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2860,6 +2876,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNot
     WString Name(L"CWSCCTest%s");
     WString Number(L"CWSCCTest%s");
     WString OrgId = L"1001389117";
+    WString DataLocationGUID = L"99999999-9999-9999-9999-999999999999";
     bool Active = true;
     WString Industry = L"8";
     WString AssetType = L"11";
@@ -2867,7 +2884,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNot
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, DataLocationGUID.c_str(), nullptr);
     ASSERT_TRUE(status == INSTANCE_NOT_FOUND);
 
     ASSERT_STREQ("Item not found on server. Please contact your server administrator", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -2927,7 +2945,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsNotEnoughRi
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == NOT_ENOUGH_RIGHTS);
 
@@ -2990,7 +3009,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSslRequired
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == SSL_REQUIRED);
 
@@ -3045,7 +3065,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsServerError
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(),
                                                                 nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == ERROR500);
 
@@ -3101,7 +3122,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsConflict_AP
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == ERROR409);
 
     ASSERT_STREQ("Unknown error. Please contact your server administrator.", ConnectWebServicesClientC_GetLastStatusMessage(api));
@@ -3155,7 +3177,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsBadRequest_
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
+    bool isRbacEnabled = true;
+    CallStatus status = ConnectWebServicesClientC_UpdateProject_V4(api, instanceId.c_str(), UltimateRefId.c_str(), &isRbacEnabled, Name.c_str(), Number.c_str(), Industry.c_str(), AssetType.c_str(), nullptr, Location.c_str(), &lat, &lon, &LocationIsUsingLatLong, nullptr, nullptr, 0, nullptr, nullptr);
     ASSERT_TRUE(status == ERROR400);
 
     ASSERT_STREQ("Unknown error. Please contact your server administrator.", ConnectWebServicesClientC_GetLastStatusMessage(api));
