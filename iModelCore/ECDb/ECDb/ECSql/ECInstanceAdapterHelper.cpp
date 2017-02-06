@@ -361,6 +361,8 @@ BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECI
         {
         ECValueBindingInfo const& memberBinding = *kvPair.second;
 
+        //don't attempt to call ECSqlStatement::BindNull on the member as it will cause a null member to be created in the JSON
+        //for struct arrays. So if the struct member is null in the IECInstance, skip the call to BindValue.
         if (memberBinding.HasPropertyIndex())
             {
             bool isNull = false;
@@ -443,6 +445,9 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
 //static
 BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, NavigationECValueBindingInfo const& valueBindingInfo)
     {
+    if (!instanceInfo.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     ECValue value;
     if (ECObjectsStatus::Success != instanceInfo.GetInstance().GetValue(value, valueBindingInfo.GetPropertyIndex()))
         return ERROR;
