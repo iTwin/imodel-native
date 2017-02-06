@@ -345,7 +345,7 @@ void SMSQLiteClipDefinitionsFile::DeleteClipPolygon(int64_t clipID)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "DELETE FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
-    DbResult status = stmt->Step();
+    stmt->Step();
     }
 
 void SMSQLiteClipDefinitionsFile::DeleteCoveragePolygon(int64_t coverageID)
@@ -354,7 +354,7 @@ void SMSQLiteClipDefinitionsFile::DeleteCoveragePolygon(int64_t coverageID)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "DELETE FROM SMCoverages WHERE PolygonId=?");
     stmt->BindInt64(1, coverageID);
-    DbResult status = stmt->Step();
+    stmt->Step();
     }
 
 void SMSQLiteClipDefinitionsFile::GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes)
