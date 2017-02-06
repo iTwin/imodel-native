@@ -372,7 +372,7 @@ private:
     TriangleSet         m_triangleSet;
     double              m_tolerance;
     double              m_areaTolerance;
-    JsonRenderMaterial  m_material;
+    RenderingAssetCP    m_material = nullptr;
 
     MeshBuilder(DisplayParamsR params, double tolerance, double areaTolerance) : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_areaTolerance(areaTolerance) {  }

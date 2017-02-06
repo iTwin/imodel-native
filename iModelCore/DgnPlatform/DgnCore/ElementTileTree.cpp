@@ -1197,14 +1197,11 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr DisplayParams::QueryTexture(DgnDbP db) const
     {
-    if (nullptr == db)
+    RenderingAssetCP mat = nullptr != db ? RenderingAsset::Load(GetMaterialId(), *db) : nullptr;
+    if (nullptr == mat)
         return nullptr;
 
-    JsonRenderMaterial mat;
-    if (!GetMaterialId().IsValid() || SUCCESS != mat.Load(GetMaterialId(), *db))
-        return nullptr;
-
-    auto texMap = mat.GetPatternMap();
+    auto texMap = mat->GetPatternMap();
     DgnTextureId texId;
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
@@ -1587,9 +1584,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     if (includeParams &&
         !params.empty() &&
         nullptr != dgnDb &&
-        (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, *dgnDb))))
+        (m_material || (nullptr != (m_material = RenderingAsset::Load(materialId, *dgnDb)))))
         {
-        auto const&         patternMap = m_material.GetPatternMap();
+        auto const&         patternMap = m_material->GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid())
