@@ -125,6 +125,14 @@ struct ScalableMeshModel : IMeshSpatialModel
         bool m_loadedAllModels;
         BeFileName m_basePath;
 
+        struct QueuedRegionOp
+            {
+            uint64_t id;
+            bvector<DPoint3d> regionData;
+            };
+
+        bvector<QueuedRegionOp> m_queuedRegions;
+
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
                        
@@ -214,6 +222,20 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void SetDefaultClipsActive();
 
         SCALABLEMESH_SCHEMA_EXPORT void AddTerrainRegion(uint64_t id, ScalableMeshModel* terrainModel, const bvector<DPoint3d> region);
+
+        SCALABLEMESH_SCHEMA_EXPORT void FindTerrainRegion(uint64_t id, ScalableMeshModel*& terrainModel);
+
+        SCALABLEMESH_SCHEMA_EXPORT void RemoveRegion(uint64_t id);
+
+        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id);
+
+        SCALABLEMESH_SCHEMA_EXPORT bool HasQueuedTerrainRegions();
+
+        SCALABLEMESH_SCHEMA_EXPORT void SyncTerrainRegions(bvector<uint64_t>& newModelIds);
+
+        SCALABLEMESH_SCHEMA_EXPORT void QueueDeleteTerrainRegions(uint64_t id);
+
+        SCALABLEMESH_SCHEMA_EXPORT void QueueAddTerrainRegions(uint64_t id, const bvector<DPoint3d>& boundary);
 
         
     };

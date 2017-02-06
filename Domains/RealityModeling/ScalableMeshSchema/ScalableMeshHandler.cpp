@@ -1189,7 +1189,10 @@ ScalableMeshModel::~ScalableMeshModel()
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         }
-    ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
+
+    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(GetDgnDb()));
+    if (appData != nullptr && appData->m_smTerrainPhysicalModelP == this)
+        ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
     ClearProgressiveQueriesInfo();
     }
 
@@ -1578,6 +1581,146 @@ void ScalableMeshModel::AddTerrainRegion(uint64_t id, ScalableMeshModel* terrain
     m_smPtr->AddToGroup(smPtr, true, region.data(), region.size());
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::FindTerrainRegion(uint64_t id, ScalableMeshModel*& terrainModel)
+    {
+    for (auto& part: m_terrainParts)
+        if (part->m_associatedRegion == id)
+            {
+            terrainModel = part;
+            return;
+            }
+
+    terrainModel = nullptr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::RemoveRegion(uint64_t id)
+    {
+    IScalableMeshPtr smPtr;
+    bvector<ScalableMeshModel*>::iterator toDelete = m_terrainParts.end();
+    for (auto it = m_terrainParts.begin(); it != m_terrainParts.end(); ++it)
+        if ((*it)->m_associatedRegion == id)
+            {
+            smPtr = (*it)->GetScalableMesh();
+            toDelete = it;
+            }
+
+    if (smPtr.IsValid())
+        m_smPtr->RemoveFromGroup(smPtr);
+
+    if (toDelete != m_terrainParts.end())
+        m_terrainParts.erase(toDelete);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id)
+    {
+    WString newPath = m_basePath + L"_terrain_";
+    newPath.append(std::to_wstring(id).c_str());
+    newPath.append(L".3sm");
+
+    terrainName = BeFileName(newPath);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::HasQueuedTerrainRegions()
+    {
+    return !m_queuedRegions.empty();
+    }
+
+void LoadAllScalableMeshModels(DgnDbCR database, Utf8CP label)
+    {
+    DgnClassId classId(database.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    auto modelList = database.Models().MakeIterator();
+
+    bvector<DgnModelId> modelsToLoad;
+    for (auto& model : modelList)
+        {
+        if (model.GetClassId() == classId && model.GetLabel() != label)
+            {
+            modelsToLoad.push_back(model.GetModelId());
+            }
+        }
+    for (auto& id : modelsToLoad)
+        if (!database.Models().FindModel(id).IsValid()) database.Models().GetModel(id);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
+    {
+    LoadAllScalableMeshModels(GetDgnDb(), GetLabel());
+    for (auto& reg : m_queuedRegions)
+        {
+        if (reg.regionData.empty())
+            {
+                RemoveRegion(reg.id);      
+            }
+        else
+            {
+            BeFileName terrainPath;
+            GetPathForTerrainRegion(terrainPath, reg.id);
+            bvector<IMeshSpatialModelP> allScalableMeshes;
+            ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
+            ScalableMeshModelP terrainRegion = nullptr;
+            for (auto& sm : allScalableMeshes)
+                {
+                if (sm != this && dynamic_cast<ScalableMeshModel*>(sm)->GetPath().CompareToI(terrainPath) == 0)
+                    {
+                    terrainRegion = dynamic_cast<ScalableMeshModel*>(sm);
+                    }
+                }
+
+            if (terrainRegion == nullptr) continue;
+
+            IScalableMeshPtr sm = terrainRegion->GetScalableMesh();
+            terrainRegion->LoadOverviews(sm);
+            ActivateClip(reg.id);
+            DgnElementId id = DgnElementId(reg.id);
+            ReloadClipMask(id, true);
+
+            terrainRegion->GetScalableMesh()->AddClip(reg.regionData.data(), reg.regionData.size(), reg.id);
+            sm->SetInvertClip(true);
+            terrainRegion->ActivateClip(reg.id, ClipMode::Clip);
+
+            AddTerrainRegion(reg.id, terrainRegion, reg.regionData);
+            newModelIds.push_back(terrainRegion->GetModelId().GetValue());
+            }
+        }
+    m_queuedRegions.clear();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::QueueDeleteTerrainRegions(uint64_t id)
+    {
+    QueuedRegionOp reg;
+    reg.id = id;
+    m_queuedRegions.push_back(reg);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::QueueAddTerrainRegions(uint64_t id, const bvector<DPoint3d>& boundary)
+    {
+    QueuedRegionOp reg;
+    reg.id = id;
+    reg.regionData = boundary;
+    m_queuedRegions.push_back(reg);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2017
