@@ -37,8 +37,8 @@ protected:
     BufferData                        * externalBuffer;
     BufferSize                          externalBufferSize;
 
-    BufferSize                          segmentSize;
-    SegmentIndex                        currentSegmentIndex;
+    BufferSize                          m_segmentSize;
+    SegmentIndex                        m_currentSegmentIndex;
 
     DataSourceStatus                    transferStatus;
 

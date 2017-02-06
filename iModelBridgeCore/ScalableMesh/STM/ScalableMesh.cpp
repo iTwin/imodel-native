@@ -896,12 +896,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString cloudIndicator(L"_cloud");
                     auto cloud_separator = s_stream_from_wsg ? L"~2F" : L"/";
 
-#ifndef VANCOUVER_API                                       
-                    WString datasetName = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
-#else
-                    // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
-                    assert(false);
-#endif
+                    WString datasetName = BEFILENAME(GetFileNameWithoutExtension, BeFileName(m_path.c_str()));
+
                     if (datasetName.Contains(cloudIndicator))
                         {
                         datasetName.resize(datasetName.length() - cloudIndicator.length());
@@ -909,15 +905,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     if (s_stream_from_disk)
                         {
-#ifndef VANCOUVER_API                                       
-                        BeFileName localDataFilesPath(m_baseExtraFilesPath);
+                        BeFileName localDataFilesPath(m_baseExtraFilesPath.c_str());
                         localDataFilesPath.PopDir();
                         localDataFilesPath.AppendToPath(s_stream_using_cesium_3d_tiles_format ? L"cloud_cesium" : L"cloud");
                         streamingSourcePath = localDataFilesPath;
-#else
-                        // NEEDS_WORK_STREAMING: make this build on topaz 
-                        assert(false);
-#endif
                         }
                     else
                         {
@@ -1596,7 +1587,13 @@ template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProv
     m_scmIndexPtr->SetNextID(nextID);
 
     double ratioToMeter(GetGCS().GetUnit().GetRatioToBase());
+#ifndef VANCOUVER_API
     Transform smUnitToMeterTransform(Transform::FromScaleFactors(ratioToMeter, ratioToMeter, ratioToMeter));
+#else
+    Transform smUnitToMeterTransform(Transform::FromRowValues(ratioToMeter, 0, 0, 0, 
+                                                              0, ratioToMeter, 0, 0, 
+                                                              0, 0, ratioToMeter, 0));
+#endif
 
     m_scmIndexPtr->TextureFromRaster(provider, smUnitToMeterTransform);
     m_scmIndexPtr->Store();
@@ -2382,9 +2379,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         s_stream_using_curl = true;
 
         const auto smFileName = BeFileName(this->GetPath());
-        path += smFileName.GetDirectoryName();
+        path += BEFILENAME(GetDirectoryName, smFileName);
         path += L"cloud\\";
-        path += smFileName.GetFileNameWithoutExtension();
+        path += BEFILENAME(GetFileNameWithoutExtension, smFileName);
         }
     else
         {
