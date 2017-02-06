@@ -601,6 +601,10 @@ static int s_forcedDepth = -1;   // change this to a non-negative value in debug
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
+    // ###TODO_ELEMENT_TILE: It would be nice to be able to generate only the tiles we need for the current frustum.
+    // However, if we don't generate parents before children, then when the viewing frustum changes we will have nothing to draw until more tiles load.
+    // So for now we do similarly to 3mx: only process children after parent is ready.
+#if defined(TILETREE_SKIP_INTERMEDIATES)
     DgnDb::VerifyClientThread();
 
     Visibility vis = GetVisibility(args);
@@ -708,6 +712,57 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         }
 
     return SelectParent::Yes;
+#else
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    bool ready = IsReady();
+    if (!ready)
+        args.InsertMissing(*this);
+
+    // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
+    // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
+    auto children = (tooCoarse && ready) ? _GetChildren(true) : nullptr;
+    if (nullptr != children)
+        {
+        m_childrenLastUsed = args.m_now;
+        bool drawParent = false;
+        size_t initialSize = selected.size();
+
+        for (auto const& child : *children)
+            {
+            if (SelectParent::Yes == child->_SelectTiles(selected, args))
+                {
+                drawParent = true;
+                // NB: We must continue iterating children so that they can be requested if missing...
+                }
+            }
+
+        if (!drawParent)
+            {
+            m_childrenLastUsed = args.m_now;
+            return SelectParent::No;
+            }
+
+        selected.resize(initialSize);
+        }
+
+    if (!tooCoarse)
+        _UnloadChildren(args.m_purgeOlderThan);
+
+    if (ready)
+        {
+        selected.push_back(this);
+        return SelectParent::No;
+        }
+
+    return SelectParent::Yes;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
