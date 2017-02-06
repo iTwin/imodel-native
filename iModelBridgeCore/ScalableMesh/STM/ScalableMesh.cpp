@@ -514,6 +514,12 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     StatusInt&              status)
 {
     status = BSISUCCESS;
+    if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") != 0)
+    {
+        status = BSIERROR;
+        return 0;
+    }
+
     if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
     if(0 != _waccess(filePath, 04))
     {

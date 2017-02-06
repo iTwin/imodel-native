@@ -3013,6 +3013,26 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetResolution(flo
     return BSISUCCESS;
     }
 
+template <class POINT> bvector<IScalableMeshNodeEditPtr> ScalableMeshNodeEdit<POINT>::_EditChildrenNodes()
+    {
+    LOAD_NODE
+
+    bvector<IScalableMeshNodeEditPtr> children;
+    if (m_node->m_nodeHeader.m_IsLeaf) return children;
+    if (m_node->GetSubNodeNoSplit() != NULL)
+    {
+        auto var = m_node->GetSubNodeNoSplit();
+        children.push_back(new ScalableMeshNodeEdit<POINT>(var));
+    }
+    else
+        for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
+        {
+            children.push_back(new ScalableMeshNodeEdit<POINT>(m_node->m_apSubNodes[i]));
+        }
+
+    return children;
+    }
+
 template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     {
     if (!nodePtr->IsLoaded())
