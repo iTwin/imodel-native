@@ -3199,8 +3199,8 @@ public:
 //! @param [in] clipPlanes chain of convex volumes
 //! @param [in] formNewFacesOnClipPlanes true to attempt reassembling faces on clip planes.
 //! @param [in] filter for mesh
-//! @param [out] optional coordinate data for cut loops
-//! @param [out] optional coordinate data for cut chains 
+//! @param [out] cutLoops optional coordinate data for cut loops
+//! @param [out] cutChains optional coordinate data for cut chains 
     GEOMDLLIMPEXP static void AddClippedPolyface (PolyfaceQueryR source,
         PolyfaceCoordinateMapP insideDest,
         PolyfaceCoordinateMapP outsideDest,
