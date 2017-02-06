@@ -11,6 +11,3 @@ NavigationECPropertyTests.InstanceWithNavProp_String
 
 UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
-
-#Base64 conversion appears to have been busted for a long time
-InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
