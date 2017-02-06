@@ -1051,6 +1051,15 @@ ScalableMeshModel::~ScalableMeshModel()
 BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject)
     {
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
+    clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
+
+    size_t fullPathHash = std::hash<std::string>()(smFilename.GetNameUtf8().c_str());
+    if (smFilename.GetDirectoryName().CompareToI(BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName()) != 0)
+        {
+        clipFileBase.AppendUtf8("_");
+        clipFileBase.AppendUtf8(std::to_string(fullPathHash).c_str());
+        }
+
     return clipFileBase;
     }
 
@@ -1073,14 +1082,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     allScalableMeshes.clear();
 
-    BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
-    clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
-
-    if (smFilename.GetDirectoryName().CompareToI(BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName()) != 0)
-        {
-        clipFileBase.AppendUtf8("_");
-        clipFileBase.AppendUtf8(std::to_string(nOfOtherModels).c_str());
-        }
+    BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
     m_basePath = clipFileBase;
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
