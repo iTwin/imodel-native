@@ -52,6 +52,29 @@ public:
     //! Construct plane from DPlane3d.
     GEOMDLLIMPEXP ClipPlane (DPlane3dCR plane, bool invisible = false, bool interior = false);
 
+    //!
+    //!<ul>
+    //!<li>For non-tilted case, (tiltAngle = 0),  the inward normal vector is upVector cross edge vector.
+    //!<li>If tilt is nonzero, that plane is rotated around the (forward) edge vector.
+    //!</ul>
+    GEOMDLLIMPEXP static ValidatedClipPlane FromEdgeAndUpVector
+        (
+        DPoint3dCR point0,  //!< [in] start point of edge
+        DPoint3dCR point1,  //!< [in] end point of edge
+        DVec3dCR upVector,  //!< [in] vector towards eye.  0-tilt plane normal is the edge vector
+        Angle tiltAngle     //!< [in] angle to tilt plane
+        );
+    //! Create a clip plane perpendicular to upVvector, positioned a distance forward or backward of given points.
+    //!<ul>
+    //!<li>
+    GEOMDLLIMPEXP static ValidatedClipPlane FromPointsAndDistanceAlongPlaneNormal
+        (
+        bvector<DPoint3d> const &points,    //!< [in] polyline points
+        DVec3d upVector,                    //!< [in] upward vector (e.g. towards eye at infinity)
+        double  distance,                    //!< [in] angle for tilt of planes.
+        bool    pointsInside                //!< [in] true to orient so the points are inside.
+        );
+
     //! Return the interior flag.
     GEOMDLLIMPEXP bool   GetIsInterior () const;
 

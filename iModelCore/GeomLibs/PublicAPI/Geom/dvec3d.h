@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dvec3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -204,6 +204,10 @@ static DVec3d FromRotate90Towards (DVec3dCR source, DVec3dCR target);
 
 //! @description return a vector same length as source but rotate 90 degrees around axis
 static DVec3d FromRotate90Around (DVec3dCR source, DVec3dCR axis);
+
+//! @description return a vector same length as source but rotated by angle around axis. (Rodriguez formula)
+static ValidatedDVec3d FromRotateVectorAroundVector (DVec3dCR source, DVec3dCR axis, Angle angle);
+
 
 //!
 //! @description Normalizes (scales) a vector to length 1.

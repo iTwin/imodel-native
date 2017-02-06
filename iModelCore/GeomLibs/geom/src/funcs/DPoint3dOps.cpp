@@ -646,6 +646,16 @@ TransformCR transform
         }
     }
 
+void DPoint3dOps::Add
+(
+bvector<DPoint3d> &xyz,
+DVec3dCR delta
+)
+    {
+    for (auto & item : xyz)
+        if (!item.IsDisconnect ())
+            item = item + delta;
+    }
 
 void DPoint2dOps::Multiply
 (
@@ -930,6 +940,34 @@ bool DPoint3dOps::ClosestPoint (bvector<DPoint3d> const &xyz, DPoint3dCR spacePo
         }
     minDist = sqrt (minDist);
     return true;
+    }
+
+bool DPoint3dOps::ClosestPoint
+(
+bvector<bvector<DPoint3d>> const &xyz,
+DPoint3dCR spacePoint,
+size_t &outerIndex,
+size_t &innerIndex,
+double &minDist
+)
+    {
+    bool found = false;
+    innerIndex = outerIndex = 0;
+    minDist = DBL_MAX;
+    for (size_t outer = 0; outer < xyz.size (); outer++)
+        {
+        double d;
+        size_t inner;
+        if (ClosestPoint (xyz[outer], spacePoint, inner, d)
+            && d < minDist)
+            {
+            minDist = d;
+            outerIndex = outer;
+            innerIndex = inner;
+            found = true;
+            }
+        }
+    return found;
     }
 
 

@@ -384,6 +384,7 @@ static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint3d> const &data);
+static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
 static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void Shift (double dx, double dy, double dz = 0.0);
 static Transform GetTransform ();

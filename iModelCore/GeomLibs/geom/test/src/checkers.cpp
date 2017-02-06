@@ -1401,6 +1401,25 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     SaveTransformed (IGeometry::Create (cv));
     }
 
+void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
+    {
+    bvector<DPoint3d> points;
+    for (auto &t : data)
+        {
+        points.clear ();
+        points.push_back (t.point[0]);
+        points.push_back (t.point[1]);
+        points.push_back (t.point[2]);
+        if (closed)
+            {
+            points.push_back (t.point[0]);
+            auto shape = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
+            SaveTransformed (*shape);
+            }
+        else
+            SaveTransformed (points);
+        }
+    }
 
 void Check::Shift (double dx, double dy, double dz)
     {

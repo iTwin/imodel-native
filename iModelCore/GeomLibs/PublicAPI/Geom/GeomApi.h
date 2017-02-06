@@ -537,6 +537,7 @@ typedef ValidatedValue <DPoint3dDVec3dDVec3d> ValidatedDPoint3dDVec3dDVec3d;
 typedef ValidatedValue <LocalRange> ValidatedLocalRange;
 typedef ValidatedValue <struct DRange3d> ValidatedDRange3d;
 typedef ValidatedValue <LocalRange> ValidatedLocalRange;
+typedef ValidatedValue <ClipPlane> ValidatedClipPlane;
 
 template<typename T>
 void CompressDuplicates (bvector<T> &data, bool (*SameMember)(T const &memberA, T const &memberB))

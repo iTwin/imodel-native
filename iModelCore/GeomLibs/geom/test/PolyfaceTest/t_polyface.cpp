@@ -3511,3 +3511,299 @@ TEST(Polyface,MaximalPlanarFaces1)
 
     }
 	
+
+TEST(Polyface,ConvexSetPunch)
+    {
+    // Sort of a dtm ...
+    size_t numX = 15;
+    size_t numY = 20;
+    auto dtm = PolyfaceWithSinusoidalGrid (numX, numY,    0.0, 0.3, 0.0, -0.25);
+    dtm->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    Check::SaveTransformed (*dtm);
+    auto base = CurveVector::CreateRectangle (0,0, 2,2, 4.0);
+    double b = -6;
+    auto solid = ISolidPrimitive::CreateDgnExtrusion (DgnExtrusionDetail (base, DVec3d::From (0,0,b), true));
+    auto options = IFacetOptions::Create ();
+    options->SetMaxPerFace (4);
+    auto solidFacets = solid->Facet (options);
+    //Check::SaveTransformed (*solid);
+    double a = 8.0;
+    double az = -12.0;
+    Transform transform = Transform::FromLineAndRotationAngle (DPoint3d::From (a,0,az), DPoint3d::From (0,a,az), Angle::DegreesToRadians (40.0));
+    solidFacets->Transform (transform);
+    ConvexClipPlaneSet clipper0;
+    solidFacets->BuildConvexClipPlaneSet (clipper0);
+    ClipPlaneSet clipper1;
+    clipper1.push_back (clipper0);
+
+    Check::SaveTransformed (*solidFacets);
+
+    
+    PolyfaceHeaderPtr insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceHeaderPtr outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceCoordinateMapPtr insideMap = PolyfaceCoordinateMap::Create (*insideMesh);
+    PolyfaceCoordinateMapPtr outsideMap = PolyfaceCoordinateMap::Create (*outsideMesh);
+    bool badCuts;
+    PolyfaceCoordinateMap::AddClippedPolyface (*dtm, insideMap.get (), outsideMap.get (), badCuts, &clipper1, false);
+    Check::Shift ((double)numX, 0,0);
+    Check::SaveTransformed (*insideMesh);
+    Check::Shift (0, (double)numY,0);
+    Check::SaveTransformed (*outsideMesh);
+    Check::ClearGeometry ("Polyface.ConvexSetPunch");
+
+    }
+
+void AddShiftedPoints (bvector<DPoint3d> &xyz0, bvector<DPoint3d> const &xyz1, DVec3dCR shift)
+    {
+    for(auto &xyz : xyz1)
+        xyz0.push_back (xyz + shift);
+    }
+// Find loop1 point closest to loop0.front ();
+// copy loop1 to loop1A with that as the start.
+bool AlignLoops (bvector<DPoint3d> const &loop0, bvector<DPoint3d> const &loop1, bvector<DPoint3d> &loop1A)
+    {
+    loop1A.clear ();
+    if (loop0.size () < 4 || loop1.size () < 4)
+        return false;
+    size_t closeIndex;
+    double minDistance;
+    DPoint3dOps::ClosestPoint (loop1, loop0.front (), closeIndex, minDistance);
+    size_t n1 = loop1.size ();
+    size_t n1C = n1 - 1;     // to skip closure point
+    for (size_t i = 0; i < n1C; i++)
+        loop1A.push_back (loop1[(closeIndex + i) % n1C]);
+    DPoint3dOps::Compress (loop1A, Angle::SmallAngle ()); // duplicates really should be identical
+    PolylineOps::EnforceClosure (loop1A);
+    DVec3d normal0 = PolygonOps::AreaNormal (loop0);
+    DVec3d normal1A = PolygonOps::AreaNormal (loop1A);
+    if (normal0.DotProduct (normal1A) < 0.0)
+        DPoint3dOps::Reverse (loop1A);
+    return true;
+    }
+
+void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, bvector<DPoint3d> &triangulationMate)
+    {
+    ClipPlaneSet clipper;
+    clipper.push_back (planes);
+
+    PolyfaceHeaderPtr insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceHeaderPtr outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceCoordinateMapPtr insideMap = PolyfaceCoordinateMap::Create (*insideMesh);
+    PolyfaceCoordinateMapPtr outsideMap = PolyfaceCoordinateMap::Create (*outsideMesh);
+
+    bvector<bvector<DPoint3d>> loops, chains;
+
+    bool badCuts;
+    PolyfaceCoordinateMap::AddClippedPolyface (facets, insideMap.get (), outsideMap.get (), badCuts, &clipper, false, nullptr, &loops, &chains);
+
+
+
+    DRange3d range = facets.PointRange ();
+
+    Check::SaveTransformed (facets);
+    Check::SaveTransformed (triangulationMate);
+    double dx = range.XLength ();
+    double dy = range.YLength ();
+    auto frame = Check::GetTransform ();
+    Check::Shift (1.5 * dx, 0,0);
+    Check::SaveTransformed (*insideMesh);
+    Check::Shift (0, dy,0);
+    Check::SaveTransformed (*outsideMesh);
+
+    Check::Shift (0, dy,0);
+    for (auto &data : loops)
+        Check::SaveTransformed (data);
+    for (auto &data: chains)
+        Check::SaveTransformed (data);
+
+
+
+    size_t loopIndex, pointIndex;
+    double distance;
+    bvector<DPoint3d> loopA;
+    if (DPoint3dOps::ClosestPoint (loops, triangulationMate[0], loopIndex, pointIndex, distance)
+        && AlignLoops (triangulationMate, loops[loopIndex], loopA)
+        )
+        {
+        Check::Shift (0, dy,0);
+        Check::SaveTransformed (triangulationMate);
+        Check::SaveTransformed (loops[loopIndex]);
+        Check::True (loopA.size () > 0, "Aligned loop is nontrivial");
+
+
+        Check::Shift (0, dy,0);
+        Check::SaveTransformed (triangulationMate);
+        Check::SaveTransformed (loopA);
+#ifdef GreedyTriangles
+        bvector<int> indices;
+        bvector<DTriangle3d> triangles;
+        PolylineOps::GreedyTriangulationBetweenLinestrings (triangulationMate, loopA, triangles, &indices);
+        Check::SaveTransformed (triangles, true);
+#endif
+        MTGFacets *pFacets = jmdlMTGFacets_grab();
+        jmdlMTGFacets_setNormalMode (pFacets, MTG_Facets_VertexOnly, 0, 0);
+        if (jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries (
+                            pFacets,
+                            &triangulationMate[0], (int)triangulationMate.size (),
+                            &loopA[0], (int)loopA.size ()
+                            ))
+            {
+            size_t numFaceB = AddMTGFacetsToIndexedPolyface (pFacets, *outsideMesh);
+
+            outsideMesh->AddPolygon (&triangulationMate[0], triangulationMate.size ());
+            outsideMesh->Compress ();
+
+            Check::SaveTransformed (*outsideMesh);
+            }
+        jmdlMTGFacets_free (pFacets);
+        }
+
+    Check::SetTransform (frame);
+    Check::Shift (4.0 * dx, 0, 0);
+    }
+
+//! Build a mesh that "connects" an above-ground culvert face to the nearby ground.
+//! The connector mesh can be perpendicular to the face, or graded at some angle from perpendicular
+PolyfaceHeaderPtr AddConvexCulvertToDTM
+(
+PolyfaceHeaderR facets,         //!< [in] DTM to be punched
+bvector<DPoint3d> forwardFaceIn,  //!< [in] exposed face of culvert.  !! This must be convex
+double maxDistanceBelow,        //!< [in] max plausible distance from culvert front face to ground contact.
+Angle tiltAngle                 //!< [in] angle to tilt away from perpendicular of the forward face.
+)
+    {
+    bool ok = false;
+    ConvexClipPlaneSet planes;
+    auto forwardFace = forwardFaceIn;
+    DVec3d viewVector = PolygonOps::AreaNormal (forwardFace);
+    if (viewVector.z < 0.0)
+        {
+        viewVector.z = - viewVector.z;
+        std::reverse (forwardFace.begin (), forwardFace.end ());
+        }
+    planes.AddSweptPolyline (forwardFace, viewVector, tiltAngle);
+
+    ClipPlaneSet clipper;
+    clipper.push_back (planes);
+
+    PolyfaceHeaderPtr insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceHeaderPtr outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceCoordinateMapPtr insideMap = PolyfaceCoordinateMap::Create (*insideMesh);
+    PolyfaceCoordinateMapPtr outsideMap = PolyfaceCoordinateMap::Create (*outsideMesh);
+
+    bvector<bvector<DPoint3d>> loops, chains;
+
+    bool badCuts;
+    PolyfaceCoordinateMap::AddClippedPolyface (facets, insideMap.get (), outsideMap.get (), badCuts, &clipper, false, nullptr, &loops, &chains);
+
+    size_t loopIndex, pointIndex;
+    double distance;
+    bvector<DPoint3d> loopA;
+    auto planeAngle = Angle::FromDegrees (10.0);
+    if (DPoint3dOps::ClosestPoint (loops, forwardFace[0], loopIndex, pointIndex, distance)
+        && AlignLoops (forwardFace, loops[loopIndex], loopA)
+        )
+        {
+        bvector<int> indices;
+        bvector<DTriangle3d> triangles;
+        PolylineOps::GreedyTriangulationBetweenLinestrings (forwardFace, loopA, triangles, &indices, planeAngle);
+#ifdef CheckCallsInCulvert
+        Check::SaveTransformed (triangles, true);
+        Check::SaveTransformed (forwardFace);
+        Check::SaveTransformed (loopA);
+#endif
+        outsideMap->AddPolygon (forwardFace);
+        for (auto &t : triangles)
+            outsideMap->AddPolygon (3, t.point);
+        ok = true;
+        }
+    return ok ? outsideMesh : nullptr;
+    }
+
+
+TEST(Polyface,CulvertPunchA)
+    {
+    double dy = 20.0;
+    bvector<DPoint3d> wave {DPoint3d::From (0,0,0), DPoint3d::From (0,0,10), DPoint3d::From (5,0,10), DPoint3d::From (5,0,0)};
+    bvector<DPoint3d> sectionPoints;
+    AddShiftedPoints (sectionPoints, wave, DVec3d::From (0,0,0));
+    AddShiftedPoints (sectionPoints, wave, DVec3d::From (10,0,0));
+    AddShiftedPoints (sectionPoints, wave, DVec3d::From (20,0,0));
+
+    auto sectionVector = CurveVector::CreateLinear (sectionPoints, CurveVector::BOUNDARY_TYPE_Open);
+    auto surface = ISolidPrimitive::CreateDgnExtrusion (
+            DgnExtrusionDetail (sectionVector, DVec3d::From (0,dy,0), false));
+
+    auto options = IFacetOptions::Create ();
+    options->SetMaxPerFace (4);
+    auto surfaceFacets = surface->Facet (options);
+
+    bvector<DPoint3d> rectangle {
+        DPoint3d::From (7,3,2),
+        DPoint3d::From (7,8,2),
+        DPoint3d::From (7,8,5),
+        DPoint3d::From (7,3,5),
+        DPoint3d::From (7,3,2)
+        };
+    DVec3d viewVector = DVec3d::From (-5,0,-1);
+    auto tilt = Angle::FromDegrees (5.0);
+    double forwardClip = 1.0;
+    double reverseClip = -5.0;
+    ConvexClipPlaneSet planes;
+    planes.AddSweptPolyline (rectangle, viewVector, tilt);
+
+    DoClip (*surfaceFacets, planes, rectangle);
+
+    planes.Add (ClipPlane::FromPointsAndDistanceAlongPlaneNormal (rectangle, viewVector, forwardClip, true));
+    planes.Add (ClipPlane::FromPointsAndDistanceAlongPlaneNormal (rectangle, viewVector, reverseClip, true));
+    DoClip (*surfaceFacets, planes, rectangle);
+    Check::ClearGeometry ("Polyface.CulvertPunchB");
+    }
+
+TEST(Polyface,CulvertPunchB)
+    {
+    // Sort of a dtm ...
+    size_t numX = 15;
+    size_t numY = 20;
+    double shiftX = (double) numX;
+    double shiftY = (double) numY;
+    auto dtm = PolyfaceWithSinusoidalGrid (numX, numY,    0.0, 0.3, 0.0, -0.25);\
+    
+    double z0 = 0.1;
+    double z1 = 0.2;
+    bvector<DPoint3d> rectangle {
+        DPoint3d::From (2.1,5.2, z0),
+        DPoint3d::From (2.1,6.2, z1),
+        DPoint3d::From (4.1,6.2, z1),
+        DPoint3d::From (4.1,5.2, z0),
+        DPoint3d::From (2.1,5.2, z0),
+        };
+
+    double e = 0.001;
+    for (DVec3d viewVector : bvector<DVec3d> {DVec3d::From (e,e,1), DVec3d::From (0,-1,2), DVec3d::From (0,0,1)})
+        {
+        for (Angle tilt : bvector<Angle>{ Angle::FromDegrees (0.0), Angle::FromDegrees (5.0), Angle::FromDegrees (15.0)})
+            {
+            auto baseFrame = Check::GetTransform ();
+            for (double dz : bvector<double> {0.0, 2.0, 4.0})
+                {
+                bvector<DPoint3d> rectangle1 = rectangle;
+                DPoint3dOps::Add (rectangle1, DVec3d::From (0,0,dz));
+
+                auto dtm1 = AddConvexCulvertToDTM (*dtm, rectangle1, 10.0, tilt);
+                Check::SaveTransformed (*dtm);
+                Check::SaveTransformed (rectangle1);
+                if (dtm1.IsValid ())
+                    {
+                    Check::Shift (0, shiftY, 0);
+                    Check::SaveTransformed (*dtm1);
+                    }
+                Check::Shift (0, 2.0 * shiftY, 0);
+                }
+                Check::SetTransform (baseFrame);
+                Check::Shift (2.0 * shiftX, 0,0);
+            }
+        }
+    Check::ClearGeometry ("Polyface.CulvertPunchB");
+    }
+

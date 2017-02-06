@@ -1427,10 +1427,16 @@ TEST(DVec3d, RotateVectorTowardsTarget)
     */
     }
 
-void test_DVec3dRotate90AroundVector(DVec3dCR axis, DVec3dCR vector) 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
+TEST(DVec3d, RotateVector90AroundAxis)
     {
-    DVec3d result = vector;
+    DVec3d vector = DVec3d::From(15, 8, 9);
+    DVec3d axis = DVec3d::From(0, 1, 0);
     double theta = axis.AngleTo(vector);
+    DVec3d result = vector;
+
     for (int i = 0; i < 4; i++)
         {
         DVec3d normal0 = DVec3d::FromCrossProduct (axis, result);
@@ -1442,20 +1448,28 @@ void test_DVec3dRotate90AroundVector(DVec3dCR axis, DVec3dCR vector)
         }
     Check::Near(result, vector);
     }
+void testRotateVectorAroundVectorByAngle (DVec3dCR vector, DVec3dCR axis, Angle angle)
+    {
+    ValidatedDVec3d result = DVec3d::FromRotateVectorAroundVector (vector, axis, angle);
+    bool isParallel = vector.IsParallelTo (axis);
+    if (Check::Bool (!isParallel, result.IsValid ()))
+        {
+        DVec3d vector1 = result.Value ();
+        double radians1 = vector.PlanarAngleTo (vector1, axis);
+        Check::True (Angle::NearlyEqualAllowPeriodShift (angle.Radians (), radians1), "rotation angle in plane perp to axis");
+        Check::Near (axis.AngleTo (vector), axis.AngleTo (vector1), "angle from rotation axis");
+        Check::Near (vector.Magnitude (), vector1.Magnitude (), "rotation does not change magnitude");
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    01/17
 //---------------------------------------------------------------------------------------
-TEST(DVec3d, RotateVectorAroundAxis)
+TEST(DVec3d,RotateVectorAroundVectorByAngle)
     {
-    DVec3d vector = DVec3d::From(15, 8, 9);
-
-    test_DVec3dRotate90AroundVector(DVec3d::From(0, 0, 1), vector);
-    test_DVec3dRotate90AroundVector(DVec3d::From(0, 1, 0), vector);
-    test_DVec3dRotate90AroundVector(DVec3d::From(1, 0, 0), vector);
-    test_DVec3dRotate90AroundVector(DVec3d::From(0.3, 0.2, 1.4), vector);
-    test_DVec3dRotate90AroundVector(DVec3d::From(0.3, 0.2, 1.4), vector);
+    testRotateVectorAroundVectorByAngle (DVec3d::From (1,0,0), DVec3d::From (0,0,1), Angle::FromDegrees (25.0));
+    testRotateVectorAroundVectorByAngle (DVec3d::From (1,0,0), DVec3d::From (0,1,0), Angle::FromDegrees (-49.0));
+    testRotateVectorAroundVectorByAngle (DVec3d::From (1,2,4), DVec3d::From (5,-2,1), Angle::FromDegrees (25.2));
     }
-
-
+    
 //END_BENTLEY_NAMESPACE

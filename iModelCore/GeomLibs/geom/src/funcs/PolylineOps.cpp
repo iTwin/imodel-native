@@ -1146,11 +1146,11 @@ double endFraction
             {
             DSegment3d localSegment = DSegment3d::From (points[i-1], points[i]);
             size_t edgeCount = options.SegmentStrokeCount (localSegment);
-            if (edgeCount > 2)
+            if (edgeCount >= 2)
                 {
-                double df = 1.0 / (double) (edgeCount - 1);
+                double df = 1.0 / (double) (edgeCount);
                 DVec3d extent = DVec3d::FromStartEnd (localSegment.point[0], localSegment.point[1]);
-                for (size_t i = 1; i < edgeCount - 1; i++)
+                for (size_t i = 1; i < edgeCount; i++)
                     {
                     DPoint3d xyz;
                     xyz.SumOf (localSegment.point[0], extent, i * df);
@@ -1710,17 +1710,19 @@ UsageSums PolylineOps::SumSegmentLengths (bvector<DPoint3d> const &xyz)
     }
 
 
-
-void PolylineOps::GreedyTriangulationBetweenLinestrings (bvector<DPoint3d> const & linestringA, bvector<DPoint3d> const &linestringB, bvector<DTriangle3d> &triangles, bvector<int> *oneBasedIndexAB)
+static void AddGreedyTriangulationBetweenLinestrings
+(
+bvector<DPoint3d> const & linestringA,  size_t baseA, size_t limitA,
+bvector<DPoint3d> const &linestringB,   size_t baseB, size_t limitB,
+bvector<DTriangle3d> &triangles,
+bvector<int> *oneBasedIndexAB
+)
     {
-    triangles.clear ();
-    size_t nA = linestringA.size ();
-    size_t nB = linestringB.size ();
-    size_t baseA = 0;
-    size_t baseB = 0;
-    if (nA == 0 || nB == 0)
-        return;
-    while (baseA + 1 < nA && baseB + 1 < nB)
+    if (limitA > linestringA.size ()) 
+        limitA = linestringA.size ();
+    if (limitB > linestringB.size ()) 
+        limitB = linestringB.size ();
+    while (baseA + 1 < limitA && baseB + 1 < limitB)
         {
         if (linestringA[baseA].AlmostEqual (linestringA[baseA+1]))
             {
@@ -1770,9 +1772,9 @@ void PolylineOps::GreedyTriangulationBetweenLinestrings (bvector<DPoint3d> const
 
         }
     // sweep in trailing points from either side.  At lesat one of baseA, baseB is at its limit, so only one of these will execute any bodies.
-    if (baseA + 1 == nA)
+    if (baseA + 1 == limitA)
         {
-        while (baseB + 1 < nB)
+        while (baseB + 1 < limitB)
             {
             triangles.push_back (DTriangle3d (linestringB[baseB+1], linestringB[baseB], linestringA[baseA]));
             if (oneBasedIndexAB != nullptr)
@@ -1786,9 +1788,9 @@ void PolylineOps::GreedyTriangulationBetweenLinestrings (bvector<DPoint3d> const
         }
 
     // sweep in trailing points from either side.  At lesat one of baseA, baseB is at its limit, so only one of these will execute any bodies.
-    if (baseB + 1 == nB)
+    if (baseB + 1 == limitB)
         {
-        while (baseA + 1 < nA)
+        while (baseA + 1 < limitA)
             {
             triangles.push_back (DTriangle3d (linestringA[baseA], linestringA[baseA+1], linestringB[baseB]));
             if (oneBasedIndexAB != nullptr)
@@ -1801,6 +1803,160 @@ void PolylineOps::GreedyTriangulationBetweenLinestrings (bvector<DPoint3d> const
             }
         }
     }
+size_t AdvanceToPlanarLimit
+(
+bvector<DPoint3d> const &xyz,
+size_t i0,          // examine indices starting here
+DPoint3dCR xyzA,
+DVec3dCR perpA,
+DVec3dCR forwardA,
+DPoint3dCR xyzB,
+DVec3dCR perpB,
+DVec3dCR forwardB,
+double radians
+)
+    {
+    size_t n = xyz.size ();
+    size_t i1 = i0;
+    while (i1 < n)
+        {
+        DVec3d vectorA = xyz[i1] - xyzA;
+        DVec3d vectorB = xyz[i1] - xyzB;
+        if (vectorA.DotProduct (forwardA) <= 0.0)
+            break;
+        if (vectorB.DotProduct (forwardB) <= 0.0)
+            break;
 
+        double thetaA = vectorA.AngleFromPerpendicular (perpA);
+        double thetaB = vectorB.AngleFromPerpendicular (perpB);
+        if (fabs (thetaA) > radians)
+            break;
+        if (fabs (thetaB) > radians)
+            break;
+        i1++;
+        }
+    return i1;
+    }
+
+
+void PolylineOps::GreedyTriangulationBetweenLinestrings
+(
+bvector<DPoint3d> const & linestringA,
+bvector<DPoint3d> const &linestringB,
+bvector<DTriangle3d> &triangles,
+bvector<int> *oneBasedIndexAB
+)
+    {
+    triangles.clear ();
+    if (oneBasedIndexAB != nullptr)
+        oneBasedIndexAB->clear ();
+    AddGreedyTriangulationBetweenLinestrings (
+            linestringA, 0, linestringA.size (),
+            linestringB, 0, linestringB.size (),
+            triangles,
+            oneBasedIndexAB);
+    }
+
+bool IsPlanarBase
+(
+bvector<DPoint3d> const & linestringA,
+size_t baseA,
+bvector<DPoint3d> const &linestringB,
+size_t baseB,
+double radians,
+DPoint3dR xyzA,
+DVec3dR crossA,
+DVec3dR forwardA,
+DPoint3dR xyzB,
+DVec3dR crossB,
+DVec3dR forwardB
+)
+    {
+    if (baseA + 1 < linestringA.size ()
+        && baseB + 1 < linestringB.size ())
+        {
+        xyzA = linestringA[baseA];
+        xyzB = linestringB[baseB];
+        forwardA = linestringA[baseA+1] - xyzA;
+        forwardB = linestringB[baseB+1] - xyzB;
+        DVec3d   chord = xyzB - xyzA;
+        crossA = DVec3d::FromCrossProduct (chord, forwardA);
+        crossB = DVec3d::FromCrossProduct (chord, forwardB);
+        if (!xyzA.AlmostEqual (xyzB) && crossA.AngleTo (crossB) < radians)
+            return true;
+        }
+    return false;
+    }
+
+
+void PolylineOps::GreedyTriangulationBetweenLinestrings
+(
+bvector<DPoint3d> const & linestringA,
+bvector<DPoint3d> const &linestringB,
+bvector<DTriangle3d> &triangles,
+bvector<int> *oneBasedIndexAB,
+Angle planarContinuationAngle
+)
+    {
+    triangles.clear ();
+    if (oneBasedIndexAB != nullptr)
+        oneBasedIndexAB->clear ();
+    size_t baseA = 0, baseB = 0;
+    size_t nA = linestringA.size ();
+    size_t nB = linestringB.size ();
+    double radians = DoubleOps::MaxAbs (planarContinuationAngle.Radians (), Angle::MediumAngle ());
+    DPoint3d xyzA, xyzB;
+    DVec3d   crossA, crossB, forwardA, forwardB;
+    while (baseA + 2 < nA && baseB + 2 < nB)
+        {
+        if (IsPlanarBase (linestringA, baseA, linestringB, baseB, radians, xyzA, crossA, forwardA, xyzB, crossB, forwardB))
+            {
+            size_t limitA = AdvanceToPlanarLimit (linestringA, baseA + 2, xyzA, crossA, forwardA, xyzB, crossB, forwardB, radians);
+            size_t limitB = AdvanceToPlanarLimit (linestringB, baseB + 2, xyzA, crossA, forwardA, xyzB, crossB, forwardB, radians);
+            AddGreedyTriangulationBetweenLinestrings (
+                    linestringA, baseA, limitA,
+                    linestringB, baseB, limitB,
+                    triangles,
+                    oneBasedIndexAB);
+            baseA = limitA - 1;
+            baseB = limitB - 1;
+            }
+        else if (IsPlanarBase (linestringA, baseA + 1, linestringB, baseB, radians, xyzA, crossA, forwardA, xyzB, crossB, forwardB))
+            {
+            AddGreedyTriangulationBetweenLinestrings (
+                    linestringA, baseA, baseA + 2,
+                    linestringB, baseB, baseB + 1,
+                    triangles,
+                    oneBasedIndexAB);
+            baseA++;
+            }
+        else if (IsPlanarBase (linestringA, baseA, linestringB, baseB + 1, radians, xyzA, crossA, forwardA, xyzB, crossB, forwardB))
+            {
+            AddGreedyTriangulationBetweenLinestrings (
+                    linestringA, baseA, baseA + 1,
+                    linestringB, baseB, baseB + 2,
+                    triangles,
+                    oneBasedIndexAB);
+            baseB++;
+            }
+        else 
+            {
+            AddGreedyTriangulationBetweenLinestrings (
+                    linestringA, baseA, baseA + 2,
+                    linestringB, baseB, baseB + 2,
+                    triangles,
+                    oneBasedIndexAB);
+            baseA++;
+            baseB++;
+            }
+        }
+
+    // catch final ..
+    AddGreedyTriangulationBetweenLinestrings (
+                    linestringA, baseA, linestringA.size (),
+                    linestringB, baseB, linestringB.size (),
+                    triangles,
+                    oneBasedIndexAB);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
 

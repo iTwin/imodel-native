@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClip1.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -568,7 +568,32 @@ bool GetSegment(PolyfaceHeaderR mesh, size_t startIndex, size_t endIndex, DSegme
     return false;
     }
 
-
+void ExtractCutLoops
+(
+bvector<bvector<DPoint3d>> *cutLoops,
+bvector<bvector<DPoint3d>> *cutChains
+)
+    {
+    auto sorter = bsiMTGFragmentSorter_new ();
+    DPoint3dCP points = m_insideMesh->GetPointCP ();
+    size_t numPoints = m_insideMesh->GetPointCount ();
+    int index = 0;
+    for (auto &data : m_globalEdgeData)
+        {
+        if (data.m_vertexA >= 0 && data.m_vertexB >= 0
+            && data.m_vertexA < numPoints && data.m_vertexB < numPoints
+            )
+            {
+            DPoint3d xyzA = points[data.m_vertexA];
+            DPoint3d xyzB = points[data.m_vertexB];
+            bsiMTGFragmentSorter_addFragment (sorter, index, &xyzA, &xyzB);
+            }
+        index++;
+        }
+    bvector<int> loopIndices, chainIndices;
+    bsiMTGFragmentSorter_sortAndExtractSignedLoopsAndChains (sorter, &loopIndices, &chainIndices, cutLoops, cutChains);
+    bsiMTGFragmentSorter_free (sorter);
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -817,7 +842,9 @@ PolyfaceCoordinateMapP  insideDest,
 PolyfaceCoordinateMapP  outsideDest,
 bool                    resultHasIncompleteCutPlaneFaces,
 ClipPlaneSetP           clipPlanes,
-bool                    formNewFacesOnClipPlanes
+bool                    formNewFacesOnClipPlanes,
+bvector<bvector<DPoint3d>> *cutLoops,
+bvector<bvector<DPoint3d>> *cutChains
 )
     {
     PolyfaceVUClipContext context (visitor, filter, insideDest, outsideDest);
@@ -839,6 +866,8 @@ bool                    formNewFacesOnClipPlanes
 
     if (formNewFacesOnClipPlanes)
         context.AnalyzeCutPlaneLoops (resultHasIncompleteCutPlaneFaces);
+    if (nullptr != cutLoops && nullptr != cutChains)
+        context.ExtractCutLoops (cutLoops, cutChains);
     context.SuppressAuxArrays ();
     }
 };
@@ -853,7 +882,9 @@ GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyface (PolyfaceQueryR sou
     bool &resultHasIncompleteCutPlaneFaces,
     ClipPlaneSetP clipPlanes,
     bool formNewFacesOnClipPlanes,
-    IPolyfaceVisitorFilter *filter
+    IPolyfaceVisitorFilter *filter,
+    bvector<bvector<DPoint3d>> *cutLoops,
+    bvector<bvector<DPoint3d>> *cutChains
     )
     {
     resultHasIncompleteCutPlaneFaces = false;
@@ -876,7 +907,30 @@ GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyface (PolyfaceQueryR sou
 
     PolyfaceVUClipContext::ClipToChain (visitor, filter, insideDest, outsideDest,
                 resultHasIncompleteCutPlaneFaces,
-                clipPlanes, formNewFacesOnClipPlanes);
+                clipPlanes, formNewFacesOnClipPlanes, cutLoops, cutChains);
+    }
+
+
+double PolyfaceQuery::BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes)
+    {
+    auto volume = ValidatedVolume ();
+    planes.clear ();
+    auto visitor = PolyfaceVisitor::Attach (*this, false);
+    double s = 1.0;
+    if (volume.IsValid () && volume.Value () < 0.0)
+        s = -1.0;
+    bvector<DPoint3d> & points = visitor->Point ();
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        auto normal = PolygonOps::AreaNormal (points).ValidatedNormalize ();
+        if (normal.IsValid ())
+            {
+            DVec3d signedNormal = -s * normal.Value ();
+            ClipPlane plane (signedNormal, points[0]);
+            planes.push_back (plane);
+            }
+        }
+    return volume.Value ();
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -683,7 +683,11 @@ FacetLocationDetail detailA;
 FacetLocationDetail detailB;
 };
 
-
+struct FacetFractionDetail
+{
+size_t readIndex;
+double fraction;
+};
 //=======================================================================================
 //! 
 //! Data for describing a set of connected edges of a polyface and their source.
@@ -1355,7 +1359,16 @@ bool tryVerticalPanels,
 bool trySpaceTriangulation,
 PolyfaceHeaderPtr &healedPolyface
 );
-    
+
+//!<ul>
+//!<li> Create a plane for each facet.
+//!<li> Assemble the planes as a single clip plane set.
+//!<li> If the facets are closed by edge pairing, use the volume to control plane orientation.
+//!<li> If the facets are not closed, the facet orientation determines plane orientation.
+//!<li> The implication of this is that if the facets are a convex volume the clip plane set is convex.
+//!</ul>
+//! @return the computed volume (if closed), 0 if not closed.
+GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes);
 
 //! @description Compute (many) integrals of volume properties, using directional
 //!    formulas that will give correct results (and confidence indicators) when "some" facets are missing
@@ -1415,6 +1428,20 @@ bvector<FacetLocationDetail> &pickDetail, //!< [out] pairs of (readIndex, u,v, x
 
 bool exitAfterFirstPick     //!< [in] true to quit as soon as a single pick is found.
 );
+
+//! Search for facets that are touched by a box
+//! returns true if valid point data and one or more facets selected.
+GEOMDLLIMPEXP bool PickFacetsByRectangle
+(
+DPoint4dCR eyePoint,    //!< [in] eyepoint for stroke (e.g. weight 1 for camera point, weight 0 for flat view vector.
+DPoint3dCR point0,      //!< [in] corner of rectangle
+DPoint3dCR point1,      //!< [in] opposite corner of rectangle
+bvector<FacetLocationDetail> &pickDetail, //!< [out] pairs of (readIndex, u,v, xyz) for the crossings.  u is along the stroke edge.  v is positive towards the eye. xyz are on the facet plane.
+
+bool exitAfterFirstPick     //!< [in] true to quit as soon as a single pick is found.
+);
+
+
 
 //! Search for intersection edges, tagged with readIndex of affected facets.
 static GEOMDLLIMPEXP bool SearchIntersectionSegments (
@@ -3136,13 +3163,22 @@ public:
 //! Add a polygon, generating indices for each datum.
     //! If normals, params, and colors are supplied, their inidces are
     //!    added to the respective index array.
-    //! As usual, only one of the three color variants can be used.
     void GEOMDLLIMPEXP AddPolygon (int n,
         DPoint3dCP      points,
         DVec3dCP        normals = NULL,
         DPoint2dCP      params = NULL,
         int *           intColor = NULL
         );
+//! Add a polygon, generating indices for each datum.
+    //! If normals, params, and colors are supplied, their inidces are
+    //!    added to the respective index array.
+    void GEOMDLLIMPEXP AddPolygon (bvector<DPoint3d> const &points,
+        bvector<DVec3d> const *normals = nullptr,
+        bvector<DPoint2d> const *params = nullptr,
+        bvector<int> const *intColor = nullptr
+        );
+
+
 
 //! Add a polygon, using a (subset of !!!) data from visitor.
     //! @param[in]  source  source data
@@ -3163,13 +3199,17 @@ public:
 //! @param [in] clipPlanes chain of convex volumes
 //! @param [in] formNewFacesOnClipPlanes true to attempt reassembling faces on clip planes.
 //! @param [in] filter for mesh
+//! @param [out] optional coordinate data for cut loops
+//! @param [out] optional coordinate data for cut chains 
     GEOMDLLIMPEXP static void AddClippedPolyface (PolyfaceQueryR source,
         PolyfaceCoordinateMapP insideDest,
         PolyfaceCoordinateMapP outsideDest,
         bool &resultHasIncompleteCutPlanefaces,
         ClipPlaneSetP clipPlanes,
         bool formNewFacesOnClipPlanes = false,
-        IPolyfaceVisitorFilter *filter = nullptr
+        IPolyfaceVisitorFilter *filter = nullptr,
+        bvector<bvector<DPoint3d>> *cutLoops = nullptr,
+        bvector<bvector<DPoint3d>> *cutChains = nullptr
         );
 /*__PUBLISH_SECTION_END__*/
 //! Visit each face of source. Clip to chain and capture the clipped residual.

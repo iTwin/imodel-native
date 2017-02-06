@@ -623,6 +623,19 @@ bvector<DPoint3d> *xyz,
 TransformCR transform
 );
 
+//!
+//! Add a vector to each element
+//! @param [out]  xyz array of points, may have disconnects
+//! @param [in] delta vector to add.
+//!
+public:
+static GEOMDLLIMPEXP void Add
+(
+bvector<DPoint3d> &xyz,
+DVec3dCR delta
+);
+
+
 
 //! Find the min and max distances and their index positions.
 public: static bool GEOMDLLIMPEXP MinMaxDistance (bvector<DPoint3d> const &xyzA, bvector<DPoint3d> const &xyzB,
@@ -636,6 +649,15 @@ public: static bool GEOMDLLIMPEXP MinMaxDistance (bvector<DPoint3d> const &xyzA,
 //! @return false if no points in the vector.
 //!
 public: static bool GEOMDLLIMPEXP ClosestPoint (bvector<DPoint3d> const &xyz, DPoint3dCR spacePoint, size_t &closestIndex, double &minDist);
+
+//!
+//! @description search for closest point in any array (NO implied curve or lines between points).
+//! @return false if no points in the vector.
+//!
+public: static bool GEOMDLLIMPEXP ClosestPoint (bvector<bvector<DPoint3d>> const &xyz,
+    DPoint3dCR spacePoint, size_t &outerIndex, size_t &innerIndex, double &minDist);
+
+
 
 //!
 //! @description search for farthest point from unbounded ray
@@ -1093,6 +1115,17 @@ bool includeStartPoint = true,
 double startFraction = 0.0,
 double endFraction = 1.0
 );
+
+public: static GEOMDLLIMPEXP bool AddStrokes
+(
+DEllipse3dCR arc,
+bvector <DPoint3d> & strokes, 
+IFacetOptionsCR options,
+bool includeStartPoint = true,
+double startFraction = 0.0,
+double endFraction = 1.0
+);
+
 //! Add xyz,fraction,tangent for this polyline to the arrays.
 //!<ul>
 //!<li>interior vertices of the polyline are present twice -- once with incoming tangent, once with outgoing.
@@ -1155,11 +1188,24 @@ double maxMiterRadians = 1.58 //!< largest angle of turn for an outside miter.  
 //! This is expected to be called in planar configurations where the construction guarantees there are no orientation flips.
 static GEOMDLLIMPEXP void GreedyTriangulationBetweenLinestrings
 (
-bvector<DPoint3d> const & linestringA,   //!< first linestring
-bvector<DPoint3d> const &linestringB,    //!< second linestring
-bvector<DTriangle3d> &triangles,         //!< triangle coordinates
-bvector<int> *oneBasedABIndex = nullptr  //!< one-based index positive index if from linestringA, negative if from linestringB
+bvector<DPoint3d> const & linestringA,   //!< [in] first linestring
+bvector<DPoint3d> const &linestringB,    //!< [in] second linestring
+bvector<DTriangle3d> &triangles,         //!< [out] triangle coordinates
+bvector<int> *oneBasedABIndex = nullptr  //!< [out] one-based index positive index if from linestringA, negative if from linestringB
 );
+
+//! Build triangles that advance along two linestrings.
+//! Selection of whether to advance on linestringA or linestringB is based on one-step lookahead -- the better aspect ratio of the two choices is chosen.
+//! This is expected to be called in planar configurations where the construction guarantees there are no orientation flips.
+static GEOMDLLIMPEXP void GreedyTriangulationBetweenLinestrings
+(
+bvector<DPoint3d> const & linestringA,   //!< [in] first linestring
+bvector<DPoint3d> const &linestringB,    //!< [in] second linestring
+bvector<DTriangle3d> &triangles,         //!< [out] triangle coordinates
+bvector<int> *oneBasedABIndex,  //!< [out] one-based index positive index if from linestringA, negative if from linestringB
+Angle planarityAngle       //!< [in] angle to use for lookahead for approximately coplanar candidates.
+);
+
 
 //! If segment chains to the final chain, add its endpoint to the chain.  Otherwise start a new chain.
 static GEOMDLLIMPEXP void AppendToChains (bvector<bvector<DPoint3d>> &chains, DSegment3dCR segment);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/Angle.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,6 +65,9 @@ static bool IsFullCircle (double radians);
 
 //! Test if {radians} is {SmallAngle} or smaller.
 static bool IsNearZero (double radians);
+
+//! test if instance is {SmallAngle} or smaller.
+bool IsNearZoro () const;
 //! Test if {radians} is {SmallAngle} or smaller.
 static bool IsNearZeroAllowPeriodShift (double radians);
 

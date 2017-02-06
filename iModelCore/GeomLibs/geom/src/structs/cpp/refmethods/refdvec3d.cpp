@@ -169,6 +169,24 @@ DVec3d DVec3d::FromRotate90Around (DVec3dCR source, DVec3dCR axis)
     return FromCrossProduct (unitNormal, source) + unitNormal.DotProduct (source) * unitNormal;
     }
 
+ValidatedDVec3d DVec3d::FromRotateVectorAroundVector (DVec3dCR vector, DVec3dCR axis, Angle angle)
+    {
+    // Rodriguez formulat, https://en.wikipedia.org/wiki/Rodrigues'_rotation_formula
+    auto unitAxis = axis.ValidatedNormalize ();
+    if (unitAxis.IsValid ())
+        {
+        double c = angle.Cos ();
+        double s = angle.Sin ();
+        DVec3d unit = unitAxis.Value ();
+        return ValidatedDVec3d
+            (
+            c * vector + s * DVec3d::FromCrossProduct (unit, vector) + (unit.DotProduct (vector) * (1.0 - c)) * unit,
+            true
+            );
+        }
+    // unchanged vector if axis is null
+    return ValidatedDVec3d (vector, false);
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012

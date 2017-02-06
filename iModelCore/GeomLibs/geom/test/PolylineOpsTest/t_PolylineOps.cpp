@@ -663,3 +663,117 @@ TEST (Polyline, Stroke)
         testSimplePolylineStroke (4, 0.9, 0.1, *options);
         }
     }
+
+TEST (Polyline, GreedyTriangleA)
+    {
+    // triangulation between simple translates
+    double a = 4.0;
+    double b = 2.0;
+    bvector<DPoint3d> pathA {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (a,0,0),
+        DPoint3d::From (a,b,0),
+        DPoint3d::From (0,b,0),
+        DPoint3d::From (0,0,0)
+        };
+    auto tiltAngle = Angle::FromDegrees (10.0);
+    IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
+    for (double z : bvector<double> {1,2,3})
+        {
+        auto baseFrame = Check::GetTransform ();
+        for (auto splitSize : bvector <DPoint2d> {
+                DPoint2d::From (4.0, 4.0),
+                DPoint2d::From (4.0, 2.0),
+                DPoint2d::From (4.0, 1.5),
+                DPoint2d::From (2.0, 0.7)}
+                )
+            {
+            auto pathB = pathA;
+            bvector<int> indices;
+            DPoint3dOps::Add (pathB, DVec3d::From (0,0,z));
+            bvector<DPoint3d> pathA1, pathB1;
+            options->SetMaxEdgeLength (splitSize.x);
+            PolylineOps::AddStrokes (pathA, pathA1, *options);
+            options->SetMaxEdgeLength (splitSize.y);
+            PolylineOps::AddStrokes (pathB, pathB1, *options);
+            bvector<DTriangle3d> triangleA;
+            PolylineOps::GreedyTriangulationBetweenLinestrings (pathA1, pathB1, triangleA, &indices, tiltAngle);
+            Check::SaveTransformed (triangleA);
+            Check::Shift (0, 1.5 * b, 0);
+            }
+        Check::SetTransform (baseFrame);
+        Check::Shift (2.0 * a, 0,0);
+        }
+    Check::ClearGeometry ("Polyline.GreedyTriangleA");
+    }
+
+bvector<DPoint3d> SplitBySimpleLength (bvector<DPoint3d> const &data, double a)
+    {
+    double b = PolylineOps::Length (data);
+    bvector<DPoint3d> out;
+    auto cp = ICurvePrimitive::CreateLineString (data);
+    double q = b / a;
+    size_t n = (int)(q + 0.999999);
+    double df = 1.0 / n;
+    out.push_back (data[0]);
+    for (size_t i = 1; i < n; i++)
+        {
+        double fraction = i * df;
+        DPoint3d xyz;
+        cp->FractionToPoint (fraction, xyz);
+        out.push_back (xyz);
+        }
+    out.push_back (data.back ());
+    return out;
+    }
+TEST (Polyline, GreedyTriangleB)
+    {
+    // triangulation between simple translates
+    double a = 4.0;
+    double b = 2.0;
+    bvector<DPoint3d> pathA {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (a,0,0),
+        DPoint3d::From (a,b,0),
+        DPoint3d::From (0,b,0),
+        DPoint3d::From (0,0,0)
+        };
+    auto tiltAngle = Angle::FromDegrees (10.0);
+    double dzPath = 0.25;
+    IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
+    for (double z : bvector<double> {1, 2, 3})
+        {
+        auto baseFrame = Check::GetTransform ();
+        for (auto splitSize : bvector <DPoint2d> {
+                DPoint2d::From (4.0, 2.0),
+                DPoint2d::From (4.0, 4.0),
+                DPoint2d::From (4.0, 1.5),
+                DPoint2d::From (2.0, 0.7),
+                DPoint2d::From (0.8, 0.4),
+                DPoint2d::From (0.6, 0.35),
+                DPoint2d::From (0.3, 0.15)
+                }
+                )
+            {
+            auto pathB = pathA;
+            bvector<int> indices;
+            DPoint3dOps::Add (pathB, DVec3d::From (0,0,z));
+            auto pathA1 = SplitBySimpleLength (pathA, splitSize.x);
+            auto pathB1 = SplitBySimpleLength (pathB, splitSize.y);
+            bvector<DTriangle3d> triangleA;
+            PolylineOps::GreedyTriangulationBetweenLinestrings (pathA1, pathB1, triangleA, &indices, tiltAngle);
+            auto baseFrame = Check::GetTransform ();
+
+            Check::SaveTransformed (pathA1);
+            Check::Shift (0,0, dzPath);
+            Check::SaveTransformed (triangleA);
+            Check::Shift (0,0, dzPath);
+            Check::SaveTransformed (pathB1);
+            Check::SetTransform (baseFrame);
+            Check::Shift (0, 1.5 * b, 0);
+            }
+        Check::SetTransform (baseFrame);
+        Check::Shift (2.0 * a, 0,0);
+        }
+    Check::ClearGeometry ("Polyline.GreedyTriangleB");
+    }

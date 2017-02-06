@@ -67,6 +67,70 @@ void ClipPlane::SetFlags (bool invisible, bool interior)
     m_flags = (interior ? PlaneMask_Interior : 0) | (invisible ? PlaneMask_Invisible : 0);
     }
  
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+ValidatedClipPlane ClipPlane::FromEdgeAndUpVector
+(
+DPoint3dCR point0,
+DPoint3dCR point1,
+DVec3dCR upVector,  //!< [in] vector towards eye.  0-tilt plane normal is the edge vector
+Angle tiltAngle     //!< [in] angle to tilt plane
+)
+    {
+    DVec3d edgeVector = point1 - point0;
+    auto baseNormal = DVec3d::FromCrossProduct (upVector, edgeVector).ValidatedNormalize ();
+    if (baseNormal.IsValid ())
+        {
+        DVec3d normal = baseNormal.Value ();
+        if (!Angle::IsNearZero (tiltAngle.Radians ()))
+            {
+            auto tiltNormal = DVec3d::FromRotateVectorAroundVector (baseNormal, edgeVector, tiltAngle);
+            if (tiltNormal.IsValid ())
+                normal = tiltNormal.Value ();
+            }
+        normal.Negate ();
+        return ValidatedClipPlane (ClipPlane (normal, point0, false, false), true);
+        }
+    return ValidatedClipPlane ();   // and this is invalid
+    }
+
+ValidatedClipPlane ClipPlane::FromPointsAndDistanceAlongPlaneNormal
+(
+bvector<DPoint3d> const &points,    //!< [in] polyline points
+DVec3d upVector,                    //!< [in] upward vector (e.g. towards eye at infinity)
+double  distance,                    //!< [in] angle for tilt of planes.
+bool    pointsInside                //!< [in] true to orient so the points are inside.
+)
+    {
+    auto unitUp = upVector.ValidatedNormalize ();
+    if (points.empty () || !unitUp.IsValid ())
+        return ValidatedClipPlane ();   // fail
+
+    DRange1d range = DRange1d::From (0);
+    DPoint3d xyz0 = points[0];
+    DVec3d unit = unitUp.Value ();
+    for (size_t i = 1; i < points.size (); i++)
+        {
+        double d = (points[0] - xyz0).DotProduct (unit);
+        range.Extend (d);
+        }
+    DPoint3d planePoint;
+    DVec3d normal = unit;
+    if (distance > 0.0)
+        {
+        planePoint = xyz0 +  (range.High () + distance) * unit;
+        normal.Negate ();
+        }
+    else
+        {
+        planePoint = xyz0 + (range.Low () + distance) * unit;   // negative distance moves backwards
+        }
+    if (!pointsInside)
+        normal.Negate ();
+
+    return ValidatedClipPlane (ClipPlane (normal, planePoint), true);
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012

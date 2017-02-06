@@ -118,6 +118,24 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     // normals
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine (bvector<DPoint3d> &points, bvector<bool> &hiddenEdge, bool leftIsInside);
 
+    //! Add space "to the left of a polyline", with left determined by edges and an upvector.
+    //!<ul>
+    //!<li>If teh polyline is closed, an orientation test is done and the point order is reveresed if needed to be sure
+    //!     the planes are oriented to enclose the space.
+    //!<li>For each edge of the polyline, the primary plane has its primary outward normal as edge vector cross up vector.
+    //!<li>The normal is then rotated by the tilt angle towards the up vector.
+    //!<li>to close around a polygon, repeat the first point at end.
+    //!<li>When closed, this correspondes to a CCW polygon with the upVector pointing at the eye, and the volume expands behind the polygon
+    //!<li>
+    //!</ul>
+    GEOMDLLIMPEXP void AddSweptPolyline (
+        bvector<DPoint3d> const &points,  //!< [in] polyline points
+        DVec3d upVector,          //!< [in] upward vector (e.g. towards eye at infinity)
+        Angle  tiltAngle            //!< [in] angle for tilt of planes.
+        );
+    //! Add the plane if it is valid.
+    GEOMDLLIMPEXP bool Add (ValidatedClipPlane const &plane);
+
     //! @description return a summary classification
     //! <ul>
     //! <li>ClipPlaneContainment_StronglyInside All points are inside the plane set

@@ -598,6 +598,42 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      01/2017
++--------------------------------------------------------------------------------------*/
+void ConvexClipPlaneSet::AddSweptPolyline
+(
+bvector<DPoint3d> const &points,  //!< [in] polyline points
+DVec3d upVector,          //!< [in] upward vector (e.g. towards eye at infinity)
+Angle  tiltAngle            //!< [in] angle for tilt of planes.
+)
+    {
+    bool reverse = false;
+    static double s = -1.0;
+    if (points.size () > 3 && points.front ().AlmostEqual (points.back ()))
+        {
+        DVec3d polygonNormal = PolygonOps::AreaNormal (points);
+        if (s * polygonNormal.DotProduct (upVector) < 0.0)
+            reverse = true;
+        }
+    for (size_t i = 0; i + 1 < points.size (); i++)
+        if (reverse)
+            Add (ClipPlane::FromEdgeAndUpVector (points[i+1], points[i], upVector, tiltAngle));
+        else
+            Add (ClipPlane::FromEdgeAndUpVector (points[i], points[i+1], upVector, tiltAngle));
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      01/2017
++--------------------------------------------------------------------------------------*/
+bool ConvexClipPlaneSet::Add (ValidatedClipPlane const &plane)
+    {
+    if (plane.IsValid ())
+        push_back (plane.Value ());
+    return plane.IsValid ();
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3dCP direction, bvector<bvector<DPoint3d>> *shapes)

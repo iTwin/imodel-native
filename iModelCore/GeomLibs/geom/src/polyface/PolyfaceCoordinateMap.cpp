@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceCoordinateMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -399,10 +399,50 @@ int * intColor
             m_polyface.NormalIndex ().push_back ((int)AddNormal (normals[i]) + 1);
         if (params != NULL)
             m_polyface.ParamIndex ().push_back ((int)AddParam (params[i]) + 1);
+        if (intColor != NULL)
+            m_polyface.ColorIndex ().push_back ((int)AddIntColor (intColor[i]) + 1);
         }
     m_polyface.PointIndex ().push_back (0);
+    if (normals != nullptr)
+        m_polyface.NormalIndex ().push_back (0);
+    if (params != nullptr)
+        m_polyface.ParamIndex ().push_back (0);
+    if (intColor != nullptr)
+        m_polyface.ColorIndex ().push_back (0);
     }
 
+void PolyfaceCoordinateMap::AddPolygon
+(
+bvector<DPoint3d> const &points,
+bvector<DVec3d> const *normals,
+bvector<DPoint2d> const *params,
+bvector<int> const *intColor
+)
+    {
+    size_t n = points.size ();
+    // eliminate trailing duplicates ...
+    while (n > 1 && points[n - 1].IsEqual (points[0]))
+        {
+        n--;
+        }
+    for (size_t i = 0; i < n; i++)
+        {
+        m_polyface.PointIndex ().push_back ((int)AddPoint (points[i]) + 1);
+        if (normals != NULL)
+            m_polyface.NormalIndex ().push_back ((int)AddNormal (normals->at(i)) + 1);
+        if (params != NULL)
+            m_polyface.ParamIndex ().push_back ((int)AddParam (params->at(i)) + 1);
+        if (intColor != NULL)
+            m_polyface.ColorIndex ().push_back ((int)AddIntColor (intColor->at(i)) + 1);
+        }
+    m_polyface.PointIndex ().push_back (0);
+    if (normals != nullptr)
+        m_polyface.NormalIndex ().push_back (0);
+    if (params != nullptr)
+        m_polyface.ParamIndex ().push_back (0);
+    if (intColor != nullptr)
+        m_polyface.ColorIndex ().push_back (0);
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012

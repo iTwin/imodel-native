@@ -1463,7 +1463,7 @@ double          &scale
 
 //!
 //! @description Test if this instance matrix is composed of only rigid rotation and scaling, allowing negative (mirror) scale
-//! @param [out] columns  matrix containing the unit vectors along the columns.
+//! @param [out] columns  descaled matrix.  (Specifically: The original matrix multiplied by the inverse of the scale)
 //! @param [out] scale signed scale of largest magnitude. If function value is true,
 //!       the min scale is the same.  Use areColumnsOrthonormal to get
 //!       separate column scales.
