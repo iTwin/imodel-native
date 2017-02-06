@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/SpatialEntityClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -149,17 +149,14 @@ SpatialEntityHandlerStatus SpatialEntityClient::GetData() const
         }
 
         // Override source url so that it points to the SpatialEntity repository and not the local one.
-        SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
-
-        newDataSource->SetUrl(m_dataRepositories[i].first.c_str());
-
-        // Set server.
-        newDataSource->SetServer(m_pServer.get());
-
-        pExtractedData->AddDataSource(*newDataSource);
+        pExtractedData->GetDataSource(0).SetUrl(m_dataRepositories[i].first.c_str());
+        pExtractedData->GetDataSource(0).SetServer(m_pServer.get());
 
         // Set provider.
         pExtractedData->SetProvider(GetServerName().c_str());
+
+        // Set provider name
+        pExtractedData->SetProviderName(GetProviderName().c_str());
 
         // Set dataset
         pExtractedData->SetDataset(GetDataset().c_str());
@@ -195,6 +192,16 @@ Utf8StringCR SpatialEntityClient::GetServerName() const
     return m_pServer->GetName();
 }
 
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    10/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntityClient::GetProviderName() const
+{
+    return m_providerName;
+}
+
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    10/2016
 //-------------------------------------------------------------------------------------
@@ -220,6 +227,13 @@ Utf8StringCR SpatialEntityClient::GetClassification() const
 }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    01/2017
+//-------------------------------------------------------------------------------------
+SpatialEntityMetadataCR SpatialEntityClient::GetMetadataSeed() const
+{
+    return m_metadataSeed;
+}
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 const SpatialEntityClient::RepositoryMapping& SpatialEntityClient::GetRepositoryMapping() const
@@ -238,10 +252,12 @@ void SpatialEntityClient::SetObserver(ISpatialEntityTraversalObserver* pObserver
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityClient::SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
+SpatialEntityClient::SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP providerName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification, SpatialEntityMetadataCR metadataSeed)
+    : m_metadataSeed(metadataSeed)
 {
     m_certificatePath = BeFileName();
     m_pServer = SpatialEntityServer::Create(serverUrl, serverName);
+    m_providerName = providerName,
     m_pObserver = NULL;
     m_dataRepositories = RepositoryMapping();
     m_datasetName = Utf8String(datasetName);

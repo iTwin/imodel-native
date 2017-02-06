@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityAdmin/ISpatialEntityTraversalObserver.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ struct ISpatialEntityTraversalObserver
 public:
     //! OnFileListed is called whenever a file was listed for download. It is up to
     //! the effective traversal observer to do whatever process is required on the data.
-    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file, Utf8CP datasetName) = 0;
+    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file) = 0;
 
     //! OnFileDownloaded is called whenever a download is completed. It is up to
     //! the effective traversal observer to do whatever process is required on the data.

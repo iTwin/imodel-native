@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/WebTraverser/WebTraverser.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,11 @@ void ShowUsage()
     std::cout << "Options:" << std::endl;
     std::cout << "  -h, --help                      Show this help message and exit" << std::endl;
     std::cout << "  -u, --update                    Enables update mode" << std::endl;
-    std::cout << "  -provider:PROVIDER              Sets provider name" << std::endl;
+    std::cout << "  -provider:PROVIDER              Sets provider keyname" << std::endl;
+    std::cout << "  -providerName:PROVIDERNAME      Sets provider name. If not provided then provider keyname will be used." << std::endl;
+    std::cout << "  -legal:LEGAL          Sets metadata terms of use." << std::endl;
+    std::cout << "  -termsOfUse:TERMSOFUSE          Sets metadata terms of use." << std::endl;
+    std::cout << "  -description:DESCRIPTION        Sets metadata description." << std::endl;
     std::cout << "  -filePattern:FILEPATTERN        Sets the file pattern to filter out files. (See below for details)" << std::endl;
     std::cout << "  -dataset:DATASET                Sets dataset name" << std::endl;
     std::cout << "  -classification:CLASSIFICATION  Sets the classification. If absent then the software will try to determine the classification from file extension." << std::endl;
@@ -118,6 +122,11 @@ int main(int argc, char *argv[])
     bool dualMode = (2 == UrlCount);
     bool updateMode = false;
     std::string provider;
+    std::string providerName;
+    std::string metadataDescription;
+    std::string metadataLegal;
+    std::string metadataTermsOfUse;
+
     std::string dataset;
     std::string filePattern = "*";
     std::string classification;
@@ -143,6 +152,12 @@ int main(int argc, char *argv[])
             substringPosition++;
             provider = std::string(substringPosition);
             }
+        else if (strstr(argv[i], "-providerName:"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            providerName = std::string(substringPosition);
+            }
         else if (strstr(argv[i], "-filePattern:"))
             {
             substringPosition = strstr(argv[i], ":");
@@ -164,6 +179,24 @@ int main(int argc, char *argv[])
             substringPosition = strstr(argv[i], ":");
             substringPosition++;
             classification = std::string(substringPosition);
+            }
+        else if (strstr(argv[i], "-description"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            metadataDescription = std::string(substringPosition);
+            }
+        else if (strstr(argv[i], "-legal"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            metadataLegal = std::string(substringPosition);
+            }
+        else if (strstr(argv[i], "-termsOfUse"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            metadataTermsOfUse = std::string(substringPosition);
             }
         else if (strstr(argv[i], "ftp://"))
             Urls.push_back(std::string(argv[i]));        
@@ -204,10 +237,21 @@ int main(int argc, char *argv[])
             std::cout << "Connecting to Web" << std::endl;
             std::cout << "*****************" << std::endl << std::endl;
 
+            if (providerName.size() == 0)
+                providerName = provider;
+
+            SpatialEntityMetadataPtr metadataSeed = SpatialEntityMetadata::Create();;
+            if (metadataDescription.size() > 0 || metadataLegal.size() > 0 || metadataTermsOfUse.size() > 0)
+                {
+                metadataSeed->SetDescription(metadataDescription.c_str());
+                metadataSeed->SetLegal(metadataLegal.c_str());
+                metadataSeed->SetTermsOfUse(metadataTermsOfUse.c_str());
+                }
+
             if (strstr(Urls[i].c_str(), ftp) != nullptr)
-                client = FtpClientPtr(FtpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str()));
+                client = FtpClientPtr(FtpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)providerName.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str(), *(metadataSeed.get())));
             else
-                client = HttpClientPtr(HttpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str()));
+                client = HttpClientPtr(HttpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)providerName.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str(), *(metadataSeed.get())));
 
             if (client == nullptr)
                 {
@@ -251,7 +295,7 @@ WebTraversalObserver::WebTraversalObserver(bool updateMode, bool dualMode, const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file, Utf8CP dataset)
+void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
     {
     if (nullptr == file)
         {
@@ -262,7 +306,7 @@ void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP fi
 
     if (m_updateMode)
         {
-        if (!ServerConnection::GetInstance().IsDuplicate(file, dataset))
+        if (!ServerConnection::GetInstance().IsDuplicate(file))
             {
             if (m_verbose)
                 std::cout << "Status: Skipped " << file << std::endl;
@@ -271,7 +315,7 @@ void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP fi
         }
     else
         {
-        if (ServerConnection::GetInstance().IsDuplicate(file, dataset))
+        if (ServerConnection::GetInstance().IsDuplicate(file))
             {
             if (m_verbose)
                 std::cout << "Status: Skipped " << file << std::endl;

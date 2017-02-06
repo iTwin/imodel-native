@@ -33,20 +33,20 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
+HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP providerName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification, SpatialEntityMetadataCR metadataSeed)
     {
-    return new HttpClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification);
+    return new HttpClient(serverUrl, serverName, providerName, datasetName, filePattern, extractThumbnails, classification, metadataSeed);
     }
 
 SpatialEntityPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
-    return HttpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
+    return HttpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails, m_metadataSeed);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification) : SpatialEntityClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification)
+HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP providerName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification, SpatialEntityMetadataCR metadataSeed) : SpatialEntityClient(serverUrl, serverName, providerName, datasetName, filePattern, extractThumbnails, classification, metadataSeed)
     {
     m_certificatePath = BeFileName();
 
@@ -123,7 +123,7 @@ SpatialEntityHandlerStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8Stri
 
             // Process listed data.
             if (GetObserver() != NULL)
-                GetObserver()->OnFileListed(fileList, fileFullPath.c_str(), GetDataset().c_str());
+                GetObserver()->OnFileListed(fileList, fileFullPath.c_str());
             else
                 fileList.push_back(fileFullPath);
             }
@@ -191,7 +191,7 @@ HttpRequest::HttpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
+SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail, SpatialEntityMetadataCR metadataSeed)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -267,6 +267,10 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
     Utf8String fileType(fileList[0].GetExtension().c_str());
     newDataSource->SetDataType(fileType.c_str());
 
+    // &&AR ... simplified ... this has to be patched up.
+    if (fileType == "hgt")
+        newDataSource->SetNoDataValue("-32768");
+
     // Location. 
     //&&JFC TODO: Construct path from compound.
     WString locationW = fileList[0].GetFileNameAndExtension();
@@ -279,6 +283,8 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
         newDataSource->SetServer(pServer.get());
 
     pExtractedData->AddDataSource(*newDataSource);
+
+    pExtractedData->SetDataType(newDataSource->GetDataType().c_str());
 
     // Classification
     // &&AR Since we currently only process rasters the file is bound to be imagery
@@ -314,25 +320,10 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
     pExtractedData->SetFootprint(shape);
     pExtractedData->SetFootprintExtents(extents);
 
-#if (0)
-    // Thumbnail.
-    if (extractThumbnail)
-        {
-        SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
-        pThumbnail->SetProvenance("Created by SpatialEntityHandler tool");
-        pThumbnail->SetFormat("png");
-        pThumbnail->SetGenerationDetails("Created by SpatialEntityHandler tool");
-        bvector<Byte> data;
-        uint32_t width = THUMBNAIL_WIDTH;
-        uint32_t height = THUMBNAIL_HEIGHT;
-        pData->GetThumbnail(data, width, height);
-        pThumbnail->SetData(data);
-        pThumbnail->SetWidth(width);
-        pThumbnail->SetHeight(height);
-        if (pThumbnail != NULL)
-            pExtractedData->SetThumbnail(*pThumbnail);
-        }
-#endif
+    SpatialEntityMetadataPtr newMetadata = SpatialEntityMetadata::CreateFromMetadata(metadataSeed);
+    pExtractedData->SetMetadata(newMetadata.get());
+
+
 
 
 

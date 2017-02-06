@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/ODBCSQLConnection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -275,14 +275,7 @@ SQLINTEGER ServerConnection::SaveServer(SpatialEntityServerCR server)
     return id;
     }
 
-bool ServerConnection::CheckExists(Utf8String id)
-    {
-    CHAR existsQuery[256];
-    sprintf(existsQuery, "SELECT * FROM [%s].[dbo].[MultibandSources] WHERE [OriginalId] = '%s'",
-        m_dbName.c_str(),
-        id.c_str());
-    return HasEntries(existsQuery);
-    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
@@ -325,6 +318,13 @@ ODBCConnectionStatus ServerConnection::SaveMetadata(SpatialEntityMetadataCR meta
             separator = commaSeparator;
             }
 
+
+        if (metadata.GetTermsOfUse().size() != 0)
+            {
+            metadataQuery += separator + "[TermsOfUse]";
+            separator = commaSeparator;
+            }
+
         if (metadata.GetContactInfo().size() != 0)
             {
             metadataQuery += separator + "[ContactInformation]";
@@ -363,6 +363,12 @@ ODBCConnectionStatus ServerConnection::SaveMetadata(SpatialEntityMetadataCR meta
         if (metadata.GetLegal().size() != 0)
             {
             metadataQuery += separator + "'" + metadata.GetLegal() + "'";
+            separator = commaSeparator;
+            }
+
+        if (metadata.GetTermsOfUse().size() != 0)
+            {
+            metadataQuery += separator + "'" + metadata.GetTermsOfUse() + "'";
             separator = commaSeparator;
             }
 
@@ -705,8 +711,8 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityCR d
     // Footprint is mandatory
     entityBaseQuery += ", [Footprint]";
 
-    if (data.HasApproximateFootprint())
-        entityBaseQuery += ", [ApproximateFootprint]";
+    // Approximate footprint is mandatory
+    entityBaseQuery += ", [ApproximateFootprint]";
 
     // Bounding box is mandatory
     entityBaseQuery += ", [MinX], [MinY], [MaxX], [MaxY]";
@@ -751,6 +757,8 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityCR d
 
     if (data.HasApproximateFootprint())
         entityBaseQuery += ", 1";
+    else
+        entityBaseQuery += ", 0";
 
     char boundingBoxString[128];
     sprintf(boundingBoxString, ", %f, %f, %f, %f", xMin, yMin, xMax, yMax);
@@ -945,6 +953,8 @@ ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityCR d
 
     if (data.HasApproximateFootprint())
         sprintf(entityBaseQuery, "%s, [ApproximateFootprint] = %d", entityBaseQuery, 1);
+    else
+        sprintf(entityBaseQuery, "%s, [ApproximateFootprint] = %d", entityBaseQuery, 0);
 
     if(data.GetOcclusion() >= 0.0f)
         sprintf(entityBaseQuery, "%s, [Occlusion] = %f", entityBaseQuery, data.GetOcclusion());
@@ -1139,6 +1149,12 @@ ODBCConnectionStatus ServerConnection::UpdateMetadata(SpatialEntityMetadataCR me
             separator = commaSeparator;
             }    
 
+        if (metadata.GetTermsOfUse().size() != 0)
+            {
+            metadataQuery += separator + "[TermsOfUse] = ";
+            metadataQuery += "'" + metadata.GetTermsOfUse() + "'";
+            separator = commaSeparator;
+            }    
 
         if (metadata.GetFormat().size() != 0)
             {
@@ -1476,13 +1492,10 @@ SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-bool ServerConnection::IsDuplicate(Utf8CP file, Utf8CP dataset)
+bool ServerConnection::IsDuplicate(Utf8CP file)
     {
     CHAR wszInput[512];
-    if (dataset != NULL)
-        sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s' AND [Dataset] = '%s'", m_dbName.c_str(), file, dataset);
-    else
-        sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName.c_str(), file);
+    sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName.c_str(), file);
 
     return HasEntries(wszInput);
     }
