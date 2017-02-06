@@ -390,6 +390,7 @@ protected:
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
     virtual SpatialLocationModelCP _ToSpatialLocationModel() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
+    virtual DrawingModelCP _ToDrawingModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual Sheet::ModelCP _ToSheetModel() const {return nullptr;}
     /** @} */
@@ -504,6 +505,7 @@ public:
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
     SpatialLocationModelCP ToSpatialLocationModel() const {return _ToSpatialLocationModel();} //!< more efficient substitute for dynamic_cast<SpatialLocationModelCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
+    DrawingModelCP ToDrawingModel() const {return _ToDrawingModel();} //!< more efficient substitute for dynamic_cast<DrawingModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     Sheet::ModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
@@ -515,6 +517,7 @@ public:
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
     SpatialLocationModelP ToSpatialLocationModelP() {return const_cast<SpatialLocationModelP>(_ToSpatialLocationModel());} //!< more efficient substitute for dynamic_cast<SpatialLocationModelP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
+    DrawingModelP ToDrawingModelP() {return const_cast<DrawingModelP>(_ToDrawingModel());} //!< more efficient substitute for dynamic_cast<DrawingModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     Sheet::ModelP ToSheetModelP() {return const_cast<Sheet::ModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
@@ -528,6 +531,7 @@ public:
     bool IsInformationModel() const {return nullptr != ToInformationModel();}
     bool IsDefinitionModel() const {return nullptr != ToDefinitionModel();}
     bool IsSheetModel() const {return nullptr != ToSheetModel();}
+    bool IsDrawingModel() const {return nullptr != ToDrawingModel();}
     bool IsDictionaryModel() const {return DictionaryId() == GetModelId();}
     //@}
 
@@ -1099,6 +1103,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
+
+    DrawingModelCP _ToDrawingModel() const override {return this;}
 
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element

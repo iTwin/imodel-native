@@ -104,6 +104,7 @@ private:
     DMap4dCP m_sheetMap = nullptr; // from attachement world to sheet world.
     GeometrySourceCP m_currentGeomSource;
     IElemTopologyCPtr m_currElemTopo;
+    HitDescriptionPtr m_hitDescription;
 
     void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
     IPickGeomP _GetIPickGeom () override {return this;}
@@ -167,6 +168,8 @@ public:
     IElemTopologyCP _GetElemTopology() const override {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
     void _SetElemTopology(IElemTopologyCP topo) override {m_currElemTopo = topo;}
     virtual bool _ProcessSheetAttachment(Sheet::Attachment::ViewportR);
+    void SetHitDescription(HitDescription* descr) {m_hitDescription = descr;}
+    HitDescriptionPtr GetHitDescription() const {return m_hitDescription;}
 
     DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
     DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
@@ -174,6 +177,16 @@ public:
     static void InitBoresite(DRay3dR boresite, DPoint3dCR localPoint, DMatrix4dCR viewToLocal);
     static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld=nullptr);
     static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld=nullptr);
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   02/17
+    //=======================================================================================
+    struct ActiveDescription 
+    {
+        PickContextR m_context;
+        ActiveDescription(PickContextR context, Utf8StringCR descr) : m_context(context) {context.SetHitDescription(new HitDescription(descr));}
+        ~ActiveDescription() {m_context.SetHitDescription(nullptr);}
+    };
 };
 
 END_BENTLEY_DGN_NAMESPACE

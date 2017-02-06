@@ -215,9 +215,6 @@ namespace Attachment
         //! Get the transfrom from sheet view coordinates to attachment view coordinates
         Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
 
-        //! Convert a point from tile world coordinates to sheet world coordinates (z will always be 0).
-        DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
-
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetClips() const {return m_attachClips.get();}
     };

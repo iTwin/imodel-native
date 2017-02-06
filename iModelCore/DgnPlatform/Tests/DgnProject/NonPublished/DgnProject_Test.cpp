@@ -176,6 +176,12 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
     project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
     ASSERT_TRUE (project != NULL);
     ASSERT_EQ (BE_SQLITE_OK, status) << "Status returned is:" << status;
+    
+    // Close the original project (otherwise, we'll get a sharing violation, rather than a dup name error).
+    project = nullptr;
+
+    // Don't allow existing file to be replaced
+    params.SetOverwriteExisting(false);
 
     //Create another project with same name. It should fail
     project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
@@ -600,6 +606,7 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     WString schemaPath = BeFileName::GetDirectoryName(ecSchemaPath);
     schemaContext->AddSchemaPath(schemaPath.c_str());
 

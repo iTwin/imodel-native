@@ -463,8 +463,6 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
     SetLocation(trans);
 
-    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   // m_toParent is attach NPC -> sheet world. Set z values to sheet NPC.
-    trans.form3d[2][3] = m_viewport->GetWorldToNpcMap()->M1.coff[2][3];
     m_viewport->m_toParent = trans;
 
     // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
@@ -585,14 +583,3 @@ Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
     return tileToSheet;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d Viewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR attachWorld)
-    {
-    DPoint3d point = WorldToView(attachWorld);
-    GetTransformToSheet(sheetVp).Multiply(point);   
-    point = sheetVp.ViewToWorld(point);
-    point.z = 0.0; // sheets are always 2d
-    return point;
-    }

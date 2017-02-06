@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementMaterial_tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,12 +26,12 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
+static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
     {
     RgbFactor red = { 1.0, 0.0, 0.0};
     uint32_t width, height;
    
-    JsonRenderMaterial renderMaterialAsset;
+    RenderingAsset renderMaterialAsset;
     renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
     renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
@@ -73,10 +73,10 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::Material::MapMode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
-    renderMaterialAsset.GetValueR()[RENDER_MATERIAL_Map] = mapsMap;
+    renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
     DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
-    material.SetRenderingAsset(renderMaterialAsset.GetValue());
+    material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
     return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
@@ -136,13 +136,13 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     Render::GeometryParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), JsonRenderMaterial::TextureMap::Units::Relative));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderingAsset::TextureMap::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d origin = DPoint3d::FromZero();
     appendGeometry(origin, *builder);
 
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , JsonRenderMaterial::TextureMap::Units::Meters));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderingAsset::TextureMap::Units::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry(origin, *builder);

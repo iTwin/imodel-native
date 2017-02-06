@@ -175,7 +175,7 @@ protected:
     virtual void _DrawDecorations(DecorateContextR) {}
 
     //! Locate/snap to view controller decorations.
-    virtual void _PickDecorations(ViewContextR) {}
+    virtual void _PickDecorations(PickContextR) {}
 
     //! Called when the display of a category is turned on or off.
     //! @param[in] singleEnable true if just turned on one category; false if
@@ -201,13 +201,6 @@ protected:
     //! Stroke a single HitDetail through a ViewContext.
     //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
-
-    //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
-    //! @param[in]  hit The locate HitDetail whose info is needed.
-    //! @param[out] descr The info string.
-    //! @param[in] delimiter The default delimiter to use when building the info string.
-    //! @return true if the info string was set or false to use the default implementation.
-    virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.

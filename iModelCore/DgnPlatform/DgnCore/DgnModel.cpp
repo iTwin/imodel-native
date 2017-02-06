@@ -154,7 +154,7 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnModel::GetName() const
     {
-    // WIP: keep this method around to avoid having to change too much source code.  Use the CodeValue of the modeled element as this model's name.
+    // WIP: keep this method around to avoid having to change too much source code. Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetModeledElement();
     return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
     }
