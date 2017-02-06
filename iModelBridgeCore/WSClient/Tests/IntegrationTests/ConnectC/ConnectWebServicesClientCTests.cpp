@@ -484,9 +484,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    
+    bool isRbacEnabled = true;
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
                                             UltimateRefId.c_str(),
+                                            &isRbacEnabled,                              
                                             Name.c_str(),
                                             Number.c_str (),
                                             Industry.c_str (),
@@ -522,9 +523,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     WPrintfString NewName(L"CWSCCTest%s", newGuidStr.c_str());
     WString dataLocationGuid = L"99999999-9999-9999-9999-999999999999";
     WString countryCode = L"US";
+    isRbacEnabled = true;
     status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
                                                       UltimateRefId.c_str(),
+                                                      &isRbacEnabled,
                                                       NewName.c_str(),
                                                       Number.c_str(),
                                                       Industry.c_str(),
@@ -599,8 +602,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     WString Location = L"Huntsville";
     WString DataLocationGUID = L"99999999-9999-9999-9999-999999999999";
     WString CountryCode = L"ZZ";
+    bool isRbacEnabled = true;
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
                                             UltimateRefId.c_str(),
+                                            &isRbacEnabled,
                                             Name.c_str(),
                                             Number.c_str (),
                                             Industry.c_str (),
@@ -638,9 +643,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     WString newGuidStr;
     BeStringUtilities::Utf8ToWChar(newGuidStr, newGuid.ToString().c_str());
     WPrintfString NewName(L"CWSCCTest%s", newGuidStr.c_str());
+    isRbacEnabled = true;
     status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
                                                       UltimateRefId.c_str(),
+                                                      &isRbacEnabled,
                                                       NewName.c_str(),
                                                       Number.c_str(),
                                                       Industry.c_str(),
@@ -766,8 +773,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
+    bool isRbacEnabled = true;
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, 
                                             UltimateRefId.c_str(),
+                                            &isRbacEnabled,
                                             Name.c_str(),
                                             Number.c_str (),
                                             Industry.c_str (),
@@ -864,8 +873,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
+    bool isRbacEnabled = true;
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
-                                            UltimateRefId.c_str(),    
+                                            UltimateRefId.c_str(),  
+                                            &isRbacEnabled,
                                             Name.c_str(),
                                             Number.c_str (),
                                             Industry.c_str (),
@@ -981,8 +992,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
+    bool isRbacEnabled = true;
     CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
                                             UltimateRefId.c_str(),
+                                            &isRbacEnabled,
                                             Name.c_str(),
                                             Number.c_str (),
                                             Industry.c_str (),
