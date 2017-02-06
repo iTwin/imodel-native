@@ -664,11 +664,12 @@ bool ScalableMeshGroupDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, dou
     {
     for (auto& scalableMesh : m_group->GetMembers())
         {
-        if (m_group->IsRegionRestricted(scalableMesh))
+        if (m_group->IsRegionRestricted(scalableMesh) && m_group->IsWithinRegion(scalableMesh, &point, 1))
             {
-            if (DTM_SUCCESS == scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) 
+            if (scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) 
                 if (m_group->IsWithinRegion(scalableMesh, endPt, 1))
-                return DTM_SUCCESS;
+                return true;
+            return false;
             }
         }
 
@@ -676,11 +677,11 @@ bool ScalableMeshGroupDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, dou
         {
         if (!m_group->IsRegionRestricted(scalableMesh))
             {
-            if (DTM_SUCCESS == scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) return DTM_SUCCESS;
+            if (scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) return true;
             }
         }
 
-    return DTM_ERROR;
+    return false;
     }
 
 bool ScalableMeshGroupDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)

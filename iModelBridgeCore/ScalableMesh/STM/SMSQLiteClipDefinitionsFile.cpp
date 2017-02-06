@@ -339,6 +339,24 @@ size_t SMSQLiteClipDefinitionsFile::GetCoveragePolygonByteCount(int64_t coverage
     return stmt->GetValueInt64(0);
     }
 
+void SMSQLiteClipDefinitionsFile::DeleteClipPolygon(int64_t clipID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "DELETE FROM SMClipDefinitions WHERE PolygonId=?");
+    stmt->BindInt64(1, clipID);
+    DbResult status = stmt->Step();
+    }
+
+void SMSQLiteClipDefinitionsFile::DeleteCoveragePolygon(int64_t coverageID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "DELETE FROM SMCoverages WHERE PolygonId=?");
+    stmt->BindInt64(1, coverageID);
+    DbResult status = stmt->Step();
+    }
+
 void SMSQLiteClipDefinitionsFile::GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes)
     {
     std::lock_guard<std::mutex> lock(dbLock);
