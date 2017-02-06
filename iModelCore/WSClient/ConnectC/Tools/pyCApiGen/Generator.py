@@ -10,9 +10,10 @@ import sys
 from xml.dom import minidom
 import os
 import optparse
-from openpyxl import load_workbook
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module='openpyxl')
+from openpyxl import load_workbook
+
 
 from SchemaWriter.Helpers.Api import Api
 from SchemaWriter.Helpers.ECSchema import ECSchema
