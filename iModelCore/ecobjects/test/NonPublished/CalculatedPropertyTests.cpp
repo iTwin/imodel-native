@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -580,7 +580,7 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
 
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"pidSnippet.01.02.ecschema.xml").c_str (), *schemaContext);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"pidSnippet.01.08.ecschema.xml").c_str (), *schemaContext);
     EXPECT_EQ (SchemaReadStatus::Success, status);
 
     ECClassP ecClass = schema->GetClassP ("BASE_REDUCER");
