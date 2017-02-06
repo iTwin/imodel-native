@@ -1136,27 +1136,23 @@ double startFraction,
 double endFraction
 )
     {
-    size_t n = options.EllipseStrokeCount (arc);
-    if (n < 1)
-        n = 1;
-    double df = 1.0 / n;
-    size_t i0 = includeStartPoint ? 0 : 1;
-    if (startFraction == 0.0 && endFraction == 1.0)
+    DEllipse3d arc1;
+    if (startFraction != 0.0 || endFraction != 1.0) // exact is ok -- default calls will be exact 0 and 1
         {
-        for (size_t i = i0; i <= n; i++)
-            {
-            double f = i * df;
-            strokes.push_back (arc.FractionToPoint (f));
-            }
+        arc1 = DEllipse3d::FromFractionInterval (arc, startFraction, endFraction);
         }
     else
+        arc1 = arc;
+
+    size_t n = options.EllipseStrokeCount (arc1);
+    if (n < 1)
+        n = 1;
+    size_t i0 = includeStartPoint ? 0 : 1;
+    double df = 1.0 / (double)n;
+    for (size_t i = i0; i <= n; i++)
         {
-        for (size_t i = i0; i <= n; i++)
-            {
-            double f0 = i * df;
-            double f1 = DoubleOps::Interpolate (startFraction, f0, endFraction);
-            strokes.push_back (arc.FractionToPoint (f1));
-            }
+        double f = i * df;
+        strokes.push_back (arc1.FractionToPoint (f));
         }
     return true;
     }

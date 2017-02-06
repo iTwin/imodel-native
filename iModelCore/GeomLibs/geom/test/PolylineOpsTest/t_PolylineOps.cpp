@@ -606,6 +606,19 @@ void PrintCurveStrokes (DPoint3dDoubleUVCurveArrays &data, char const *name)
                 data.m_vectorU[i].x, data.m_vectorU[i].y, data.m_vectorU[i].z);
         }
     }
+
+TEST(Polyline,AddStrokesDEllipse3d)
+    {
+    DEllipse3d arc = DEllipse3d::From (0,0,0,   4,0,0, 0,2,0, 0.0, Angle::TwoPi ());
+    bvector<DPoint3d> stroke0, stroke1;
+    auto options = IFacetOptions::CreateForCurves ();
+    // accept default angle tolerance ..
+    PolylineOps::AddStrokes (arc, stroke0, *options);
+    PolylineOps::AddStrokes (arc, stroke1, *options, true, 0.0, 0.5);
+    // EXPECT (with inside knowledge) exactly half the stroke 
+    Check::Near (PolylineOps::Length (stroke0), 2.0 * PolylineOps::Length (stroke1), "Strokes of full, half arc");
+    }
+
 // Create a polyline on the x axis with points at x=0,1,..xMax (inclusive)
 // ExecuteAddStrokes and check length
 void testSimplePolylineStroke (size_t xMax, double startFraction, double endFraction, IFacetOptionsCR options)
