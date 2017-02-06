@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitDefinitions.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -78,6 +78,7 @@ void AddMass(UnitRegistry& reg)
     reg.AddUnit(MASS, USCUSTOM, "LONG_TON_MASS", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddSynonym("LONG_TON_MASS", "LONG_TON");
     reg.AddUnit(MASS, USCUSTOM, "KIPM", "LBM", 1000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 1.0/16.0); // Exact, https://en.wikipedia.org/wiki/Ounce
     }
 
 void AddTime(UnitRegistry& reg)
@@ -489,6 +490,7 @@ void AddForce(UnitRegistry& reg)
     reg.AddUnit(FORCE, SI, "KGF", "[STD_G]*KG");
     reg.AddSynonym("KGF", "KILOPOND");
     reg.AddUnit(FORCE, SI, "LBF", "[STD_G]*LBM");
+    reg.AddUnit(FORCE, SI, "OZF", "[STD_G]*OZM");
     reg.AddUnit(FORCE, SI, "KPF", "[KILO]*LBF");
     reg.AddUnit(FORCE, SI, "DYNE", "G*CM*S(-2)");
     

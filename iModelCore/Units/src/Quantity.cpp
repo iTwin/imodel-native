@@ -2,7 +2,7 @@
 |
 |     $Source: src/Quantity.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ static almost_equal(const T x, const T y, int ulp)
     // the machine epsilon has to be scaled to the magnitude of the values used
     // and multiplied by the desired precision in ULPs (units in the last place)
     return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
-        // unless the result is subnormal
+        // unless the result is subnormal            
         || std::abs(x - y) < std::numeric_limits<T>::min();
     }
 
@@ -110,7 +110,7 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::AlmostLessThan (QuantityCR rhs) const
+bool Quantity::AlmostLessThan (QuantityCR rhs) const   // SignificantlyLess(
     {
     if (this->AlmostEqual(rhs))
         return false;

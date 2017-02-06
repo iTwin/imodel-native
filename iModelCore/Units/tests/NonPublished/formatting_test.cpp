@@ -103,7 +103,7 @@ TEST(FormattingTest, PhysValues)
     // Volumes
     EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
     EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
-    EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4", 543.67, "GALLON", "LITRE", "L", " ").c_str());
+    EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4", 543.6700, "GALLON", "LITRE", "L", " ").c_str());
 
     // Areas
     EXPECT_STREQ ("327.7853 ACRE", NumericFormatSpec::StdFormatPhysValue("real4", 132.65, "HECTARE", "ACRE", nullptr, " ").c_str());
@@ -114,6 +114,11 @@ TEST(FormattingTest, PhysValues)
 
     // mass
     EXPECT_STREQ ("115.3485 KG", NumericFormatSpec::StdFormatPhysValue("real4", 254.3, "LBM", "KG", nullptr, " ").c_str());
+    EXPECT_STREQ ("35.274 OZM", NumericFormatSpec::StdFormatPhysValue("real4", 1.0, "KG", "OZM", nullptr, " ").c_str());
+    EXPECT_STREQ ("35.273962_OZM", NumericFormatSpec::StdFormatPhysValue("real", 1.0, "KG", "OZM", nullptr, "_").c_str());
+    EXPECT_STREQ ("1.0 KG", NumericFormatSpec::StdFormatPhysValue("real", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
+    EXPECT_STREQ ("4068.7986 OZM", NumericFormatSpec::StdFormatPhysValue("real4", 115.3485, "KG", "OZM", nullptr, " ").c_str());
+
     }
 
 
