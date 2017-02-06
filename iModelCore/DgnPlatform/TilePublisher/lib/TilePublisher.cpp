@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                      
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -1178,23 +1178,23 @@ Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTe
 
     if (!isUnlit && displayParams->GetMaterialId().IsValid())
         {
-        JsonRenderMaterial  jsonMaterial;
+        auto jsonMaterial = RenderingAsset::Load(displayParams->GetMaterialId(), m_context.GetDgnDb());
 
-        if (SUCCESS == jsonMaterial.Load (displayParams->GetMaterialId(), m_context.GetDgnDb()))
+        if (nullptr != jsonMaterial)
             {
             static double       s_finishScale = 15.0;
 
-            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
-                specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
+            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
+                specularColor = jsonMaterial->GetColor (RENDER_MATERIAL_SpecularColor);
 
-            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
-                specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasFinish, false))
+                specularExponent = jsonMaterial->GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
 
-            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
-                rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
+            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
+                rgb = jsonMaterial->GetColor (RENDER_MATERIAL_Color);
 
-            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
-                alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
+                alpha = 1.0 - jsonMaterial->GetDouble (RENDER_MATERIAL_Transmit, 0.0);
 
             DgnMaterialCPtr material = DgnMaterial::Get(m_context.GetDgnDb(), displayParams->GetMaterialId());
 

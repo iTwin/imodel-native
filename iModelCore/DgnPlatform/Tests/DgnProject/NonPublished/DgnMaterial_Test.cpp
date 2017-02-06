@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnMaterial_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -19,10 +19,8 @@ struct MaterialTest : public DgnDbTestFixture
 
     DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
         {
-        static int32_t s_jsonDummy = 0;
-        Utf8PrintfString value("value:%d", ++s_jsonDummy);
         DgnDbR db = nullptr != pDb ? *pDb : *m_db;
-        return DgnMaterial::CreateParams(db, palette, name, value, parent, descr);
+        return DgnMaterial::CreateParams(db, palette, name, parent, descr);
         }
 
     template<typename T, typename U>
@@ -32,7 +30,6 @@ struct MaterialTest : public DgnDbTestFixture
         EXPECT_EQ(a.GetMaterialName(), b.GetMaterialName());
         EXPECT_EQ(a.GetParentId(), b.GetParentId());
         EXPECT_EQ(a.GetDescr(), b.GetDescr());
-        EXPECT_EQ(a.GetValue(), b.GetValue());
         }
 
     DgnMaterialCPtr CreateMaterial(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId(), DgnDbP pDb = nullptr)
@@ -58,7 +55,6 @@ TEST_F(MaterialTest, CRUD)
     Compare(*mat, *persistent);
 
     mat->SetDescr("new description");
-    mat->SetValue("value:1234");
 
     DgnMaterialCPtr updatedMat = mat->Update();
     EXPECT_TRUE(updatedMat.IsValid());

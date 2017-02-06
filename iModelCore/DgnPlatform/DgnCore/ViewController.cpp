@@ -428,7 +428,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
 #if defined (BENTLEY_CHANGE)
-    if (compression >=(1.0 - s_flatViewFractionTolerance))
+    if (compression >= (1.0 - s_flatViewFractionTolerance))
         {
         SetCameraOn(false);
         return ViewportStatus::Success;
@@ -1036,8 +1036,8 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
 
-    frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
-    backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
+    frontDist = std::max(frontDist, (.5 *DgnUnits::OneMeter())); 
+    backDist  = std::max(backDist, focusDist+(.5*DgnUnits::OneMeter()));
 
     if (backDist < focusDist) // make sure focus distance is in front of back distance.
         backDist = focusDist + DgnUnits::OneMillimeter();
