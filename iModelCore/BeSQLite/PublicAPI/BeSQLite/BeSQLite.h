@@ -2111,10 +2111,29 @@ public:
     };
 
 protected:
+
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   02/17
+    //=======================================================================================
+    struct AppDataCollection
+    {
+        using AppData = Db::AppData;
+    private:
+        typedef bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> Map;
+
+        BeMutex     m_mutex;
+        Map         m_map;
+    public:
+        void Add(AppData::Key const& key, AppData* data);
+        StatusInt Drop(AppData::Key const& key);
+        AppData* Find(AppData::Key const& key);
+        void Clear() { m_map.clear(); }
+    };
+
     DbFile* m_dbFile;
     StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+    mutable AppDataCollection m_appData;
 
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
@@ -2550,15 +2569,18 @@ public:
     //! every session. But that's OK, the only thing important about \c key is that it be unique.
     //! If AppData with this key already exists on this Db, it is dropped and replaced with \a appData.
     //! @param[in] appData The application's instance of a subclass of AppData to store on this Db.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Remove a Db::AppData object from this Db by its key.
     //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
     //! @return SUCCESS if a AppData object with \c key was found and was dropped. ERROR if no AppData with \c key exists.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT StatusInt DropAppData(AppData::Key const& key) const;
 
     //! Search for the Db::AppData on this Db with \c key. See discussion of keys in AddAppData.
     //! @return A pointer to the AppData object with \c key. nullptr if not found.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT AppData* FindAppData(AppData::Key const& key) const;
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
