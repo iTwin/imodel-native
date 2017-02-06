@@ -460,7 +460,7 @@
 
     %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file".
     However, %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema
-    with dedicated custom attributes defined in the standard ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>.
+    with dedicated custom attributes defined in the ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>.
 
     @section ECDbDefaultMappingRules ECDb Default Mapping Rules
     - Type of ECClasses that <b>are not mapped</b>.

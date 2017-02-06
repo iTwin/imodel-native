@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    auto context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
     BeFileName ecdbStandardSchemasFolder(context->GetHostAssetsDirectory());
