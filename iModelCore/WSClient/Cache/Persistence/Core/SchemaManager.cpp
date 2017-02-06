@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/SchemaManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,7 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
         );
 
     ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
+    context->AddSchemaLocater(m_db.GetSchemaLocater());
     ECSchemaPtr cacheSchema = LoadSchema(cacheSchemaKey, *context);
     return ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema});
     }

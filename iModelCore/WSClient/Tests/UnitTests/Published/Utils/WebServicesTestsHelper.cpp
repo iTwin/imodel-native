@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -319,6 +319,8 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
         {
         context = ECSchemaReadContext::CreateContext();
         context->AddSchemaPath(GetTestsAssetsDir().AppendToPath(L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
+        context->AddSchemaPath(GetTestsAssetsDir().AppendToPath(L"ECSchemas/ECDb"));
+
         }
 
     ECSchemaPtr schema;

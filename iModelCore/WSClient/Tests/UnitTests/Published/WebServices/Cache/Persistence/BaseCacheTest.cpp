@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -186,7 +186,13 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
-    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ECSchemaReadContext::CreateContext());
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    BeFileName ecdbSchemaPath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaPath);
+    ecdbSchemaPath.AppendToPath(L"ECSchemas\\ECDb");
+    readContext->AddSchemaPath(ecdbSchemaPath.GetName());
+
+    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *readContext);
     return schema;
     }
 
