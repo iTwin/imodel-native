@@ -20,7 +20,7 @@ private:
     struct ArrayElementValue : public IECSqlValue, IECSqlPrimitiveValue
         {
         private:
-            ECDbCR m_ecdb;
+            // unused - ECDbCR m_ecdb;
             ECN::ECValue m_value;
             ECSqlColumnInfo m_columnInfo;
 
@@ -48,7 +48,7 @@ private:
             bool CanRead(ECN::PrimitiveType requestedType) const;
 
         public:
-            explicit ArrayElementValue(ECDbCR ecdb) : m_ecdb(ecdb) {}
+            explicit ArrayElementValue(ECDbCR ecdb) /*:  unued - m_ecdb(ecdb) */ {}
             void Init(ECSqlColumnInfoCR parentColumnInfo);
 
             BentleyStatus SetValue(ECN::IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata);
