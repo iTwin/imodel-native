@@ -215,6 +215,9 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
 
         static BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
+
+        IScalableMesh* GetScalableMeshHandle();
+
         SCALABLEMESH_SCHEMA_EXPORT void ActivateClip(uint64_t id, ClipMode clip = ClipMode::Mask);
 
         SCALABLEMESH_SCHEMA_EXPORT void DeactivateClip(uint64_t clipId);

@@ -1269,6 +1269,14 @@ IScalableMesh* ScalableMeshModel::GetScalableMesh()
         return m_smPtr->GetGroup().get();
     return m_smPtr.get();
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/201
+//----------------------------------------------------------------------------------------
+IScalableMesh* ScalableMeshModel::GetScalableMeshHandle()
+    {
+    return m_smPtr.get();
+    }
     
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -1424,7 +1432,7 @@ void ScalableMeshModel::RemoveRegion(uint64_t id)
     for (auto it = m_terrainParts.begin(); it != m_terrainParts.end(); ++it)
         if ((*it)->m_associatedRegion == id)
             {
-            smPtr = (*it)->GetScalableMesh();
+            smPtr = (*it)->GetScalableMeshHandle();
             toDelete = it;
             }
 
