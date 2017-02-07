@@ -2,13 +2,17 @@
 |
 |     $Source: Drainage/PublicAPI/drainage.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifndef TERRAINMODEL_DRAINAGE_H
+#define TERRAINMODEL_DRAINAGE_H
 #include <TerrainModel\Core\bcDTMClass.h>
 #include <TerrainModel\Core\IDTM.h>
 #include <TerrainModel\Core\dtmdefs.h>
 #include <TerrainModel\Core\dtm2dfns.h>
+
+#include <iterator>
 
 #if defined (CREATE_STATIC_LIBRARIES) || defined (TERRAINMODEL_STATICLIB)
   #define BENTLEYDTMDRAINAGE_EXPORT 
@@ -43,6 +47,41 @@ struct BcDTMDrainage
     BENTLEYDTMDRAINAGE_EXPORT static DTMStatusInt ReturnZeroSlopePolygons(BcDTMP dtmP,DTMFeatureCallback loadFunctionP,DTMFenceParamsCR fence,void* userP) ;
     BENTLEYDTMDRAINAGE_EXPORT static DTMStatusInt CreateRefinedDrainageDtm(BcDTMP dtmP,DTMFenceParamsCR fence,Bentley::TerrainModel::BcDTMPtr* refinedDtmPP) ;
     BENTLEYDTMDRAINAGE_EXPORT static DTMStatusInt ReturnCatchments(BcDTMP dtmP,class DTMDrainageTables* drainageTablesP,double falseLowDepth,bool refineOption, DTMFeatureCallback loadFunctionP,DTMFenceParamsCR  fence,void* userP) ;
-
 };
 
+struct DtmPondDesignCriteria
+    {
+    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, int numPoints, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double target) :
+        points(&pointsP[0], &pointsP[numPoints-1]) , sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target)
+        {
+        }
+
+    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, const bvector<DPoint3d>& points, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double targetElevation, double targetVolume) :
+        points(points), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target)
+        {
+        }
+
+    BENTLEYDTMDRAINAGE_EXPORT DTMPondResult  CreatePond(Bentley::TerrainModel::BcDTMPtr& pondDTM);
+        
+    bvector<DPoint3d> points;
+    double sideSlope = 1; // pondSlope
+    double freeBoard = 0;
+    DTMPondTarget pondTarget = DTMPondTarget::Volume;
+    DTMPondDesignMethod designMethod = DTMPondDesignMethod::BottomUp;
+    double target= 100000;
+
+    double pondElevation = 0;
+    double pondVolume = 0;
+    DTMPondResult result = DTMPondResult::TargetObtained;
+
+    bool isBerm = 0;
+    double bermSlope = 0;
+    double bermWidth = 0;
+    bool isCrown = false;
+    double crownWidth = 0;
+    double cornerStrokeTolerance = 0;
+    bool isBermFillOnly = false;
+    BcDTMP fillTinP = nullptr;
+    double fillSlope = 0;
+    };
+#endif

@@ -2,14 +2,14 @@
 |
 |     $Source: TerrainModelNET/DTMPond.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include < vcclr.h >
 #include ".\dtm.h"
 #include ".\dtmexception.h"
-
+#include "TerrainModel\Drainage\drainage.h"
 #if defined(Public)
 
 #undef Public
@@ -226,28 +226,23 @@ public ref class DTMPondDesignCriteria
                 return DTMPondResult::NoReferencePoints;
           
             // Make the call...                
-            long pondFlag;
-            double pondElevation;
-            double pondVolume;
+            ::DTMPondResult pondFlag;
 
             long numPoints = (long) m_points->Length;
             pin_ptr<BGEO::DPoint3d const> tPoint = &m_points[0];
             
-            BcDTMPtr dtm = BcDTM::DesignPondToTargetVolumeOrElevation(&pondFlag, &pondElevation, &pondVolume,
-                (::DPoint3d*)&tPoint[0], numPoints, (long) m_designMethod, (long) m_pondTarget,
-                m_targetVolume, m_targetElevation, m_sideSlope, m_freeBoard);
+            DtmPondDesignCriteria pondDesignCrit((::DTMPondDesignMethod)m_designMethod, (::DPoint3d*)&tPoint[0], numPoints, m_sideSlope, m_freeBoard, (::DTMPondTarget)m_pondTarget, (DTMPondTarget)m_pondTarget == DTMPondTarget::Elevation ? m_targetElevation : m_targetVolume);
+            BcDTMPtr dtm;
+            pondFlag = pondDesignCrit.CreatePond(dtm);
+            m_pondElevation = pondDesignCrit.pondElevation;
+            m_pondVolume = pondDesignCrit.pondVolume;
+            m_lastResult = (DTMPondResult)pondDesignCrit.result;
 
-            m_lastResult = (DTMPondResult) pondFlag;
-            m_pondVolume = pondVolume;
-            m_pondElevation = pondElevation;
+            if ( dtm.IsNull())
+                return DTMPondResult::UnknownError ;
 
-            if (dtm!=NULL)
-                {
-                pondDTM = gcnew DTM (dtm.get());
-                return (DTMPondResult) pondFlag;
-                }
-                             
-            return DTMPondResult::UnknownError;                            
+            pondDTM = gcnew DTM (dtm.get());
+            return (DTMPondResult) pondFlag;
 
             }
 

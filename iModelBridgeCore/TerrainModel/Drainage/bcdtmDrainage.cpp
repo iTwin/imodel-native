@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainage.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //
@@ -726,4 +726,38 @@ DTMStatusInt BcDTMDrainage::ReturnCatchments
 
     return  ( DTMStatusInt ) bcdtmDrainage_traceCatchmentsDtmObject(dtmP->GetTinHandle(),loadFunctionP,drainageTablesP,falseLowDepth,refineOption,useFence,fenceType,fenceOption,fencePtsP,numFencePts,userP,numCatchments) ;
     
+    }
+
+DTMPondResult DtmPondDesignCriteria::CreatePond(Bentley::TerrainModel::BcDTMPtr& dtm)
+    {
+    dtm = Bentley::TerrainModel::BcDTM::Create ();
+
+    if (bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(
+        dtm->GetTinHandle(),
+        result,
+        &pondElevation,
+        &pondVolume,
+        points.data(),
+        (long)points.size(),
+        designMethod,
+        pondTarget,
+        target,
+        target,
+        sideSlope,
+        freeBoard,
+        isBerm,
+        bermSlope,
+        bermWidth,
+        isCrown,
+        crownWidth,
+        cornerStrokeTolerance,
+        isBermFillOnly,
+        fillTinP == nullptr ? nullptr : fillTinP->GetTinHandle(),
+        fillSlope) != DTM_SUCCESS)
+        {
+        dtm = nullptr;
+        return DTMPondResult::UnknownError;
+        }
+    return result;
+
     }
