@@ -581,7 +581,7 @@ bvector<bvector<DPoint3d>> *cutChains
     for (auto &data : m_globalEdgeData)
         {
         if (data.m_vertexA >= 0 && data.m_vertexB >= 0
-            && data.m_vertexA < numPoints && data.m_vertexB < numPoints
+            && data.m_vertexA < (int)numPoints && data.m_vertexB < (int)numPoints
             )
             {
             DPoint3d xyzA = points[data.m_vertexA];
