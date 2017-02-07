@@ -430,9 +430,9 @@ void Root::ClearAllTiles()
         return;
 
     m_rootTile->SetAbandoned();
-    m_rootTile = nullptr;
     WaitForAllLoads();
 
+    m_rootTile = nullptr;
     m_cache = nullptr;
     }
 
