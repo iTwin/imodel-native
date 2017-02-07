@@ -44,33 +44,30 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
-    m_eccrudWriteToken = nullptr;
-    //uncomment this (and remove line above) once API for modifying Aspects has been implemented
-    //m_eccrudWriteToken = &T_Super::EnableECCrudWriteTokenValidation();
 
-    m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
+    ApplyECDbSettings(false /* requireECCrudWriteToken */, false /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return m_eccrudWriteToken;}
+ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettings().GetECCrudWriteToken();}
+
+//--------------------------------------------------------------------------------------
+//not inlined as it must not be called externally
+// @bsimethod                                Krischan.Eberle                11/2016
+//---------------+---------------+---------------+---------------+---------------+------
+ECSchemaImportToken const* DgnDb::GetECSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
-// @bsimethod                                Krischan.Eberle                11/2016
+// @bsimethod                                Sam.Wilson                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
 extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
     {
     return (void*)db.GetECCrudWriteToken();
     }
-
-//--------------------------------------------------------------------------------------
-//not inlined as it must not be called externally
-// @bsimethod                                Krischan.Eberle                12/2016
-//---------------+---------------+---------------+---------------+---------------+------
-DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const {return m_dbSchemaModificationToken;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12
