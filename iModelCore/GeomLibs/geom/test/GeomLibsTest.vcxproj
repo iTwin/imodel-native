@@ -195,6 +195,7 @@
     <ClCompile Include="src\StopWatch.cpp" />
     <ClCompile Include="structsTest\t_Angle.cpp" />
     <ClCompile Include="structsTest\t_DEllipse3d.cpp" />
+    <ClCompile Include="structsTest\t_dMatrix4d.cpp" />
     <ClCompile Include="structsTest\t_DPlane3d.cpp" />
     <ClCompile Include="structsTest\t_DPoint2d.cpp" />
     <ClCompile Include="structsTest\t_DPoint3d.cpp" />

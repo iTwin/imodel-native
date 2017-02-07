@@ -335,5 +335,8 @@
     <ClCompile Include="structsTest\t_DRange2d.cpp">
       <Filter>Source Files\StructsTest</Filter>
     </ClCompile>
+    <ClCompile Include="structsTest\t_dMatrix4d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
