@@ -2415,77 +2415,77 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns2)
-	{
-	ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?> "
-		"<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-		"    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-		"    <ECEntityClass typeName='Element' modifier='Abstract'>"
-		"        <ECCustomAttributes>"
-		"            <ClassMap xmlns='ECDbMap.02.00'>"
-		"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-		"            </ClassMap>"
-		"            <ShareColumns xmlns='ECDbMap.02.00'>"
-		"              <SharedColumnCount>3</SharedColumnCount>"
-		"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-		"            </ShareColumns>"
-		"        </ECCustomAttributes>"
-		"        <ECProperty propertyName='Code' typeName='string' />"
-		"    </ECEntityClass>"
-		"    <ECEntityClass typeName='D1' modifier='None'>"
-		"        <BaseClass>Element</BaseClass>"
-		"        <ECProperty propertyName='D1A' typeName='int'/>"
-		"        <ECProperty propertyName='D1B' typeName='int'/>"
-		"        <ECProperty propertyName='D1C' typeName='int'/>"
-		"        <ECProperty propertyName='D1D' typeName='int'/>"
-		"    </ECEntityClass>"
-		"    <ECEntityClass typeName='D2' modifier='None'>"
-		"        <BaseClass>Element</BaseClass>"
-		"        <ECProperty propertyName='D2A' typeName='int'/>"
-		"        <ECProperty propertyName='D2B' typeName='int'/>"
-		"        <ECProperty propertyName='D2C' typeName='int'/>"
-		"        <ECProperty propertyName='D2D' typeName='int'/>"
-		"    </ECEntityClass>"
-		"    <ECEntityClass typeName='D11' modifier='None'>"
-		"        <BaseClass>D1</BaseClass>"
-		"        <ECProperty propertyName='D11A' typeName='int'/>"
-		"        <ECProperty propertyName='D11B' typeName='int'/>"
-		"        <ECProperty propertyName='D11C' typeName='int'/>"
-		"        <ECProperty propertyName='D11D' typeName='int'/>"
-		"    </ECEntityClass>"
-		"    <ECEntityClass typeName='D21' modifier='None'>"
-		"        <BaseClass>Element</BaseClass>"
-		"        <ECProperty propertyName='D21A' typeName='int'/>"
-		"        <ECProperty propertyName='D21B' typeName='int'/>"
-		"        <ECProperty propertyName='D21C' typeName='int'/>"
-		"        <ECProperty propertyName='D21D' typeName='int'/>"
-		"    </ECEntityClass>"
-		"</ECSchema>"));
-	
+    {
+    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>3</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D1' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D1A' typeName='int'/>"
+        "        <ECProperty propertyName='D1B' typeName='int'/>"
+        "        <ECProperty propertyName='D1C' typeName='int'/>"
+        "        <ECProperty propertyName='D1D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D2' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D2A' typeName='int'/>"
+        "        <ECProperty propertyName='D2B' typeName='int'/>"
+        "        <ECProperty propertyName='D2C' typeName='int'/>"
+        "        <ECProperty propertyName='D2D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D11' modifier='None'>"
+        "        <BaseClass>D1</BaseClass>"
+        "        <ECProperty propertyName='D11A' typeName='int'/>"
+        "        <ECProperty propertyName='D11B' typeName='int'/>"
+        "        <ECProperty propertyName='D11C' typeName='int'/>"
+        "        <ECProperty propertyName='D11D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D21' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D21A' typeName='int'/>"
+        "        <ECProperty propertyName='D21B' typeName='int'/>"
+        "        <ECProperty propertyName='D21C' typeName='int'/>"
+        "        <ECProperty propertyName='D21D' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+    
 
-	SchemaItem thirdSchema(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		"    <ECSchemaReference name='TestSchema1' version='01.00' prefix='ts1' />"
-		"    <ECEntityClass typeName='D111'>"
-		"        <BaseClass>ts1:D11</BaseClass>"
-		"        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
-		"        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
-		"    </ECEntityClass>"
-		"    <ECEntityClass typeName='D211'>"
-		"        <BaseClass>ts1:D21</BaseClass>"
-		"        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
-		"        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
-		"    </ECEntityClass>"
-		"</ECSchema>",true);
+    SchemaItem thirdSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema1' version='01.00' prefix='ts1' />"
+        "    <ECEntityClass typeName='D111'>"
+        "        <BaseClass>ts1:D11</BaseClass>"
+        "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
+        "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D211'>"
+        "        <BaseClass>ts1:D21</BaseClass>"
+        "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
+        "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>",true);
 
-	bool asserted = false;
-	AssertSchemaImport(asserted, ecdb, thirdSchema);
-	ASSERT_FALSE(asserted);
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, thirdSchema);
+    ASSERT_FALSE(asserted);
 
-	ecdb.Schemas().CreateECClassViewsInDb();
-	ecdb.SaveChanges();
-	}
+    ecdb.Schemas().CreateECClassViewsInDb();
+    ecdb.SaveChanges();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4617,7 +4617,7 @@ TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT IsVirtual FROM ec_Column WHERE Name='ECClassId' AND TableId = (SELECT Id FROM ec_Table WHERE Name='ts_Product')"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_EQ(1, sqlstmt.GetValueInt(0));
-	}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
@@ -7187,10 +7187,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7230,10 +7230,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7274,10 +7274,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' >"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -7315,10 +7315,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -7370,10 +7370,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -7425,10 +7425,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
-					"    <ECCustomAttributes>"
-					"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-					"        </ForeignKeyConstraint>"
-					"    </ECCustomAttributes>"
+                    "    <ECCustomAttributes>"
+                    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                    "        </ForeignKeyConstraint>"
+                    "    </ECCustomAttributes>"
                     "    <Source cardinality='(1,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -8245,10 +8245,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-						"    <ECCustomAttributes>"
-						"        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-						"        </ForeignKeyConstraint>"
-						"    </ECCustomAttributes>"
+                        "    <ECCustomAttributes>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
+                        "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -11588,88 +11588,354 @@ TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
 
     }
 struct ECSqlHelper
-	{
-	public:
-		static DbResult ExecuteNoQuery(ECDbCR db, Utf8CP ecsql)
-			{
-			ECSqlStatement stmt;
-			if (stmt.Prepare(db, ecsql) != ECSqlStatus::Success)
-				return BE_SQLITE_ERROR;
+    {
+    public:
+        static DbResult ExecuteNoQuery(ECDbCR db, Utf8CP ecsql)
+            {
+            ECSqlStatement stmt;
+            if (stmt.Prepare(db, ecsql) != ECSqlStatus::Success)
+                return BE_SQLITE_ERROR;
 
-			return stmt.Step();
-			}
-	};
+            return stmt.Step();
+            }
+    };
 TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
-	{
-	SetupECDb("diamond_problem.ecdb",
-		SchemaItem("Diamond Problem",
-			"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-			"  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-			"  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
-			"  <ECEntityClass typeName='PrimaryClassA'>"
-			"      <ECCustomAttributes>"
-			"          <ClassMap xmlns='ECDbMap.02.00'>"
-			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
-			"          </ClassMap>"
-			"          <ShareColumns xmlns='ECDbMap.02.00'>"
-			"              <SharedColumnCount>5</SharedColumnCount>" //
-			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-			"          </ShareColumns>"
-			"      </ECCustomAttributes>"
-			"      <ECProperty propertyName='P1' typeName='long' />"
-			"  </ECEntityClass>"
-			"  <ECEntityClass typeName='SecondaryClassA'>"
-			"      <ECCustomAttributes>"
-			"          <ClassMap xmlns='ECDbMap.02.00'>"
-			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
-			"          </ClassMap>"
-			"          <ShareColumns xmlns='ECDbMap.02.00'>"
-			"              <SharedColumnCount>2</SharedColumnCount>" //
-			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-			"          </ShareColumns>"
-			"      </ECCustomAttributes>"
-			"      <ECProperty propertyName='T1' typeName='long' />"
-			"      <ECNavigationProperty propertyName='PrimaryClassA' relationshipName='PrimaryClassAHasSecondaryClassA' direction='Backward' />"
-			"  </ECEntityClass>"
-			"   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassA' strength='Referencing' modifier='Abstract'>"
-			"      <Source cardinality='(0,1)' polymorphic='False'>"
-			"          <Class class ='PrimaryClassA' />"
-			"      </Source>"
-			"      <Target cardinality='(0,N)' polymorphic='False'>"
-			"          <Class class ='SecondaryClassA' />"
-			"      </Target>"
-			"   </ECRelationshipClass>"
-			"   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassB' strength='Referencing' modifier='Sealed'>"
-			"       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "		
-			"      <Source cardinality='(0,1)' polymorphic='False'>"
-			"          <Class class ='PrimaryClassA' />"
-			"      </Source>"
-			"      <Target cardinality='(0,N)' polymorphic='False'>"
-			"          <Class class ='SecondaryClassA' />"
-			"      </Target>"
-			"   </ECRelationshipClass>"
-			"</ECSchema>"));
+    {
+    SetupECDb("diamond_problem.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+            "  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
+            "  <ECEntityClass typeName='PrimaryClassA'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>5</SharedColumnCount>" //
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='P1' typeName='long' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SecondaryClassA'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>2</SharedColumnCount>" //
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='T1' typeName='long' />"
+            "      <ECNavigationProperty propertyName='PrimaryClassA' relationshipName='PrimaryClassAHasSecondaryClassA' direction='Backward' />"
+            "  </ECEntityClass>"
+            "   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassA' strength='Referencing' modifier='Abstract'>"
+            "      <Source cardinality='(0,1)' polymorphic='False'>"
+            "          <Class class ='PrimaryClassA' />"
+            "      </Source>"
+            "      <Target cardinality='(0,N)' polymorphic='False'>"
+            "          <Class class ='SecondaryClassA' />"
+            "      </Target>"
+            "   </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassB' strength='Referencing' modifier='Sealed'>"
+            "       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "		
+            "      <Source cardinality='(0,1)' polymorphic='False'>"
+            "          <Class class ='PrimaryClassA' />"
+            "      </Source>"
+            "      <Target cardinality='(0,N)' polymorphic='False'>"
+            "          <Class class ='SecondaryClassA' />"
+            "      </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>"));
 
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	GetECDb().Schemas().CreateECClassViewsInDb();
-	GetECDb().SaveChanges();
-	ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
-	ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
+    ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
 
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
 
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(),SqlPrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue())));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
-	GetECDb().SaveChanges();
-	//This does not work with overflow property
-	//ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
-	}
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(),SqlPrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
+    GetECDb().SaveChanges();
+    //This does not work with overflow property
+    //ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
+    }
+TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
+    {
+
+    SetupECDb("diamond_problem.ecdb",
+        SchemaItem("Diamond Problem",
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='Foo' alias='Foo' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='IBehaviour1' modifier='Abstract'>"
+            "    <ECCustomAttributes>"
+            "      <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "        <AppliesToEntityClass>Object</AppliesToEntityClass>"
+            "      </IsMixin>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='IB1' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IBehaviour2' modifier='Abstract'>"
+            "    <ECCustomAttributes>"
+            "      <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "        <AppliesToEntityClass>Object</AppliesToEntityClass>"
+            "      </IsMixin>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='IB2' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IBehaviour3' modifier='Abstract'>"
+            "    <ECCustomAttributes>"
+            "      <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "        <AppliesToEntityClass>Object</AppliesToEntityClass>"
+            "      </IsMixin>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='IB3' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Object' modifier='Abstract'>"
+            "    <ECCustomAttributes>"
+            "      <ClassMap xmlns='ECDbMap.02.00'>"
+            "        <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "      </ClassMap>"
+            "      <ShareColumns xmlns='ECDbMap.02.00'>"
+            "        <SharedColumnCount>10</SharedColumnCount>"
+            "        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "      </ShareColumns>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='P0' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject1'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour1</BaseClass>"
+            "    <ECProperty propertyName='P1' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject2'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour2</BaseClass>"
+            "    <ECProperty propertyName='P2' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject3'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour3</BaseClass>"
+            "    <ECProperty propertyName='P3' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject123'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour1</BaseClass>"
+            "    <BaseClass>IBehaviour2</BaseClass>"
+            "    <BaseClass>IBehaviour3</BaseClass>"
+            "    <ECProperty propertyName='P123' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject11'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour1</BaseClass>"
+            "    <ECProperty propertyName='P11' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject12'>"
+            "    <BaseClass>SubObject11</BaseClass>"
+            "    <BaseClass>IBehaviour2</BaseClass>"
+            "    <ECProperty propertyName='P12' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject13'>"
+            "    <BaseClass>SubObject12</BaseClass>"
+            "    <BaseClass>IBehaviour3</BaseClass>"
+            "    <ECProperty propertyName='P13' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject21'>"
+            "    <BaseClass>Object</BaseClass>"
+            "    <BaseClass>IBehaviour1</BaseClass>"
+            "    <ECProperty propertyName='P21' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject22'>"
+            "    <BaseClass>SubObject21</BaseClass>"
+            "    <BaseClass>IBehaviour2</BaseClass>"
+            "    <ECProperty propertyName='P22' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubObject23'>"
+            "    <BaseClass>SubObject22</BaseClass>"
+            "    <BaseClass>IBehaviour3</BaseClass>"
+            "    <ECProperty propertyName='P23' typeName='string' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"
+        ));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+
+
+
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+/*
+        IBehaviour1(IB1)
+        IBehaviour2(IB2)
+        IBehaviour3(IB3)
+        Object(P0)
+        SubObject1(P0, IB1, P1)
+        SubObject2(P0, IB2, P2)
+        SubObject3(P0, IB3, P3)
+        SubObject123(P0, IB1, IB2, IB3, P123)
+        SubObject11(P0, IB1, P11)
+        SubObject12(P0, IB1, P11, IB2, P12)
+        SubObject13(P0, IB1, P11, IB2, P12, IB3, P13)
+        SubObject21(P0, IB1, P21)
+        SubObject22(P0, IB1, P21, IB2, P22)
+        SubObject23(P0, IB1, P21, IB2, P22, IB3, P23)
+*/
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject1	(P0, IB1, P1)						VALUES ('P0-1', 'IB1-1', 'P1-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject2	(P0, IB2, P2)						VALUES ('P0-2', 'IB2-1', 'P2-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject3	(P0, IB3, P3)						VALUES ('P0-3', 'IB3-1', 'P3-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject123(P0, IB1, IB2, IB3, P123)			VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject11	(P0, IB1, P11)						VALUES ('P0-5', 'IB1-3', 'P11-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject12	(P0, IB1, P11, IB2, P12)			VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject13	(P0, IB1, P11, IB2, P12, IB3, P13)	VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject21	(P0, IB1, P21)						VALUES ('P0-8', 'IB1-6', 'P21-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject22	(P0, IB1, P21, IB2, P22)			VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject23	(P0, IB1, P21, IB2, P22, IB3, P23)	VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')");
+    GetECDb().SaveChanges();
+
+    //====[Foo.Object]====================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0 FROM Foo.Object ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-4", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-5", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-6", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-8", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-9", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject1]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P1 FROM Foo.SubObject1 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+    ASSERT_STREQ("P0-1", stmt.GetValueText(0)); 
+    ASSERT_STREQ("IB1-1", stmt.GetValueText(1)); 
+    ASSERT_STREQ("P1-1", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject2]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB2, P2 FROM Foo.SubObject2 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("P0-2", stmt.GetValueText(0));
+    ASSERT_STREQ("IB2-1", stmt.GetValueText(1));
+    ASSERT_STREQ("P2-1", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject3]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB3, P3 FROM Foo.SubObject3 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("P0-3", stmt.GetValueText(0));
+    ASSERT_STREQ("IB3-1", stmt.GetValueText(1));
+    ASSERT_STREQ("P3-1", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject123]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, IB2, IB3, P123 FROM Foo.SubObject123 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("P0-4", stmt.GetValueText(0));
+    ASSERT_STREQ("IB1-2", stmt.GetValueText(1));
+    ASSERT_STREQ("IB2-2", stmt.GetValueText(2));
+    ASSERT_STREQ("IB3-2", stmt.GetValueText(3));
+    ASSERT_STREQ("P123-1", stmt.GetValueText(4));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject11]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11 FROM Foo.SubObject11 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-5", stmt.GetValueText(0)); ASSERT_STREQ("IB1-3", stmt.GetValueText(1)); ASSERT_STREQ("P11-1", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-6", stmt.GetValueText(0)); ASSERT_STREQ("IB1-4", stmt.GetValueText(1)); ASSERT_STREQ("P11-2", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject12]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11, IB2, P12 FROM Foo.SubObject12 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-6", stmt.GetValueText(0)); ASSERT_STREQ("IB1-4", stmt.GetValueText(1)); ASSERT_STREQ("P11-2", stmt.GetValueText(2)); ASSERT_STREQ("IB2-3", stmt.GetValueText(3)); ASSERT_STREQ("P12-1", stmt.GetValueText(4));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-4", stmt.GetValueText(3)); ASSERT_STREQ("P12-2", stmt.GetValueText(4));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject13]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11, IB2, P12, IB3, P13 FROM Foo.SubObject13 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-4", stmt.GetValueText(3)); ASSERT_STREQ("P12-2", stmt.GetValueText(4)); ASSERT_STREQ("IB3-3", stmt.GetValueText(5)); ASSERT_STREQ("P13-1", stmt.GetValueText(6));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject21]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21 FROM Foo.SubObject21 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-8", stmt.GetValueText(0)); ASSERT_STREQ("IB1-6", stmt.GetValueText(1)); ASSERT_STREQ("P21-1", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-9", stmt.GetValueText(0)); ASSERT_STREQ("IB1-7", stmt.GetValueText(1)); ASSERT_STREQ("P21-2", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject22]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21, IB2, P22 FROM Foo.SubObject22 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-9", stmt.GetValueText(0)); ASSERT_STREQ("IB1-7", stmt.GetValueText(1)); ASSERT_STREQ("P21-2", stmt.GetValueText(2)); ASSERT_STREQ("IB2-5", stmt.GetValueText(3)); ASSERT_STREQ("P22-1", stmt.GetValueText(4));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-6", stmt.GetValueText(3)); ASSERT_STREQ("P22-2", stmt.GetValueText(4));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.SubObject23]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21, IB2, P22, IB3, P23 FROM Foo.SubObject23 ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-6", stmt.GetValueText(3)); ASSERT_STREQ("P22-2", stmt.GetValueText(4)); ASSERT_STREQ("IB3-4", stmt.GetValueText(5)); ASSERT_STREQ("P23-1", stmt.GetValueText(6));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.IBehaviour1]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB1 FROM Foo.IBehaviour1 ORDER BY ECInstanceId"));
+    //ORDER BY does not work.
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-4", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-5", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-6", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-7", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-0", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.IBehaviour2]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
+    printf(stmt.GetNativeSql());
+    //ORDER BY does not work.
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-4", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-5", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-6", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //====[Foo.IBehaviour3]====================================================
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB3 FROM Foo.IBehaviour3 ORDER BY ECInstanceId"));
+    //ORDER BY does not work.
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-4", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -11677,10 +11943,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     {
     SetupECDb("diamond_problem.ecdb",
               SchemaItem("Diamond Problem",
-                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                         "  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
-                         "  <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
+                         "<ECSchema schemaName='TestSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+                         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+                         "  <ECEntityClass typeName='BaseClass' modifier='Abstract' >"
                          "      <ECCustomAttributes>"
                          "          <ClassMap xmlns='ECDbMap.02.00'>"
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -11694,11 +11960,13 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
                          "  </ECEntityClass>"
                          "  <ECEntityClass typeName='IXFace' modifier='Abstract'>"
                          "      <ECCustomAttributes>"
-                         "          <Interface xmlns='TestSchema.01.00'/>"
+                         "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                         "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+                         "          </IsMixin>"
                          "      </ECCustomAttributes>"
                          "      <ECProperty propertyName='P2' typeName='long' />"
                          "  </ECEntityClass>"
-                           "  <ECEntityClass typeName='D_A'>" //(p1,p2,p3)
+                          "  <ECEntityClass typeName='D_A'>" //(p1,p2,p3)
                          "      <BaseClass>BaseClass</BaseClass>"   
                          "      <BaseClass>IXFace</BaseClass>"     
                          "      <ECProperty propertyName='P3' typeName='long' />"
@@ -11721,7 +11989,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)");
-
+    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3 FROM ts.D_A WHERE ECInstanceId = 1"));
@@ -11758,9 +12026,9 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     {
     SetupECDb("diamond_problem.ecdb",
               SchemaItem("Diamond Problem",
-                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                         "  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
+                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+                         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
                          "  <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
                          "      <ECCustomAttributes>"
                          "          <ClassMap xmlns='ECDbMap.02.00'>"
@@ -11775,13 +12043,17 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
                          "  </ECEntityClass>"
                          "  <ECEntityClass typeName='IXFaceA' modifier='Abstract'>"
                          "      <ECCustomAttributes>"
-                         "          <Interface xmlns='TestSchema.01.00'/>"
+                         "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                         "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+                         "          </IsMixin>"
                          "      </ECCustomAttributes>"
                          "      <ECProperty propertyName='P2' typeName='long' />"
                          "  </ECEntityClass>"
                          "  <ECEntityClass typeName='IXFaceB' modifier='Abstract'>"
                          "      <ECCustomAttributes>"
-                         "          <Interface xmlns='TestSchema.01.00'/>"
+                         "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                         "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+                         "          </IsMixin>"
                          "      </ECCustomAttributes>"
                          "      <ECProperty propertyName='P3' typeName='long' />"
                          "  </ECEntityClass>"
@@ -11815,7 +12087,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)");
-
+    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3, P4, P6 FROM ts.D1_AB WHERE ECInstanceId = 1"));
