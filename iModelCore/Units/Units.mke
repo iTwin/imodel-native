@@ -67,9 +67,11 @@ $(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepe
 
 %message formatSrcDir ($(formatSrcDir))
 
-$(o)Formatting$(oext)    : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)Formatting.h ${MultiCompileDepends}
+$(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)Formatting.h ${MultiCompileDepends}
 
 $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)Formatting.h ${MultiCompileDepends}
+
+$(o)FormatQuantity$(oext) : $(formatSrcDir)FormatQuantity.cpp $(formatHeaderDir)Formatting.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

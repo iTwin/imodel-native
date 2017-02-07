@@ -541,6 +541,8 @@ public:
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatComboValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
+
     //FormatDoubleStd
 
 
@@ -557,6 +559,68 @@ public:
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
     UNITS_EXPORT Utf8String GetName() { return m_name; };
     };
+
+//=======================================================================================
+// We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
+//   subquantities expressed in lesser UOM's. For example, a given length could be representes
+//    as a sum of M + Y + F + I where M- is a number of miles, Y - a number of yards, 
+//   F - a number of feet and I a number of inches. The operation of expressing the given length 
+//  in this form will require 3 ratios: M/Y, Y/F, F/I where M/Y is a number of Yards in a Mile,
+//   Y/F - is a number of feet in one yard, F/I is a number of inches in one foot.
+//  Obviously, the combo-presentation of length is just one example and in some special cases 
+//   this system of ratios can be anything the application needs. Ratios could be set explicitly
+// or automatically via names of the UOM's. The only condition is that all integer ratios must be > 1.
+//   let's define terms for UOM of different levels: 0 - majorUOM, 1 - midlleUOM, 2 - minorUOM, 3 - subUOM
+//    accordingly there are 3 ratios: major/middle, middle/minor. minor/sub and their indexes
+// in the ratio array are associated with the upper UOM
+// @bsiclass                                                    David.Fox-Rabinovitz  01/2017
+//=======================================================================================
+struct ComboNumberSpec
+    {
+private:
+    static const size_t  majorUOM  = 0;
+    static const size_t  middleUOM = 1;
+    static const size_t  minorUOM  = 2;
+    static const size_t  subUOM    = 3;
+    size_t m_ratio[subUOM];
+    UnitCP m_units[subUOM +1];
+    Utf8CP m_unitLabel[subUOM +1];
+    bool m_includeZero;
+    FormatProblemCode m_problemCode;
+
+    bool SetUnitLabel(int index, Utf8CP label);
+    bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
+public:
+    size_t SetMajorToMiddleRatio(size_t value) { return  m_ratio[majorUOM] = value; }
+    size_t SetMiddleToMinorRatio(size_t value) { return   m_ratio[middleUOM] = value; }
+    size_t SetMinorToSubRatio(size_t value) { return   m_ratio[minorUOM] = value; }
+    UNITS_EXPORT bool SetUnits(UnitCP MajorUnit, UnitCP MiddlerUnit, UnitCP MinorUnit, UnitCP subUnit);
+    UNITS_EXPORT bool SetUnits(Utf8CP MajorUnit, Utf8CP MiddlerUnit, Utf8CP MinorUnit, Utf8CP subUnit);
+    UNITS_EXPORT bool SetUnitLabels(Utf8CP MajorUnit, Utf8CP MiddlerUnit, Utf8CP MinorUnit, Utf8CP subUnit);
+    UNITS_EXPORT bool SetMajorLabel(Utf8CP MajorLabel);
+    UNITS_EXPORT bool SetMiddleLabel(Utf8CP MiddleLabel);
+    UNITS_EXPORT bool SetMinorLabel(Utf8CP MinorLabel);
+    UNITS_EXPORT bool SetSubLabel(Utf8CP SubLabel);
+
+    UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[majorUOM]; }
+    UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[majorUOM]; }
+    UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[majorUOM]; }
+    UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[majorUOM]; }
+    UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
+    };
+
+    struct ComboValueSpec
+        {
+        UnitCP m_topUnit;
+        UnitCP m_midUnit;
+        UnitCP m_lowUnit;
+        Utf8CP m_topUnitLabel;
+        Utf8CP m_midUnitLabel;
+        Utf8CP m_lowUnitLabel;
+        bool m_includeZero;
+        FormatProblemCode m_problemCode;
+
+        };
 
     //Spec
 //=======================================================================================
@@ -604,6 +668,7 @@ public:
     UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero=false);
     };
 
+
 struct QuantityTriadSpec : NumericTriad
     {
 private:
@@ -620,6 +685,7 @@ private:
     void Init(bool incl0);
     QuantityTriadSpec();
     bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
+    // UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
 public:
 
     Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
