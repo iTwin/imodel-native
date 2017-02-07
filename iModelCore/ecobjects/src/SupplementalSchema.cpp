@@ -10,87 +10,80 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaMetaData::SupplementalSchemaMetaData
-(
-Utf8String primarySchemaName, 
-uint32_t primarySchemaMajorVersion, 
-uint32_t primarySchemaMinorVersion, 
-uint32_t supplementalSchemaPrecedence, 
-Utf8String supplementalSchemaPurpose, 
-bool isUserSpecific 
-)
-    {
-    m_primarySchemaName            = primarySchemaName;
-    m_primarySchemaMajorVersion    = primarySchemaMajorVersion;
-    m_primarySchemaMinorVersion    = primarySchemaMinorVersion;
-    m_supplementalSchemaPrecedence = supplementalSchemaPrecedence;
-    m_supplementalSchemaPurpose    = supplementalSchemaPurpose;
-    m_isUserSpecific               = isUserSpecific;
-    }
+Utf8CP SupplementalSchemaMetaData::s_customAttributeAccessor = "SupplementalSchema";
+Utf8CP SupplementalSchemaMetaData::s_customAttributeSchemaName = "CoreCustomAttributes";
 
-Utf8CP SupplementalSchemaMetaData::s_customAttributeAccessor = "SupplementalSchemaMetaData";
-Utf8CP SupplementalSchemaMetaData::s_customAttributeSchemaName = "Bentley_Standard_CustomAttributes";
+static Utf8CP s_bscaCustomAttributeAccessor = "SupplementalSchemaMetaData";
+static Utf8CP s_bscaCustomAttributeSchemaName = "Bentley_Standard_CustomAttributes";
+static Utf8CP s_bsca_primarySchemaNameAccessor = "PrimarySchemaName";
+static Utf8CP s_bsca_primarySchemaMajorVersionAccessor = "PrimarySchemaMajorVersion";
+static Utf8CP s_bsca_primarySchemaMinorVersionAccessor = "PrimarySchemaMinorVersion";
+static Utf8CP s_bsca_isUserSpecificAccessor = "IsUserSpecific";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaMetaData::SupplementalSchemaMetaData
-(
-IECInstanceCR supplementalSchemaMetaDataCustomAttribute
-)
+SupplementalSchemaMetaData::SupplementalSchemaMetaData(IECInstanceCR supplementalSchemaMetaDataCustomAttribute)
     {
-    assert (0 == supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().compare(GetCustomAttributeAccessor()));
+    if (!supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().EqualsIAscii(GetCustomAttributeAccessor()))
+        {
+        InitializeFromOldCustomAttribute(supplementalSchemaMetaDataCustomAttribute);
+        return;
+        }
 
     ECValue propertyValue;
     if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
-        m_primarySchemaName = propertyValue.GetUtf8CP();
+        m_schemaName = propertyValue.GetUtf8CP();
 
-    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
-        m_primarySchemaMajorVersion = propertyValue.GetInteger();
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaReadVersionPropertyAccessor()) && !propertyValue.IsNull())
+        m_readVersion = propertyValue.GetInteger();
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaWriteVersionPropertyAccessor()) && !propertyValue.IsNull())
+        m_writeVersion = propertyValue.GetInteger();
 
     if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
-        m_primarySchemaMinorVersion = propertyValue.GetInteger();
+        m_minorVersion = propertyValue.GetInteger();
 
     if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
-        m_supplementalSchemaPrecedence = propertyValue.GetInteger();
+        m_precedence = propertyValue.GetInteger();
 
     if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
-        m_supplementalSchemaPurpose = propertyValue.GetUtf8CP();
+        m_purpose = propertyValue.GetUtf8CP();
+    }
 
-    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void SupplementalSchemaMetaData::InitializeFromOldCustomAttribute(IECInstanceCR supplementalSchemaMetaDataCustomAttribute)
+    {
+    assert(0 == supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().compare(s_bscaCustomAttributeAccessor));
+
+    ECValue propertyValue;
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, s_bsca_primarySchemaNameAccessor) && !propertyValue.IsNull())
+        m_schemaName = propertyValue.GetUtf8CP();
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, s_bsca_primarySchemaMajorVersionAccessor) && !propertyValue.IsNull())
+        m_readVersion = propertyValue.GetInteger();
+
+    m_writeVersion = 0;
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, s_bsca_primarySchemaMinorVersionAccessor) && !propertyValue.IsNull())
+        m_minorVersion = propertyValue.GetInteger();
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
+        m_precedence = propertyValue.GetInteger();
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
+        m_purpose = propertyValue.GetUtf8CP();
+
+    if (ECObjectsStatus::Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, s_bsca_isUserSpecificAccessor) && !propertyValue.IsNull())
         m_isUserSpecific = propertyValue.GetBoolean();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create
-( 
-Utf8String primarySchemaName, 
-uint32_t primarySchemaMajorVersion, 
-uint32_t primarySchemaMinorVersion, 
-uint32_t supplementalSchemaPrecedence, 
-Utf8String supplementalSchemaPurpose, 
-bool isUserSpecific
-)
-    {
-    return new SupplementalSchemaMetaData(primarySchemaName, primarySchemaMajorVersion, primarySchemaMinorVersion, supplementalSchemaPrecedence, supplementalSchemaPurpose, isUserSpecific);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create(IECInstanceCR supplementalSchemaMetaDataCustomAttribute)
-    {
-    return new SupplementalSchemaMetaData(supplementalSchemaMetaDataCustomAttribute);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
@@ -99,33 +92,47 @@ Utf8CP SupplementalSchemaMetaData::GetCustomAttributeAccessor()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stefan.Apfel                    09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetCustomAttributeSchemaName()
     {
     return s_customAttributeSchemaName;
     }
 
-static Utf8CP s_primarySchemaNameAccessor = "PrimarySchemaName";
+static Utf8CP s_primarySchemaNameAccessor = "PrimarySchemaReference.SchemaName";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaNamePropertyAccessor()
     {
     return s_primarySchemaNameAccessor;
     }
 
-static Utf8CP s_primarySchemaVersionMajorAccessor = "PrimarySchemaMajorVersion";
+static Utf8CP s_primarySchemaVersionMajorAccessor = "PrimarySchemaReference.MajorVersion";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaMajorVersionPropertyAccessor()
+// static
+Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaReadVersionPropertyAccessor()
     {
     return s_primarySchemaVersionMajorAccessor;
     }
 
-static Utf8CP s_primarySchemaVersionMinorAccessor = "PrimarySchemaMinorVersion";
+static Utf8CP s_primarySchemaVersionWriteAccessor = "PrimarySchemaReference.WriteVersion";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
+Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaWriteVersionPropertyAccessor()
+    {
+    return s_primarySchemaVersionWriteAccessor;
+    }
+
+static Utf8CP s_primarySchemaVersionMinorAccessor = "PrimarySchemaReference.MinorVersion";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaMinorVersionPropertyAccessor()
     {
     return s_primarySchemaVersionMinorAccessor;
@@ -135,6 +142,7 @@ static Utf8CP s_precedenceAccessor = "Precedence";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetPrecedencePropertyAccessor()
     {
     return s_precedenceAccessor;
@@ -144,30 +152,22 @@ static Utf8CP s_purposeAccessor = "Purpose";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaMetaData::GetPurposePropertyAccessor()
     {
     return s_purposeAccessor;
     }
 
-static Utf8CP s_isUserSpecificAccessor = "IsUserSpecific";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SupplementalSchemaMetaData::GetIsUserSpecificPropertyAccessor()
-    {
-    return s_isUserSpecificAccessor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SupplementalSchemaMetaData::TryGetFromSchema
-(
-SupplementalSchemaMetaDataPtr& supplementalSchemaMetadata, 
-ECSchemaCR supplementalSchema
-)
+// static
+bool SupplementalSchemaMetaData::TryGetFromSchema(SupplementalSchemaMetaDataPtr& supplementalSchemaMetadata, ECSchemaCR supplementalSchema)
     {
     IECInstancePtr supplementalSchemaMetaDataCustomAttribute = supplementalSchema.GetCustomAttribute(GetCustomAttributeSchemaName(), GetCustomAttributeAccessor());
+    if (!supplementalSchemaMetaDataCustomAttribute.IsValid())
+        supplementalSchemaMetaDataCustomAttribute = supplementalSchema.GetCustomAttribute(s_bscaCustomAttributeSchemaName, s_bscaCustomAttributeAccessor);
+        
     if (!supplementalSchemaMetaDataCustomAttribute.IsValid())
         return false;
 
@@ -178,11 +178,8 @@ ECSchemaCR supplementalSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetMetadata
-(
-ECSchemaR supplementalSchema, 
-SupplementalSchemaMetaDataR supplementalSchemaData
-)
+// static
+void SupplementalSchemaMetaData::SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaData)
     {
     IECInstancePtr instance = supplementalSchemaData.CreateCustomAttribute();
     supplementalSchema.SetCustomAttribute(*instance);
@@ -191,15 +188,12 @@ SupplementalSchemaMetaDataR supplementalSchemaData
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SupplementalSchemaMetaData::IsSupplemental
-(
-ECSchemaP supplementalSchema
-)
+bool SupplementalSchemaMetaData::IsSupplemental(ECSchemaP supplementalSchema) const
     {
-    if (NULL == supplementalSchema)
+    if (nullptr == supplementalSchema)
         return false;
 
-    return supplementalSchema->IsDefined(GetCustomAttributeSchemaName(), GetCustomAttributeAccessor());
+    return supplementalSchema->IsDefined(GetCustomAttributeSchemaName(), GetCustomAttributeAccessor()) || supplementalSchema->IsDefined(s_bscaCustomAttributeSchemaName, s_bscaCustomAttributeAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,13 +201,13 @@ ECSchemaP supplementalSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
     {
-    IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
-    instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMajorVersion()));
+    instance->SetValue(GetPrimarySchemaReadVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaReadVersion()));
+    instance->SetValue(GetPrimarySchemaWriteVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaWriteVersion()));
     instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMinorVersion()));
     instance->SetValue(GetPrecedencePropertyAccessor(), ECValue((::int32_t)GetSupplementalSchemaPrecedence()));
     instance->SetValue(GetPurposePropertyAccessor(), ECValue(GetSupplementalSchemaPurpose().c_str()));
-    instance->SetValue(GetIsUserSpecificPropertyAccessor(), ECValue(IsUserSpecific()));
 
     return instance;
     }
@@ -221,142 +215,17 @@ IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR SupplementalSchemaMetaData::GetPrimarySchemaName() const
+bool SupplementalSchemaMetaData::IsForPrimarySchema(Utf8StringCR querySchemaName, uint32_t querySchemaReadVersion, uint32_t querySchemaWriteVersion, uint32_t querySchemaMinorVersion, SchemaMatchType matchType) const
     {
-    return m_primarySchemaName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetPrimarySchemaName
-(
-Utf8StringCR name
-)
-    {
-    m_primarySchemaName = name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t SupplementalSchemaMetaData::GetPrimarySchemaMajorVersion() const
-    {
-    return m_primarySchemaMajorVersion;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetPrimarySchemaMajorVersion
-(
-uint32_t major
-)
-    {
-    m_primarySchemaMajorVersion = major;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t SupplementalSchemaMetaData::GetPrimarySchemaMinorVersion() const
-    {
-    return m_primarySchemaMinorVersion;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetPrimarySchemaMinorVersion
-(
-uint32_t minor
-)
-    {
-    m_primarySchemaMinorVersion = minor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t SupplementalSchemaMetaData::GetSupplementalSchemaPrecedence() const
-    {
-    return m_supplementalSchemaPrecedence;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetSupplementalSchemaPrecedence
-(
-uint32_t precedence
-)
-    {
-    m_supplementalSchemaPrecedence = precedence;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR SupplementalSchemaMetaData::GetSupplementalSchemaPurpose() const
-    {
-    return m_supplementalSchemaPurpose;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetSupplementalSchemaPurpose
-(
-Utf8StringCR purpose
-)
-    {
-    m_supplementalSchemaPurpose = purpose;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SupplementalSchemaMetaData::IsUserSpecific() const
-    {
-    return m_isUserSpecific;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupplementalSchemaMetaData::SetUserSpecific
-(
-bool userSpecific
-)
-    {
-    m_isUserSpecific = userSpecific;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SupplementalSchemaMetaData::IsForPrimarySchema
-(
-Utf8StringCR querySchemaName, 
-uint32_t querySchemaMajorVersion, 
-uint32_t querySchemaMinorVersion, 
-SchemaMatchType matchType
-) const
-    {
-    SchemaKey primaryKey(m_primarySchemaName.c_str(), m_primarySchemaMajorVersion, m_primarySchemaMinorVersion);
-    SchemaKey queryKey(querySchemaName.c_str(), querySchemaMajorVersion, querySchemaMinorVersion);
+    SchemaKey primaryKey(m_schemaName.c_str(), m_readVersion, m_writeVersion, m_minorVersion);
+    SchemaKey queryKey(querySchemaName.c_str(), querySchemaReadVersion, querySchemaWriteVersion, querySchemaMinorVersion);
     return primaryKey.Matches(queryKey, matchType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
-(
-ECSchemaR primarySchema, 
-bvector<ECSchemaP>& supplementalSchemaList,
-bool createCopyOfSupplementalCustomAttribute
-)
+SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute)
     {
     return UpdateSchema(primarySchema, supplementalSchemaList, "", createCopyOfSupplementalCustomAttribute);
     }
@@ -454,13 +323,7 @@ bvector<ECSchemaP>& localizationSchemas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas
-(
-bmap<uint32_t, ECSchemaP>& schemasByPrecedence, 
-ECSchemaR primarySchema, 
-const bvector<ECSchemaP>& supplementalSchemaList, 
-bvector<ECSchemaP>& localizationSchemas 
-)
+SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas(bmap<uint32_t, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP>& localizationSchemas)
     {
     SupplementedSchemaStatus status = SupplementedSchemaStatus::Success;
     for (ECSchemaP supplemental : supplementalSchemaList)
@@ -470,7 +333,7 @@ bvector<ECSchemaP>& localizationSchemas
             return SupplementedSchemaStatus::Metadata_Missing;
         if (!metaData.IsValid())
             return SupplementedSchemaStatus::Metadata_Missing;
-        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionRead(), primarySchema.GetVersionMinor(), SchemaMatchType::LatestWriteCompatible))
+        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionRead(), primarySchema.GetVersionWrite(), primarySchema.GetVersionMinor(), SchemaMatchType::LatestWriteCompatible))
             continue;
 
         if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))
@@ -491,7 +354,7 @@ bvector<ECSchemaP>& localizationSchemas
             status = CreateMergedSchemaFromSchemasWithEqualPrecedence(schema1, supplemental);
             if (SupplementedSchemaStatus::Success != status)
                 return status;
-            SchemaKey key(schema1->GetName().c_str(), schema1->GetVersionRead(), schema1->GetVersionMinor());
+            SchemaKey key(schema1->GetName().c_str(), schema1->GetVersionRead(), schema1->GetVersionWrite(), schema1->GetVersionMinor());
             schemasByPrecedence[precedence] = m_schemaCache->GetSchema(key);
             }
         else
@@ -1194,18 +1057,6 @@ SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaInfoPtr SupplementalSchemaInfo::Create
-(
-Utf8StringCR primarySchemaFullName, 
-SchemaNamePurposeMap& schemaFullNameToPurposeMapping
-)
-    {
-    return new SupplementalSchemaInfo(primarySchemaFullName, schemaFullNameToPurposeMapping);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemaNames
 (
 bvector<Utf8String>& supplementalSchemaNames
@@ -1312,6 +1163,7 @@ Utf8StringCR purpose
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaInfo::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
@@ -1320,6 +1172,7 @@ Utf8CP SupplementalSchemaInfo::GetCustomAttributeAccessor()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stefan.Apfel                    09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
     {
     return s_customAttributeSchemaName;
@@ -1330,12 +1183,12 @@ Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     {
-    IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(GetCustomAttributeAccessor());
     if (!instance.IsValid())
         return instance;
 
-    ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass("SchemaNameAndPurpose");
-    if (NULL == schemaNameAndPurpose)
+    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetCustomAttributeClass("SchemaNameAndPurpose");
+    if (nullptr == schemaNameAndPurpose)
         return instance;
 
     StandaloneECEnablerPtr classEnabler = schemaNameAndPurpose->GetDefaultStandaloneEnabler();

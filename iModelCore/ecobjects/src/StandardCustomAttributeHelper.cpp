@@ -196,6 +196,7 @@ struct CoreCustomAttributesSchemaHolder : RefCountedBase
 
 CoreCustomAttributesSchemaHolderPtr CoreCustomAttributesSchemaHolder::s_schemaHolder;
 
+static Utf8CP s_supplementalAccessor = "SupplementalSchema";
 static Utf8CP s_isMixinAccessor = "IsMixin";
 static const uint32_t s_coreCAVersionRead = 1;
 static const uint32_t s_coreCAVersionWrite = 0;
@@ -211,12 +212,12 @@ CoreCustomAttributesSchemaHolder::CoreCustomAttributesSchemaHolder()
 
     m_schema = ECSchema::LocateSchema(key, *schemaContext);
 
-    ECClassP metaDataClass = m_schema->GetClassP(s_supplementalMetaDataAccessor);
+    ECClassP metaDataClass = m_schema->GetClassP(s_supplementalAccessor);
     StandaloneECEnablerPtr enabler;
     if (nullptr != metaDataClass)
         enabler = metaDataClass->GetDefaultStandaloneEnabler();
 
-    m_enablers.Insert(s_supplementalMetaDataAccessor, enabler);
+    m_enablers.Insert(s_supplementalAccessor, enabler);
 
     ECClassP provenanceClass = m_schema->GetClassP(s_supplementalProvenanceAccessor);
     StandaloneECEnablerPtr provenanceEnabler;
