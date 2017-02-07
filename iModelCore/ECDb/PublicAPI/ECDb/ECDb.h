@@ -103,6 +103,8 @@ private:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
+    //! To be called during construction of the ECDb subclass.
+    //This is only a separate method because DgnDb is not a direct subclass of ECDb, but of RefCounted<ECDb>. So DgnDb's ctor cannot call ECDb's ctor.
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;

@@ -24,20 +24,54 @@ struct ECSchemaImportToken final
 // Holds and issues the tokens used to restrict certain ECDb APIs
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-struct TokenManager final : NonCopyableClass
+struct SettingsHolder final : NonCopyableClass
     {
 private:
+    ECDb::Settings m_settings;
+
     std::unique_ptr<ECCrudWriteToken> m_eccrudWriteToken;
     std::unique_ptr<ECSchemaImportToken> m_ecSchemaImportToken;
 
 public:
-    TokenManager() : m_eccrudWriteToken(nullptr), m_ecSchemaImportToken(nullptr) {}
+    SettingsHolder() : m_eccrudWriteToken(nullptr), m_ecSchemaImportToken(nullptr) {}
 
-    void EnableECCrudWriteTokenValidation() { m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken()); }
-    ECCrudWriteToken const* GetECCrudWriteToken() const { return m_eccrudWriteToken.get(); }
+    void ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport);
 
-    void EnableECSchemaImportTokenValidation() { m_ecSchemaImportToken = std::unique_ptr<ECSchemaImportToken>(new ECSchemaImportToken()); }
-    ECSchemaImportToken const* GetECSchemaImportToken() const { return m_ecSchemaImportToken.get(); }
+    ECDb::Settings const& GetSettings() const { return m_settings; }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      02/2017
+//+===============+===============+===============+===============+===============+======
+struct IdSequences : NonCopyableClass
+    {
+public:
+    //the numbers are the indexes into the sequence vector of SequenceManager. So they
+    //must match the order of the names in the name vector passed in the ctor
+    static const uint32_t ECInstanceId = 0;
+    static const uint32_t ECSchemaId = 1;
+    static const uint32_t ECClassId = 2;
+    static const uint32_t ECPropertyId = 3;
+    static const uint32_t ECEnumId = 4;
+    static const uint32_t KoqId = 5;
+    static const uint32_t TableId = 6;
+    static const uint32_t ColumnId = 7;
+    static const uint32_t IndexId = 8;
+    static const uint32_t PropertyPathId = 9;
+
+private:
+    BeBriefcaseBasedIdSequenceManager m_sequenceManager;
+
+public:
+    explicit IdSequences(ECDbR ecdb) : 
+        m_sequenceManager(ecdb, {"ec_ecinstanceidsequence", "ec_ecschemaidsequence","ec_ecclassidsequence",
+                                 "ec_ecpropertyidsequence","ec_ecenumidsequence","ec_kindofquantityidsequence", 
+                                 "ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", 
+                                 "ec_propertypathidsequence"})
+        {}
+
+    BeBriefcaseBasedIdSequence const& GetSequence(uint32_t key) const { return m_sequenceManager.GetSequence(key); }
+    BeBriefcaseBasedIdSequenceManager const& GetManager() const { return m_sequenceManager; }
     };
 
 //=======================================================================================
@@ -97,28 +131,19 @@ private:
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
 
-    ECDb::Settings m_settings;
-    TokenManager m_tokenManager;
+    SettingsHolder m_settings;
 
-    mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
-    BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
-    BeBriefcaseBasedIdSequence m_ecClassIdSequence;
-    BeBriefcaseBasedIdSequence m_ecPropertyIdSequence;
-    BeBriefcaseBasedIdSequence m_ecEnumIdSequence;
-    BeBriefcaseBasedIdSequence m_koqIdSequence;
-    BeBriefcaseBasedIdSequence m_tableIdSequence;
-    BeBriefcaseBasedIdSequence m_columnIdSequence;
-    BeBriefcaseBasedIdSequence m_indexIdSequence;
-    BeBriefcaseBasedIdSequence m_propertypathIdSequence;
+    IdSequences m_idSequences;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
     mutable ClearCacheCounter m_clearCacheCounter;
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb);
-
-    void ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport);
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_issueReporter(ecdb), m_idSequences(ecdb)
+        {
+        m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, m_mutex));
+        }
 
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { SchemaVersion unused(0, 0, 0, 0); return ECDbProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
 
@@ -147,10 +172,6 @@ private:
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeProfile(m_ecdb, params); }
 
-    DbResult InitializeSequences() const;
-    DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
-    std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
-
     void RegisterBuiltinFunctions() const;
     void UnregisterBuiltinFunctions() const;
 
@@ -159,20 +180,10 @@ private:
 public:
     ~Impl() {}
 
-    BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECClassIdSequence() { return m_ecClassIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECPropertyIdSequence() { return m_ecPropertyIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECEnumIdSequence() { return m_ecEnumIdSequence; }
-    BeBriefcaseBasedIdSequence& GetKindOfQuantityIdSequence() { return m_koqIdSequence; }
-    BeBriefcaseBasedIdSequence& GetTableIdSequence() { return m_tableIdSequence; }
-    BeBriefcaseBasedIdSequence& GetColumnIdSequence() { return m_columnIdSequence; }
-    BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
-    BeBriefcaseBasedIdSequence& GetPropertyPathIdSequence() { return m_propertypathIdSequence; }
-
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
+    ECDb::Settings const& GetSettings() const { return m_settings.GetSettings(); }
 
-    ECDb::Settings const& GetSettings() const { return m_settings; }
+    BeBriefcaseBasedIdSequence const& GetSequence(uint32_t sequenceIndex) const { return m_idSequences.GetSequence(sequenceIndex); }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

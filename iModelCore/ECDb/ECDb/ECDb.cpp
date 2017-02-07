@@ -34,7 +34,7 @@ ECDb::~ECDb()
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
     {
-    m_pimpl->ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
+    m_pimpl->m_settings.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
     }
 
 //--------------------------------------------------------------------------------------

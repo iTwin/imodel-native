@@ -50,15 +50,14 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
         return SUCCESS;
 
     // GenerateId
-    BeBriefcaseBasedId nextId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECSchemaIdSequence().GetNextValue(nextId))
+    ECSchemaId schemaId;
+    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::ECSchemaId).GetNextValue(schemaId))
         {
         BeAssert(false && "Could not generate new ECSchemaId");
         return ERROR;
         }
 
-    const ECSchemaId ecSchemaId(nextId.GetValue());
-    const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
+    const_cast<ECSchemaR>(ecSchema).SetId(schemaId);
 
     if (SUCCESS != InsertECSchemaEntry(ecSchema))
         {
@@ -105,7 +104,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
             }
         }
 
-    if (SUCCESS != ImportCustomAttributes(ecSchema, ECContainerId(ecSchemaId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
+    if (SUCCESS != ImportCustomAttributes(ecSchema, ECContainerId(schemaId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
         {
         Issues().Report("Failed to import custom attributes of ECSchema '%s'.", ecSchema.GetFullSchemaName().c_str());
         return ERROR;
@@ -174,11 +173,10 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
         return SUCCESS;
 
     // GenerateId
-    BeBriefcaseBasedId nextId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECClassIdSequence().GetNextValue(nextId))
+    ECClassId ecClassId;
+    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::ECClassId).GetNextValue(ecClassId))
         return ERROR;
 
-    ECClassId ecClassId(nextId.GetValue());
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
 
     BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(ecClass.GetSchema()).IsValid());
@@ -282,11 +280,10 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (stmt == nullptr)
         return ERROR;
 
-    BeBriefcaseBasedId nextId;
-    if (m_ecdb.GetECDbImplR().GetECEnumIdSequence().GetNextValue(nextId))
+    ECEnumerationId enumId;
+    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::ECEnumId).GetNextValue(enumId))
         return ERROR;
 
-    ECEnumerationId enumId(nextId.GetValue());
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
 
     BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(ecEnum.GetSchema()).IsValid());
@@ -343,11 +340,10 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     if (stmt == nullptr)
         return ERROR;
 
-    BeBriefcaseBasedId nextId;
-    if (m_ecdb.GetECDbImplR().GetKindOfQuantityIdSequence().GetNextValue(nextId))
+    KindOfQuantityId koqId;
+    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::KoqId).GetNextValue(koqId))
         return ERROR;
 
-    KindOfQuantityId koqId(nextId.GetValue());
     const_cast<KindOfQuantityR>(koq).SetId(koqId);
 
     BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(koq.GetSchema()).IsValid());
@@ -463,11 +459,10 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     BeAssert(!m_ecdb.Schemas().GetReader().GetECPropertyId(ecProperty).IsValid());
 
     // GenerateId
-    BeBriefcaseBasedId nextId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECPropertyIdSequence().GetNextValue(nextId))
+    ECPropertyId ecPropertyId;
+    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::ECPropertyId).GetNextValue(ecPropertyId))
         return ERROR;
 
-    ECPropertyId ecPropertyId(nextId.GetValue());
     const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
 
     if (ecProperty.GetIsStruct())

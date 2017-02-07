@@ -11,38 +11,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
-//---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb),
-                            m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
-                            m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
-                            m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
-                            m_ecPropertyIdSequence(ecdb, "ec_ecpropertyidsequence"),
-                            m_ecEnumIdSequence(ecdb, "ec_ecenumidsequence"),
-                            m_koqIdSequence(ecdb, "ec_kindofquantityidsequence"),
-                            m_tableIdSequence(ecdb, "ec_tableidsequence"),
-                            m_columnIdSequence(ecdb, "ec_columnidsequence"),
-                            m_indexIdSequence(ecdb, "ec_indexidsequence"),
-                            m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
-                            m_issueReporter(ecdb)
-    {
-    m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, m_mutex));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                02/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
-    {
-    if (requireECCrudTokenValidation)
-        m_tokenManager.EnableECCrudWriteTokenValidation();
-
-    if (requireECSchemaImportTokenValidation)
-        m_tokenManager.EnableECSchemaImportTokenValidation();
-
-    m_settings = Settings(m_tokenManager.GetECCrudWriteToken(), m_tokenManager.GetECSchemaImportToken(), allowChangesetMergingIncompatibleECSchemaImport);
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
@@ -51,12 +19,12 @@ DbResult ECDb::Impl::OnDbCreated() const
     {
     RegisterBuiltinFunctions();
 
-    DbResult stat = InitializeSequences();
+    DbResult stat = m_idSequences.GetManager().InitializeSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //set initial value of sequence to current briefcase id.
-    stat = ResetSequences();
+    stat = m_idSequences.GetManager().ResetSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -70,7 +38,7 @@ DbResult ECDb::Impl::OnDbCreated() const
 DbResult ECDb::Impl::OnDbOpening() const
     {
     RegisterBuiltinFunctions();
-    return InitializeSequences();
+    return m_idSequences.GetManager().InitializeSequences();
     }
 
 //--------------------------------------------------------------------------------------
@@ -91,7 +59,7 @@ DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
     if (m_ecdb.IsReadonly())
         return BE_SQLITE_READONLY;
 
-    const DbResult stat = ResetSequences(&newBriefcaseId);
+    const DbResult stat = m_idSequences.GetManager().ResetSequences(&newBriefcaseId);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Changing briefcase id to %" PRIu32 " in file '%s' failed because ECDb's id sequences could not be reset.",
@@ -186,56 +154,6 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     m_ecdb.RemoveFunction(Base64ToBlobSqlFunction::GetSingleton());
     m_ecdb.RemoveFunction(BlobToBase64SqlFunction::GetSingleton());
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  04/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::InitializeSequences() const
-    {
-    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
-        {
-        const DbResult stat = sequence->Initialize();
-        if (stat != BE_SQLITE_OK)
-            return stat;
-        }
-
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ResetSequences(BeBriefcaseId* repoId) const
-    {
-    BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetBriefcaseId();
-    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
-        {
-        const DbResult stat = sequence->Reset(actualRepoId);
-        if (stat != BE_SQLITE_OK)
-            return stat;
-        }
-
-    return BE_SQLITE_OK;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2014
-//---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
-    {
-    return std::vector<BeBriefcaseBasedIdSequence const*>  {
-        &m_ecInstanceIdSequence,
-            &m_ecSchemaIdSequence,
-            &m_ecClassIdSequence,
-            &m_ecPropertyIdSequence,
-            &m_ecEnumIdSequence,
-            &m_koqIdSequence,
-            &m_columnIdSequence,
-            &m_tableIdSequence,
-            &m_propertypathIdSequence,
-            &m_indexIdSequence};
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2015
@@ -413,5 +331,18 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     return BE_SQLITE_OK;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                02/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void SettingsHolder::ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
+    {
+    if (requireECCrudTokenValidation)
+        m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken());
+
+    if (requireECSchemaImportTokenValidation)
+        m_ecSchemaImportToken = std::unique_ptr<ECSchemaImportToken>(new ECSchemaImportToken());
+
+    m_settings = ECDb::Settings(m_eccrudWriteToken.get(), m_ecSchemaImportToken.get(), allowChangesetMergingIncompatibleECSchemaImport);
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
