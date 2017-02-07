@@ -31,29 +31,18 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb),
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
+// @bsimethod                                Krischan.Eberle                02/2017
 //---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDb::Impl::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+void ECDb::Impl::ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
     {
-    const DbResult stat = BeSQLiteLib::Initialize(ecdbTempDir, logSqliteErrors);
-    if (stat != BE_SQLITE_OK)
-        return stat;
+    if (requireECCrudTokenValidation)
+        m_tokenManager.EnableECCrudWriteTokenValidation();
 
-    if (hostAssetsDir != nullptr)
-        {
-        if (!hostAssetsDir->DoesPathExist())
-            {
-            LOG.warningv("ECDb::Initialize: host assets dir '%s' does not exist.", hostAssetsDir->GetNameUtf8().c_str());
-            BeAssert(false && "ECDb::Initialize: host assets dir does not exist!");
-            }
+    if (requireECSchemaImportTokenValidation)
+        m_tokenManager.EnableECSchemaImportTokenValidation();
 
-        ECN::ECSchemaReadContext::Initialize(*hostAssetsDir);
-        }
-
-    return BE_SQLITE_OK;
+    m_settings = Settings(m_tokenManager.GetECCrudWriteToken(), m_tokenManager.GetECSchemaImportToken(), allowChangesetMergingIncompatibleECSchemaImport);
     }
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
@@ -399,5 +388,30 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
 
     return blobIO.Open(m_ecdb, col.GetTable().GetName().c_str(), col.GetName().c_str(), ecinstanceId.GetValue(), writable) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                09/2012
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+    {
+    const DbResult stat = BeSQLiteLib::Initialize(ecdbTempDir, logSqliteErrors);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    if (hostAssetsDir != nullptr)
+        {
+        if (!hostAssetsDir->DoesPathExist())
+            {
+            LOG.warningv("ECDb::Initialize: host assets dir '%s' does not exist.", hostAssetsDir->GetNameUtf8().c_str());
+            BeAssert(false && "ECDb::Initialize: host assets dir does not exist!");
+            }
+
+        ECN::ECSchemaReadContext::Initialize(*hostAssetsDir);
+        }
+
+    return BE_SQLITE_OK;
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

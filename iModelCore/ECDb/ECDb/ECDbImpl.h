@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECCrudWriteToken final
     {};
 
-struct DbSchemaModificationToken final
+struct ECSchemaImportToken final
     {};
 
 //=======================================================================================
@@ -28,16 +28,16 @@ struct TokenManager final : NonCopyableClass
     {
 private:
     std::unique_ptr<ECCrudWriteToken> m_eccrudWriteToken;
-    std::unique_ptr<DbSchemaModificationToken> m_dbSchemaModificationToken;
+    std::unique_ptr<ECSchemaImportToken> m_ecSchemaImportToken;
 
 public:
-    TokenManager() : m_eccrudWriteToken(nullptr), m_dbSchemaModificationToken(nullptr) {}
+    TokenManager() : m_eccrudWriteToken(nullptr), m_ecSchemaImportToken(nullptr) {}
 
-    ECCrudWriteToken const& EnableECCrudWriteTokenValidation() { m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken()); return *m_eccrudWriteToken; }
+    void EnableECCrudWriteTokenValidation() { m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken()); }
     ECCrudWriteToken const* GetECCrudWriteToken() const { return m_eccrudWriteToken.get(); }
 
-    DbSchemaModificationToken const& EnableDbSchemaModificationTokenValidation() { m_dbSchemaModificationToken = std::unique_ptr<DbSchemaModificationToken>(new DbSchemaModificationToken()); return *m_dbSchemaModificationToken; }
-    DbSchemaModificationToken const* GetDbSchemaModificationToken() const { return m_dbSchemaModificationToken.get(); }
+    void EnableECSchemaImportTokenValidation() { m_ecSchemaImportToken = std::unique_ptr<ECSchemaImportToken>(new ECSchemaImportToken()); }
+    ECSchemaImportToken const* GetECSchemaImportToken() const { return m_ecSchemaImportToken.get(); }
     };
 
 //=======================================================================================
@@ -96,6 +96,8 @@ private:
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
+
+    ECDb::Settings m_settings;
     TokenManager m_tokenManager;
 
     mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
@@ -115,6 +117,8 @@ private:
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
+
+    void ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport);
 
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { SchemaVersion unused(0, 0, 0, 0); return ECDbProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
 
@@ -150,7 +154,7 @@ private:
     void RegisterBuiltinFunctions() const;
     void UnregisterBuiltinFunctions() const;
 
-    static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
+    static DbResult InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
 public:
     ~Impl() {}
@@ -168,7 +172,7 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
-    TokenManager const& GetTokenManager() const { return m_tokenManager; }
+    ECDb::Settings const& GetSettings() const { return m_settings; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

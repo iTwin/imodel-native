@@ -40,7 +40,7 @@ bool ECDbMap::IsImportingSchema() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2016
 //---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECDbMap::PurgeOrphanTables(DbSchemaModificationToken const* mayModifyDbSchemaToken) const
+BentleyStatus ECDbMap::PurgeOrphanTables() const
     {
     //skip ExistingTable and NotMapped
     Statement stmt;
@@ -91,8 +91,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables(DbSchemaModificationToken const* mayMod
     if (nonVirtualTables.empty())
         return SUCCESS;
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(MayModifyDbSchemaPolicyAssertion(GetECDb(), mayModifyDbSchemaToken));
-    if (!policy.IsSupported())
+    if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleECSchemaImport())
         {
         Utf8String tableNames;
         bool isFirstTable = true;
@@ -105,12 +104,9 @@ BentleyStatus ECDbMap::PurgeOrphanTables(DbSchemaModificationToken const* mayMod
             isFirstTable = false;
             }
 
-        //until we can enforce this, we just issue a warning, so that people can fix their ECSchemas
-        LOG.warningv("DB-schema modifying ECSchema import. The following tables are deleted: %s", tableNames.c_str());
-        /*ecdb.GetECDbImplR().GetIssueReporter().Report(
-        "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to delete these tables: %s", tableNames.c_str());
-        return CreateOrUpdateTableResult::Error;
-        */
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(
+            "Failed to import ECSchemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
+        return ERROR;
         }
 
     for (Utf8StringCR name : nonVirtualTables)
@@ -146,7 +142,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
+BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -172,7 +168,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx, DbSchemaModification
         return ERROR;
         }
 
-    if (SUCCESS != CreateOrUpdateRequiredTables(mayModifyDbSchemaToken))
+    if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -186,7 +182,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx, DbSchemaModification
         return ERROR;
         }
     
-    if (PurgeOrphanTables(mayModifyDbSchemaToken) != SUCCESS)
+    if (SUCCESS != PurgeOrphanTables())
         {
         BeAssert(false);
         ClearCache();
@@ -541,7 +537,7 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2011
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::CreateOrUpdateRequiredTables(DbSchemaModificationToken const* mayModifyDbSchemaToken) const
+BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     {
     if (AssertIfIsNotImportingSchema())
         return ERROR;
@@ -555,7 +551,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables(DbSchemaModificationToken co
 
     for (DbTable const* table : GetDbSchemaR().GetCachedTables())
         {
-        const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table, mayModifyDbSchemaToken);
+        const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table);
         switch (result)
             {
                 case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Created:

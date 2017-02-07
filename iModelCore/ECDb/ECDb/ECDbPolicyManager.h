@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! in a given context
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbPolicy
+struct ECDbPolicy final
     {
     private:
         bool m_isSupported;
@@ -64,7 +64,7 @@ struct ECDbPolicyAssertion
             {
             ClassIsValidInECSql,
             ECCrudPermission,
-            MayModifyDbSchema
+            ECSchemaImportPermission
             };
 
     private:
@@ -83,7 +83,7 @@ struct ECDbPolicyAssertion
 //! Policy whether a given ECClass can be used in ECSQL or not.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ClassIsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
+struct ClassIsValidInECSqlPolicyAssertion final : ECDbPolicyAssertion
     {
     private:
         ClassMap const& m_classMap;
@@ -123,7 +123,7 @@ struct ClassIsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct ECCrudPermissionPolicyAssertion : ECDbPolicyAssertion
+struct ECCrudPermissionPolicyAssertion final : ECDbPolicyAssertion
     {
     private:
         ECDbCR m_ecdb;
@@ -143,26 +143,26 @@ struct ECCrudPermissionPolicyAssertion : ECDbPolicyAssertion
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-struct MayModifyDbSchemaPolicyAssertion : ECDbPolicyAssertion
+struct ECSchemaImportPermissionPolicyAssertion final : ECDbPolicyAssertion
     {
     private:
         ECDbCR m_ecdb;
-        DbSchemaModificationToken const* m_token;
+        ECSchemaImportToken const* m_token;
 
     public:
-        MayModifyDbSchemaPolicyAssertion(ECDbCR ecdb, DbSchemaModificationToken const* token)
-            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::MayModifyDbSchema), m_ecdb(ecdb), m_token(token)
+        ECSchemaImportPermissionPolicyAssertion(ECDbCR ecdb, ECSchemaImportToken const* token)
+            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECSchemaImportPermission), m_ecdb(ecdb), m_token(token)
             {}
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        DbSchemaModificationToken const* GetToken() const { return m_token; }
+        ECSchemaImportToken const* GetToken() const { return m_token; }
     };
 
 //=======================================================================================
 //! Determines whether a given ECDb feature is supported in a given context.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbPolicyManager
+struct ECDbPolicyManager final
     {
     private:
         ECDbPolicyManager();
@@ -170,7 +170,7 @@ struct ECDbPolicyManager
 
         static ECDbPolicy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
         static ECDbPolicy DoGetPolicy(ECCrudPermissionPolicyAssertion const&);
-        static ECDbPolicy DoGetPolicy(MayModifyDbSchemaPolicyAssertion const&);
+        static ECDbPolicy DoGetPolicy(ECSchemaImportPermissionPolicyAssertion const&);
 
     public:
         static ECDbPolicy GetPolicy(ECDbPolicyAssertion const&);

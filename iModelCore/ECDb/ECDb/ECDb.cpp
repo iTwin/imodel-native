@@ -17,7 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
@@ -29,6 +28,19 @@ ECDb::~ECDb()
         m_pimpl = nullptr;
         }
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                02/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
+    {
+    m_pimpl->ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                02/2017
+//---------------+---------------+---------------+---------------+---------------+------
+ECDb::Settings const& ECDb::GetECDbSettings() const { return m_pimpl->GetSettings(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                01/2017
@@ -118,22 +130,6 @@ int ECDb::_OnAddFunction(DbFunction& func) const { return m_pimpl->OnAddFunction
 void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction(func); }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                11/2016
-//---------------+---------------+---------------+---------------+---------------+------
-ECCrudWriteToken const& ECDb::EnableECCrudWriteTokenValidation() 
-    {
-    return m_pimpl->m_tokenManager.EnableECCrudWriteTokenValidation(); 
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2016
-//---------------+---------------+---------------+---------------+---------------+------
-DbSchemaModificationToken const& ECDb::EnableDbSchemaModificationTokenValidation()
-    {
-    return m_pimpl->m_tokenManager.EnableDbSchemaModificationTokenValidation();
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 ECDbSchemaManagerCR ECDb::Schemas() const { return m_pimpl->Schemas(); }
@@ -195,9 +191,22 @@ ECDb::Impl& ECDb::GetECDbImplR() const { BeAssert(m_pimpl != nullptr); return *m
 //static
 DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
     {
-    return Impl::Initialize(ecdbTempDir, hostAssetsDir, logSqliteErrors);
+    return Impl::InitializeLib(ecdbTempDir, hostAssetsDir, logSqliteErrors);
     }
 
+//---------------------------------------------------------------------------------------
+//not inlined to prevent being called outside ECDb
+// @bsimethod                                                   Krischan.Eberle   02/2017
+//---------------------------------------------------------------------------------------
+ECDb::Settings::Settings() {}
+
+//---------------------------------------------------------------------------------------
+//not inlined to prevent being called outside ECDb
+// @bsimethod                                                   Krischan.Eberle   02/2017
+//---------------------------------------------------------------------------------------
+ECDb::Settings::Settings(ECCrudWriteToken const* ecCrudWriteToken, ECSchemaImportToken const* schemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
+    : m_eccrudWriteToken(ecCrudWriteToken), m_ecSchemaImportToken(schemaImportToken), m_allowChangesetMergingIncompatibleECSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015

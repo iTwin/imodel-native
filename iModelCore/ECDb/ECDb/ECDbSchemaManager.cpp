@@ -150,13 +150,13 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
+BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
     StopWatch timer(true);
     //until decided whether a bool flag is enough or a token should be used we fake the token this way.
-    const BentleyStatus stat = DoImportECSchemas(schemas, mayModifyDbSchemaToken);
+    const BentleyStatus stat = DoImportECSchemas(schemas, schemaImportToken);
     timer.Stop();
     if (SUCCESS == stat)
         {
@@ -172,8 +172,16 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
+BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
     {
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECSchemaImportPermissionPolicyAssertion(GetECDb(), schemaImportToken));
+    if (!policy.IsSupported())
+        {
+        LOG.error("Failed to import ECSchemas: Caller has not provided an ECSchemaImportToken.");
+        return ERROR;
+        }
+
+
     if (m_ecdb.IsReadonly())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECDb file is read-only.");
@@ -205,7 +213,7 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     if (compareContext.ReloadContextECSchemas(*this) == ERROR)
         return ERROR;
 
-    if (SUCCESS != GetDbMap().MapSchemas(context, mayModifyDbSchemaToken))
+    if (SUCCESS != GetDbMap().MapSchemas(context))
         return ERROR;
 
     return ViewGenerator::CreateUpdatableViews(GetECDb());

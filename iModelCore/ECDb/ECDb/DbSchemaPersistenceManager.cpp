@@ -84,7 +84,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
-DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table, DbSchemaModificationToken const* mayModifyDbSchemaToken)
+DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
     if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
@@ -99,19 +99,6 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
 
     if (mode == CreateOrUpdateTableResult::WasUpToDate)
         return mode;
-
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(MayModifyDbSchemaPolicyAssertion(ecdb, mayModifyDbSchemaToken));
-    if (!policy.IsSupported())
-        {
-        //until we can enforce this, we just issue a warning, so that people can fix their ECSchemas
-        LOG.warningv("DB-schema modifying ECSchema import: %s table '%s'.",
-                       mode == CreateOrUpdateTableResult::Created ? "created" : "modified", table.GetName().c_str());
-        /*ecdb.GetECDbImplR().GetIssueReporter().Report(
-               "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to %s table '%s'.",
-                      mode == CreateOrUpdateTableResult::Created ? "create" : "modify", table.GetName().c_str());
-        return CreateOrUpdateTableResult::Error;
-        */
-        }
 
     BentleyStatus stat = SUCCESS;
     if (mode == CreateOrUpdateTableResult::Created)

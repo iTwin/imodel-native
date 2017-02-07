@@ -14,10 +14,9 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECDbSchemaManager;
-struct ECSqlScalarFunction;
 
 struct ECCrudWriteToken;
-struct DbSchemaModificationToken;
+struct ECSchemaImportToken;
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -38,6 +37,30 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
     //=======================================================================================
+    // @bsiclass                                                Krischan.Eberle      02/2017
+    //+===============+===============+===============+===============+===============+======
+    struct Settings final
+        {
+    private:
+        ECCrudWriteToken const* m_eccrudWriteToken = nullptr;
+        ECSchemaImportToken const* m_ecSchemaImportToken = nullptr;
+        bool m_allowChangesetMergingIncompatibleECSchemaImport = true;
+
+    public:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //not inlined as ctors are only needed internally
+        Settings();
+        Settings(ECCrudWriteToken const*, ECSchemaImportToken const*, bool allowChangesetMergingIncompatibleECSchemaImport);
+#endif
+        //! Consumers can only execute EC CRUD operations like ECSQL INSERT, UPDATE or DELETE statements
+        ECCrudWriteToken const* GetECCrudWriteToken() const { return m_eccrudWriteToken; }
+        //! Consumers can only import ECSchemas with the token
+        ECSchemaImportToken const* GetECSchemaImportToken() const { return m_ecSchemaImportToken; }
+
+        bool AllowChangesetMergingIncompatibleECSchemaImport() const { return m_allowChangesetMergingIncompatibleECSchemaImport; }
+        };
+
+    //=======================================================================================
     //! Modes for the ECDb::Purge method.
     // @bsiclass                                                Krischan.Eberle      11/2015
     //+===============+===============+===============+===============+===============+======
@@ -46,8 +69,6 @@ public:
         FileInfoOwnerships = 1, //!< Purges FileInfoOwnership instances (see also @ref ECDbFileInfo)
         All = FileInfoOwnerships
         };
-
-    struct Impl;
 
     //=======================================================================================
     //! Allows clients to be notified of error messages.
@@ -75,11 +96,15 @@ public:
 #endif
         };
 
+    struct Impl;
+
 private:
     Impl* m_pimpl;
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
+    ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
+
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
@@ -89,16 +114,7 @@ protected:
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
-    //! If called, consumers can only execute EC CRUD operations like ECSQL INSERT, UPDATE or DELETE statements
-    //! with the write token returned from this method. 
-    //! Subclasses can call this if they don't want consumers to modify data via ECSQL directly,
-    //! and provide their own data modifying APIs.
-    ECDB_EXPORT ECCrudWriteToken const& EnableECCrudWriteTokenValidation();
-
-    //! If called, consumers can only perform DB-schema-modifying ECSchema imports or updates
-    //! with the token returned from this method. 
-    //! Subclasses can call this if they don't want consumers to modify the DB schema
-    ECDB_EXPORT DbSchemaModificationToken const& EnableDbSchemaModificationTokenValidation();
+    ECDB_EXPORT Settings const& GetECDbSettings() const;
 #endif
 
     virtual void _OnAfterECSchemaImport() const {}
