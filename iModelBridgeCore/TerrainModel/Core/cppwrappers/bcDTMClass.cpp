@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable: 4018)
@@ -900,23 +900,20 @@ BcDTMPtr BcDTM::DesignPondToTargetVolumeOrElevation
     double freeBoard
     )
     {
-
     DTMStatusInt status = DTM_ERROR;
-    BcDTMPtr dtmP = BcDTM::Create ();
-    // ToDo Translatation
-// TODO: Drainage
-    //status = bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(dtmP->GetTinHandle(), pondFlag, pondElevation, pondVolume,
-    //    points,  numPoints, perimeterOrInvert, targetVolumeOrElevation,
-    //    targetVolume, targetElevation, sideSlope, freeBoard,
-    //    0,0.0,0.0,0,0.0,100.0, 0, nullptr, 0.0);
 
-    if ( status != DTM_SUCCESS)
-        {
+    DtmPondDesignCriteria pondDesignCrit((DTMPondDesignMethod)perimeterOrInvert, points, (int)numPoints, sideSlope, freeBoard, (DTMPondTarget)targetVolumeOrElevation, (DTMPondTarget)targetVolumeOrElevation == DTMPondTarget::Elevation ? targetElevation : targetVolume);
+    BcDTMPtr dtm;
+    DTMPondResult result = pondDesignCrit.CreatePond(dtm);
+    if ( dtm.IsNull())
         return nullptr ;
-        }
+
+    if (pondElevation) *pondElevation = pondDesignCrit.pondElevation;
+    if (pondVolume) *pondVolume = pondDesignCrit.pondVolume;
+    if (pondFlag) *pondFlag = (long)result;
 
     // Return this DTM
-    return dtmP;
+    return dtm;
     }
 
 
