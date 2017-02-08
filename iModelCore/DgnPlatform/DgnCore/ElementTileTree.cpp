@@ -503,12 +503,15 @@ enum class InstancingOptions
     AsPreTransformedSubGraphics,
     // Use the AddInstanced* functions
     AsInstances,
+    // Cache instanced geometry, but merge it into the meshes rather than instancing it
+    MergeIntoMeshes,
+    // Don't do instancing
+    None
 };
 
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
-static bool s_cacheInstances = false;
-static InstancingOptions s_instancingOptions = InstancingOptions::AsInstances;
+constexpr InstancingOptions s_instancingOptions = InstancingOptions::MergeIntoMeshes;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1168,7 +1171,13 @@ static void adjustGeometryTolerance(GeometryList& geometries, double tolerance)
     {
     // Remove any geometry too small for inclusion in at this tolerance
     double minRangeDiagonal = s_minRangeBoxSize * tolerance;
-    auto eraseAt = std::remove_if(geometries.begin(), geometries.end(), [=](GeometryPtr const& geom) { return geom->GetTileRange().DiagonalDistance() < minRangeDiagonal; });
+    auto eraseAt = std::remove_if(geometries.begin(), geometries.end(), [=](GeometryPtr const& geom)
+        {
+        DRange3dCR tileRange = geom->GetTileRange();
+        double tileDiagonal = tileRange.DiagonalDistance();
+        return tileDiagonal < minRangeDiagonal;
+        });
+
     if (eraseAt != geometries.end())
         geometries.erase(eraseAt, geometries.end());
     }
@@ -1710,14 +1719,16 @@ PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR inst
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries) 
         {
+        BeAssert(geometry->GetTransform().IsIdentity());
         PolyfaceList thisPolyfaces = geometry->GetPolyfaces (facetOptions);
 
-        if (!thisPolyfaces.empty())
-            polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
+        for (auto const& thisPolyface : thisPolyfaces)
+            {
+            Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
+            polyface.Transform(instance.GetTransform());
+            polyfaces.push_back(polyface);
+            }
         }
-
-    for (auto& polyface : polyfaces)
-        polyface.Transform(instance.GetTransform());
 
     return polyfaces;
     }
@@ -2158,7 +2169,7 @@ BentleyStatus Loader::_LoadTile()
                 }
             }
         }
-    else
+    else if (InstancingOptions::AsPreTransformedSubGraphics == s_instancingOptions)
         {
         for (auto const& part : geometry.Parts())
             {
@@ -2260,20 +2271,20 @@ BentleyStatus Loader::_LoadTile()
         if (root.WantDebugRanges())
             {
             ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
-            GraphicParams gfParams;
-            gfParams.SetLineColor(color);
-            gfParams.SetFillColor(ColorDef::Green());
-            gfParams.SetWidth(0);
-            gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
+                GraphicParams gfParams;
+                gfParams.SetLineColor(color);
+                gfParams.SetFillColor(ColorDef::Green());
+                gfParams.SetWidth(0);
+                gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-            Render::GraphicBuilderPtr rangeGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
-            rangeGraphic->ActivateGraphicParams(gfParams);
-            rangeGraphic->AddRangeBox(tile.GetRange());
-            if (addAsSubGraphics)
-                {
-                rangeGraphic->Close();
-                graphic->AddSubGraphic(*rangeGraphic, Transform::FromIdentity(), gfParams);
-                }
+                Render::GraphicBuilderPtr rangeGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
+                rangeGraphic->ActivateGraphicParams(gfParams);
+                rangeGraphic->AddRangeBox(tile.GetRange());
+                if (addAsSubGraphics)
+                    {
+                    rangeGraphic->Close();
+                    graphic->AddSubGraphic(*rangeGraphic, Transform::FromIdentity(), gfParams);
+                    }
             }
 
         graphic->Close();
@@ -2793,9 +2804,18 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
     {
     ElementTileTree::GeometryCollection collection;
+    if (InstancingOptions::MergeIntoMeshes == s_instancingOptions || InstancingOptions::None == s_instancingOptions)
+        {
+        // In the former case, we want to merge part meshes into tile geometry. In the latter, we have no part meshes.
+        auto meshes = GenerateMeshes(options, geometries, /*###TODO: range test*/ false, context);
+        if (!context.WasAborted())
+            collection.Meshes() = std::move(meshes);
+
+        return collection;
+        }
     
-    GeometryList                        uninstancedGeometry;
-    bmap<GeomPartCP,MeshPartPtr> partMap;
+    GeometryList                    uninstancedGeometry;
+    bmap<GeomPartCP,MeshPartPtr>    partMap;
 
     // Extract instances first...
     for (auto const& geom : geometries)
@@ -2952,7 +2972,9 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
 bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
     DisplayParamsPtr displayParams = CreateDefaultDisplayParams(gf);
-    if (s_cacheInstances)
+
+    // No real point in caching solid primitives if they're to be merged into the mesh anyway...
+    if (InstancingOptions::None != s_instancingOptions)
         {
         DRange3d range, thisTileRange;
         Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
@@ -3064,6 +3086,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         m_geometryListBuilder.Clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
 
+        if (viewContext._CheckStop())
+            return;
+
         m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(geomPart->GetBoundingBox(), m_geometryListBuilder.GetGeometries())));
 
         m_geometryListBuilder.SetGeometryList(saveCurrGeometries);
@@ -3113,7 +3138,7 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
-    if (s_cacheInstances)
+    if (InstancingOptions::None != s_instancingOptions)
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
