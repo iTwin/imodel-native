@@ -697,6 +697,11 @@ public:
             fflush(logger.GetFile());                                                    
 #endif
 
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
+
+        size_t currentNbProcessingQueries;
+
+        m_processingQueriesMutex.lock();
 
 #ifndef NDEBUG
         for (auto& query : m_processingQueries)
@@ -705,11 +710,7 @@ public:
                 assert(!"Query already processing");
             }
 #endif
-        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
 
-        size_t currentNbProcessingQueries;
-
-        m_processingQueriesMutex.lock();
         currentNbProcessingQueries = m_processingQueries.size();
         m_processingQueries.push_back(processingQueryPtr);
         m_processingQueriesMutex.unlock();
@@ -1124,7 +1125,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     
     if (parentNodePtr == nullptr)
         {        
-        assert(!"Should not occurs");               
+        //assert(!"Should not occurs");               
         return;
         }
     
@@ -1204,7 +1205,8 @@ class NewQueryStartingNodeProcessor
         NewQueryStartingNodeProcessor()
             {
 #ifndef DEACTIVATE_THREADING
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;            
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;       
+            m_numWorkingThreads = max(1, m_numWorkingThreads);
 #else
             m_numWorkingThreads = 1;            
 #endif
@@ -1441,6 +1443,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     //assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd - 1) == 0);
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
+
+
 
     if (s_sortOverviewBySize == true)
         {
