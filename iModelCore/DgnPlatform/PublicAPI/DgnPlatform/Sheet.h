@@ -74,8 +74,7 @@ public:
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
     //! @param[in] scale The sheet's drawing scale
-    //! @param[in] height The sheet height (meters)
-    //! @param[in] width The sheet width (meters)
+    //! @param[in] size  The sheet height and width (meters)
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
     DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name);
