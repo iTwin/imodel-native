@@ -2,12 +2,13 @@
 |
 |     $Source: DgnHandlers/DgnECPersistence.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnECPersistence.h>
 #include    <DgnPlatform/DgnECTypes.h>
+#include    <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -256,6 +257,8 @@ IECInstancePtr DgnECPropertyFormatter::_GetPropertyCategory (ECN::ECPropertyCR e
 // static
 BentleyStatus DgnECPersistence::GetElementInfo(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, DgnElementId elementId, DgnDbCR dgndb)
     {
+    PERFLOG_START("Core", "Getting Element Information");
+
     DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
     if (!element.IsValid())
         {
@@ -267,6 +270,9 @@ BentleyStatus DgnECPersistence::GetElementInfo(JsonValueR jsonInstances, JsonVal
     JsonECSqlSelectAdapter::FormatOptions formatOptions (ECValueFormat::FormattedStrings, propertyFormatter.get());
 
     JsonReader jsonReader(dgndb, element->GetElementClassId());
-    return jsonReader.Read (jsonInstances, jsonDisplayInfo, (ECInstanceId) elementId.GetValue(), formatOptions);
+    BentleyStatus status = jsonReader.Read(jsonInstances, jsonDisplayInfo, (ECInstanceId) elementId.GetValue(), formatOptions);
+
+    PERFLOG_FINISH("Core", "Getting Element Information");
+    return status;
     }
 

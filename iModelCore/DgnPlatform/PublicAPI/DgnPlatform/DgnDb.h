@@ -162,9 +162,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     };
 
 private:
-    BeSQLite::EC::ECCrudWriteToken const* m_eccrudWriteToken; //owned and released by ECDb
-    BeSQLite::EC::DbSchemaModificationToken const* m_dbSchemaModificationToken; //owned and released by ECDb
-
     void Destroy();
 
 protected:
@@ -346,9 +343,9 @@ public:
     //!Otherwise the preparation of the ECSQL or the write operation will fail.
     //!@return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
     BeSQLite::EC::ECCrudWriteToken const* GetECCrudWriteToken() const; //not inlined as it must not be called externally
-    //!Gets the permission token to perform a data-modifying ECSchema import/update
-    //!@return DB schema modification token. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
-    BeSQLite::EC::DbSchemaModificationToken const* GetDbSchemaModificationToken() const; //not inlined as it must not be called externally
+    //!Gets the permission token to perform a ECSchema import/update
+    //!@return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
+    BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
 #endif
 };
 

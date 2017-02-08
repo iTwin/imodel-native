@@ -2,11 +2,12 @@
 |
 |     $Source: DgnCore/DgnIModel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <BeSQLite/IModelDb.h>
+#include <Bentley/PerformanceLogger.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
@@ -71,6 +72,8 @@ static DgnDbStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
 //---------------------------------------------------------------------------------------
 DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgndbFile, BeFileNameCR packageFile, bool overwriteExisting, ICompressProgressTracker* progress)
     {
+    PERFLOG_START("Core", "Uncompressing the DgnDb");
+
     if (!BeFileName::DoesPathExist(packageFile))
         return DgnDbStatus::FileNotFound;
 
@@ -138,6 +141,7 @@ DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgn
     if ((dbResult = embeddedFiles.ExportDbFile(u8outputName.c_str(), dbName, progress)) != BE_SQLITE_OK)
         return DgnDbStatus::SQLiteError;
 
+    PERFLOG_FINISH("Core", "Uncompressing the DgnDb");
     return DgnDbStatus::Success;
     }
 
