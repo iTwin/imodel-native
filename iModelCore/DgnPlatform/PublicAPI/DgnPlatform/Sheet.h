@@ -74,7 +74,7 @@ public:
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
     //! @param[in] scale The sheet's drawing scale
-    //! @param[in] size  The sheet height and width (meters)
+    //! @param[in] size The sheet size (meters)
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
     DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name);
@@ -283,13 +283,12 @@ protected:
     void _DrawView(ViewContextR) override;
     void _CreateTerrain(TerrainContextR context) override;
     void _LoadState() override;
-    void DrawBorder(ViewContextR context) const;
-    AxisAlignedBox3d GetSheetExtents() const {return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0));}
     FitComplete _ComputeFitRange(FitContextR context) override;
-    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
 
-    //! Construct a new SheetViewController.
-    ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
+    void DrawBorder(ViewContextR context) const;
+    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
+    AxisAlignedBox3d GetSheetExtents() const {return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0));}
+    ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
 };
 
 //=======================================================================================
