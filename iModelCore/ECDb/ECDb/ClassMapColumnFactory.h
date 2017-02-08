@@ -12,18 +12,47 @@
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+struct RelationshipClassEndTableMap;
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
 struct ClassMapColumnFactory final : NonCopyableClass
     {
-    private:
+    private: 
+        //Find list of columns with accessstring that cannot be used by current classmap
+        struct UsedColumnFinder final
+            {
+            typedef std::map<Utf8String, DbColumn const*> ColumnMap;
+            private:
+                std::set<ClassMap const*> m_deepestClassMapped;//Set of deepest classmap in traversed hierarchy.
+                std::set<ECN::ECEntityClassCP> m_mixIns; //Set of identitifed mixin during traversing class hierarchy
+                std::set<ECN::ECClassCP> m_primaryHierarchy; //Set of classes that is part of pirmary hierarchy that is already traversed.
+                std::set<RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
+                std::map<ECN::ECEntityClassCP, const ClassMap*> m_mixInsImpl; // Final list of mixIn classes implementation
+                std::set<DbTable const*> m_contextMapTableSet; //fast cache for context class tables
+                ClassMap const& m_classMap; //Context Class for which to find used columns
+
+            private:
+                UsedColumnFinder(ClassMap const& classMap);				
+                ClassMap const* GetClassMap(ECN::ECClassCR ) const;
+                bool IsMappedIntoContextClassMapTables(ClassMap const& ) const;
+                bool IsMappedIntoContextClassMapTables(PropertyMap const& ) const;
+                BentleyStatus ResolveMixins();
+                BentleyStatus ResolveMixins(ECN::ECClassCR );
+                BentleyStatus TraverseClassHierarchy(ECN::ECClassCR , ClassMap const*);
+                BentleyStatus FindRelationshipEndTableMaps();
+                BentleyStatus Execute(ColumnMap& );
+                BentleyStatus QueryMixIns();
+            public:
+                static BentleyStatus Find(ColumnMap& , ClassMap const& );
+            };
+
+
         ClassMap const& m_classMap;
         mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
         mutable std::set<DbColumn const*> m_usedColumnSet;
         bool m_usesSharedColumnStrategy;
-		mutable std::vector<const ClassMap*> m_compoundFilter;
+        mutable std::vector<const ClassMap*> m_compoundFilter;
         void Initialize();
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
@@ -34,20 +63,19 @@ struct ClassMapColumnFactory final : NonCopyableClass
         DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
 
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
-		bool IsColumnInUseByClassMap(DbColumn const& column) const;
+        bool IsColumnInUseByClassMap(DbColumn const& column) const;
         bool IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& param) const;
 
         void AddColumnToCache(DbColumn const&, Utf8StringCR) const;
-        BentleyStatus ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const;
-		void SetupCompoundFilter(bset<const ClassMap*> const* additionalFilter) const;
-		void RemoveCompoundFilter() const;
+        void SetupCompoundFilter(bset<const ClassMap*> const* additionalFilter) const;
+        void RemoveCompoundFilter() const;
         ClassMap const& GetClassMap() const { return m_classMap; }
         DbTable& GetTable() const;
         ECDbCR GetECDb() const;
 
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
-		void Refresh() { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
+        void Refresh() { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         //This function either create a column or grab a existing column
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Debug() const;

@@ -20,12 +20,12 @@ ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
 
-#TFS 590267
-ECDbMappingTestFixture.DiamondProblem_Case1
-ECDbMappingTestFixture.DiamondProblem_Case2
-
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
 #TFS 657660
 ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
+
+ECSchemaUpdateTests.DeleteProperties_TPH
+ECSchemaUpdateTests.DeleteProperties_JoinedTable
+ECSchemaUpdateTests.AddECPropertyToBaseClass

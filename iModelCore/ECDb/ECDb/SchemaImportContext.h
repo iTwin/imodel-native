@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaImportContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,11 +64,12 @@ public:
 private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
+	mutable std::map<DbTable const*, std::unique_ptr<std::vector<ECN::ECEntityClassCP>>> m_mixInCachePerTable;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
     ClassMapSaveContext m_saveContext;
     ECSchemaCompareContext m_compareContext;
-
+	static BentleyStatus QueryMixIns(ECDbCR ecdb, DbTable const& table, std::vector<ECN::ECEntityClassCP>& mixIns);
 public:
     SchemaImportContext() {}
 
@@ -83,7 +84,7 @@ public:
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     ClassMapSaveContext& GetClassMapSaveContext() { return m_saveContext; }
     ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
-    };
-
+	std::vector<ECN::ECEntityClassCP> const* QueryMixIns(ECDbCR ecdb, DbTable const& table) const;
+	};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
