@@ -2622,121 +2622,203 @@ double Tile::_GetMaximumSize() const
     return 512; // ###TODO: come up with a decent value, and account for device ppi
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct MeshGenerator
+{
+private:
+    typedef bmap<MeshMergeKey, MeshBuilderPtr> BuilderMap;
+
+    TileCR          m_tile;
+    GeometryOptions m_options;
+    double          m_tolerance;
+    double          m_vertexTolerance;
+    double          m_facetAreaTolerance;
+    BuilderMap      m_builderMap;
+    DRange3d        m_tileRange;
+    LoadContextCR   m_loadContext;
+    size_t          m_geometryCount = 0;
+    bool            m_maxGeometryCountExceeded = false;
+
+    static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
+    static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
+
+    MeshBuilderR GetMeshBuilder(MeshMergeKey& key);
+    DgnElementId GetElementId(GeometryR geom) const { return m_maxGeometryCountExceeded ? DgnElementId() : geom.GetEntityId(); }
+
+    void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained);
+
+    void AddStrokes(GeometryR geom, double rangePixels);
+    void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels);
+public:
+    MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
+
+    // Add meshes to the MeshBuilder map
+    void AddMeshes(GeometryList const& geometries, bool doRangeTest);
+
+    // Return a list of all meshes currently in the builder map
+    MeshList GetMeshes();
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
+  : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*s_vertexToleranceRatio),
+    m_facetAreaTolerance(m_tolerance*s_facetAreaToleranceRatio), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
+    {
+    auto found = m_builderMap.find(key);
+    if (m_builderMap.end() != found)
+        return *found->second;
+
+    MeshBuilderPtr builder = MeshBuilder::Create(*const_cast<DisplayParamsP>(key.m_params), m_vertexTolerance, m_facetAreaTolerance);
+    m_builderMap[key] = builder;
+    return *builder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
+    {
+    for (auto& geom : geometries)
+        {
+        if (m_loadContext.WasAborted())
+            return;
+
+        DRange3dCR geomRange = geom->GetTileRange();
+        double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+        if (rangePixels < s_minRangeBoxSize)
+            continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
+
+        bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
+        if (!m_maxGeometryCountExceeded)
+            m_maxGeometryCountExceeded = (++m_geometryCount > s_maxGeometryIdCount);
+
+        AddPolyfaces(*geom, rangePixels, isContained);
+        if (!m_options.WantSurfacesOnly())
+            AddStrokes(*geom, rangePixels);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyfaces(GeometryR geom, double rangePixels, bool isContained)
+    {
+    auto polyfaces = geom.GetPolyfaces(m_tolerance, m_options.m_normalMode);
+    AddPolyfaces(polyfaces, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained)
+    {
+    for (auto& polyface : polyfaces)
+        AddPolyface(polyface, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+    {
+    PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
+    if (nullptr == polyface || 0 == polyface->GetPointCount())
+        return;
+
+    DisplayParamsR displayParams = *tilePolyface.m_displayParams;
+    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
+    bool hasTexture = displayParams.QueryTexture(&db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
+
+    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), true);
+    MeshBuilderR builder = GetMeshBuilder(key);
+
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
+    bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
+
+    if (doDecimate)
+        polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+        {
+        if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+            {
+            DgnElementId elemId = GetElementId(geom);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), &db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels)
+    {
+    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never));
+    AddStrokes(strokes, geom, rangePixels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels)
+    {
+    for (auto& stroke : strokes)
+        AddStrokes(stroke, geom, rangePixels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels)
+    {
+    if (m_loadContext.WasAborted())
+        return;
+
+    DisplayParamsR displayParams = *strokes.m_displayParams;
+    MeshMergeKey key(displayParams, false, false);
+    MeshBuilderR builder = GetMeshBuilder(key);
+
+    DgnElementId elemId = GetElementId(geom);
+    for (auto& strokePoints : strokes.m_strokes)
+        builder.AddPolyline(strokePoints, elemId, rangePixels < GetVertexClusterThresholdPixels());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshList MeshGenerator::GetMeshes()
+    {
+    MeshList meshes;
+    for (auto& builder : m_builderMap)
+        if (!builder.second->GetMesh()->IsEmpty())
+            meshes.push_back(builder.second->GetMesh());
+
+    return meshes;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest, LoadContextCR loadContext) const
     {
-    static const double         s_vertexClusterThresholdPixels = 5.0;
-    static const size_t         s_decimatePolyfacePointCount = 100;
-
-    DgnDbR  db = GetElementRoot().GetDgnDb();
-    auto    normalMode = options.m_normalMode;
-    bool    twoSidedTriangles = options.WantTwoSidedTriangles();
-    bool    doSurfacesOnly = options.WantSurfacesOnly();
-
-    double  tolerance = GetTolerance();
-    double  vertexTolerance = tolerance * s_vertexToleranceRatio;
-    double  facetAreaTolerance = tolerance * tolerance * s_facetAreaToleranceRatio;
-
-    // Convert to meshes
-    bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
-    size_t      geometryCount = 0;
-    DRange3d    myTileRange = GetTileRange();
-
-    MeshList meshes;
-
-    for (auto& geom : geometries)
-        {
-        if (loadContext.WasAborted())
-            return meshes;
-
-        DRange3dCR  geomRange = geom->GetTileRange();
-        double      rangePixels = geomRange.DiagonalDistance() / tolerance;
-
-        if (rangePixels < s_minRangeBoxSize)
-            continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
-
-        auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
-        bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
-        bool        maxGeometryCountExceeded = (++geometryCount > s_maxGeometryIdCount);
-
-        for (auto& tilePolyface : polyfaces)
-            {
-            DisplayParamsPtr        displayParams = tilePolyface.m_displayParams;
-            PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
-            bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(&db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
-
-            if (0 == polyface->GetPointCount())
-                continue;
-
-            MeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
-
-            MeshBuilderPtr meshBuilder;
-            auto found = builderMap.find(key);
-            if (builderMap.end() != found)
-                meshBuilder = found->second;
-            else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
-
-            if (polyface.IsValid())
-                {
-                // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
-                // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate          = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
-                bool        doVertexCluster     = !doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels;
-
-                if (doDecimate)
-                    polyface->DecimateByEdgeCollapse (tolerance, 0.0);
-
-                for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                    {
-                    if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-                        {
-                        DgnElementId elemId;
-                        if (!maxGeometryCountExceeded)
-                            elemId = geom->GetEntityId();
-
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), &db, elemId, doVertexCluster, twoSidedTriangles, hasTexture);
-                        }
-                    }
-                }
-            }
-
-        if (!doSurfacesOnly)
-            {
-            auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, NormalMode::Never));
-        
-            for (auto& tileStrokes : tileStrokesArray)
-                {
-                if (loadContext.WasAborted())
-                    return meshes;
-
-                DisplayParamsPtr displayParams = tileStrokes.m_displayParams;
-                MeshMergeKey key(*displayParams, false, false);
-
-                MeshBuilderPtr meshBuilder;
-                auto found = builderMap.find(key);
-                if (builderMap.end() != found)
-                    meshBuilder = found->second;
-                else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
-
-                DgnElementId elemId;
-                if (geometryCount < s_maxGeometryIdCount)
-                    elemId = geom->GetEntityId();
-
-                for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline (strokePoints, elemId, rangePixels < s_vertexClusterThresholdPixels);
-                }
-            }
-        }
-
-    for (auto& builder : builderMap)
-        if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back (builder.second->GetMesh());
-
-    return meshes;
+    MeshGenerator generator(*this, options, loadContext);
+    generator.AddMeshes(geometries, doRangeTest);
+    return loadContext.WasAborted() ? MeshList() : generator.GetMeshes();
     }
 
 /*---------------------------------------------------------------------------------**//**
