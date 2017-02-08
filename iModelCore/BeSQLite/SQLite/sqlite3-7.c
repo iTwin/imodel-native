@@ -1841,6 +1841,31 @@ static int fts5yyGrowStack(fts5yyParser *p){
 # define fts5YYMALLOCARGTYPE size_t
 #endif
 
+/* Initialize a new parser that has already been allocated.
+*/
+static void sqlite3Fts5ParserInit(void *fts5yypParser){
+  fts5yyParser *pParser = (fts5yyParser*)fts5yypParser;
+#ifdef fts5YYTRACKMAXSTACKDEPTH
+  pParser->fts5yyhwm = 0;
+#endif
+#if fts5YYSTACKDEPTH<=0
+  pParser->fts5yytos = NULL;
+  pParser->fts5yystack = NULL;
+  pParser->fts5yystksz = 0;
+  if( fts5yyGrowStack(pParser) ){
+    pParser->fts5yystack = &pParser->fts5yystk0;
+    pParser->fts5yystksz = 1;
+  }
+#endif
+#ifndef fts5YYNOERRORRECOVERY
+  pParser->fts5yyerrcnt = -1;
+#endif
+  pParser->fts5yytos = pParser->fts5yystack;
+  pParser->fts5yystack[0].stateno = 0;
+  pParser->fts5yystack[0].major = 0;
+}
+
+#ifndef sqlite3Fts5Parser_ENGINEALWAYSONSTACK
 /* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
@@ -1856,28 +1881,11 @@ static int fts5yyGrowStack(fts5yyParser *p){
 static void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(fts5YYMALLOCARGTYPE)){
   fts5yyParser *pParser;
   pParser = (fts5yyParser*)(*mallocProc)( (fts5YYMALLOCARGTYPE)sizeof(fts5yyParser) );
-  if( pParser ){
-#ifdef fts5YYTRACKMAXSTACKDEPTH
-    pParser->fts5yyhwm = 0;
-#endif
-#if fts5YYSTACKDEPTH<=0
-    pParser->fts5yytos = NULL;
-    pParser->fts5yystack = NULL;
-    pParser->fts5yystksz = 0;
-    if( fts5yyGrowStack(pParser) ){
-      pParser->fts5yystack = &pParser->fts5yystk0;
-      pParser->fts5yystksz = 1;
-    }
-#endif
-#ifndef fts5YYNOERRORRECOVERY
-    pParser->fts5yyerrcnt = -1;
-#endif
-    pParser->fts5yytos = pParser->fts5yystack;
-    pParser->fts5yystack[0].stateno = 0;
-    pParser->fts5yystack[0].major = 0;
-  }
+  if( pParser ) sqlite3Fts5ParserInit(pParser);
   return pParser;
 }
+#endif /* sqlite3Fts5Parser_ENGINEALWAYSONSTACK */
+
 
 /* The following function deletes the "minor type" or semantic value
 ** associated with a symbol.  The symbol can be either a terminal
@@ -1959,6 +1967,18 @@ static void fts5yy_pop_parser_stack(fts5yyParser *pParser){
   fts5yy_destructor(pParser, fts5yytos->major, &fts5yytos->minor);
 }
 
+/*
+** Clear all secondary memory allocations from the parser
+*/
+static void sqlite3Fts5ParserFinalize(void *p){
+  fts5yyParser *pParser = (fts5yyParser*)p;
+  while( pParser->fts5yytos>pParser->fts5yystack ) fts5yy_pop_parser_stack(pParser);
+#if fts5YYSTACKDEPTH<=0
+  if( pParser->fts5yystack!=&pParser->fts5yystk0 ) free(pParser->fts5yystack);
+#endif
+}
+
+#ifndef sqlite3Fts5Parser_ENGINEALWAYSONSTACK
 /* 
 ** Deallocate and destroy a parser.  Destructors are called for
 ** all stack elements before shutting the parser down.
@@ -1971,16 +1991,13 @@ static void sqlite3Fts5ParserFree(
   void *p,                    /* The parser to be deleted */
   void (*freeProc)(void*)     /* Function used to reclaim memory */
 ){
-  fts5yyParser *pParser = (fts5yyParser*)p;
 #ifndef fts5YYPARSEFREENEVERNULL
-  if( pParser==0 ) return;
+  if( p==0 ) return;
 #endif
-  while( pParser->fts5yytos>pParser->fts5yystack ) fts5yy_pop_parser_stack(pParser);
-#if fts5YYSTACKDEPTH<=0
-  if( pParser->fts5yystack!=&pParser->fts5yystk0 ) free(pParser->fts5yystack);
-#endif
-  (*freeProc)((void*)pParser);
+  sqlite3Fts5ParserFinalize(p);
+  (*freeProc)(p);
 }
+#endif /* sqlite3Fts5Parser_ENGINEALWAYSONSTACK */
 
 /*
 ** Return the peak depth of the stack for a parser.
@@ -17060,7 +17077,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2017-01-26 02:26:02 9879be1899adf5634f551a2077b15ccb1133e4e3", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-02-07 14:45:18 bb7f445ba1df53cd4a169612b18fc533016102b7", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
