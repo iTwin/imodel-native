@@ -3648,7 +3648,7 @@ void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, bvector<DPoint
                             &loopA[0], (int)loopA.size ()
                             ))
             {
-            size_t numFaceB = AddMTGFacetsToIndexedPolyface (pFacets, *outsideMesh);
+            /*size_t numFaceB = */AddMTGFacetsToIndexedPolyface (pFacets, *outsideMesh);
 
             outsideMesh->AddPolygon (&triangulationMate[0], triangulationMate.size ());
             outsideMesh->Compress ();
@@ -3779,8 +3779,9 @@ TEST(Polyface,CulvertPunchB)
         DPoint3d::From (2.1,5.2, z0),
         };
 
-    double e = 0.001;
-    for (DVec3d viewVector : bvector<DVec3d> {DVec3d::From (e,e,1), DVec3d::From (0,-1,2), DVec3d::From (0,0,1)})
+    // unused - double e = 0.001;
+    // unused viewVector - for (DVec3d viewVector : bvector<DVec3d> {DVec3d::From (e,e,1), DVec3d::From (0,-1,2), DVec3d::From (0,0,1)})
+    for (size_t i = 0; i < 3; ++i)
         {
         for (Angle tilt : bvector<Angle>{ Angle::FromDegrees (0.0), Angle::FromDegrees (5.0), Angle::FromDegrees (15.0)})
             {
