@@ -67,6 +67,7 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     createStatus = rdlModel->Insert();
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
 
+#define WIP_TEST_REDLINE_IMAGE
 #ifdef WIP_TEST_REDLINE_IMAGE
     //  Store an image in the redline mdoel
     BeFile blah;
