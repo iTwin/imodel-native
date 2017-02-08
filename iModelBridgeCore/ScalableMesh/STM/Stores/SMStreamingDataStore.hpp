@@ -488,14 +488,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             group->SetDistributor(*m_NodeHeaderFetchDistributor);
             m_nodeHeaderGroups.push_back(group);
 
-            vector<uint64_t> nodeIds(group_numNodes);
+            vector<size_t> nodeIds(group_numNodes);
             memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
             position += group_numNodes * sizeof(uint64_t);
 
             group->GetHeader()->resize(group_numNodes);
-            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const size_t& nodeId)
                 {
-                return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
+                return SMNodeHeader{ nodeId, size_t(-1), 0 };
                 });
             }
         }
@@ -534,7 +534,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     return headerSize;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize)
     {
     assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
@@ -650,7 +650,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
     po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize) const
     {
 #ifndef VANCOUVER_API
     // Get Cesium 3D tiles required properties
@@ -868,7 +868,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
-    uint32_t headerSize = 0;
+    size_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
     std::wstring extension;
     switch (m_formatType)
@@ -962,7 +962,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 1;
@@ -982,7 +982,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 0;
@@ -1032,7 +1032,7 @@ template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMB
     return group;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const
     {
     size_t dataIndex = 0;
 
@@ -1279,7 +1279,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         }
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize)
     {
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
     std::unique_ptr<DataSource::Buffer[]>          dest;
