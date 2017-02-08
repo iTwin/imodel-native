@@ -2,7 +2,7 @@
 |
 |     $Source: ChangeSet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
@@ -758,6 +758,23 @@ DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup)
     DbResult result = (DbResult) sqlite3changegroup_add_strm((sqlite3_changegroup*) changeGroup.m_changegroup, InputCallback, (void*) this);
     _Reset();
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
+    {
+    ChangeGroup changeGroup;
+    DbResult result = ToChangeGroup(changeGroup);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    result = changeSet.FromChangeGroup(changeGroup);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return invert ? changeSet.Invert() : BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
