@@ -168,6 +168,15 @@ public:
     //! Apply offset to plane.
     GEOMDLLIMPEXP   void    OffsetDistance (double distance);
 
+    //! Search an array of points for the first index at which the point is on both of two planes.
+    GEOMDLLIMPEXP static ValidatedSize FindPointOnBothPlanes
+        (
+        bvector<DPoint3d> const &data,  //! [in] points to search
+        ClipPlaneCR plane0, //!< [in] first plane
+        ClipPlaneCR plane1, //!< [in] second plane
+        double tolerance    //!< [in] tolerance for "on" decision
+        );
+
     };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

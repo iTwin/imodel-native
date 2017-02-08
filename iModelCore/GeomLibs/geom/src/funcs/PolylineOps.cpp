@@ -2019,5 +2019,19 @@ Angle planarContinuationAngle
                     triangles,
                     oneBasedIndexAB);
     }
+
+
+void PolylineOps::CopyCyclicPointsFromStartIndex (bvector<DPoint3d> const &source, size_t startIndex, bvector<DPoint3d> &dest)
+    {
+    dest.clear ();
+    size_t n = source.size ();
+    for (size_t i = 0; i < n; i++)
+        {
+        size_t j = (startIndex + i) % n;
+        if (i == 0 || !source[j].AlmostEqual (dest.back ()))
+            dest.push_back (source[j]);
+        }
+    PolylineOps::EnforceClosure (dest);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
 

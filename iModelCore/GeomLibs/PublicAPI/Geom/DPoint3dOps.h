@@ -571,6 +571,8 @@ static GEOMDLLIMPEXP void LinearMapFrontBackToInterval(bvector<double> &data, do
 static GEOMDLLIMPEXP double ChebyshevPoint (size_t i, size_t n);
 //! Relative tolerance for coordinate tests.  This is 1e-10, and is coarser than Angle::SmallAngle.
 public: static GEOMDLLIMPEXP double SmallCoordinateRelTol ();
+//! Return a distance (1.0e-6) that is essentially zero for typical metric calculation.
+public: static GEOMDLLIMPEXP double SmallMetricDistance ();
 };
 
 
@@ -1216,6 +1218,16 @@ static GEOMDLLIMPEXP void AddPointIfDistinctFromBack (bvector<DPoint3d> &points,
 static GEOMDLLIMPEXP void EnforceClosure(bvector<DPoint3d> &points);
 //! Starting at initialIndex, pack out points that are AlmostEqual.  (if initialIndex is greater than 0, it is compared to [initialIndex-1])
 static GEOMDLLIMPEXP void PackAlmostEqualAfter (bvector<DPoint3d> &points, size_t initialCount);
+
+//! Make a copy of points in an array, starting at specified index and wrapping around.
+//! Consecutive AlmostEqual points are eliminated.
+//! A closure point is added if needed.
+static GEOMDLLIMPEXP void CopyCyclicPointsFromStartIndex
+(
+bvector<DPoint3d> const &source,    //!< [in] given points.
+size_t startIndex,                  //!< [in] index of first point to copy.
+bvector<DPoint3d> &dest             //!< [out] copied points.
+);
 };
 
 
@@ -1474,7 +1486,9 @@ public: static GEOMDLLIMPEXP bool PickTriangleFromStart
     size_t &edgeBaseIndex
     );
 
-
+//! Compute the area normal of the polygon.  If its dot product with positiveDirection is negative, reverse the points.
+//! @return true if a normal flip was applied.
+public: static GEOMDLLIMPEXP bool ReverseForPreferedNormal (bvector<DPoint3d> &xyz, DVec3dCR positiveDirection);
 //! Search for a triangle where uv is an interior point.
 //! The triangles considered all have the polygon start point as one vertex and a polygon edge as opposite edge.
 //! @param [in] xyPoints coordinates for triangles.

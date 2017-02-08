@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/PolygonOps.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1167,4 +1167,16 @@ DRange1d &altitudeRange
         }
     return PlanePolygonSSICode::Transverse;          
     }    
+
+bool PolygonOps::ReverseForPreferedNormal (bvector<DPoint3d> &xyz, DVec3dCR positiveDirection)
+    {
+    DVec3d normal = AreaNormal (xyz);
+    if (positiveDirection.DotProduct (normal) < 0.0)
+        {
+        DPoint3dOps::Reverse (xyz);
+        return true;
+        }
+    return false;
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

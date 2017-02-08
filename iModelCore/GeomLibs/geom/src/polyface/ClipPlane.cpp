@@ -414,4 +414,17 @@ bvector<DPoint3d> &xyzOut             //!< [out] outside part
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ValidatedSize ClipPlane::FindPointOnBothPlanes (bvector<DPoint3d> const &data, ClipPlaneCR plane0, ClipPlaneCR plane1, double tolerance)
+    {
+    for (size_t i = 0; i < data.size (); i++)
+        {
+        if (plane0.IsPointOn (data[i], tolerance) && plane1.IsPointOn (data[i], tolerance))
+            return ValidatedSize (i, true);
+        }
+    return ValidatedSize (0, false);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
