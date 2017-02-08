@@ -12,9 +12,21 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 //===================================================
 //
-// ComboNumberSpec Methods
+// CompositeValueSpec Methods
 //
 //===================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+void CompositeValueSpec::Init()
+    {
+    memset(m_ratio, 0, sizeof(m_ratio));
+    memset(m_units, 0, sizeof(m_units));
+    memset(m_unitLabel, 0, sizeof(m_unitLabel));
+    m_problemCode = FormatProblemCode::NoProblems;
+    m_type = ComboSpecType::Undefined;
+    }
 
 //---------------------------------------------------------------------------------------
 // The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
@@ -22,17 +34,181 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //    1. Units do not belong to the same Phenomenon
 //    2. Ratio of major/minor < 1
 //    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-size_t ComboNumberSpec::UnitRatio(UnitCP major, UnitCP minor)
+size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
     {
-    if (nullptr != major && nullptr != minor && (major->GetPhenomenon() == minor->GetPhenomenon()))
+    if (nullptr == subunit) // subunit is not defined - which is OK regardless of wheteh the unit is defined
+        return 0;
+    if (nullptr != unit)  // this is not allowed because defined subunit requires unit to be defined
         {
-        double rat = major->Convert(1.0, minor);
+        if (unit->GetPhenomenon() != subunit->GetPhenomenon())
+            {
+            UpdateProblemCode(FormatProblemCode::CNS_IncompatibleUnits);
+            }
+        double rat = unit->Convert(1.0, subunit);
         if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
             return static_cast<size_t>(rat);
+        else
+            UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
         }
+    else
+        UpdateProblemCode(FormatProblemCode::CNS_InconsistentUnitSet);
     return 0;
+    }
+
+void CompositeValueSpec::CheckRatios()
+    {
+    size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
+    if (1 < m_ratio[majorUOM]) ratioBits |= 0x1;
+    if (1 < m_ratio[middleUOM]) ratioBits |= 0x2;
+    if (1 < m_ratio[minorUOM]) ratioBits |= 0x4;
+    m_type = ComboSpecType::Undefined;
+
+    switch (ratioBits)
+        {
+        case 0x3:
+            m_type = ComboSpecType::Triple;
+            break;
+        case 0x7:
+            m_type = ComboSpecType::Quatro;
+            break;
+        case 0x1:
+            m_type = ComboSpecType::Double;
+            break;
+        case 0:
+            m_type = ComboSpecType::Single;
+            break;
+        default:
+            UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
+            break;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
+//   possible (within the current triad concept). This function will return -1 if Units do not qualify:
+//    1. Units do not belong to the same Phenomenon
+//    2. Ratio of major/minor < 1
+//    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+//size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subUnit)
+//    {
+//    if (nullptr != unit && nullptr != subUnit && (unit->GetPhenomenon() == subUnit->GetPhenomenon()))
+//        {
+//        double rat = unit->Convert(1.0, subUnit);
+//        double ratInt = 0.0;
+//        double fract = modf(rat, &ratInt);
+//        size_t intRat = static_cast<size_t>(ratInt);
+//        if (FormatConstant::IsNegligible(fract) && 1 < intRat)
+//            return static_cast<size_t>(intRat);
+//        else
+//           UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
+//        }
+//    return 0;
+//    }
+
+
+//---------------------------------------------------------------------------------------
+// Constructor has three call formats that could use default values of arguments
+//  Value of MajorToMiddle lesser than 2 will be treated as error because this
+//  is designed for helping in breaking a single given value into subvalues according
+//   to ratios. The processing algorithm 
+//  could be this approach - is not prohibited
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
+    {
+    Init();
+    m_ratio[majorUOM] = MajorToMiddle;
+    m_ratio[middleUOM] = MiddleToMinor;
+    m_ratio[minorUOM] = MinorToSub;
+    CheckRatios();
+    }
+
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
+    {
+    Init();
+    m_units[majorUOM] = MajorUnit;
+    m_units[middleUOM] = MiddleUnit;
+    m_units[minorUOM] = MinorUnit;
+    m_units[subUOM] = SubUnit;
+    m_ratio[majorUOM] = UnitRatio(m_units[majorUOM], m_units[middleUOM]);
+    m_ratio[middleUOM] = UnitRatio(MiddleUnit, MinorUnit);
+    m_ratio[minorUOM] = UnitRatio(MinorUnit, SubUnit);
+    CheckRatios();
+    }
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit)
+    {
+    UnitCP un = UnitRegistry::Instance().LookupUnit(MajorUnit);
+    if(nullptr == un)
+        UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
+    while(NoProblem())
+        {
+        m_units[majorUOM] = un;
+        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MiddleUnit)))
+            {
+            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+            break;
+            }
+        m_units[middleUOM] = un;
+        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MinorUnit)))
+            {
+            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+            break;
+            }
+        m_units[minorUOM] = un;
+        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(SubUnit)))
+            {
+            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+            break;
+            }
+        m_units[subUOM] = un;
+        m_ratio[majorUOM] = UnitRatio(m_units[majorUOM], m_units[middleUOM]);
+        m_ratio[middleUOM] = UnitRatio(m_units[middleUOM], m_units[minorUOM]);
+        m_ratio[minorUOM] = UnitRatio(m_units[minorUOM], m_units[subUOM]);
+        CheckRatios();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Using CompositeValueSpec is possible only when the quantity of the source value is defined and at least
+//   the top UOM is also defined. Regarding middle and low Units wqe may have three valid cases:
+//    1. Both of them not defined
+//    2. Middle is defined but low is not (null)
+//    3. Both of them are not defined
+//  if either of three "target" UOM are defined their associated phenomenon must be the same as
+//    the phenomenon of the source quantity
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+bool CompositeValueSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
+    {
+    if (nullptr == srcPhen || nullptr == targPhen)
+        return UpdateProblemCode(FormatProblemCode::QT_PhenomenonNotDefined);
+    if (srcPhen != targPhen)
+        return UpdateProblemCode(FormatProblemCode::QT_PhenomenaNotSame);
+    return IsProblem();
+    }
+
+//---------------------------------------------------------------------------------------
+// The problem code will be updated only if it was not already set to some non-zero value
+//   this approach is not the best, but witout a standard method for collection multiple 
+//    problems it's better than override earlier encountered problems
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+bool CompositeValueSpec::UpdateProblemCode(FormatProblemCode code)
+    {
+    if (m_problemCode == FormatProblemCode::NoProblems)
+        m_problemCode = code;
+    return IsProblem();
     }
 
 //===================================================
@@ -163,12 +339,9 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
     NumericFormatSpec fmt = NumericFormatSpec("Triad", presType, signOpt, formatTraits, (size_t)prec);
 
     Utf8CP blank = FormatConstant::BlankString();
-    if (IsNameNullOrEmpty(topName))
-        topName = blank;
-    if (IsNameNullOrEmpty(midName))
-        midName = blank;
-    if (IsNameNullOrEmpty(lowName))
-        lowName = blank;
+    topName = Utils::SubstituteEmptyOrNull(topName,blank);
+    midName = Utils::SubstituteEmptyOrNull(midName, blank);
+    lowName = Utils::SubstituteEmptyOrNull(lowName, blank);
 
     if (!m_midAssigned)
         {

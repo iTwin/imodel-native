@@ -233,9 +233,15 @@ enum class StdFormatCode
     DefaultInt = 600
     };
 
+//! Codes of problems might help in finding the source of the problem
 enum class FormatProblemCode
     {
     NoProblems = 0,
+    CNS_InconsistentFactorSet = 51,  //!< All ratio factors between units must be bigger than one
+    CNS_InconsistentUnitSet = 52,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
+    CNS_IncompatibleUnits = 53,      //!< Units provided on the argument list are not compatible
+    CNS_InvalidUnitName = 54,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
+    CNS_InvalidMajorUnit = 55,       //!< The MajorUnit in ComboNumbers is null or invalid
     QT_PhenomenonNotDefined = 101,
     QT_PhenomenaNotSame = 102,
     QT_InvalidTopMidUnits = 103,
@@ -243,6 +249,15 @@ enum class FormatProblemCode
     QT_InvalidUnitCombination = 105
     };
 
+//! Type of the ComboSpec describes one of allowable value transformations
+enum class ComboSpecType
+    {
+    Undefined = 0, //!< program failes to infer the type (default)
+    Single = 1,    //!< trivial case when Combo effectively is not used - not prohibited though
+    Double = 2,    //!< indicates of using 2 levels: Major and Middle
+    Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
+    Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
+    };
 struct Utils
     {
     UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
@@ -258,6 +273,8 @@ struct Utils
     static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
+    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
+    UNITS_EXPORT static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return (nullptr == name || strlen(name) == 0)? subs : name; }
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
@@ -575,7 +592,7 @@ public:
 // in the ratio array are associated with the upper UOM
 // @bsiclass                                                    David.Fox-Rabinovitz  01/2017
 //=======================================================================================
-struct ComboNumberSpec
+struct CompositeValueSpec
     {
 private:
     static const size_t  majorUOM  = 0;
@@ -585,44 +602,34 @@ private:
     size_t m_ratio[subUOM];
     UnitCP m_units[subUOM +1];
     Utf8CP m_unitLabel[subUOM +1];
-    bool m_includeZero;
     FormatProblemCode m_problemCode;
+    ComboSpecType m_type;
 
     bool SetUnitLabel(int index, Utf8CP label);
     bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
+    ComboSpecType InferSpecType();
+    //bool IsUnitPairMatch(UnitCP unit, UnitCP subunit);
+    size_t UnitRatio(UnitCP upper, UnitCP lower);
+    void ResetType() { m_type = ComboSpecType::Undefined; }
+    void CheckRatios();
+    CompositeValueSpec();
+    void Init();
 public:
-    size_t SetMajorToMiddleRatio(size_t value) { return  m_ratio[majorUOM] = value; }
-    size_t SetMiddleToMinorRatio(size_t value) { return   m_ratio[middleUOM] = value; }
-    size_t SetMinorToSubRatio(size_t value) { return   m_ratio[minorUOM] = value; }
-    UNITS_EXPORT bool SetUnits(UnitCP MajorUnit, UnitCP MiddlerUnit, UnitCP MinorUnit, UnitCP subUnit);
-    UNITS_EXPORT bool SetUnits(Utf8CP MajorUnit, Utf8CP MiddlerUnit, Utf8CP MinorUnit, Utf8CP subUnit);
-    UNITS_EXPORT bool SetUnitLabels(Utf8CP MajorUnit, Utf8CP MiddlerUnit, Utf8CP MinorUnit, Utf8CP subUnit);
-    UNITS_EXPORT bool SetMajorLabel(Utf8CP MajorLabel);
-    UNITS_EXPORT bool SetMiddleLabel(Utf8CP MiddleLabel);
-    UNITS_EXPORT bool SetMinorLabel(Utf8CP MinorLabel);
-    UNITS_EXPORT bool SetSubLabel(Utf8CP SubLabel);
+
+    UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
+    UNITS_EXPORT CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit=nullptr, UnitCP MinorUnit=nullptr, UnitCP subUnit = nullptr);
+    UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
+    UNITS_EXPORT void SetUnitLabels(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUnit = nullptr, Utf8CP subUnit = nullptr);
 
     UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[majorUOM]; }
     UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[majorUOM]; }
     UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[majorUOM]; }
     UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[majorUOM]; }
-    UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
+    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+    bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    bool NoProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
     };
 
-    struct ComboValueSpec
-        {
-        UnitCP m_topUnit;
-        UnitCP m_midUnit;
-        UnitCP m_lowUnit;
-        Utf8CP m_topUnitLabel;
-        Utf8CP m_midUnitLabel;
-        Utf8CP m_lowUnitLabel;
-        bool m_includeZero;
-        FormatProblemCode m_problemCode;
-
-        };
-
-    //Spec
 //=======================================================================================
 //! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
 //! Can be used for presenting angular measurement in the form of Degrees, Minutes and Seconds or 

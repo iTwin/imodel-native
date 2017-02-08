@@ -142,62 +142,63 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
         }
     }
 
- //----------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //----------------------------------------------------------------------------------------
- FractionalPrecision Utils::FractionalPrecisionByDenominator(size_t prec)
-     {
-     switch (prec)
-         {
-         case 2: return FractionalPrecision::Half;
-         case 4: return FractionalPrecision::Quarter;
-         case 8: return FractionalPrecision::Eighth;
-         case 16: return FractionalPrecision::Sixteenth;
-         case 32: return FractionalPrecision::Over_32;
-         case 64: return FractionalPrecision::Over_64;
-         case 128: return FractionalPrecision::Over_128;
-         case 256: return FractionalPrecision::Over_256;
-         case 1:
-         default:return FractionalPrecision::Whole;
-         }
-     }
-
- //----------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //----------------------------------------------------------------------------------------
-  const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
-     {
-     switch (prec)
-         {
-         case FractionalPrecision::Half: return 2;
-         case FractionalPrecision::Quarter: return 4;
-         case FractionalPrecision::Eighth: return 8;
-         case FractionalPrecision::Sixteenth: return 16;
-         case FractionalPrecision::Over_32: return 32;
-         case FractionalPrecision::Over_64: return 64;
-         case FractionalPrecision::Over_128: return 128;
-         case FractionalPrecision::Over_256: return 256;
-         default:
-         case FractionalPrecision::Whole: return 1;
-         }
-     }
-
-  //----------------------------------------------------------------------------------------
-  // @bsimethod                                                   David Fox-Rabinovitz 11/16
-  //----------------------------------------------------------------------------------------
-  size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+FractionalPrecision Utils::FractionalPrecisionByDenominator(size_t prec)
     {
-      int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
-      size_t strL = (nullptr == str) ? 0 : strlen(str);
-      if (strL < 1 || cap < 1)
-          return index;
-      if (static_cast<int>(strL) > cap)
-          strL = static_cast<size_t>(cap);
-      memcpy(static_cast<void*>(buf + index), str, strL);
-      index += strL;
-      buf[index] = '\0';     
-      return index;
+    switch (prec)
+        {
+        case 2: return FractionalPrecision::Half;
+        case 4: return FractionalPrecision::Quarter;
+        case 8: return FractionalPrecision::Eighth;
+        case 16: return FractionalPrecision::Sixteenth;
+        case 32: return FractionalPrecision::Over_32;
+        case 64: return FractionalPrecision::Over_64;
+        case 128: return FractionalPrecision::Over_128;
+        case 256: return FractionalPrecision::Over_256;
+        case 1:
+        default:return FractionalPrecision::Whole;
+        }
     }
+
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //----------------------------------------------------------------------------------------
+const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
+    {
+    switch (prec)
+        {
+        case FractionalPrecision::Half: return 2;
+        case FractionalPrecision::Quarter: return 4;
+        case FractionalPrecision::Eighth: return 8;
+        case FractionalPrecision::Sixteenth: return 16;
+        case FractionalPrecision::Over_32: return 32;
+        case FractionalPrecision::Over_64: return 64;
+        case FractionalPrecision::Over_128: return 128;
+        case FractionalPrecision::Over_256: return 256;
+        default:
+        case FractionalPrecision::Whole: return 1;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
+    {
+        int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
+        size_t strL = (nullptr == str) ? 0 : strlen(str);
+        if (strL < 1 || cap < 1)
+            return index;
+        if (static_cast<int>(strL) > cap)
+            strL = static_cast<size_t>(cap);
+        memcpy(static_cast<void*>(buf + index), str, strL);
+        index += strL;
+        buf[index] = '\0';     
+        return index;
+    }
+
 
  //===================================================
  //
