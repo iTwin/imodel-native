@@ -311,18 +311,18 @@ private:
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
     void ApplyChanges(TxnId, TxnAction);
-    void OnChangesetApplied(BeSQLite::ChangeSet& changeset, TxnAction);
     void OnChangesApplied(BeSQLite::Changes const&, TxnAction);
-    OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
+    OnCommitStatus CancelChangeSet(BeSQLite::ChangeSet& changeset);
     DgnDbStatus ReinstateActions(TxnRange& revTxn);
     bool PrepareForUndo();
     DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     TxnTable* FindTxnTable(Utf8CP tableName) const;
-    BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
-    bool IsMultiTxnMember(TxnId rowid);
+    BeSQLite::DbResult ApplyChangeSet(BeSQLite::IChangeSet& changeset, TxnAction isUndo);
+    bool IsMultiTxnMember(TxnId rowid) const;
     RevisionStatus MergeRevision(DgnRevisionCR revision);
+    RevisionStatus ApplyRevision(DgnRevisionCR revision, bool reverse);
     void CancelDynamics();
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -368,7 +368,7 @@ public:
     DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
 
     //! Get the description of a previously committed Txn, given its TxnId.
-    DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
+    DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId) const;
 
     //! Get a description of the operation that would be reversed by calling ReverseTxns(1).
     //! This is useful for showing the operation that would be undone, for example in a pull-down menu.
@@ -410,7 +410,7 @@ public:
     //! Get the TxnId of the current Txn.
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
     //! @see   ReverseTo CancelTo
-    TxnId GetCurrentTxnId() {return m_curr;}
+    TxnId GetCurrentTxnId() const {return m_curr;}
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
@@ -434,11 +434,11 @@ public:
 
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
-    bool IsUndoPossible() {return GetSessionStartId() < GetCurrentTxnId();}
+    bool IsUndoPossible() const {return GetSessionStartId() < GetCurrentTxnId();}
 
     //! Query if there are currently any reinstateable (redoable) changes
     //! @return True if there are currently any reinstate-able (redoable) changes
-    bool IsRedoPossible() {return !m_reversedTxn.empty();}
+    bool IsRedoPossible() const {return !m_reversedTxn.empty();}
 
     enum class AllowCrossSessions {Yes=1, No=0};
     //! Reverse (undo) the most recent operation(s).

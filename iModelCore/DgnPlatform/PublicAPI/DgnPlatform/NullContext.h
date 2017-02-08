@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NullContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,6 +86,7 @@ struct FitContext : NullContext
     RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
     bool IsRangeContained(RangeIndex::FBoxCR range) const;
     DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
+    DGNPLATFORM_EXPORT void ExtendFitRange(AxisAlignedBox3dCR elementBox);
 
     FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
     FitViewParams const& GetParams() const {return m_params;}
