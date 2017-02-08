@@ -524,7 +524,7 @@ static bool WriteSchema(Options const& options)
         }
     schema->AddReferencedSchema(*bsCASchema);
 
-    auto supInfo = SupplementalSchemaMetaData::Create(schemaKey.GetName(), schemaKey.GetVersionRead(), schemaKey.GetVersionMinor(), options.Precendence, "Localization", false);
+    auto supInfo = SupplementalSchemaMetaData::Create(schemaKey.GetName().c_str(), schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor(), options.Precendence, "Localization");
     IECInstancePtr instance = supInfo->CreateCustomAttribute();
     schema->SetCustomAttribute(*instance);
 

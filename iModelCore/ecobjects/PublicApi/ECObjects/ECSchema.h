@@ -216,6 +216,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECCustomAttributeContainer
 private:
     friend struct ECCustomAttributeInstanceIterable;
     friend struct SupplementedSchemaBuilder;
+    friend struct StandardCustomAttributeReferencesConverter;
 
     ECCustomAttributeCollection         m_primaryCustomAttributes;
     ECCustomAttributeCollection         m_supplementedCustomAttributes;

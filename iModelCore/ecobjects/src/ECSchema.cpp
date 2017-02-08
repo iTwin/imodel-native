@@ -1614,7 +1614,7 @@ int ECSchema::RemoveUnusedSchemaReferences()
 void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     {
     m_supplementalSchemaInfo = info;
-    if (NULL == info)
+    if (nullptr == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(), 
 		                            SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
@@ -1623,10 +1623,10 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
         if (attribute.IsValid())
             {
             this->SetSupplementedCustomAttribute(*attribute);
-            auto& bsca = attribute->GetClass().GetSchema();
-            if (!ECSchema::IsSchemaReferenced(*this, bsca ))
+            auto& coreCA = attribute->GetClass().GetSchema();
+            if (!ECSchema::IsSchemaReferenced(*this, coreCA))
                 {
-                this->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
                 }
             }
         }

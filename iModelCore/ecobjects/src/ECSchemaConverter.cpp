@@ -826,6 +826,31 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus CustomAttributeReplacement::AddPropertyMapping(Utf8CP oldPropertyName, Utf8CP newPropertyName)
+    {
+    auto const it = m_propertyMapping.find(oldPropertyName);
+    if (it != m_propertyMapping.end())
+        {
+        if (0 != BeStringUtilities::Stricmp(newPropertyName, it->second.c_str()))
+            return ECObjectsStatus::Error; // The existing property mapping is different than the one that is trying to be added
+        
+        return ECObjectsStatus::Success;
+        }
+
+    m_propertyMapping[oldPropertyName] = newPropertyName;
+
+    return ECObjectsStatus::Success;
+    }
+
+Utf8String CustomAttributeReplacement::GetPropertyMapping(Utf8CP oldPropertyName)
+    {
+    auto const it = m_propertyMapping.find(oldPropertyName);
+    if (m_propertyMapping.end() == it)
+        return Utf8String();
+
+    return it->second;
+    }
+
 bmap<Utf8String, CustomAttributeReplacement> StandardCustomAttributeReferencesConverter::s_entries = bmap<Utf8String, CustomAttributeReplacement>();
 bool StandardCustomAttributeReferencesConverter::s_isInitialized = false;
 ECSchemaReadContextPtr schemaContext = NULL;
@@ -849,36 +874,45 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
     if (schemaContext == NULL)
         schemaContext = ECSchemaReadContext::CreateContext();
 
-    SchemaKey key(mapping.newSchemaName.c_str(), 1, 0);
+    SchemaKey key(mapping.GetNewSchemaName().c_str(), 1, 0);
     auto customAttributeSchema = ECSchema::LocateSchema(key, *schemaContext);
 
-    ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.newCustomAttributeName.c_str());
+    ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-
-    schema.AddReferencedSchema(*customAttributeSchema);
 
     ECObjectsStatus propertyConversionStatus;
     for (uint32_t i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
         {
         ECPropertyP propP = sourceCustomAttributeClass->GetPropertyByIndex((uint32_t)i);
 
-        propertyConversionStatus = ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
+        propertyConversionStatus = ConvertPropertyValue(propP->GetName().c_str(), mapping, sourceCustomAttribute, *targetAttributeInstance);
         if (ECObjectsStatus::Success != propertyConversionStatus)
             return propertyConversionStatus;
         }
 
     // Remove the old Custom Attribute and add the new one to the container
-    if (!container.RemoveCustomAttribute(mapping.oldSchemaName, mapping.oldCustomAttributeName))
+    ECObjectsStatus status;
+    if (container.RemoveCustomAttribute(mapping.GetOldSchemaName(), mapping.GetOldCustomAttributeName()))
+        {
+        schema.AddReferencedSchema(*customAttributeSchema);
+        if ((status = container.SetCustomAttribute(*targetAttributeInstance)) != ECObjectsStatus::Success)
+            return status;
+        }
+    else if (container.RemoveSupplementedCustomAttribute(mapping.GetOldSchemaName(), mapping.GetOldCustomAttributeName()))
+        {
+        if ((status = container.SetSupplementedCustomAttribute(*targetAttributeInstance)) != ECObjectsStatus::Success)
+            return status;
+        }
+    else
         {
         LOG.errorv("Couldn't remove the CustomAttribute %s from %s", sourceCustomAttributeClass->GetName().c_str(), GetContainerName(container).c_str());
         return ECObjectsStatus::Error;
         }
 
-    ECObjectsStatus status;
-    if ((status = container.SetCustomAttribute(*targetAttributeInstance)) != ECObjectsStatus::Success)
-        return status;
+    // Attempt to remove the old referenced schema. If it fails that means it is still in use, so don't fail conversion.
+    schema.RemoveUnusedSchemaReferences();
 
-    return ECObjectsStatus::Success;
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -892,6 +926,13 @@ bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeRefer
         AddMapping("Bentley_Standard_CustomAttributes", "DateTimeInfo", "CoreCustomAttributes", "DateTimeInfo");
         AddMapping("Bentley_Standard_CustomAttributes", "ClassHasCurrentTimeStampProperty", "CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
         
+        // SupplementalProvenance does not need to be converted since it is never serialized.
+        AddMapping("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData", "CoreCustomAttributes", "SupplementalSchema");
+        Utf8String oldSupplementalSchemaQualifiedName = ECSchemaConverter::GetQualifiedClassName("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
+        AddPropertyMapping(oldSupplementalSchemaQualifiedName.c_str(), "PrimarySchemaName", "PrimarySchemaReference.SchemaName");
+        AddPropertyMapping(oldSupplementalSchemaQualifiedName.c_str(), "PrimarySchemaMajorVersion", "PrimarySchemaReference.MajorVersion");
+        AddPropertyMapping(oldSupplementalSchemaQualifiedName.c_str(), "PrimarySchemaMinorVersion", "PrimarySchemaReference.MinorVersion");
+
         // Add More...
             
         s_isInitialized = true;
@@ -909,6 +950,18 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::AddMapping(Utf8CP oS
     s_entries[qualifiedName] = CustomAttributeReplacement(oSchema, oName, nSchema, nName);
 
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardCustomAttributeReferencesConverter::AddPropertyMapping(Utf8CP oldFullyQualifiedName, Utf8CP oldPropertyName, Utf8CP newPropertyName)
+    {
+    auto it = s_entries.find(oldFullyQualifiedName);
+    if (s_entries.end() == it)
+        ECObjectsStatus::Error;
+
+    return it->second.AddPropertyMapping(oldPropertyName, newPropertyName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -934,12 +987,12 @@ Utf8String StandardCustomAttributeReferencesConverter::GetContainerName(IECCusto
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR sourceCustomAttribute, IECInstanceR targetCustomAttribute)
+ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue(Utf8CP sourceProp, CustomAttributeReplacement mapping, IECInstanceR sourceCustomAttribute, IECInstanceR targetCustomAttribute)
     {
     ECObjectsStatus status;
 
     ECValue sourceValue;
-    if ((status = sourceCustomAttribute.GetValue(sourceValue, propertyName.c_str())) != ECObjectsStatus::Success)
+    if ((status = sourceCustomAttribute.GetValue(sourceValue, sourceProp)) != ECObjectsStatus::Success)
         return status;
 
     // Checks if property Value is actually set. In case it isn't the conversion will be stopped
@@ -948,26 +1001,39 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyValue
     if (sourceValue.IsUninitialized() || sourceValue.IsNull())
         return ECObjectsStatus::Success;
 
-    ECValue targetValue;
-    if ((status = targetCustomAttribute.GetValue(targetValue, propertyName.c_str())) != ECObjectsStatus::Success)
-        return status;
-
-    auto targetProperty = targetCustomAttribute.GetClass().GetPropertyP(propertyName);
-    if (!targetProperty->GetIsPrimitive())
+    if (!sourceValue.IsPrimitive())
         {
-        LOG.errorv("Complex Properties are not supported in the current version of StandardCustomAttributeReferencesConverter");
+        LOG.errorv("The current version of StandardCustomAttributeReferencesConverter only supports converting from primitive properties.");
         return ECObjectsStatus::Error;
         }
 
-    auto targetPrimitiveProperty = targetProperty->GetAsPrimitiveProperty();
-    auto enumeration = targetPrimitiveProperty->GetEnumeration();
-    if (enumeration != nullptr)
+    Utf8String targetAccessor = mapping.GetPropertyMapping(sourceProp);
+    if (targetAccessor.empty())
+        targetAccessor = sourceProp;
+
+    ECValue targetValue;
+    if ((status = targetCustomAttribute.GetValue(targetValue, targetAccessor.c_str())) != ECObjectsStatus::Success)
+        return ECObjectsStatus::Success; // drops the property
+
+    if (!targetValue.IsPrimitive())
         {
-        return ConvertPropertyToEnum(propertyName, *enumeration, targetCustomAttribute, targetValue, sourceValue);
+        LOG.errorv("The current version of StandardCustomAttributeReferencesConverter only supports converting to primitive or struct properties.");
+        return ECObjectsStatus::Error;
+        }
+
+    ECPropertyP targetProperty = targetCustomAttribute.GetClass().GetPropertyP(targetAccessor);
+    if (nullptr != targetProperty)
+        {
+        auto targetPrimitiveProperty = targetProperty->GetAsPrimitiveProperty();
+        auto enumeration = targetPrimitiveProperty->GetEnumeration();
+        if (enumeration != nullptr)
+            {
+            return ConvertPropertyToEnum(targetAccessor, *enumeration, targetCustomAttribute, targetValue, sourceValue);
+            }
         }
 
     targetValue.From(sourceValue);
-    targetCustomAttribute.SetValue(propertyName.c_str(), targetValue);
+    targetCustomAttribute.SetValue(targetAccessor.c_str(), targetValue);
     return ECObjectsStatus::Success;
     }
 

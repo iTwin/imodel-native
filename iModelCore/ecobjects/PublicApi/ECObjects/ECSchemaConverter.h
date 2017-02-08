@@ -197,18 +197,32 @@ struct UnitSpecificationsConverter : IECCustomAttributeConverter
 //+===============+===============+===============+===============+===============+======
 //@bsiclass
 //+===============+===============+===============+===============+===============+======
-struct CustomAttributeReplacement
+struct CustomAttributeReplacement final
     {
-    Utf8String oldSchemaName;
-    Utf8String oldCustomAttributeName;
+private:
+    Utf8String m_oldSchemaName;
+    Utf8String m_oldCustomAttributeName;
 
-    Utf8String newSchemaName;
-    Utf8String newCustomAttributeName;
+    Utf8String m_newSchemaName;
+    Utf8String m_newCustomAttributeName;
 
+    bmap<Utf8String, Utf8String> m_propertyMapping;
+
+public:
     CustomAttributeReplacement(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName)
-        : oldSchemaName(oSchema), oldCustomAttributeName(oName), newSchemaName(nSchema), newCustomAttributeName(nName)
-        {}
-    CustomAttributeReplacement() {}
+        : m_oldSchemaName(oSchema), m_oldCustomAttributeName(oName), m_newSchemaName(nSchema), m_newCustomAttributeName(nName)
+        {
+        m_propertyMapping = bmap<Utf8String, Utf8String>();
+        }
+    CustomAttributeReplacement() {CustomAttributeReplacement("", "", "", "");}
+
+    Utf8String GetOldSchemaName() {return m_oldSchemaName;}
+    Utf8String GetOldCustomAttributeName() {return m_oldCustomAttributeName;}
+    Utf8String GetNewSchemaName() {return m_newSchemaName;}
+    Utf8String GetNewCustomAttributeName() {return m_newCustomAttributeName;}
+
+    ECObjectsStatus AddPropertyMapping(Utf8CP oldPropertyName, Utf8CP newPropertyName);
+    Utf8String GetPropertyMapping(Utf8CP oldPropertyName);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -224,11 +238,12 @@ struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
         static bmap<Utf8String, CustomAttributeReplacement> s_entries;
 
         static ECObjectsStatus AddMapping(Utf8CP oSchema, Utf8CP oName, Utf8CP nSchema, Utf8CP nName);
+        static ECObjectsStatus AddPropertyMapping(Utf8CP oldName, Utf8CP propertyName, Utf8CP newPropertyName);
 
     public:
         ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
         static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
-        ECObjectsStatus ConvertPropertyValue(Utf8StringCR propertyName, IECInstanceR oldCustomAttribute, IECInstanceR newCustomAttribute);
+        ECObjectsStatus ConvertPropertyValue(Utf8CP sourcePropAccessor, CustomAttributeReplacement mapping, IECInstanceR sourceCustomAttribute, IECInstanceR targetCustomAttribute);
         ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
         Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };

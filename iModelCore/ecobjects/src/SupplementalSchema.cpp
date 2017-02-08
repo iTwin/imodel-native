@@ -1035,7 +1035,7 @@ SchemaPrecedence precedence
     }
 
 Utf8CP SupplementalSchemaInfo::s_customAttributeAccessor = "SupplementalProvenance";
-Utf8CP SupplementalSchemaInfo::s_customAttributeSchemaName = "Bentley_Standard_CustomAttributes";
+Utf8CP SupplementalSchemaInfo::s_customAttributeSchemaName = "CoreCustomAttributes";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012

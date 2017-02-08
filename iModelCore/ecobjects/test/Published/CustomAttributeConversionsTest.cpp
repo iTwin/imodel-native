@@ -14,7 +14,25 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct StandardCustomAttributeConversionTests : ECTestFixture 
     {
+    ECSchemaPtr m_coreCASchema;
+    ECSchemaPtr m_bscaSchema;
+
     Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
+
+    virtual void SetUp() override
+        {
+        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+        SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
+        m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
+        ASSERT_TRUE(m_bscaSchema.IsValid());
+
+        SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
+        m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
+        ASSERT_TRUE(m_coreCASchema.IsValid());
+
+        ECTestFixture::SetUp();
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -1866,9 +1884,7 @@ TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTim
 
     ASSERT_EQ(true, ECSchemaConverter::Convert(*schema)) << "Failed to convert " << schema->GetFullSchemaName().c_str() << ".";
 
-    SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
-    ASSERT_TRUE(schema->GetReferencedSchemas().end() != schema->GetReferencedSchemas().Find(coreCAKey, SchemaMatchType::Exact))
-                    << "Converted schema is missing schema reference to CoreCustomAttributes";
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *m_coreCASchema)) << "Converted schema is missing schema reference to CoreCustomAttributes";
     
     ECClassP classAP = schema->GetClassP("TestClassA");
     EXPECT_TRUE(classAP != nullptr) << "Could not find TestClassA in schema";
@@ -1885,23 +1901,113 @@ TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTim
 
     IECInstancePtr dateTimeInfoAPtr = lastModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoAPtr != nullptr) << "Could not find DateTimeInfo on LastMod property of TestClassA";
-    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << lastModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_EQ(m_coreCASchema->GetSchemaKey(), dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << lastModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
     EXPECT_STREQ("Utc", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassA does not have expected value.";
     EXPECT_STREQ("DateTime", GetDateTimeInfoValue(dateTimeInfoAPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassA does not have expected value.";
 
     IECInstancePtr dateTimeInfoBPtr = nextModPropP->GetCustomAttribute("DateTimeInfo");
     EXPECT_TRUE(dateTimeInfoBPtr != nullptr) << "Could not find DateTimeInfo on NextMod property of TestClassB";
-    EXPECT_EQ(coreCAKey, dateTimeInfoBPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << nextModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_EQ(m_coreCASchema->GetSchemaKey(), dateTimeInfoBPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, DateTimeInfo, on property " << nextModPropP->GetName().c_str() << " was not converted to use the new CoreCA custom attribute";
     EXPECT_STREQ("Unspecified", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeKind").c_str()) << "DateTimeKind of TestClassB does not have expected value.";
     EXPECT_STREQ("Date", GetDateTimeInfoValue(dateTimeInfoBPtr, "DateTimeComponent").c_str()) << "DateTimeComponent of TestClassB does not have expected value.";
 
     IECInstancePtr timeStampInstancePtr = classCP->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
     EXPECT_TRUE(timeStampInstancePtr != nullptr) << "Could not get ClassHasCurrentTimeStampProperty CA from TestClassC";
-    EXPECT_EQ(coreCAKey, dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, ClassHasCurrentTimeStampProperty, on class " << classCP->GetFullName() << " was not converted to use the new CoreCA custom attribute";
+    EXPECT_EQ(m_coreCASchema->GetSchemaKey(), dateTimeInfoAPtr->GetClass().GetSchema().GetSchemaKey()) << "The custom attribute, ClassHasCurrentTimeStampProperty, on class " << classCP->GetFullName() << " was not converted to use the new CoreCA custom attribute";
     ECValue checkValue;
     timeStampInstancePtr->GetValue(checkValue, "PropertyName");
     EXPECT_TRUE(checkValue.IsString()) << "The value in the property PropertyName of CustomAttribute ClassHasCurrentTimeStampProperty is not of the expected type";
     EXPECT_STREQ("TimeStampProp", checkValue.GetUtf8CP()) << "The value of CustomAttribute ClassHasCurrentTimeStampProperty.PropertyName is not as expected.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, TestSupplementalSchemaMetaDataConversion)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='suppSchema_Supplemental_Testing' namespacePrefix='sup' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='1.13' prefix='bsca'/>"
+        "   <ECCustomAttributes>"
+        "       <SupplementalSchemaMetaData xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "           <PrimarySchemaName>TestSchema</PrimarySchemaName>"
+        "           <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>"
+        "           <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>"
+        "           <Precedence>200</Precedence>"
+        "           <Purpose>Testing</Purpose>"
+        "           <IsUserSpecific>False</IsUserSpecific>"
+        "       </SupplementalSchemaMetaData>"
+        "   </ECCustomAttributes>"
+        "</ECSchema>";
+
+    ECSchemaPtr suppSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(suppSchema, schemaXml, *context);
+    ASSERT_TRUE(suppSchema.IsValid());
+    ASSERT_TRUE(ECSchemaConverter::Convert(*suppSchema));
+
+    EXPECT_TRUE(suppSchema->IsSupplementalSchema());
+    EXPECT_TRUE(suppSchema->IsDefined("CoreCustomAttributes", "SupplementalSchema"));
+    EXPECT_FALSE(suppSchema->IsDefined("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData"));
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*suppSchema, *m_coreCASchema));
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*suppSchema, *m_bscaSchema));
+
+    IECInstancePtr metaDataInstance = suppSchema->GetCustomAttribute("CoreCustomAttributes", "SupplementalSchema");
+    ASSERT_TRUE(metaDataInstance.IsValid());
+    SupplementalSchemaMetaData metaData(*metaDataInstance);
+    EXPECT_STREQ("TestSchema", metaData.GetPrimarySchemaName().c_str());
+    EXPECT_EQ(1, metaData.GetPrimarySchemaReadVersion());
+    EXPECT_EQ(0, metaData.GetPrimarySchemaMinorVersion());
+    EXPECT_EQ(200, metaData.GetSupplementalSchemaPrecedence());
+    EXPECT_STREQ("Testing", metaData.GetSupplementalSchemaPurpose().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
+    {
+    Utf8CP supSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema_Supplemental_Testing" namespacePrefix="sup" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <PrimarySchemaName>TestSchema</PrimarySchemaName>
+                    <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+                    <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+                    <Precedence>200</Precedence>
+                    <Purpose>Testing</Purpose>
+                    <IsUserSpecific>False</IsUserSpecific>
+                </SupplementalSchemaMetaData>
+            </ECCustomAttributes>
+        </ECSchema>)xml";
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" isDomainClass="false"/>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ECSchemaPtr supSchema;
+    ECSchema::ReadFromXmlString(supSchema, supSchemaXml, *context);
+    bvector<ECSchemaP> supSchemas;
+    supSchemas.push_back(supSchema.get());
+    SupplementedSchemaBuilder builder;
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, false)) << "Failed to supplement schema";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
+
+    EXPECT_TRUE(schema->IsSupplemented());
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *m_coreCASchema));
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schema, *m_bscaSchema));
+
+    SupplementalSchemaInfoPtr suppInfo = schema->GetSupplementalInfo();
+    ASSERT_TRUE(suppInfo.IsValid());
+    bvector<Utf8String> suppSchemaNames;
+    EXPECT_EQ(ECObjectsStatus::Success, suppInfo->GetSupplementalSchemaNames(suppSchemaNames));
+    EXPECT_EQ(1, suppSchemaNames.size());
+    EXPECT_STREQ("TestSchema_Supplemental_Testing.01.00.00", suppSchemaNames[0].c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
