@@ -12,9 +12,15 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define REVISION_LZMA_MARKER   "RevLzma"
-#define CURRENT_REV_END_TXN_ID "CurrentRevisionEndTxnId"
+#define REVISION_LZMA_MARKER    "RevLzma"
+#define CURRENT_REV_END_TXN_ID  "CurrentRevisionEndTxnId"
+#define INITIAL_PARENT_REV_ID   "InitialParentRevisionId"
+#define PARENT_REV_ID           "ParentRevisionId"
+#define REVERSED_PARENT_REV_ID  "ReversedParentRevisionId"
+#define REVISION_FORMAT_VERSION  0x10
 // #define DEBUG_REVISION_KEEP_FILES 1
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 // LZMA Header written to the top of the revision file
@@ -29,7 +35,7 @@ private:
     uint16_t m_compressionType;
 
 public:
-    static const int formatVersionNumber = 0x10;
+    static const int formatVersionNumber = REVISION_FORMAT_VERSION;
     enum CompressionType
         {
         LZMA2 = 2
@@ -78,7 +84,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    11/2016
     //---------------------------------------------------------------------------------------
-    BentleyStatus StartOutput()
+    DbResult StartOutput()
         {
         BeAssert(m_outLzmaFileStream == nullptr);
         m_outLzmaFileStream = new BeFileLzmaOutStream();
@@ -87,7 +93,7 @@ private:
         if (fileStatus != BeFileStatus::Success)
             {
             BeAssert(false);
-            return ERROR;
+            return BE_SQLITE_ERROR;
             }
 
         RevisionLzmaHeader header;
@@ -96,17 +102,17 @@ private:
         if (zipStatus != ZIP_SUCCESS)
             {
             BeAssert(false);
-            return ERROR;
+            return BE_SQLITE_ERROR;
             }
 
         zipStatus = m_lzmaEncoder.StartCompress(*m_outLzmaFileStream);
         if (zipStatus != ZIP_SUCCESS)
             {
             BeAssert(false);
-            return ERROR;
+            return BE_SQLITE_ERROR;
             }
 
-        return SUCCESS;
+        return BE_SQLITE_OK;
         }
 
     //---------------------------------------------------------------------------------------
@@ -130,7 +136,8 @@ private:
         {
         if (nullptr == m_outLzmaFileStream)
             {
-            if (SUCCESS != StartOutput())
+            DbResult result = StartOutput();
+            if (BE_SQLITE_OK != result)
                 return BE_SQLITE_ERROR;
             }
             
@@ -167,7 +174,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionChangesFileReader::StartInput()
+DbResult RevisionChangesFileReader::StartInput()
     {
     BeAssert(m_inLzmaFileStream == nullptr);
     m_inLzmaFileStream = new BeFileLzmaInStream();
@@ -176,7 +183,7 @@ BentleyStatus RevisionChangesFileReader::StartInput()
     if (status != SUCCESS)
         {
         BeAssert(false);
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     RevisionLzmaHeader  header;
@@ -184,18 +191,18 @@ BentleyStatus RevisionChangesFileReader::StartInput()
     m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
     if (actuallyRead != sizeof(header) || !header.IsValid())
         {
-        BeAssert(false);
-        return ERROR;
+        BeAssert(false && "Attempt to read an invalid revision version");
+        return BE_SQLITE_ERROR_InvalidRevisionVersion;
         }
 
     ZipErrors zipStatus = m_lzmaDecoder.StartDecompress(*m_inLzmaFileStream);
     if (zipStatus != ZIP_SUCCESS)
         {
         BeAssert(false);
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
-    return SUCCESS;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -218,8 +225,9 @@ DbResult RevisionChangesFileReader::_InputPage(void *pData, int *pnData)
     {
     if (nullptr == m_inLzmaFileStream)
         {
-        if (SUCCESS != StartInput())
-            return BE_SQLITE_ERROR;
+        DbResult result = StartInput();
+        if (result != BE_SQLITE_OK)
+            return result;
         }
     ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) pData, pnData);
     return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
@@ -308,7 +316,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    void AddIdStringToHash(Utf8StringCR hashString)
+    void AddStringToHash(Utf8StringCR hashString)
         {
         Byte hashValue[SHA1::HashBytes];            
         if (hashString.empty())
@@ -361,31 +369,43 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    static Utf8String GenerateId(Utf8String parentRevId, ChangeGroup& changeGroup)
+    static RevisionStatus GenerateId(Utf8StringR revId, Utf8StringCR parentRevId, ChangeGroup& changeGroup)
         {
+        revId.clear();
+
         DgnRevisionIdGenerator idgen;
-        idgen.AddIdStringToHash(parentRevId);
+        idgen.AddStringToHash(parentRevId);
 
         DbResult result = idgen.FromChangeGroup(changeGroup);
         if (BE_SQLITE_OK != result)
-            return "";
-
-        return idgen.GetHashString();
+            {
+            BeAssert(false);
+            return (result == BE_SQLITE_ERROR_InvalidRevisionVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
+            }
+            
+        revId = idgen.GetHashString();
+        return RevisionStatus::Success;
         }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    static Utf8String GenerateId(Utf8String parentRevId, ChangeStream& changeStream)
+    static RevisionStatus GenerateId(Utf8StringR revId, Utf8StringCR parentRevId, ChangeStream& changeStream)
         {
+        revId.clear();
+
         DgnRevisionIdGenerator idgen;
-        idgen.AddIdStringToHash(parentRevId);
+        idgen.AddStringToHash(parentRevId);
 
         DbResult result = idgen.FromChangeStream(changeStream);
         if (BE_SQLITE_OK != result)
-            return "";
+            {
+            BeAssert(false);
+            return (result == BE_SQLITE_ERROR_InvalidRevisionVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
+            }
 
-        return idgen.GetHashString();
+        revId = idgen.GetHashString();
+        return RevisionStatus::Success;
         }
 };
 
@@ -483,7 +503,11 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
 
     RevisionChangesFileReader fs(m_revChangesFile, dgndb);
 
-    Utf8String id = DgnRevisionIdGenerator::GenerateId(m_parentId, fs);
+    Utf8String id;
+    RevisionStatus status = DgnRevisionIdGenerator::GenerateId(id, m_parentId, fs);
+    if (status != RevisionStatus::Success)
+        return status;
+
     if (m_id != id)
         {
         BeAssert(false && "The contents of the change stream file don't match the DgnRevision");
@@ -570,8 +594,8 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
     ECClassCP elemClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
 
-    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
-    ChangeIterator changeIter(dgndb, changeStream);
+    RevisionChangesFileReader revisionReader(m_revChangesFile, dgndb);
+    ChangeIterator changeIter(dgndb, revisionReader);
 
     assignedCodes.clear();
     discardedCodes.clear();
@@ -688,7 +712,8 @@ RevisionManager::~RevisionManager()
 RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue("ParentRevisionId", revisionId);
+
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_REV_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -699,12 +724,64 @@ RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::SaveReversedParentRevisionId(Utf8StringCR revisionId)
+    {
+    BeAssert(revisionId.length() == SHA1::HashBytes * 2);
+
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_PARENT_REV_ID, revisionId);
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DeleteReversedParentRevisionId()
+    {
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_PARENT_REV_ID);
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+bool RevisionManager::HasReversedRevisions() const
+    {
+    Utf8String reversedParentId;
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_PARENT_REV_ID);
+    return (result == BE_SQLITE_ROW);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 Utf8String RevisionManager::GetParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, "ParentRevisionId");
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_REV_ID);
+    return (BE_SQLITE_ROW == result) ? revisionId : "";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+Utf8String RevisionManager::GetReversedParentRevisionId() const
+    {
+    Utf8String revisionId;
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_PARENT_REV_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -713,7 +790,7 @@ Utf8String RevisionManager::GetParentRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue("InitialParentRevisionId", GetParentRevisionId());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_REV_ID, GetParentRevisionId());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -729,7 +806,7 @@ RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
 Utf8String RevisionManager::QueryInitialParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, "InitialParentRevisionId");
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, INITIAL_PARENT_REV_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -893,7 +970,11 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup, TxnManage
 DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
-    Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
+    
+    Utf8String revId;
+    RevisionStatus status = DgnRevisionIdGenerator::GenerateId(revId, parentRevId, changeGroup);
+    BeAssert(status == RevisionStatus::Success);
+
     Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
 
     DgnRevisionPtr revision = DgnRevision::Create(outStatus, revId, parentRevId, dbGuid);
@@ -1040,3 +1121,71 @@ void RevisionManager::AbandonCreateRevision()
     DeleteCurrentRevisionEndTxnId();
     m_currentRevision = nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
+    {
+    TxnManagerR txnMgr = m_dgndb.Txns();
+
+    if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
+        {
+        BeAssert(false && "Cannot reverse revisions if there are local changes.");
+        return RevisionStatus::TransactionHasUnsavedChanges;
+        }
+
+    if (IsCreatingRevision())
+        {
+        BeAssert(false && "Cannot reverse revisions when one's being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
+        return RevisionStatus::IsCreatingRevision;
+        }
+
+    RevisionStatus status = revision.Validate(m_dgndb);
+    if (RevisionStatus::Success != status)
+        return status;
+
+    Utf8String currentParentRevId = GetReversedParentRevisionId();
+    if (currentParentRevId.empty())
+        currentParentRevId = GetParentRevisionId();
+
+    if (currentParentRevId != revision.GetId())
+        {
+        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
+        return RevisionStatus::ParentMismatch;
+        }
+
+    return txnMgr.ApplyRevision(revision, true /*=invert*/);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
+    {
+    TxnManagerR txnMgr = m_dgndb.Txns();
+    BeAssert(!IsCreatingRevision());
+    if (txnMgr.HasChanges())
+        {
+        BeAssert(false && "Cannot reinstate revisions if there are local changes. Abandon them first.");
+        return RevisionStatus::TransactionHasUnsavedChanges;
+        }
+
+    RevisionStatus status = revision.Validate(m_dgndb);
+    if (RevisionStatus::Success != status)
+        return status;
+
+    Utf8String currentParentRevId = GetReversedParentRevisionId();
+    if (currentParentRevId.empty())
+        currentParentRevId = GetParentRevisionId();
+
+    if (currentParentRevId != revision.GetParentId())
+        {
+        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
+        return RevisionStatus::ParentMismatch;
+        }
+
+    return txnMgr.ApplyRevision(revision, false /*=invert*/);
+    }
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

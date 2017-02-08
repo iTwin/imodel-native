@@ -121,7 +121,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 * Read the description of a Txn
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TxnManager::GetTxnDescription(TxnId rowid)
+Utf8String TxnManager::GetTxnDescription(TxnId rowid) const
     {
     CachedStatementPtr stmt = GetTxnStatement("SELECT Operation FROM " DGN_TABLE_Txns " WHERE Id=?");
     stmt->BindInt64(1, rowid.GetValue());
@@ -133,7 +133,7 @@ Utf8String TxnManager::GetTxnDescription(TxnId rowid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::IsMultiTxnMember(TxnId rowid)
+bool TxnManager::IsMultiTxnMember(TxnId rowid) const
     {
     CachedStatementPtr stmt = GetTxnStatement("SELECT Grouped FROM " DGN_TABLE_Txns " WHERE Id=?");
     stmt->BindInt64(1, rowid.GetValue());
@@ -433,11 +433,11 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 
 /*---------------------------------------------------------------------------------**//**
 * The supplied changeset represents all of the pending uncommited changes in the current transaction.
-* Use the SQLite "ROLLBACK" statement to reverse all of those changes in the database, and then call the OnChangesetApplied method
+* Use the SQLite "ROLLBACK" statement to reverse all of those changes in the database, and then call the OnChangesApplied method
 * on the inverted changeset to allow TxnTables to react to the fact that the changes were abandoned.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
+ChangeTracker::OnCommitStatus TxnManager::CancelChangeSet(ChangeSet& changeset)
     {
     changeset.Invert();
 
@@ -445,7 +445,9 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
     if (rc != BE_SQLITE_OK)
         return OnCommitStatus::Abort;
 
-    OnChangesetApplied(changeset, TxnAction::Abandon);
+    Changes changes(changeset);
+    OnChangesApplied(changes, TxnAction::Abandon);
+
     return OnCommitStatus::Completed;
     }
 
@@ -454,15 +456,6 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
 * state than the in-memory objects for the affected tables. Use the changeset to send _OnReversedxxx events to the TxnTables for each changed row,
 * so they can update in-memory state as necessary.
 * @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
-    {
-    Changes changes(changeset);
-    OnChangesApplied(changes, action);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnChangesApplied(Changes const& changes, TxnAction action)
     {
@@ -560,6 +553,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         return OnCommitStatus::Continue;
         }
 
+    if (m_dgndb.Revisions().HasReversedRevisions())
+        {
+        BeAssert(false && "Cannot commit when revisions have been reversed. Abandon changes, reinstate revisions and try again");
+        return OnCommitStatus::Abort;
+        }
+
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
     // Create changeset from modified tables. We'll use this changeset to drive indirect changes.
@@ -581,7 +580,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     Restart();  // clear the change tracker, since we have captured all the changes in the changeset
 
     if (!isCommit)
-        return CancelChanges(changeset);
+        return CancelChangeSet(changeset);
 
     OnBeginValidate();
 
@@ -602,7 +601,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
         OnEndValidate();
-        return CancelChanges(changeset); // roll back entire txn
+        return CancelChangeSet(changeset); // roll back entire txn
         }   
 
     DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
@@ -628,68 +627,64 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     
     RevisionChangesFileReader changeStream(revision.GetRevisionChangesFile(), m_dgndb);
 
-    m_dgndb.Txns().EnableTracking(false);
-    DbResult result = changeStream.ApplyChanges(m_dgndb);
+    DbResult result = ApplyChangeSet(changeStream, TxnAction::Merge);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
         return RevisionStatus::MergeError;
         }
-    m_dgndb.Txns().EnableTracking(true);
 
     RevisionStatus status = RevisionStatus::Success;
-
-    OnBeginValidate();
-
-    Changes changes(changeStream);
-    AddChanges(changes);
-
-    OnChangesApplied(changes, TxnAction::Merge);
+    UndoChangeSet indirectChanges;
 
     if (HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
         {
         /*
-         * We propagate changes (run dependency rules) ONLY if there are no local changes.
-         * + The final state of the (incoming) revision is always setup to be exactly right. This 
-         *   is in turn because we cannot expect dependency handlers to be around on a server (or for 
-         *   that matter other briefcases), and the revisions offer the only mechanism to get the final 
-         *   state of the server exactly right. We generalize this behavior to be applicable to the server 
-         *   and local briefcases - if there are NO local changes, we simply accept the incoming revision's 
+         * We propagate changes (run dependency rules) ONLY if there are local changes.
+         * + The final state of the (incoming) revision is always setup to be exactly right. This
+         *   is in turn because we cannot expect dependency handlers to be around on a server (or for
+         *   that matter other briefcases), and the revisions offer the only mechanism to get the final
+         *   state of the server exactly right. We generalize this behavior to be applicable to the server
+         *   and local briefcases - if there are NO local changes, we simply accept the incoming revision's
          *   changes, and don't bother running the dependency handlers (even if the are actually available).
          *
          * Also see comments in RevisionChangesFileReader::_OnConflict()
          */
+        OnBeginValidate();
+
+        Changes changes(changeStream);
+        AddChanges(changes);
+
         if (SUCCESS != PropagateChanges())
             status = RevisionStatus::MergePropagationError;
-        }
 
-    UndoChangeSet indirectChanges;
-    if (HasChanges())
-        {
-        indirectChanges.FromChangeTrack(*this);
-        Restart();
-
-        if (status == RevisionStatus::Success)
+        if (HasChanges())
             {
-            T_HOST.GetTxnAdmin()._OnCommit(*this); // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+            indirectChanges.FromChangeTrack(*this);
+            Restart();
 
-            Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merged()); 
-            if (!revision.GetSummary().empty())
+            if (status == RevisionStatus::Success)
                 {
-                mergeComment.append(": ");
-                mergeComment.append(revision.GetSummary());
-                }
+                T_HOST.GetTxnAdmin()._OnCommit(*this); // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
 
-            DbResult result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
-            if (BE_SQLITE_DONE != result)
-                {
-                BeAssert(false);
-                status = RevisionStatus::SQLiteError;
+                Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merged());
+                if (!revision.GetSummary().empty())
+                    {
+                    mergeComment.append(": ");
+                    mergeComment.append(revision.GetSummary());
+                    }
+
+                result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
+                if (BE_SQLITE_DONE != result)
+                    {
+                    BeAssert(false);
+                    status = RevisionStatus::SQLiteError;
+                    }
                 }
             }
-        }
 
-    OnEndValidate();
+        OnEndValidate();
+        }
 
     if (status == RevisionStatus::Success)
         {
@@ -697,7 +692,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
         if (status == RevisionStatus::Success)
             {
-            DbResult result = m_dgndb.SaveChanges(""); 
+            result = m_dgndb.SaveChanges(""); 
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
@@ -716,7 +711,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
         // appropriately revert their in-memory state.
         LOG.errorv("Could not propagate changes after merge due to validation errors.");
 
-        // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges(). 
+        // Note: CancelChangeSet() requires an iterator over the inverse of the changes notified through AddChanges(). 
         // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk. 
         // Since this is an unlikely error condition, and it's just a single revision, we just hold the changes in memory 
         // and not worry about the memory overhead. 
@@ -724,14 +719,71 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
         changeStream.ToChangeGroup(undoChangeGroup);
         if (indirectChanges.IsValid())
             {
-            DbResult locResult = undoChangeGroup.AddChanges(indirectChanges.GetSize(), indirectChanges.GetData());
-            BeAssert(locResult == BE_SQLITE_OK);
-            UNUSED_VARIABLE(locResult);
+            result = undoChangeGroup.AddChanges(indirectChanges.GetSize(), indirectChanges.GetData());
+            BeAssert(result == BE_SQLITE_OK);
             }
 
         UndoChangeSet undoChangeSet;
         undoChangeSet.FromChangeGroup(undoChangeGroup);
-        ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(undoChangeSet); // roll back entire txn
+        ChangeTracker::OnCommitStatus cancelStatus = CancelChangeSet(undoChangeSet); // roll back entire txn
+        BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
+        UNUSED_VARIABLE(cancelStatus);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
+    {
+    BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
+    RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
+
+    AbortOnConflictChangeSet changeSet;
+    DbResult result = changeStream.ToChangeSet(changeSet, reverse);
+    BeAssert(result == BE_SQLITE_OK);
+
+    OnBeginApplyChanges();
+    TxnAction action = reverse ? TxnAction::Reverse : TxnAction::Reinstate;
+    result = ApplyChangeSet(changeSet, action);
+
+    // Host/TxnMonitors may want to know current action...OnChangesApplied() will have reset it...
+    m_action = action;
+    T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
+
+    OnEndApplyChanges();
+    m_action = TxnAction::None;
+
+    if (result != BE_SQLITE_OK)
+        return RevisionStatus::ApplyError;
+
+    RevisionStatus status;
+    RevisionManagerR revMgr = m_dgndb.Revisions();
+    if (reverse)
+        status = revMgr.SaveReversedParentRevisionId(revision.GetParentId());
+    else
+        status = (revision.GetId() == revMgr.GetParentRevisionId()) ? revMgr.DeleteReversedParentRevisionId() : revMgr.SaveReversedParentRevisionId(revision.GetId());
+        
+    // DeleteReversedParentRevisionId
+    status = m_dgndb.Revisions().SaveReversedParentRevisionId(reverse ? revision.GetParentId() : revision.GetId());
+    if (status == RevisionStatus::Success)
+        {
+        DbResult result = m_dgndb.SaveChanges("");
+        if (BE_SQLITE_OK != result)
+            {
+            LOG.errorv("Apply failed with SQLite error %s", m_dgndb.GetLastError().c_str());
+            BeAssert(false);
+            status = RevisionStatus::SQLiteError;
+            }
+        }
+
+    if (status != RevisionStatus::Success)
+        {
+        // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
+        // appropriately revert their in-memory state.
+        ChangeTracker::OnCommitStatus cancelStatus = CancelChangeSet(changeSet);
         BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
         UNUSED_VARIABLE(cancelStatus);
         }
@@ -819,14 +871,20 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
+DbResult TxnManager::ApplyChangeSet(IChangeSet& changeset, TxnAction action)
     {
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
-    BeAssert(rc == BE_SQLITE_OK);
     EnableTracking(wasTracking);
 
-    OnChangesetApplied(changeset, action);
+    if (rc != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return rc;
+        }
+
+    Changes changes = changeset.GetChanges();
+    OnChangesApplied(changes, action);
 
     return rc;
     }
@@ -880,7 +938,7 @@ void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     OnBeginApplyChanges();
     auto rc = ApplyChangeSet(changeset, action);
 
-    // Host/TxnMonitors may want to know current action...OnChangeSetApplied() will have reset it...
+    // Host/TxnMonitors may want to know current action...OnChangesApplied() will have reset it...
     m_action = action;
     T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
 
