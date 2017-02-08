@@ -780,7 +780,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     
     DMatrix4d localToView(context.GetLocalToView());
                                    
-    bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
+    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
+
+    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
 
     //DPoint3d viewBox[8];
 
