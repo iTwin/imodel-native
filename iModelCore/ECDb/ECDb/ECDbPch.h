@@ -12,6 +12,7 @@
 #include <ECDb/ECDbApi.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/PerformanceLogger.h>
 #include <algorithm>
 #include <memory>
 

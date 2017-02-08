@@ -152,20 +152,13 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
     {
+    PERFLOG_START("ECDb", "ECSchema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
-
-    StopWatch timer(true);
-    //until decided whether a bool flag is enough or a token should be used we fake the token this way.
     const BentleyStatus stat = DoImportECSchemas(schemas, schemaImportToken);
-    timer.Stop();
-    if (SUCCESS == stat)
-        {
-        LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
-        STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
-        }
-
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
     m_ecdb.ClearECDbCache();
     m_ecdb.FireAfterECSchemaImportEvent();
+    PERFLOG_FINISH("ECDb", "ECSchema import");
     return stat;
     }
 
