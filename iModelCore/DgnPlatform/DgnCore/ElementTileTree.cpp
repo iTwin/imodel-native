@@ -1716,6 +1716,14 @@ bool GeomPart::IsCurved() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance)
     {
+    return GetPolyfaces(facetOptions, &instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance)
+    {
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries) 
         {
@@ -1725,7 +1733,9 @@ PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR inst
         for (auto const& thisPolyface : thisPolyfaces)
             {
             Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
-            polyface.Transform(instance.GetTransform());
+            if (nullptr != instance)
+                polyface.Transform(instance->GetTransform());
+
             polyfaces.push_back(polyface);
             }
         }
@@ -1738,6 +1748,14 @@ PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR inst
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList GeomPart::GetStrokes (IFacetOptionsR facetOptions, GeometryCR instance)
     {
+    return GetStrokes(facetOptions, &instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StrokesList GeomPart::GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance)
+    {
     StrokesList strokes;
 
     for (auto& geometry : m_geometries) 
@@ -1748,8 +1766,11 @@ StrokesList GeomPart::GetStrokes (IFacetOptionsR facetOptions, GeometryCR instan
             strokes.insert (strokes.end(), thisStrokes.begin(), thisStrokes.end());
         }
 
-    for (auto& stroke : strokes)
-        stroke.Transform(instance.GetTransform());
+    if (nullptr != instance)
+        {
+        for (auto& stroke : strokes)
+            stroke.Transform(instance->GetTransform());
+        }
 
     return strokes;
     }
@@ -2659,6 +2680,8 @@ public:
 
     // Add meshes to the MeshBuilder map
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
+    void AddMeshes(GeometryR geom, bool doRangeTest);
+    void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes();
@@ -2696,20 +2719,71 @@ void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
     for (auto& geom : geometries)
         {
         if (m_loadContext.WasAborted())
-            return;
+            break;
 
-        DRange3dCR geomRange = geom->GetTileRange();
-        double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
-        if (rangePixels < s_minRangeBoxSize)
-            continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
+        AddMeshes(*geom, doRangeTest);
+        }
+    }
 
-        bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
-        if (!m_maxGeometryCountExceeded)
-            m_maxGeometryCountExceeded = (++m_geometryCount > s_maxGeometryIdCount);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
+    {
+    DRange3dCR geomRange = geom.GetTileRange();
+    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    if (rangePixels < s_minRangeBoxSize)
+        return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
-        AddPolyfaces(*geom, rangePixels, isContained);
-        if (!m_options.WantSurfacesOnly())
-            AddStrokes(*geom, rangePixels);
+    bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
+    if (!m_maxGeometryCountExceeded)
+        m_maxGeometryCountExceeded = (++m_geometryCount > s_maxGeometryIdCount);
+
+    AddPolyfaces(geom, rangePixels, isContained);
+    if (!m_options.WantSurfacesOnly())
+        AddStrokes(geom, rangePixels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances)
+    {
+    auto iter = instances.begin();
+    if (instances.end() == iter)
+        return;
+
+    // All instances will have the same facet options and range size...
+    GeometryCP first = *iter;
+    DRange3dCR geomRange = first->GetTileRange();
+    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    if (rangePixels < s_minRangeBoxSize)
+        return;
+
+    auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
+
+    // Get the polyfaces and strokes with no transform applied
+    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr);
+    facetOptions->SetNormalsRequired(false);
+    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr);
+
+    // For each instance, transform the polyfaces and add them to the mesh
+    Transform invTransform = Transform::FromIdentity();
+    for (GeometryCP instance : instances)
+        {
+        Transform instanceTransform = Transform::FromProduct(instance->GetTransform(), invTransform);
+        invTransform.InverseOf(instance->GetTransform());
+        for (auto& polyface : polyfaces)
+            {
+            polyface.Transform(instanceTransform);
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, true);
+            }
+
+        for (auto& strokeList : strokes)
+            {
+            strokeList.Transform(instanceTransform);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels);
+            }
         }
     }
 
@@ -2886,58 +2960,98 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
     {
     ElementTileTree::GeometryCollection collection;
-    if (InstancingOptions::MergeIntoMeshes == s_instancingOptions || InstancingOptions::None == s_instancingOptions)
+    switch (s_instancingOptions)
         {
-        // In the former case, we want to merge part meshes into tile geometry. In the latter, we have no part meshes.
-        auto meshes = GenerateMeshes(options, geometries, /*###TODO: range test*/ false, context);
-        if (!context.WasAborted())
-            collection.Meshes() = std::move(meshes);
+        case InstancingOptions::None:
+            {
+            auto meshes = GenerateMeshes(options, geometries, true, context);
+            if (!context.WasAborted())
+                collection.Meshes() = std::move(meshes);
 
-        return collection;
-        }
-    
-    GeometryList                    uninstancedGeometry;
-    bmap<GeomPartCP,MeshPartPtr>    partMap;
-
-    // Extract instances first...
-    for (auto const& geom : geometries)
-        {
-        if (context.WasAborted())
             return collection;
-
-        auto const& part = geom->GetPart();
-        if (part.IsValid())
-            {
-            MeshPartPtr meshPart;
-            auto found = partMap.find(part.get());
-
-            if (partMap.end() == found)
-                {
-                MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false, context);
-                if (partMeshes.empty())
-                    continue;
-
-                collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
-                partMap.Insert(part.get(), meshPart);
-                }
-            else
-                {
-                meshPart = found->second;
-                }
-
-            meshPart->AddInstance(MeshInstance(geom->GetEntityId(), geom->GetTransform()));
             }
-        else
+        case InstancingOptions::MergeIntoMeshes:
             {
-            uninstancedGeometry.push_back(geom);
+            bmap<GeomPartCP, bvector<GeometryCP>> parts;
+            MeshGenerator generator(*this, options, context);
+            for (auto const& geom : geometries)
+                {
+                if (context.WasAborted())
+                    return collection;
+
+                auto part = geom->GetPart();
+                if (part.IsNull())
+                    {
+                    generator.AddMeshes(*geom, true);
+                    continue;
+                    }
+
+                auto iter = parts.find(part.get());
+                if (parts.end() == iter)
+                    iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
+
+                iter->second.push_back(geom.get());
+                }
+
+            for (auto& kvp : parts)
+                {
+                if (context.WasAborted())
+                    break;
+
+                generator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
+                }
+
+            if (!context.WasAborted())
+                collection.Meshes() = generator.GetMeshes();
+
+            return collection;
+            }
+        default:
+            {
+            GeometryList uninstancedGeometry;
+            bmap<GeomPartCP, MeshPartPtr> partMap;
+
+            // Extract instances first...
+            for (auto const& geom : geometries)
+                {
+                if (context.WasAborted())
+                    return collection;
+
+                auto const& part = geom->GetPart();
+                if (part.IsValid())
+                    {
+                    MeshPartPtr meshPart;
+                    auto found = partMap.find(part.get());
+
+                    if (partMap.end() == found)
+                        {
+                        MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false, context);
+                        if (partMeshes.empty())
+                            continue;
+
+                        collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
+                        partMap.Insert(part.get(), meshPart);
+                        }
+                    else
+                        {
+                        meshPart = found->second;
+                        }
+
+                    meshPart->AddInstance(MeshInstance(geom->GetEntityId(), geom->GetTransform()));
+                    }
+                else
+                    {
+                    uninstancedGeometry.push_back(geom);
+                    }
+                }
+
+            auto& meshes = collection.Meshes();
+            MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true, context);
+            meshes.insert(meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
+
+            return collection;
             }
         }
-
-    auto& meshes = collection.Meshes();
-    MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true, context);
-    meshes.insert(meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
-
-    return collection;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3055,7 +3169,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     {
     DisplayParamsPtr displayParams = CreateDefaultDisplayParams(gf);
 
-    // No real point in caching solid primitives if they're to be merged into the mesh anyway...
+    // ###TODO: Determine if the synchronization overhead of caching solid primitives is worth it.
     if (InstancingOptions::None != s_instancingOptions)
         {
         DRange3d range, thisTileRange;

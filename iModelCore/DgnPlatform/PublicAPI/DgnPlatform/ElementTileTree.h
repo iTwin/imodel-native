@@ -496,7 +496,9 @@ protected:
 public:
     static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
     PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance);
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance);
     StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance);
+    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }
