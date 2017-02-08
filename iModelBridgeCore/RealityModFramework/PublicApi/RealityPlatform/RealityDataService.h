@@ -97,16 +97,16 @@ private:
 //!  class object. Need to check if this class is necessary. We can return
 //!  all projects that have a link with a certain RealityData
 //=====================================================================================
-struct RealityDataProjectRelationshipByIdRequest : public RealityDataUrl
+struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationshipByIdRequest() {}
+    RealityDataProjectRelationshipByProjectIdRequest() {}
     };
 
 //=====================================================================================
@@ -218,38 +218,38 @@ struct RealityDataFilterCreator
     //! Sets filtering upon the classification. The classification may contain
     //!  more than one classification by bitwise oring the classification
     //!  values.
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByClassification(int classification);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(int classification);
 
     //! Filters the returned set by the reality data size.
     //! Both the min and max size must be specified
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterBySize(double minSize, double maxSize);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterBySize(double minSize, double maxSize);
 
     //! Sets a spatial filter. Only RealityData for which the footprint overlaps (even
     //! partially) the given region will be selected.
     //! The area provided is a list of geo points (longitude/latitude)
     //!  that must form a closed area. The last point of the list must
     //!  be equal to the first point.
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys);
 
     //! Filters the list by owner. Only reality data belonging to given owner
     //!  will be returned. The owner is specified by the email address
     //!  and is case insensitive.
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByOwner(Utf8String owner);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByOwner(Utf8String owner);
 
     //! Filters the list by creation date. To indicate either min or max date
     //!  are unbounded simply provide an invalid/unset DataTime object
     //!  If both dates are invalid/unset then the command will return an error
     //!  and no filtering will be set.
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByCreationDate(DateTime minDate, DateTime maxDate);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByCreationDate(DateTime minDate, DateTime maxDate);
 
     //! Filters the list by modification date. To indicate either min or max date
     //!  are unbounded simply provide an invalid/unset DataTime object.
     //! If both dates are invalid/unset then the command will return an error
     //!  and no filtering will be set.  
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByModificationDate(DateTime minDate, DateTime maxDate);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByModificationDate(DateTime minDate, DateTime maxDate);
 
     //! Filters in or out public data as specified
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterPublic(bool isPublic);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterPublic(bool isPublic);
         
     //! Filter by resolution. As resolution may be confusing since minimum resolution is
     //!  expressed a higher number the resolution can be specified in any order and
@@ -257,7 +257,7 @@ struct RealityDataFilterCreator
     //! Reality data that have no resolution set will be considered 'unspecified' and
     //!  will be returned whatever the resolution bracket given if filterOutUnspecified is false
     //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByResolution(double resMin, double resMax, bool filterOutUnspecified);
 
     //! Filter by accuracy. As accuracy may be confusing since minimum accuracy is
     //!  expressed a higher number the accuracy can be specified in any order and
@@ -265,29 +265,24 @@ struct RealityDataFilterCreator
     //! Reality data that have no accuracy set will be considered 'unspecified' and
     //!  will be returned whatever the bracket given if filterOutUnspecified is false
     //!  and will be discarded if true
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified);
 
     //! Filter by type. The type is specified by a string in the reality data.
     //! The filter type specification here can contain many types
     //!  separated by semi-colons. All reality data of any of the specified types
     //!  will be returned in the list.
     //!  types are case insensitive
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByType(Utf8String types);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByType(Utf8String types);
 
     //! Filter by dataset. Only reality data of specified dataset will be returned
     //!  note that Dataset names are case-sensitive.
-    REALITYDATAPLATFORM_EXPORT Utf8String FilterByDataset(Utf8String dataset);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByDataset(Utf8String dataset);
 
     //! Groups all filters inside of parentheses, all criteria must be met ( && )
-    REALITYDATAPLATFORM_EXPORT Utf8String GroupFilters(bvector<Utf8String> filters);
+    REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersAND(bvector<Utf8String> filters);
 
     //! Groups all filters inside of parentheses, only one of the criteria must be met ( || )
-    REALITYDATAPLATFORM_EXPORT Utf8String GroupAlternativeFilters(bvector<Utf8String> filters);
-
-/*protected:
-    RealityDataField m_sortField;
-    bool m_sortAscending;
-    bool m_sorted;*/
+    REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersOR(bvector<Utf8String> filters);
     };
 
 //=====================================================================================
@@ -357,7 +352,7 @@ protected:
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex, uint8_t pageSize) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -366,16 +361,16 @@ private:
     RealityDataListByEnterprisePagedRequest() {}
     };
 
-struct RealityDataProjectRelationByProjectIdPagedRequest : public RealityDataPagedRequest
+struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationByProjectIdPagedRequest() {}
+    RealityDataProjectRelationshipByProjectIdPagedRequest() {}
     };
 
 //! Callback function to follow the download progression.
@@ -504,30 +499,42 @@ public:
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of RealityData Service.
-    static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "")
         {
         BeAssert(server.size() != 0);
         BeAssert(WSGProtocol.size() != 0);
-        BeAssert(name.size() != 0);
+        BeAssert(repoName.size() != 0);
         BeAssert(schemaName.size() != 0);
 
         s_realityDataServer = server;
         s_realityDataWSGProtocol = WSGProtocol;
-        s_realityDataName = name;
+        s_realityDataRepoName = repoName;
         s_realityDataSchemaName = schemaName;
+
+        if(certificatePath.size() == 0)
+            s_verifyPeer = 0;
+        else
+            s_verifyPeer = 1;
+        s_realityDataCertificatePath = certificatePath;
         }
 
     //! Returns the current name of the server
-    static Utf8StringCR GetServer();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServer();
 
     //! Results the string containing the WSG protocol version number
-    static Utf8StringCR GetWSGProtocol();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetWSGProtocol();
 
     //! Returns the name of the WSG repository containing the RealityData Service objects
-    static Utf8StringCR GetRepoName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetRepoName();
 
     //! Returns the name of the schema defining the classes exposed by the RealityData Service.
-    static Utf8StringCR GetSchemaName();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetSchemaName();
+
+    //! Returns the name of the schema defining the classes exposed by the RealityData Service.
+    REALITYDATAPLATFORM_EXPORT static const int GetVerifyPeer();
+
+    //! Returns the name of the schema defining the classes exposed by the RealityData Service.
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
 
     //! The classification codes. The high level interface only supports the four base classification
     //&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
@@ -551,7 +558,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequestCR request);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static bvector<Byte> Request(RealityDataDocumentContentByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequestR request, FILE* file);
 
     //! Returns a RealityDataFolder or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequestCR request);
@@ -564,9 +571,12 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(RealityDataListByEnterprisePagedRequestCR request);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationshipByProjectIdRequestCR request);
+
+    //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationByProjectIdPagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationshipByProjectIdPagedRequestCR request);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
@@ -582,8 +592,10 @@ public:
 private:
     static Utf8String s_realityDataServer;
     static Utf8String s_realityDataWSGProtocol;
-    static Utf8String s_realityDataName;
+    static Utf8String s_realityDataRepoName;
     static Utf8String s_realityDataSchemaName;
+    static int s_verifyPeer;
+    static Utf8String s_realityDataCertificatePath;
 
     static const Utf8String s_ImageryKey;
     static const Utf8String s_TerrainKey;

@@ -138,7 +138,10 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Create();
 
     //! Create from xml file.
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr CreateFromFile(Utf8CP filePath);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr CreateFromFile(Utf8CP filePath, SpatialEntityMetadataCR metadataSeed);
+
+    //! Copy constructor
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr CreateFromMetadata(SpatialEntityMetadataCR metadataSeed);
 
     //! IsEmpty
     //! Indicates if the metadata is empty and had no fields set.
@@ -173,8 +176,8 @@ public:
     //! Get/Set
     //! If known or different from Legal field, a text indicating the terms of use applicable to the data
     //! or a URL to a web page containing the information. The text can be a mix of text and URL. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetTermOfUse() const;
-    REALITYDATAPLATFORM_EXPORT void SetTermOfUse(Utf8CP termOfUse);
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetTermsOfUse() const;
+    REALITYDATAPLATFORM_EXPORT void SetTermsOfUse(Utf8CP termsOfUse);
 
     //! Get/Set
     //! A formated string that contains a list of keywords applicable to the data.
@@ -206,14 +209,15 @@ public:
 
 protected:
     SpatialEntityMetadata();
-    SpatialEntityMetadata(Utf8CP filePath);
+    SpatialEntityMetadata(Utf8CP filePath, SpatialEntityMetadataCR metadataSeed);
+    SpatialEntityMetadata(SpatialEntityMetadataCR metadataSeed);
 
     Utf8String m_provenance;
     Utf8String m_lineage;
     Utf8String m_description;
     Utf8String m_contactInfo;
     Utf8String m_legal;
-    Utf8String m_termOfUse; 
+    Utf8String m_termsOfUse; 
     Utf8String m_format;
     Utf8String m_metadataUrl;
 

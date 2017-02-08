@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/AwsTraverser/AwsTraverser.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -393,11 +393,13 @@ int main(int argc, char *argv[])
             comma ++;
             rest = line.substr(comma);
 
+#if (0)
             if(!updateMode && serverConnection.CheckExists(Utf8String(id.c_str())))
                 {   
                 log->Log("duplicate: " + line);
                 continue;
                 }
+#endif
 
             comma = rest.find(",");
             if(!log->ValidateLine(comma, line))
@@ -512,8 +514,8 @@ int main(int argc, char *argv[])
                 data->SetResolution("15.00x15.00");
 
                 data->SetProvider("USGS");
-                data->SetProviderName("U.S. Geological Survey");
-                data->SetDataset("Landat 8");
+                data->SetProviderName("United States Geological Survey");
+                data->SetDataset("Landsat 8");
                 data->SetDataType("tif");
                 data->SetClassification("Imagery");
 

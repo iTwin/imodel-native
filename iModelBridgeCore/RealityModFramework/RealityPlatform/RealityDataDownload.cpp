@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityDataDownload.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -641,7 +641,16 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
                 if(status > 0)
                     fwrite( read_buffer, status, 1, out );
                 } while (status > 0 );
+
+            
             fclose( out );
+            // Set the date to original file
+            DateTime fileTime(DateTime::Kind::Local, (uint16_t)file_info.tmu_date.tm_year, (uint8_t)(file_info.tmu_date.tm_mon + 1), (uint8_t)file_info.tmu_date.tm_mday, (uint8_t)file_info.tmu_date.tm_hour, (uint8_t)file_info.tmu_date.tm_min, (uint8_t)file_info.tmu_date.tm_sec);
+            time_t fileModifTime = (time_t)(file_info.dosDate);
+            fileTime.ToUnixMilliseconds(fileModifTime);
+            fileModifTime /= 1000;
+
+            BeFileName::SetFileTime(WString(fullpath, true).c_str(), &fileModifTime, &fileModifTime);
             }
         else // a folder
             {

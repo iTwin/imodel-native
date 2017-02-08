@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     BeFileName fileName = BeFileName(exeDir);
     fileName.AppendToPath(BeFileName(subNodes[objectIndex].GetInstanceId()));
     char outfile[1024] = "";
-    strcpy(outfile, m_packageFileName.GetNameUtf8().c_str());
+    strcpy(outfile, fileName.GetNameUtf8().c_str());
     FILE* file = fopen(outfile, "wb");
 
     //performRequest with file pointer
