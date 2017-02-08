@@ -327,6 +327,12 @@ private:
         BeGuidCR masterFileId, Utf8StringCR lastRevisionId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    DgnDbServerStatusTaskPtr QueryUnavailableCodesInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
+                                                           DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
+
+    DgnDbServerStatusTaskPtr QueryUnavailableLocksInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
+                                                           DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
+
 public:
     virtual ~DgnDbRepositoryConnection();
 
