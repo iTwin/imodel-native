@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/RealityDataSourceNet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -684,6 +684,26 @@ RealityDataSourceNet::RealityDataSourceNet(UriNet^ uri, String^ type)
 
     m_pSource = new RealityDataSourcePtr(RealityDataSource::Create(*ManagedToNativeUri(uri), typeUtf8.c_str()));
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Christian.Tye-Gingras         	02/2017
+//-------------------------------------------------------------------------------------
+System::IntPtr RealityDataSourceNet::GetPeer()
+    { 
+        return System::IntPtr((void *) m_pSource); 
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Christian.Tye-Gingras         	02/2017
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetPeer(System::IntPtr newRDSN)
+        {
+        if (NULL != m_pSource)
+            delete m_pSource;
+
+        m_pSource = new RealityDataSourcePtr((*(RealityDataSourcePtr*) newRDSN.ToPointer()));
+        }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016

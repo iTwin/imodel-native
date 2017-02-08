@@ -373,10 +373,9 @@ namespace IndexECPlugin.Source.QueryProviders
                             }
                         }
                     }
-                CreateRelatedInstance(instance, selectClause.SelectedRelatedInstances);
-
                 if ( instance != null )
                     {
+                    CreateRelatedInstance(instance, selectClause.SelectedRelatedInstances);
                     instanceList.Add(instance);
                     }
 

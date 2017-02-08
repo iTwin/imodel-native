@@ -264,6 +264,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["FileSize"].NativeValue = filesize;
                 }
 
+            instance["Streamed"].NativeValue = true;
+
             //Metadata
 
             return instance;
@@ -278,7 +280,7 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             JObject json = GetJsonWithCache(sourceID);
 
-            IECClass ecClass = Schema.GetClass("SpatialDataSource");
+            IECClass ecClass = Schema.GetClass("Server");
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InitializePropertiesToNull();
@@ -293,7 +295,7 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Id"].StringValue = sourceID;
 
             instance["CommunicationProtocol"].StringValue = m_rdsDataFetcher.RdsUrlBase.Split(':')[0];
-            instance["Streamed"].NativeValue = false; 
+            instance["Streamed"].NativeValue = true; 
             //loginKey
             instance["LoginMethod"].StringValue = "IMS";
             //RegistrationPage

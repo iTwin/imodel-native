@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/models.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -418,6 +418,51 @@ namespace IndexECPlugin.Source
         /// 
         /// </summary>
         public List<UriNet> SisterFiles
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool Streamed
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ServerLoginKey
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ServerLoginMethod
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ServerOrganisationPage
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ServerRegistrationPage
             {
             get;
             set;
