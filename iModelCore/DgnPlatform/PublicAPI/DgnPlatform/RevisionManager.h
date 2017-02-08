@@ -112,7 +112,7 @@ private:
     BeSQLite::LzmaDecoder m_lzmaDecoder;
     BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
     
-    BentleyStatus StartInput();
+    BeSQLite::DbResult StartInput();
     void FinishInput();
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
@@ -138,6 +138,10 @@ private:
     DgnRevisionPtr m_currentRevision;
 
     RevisionStatus SaveParentRevisionId(Utf8StringCR revisionId);
+    RevisionStatus SaveReversedParentRevisionId(Utf8StringCR revisionId);
+    RevisionStatus DeleteReversedParentRevisionId();
+    Utf8String GetReversedParentRevisionId() const;
+    bool HasReversedRevisions() const;
 
     Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
@@ -203,6 +207,22 @@ public:
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
+
+    //! Reverses a previously merged revision
+    //! @param[in] revision The revision to be reversed. Must match the parent revision of the Db. i.e., the revisions
+    //! must be reversed in the opposite order of how were merged. 
+    //! @return RevisionStatus::Success if the revision was successfully reversed or some error status otherwise.
+    //! @remarks After reversals no changes can be committed to the DgnDb unless all the reversed revisions are reinstated
+    //! again. @see ReinstateRevision()
+    DGNPLATFORM_EXPORT RevisionStatus ReverseRevision(DgnRevisionCR revision);
+
+    //! Reinstates a previously reversed revision
+    //! @param[in] revision The revision to be reinstated. The parent of the revision must match the parent revision of the 
+    //! Db. i.e., the revisions must be reinstated in the opposite order of how they were reversed. 
+    //! @return RevisionStatus::Success if the revision was successfully reinstated or some error status otherwise.
+    //! @remarks After reinstating all the revisions, the user can make changes to the DgnDb and create new revisions
+    //! again. @see ReverseRevision()
+    DGNPLATFORM_EXPORT RevisionStatus ReinstateRevision(DgnRevisionCR revision);
 
     TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
 };
