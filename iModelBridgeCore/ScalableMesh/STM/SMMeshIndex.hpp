@@ -3448,8 +3448,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
-   if (m_SMIndex->IsTerrain() == false) 
-       return poolMemItemPtr;
+   //if (m_SMIndex->IsTerrain() == false) 
+    //   return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
@@ -3854,6 +3854,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
     bvector<bpair<double, int>> metadata;
+    DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
+    bool polyInclusion = false;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -3863,6 +3865,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
+            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength()) extentOfBiggestPoly = polyExtent;
+            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly)) polyInclusion = true;
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);
@@ -3883,6 +3887,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     diffSetPtr->clear();
     for(auto& skirt: skirts) diffSetPtr->push_back(skirt);
     m_nbClips = skirts.size();
+
+
     
             
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
@@ -3916,7 +3922,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             );
 
         bool hasClip = false;
-        if (!m_nodeHeader.m_arePoints3d)
+        if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
             {
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)

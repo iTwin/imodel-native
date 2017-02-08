@@ -6,7 +6,7 @@
 |       $Date: 2015/09/14 15:28:03 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -66,6 +66,10 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     bool HasCoverage(uint64_t id);
 
     void GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys);
+
+    void GetAllCoverageIds(bvector<uint64_t>& ids);
+
+    void DeleteCoverage(uint64_t id);
         
     size_t GetNbClips();
         

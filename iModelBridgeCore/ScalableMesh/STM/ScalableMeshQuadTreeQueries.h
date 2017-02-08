@@ -428,6 +428,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
     private: 
 
         size_t        m_maxNumberOfPoints;
+
+        bool m_invertClips;
                  
     protected: 
         ClipVectorPtr m_viewClipVector;
@@ -440,6 +442,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                             const double         viewportRotMatrix[][3],                                                                 
                                             bool                 gatherTileBreaklines, 
                                             const ClipVectorPtr& viewClipVector,
+                                            bool invertClips = false,
                                             size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
         : ScalableMeshQuadTreeViewDependentPointQuery(extent,
                                               rootToViewMatrix,
@@ -447,6 +450,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                               gatherTileBreaklines)
             {              
             m_maxNumberOfPoints = maxNumberOfPoints;
+            m_invertClips = invertClips;
             m_viewClipVector = viewClipVector;
             }
 
@@ -470,6 +474,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                                  const DPoint3d       viewBox[],                                                                 
                                                                  bool                 gatherTileBreaklines, 
                                                                  const ClipVectorPtr& viewClipVector,
+                                                                 bool invertClips = false,
                                                                  size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
                             : ScalableMeshQuadTreeViewDependentPointQuery(extent, 
                                                                   rootToViewMatrix,
@@ -479,6 +484,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                             {                                                            
                             m_maxNumberOfPoints = maxNumberOfPoints;
                             m_viewClipVector = viewClipVector;
+                            m_invertClips = invertClips;
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};
