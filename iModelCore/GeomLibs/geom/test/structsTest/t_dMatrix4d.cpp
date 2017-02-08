@@ -149,3 +149,73 @@ TEST(DMatrix4d, Swaps)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, AffineTransformation)
+    {
+    DMatrix4d mat0 = DMatrix4d::FromColumns(DPoint4d::From(0.4, 1, 0.1, 0), 
+                                            DPoint4d::From(2, 1, 0.1, 0), 
+                                            DPoint4d::From(1.5, 8, 2, 0), 
+                                            DPoint4d::From(9, 9, 0.1, 1));
+    Check::True(mat0.IsAffine());
+    RotMatrix rotMat = RotMatrix::FromIdentity();
+    DMatrix4d mot1 = DMatrix4d::From(rotMat);
+    Check::True(mot1.IsAffine());
+    mat0.CopyUpperTriangleToLower();
+    Check::False(mat0.IsAffine());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, TransposedPoints)
+    {
+    DMatrix4d mat0 = DMatrix4d::FromColumns(DPoint4d::From(0.4, 1, 0.1, 0),
+                                            DPoint4d::From(2, 1, 0.1, 0),
+                                            DPoint4d::From(1.5, 8, 2, 0),
+                                            DPoint4d::From(9, 9, 0.1, 1));
+    DPoint4d pointsArr[] = { DPoint4d::From(1, 4, 1, 1),
+                             DPoint4d::From(2, 3, 1, 1),
+                             DPoint4d::From(2, 4, 5, 1),
+                             DPoint4d::From(0, 1, 0, 1) };
+    DPoint4d ptsTransposed[4];
+
+    mat0.MultiplyTranspose(ptsTransposed, pointsArr, 4);
+
+    mat0.TransposeOf(mat0);
+    DMatrix4d matPoints = DMatrix4d::FromColumns(pointsArr[0], pointsArr[1], pointsArr[2], pointsArr[3]);
+    mat0.InitProduct(mat0, matPoints);
+    DPoint4d pointT;
+    mat0.GetColumn(pointT, 0);
+    Check::Near(pointT, ptsTransposed[0]);
+    mat0.GetColumn(pointT, 1);
+    Check::Near(pointT, ptsTransposed[1]);
+    mat0.GetColumn(pointT, 2);
+    Check::Near(pointT, ptsTransposed[2]);
+    mat0.GetColumn(pointT, 3);
+    Check::Near(pointT, ptsTransposed[3]);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, MultiplyAffine)
+    {
+    DMatrix4d mat0 = DMatrix4d::FromColumns(DPoint4d::From(0.4, 1, 0.1, 0),
+                                            DPoint4d::From(2, 1, 0.1, 3),
+                                            DPoint4d::From(1.5, 8, 2, 0),
+                                            DPoint4d::From(9, 9, 0.1, 1));
+    DPoint4d pointsArr[] = { DPoint4d::From(1, 4, 1, 3),
+                             DPoint4d::From(2, 3, 1, 2),
+                             DPoint4d::From(2, 4, 5, 1),
+                             DPoint4d::From(0, 1, 0, 4) };
+    DPoint4d ptsHomogeneous[4], ptsNonHom[4];
+    mat0 = CopyAffine(mat0);
+    mat0.MultiplyAffine(ptsHomogeneous, pointsArr, 4);
+    mat0.Multiply(ptsNonHom, pointsArr, 4);
+    
+    Check::Near(ptsNonHom[0], ptsHomogeneous[0], "Homogeneous coordinates differ");
+    Check::Near(ptsNonHom[1], ptsHomogeneous[1], "Homogeneous coordinates differ");
+    Check::Near(ptsNonHom[2], ptsHomogeneous[2], "Homogeneous coordinates differ");
+    Check::Near(ptsNonHom[3], ptsHomogeneous[3], "Homogeneous coordinates differ");
+    }
