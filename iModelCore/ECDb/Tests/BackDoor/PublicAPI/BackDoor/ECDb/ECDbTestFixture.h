@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
+
 #include "ECDbTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -42,7 +44,6 @@ protected:
 private:
     static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0);
     static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const&, int perClassRowCount = 0);
-    static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName);
 
     static BentleyStatus Populate(ECDbCR, ECN::ECSchemaCR, int instanceCountPerClass);
     static BentleyStatus Populate(ECDbCR, int instanceCountPerClass);
@@ -59,6 +60,8 @@ protected:
 
     static Utf8String RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType = "table");
 
+    ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, GetECDb(), schemaFileName); }
+
 public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture () {};
@@ -69,6 +72,11 @@ public:
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use
     //! that method can call this method statically.
     static void Initialize();
+
+    static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
+    static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName);
+    static ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr&, ECDbCR, BeFileNameCR schemaFileName);
+    static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

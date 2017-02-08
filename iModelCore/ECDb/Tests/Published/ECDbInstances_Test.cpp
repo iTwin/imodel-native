@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -308,13 +307,8 @@ void SetStruct2Values(StandaloneECInstancePtr instance, Utf8CP stringVal, double
 //---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     {
-    ECDbTestProject test;
-    auto& dgndb = test.Create("importecschema.ecdb");
-    Utf8String filename = dgndb.GetDbFileName();
-    dgndb.CloseDb();
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_EQ(BE_SQLITE_OK, stat);
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 2);
@@ -344,7 +338,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     bvector<ECSchemaCP> schemas;
     schemas.push_back(schema.get());
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemas));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas));
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler();
@@ -392,14 +386,14 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     structVal3.SetStruct(struct2Instance3.get());
     testClassInstance->SetValue("StructArray", structVal3, 2);
 
-    ECInstanceInserter inserter(db, *testClass, nullptr);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testClassInstance));
 
     SqlPrintfString ecSql("SELECT StructArray FROM TestSchema.TestClass");
     ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare(db, ecSql.GetUtf8CP());
+    ECSqlStatus status = ecStatement.Prepare(ecdb, ecSql.GetUtf8CP());
     ASSERT_TRUE(ECSqlStatus::Success == status);
 
     while (ecStatement.Step() == BE_SQLITE_ROW)

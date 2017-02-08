@@ -5,109 +5,102 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
+#include "SchemaImportTestFixture.h"
 #include <BeSQLite/RTreeMatch.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus AddRowToRtree(ECDbR ecdb, ECInstanceId id, DRange2dCR boundingBox)
+struct ECSqlRangeTreeTests : SchemaImportTestFixture
     {
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO demo_rtree VALUES(?,?,?,?,?)"))
-        return ERROR;
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                     Krischan.Eberle                  05/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    BentleyStatus AddRowToRtree(ECDbCR ecdb, ECInstanceId id, DRange2dCR boundingBox)
+        {
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO demo_rtree VALUES(?,?,?,?,?)"))
+            return ERROR;
 
-    stmt.BindId(1, id);
-    stmt.BindDouble(2, boundingBox.low.x);
-    stmt.BindDouble(3, boundingBox.high.x);
-    stmt.BindDouble(4, boundingBox.low.y);
-    stmt.BindDouble(5, boundingBox.high.y);
+        stmt.BindId(1, id);
+        stmt.BindDouble(2, boundingBox.low.x);
+        stmt.BindDouble(3, boundingBox.high.x);
+        stmt.BindDouble(4, boundingBox.low.y);
+        stmt.BindDouble(5, boundingBox.high.y);
 
-    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
-    }
+        return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
-    {
-    Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"RangeTreeTest\" alias=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "  <ECEntityClass typeName=\"DemoRTree\" >"
-        "       <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>ExistingTable</MapStrategy>"
-        "               <TableName>demo_rtree</TableName>"
-        "                <ECInstanceIdColumn>ECInstanceId</ECInstanceIdColumn>"
-        "            </ClassMap>"
-        "       </ECCustomAttributes>"
-        "       <ECProperty typeName='double' propertyName='MinX' />"
-        "       <ECProperty typeName='double' propertyName='MaxX' />"
-        "       <ECProperty typeName='double' propertyName='MinY' />"
-        "       <ECProperty typeName='double' propertyName='MaxY' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='DemoData' >"
-        "       <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "</ECSchema>";
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                     Krischan.Eberle                  05/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    void SetupTestFile()
+        {
+        ECDbR ecdb = SetupECDb("rtreetest.ecdb");
+        ASSERT_TRUE(ecdb.IsDbOpen());
+        //create rtree before importing the schema
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE demo_rtree USING rtree(ECInstanceId,minX,maxX,minY,maxY);"));
 
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create("rtreetest.ecdb");
-    ecdbPath = ecdb.GetDbFileName();
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(
+            "<ECSchema schemaName=\"RangeTreeTest\" alias=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName=\"DemoRTree\" >"
+            "       <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>ExistingTable</MapStrategy>"
+            "               <TableName>demo_rtree</TableName>"
+            "                <ECInstanceIdColumn>ECInstanceId</ECInstanceIdColumn>"
+            "            </ClassMap>"
+            "       </ECCustomAttributes>"
+            "       <ECProperty typeName='double' propertyName='MinX' />"
+            "       <ECProperty typeName='double' propertyName='MaxX' />"
+            "       <ECProperty typeName='double' propertyName='MinY' />"
+            "       <ECProperty typeName='double' propertyName='MaxY' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='DemoData' >"
+            "       <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+        ASSERT_FALSE(asserted);
 
-    //create rtree before importing the schema
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE VIRTUAL TABLE demo_rtree USING rtree(ECInstanceId,minX,maxX,minY,maxY);"))
-        return ERROR;
+        ecdb.SaveChanges();
 
-    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString(testSchemaXml);
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()))
-        return ERROR;
+        //populate with data (sample data taken from https://www.sqlite.org/rtree.html)
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO rt.DemoData (Name) VALUES(?)"));
 
-    ecdb.SaveChanges();
+        //first entry
+        stmt.BindText(1, "SQLite headquarters", IECSqlBinder::MakeCopy::Yes);
+        ECInstanceKey newKey;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
 
-    //populate with data (sample data taken from https://www.sqlite.org/rtree.html)
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "INSERT INTO rt.DemoData (Name) VALUES(?)"))
-        return ERROR;
+        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-80.7749, 35.3776, -80.7747, 35.3778)));
 
-    //first entry
-    stmt.BindText(1, "SQLite headquarters", IECSqlBinder::MakeCopy::Yes);
-    ECInstanceKey newKey;
-    if (BE_SQLITE_DONE != stmt.Step(newKey))
-        return ERROR;
+        stmt.Reset();
+        stmt.ClearBindings();
 
-    if (SUCCESS != AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-80.7749, 35.3776, -80.7747, 35.3778)))
-        return ERROR;
+        //second entry
+        stmt.BindText(1, "NC 12th Congressional District in 2010", IECSqlBinder::MakeCopy::Yes);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
+        stmt.Finalize();
 
-    stmt.Reset();
-    stmt.ClearBindings();
+        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-81.0, 35.0, -79.6, 36.2)));
 
-    //second entry
-    stmt.BindText(1, "NC 12th Congressional District in 2010", IECSqlBinder::MakeCopy::Yes);
-    if (BE_SQLITE_DONE != stmt.Step(newKey))
-        return ERROR;
+        ecdb.SaveChanges();
+        Utf8String filePath(ecdb.GetDbFileName());
+        ecdb.CloseDb();
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)));
+        }
+    };
 
-    if (SUCCESS != AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-81.0, 35.0, -79.6, 36.2)))
-        return ERROR;
-
-    ecdb.SaveChanges();
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlRangeTreeTests, SimpleQuery)
+TEST_F(ECSqlRangeTreeTests, SimpleQuery)
     {
-    Utf8String ecdbPath;
-    ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
-
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    SetupTestFile();
+    ASSERT_TRUE(GetECDb().IsDbOpen());
 
     //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
@@ -115,7 +108,7 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
         "rt.MinX>=-81.08 AND rt.MaxX <=-80.58 AND rt.MinY>=35.00 AND rt.MaxY<=35.44";
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql));
 
     int rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -170,16 +163,13 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlRangeTreeTests, MatchQuery)
+TEST_F(ECSqlRangeTreeTests, MatchQuery)
     {
-    Utf8String ecdbPath;
-    ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
-
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    SetupTestFile();
+    ASSERT_TRUE(GetECDb().IsDbOpen());
 
     BBox2DMatchFunction bbox2dFunc;
-    ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));
+    ASSERT_EQ(0, GetECDb().AddRTreeMatchFunction(bbox2dFunc));
 
     //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
@@ -187,7 +177,7 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
         "rt.ECInstanceId MATCH BBOX2D(-81.08,35.00,-80.58,35.44)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql));
 
     int rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -202,16 +192,13 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
+TEST_F(ECSqlRangeTreeTests, MatchQueryWithParameters)
     {
-    Utf8String ecdbPath;
-    ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
-
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    SetupTestFile();
+    ASSERT_TRUE(GetECDb().IsDbOpen());
 
     BBox2DMatchFunction bbox2dFunc;
-    ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));
+    ASSERT_EQ(0, GetECDb().AddRTreeMatchFunction(bbox2dFunc));
 
     //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
@@ -219,7 +206,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
         "rt.ECInstanceId MATCH BBOX2D(?,?,?,?)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql));
 
     stmt.BindDouble(1, -81.08);
     stmt.BindDouble(2, 35.00);

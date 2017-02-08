@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/SchemaImportTestFixture.cpp $
+|     $Source: Tests/BackDoor/SchemaImportTestFixture.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "SchemaImportTestFixture.h"
+#include "PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -36,8 +36,7 @@ void SchemaImportTestFixture::AssertSchemaImport(SchemaItem const& testItem, Utf
 void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, SchemaItem const& testItem, Utf8CP ecdbFileName) const
     {
     asserted = true;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
-
+    ASSERT_EQ (BE_SQLITE_OK, CreateECDb(ecdb, ecdbFileName));
     AssertSchemaImport(asserted, ecdb, testItem);
     }
 
@@ -54,13 +53,10 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
         BeTest::SetFailOnAssert(false);
 
     bool deserializationFailed = false;
-    for (Utf8StringCR schemaXml : testItem.m_schemaXmlList)
+    if (SUCCESS != ReadECSchemaFromString(context, ecdb, testItem))
         {
-        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
-            {
-            ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed: " << testItem.m_assertMessage.c_str() << " " << schemaXml.c_str();
-            deserializationFailed = true;
-            }
+        ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed";
+        deserializationFailed = true;
         }
 
     if (!deserializationFailed)

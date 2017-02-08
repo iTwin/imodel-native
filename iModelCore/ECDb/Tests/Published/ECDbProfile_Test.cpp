@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const SchemaVersion EXPECTED_PROFILEVERSION (3, 102, 0, 0);
+static const SchemaVersion EXPECTED_PROFILEVERSION (3, 103, 0, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
@@ -24,7 +24,7 @@ static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_ecinstanceidsequence";
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, ECDbProfile)
     {
-    BeFileName dbPath = ECDbTestUtility::BuildECDbPath("ecdbprofiletest.db");
+    BeFileName dbPath = BuildECDbPath("ecdbprofiletest.db");
     if (dbPath.DoesPathExist())
         {
         // Delete any previously created file
@@ -74,13 +74,13 @@ TEST_F(ECDbTestFixture, ECDbProfileSchemas)
     {
     ECDbCR ecdb = SetupECDb("empty.ecdb");
 
-    ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
+    ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDbSystem");
     ASSERT_TRUE(systemSchema != nullptr);
 
     //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
     ASSERT_FALSE(systemSchema->IsSystemSchema());
 
-    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDb_FileInfo");
+    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDbFileInfo");
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
@@ -144,14 +144,14 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {SchemaVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
             {SchemaVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
             {SchemaVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,102,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,102,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {SchemaVersion(3,102,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,102,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {SchemaVersion(3,102,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,102,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
-            {SchemaVersion(3,103,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {SchemaVersion(3,103,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {SchemaVersion(3,103,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,103,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {SchemaVersion(3,103,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,103,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {SchemaVersion(3,103,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {SchemaVersion(3,103,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
+            {SchemaVersion(3,104,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {SchemaVersion(3,104,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
             {SchemaVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
             {SchemaVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
         };

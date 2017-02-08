@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/SchemaImportTestFixture.h $
+|     $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "ECDbPublishedTests.h"
+#include "ECDbTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -26,18 +26,16 @@ public:
         IndexInfo(Utf8CP name, Utf8CP tableName, Utf8CP ddl) : m_name(name), m_tableName(tableName), m_ddl(ddl) {}
         };
 
-    struct NoDbSchemaModificationsECDb : ECDb
+    struct RestrictedSchemaImportECDb : ECDb
         {
-        private:
-            DbSchemaModificationToken const* m_token;
-
         public:
-            NoDbSchemaModificationsECDb() : ECDb()
+            RestrictedSchemaImportECDb(bool requiresSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport) : ECDb()
                 {
-                m_token = &EnableDbSchemaModificationTokenValidation();
+                ApplyECDbSettings(false, requiresSchemaImportToken, allowChangesetMergingIncompatibleECSchemaImport);
                 }
 
-            DbSchemaModificationToken const* GetToken() const { return m_token; }
+            ECSchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
+            bool AllowChangesetMergingIncompatibleECSchemaImport() const { return GetECDbSettings().AllowChangesetMergingIncompatibleECSchemaImport(); }
         };
 
 

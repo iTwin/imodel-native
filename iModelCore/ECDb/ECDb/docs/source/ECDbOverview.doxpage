@@ -287,7 +287,7 @@
 
     #### DbIndex ECStructClass
     - @b Modify: 
-        - @ref BentleyApi::ECN::DbIndexList::DbIndex::GetName "Name"
+        - ECProperty @em Name
         
     @see @ref ECDbOverview
     */
@@ -344,10 +344,10 @@
     - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
     If the custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
-    @note Cardinality is not enforced either in that case.  
-    
-    
-    @b Rule:
+    <b>Cardinality is not enforced either in that case.</b>
+
+    #### Rule
+
     <b>Link Table</b> mapping is chosen if
     - the cardinality is N:N
     - ECProperties are defined for the ECRelationshipClass
@@ -460,7 +460,7 @@
 
     %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file".
     However, %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema
-    with dedicated custom attributes defined in the standard ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>.
+    with dedicated custom attributes defined in the ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>.
 
     @section ECDbDefaultMappingRules ECDb Default Mapping Rules
     - Type of ECClasses that <b>are not mapped</b>.
@@ -717,7 +717,7 @@
     /**
     @page ECDbFileInfo File-backed ECInstances
     %ECDb provides basic support for file-backed ECInstances. Every %ECDb file contains the system ECSchema
-    @b ECDb_FileInfo. The ECClass @b FileInfo and its subclasses are used to describe the file to which
+    @b ECDbFileInfo. The ECClass @b FileInfo and its subclasses are used to describe the file to which
     an ECInstance is associated. The ECClass @b FileInfoOwnership is used to relate a @b FileInfo to its owning
     ECInstance.
     

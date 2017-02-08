@@ -144,7 +144,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     if (!addIfDoesNotExist)
         return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetPropertyPathIdSequence().GetNextValue(id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
         {
         BeAssert(false);
         return ERROR;

@@ -2500,7 +2500,8 @@ void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
     {
     SetupECDb("JoinedTableECSqlStatementTests.ecdb");
 
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaPtr != NULL);
 
     ImportSchemaWithCA(schemaPtr, "Person");
@@ -2515,7 +2516,8 @@ void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb()
     {
     SetupECDb("JoinedTableECSqlStatementTests.ecdb");
 
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"NestedStructArrayTest.01.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaPtr != NULL);
 
     ImportSchemaWithCA(schemaPtr, "ClassA");

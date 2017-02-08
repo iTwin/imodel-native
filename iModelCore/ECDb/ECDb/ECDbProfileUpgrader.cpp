@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    auto context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
     BeFileName ecdbStandardSchemasFolder(context->GetHostAssetsDirectory());
@@ -31,7 +31,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadECDbSystemSchema(*context, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    SchemaKey schemaKey("ECDb_FileInfo", 2, 0, 0);
+    SchemaKey schemaKey("ECDbFileInfo", 2, 0, 0);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
@@ -40,7 +40,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetTokenManager().GetDbSchemaModificationToken());
+    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetSettings().GetECSchemaImportToken());
     timer.Stop();
     if (importStat != SUCCESS)
         {
@@ -74,8 +74,8 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadCont
         else
             {
             //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
-            BeAssert(false && "ECDb upgrade: Failed to deserialize ECDb_System ECSchema");
+            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
+            BeAssert(false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
             }
 
         return ERROR;
@@ -109,7 +109,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' alias='ecdbsys' description='Helper ECSchema for ECDb internal purposes.' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "<ECSchema schemaName='ECDbSystem' alias='ecdbsys' description='Helper ECSchema for ECDb internal purposes.' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <Bentley/PerformanceLogger.h>
 #include "SqlNames.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -115,6 +116,8 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
     if (!runProfileUpgrade)
         return stat;
 
+    PERFLOG_START("Core", "Upgrading the ECDb profile");
+
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
         {
@@ -157,6 +160,7 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
+    PERFLOG_FINISH("Core", "Upgrading the ECDb profile");
     return BE_SQLITE_OK;
     }
 

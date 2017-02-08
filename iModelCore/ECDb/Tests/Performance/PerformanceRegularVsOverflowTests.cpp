@@ -858,7 +858,7 @@ void PerformanceRegularVsOverflowTestFixture::GetTestSchemaXml(Utf8StringR schem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName, Utf8CP schemaXml, Utf8String destFileName)
     {
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(seedDbName.c_str());
+    BeFileName seedFilePath = BuildECDbPath(seedDbName.c_str());
 
     if (!seedFilePath.DoesPathExist())
         {
@@ -879,7 +879,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
     Utf8String seedFileName;
     seedFileName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties_seed%d.ecdb", sharedColumnsCount, propertiesCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+    BeFileName seedFilePath = BuildECDbPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
         {

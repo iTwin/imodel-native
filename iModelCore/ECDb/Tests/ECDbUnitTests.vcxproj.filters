@@ -7,12 +7,6 @@
     <ClCompile Include="Published\ECDbReadTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbRelationshipTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\FieldEngineer_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -82,9 +76,6 @@
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaImportTestFixture.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -100,16 +91,10 @@
     <ClCompile Include="Published\ECDbSchemas_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\FSRTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp">
-      <Filter>BackDoor</Filter>
-    </ClCompile>
-    <ClCompile Include="BackDoor\ECDbTestProject.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -156,9 +141,6 @@
     </ClCompile>
     <ClCompile Include="Published\ECDbJoinedTable_Test.cpp">
       <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbSql_Test.cpp">
-      <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceJoinedTableTests.cpp">
       <Filter>Performance</Filter>
@@ -208,9 +190,6 @@
     <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -241,6 +220,9 @@
     <ClCompile Include="Performance\PerformanceRegularVsOverflowTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -267,16 +249,10 @@
     <ClInclude Include="Published\RandomECInstanceGenerator.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\SchemaImportTestFixture.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h">
-      <Filter>BackDoor</Filter>
-    </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlStatementTestFixture.h">
@@ -311,6 +287,9 @@
     </ClInclude>
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h">
       <Filter>Published\ECSql</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\SchemaImportTestFixture.h">
+      <Filter>BackDoor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

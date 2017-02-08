@@ -56,7 +56,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     ecdb.SaveChanges();
     ecdb.CloseDb();
 
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
+    BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
     ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
@@ -129,7 +129,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     ecdb.SaveChanges();
     ecdb.CloseDb();
 
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath("CRUDPerformance_SharedTableForSubClasses.ecdb");
+    BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_SharedTableForSubClasses.ecdb");
     ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
@@ -189,7 +189,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     ecdb.SaveChanges();
     ecdb.CloseDb();
 
-    BeFileName seedFilePath = ECDbTestUtility::BuildECDbPath("CRUDPerformance_DefaultClasses.ecdb");
+    BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_DefaultClasses.ecdb");
     ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";

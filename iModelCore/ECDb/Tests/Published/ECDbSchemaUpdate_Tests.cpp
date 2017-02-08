@@ -49,11 +49,11 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
             {
             //test 1: unrestricted ECDb
             ECDb ecdb;
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_maymodifydbschema.ecdb", seedFilePath));
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_unrestricted.ecdb", seedFilePath));
 
             bool expectedToSucceed = expectedToSucceedList.first;
             bool asserted = false;
-            Utf8String assertMessageFull("[May modify DB schema] ");
+            Utf8String assertMessageFull("[Unrestricted schema import] ");
             assertMessageFull.append(assertMessage);
             AssertSchemaImport(asserted, ecdb, SchemaItem(schemaXml, expectedToSucceed, assertMessageFull.c_str()));
 
@@ -63,14 +63,12 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
             ecdb.CloseDb();
 
             //test 2: restricted ECDb
-            NoDbSchemaModificationsECDb restrictedECDb;
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "schemaupdate_maynotmodifydbschema.ecdb", seedFilePath));
+            RestrictedSchemaImportECDb restrictedECDb(false, false);
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "schemaupdate_changemergecomtapible.ecdb", seedFilePath));
 
-            //until the strict mode is enforced, only a warning is issued, but the behavior is the same as in
-            //the unrestricted mode, so use the expected value from the unrestricted mode for now
-            //expectedToSucceed = expectedToSucceedList.second;
+            expectedToSucceed = expectedToSucceedList.second;
             asserted = false;
-            assertMessageFull.assign("[May not modify DB schema] ").append(assertMessage);
+            assertMessageFull.assign("[Changeset-merging compatible schema import] ").append(assertMessage);
             AssertSchemaImport(asserted, restrictedECDb, SchemaItem(schemaXml, expectedToSucceed, assertMessageFull.c_str()));
 
             if (expectedToSucceed)
@@ -80,62 +78,6 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
             }
     };
 
-#ifdef NotUsedYet
-struct ECSchemaDuplicator :IECSchemaLocater
-    {
-    private:
-        ECSchemaCacheCR m_fromCache;
-    
-        ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
-            {
-            if (auto schema = schemaContext.GetCache().GetSchema(key, matchType))
-                return schema;
-
-            if (auto schema = m_fromCache.GetSchema(key, matchType))
-                {
-                Utf8String xml;
-                if (SchemaWriteStatus::Success != schema->WriteToXmlString(xml))
-                    return nullptr;
-
-                ECSchemaPtr out;
-                if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(out, xml.c_str(), schemaContext))
-                    return nullptr;
-
-                return out;
-                }
-
-            return nullptr;
-            }
-        ECSchemaDuplicator(ECSchemaCacheCR fromCache)
-            :m_fromCache(fromCache)
-            {}
-    public:
-        static ECSchemaCachePtr Duplicate(ECSchemaCacheCR fromCache)
-            {
-            ECSchemaReadContextPtr ptr = ECSchemaReadContext::CreateContext();
-            ECSchemaDuplicator loc(fromCache);
-            ptr->AddSchemaLocater(loc);
-            bvector<ECSchemaP> schemas;
-            fromCache.GetSchemas(schemas);
-            for (auto schema : schemas)
-                {
-                ptr->LocateSchema(const_cast<SchemaKeyR>(schema->GetSchemaKey()), SchemaMatchType::Exact);
-                }
-
-            return &ptr->GetCache();
-            }
-        static ECSchemaCachePtr Duplicate(ECSchemaCR schema)
-            {
-            ECSchemaCachePtr ptr = ECSchemaCache::Create();
-            ptr->AddSchema(const_cast<ECSchemaR>(schema));
-            return Duplicate(*ptr);
-            }
-        static ECSchemaCachePtr Duplicate(ECSchemaReadContextR ctx)
-            {
-            return Duplicate(ctx.GetCache());
-            }
-    };
-#endif // NotUsedYet
 
 void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true)
     {
@@ -1149,7 +1091,7 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(addNewEntityClass, filePath, {true, false}, "Adding New Entity Class");
+    AssertSchemaUpdate(addNewEntityClass, filePath, {true, true}, "Adding New Entity Class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1211,7 +1153,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
     GetECDb().CloseDb();
 
-    NoDbSchemaModificationsECDb restrictedECDb;
+    RestrictedSchemaImportECDb restrictedECDb(false, false);
     ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     SchemaItem schemaWithNewSubClass(
@@ -1293,7 +1235,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
 
-    NoDbSchemaModificationsECDb restrictedECDb;
+    RestrictedSchemaImportECDb restrictedECDb(false, false);
     ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     SchemaItem schemaWithNewSubClassWithProperty(
@@ -1451,7 +1393,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         "</ECSchema>");
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(addingEntityClassC3, filePath, { true, false }, "Adding New Entity Class");
+    AssertSchemaUpdate(addingEntityClassC3, filePath, { true, true }, "Adding New Entity Class");
     GetECDb().CloseDb();
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1507,7 +1449,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         "</ECSchema>");
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(addingEntityClassesC31C32, filePath, { true, false }, "Adding Entity Classes C31 and C32");
+    AssertSchemaUpdate(addingEntityClassesC31C32, filePath, { true, true }, "Adding Entity Classes C31 and C32");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1595,7 +1537,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Adding New Entity Class");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding New Entity Class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1820,7 +1762,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaXml, filePath, {true, false}, "Add new ECProperty");
+    AssertSchemaUpdate(schemaXml, filePath, {true, true}, "Add new ECProperty");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2056,7 +1998,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new ECProperty");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new ECProperty");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2527,23 +2469,11 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"DSCacheSchema.01.03.ecschema.xml");
+    ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
+    ASSERT_TRUE(ecSchema != nullptr);
     BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(ERROR, schemaStatus);
-    /*
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
-    schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(SUCCESS, schemaStatus);
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"RSComponents.02.00.ecschema.xml");
-    ecSchema->SetVersionMajor(1);
-    ecSchema->SetVersionMinor(22);
-    schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(SUCCESS, schemaStatus);
-    */
     }
 
 //---------------------------------------------------------------------------------------
@@ -4567,7 +4497,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    AssertSchemaUpdate(linkTableECRelationship, filePath, {true, true}, "Deletion of LinkTable mapped relationship");
+    AssertSchemaUpdate(linkTableECRelationship, filePath, {true, false}, "Deletion of LinkTable mapped relationship");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4789,7 +4719,7 @@ TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaWithNavProperty, filePath, {true, false}, "Adding Classes and Navigation property simultaneously");
+    AssertSchemaUpdate(schemaWithNavProperty, filePath, {true, true}, "Adding Classes and Navigation property simultaneously");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7024,7 +6954,7 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
 
     //verify Adding new EndTable relationship
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new endtable relationship");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new endtable relationship");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7059,7 +6989,7 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
 
     //verify Adding new linkTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new LinkTable relationship");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new LinkTable relationship");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECDbReferentialIntegrityTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -22,8 +22,13 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
     IECInstancePtr sourceInstance = sourceClass->GetDefaultStandaloneEnabler()->CreateInstance();
     IECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    ECDbTestUtility::SetECInstanceId(*sourceInstance, sourceECInstanceId);
-    ECDbTestUtility::SetECInstanceId(*targetInstance, targetECInstanceId);
+    ASSERT_TRUE(sourceECInstanceId.IsValid());
+    Utf8Char instanceIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    sourceECInstanceId.ToString(instanceIdStr);
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->SetInstanceId(instanceIdStr));
+    ASSERT_TRUE(targetECInstanceId.IsValid());
+    targetECInstanceId.ToString(instanceIdStr);
+    ASSERT_EQ(ECObjectsStatus::Success, targetInstance->SetInstanceId(instanceIdStr));
     relationshipInstance->SetSource(sourceInstance.get());
     relationshipInstance->SetTarget(targetInstance.get());
 

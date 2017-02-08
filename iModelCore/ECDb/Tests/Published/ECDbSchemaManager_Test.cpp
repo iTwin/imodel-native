@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -50,7 +49,7 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportToken)
     {
-    auto assertImport = [this] (Utf8CP ecschemaXml, bool expectedToSucceedInRestrictedMode, BeFileNameCR seedFilePath)
+    auto assertImport = [this] (Utf8CP ecschemaXml, BeFileNameCR seedFilePath)
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_unrestricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
@@ -59,14 +58,12 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
         ASSERT_FALSE(asserted) << "SchemaImport into unrestricted ECDb failed unexpectedly for: " << ecschemaXml;
         ecdb.CloseDb();
 
-        NoDbSchemaModificationsECDb restrictedECDb;
+        RestrictedSchemaImportECDb restrictedECDb(true, false);
         ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
         asserted = false;
-        //Until enforced finally, the token validation does not fail the schema import, but just logs a warning.
-        expectedToSucceedInRestrictedMode = true;
-        AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, expectedToSucceedInRestrictedMode));
-        ASSERT_FALSE(asserted) << "SchemaImport into restricted ECDb. Expected to succeed: " << expectedToSucceedInRestrictedMode << " for: " << ecschemaXml;
+        AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, false));
+        ASSERT_FALSE(asserted) << "SchemaImport into restricted ECDb. Expected to fail for: " << ecschemaXml;
         restrictedECDb.CloseDb();
         };
 
@@ -80,7 +77,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='Pet' typeName='string'/>"
                  "        <ECProperty propertyName='LastMod' typeName='DateTime'/>"
                  "    </ECEntityClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
 
 
     SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
@@ -148,7 +145,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
                  "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
                  "    </ECEntityClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
     
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='SubClassGetsJoinedTable' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -158,7 +155,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
                  "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
                  "    </ECEntityClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='NotSharedCols' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -168,7 +165,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
                  "        <ECProperty propertyName='SubSubProp2' typeName='string' />"
                  "    </ECEntityClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='SharedCols' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -178,7 +175,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
                  "        <ECProperty propertyName='SubSubProp2' typeName='string' />"
                  "    </ECEntityClass>"
-                 "</ECSchema>", true, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='RootFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -191,7 +188,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "          <Class class ='base:TphBase' />"
                  "      </Target>"
                  "   </ECRelationshipClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='SubFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -205,7 +202,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "          <Class class ='base:TphBase' />"
                  "      </Target>"
                  "   </ECRelationshipClass>"
-                 "</ECSchema>", true, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='RootLinkTableRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -218,7 +215,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "          <Class class ='base:TphBase' />"
                  "      </Target>"
                  "   </ECRelationshipClass>"
-                 "</ECSchema>", false, seedFileName);
+                 "</ECSchema>", seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='SubLinkTableRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -232,8 +229,260 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "          <Class class ='base:TphBase' />"
                  "      </Target>"
                  "   </ECRelationshipClass>"
-                 "</ECSchema>", true, seedFileName);
+                 "</ECSchema>", seedFileName);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
+    {
+    auto assertImport = [this] (Utf8CP ecschemaXml, BeFileNameCR seedFilePath, std::pair<bool,bool> const& expectedToSucceed, Utf8CP scenario)
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_unrestricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(ecschemaXml, expectedToSucceed.first));
+        ASSERT_FALSE(asserted) << "SchemaImport into unrestricted ECDb failed unexpectedly for scenario " << scenario;
+        ecdb.CloseDb();
+
+        RestrictedSchemaImportECDb restrictedECDb(false, false);
+        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+        asserted = false;
+        AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, expectedToSucceed.second));
+        ASSERT_FALSE(asserted) << "SchemaImport into restricted ECDb. Expected to fail for scenario " << scenario;
+        restrictedECDb.CloseDb();
+        };
+
+    SetupECDb("allowChangesetMergingIncompatibleECSchemaImport.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                                  "<ECSchema schemaName='BaseSchema' alias='base' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                                                  "    <ECEntityClass typeName='BaseNoChildren' modifier='Abstract'>"
+                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+                                                  "        <BaseClass>BaseNoTph</BaseClass>"
+                                                  "        <ECProperty propertyName='FooProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='FooProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                                                  "          <ECCustomAttributes>"
+                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                  "            </ClassMap>"
+                                                  "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                                  "          </ECCustomAttributes>"
+                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                                                  "        <BaseClass>TphBase</BaseClass>"
+                                                  "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+                                                  "        <ECProperty propertyName='Sub1Prop2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='Sub11' modifier='None'>"
+                                                  "        <BaseClass>Sub1</BaseClass>"
+                                                  "        <ECProperty propertyName='Sub11Prop1' typeName='long' />"
+                                                  "        <ECProperty propertyName='Sub11Prop2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                                                  "        <BaseClass>TphBase</BaseClass>"
+                                                  "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                                                  "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "</ECSchema>", true));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    BeFileName seedFileName(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //adding a subclass for TPH and non-TPH
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='BaseSchema' alias='base' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                 "    <ECEntityClass typeName='BaseNoChildren' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+                 "        <BaseClass>BaseNoTph</BaseClass>"
+                 "        <ECProperty propertyName='FooProp1' typeName='long' />"
+                 "        <ECProperty propertyName='FooProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Goo' modifier='Sealed'>"
+                 "        <BaseClass>BaseNoTph</BaseClass>"
+                 "        <ECProperty propertyName='GooProp1' typeName='long' />"
+                 "        <ECProperty propertyName='GooProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                 "          <ECCustomAttributes>"
+                 "            <ClassMap xmlns='ECDbMap.02.00'>"
+                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                 "            </ClassMap>"
+                 "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                 "          </ECCustomAttributes>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub1Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub11' modifier='None'>"
+                 "        <BaseClass>Sub1</BaseClass>"
+                 "        <ECProperty propertyName='Sub11Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub11Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub12' modifier='None'>"
+                 "        <BaseClass>Sub1</BaseClass>"
+                 "        <ECProperty propertyName='Sub12Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub12Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub3' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub3Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub3Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", seedFileName, {true, true}, "adding subclasses");
+
+    //deleting a subclass with TPH (expected to succeed as no table is deleted)
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='BaseSchema' alias='base' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                 "    <ECEntityClass typeName='BaseNoChildren' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+                 "        <BaseClass>BaseNoTph</BaseClass>"
+                 "        <ECProperty propertyName='FooProp1' typeName='long' />"
+                 "        <ECProperty propertyName='FooProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                 "          <ECCustomAttributes>"
+                 "            <ClassMap xmlns='ECDbMap.02.00'>"
+                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                 "            </ClassMap>"
+                 "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                 "          </ECCustomAttributes>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub1Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub11' modifier='None'>"
+                 "        <BaseClass>Sub1</BaseClass>"
+                 "        <ECProperty propertyName='Sub11Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub11Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", seedFileName, {true, true}, "deleting a subclass with TPH");
+
+    //deleting a subclass with TPH which is root of joined table (expected to fail as joined table is deleted)
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+    "<ECSchema schemaName='BaseSchema' alias='base' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+    "    <ECEntityClass typeName='BaseNoChildren' modifier='Abstract'>"
+    "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+    "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+    "    </ECEntityClass>"
+    "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+    "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+    "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+    "    </ECEntityClass>"
+    "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+    "        <BaseClass>BaseNoTph</BaseClass>"
+    "        <ECProperty propertyName='FooProp1' typeName='long' />"
+    "        <ECProperty propertyName='FooProp2' typeName='string' />"
+    "    </ECEntityClass>"
+    "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+    "          <ECCustomAttributes>"
+    "            <ClassMap xmlns='ECDbMap.02.00'>"
+    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+    "            </ClassMap>"
+    "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+    "          </ECCustomAttributes>"
+    "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+    "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+    "    </ECEntityClass>"
+    "    <ECEntityClass typeName='Sub1' modifier='None'>"
+    "        <BaseClass>TphBase</BaseClass>"
+    "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+    "        <ECProperty propertyName='Sub1Prop2' typeName='string' />"
+    "    </ECEntityClass>"
+    "    <ECEntityClass typeName='Sub11' modifier='None'>"
+    "        <BaseClass>Sub1</BaseClass>"
+    "        <ECProperty propertyName='Sub11Prop1' typeName='long' />"
+    "        <ECProperty propertyName='Sub11Prop2' typeName='string' />"
+    "    </ECEntityClass>"
+                 "</ECSchema>", seedFileName, {true, false}, "deleting a subclass which is root of joined table");
+
+    //deleting a subclass with non-TPH (expected to fail as table is deleted)
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='BaseSchema' alias='base' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                 "    <ECEntityClass typeName='BaseNoChildren' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                 "          <ECCustomAttributes>"
+                 "            <ClassMap xmlns='ECDbMap.02.00'>"
+                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                 "            </ClassMap>"
+                 "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                 "          </ECCustomAttributes>"
+                 "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                 "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub1Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub11' modifier='None'>"
+                 "        <BaseClass>Sub1</BaseClass>"
+                 "        <ECProperty propertyName='Sub11Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub11Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                 "        <BaseClass>TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", seedFileName, {true, false}, "deleting a subclass without TPH");
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
@@ -380,7 +629,7 @@ TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDb_System", "PrimitiveArray");
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDbSystem", "PrimitiveArray");
     ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('ECDbSystem', 'PrimitiveArray') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
@@ -420,8 +669,8 @@ TEST_F(ECDbSchemaManagerTests, CasingTests)
     ECDbCR ecdb = SetupECDb("schemamanagercasingtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDB_FILEinfo");
-    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDb_FileInfo"));
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDBFILEinfo");
+    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
 
     schema = ecdb.Schemas().GetECSchema("ecsqltest");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECSqlTest"));
@@ -500,7 +749,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     {
     ECDbCR ecdb = SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                     "<ECSchemaReference name='ECDb_FileInfo' version='02.00.00' prefix='ecdbf' />"
+                                     "<ECSchemaReference name='ECDbFileInfo' version='02.00.00' prefix='ecdbf' />"
                                      "  <ECEntityClass typeName='Foo' >"
                                      "    <ECProperty propertyName='Folder' typeName='ecdbf:StandardRootFolderType' />"
                                      "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
@@ -515,7 +764,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDb_FileInfo", "StandardRootFolderType");
+    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDbFileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
@@ -524,10 +773,10 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDb_FileInfo", "ExternalFileInfo");
+    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("RootFolder");
@@ -547,7 +796,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
     ECClassCP classWithEnum = ecdb.Schemas().GetECClass("TestSchema", "Foo");
@@ -570,7 +819,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", true);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", true);
     ASSERT_TRUE(schema != nullptr);
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
@@ -779,22 +1028,20 @@ TEST_F(ECDbSchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
     {
-    ECDbTestFixture::Initialize();
+    ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"ecschemamanagertest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    ECSchemaPtr schemaPtr1 = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr1 != NULL);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
+    ASSERT_TRUE(schemaPtr != nullptr);
+    context = nullptr;
+    ECSchemaPtr schemaPtr1 = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
+    ASSERT_TRUE(schemaPtr1 != nullptr);
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     ASSERT_EQ(ECObjectsStatus::Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
     ASSERT_EQ(ECObjectsStatus::DuplicateSchema, schemacache->AddSchema(*schemaPtr1));
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "could not import test ecschema.";
-    ecdb.SaveChanges();
 
     ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
     EXPECT_TRUE(ecclass != NULL) << "ecclass with the specified name does not exist";
@@ -807,7 +1054,8 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     {
     ECDbR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"BaseSchemaA.01.00.ecschema.xml"), 3);
 
-    ECSchemaPtr schema = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schema = ReadECSchemaFromDisk(context, BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
     ASSERT_TRUE(schema != nullptr);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
@@ -820,31 +1068,6 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportingSchemaInDifferentECDB)
-    {
-    ECDbTestFixture::Initialize();
-    ECDb ecdb, testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"testecdbSchema.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-    stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"testecdbSchema1.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk(L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-
-    ECSchemaCachePtr Schemacache = ECSchemaCache::Create();
-    Schemacache->AddSchema(*schemaPtr);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(Schemacache->GetSchemas())) << "could not import test ecschema.";
-    ecdb.SaveChanges();
-
-    ASSERT_EQ(ERROR, testecdb.Schemas().ImportECSchemas(Schemacache->GetSchemas())) << "could not import test ecschema in the 2nd ecdb file.";
-    testecdb.SaveChanges();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
@@ -852,17 +1075,13 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+    ECSchemaReadContextPtr context = nullptr;
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
-    ECSchemaPtr supple1;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml", nullptr);
+    ECSchemaPtr supple1 = ReadECSchemaFromDisk(context, ecdb, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
     ASSERT_TRUE(supple1 != NULL);
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
@@ -911,21 +1130,18 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(testecdb.IsDbOpen());
     ECSchemaReadContextPtr  context = nullptr;
 
-    ECSchemaPtr schemaPtr;
+    
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
 
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml", nullptr);
+    schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
     schemaCache->AddSchema(*schemaPtr);
-
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas())) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
@@ -938,25 +1154,21 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
  //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ECSchemaReadContextPtr context = nullptr;
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supplementalSchemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(supplementalSchemaptr, context, L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml", nullptr);
+    ECSchemaPtr supplementalSchemaptr= ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
     ASSERT_TRUE(supplementalSchemaptr != NULL);
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
     schemacache->AddSchema(*supplementalSchemaptr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
     }
 
@@ -985,31 +1197,26 @@ TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
 // A primary schema should be supplemented with the latest available supplemental schema
 TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml", nullptr);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1030,30 +1237,26 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 //supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
 TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml", nullptr);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml"));
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1127,10 +1330,8 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
 
-    ECSchemaReadContextPtr  context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schemaptr= ReadECSchemaFromDisk(context, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
@@ -1317,27 +1518,23 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidCla
 //supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
 TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(testecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
 
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.69.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaptr != NULL);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.69.ecschema.xml"));
+    ASSERT_TRUE(schemaptr != nullptr);
     schemacache->AddSchema(*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
+    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml"));
+    ASSERT_TRUE(supple != nullptr);
     schemacache->AddSchema(*supple);
 
     //With new supplementation Behaviour, this one will not be ignored though it is not targeting the primary schema's exact version.
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
+    supple = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml"));
+    ASSERT_TRUE(supple != nullptr);
     schemacache->AddSchema(*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
@@ -1414,8 +1611,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         activityKey = newKey;
         };
 
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema1.ecdb");
+    ECDbR ecdb = SetupECDb("importschemawithsubclassestoexistingschema1.ecdb");
 
     ECInstanceKey activityKey;
     setup(activityKey, ecdb);
@@ -1594,8 +1790,6 @@ TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
     {
-
-
     Utf8CP stdXml = 
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"

@@ -2,11 +2,10 @@
 |
 |  $Source: Tests/Published/ECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -65,8 +64,6 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         }
     }
 
-extern IECRelationshipInstancePtr CreateRelationship(ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target);
-
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
     ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
@@ -76,6 +73,7 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
 
     ECClassCP tempClass = ecdb.Schemas().GetECClass(schemaName, relationshipClassName);
     ECRelationshipClassCP relationshipClass = tempClass->GetRelationshipClassCP();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
 
     ECInstanceInserter sourceInserter(ecdb, *sourceClass, nullptr);
     ECInstanceInserter targetInserter(ecdb, *targetClass, nullptr);
@@ -91,7 +89,11 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
             ECInstanceKey relationshipId;
             ASSERT_EQ(BE_SQLITE_OK, targetInserter.Insert(*targetInstance));
 
-            IECRelationshipInstancePtr relationshipInstance = CreateRelationship(*relationshipClass, *sourceInstance, *targetInstance);
+            IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+            ASSERT_TRUE(relationshipInstance != nullptr);
+            relationshipInstance->SetSource(sourceInstance.get());
+            relationshipInstance->SetTarget(targetInstance.get());
+            relationshipInstance->SetInstanceId("source->target");
             ASSERT_EQ(BE_SQLITE_OK, relationshipInserter.Insert(relationshipId, *relationshipInstance));
             }
         }
@@ -126,6 +128,58 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     ASSERT_TRUE(structClass != nullptr);
     ECInstanceInserter inserter(ecdb, *structClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
+    {
+    ECDbCR ecdb = SetupECDb("ecinstanceinserterstructarray.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECClassCP structClass = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(structClass != nullptr);
+
+    ECInstanceKey key;
+    {
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
+
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("PStruct_Array", 4));
+
+    //first element: set nullptr struct
+    ECValue structValue;
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(nullptr));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 0));
+
+    //second element: set empty struct
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    structValue.Clear();
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 1));
+
+    //third element: set struct with a single property value set
+    structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, structInstance->SetValue("i", ECValue(123)));
+    structValue.Clear();
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 2));
+
+    //fourth element: not set at all(just created by AddArrayElement call)
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *instance));
+    }
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT PStruct_Array FROM ecsqltest_PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String actualJson(stmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ("[null,null,{\"i\":123},null]", actualJson.c_str());
     }
 
 TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)
@@ -324,7 +378,7 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ExecuteECSqlCommand(ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)
+void ExecuteECSqlCommand(ECSqlStatement& stmt, ECDbCR db, Utf8CP ecsql)
     {
     ASSERT_EQ(stmt.Prepare(db, ecsql), ECSqlStatus::Success);
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
@@ -416,7 +470,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ExecuteECSql(ECSqlStatement& stmt, ECInstanceKey& key, ECDbR ecdb, Utf8CP ecsql)
+void ExecuteECSql(ECSqlStatement& stmt, ECInstanceKey& key, ECDbCR ecdb, Utf8CP ecsql)
     {
     ASSERT_EQ(stmt.Prepare(ecdb, ecsql), ECSqlStatus::Success);
     ASSERT_EQ(stmt.Step(key), BE_SQLITE_DONE);
@@ -428,7 +482,7 @@ void ExecuteECSql(ECSqlStatement& stmt, ECInstanceKey& key, ECDbR ecdb, Utf8CP e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     {
-    auto const schema =
+    ECDbCR ecdb = SetupECDb("TestECDbGroupByClauseWithFunctions.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -447,26 +501,17 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
         "    <ECEntityClass typeName='ClassAC' >"
         "        <BaseClass>ClassA</BaseClass>"
         "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("TestECDbGroupByClauseWithFunctions.ecdb");
-    ECSchemaPtr testSchema;
-    auto readContext = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(testSchema, schema, *readContext);
-    ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas());
-    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
-
+        "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ECSqlStatement stmt;
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassA VALUES(1000, 1)");
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassA VALUES(1500, 1)");
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassAB VALUES(2000, 2)");
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassAB VALUES(2500, 2)");
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassAC VALUES(3000, 3)");
-    ExecuteECSqlCommand(stmt, db, "INSERT INTO rc.ClassAC VALUES(3500, 3)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassA VALUES(1000, 1)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassA VALUES(1500, 1)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAB VALUES(2000, 2)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAB VALUES(2500, 2)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAC VALUES(3000, 3)");
+    ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAC VALUES(3500, 3)");
 
-    ASSERT_EQ(stmt.Prepare(db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Id"), ECSqlStatus::Success);
     int count = 0;
     Utf8String expectedAvgValues = "21250.022250.023250.0";
     Utf8String actualAvgValues;
@@ -482,7 +527,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 
     count = 0;
     actualAvgValues = "";
-    ASSERT_EQ(stmt.Prepare(db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"), ECSqlStatus::Success);
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         actualAvgValues.append(stmt.GetValueText(1));
@@ -492,8 +537,6 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     ASSERT_EQ(count, 3);
     ASSERT_EQ(expectedAvgValues, actualAvgValues);
     stmt.Finalize();
-
-    db.CloseDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -501,14 +544,8 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     {
-    ECDb ecdb;
-    BeFileName applicationSchemaDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-    ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"InstanceInserterDb.ecdb");
-    ASSERT_EQ(stat, BE_SQLITE_OK);
+    ECDbR ecdb = SetupECDb("InstanceInserterDb.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaPtr testSchema;
     ECEntityClassP testClass = nullptr;
@@ -546,7 +583,7 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassIds)
     {
-    auto const schema =
+    ECDbCR db = SetupECDb("InsertRelationshipInstances.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -600,16 +637,8 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
         "              <Class class = 'ClassD'/> "
         "          </Target> "
         "      </ECRelationshipClass> "
-        "</ECSchema>";
-
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("InsertRelationshipInstances.ecdb");
-    ECSchemaPtr testSchema;
-    auto readContext = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(testSchema, schema, *readContext);
-    ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas());
-    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
+        "</ECSchema>"));
+    ASSERT_TRUE(db.IsDbOpen());
 
     ECSqlStatement stmt;
     ECInstanceKey key1, key2, key3, key4, key5;

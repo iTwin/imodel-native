@@ -647,7 +647,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDb_FileInfo' version='02.00' prefix='ecdbf' />"
+        "    <ECSchemaReference name='ECDbFileInfo' version='02.00' prefix='ecdbf' />"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
@@ -3640,8 +3640,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"VerifyInstanceInsertionForClassMappedToExistingTable.ecdb"));
+    ECDbR ecdb = SetupECDb("VerifyInstanceInsertionForClassMappedToExistingTable.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_FALSE(ecdb.TableExists("TestTable"));
@@ -4700,8 +4699,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCAForLinkTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"DataTypeMismatchInExistingTableTest.ecdb"));
+    ECDbR ecdb = SetupECDb("DataTypeMismatchInExistingTableTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_FALSE(ecdb.TableExists("TestTable"));
@@ -4736,8 +4734,7 @@ TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"InvalidPrimaryKeyInExistingTable.ecdb"));
+    ECDbR ecdb = SetupECDb("InvalidPrimaryKeyInExistingTable.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_FALSE(ecdb.TableExists("TestTable"));
@@ -6557,6 +6554,228 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                     AssertIndex(db, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
                     }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Majd.Uddin                         03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMappingTestFixture, PartialIndex)
+    {
+        ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
+            "   <ECEntityClass typeName = 'IndexClass' >"
+            "       <ECCustomAttributes>"
+            "       <DbIndexList xmlns='ECDbMap.02.00'>"
+            "           <Indexes>"
+            "               <DbIndex>"
+            "                   <Name>IDX_Partial</Name>"
+            "                   <IsUnique>False</IsUnique>"
+            "                   <Properties>"
+            "                       <string>PropertyPartialIndex</string>"
+            "                   </Properties>"
+            "                   <Where>IndexedColumnsAreNotNull</Where>"
+            "               </DbIndex>"
+            "               <DbIndex>"
+            "                   <Name>IDX_Full</Name>"
+            "                   <IsUnique>False</IsUnique>"
+            "                   <Properties>"
+            "                       <string>PropertyFullIndex</string>"
+            "                   </Properties>"
+            "               </DbIndex>"
+            "               <DbIndex>"
+            "                   <Name>IDX_PartialMissing</Name>"
+            "                   <IsUnique>False</IsUnique>"
+            "                   <Properties>"
+            "                       <string>PropertyPartialIndex</string>"
+            "                   </Properties>"
+            "                   <Where></Where>"
+            "               </DbIndex>"
+            "           </Indexes>"
+            "       </DbIndexList>"
+            "   </ECCustomAttributes>"
+            "   <ECProperty propertyName ='PropertyFullIndex' typeName = 'string' />"
+            "   <ECProperty propertyName ='PropertyPartialIndex' typeName = 'string' />"
+            "   </ECEntityClass>"
+            "</ECSchema>"));
+
+        ASSERT_TRUE(ecdb.IsDbOpen());
+
+        //Verify that one Partial index was created
+        BeSQLite::Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass' AND name=?"));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Partial", Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        Utf8String sqlCmd = stmt.GetValueText(4);
+        ASSERT_FALSE(sqlCmd.find("WHERE") == std::string::npos) << "IDX_Partial is a partial index and will have WHERE clause";
+        //Verify that other index is not Partial as Where was not specified
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Full", Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        sqlCmd = stmt.GetValueText(4);
+        ASSERT_TRUE(sqlCmd.find("WHERE") == std::string::npos);
+
+        //Verify that index with empty Where clause is treated as not-partial index
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_PartialMissing", Statement::MakeCopy::No));
+        //IDX_PartialMissing will be skipped as it has empty WHERE clause
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        stmt.Finalize();
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Majd.Uddin                         03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMappingTestFixture, UniqueIndex)
+    {
+    ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                                                                "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                                                "<ECEntityClass typeName='IndexClass2' >"
+                                                                "   <ECCustomAttributes>"
+                                                                "       <DbIndexList xmlns='ECDbMap.02.00'>"
+                                                                "           <Indexes>"
+                                                                "               <DbIndex>"
+                                                                "                   <Name>IDX_Unique</Name>"
+                                                                "                   <IsUnique>True</IsUnique>"
+                                                                "                   <Properties>"
+                                                                "                       <string>Property2</string>"
+                                                                "                   </Properties>"
+                                                                "               </DbIndex>"
+                                                                "               <DbIndex>"
+                                                                "                   <Name>IDX_NotUnique</Name>"
+                                                                "                   <IsUnique>False</IsUnique>"
+                                                                "                   <Properties>"
+                                                                "                       <string>Property2</string>"
+                                                                "                   </Properties>"
+                                                                "               </DbIndex>"
+                                                                "           </Indexes>"
+                                                                "       </DbIndexList>"
+                                                                "   </ECCustomAttributes>"
+                                                                "   <ECProperty propertyName='Property1' typeName='string' />"
+                                                                "   <ECProperty propertyName='Property2' typeName='string' />"
+                                                                "</ECEntityClass>"
+                                                                "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    //Verify that one Unique index was created
+    BeSQLite::Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass2' AND name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Unique", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String sqlCmd = stmt.GetValueText(4);
+    ASSERT_FALSE(sqlCmd.find("UNIQUE") == std::string::npos) << "IDX_Unique will have UNIQUE clause";
+
+    //Verify that other indexes are not Unique
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_NotUnique", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    sqlCmd = stmt.GetValueText(4);
+    ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
+
+    stmt.Finalize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Majd.Uddin                         03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMappingTestFixture, IndexErrors)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                                     "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                     "<ECEntityClass typeName='IndexClass3' >"
+                                     "   <ECCustomAttributes>"
+                                     "       <DbIndexList xmlns='ECDbMap.02.00'>"
+                                     "           <Indexes>"
+                                     "               <DbIndex>"
+                                     "                   <Name>IDX_NoProperty</Name>"
+                                     "                   <IsUnique>False</IsUnique>"
+                                     "                   <Properties>"
+                                     "                       <string>Property1</string>"
+                                     "                   </Properties>"
+                                     "               </DbIndex>"
+                                     "           </Indexes>"
+                                     "       </DbIndexList>"
+                                     "   </ECCustomAttributes>"
+                                     "   <ECProperty propertyName='PropertyString' typeName='string' />"
+                                     "   <ECProperty propertyName='PropertyInt' typeName='int' />"
+                                     "   <ECProperty propertyName='PropertyDouble' typeName='double' />"
+                                     "</ECEntityClass>"
+                                     "</ECSchema>", false));
+
+    testSchemas.push_back(SchemaItem(
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='IndexClass3' >"
+        "   <ECCustomAttributes>"
+        "       <DbIndexList xmlns='ECDbMap.02.00'>"
+        "           <Indexes>"
+        "               <DbIndex>"
+        "                   <Name>IDX_WrongProperty</Name>"
+        "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <string>Property1</string>"
+        "                   </Properties>"
+        "               </DbIndex>"
+        "           </Indexes>"
+        "       </DbIndexList>"
+        "   </ECCustomAttributes>"
+        "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
+        "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
+        "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
+        "</ECEntityClass>"
+        "</ECSchema>", false));
+
+    testSchemas.push_back(SchemaItem(
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
+        "<ECEntityClass typeName = 'IndexClass3' >"
+        "   <ECCustomAttributes>"
+        "       <DbIndexList xmlns='ECDbMap.02.00'>"
+        "           <Indexes>"
+        "               <DbIndex>"
+        "                   <Name>IDX_WrongPropertyArray</Name>"
+        "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <int>PropertyInt</int>"
+        "                       <string>Property1</string>"
+        "                   </Properties>"
+        "               </DbIndex>"
+        "           </Indexes>"
+        "       </DbIndexList>"
+        "   </ECCustomAttributes>"
+        "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
+        "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
+        "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
+        "</ECEntityClass>"
+        "</ECSchema>", false));
+
+    testSchemas.push_back(SchemaItem(
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
+        "<ECEntityClass typeName = 'IndexClass3' >"
+        "   <ECCustomAttributes>"
+        "       <DbIndexList xmlns='ECDbMap.02.00'>"
+        "           <Indexes>"
+        "               <DbIndex>"
+        "                   <Name>SELECT</Name>"
+        "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <string>PropertyInt</string>"
+        "                   </Properties>"
+        "               </DbIndex>"
+        "           </Indexes>"
+        "       </DbIndexList>"
+        "   </ECCustomAttributes>"
+        "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
+        "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
+        "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
+        "</ECEntityClass>"
+        "</ECSchema>", true));
+
+    AssertSchemaImport(testSchemas, "ecdbmapindextest.ecdb");
     }
 
 //---------------------------------------------------------------------------------------

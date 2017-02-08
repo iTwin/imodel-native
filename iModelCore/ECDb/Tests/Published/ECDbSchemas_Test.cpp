@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -68,19 +67,13 @@ TEST_F(ECDbSchemaTests, OrderOfPropertyIsPreservedInTableColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaTests, ValidateSchemaUsingSqliteQuery)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    EXPECT_EQ(BE_SQLITE_OK, stat);
+    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     Utf8CP sql = "SELECT [Element].[ElementId] FROM (SELECT NULL ECClassId, NULL ECInstanceId, NULL [ElementId] LIMIT 0) Element ";
     // Validate the expected ECSchemas in the project
     Statement stmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(db, sql));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(ecdb, sql));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -89,28 +82,22 @@ TEST_F(ECDbSchemaTests, ValidateSchemaUsingSqliteQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, LoadECSchemas)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    EXPECT_EQ(BE_SQLITE_OK, stat);
+    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("Bentley_Standard_CustomAttributes");
     expectedSchemas.push_back("CoreCustomAttributes");
-    expectedSchemas.push_back("ECDb_FileInfo");
-    expectedSchemas.push_back("ECDb_System");
+    expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
+    expectedSchemas.push_back("ECDbSystem");
     expectedSchemas.push_back("EditorCustomAttributes");
     expectedSchemas.push_back("MetaSchema");
     expectedSchemas.push_back("StartupCompany");
 
     // Validate the expected ECSchemas in the project
     Statement stmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(db, "SELECT Name FROM ec_Schema ORDER BY Name"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Name FROM ec_Schema ORDER BY Name"));
     int i = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -126,23 +113,15 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECDbSchemaTests, ImportDiamondInheritanceECSchema)
     {
-	ECDbTestProject test;
-	ECDbR ecdb = test.Create ("importecschema.ecdb");
-
-	ECSchemaPtr s1;
-	ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
-	ECDbTestUtility::ReadECSchemaFromDisk (s1, ctx, L"DiamondInheritance.01.00.ecschema.xml", nullptr);
-	ASSERT_TRUE (s1.IsValid ());
-
-	//now import test schema where the table already exists for the ECClass
-	ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (ctx->GetCache ().GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ECDbCR ecdb = SetupECDb("DiamondInheritance.ecdb", BeFileName(L"DiamondInheritance.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 	ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int GetColumnCount(DbR db, Utf8CP table)
+static int GetColumnCount(ECDbCR db, Utf8CP table)
     {
     Statement stmt;
     stmt.Prepare(db, SqlPrintfString("SELECT * FROM %s LIMIT 1", table));
@@ -154,9 +133,7 @@ static int GetColumnCount(DbR db, Utf8CP table)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     {
-    // Create a sample project
-    ECDbTestProject test;
-    ECDbR db = test.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     //========================[sc_ClassWithPrimitiveProperties===================================
 
     Utf8CP tblClassWithPrimitiveProperties = "sc_ClassWithPrimitiveProperties";
@@ -479,15 +456,11 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
  +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, ImportECSchemaWithSameVersionAndSameContentTwice)
     {
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
-    ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(SUCCESS, schemaStatus);
+    ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -495,19 +468,15 @@ TEST_F(ECDbSchemaTests, ImportECSchemaWithSameVersionAndSameContentTwice)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
     {
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("MultipleSchemas.ecdb", L"BaseSchemaA.01.00.ecschema.xml", false);
+    ECDbCR db = SetupECDb("MultipleSchemas.ecdb", BeFileName(L"BaseSchemaA.01.00.ecschema.xml"));
 
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"SchoolSchema.01.00.ecschema.xml");
+    ECSchemaReadContextPtr schemaContext = nullptr;
+    ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
     auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
     schemaContext->GetCache().Clear();
 
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"ECSqlTest.01.00.ecschema.xml");
+    ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
     }
@@ -521,27 +490,6 @@ TEST_F(ECDbSchemaTests, IntegrityCheck)
     Utf8String actualDdl = RetrieveDdl(ecdb, "ic_TargetBase");
     ASSERT_FALSE(actualDdl.empty());
     ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [ForeignECInstanceId_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([ForeignECInstanceId_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
-    }
-
-//-------------------------------------------------------------------------------------
-// <author>Carole.MacDonald</author>                     <date>06/2013</date>
-//---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(ECDbSchemaTests, CreateCloseOpenImport)
-    {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("importecschema.ecdb");
-    Utf8String filename = ecdb.GetDbFileName();
-    ecdb.CloseDb();
-
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_EQ(BE_SQLITE_OK, stat);
-
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas())) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -590,7 +538,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertImportedSchema(DbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedClassName, Utf8CP expectedPropertyName)
+void AssertImportedSchema(ECDbCR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedClassName, Utf8CP expectedPropertyName)
     {
     CachedStatementPtr findClassStmt = nullptr;
     ecdb.GetCachedStatement(findClassStmt, "SELECT NULL FROM ec_Class c, ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ? LIMIT 1");
@@ -614,9 +562,7 @@ void AssertImportedSchema(DbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedCl
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
     {
-    // Create a sample project
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("importecschema.ecdb");
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Name TEXT)"));
@@ -638,9 +584,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithoutECInstanceIdColum
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
     {
-    // Create a sample project
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("importecschema.ecdb");
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (ECInstanceId INTEGER PRIMARY KEY, Name TEXT)"));
@@ -661,14 +605,13 @@ TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 TEST_F(ECDbSchemaTests, DiegoRelationshipTest)
     {
     // Create a sample project
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("importecschema.ecdb");
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaPtr s1, s2;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    ECDbTestUtility::ReadECSchemaFromDisk(s1, ctx, L"DiegoSchema1.01.00.ecschema.xml", nullptr);
+    ECSchemaReadContextPtr ctx = nullptr;
+    ECSchemaPtr s1 = ReadECSchemaFromDisk(ctx, BeFileName(L"DiegoSchema1.01.00.ecschema.xml"));
     ASSERT_TRUE(s1.IsValid());
-    ECDbTestUtility::ReadECSchemaFromDisk(s2, ctx, L"DiegoSchema2.01.00.ecschema.xml", nullptr);
+    ECSchemaPtr s2 = ReadECSchemaFromDisk(ctx, BeFileName(L"DiegoSchema2.01.00.ecschema.xml"));
     ASSERT_TRUE(s2.IsValid());
 
     //now import test schema where the table already exists for the ECClass
@@ -713,8 +656,7 @@ TEST_F(ECDbSchemaTests, DiegoRelationshipTest)
 TEST_F(ECDbSchemaTests, ImportSchemaWithRelationshipAgainstExistingTable)
     {
     // Create a sample project
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("importecschema.ecdb");
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (ECInstanceId INTEGER PRIMARY KEY, Name TEXT)"));
@@ -848,20 +790,18 @@ TEST_F(ECDbSchemaTests, ReadCustomAttributesTest)
     //create test db and close it again
     Utf8String dbPath;
     {
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create("customattributestest.ecdb");
-    auto importStat = db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas());
-    ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
-
-    dbPath = testProject.GetECDbPath();
+    ECDbR db = SetupECDb("customattributestest.ecdb");
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "Could not import test schema into ECDb file";
+    db.SaveChanges();
+    dbPath = db.GetDbFileName();
+    db.CloseDb();
     }
 
     //reopen test ECDb file (to make sure that the stored schema is read correctly)
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
+    DbResult stat =  GetECDb().OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Could not open test ECDb file";
 
-    ECSchemaCP readSchema = db.Schemas().GetECSchema(testSchema->GetName().c_str());
+    ECSchemaCP readSchema = GetECDb().Schemas().GetECSchema(testSchema->GetName().c_str());
     ASSERT_TRUE(readSchema != nullptr) << "Could not read test schema from reopened ECDb file.";
     //*** assert custom attribute instance with instance id
     ECClassCP domainClass1 = readSchema->GetClassCP("domain1");
@@ -903,8 +843,7 @@ TEST_F(ECDbSchemaTests, CheckCustomAttributesXmlFormatTest)
     //assign CA with instance id
     CreateAndAssignRandomCAInstance(testSchema);
 
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create("customattributestest.ecdb");
+    ECDbCR db = SetupECDb("customattributestest.ecdb");
     auto importStat = db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas());
     ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
 
@@ -943,10 +882,8 @@ TEST_F(ECDbSchemaTests, ImportSupplementalSchemas)
     ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
 
-    ECSchemaPtr startup;
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(startup, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, schemaContext, L"StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml");
+    ECSchemaPtr startup = ReadECSchemaFromDisk(schemaContext, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ECSchemaPtr supple = ReadECSchemaFromDisk(schemaContext, BeFileName(L"StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml"));
     SchemaKey key("StartupCompany", 2, 0);
 
     bvector<ECSchemaP> supplementalSchemas;
@@ -982,8 +919,8 @@ TEST_F(ECDbSchemaTests, ImportSupplementalSchemas)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, ArrayPropertyTest)
     {
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ASSERT_TRUE(db.IsDbOpen());
 
     ECSchemaCP startupCompanySchema = db.Schemas().GetECSchema("StartupCompany", true);
     ASSERT_TRUE(startupCompanySchema != nullptr);

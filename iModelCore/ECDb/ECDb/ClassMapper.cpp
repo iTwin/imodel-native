@@ -157,17 +157,17 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
-        if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
+        if (SUCCESS != customPropMap.TryGetColumnName(columnName))
             return ERROR;
 
-        if (ECObjectsStatus::Success != customPropMap.TryGetIsNullable(isNullable))
+        if (SUCCESS != customPropMap.TryGetIsNullable(isNullable))
             return ERROR;
 
-        if (ECObjectsStatus::Success != customPropMap.TryGetIsUnique(isUnique))
+        if (SUCCESS != customPropMap.TryGetIsUnique(isUnique))
             return ERROR;
 
         Utf8String collationStr;
-        if (ECObjectsStatus::Success != customPropMap.TryGetCollation(collationStr))
+        if (SUCCESS != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
         if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))

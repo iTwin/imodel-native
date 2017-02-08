@@ -11,39 +11,82 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct RelationshipStrength : ECDbTestFixture {};
-
-extern bool InsertInstance(ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance);
-extern IECRelationshipInstancePtr CreateRelationship(ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target);
-extern ECInstanceId InstanceToId(IECInstanceCR ecInstance);
-extern IECInstancePtr CreatePerson(ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DeleteInstance(IECInstanceCR instance, ECDbR ecdb)
+struct RelationshipStrength : ECDbTestFixture 
     {
-    ECClassCR ecClass = instance.GetClass();
-    ECInstanceDeleter deleter(ecdb, ecClass, nullptr);
+    protected:
+    //---------------------------------------------------------------------------------------
+    //                                               Krischan.Eberle              02/2017
+    //+---------------+---------------+---------------+---------------+---------------+------
+    ECInstanceKey InsertPerson(Utf8CP firstName, Utf8CP lastName)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO RelationshipStrengthTest.Person(FirstName,LastName) VALUES('%s','%s')", firstName, lastName);
+        ECSqlStatement stmt;
+        if (stmt.Prepare(GetECDb(), ecsql.c_str()) != ECSqlStatus::Success)
+            return ECInstanceKey();
 
-    ASSERT_TRUE(deleter.IsValid()) << "Invaild Deleter for ecClass : " << ecClass.GetName().c_str();
+        ECInstanceKey key;
+        stmt.Step(key);
+        return key;
+        }
 
-    ASSERT_EQ(BE_SQLITE_OK, deleter.Delete(instance)) << "Instance Deletion failed for ecClass : " << ecClass.GetName().c_str();
-    }
+    //---------------------------------------------------------------------------------------
+    //                                               Krischan.Eberle              02/2017
+    //+---------------+---------------+---------------+---------------+---------------+------
+    ECInstanceKey InsertRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO %s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", relationshipClassECSqlName, source.GetECInstanceId().ToString().c_str(),
+                      target.GetECInstanceId().ToString().c_str());
+        ECSqlStatement stmt;
+        if (stmt.Prepare(GetECDb(), ecsql.c_str()) != ECSqlStatus::Success)
+            return ECInstanceKey();
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool HasInstance(IECInstanceCR instance, ECDbR ecdb)
-    {
-    Utf8String ecsql;
-    ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%llu",
-                  instance.GetClass().GetECSqlName().c_str(), InstanceToId(instance).GetValue());
+        ECInstanceKey key;
+        stmt.Step(key);
+        return key;
+        }
 
-    ECSqlStatement statement;
-    EXPECT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql.c_str()));
-    return statement.Step() == BE_SQLITE_ROW;
-    }
+    //---------------------------------------------------------------------------------------
+    //                                               Krischan.Eberle              02/2017
+    //+---------------+---------------+---------------+---------------+---------------+------
+    BentleyStatus DeleteInstance(ECInstanceKey const& key)
+        {
+        ECClassCP ecClass = GetECDb().Schemas().GetECClass(key.GetECClassId());
+        if (ecClass == nullptr)
+            return ERROR;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("DELETE FROM %s WHERE ECInstanceId=%s", ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+        ECSqlStatement stmt;
+        if (stmt.Prepare(GetECDb(), ecsql.c_str()) != ECSqlStatus::Success)
+            return ERROR;
+
+        return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
+        }
+
+    //---------------------------------------------------------------------------------------
+    //                                               Krischan.Eberle              02/2017
+    //+---------------+---------------+---------------+---------------+---------------+------
+    bool HasInstance(ECInstanceKey const& key)
+        {
+        ECClassCP ecClass = GetECDb().Schemas().GetECClass(key.GetECClassId());
+        if (ecClass == nullptr)
+            return false;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%s",
+                      ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+
+        ECSqlStatement statement;
+        if (ECSqlStatus::Success != statement.Prepare(GetECDb(), ecsql.c_str()))
+            return false;
+
+        return statement.Step() == BE_SQLITE_ROW;
+        }
+    };
+
+
 
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/2014
@@ -60,44 +103,32 @@ TEST_F(RelationshipStrength, BackwardEmbedding)
     *        |                                        |                                      |
     *      Child1                                   Child2                                 Child3
     */
-    ECClassCP personClass = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-    InsertInstance(ecdb, *personClass, *child1);
-    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-    InsertInstance(ecdb, *personClass, *child2);
-    IECInstancePtr child3 = CreatePerson(*personClass, "Third", "Child");
-    InsertInstance(ecdb, *personClass, *child3);
-    IECInstancePtr singleParent = CreatePerson(*personClass, "Only", "singleParent");
-    InsertInstance(ecdb, *personClass, *singleParent);
+    ECInstanceKey child1 = InsertPerson("First", "Child");
+    ECInstanceKey child2 = InsertPerson("Second", "Child");
+    ECInstanceKey child3 = InsertPerson("Third", "Child");
+    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
 
     //Backward Embedding relationship (SingleParent -> Child1, Child2)
-    ECRelationshipClassCP ChildrenHasSingleParent = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "ChildrenHasSingleParent")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr child1HasSingleParent;
-    child1HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *child1, *singleParent);
-    InsertInstance(ecdb, *ChildrenHasSingleParent, *child1HasSingleParent);
-    IECRelationshipInstancePtr child2HasSingleParent;
-    child2HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *child2, *singleParent);
-    InsertInstance(ecdb, *ChildrenHasSingleParent, *child2HasSingleParent);
-    IECRelationshipInstancePtr child3HasSingleParent;
-    child3HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *child3, *singleParent);
-    InsertInstance(ecdb, *ChildrenHasSingleParent, *child3HasSingleParent);
+    ECInstanceKey child1HasSingleParent = InsertRelationship("RelationshipStrengthTest.ChildrenHasSingleParent", child1, singleParent);
+    ECInstanceKey child2HasSingleParent = InsertRelationship("RelationshipStrengthTest.ChildrenHasSingleParent", child2, singleParent);
+    ECInstanceKey child3HasSingleParent = InsertRelationship("RelationshipStrengthTest.ChildrenHasSingleParent", child3, singleParent);
 
     /*
     * Test 1: Delete Child1
     * Validate child1HasSingleParent,  child1 have been deleted
     * Validate singleParent, child2HasSingleParent, child3HasSingleParent, child2, child3 are still there
     */
-    DeleteInstance(*child1, ecdb);
+    DeleteInstance(child1);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*child1, ecdb));
-    ASSERT_FALSE(HasInstance(*child1HasSingleParent, ecdb));
+    ASSERT_FALSE(HasInstance(child1));
+    ASSERT_FALSE(HasInstance(child1HasSingleParent));
 
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
-    ASSERT_TRUE(HasInstance(*child2HasSingleParent, ecdb));
-    ASSERT_TRUE(HasInstance(*child3HasSingleParent, ecdb));
-    ASSERT_TRUE(HasInstance(*child2, ecdb));
-    ASSERT_TRUE(HasInstance(*child3, ecdb));
+    ASSERT_TRUE(HasInstance(singleParent));
+    ASSERT_TRUE(HasInstance(child2HasSingleParent));
+    ASSERT_TRUE(HasInstance(child3HasSingleParent));
+    ASSERT_TRUE(HasInstance(child2));
+    ASSERT_TRUE(HasInstance(child3));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,81 +156,60 @@ TEST_F(RelationshipStrength, RelationshipTest)
      *
      */
 
-    ECClassCP personClass = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-    InsertInstance(ecdb, *personClass, *grandParent1);
-    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-    InsertInstance(ecdb, *personClass, *grandParent2);
-    IECInstancePtr singleParent = CreatePerson(*personClass, "Only", "SingleParent");
-    InsertInstance(ecdb, *personClass, *singleParent);
-    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-    InsertInstance(ecdb, *personClass, *child1);
-    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-    InsertInstance(ecdb, *personClass, *child2);
+    ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
+    ECInstanceKey singleParent = InsertPerson("Only", "SingleParent");
+    ECInstanceKey child1 = InsertPerson("First", "Child");
+    ECInstanceKey child2 = InsertPerson("Second", "Child");
 
     // Referencing relationship (GrandParent1, GrandParent2 -> SingleParent)
-    ECRelationshipClassCP manyParentsHaveChildren = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "ManyParentsHaveChildren")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr grandParent1HasSingleParent;
-    grandParent1HasSingleParent = CreateRelationship(*manyParentsHaveChildren, *grandParent1, *singleParent);
-    InsertInstance(ecdb, *manyParentsHaveChildren, *grandParent1HasSingleParent);
-    IECRelationshipInstancePtr grandParent2HasSingleParent;
-    grandParent2HasSingleParent = CreateRelationship(*manyParentsHaveChildren, *grandParent2, *singleParent);
-    InsertInstance(ecdb, *manyParentsHaveChildren, *grandParent2HasSingleParent);
+    ECInstanceKey grandParent1HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
+    ECInstanceKey grandParent2HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
 
     // Embedding relationship (SingleParent -> Child1, Child2)
-    ECRelationshipClassCP singleParentHasChildren = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "SingleParentHasChildren")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr singleParentHasChild1;
-    singleParentHasChild1 = CreateRelationship(*singleParentHasChildren, *singleParent, *child1);
-    InsertInstance(ecdb, *singleParentHasChildren, *singleParentHasChild1);
-    IECRelationshipInstancePtr singleParentHasChild2;
-    singleParentHasChild2 = CreateRelationship(*singleParentHasChildren, *singleParent, *child2);
-    InsertInstance(ecdb, *singleParentHasChildren, *singleParentHasChild2);
+    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
+    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
 
     // Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECRelationshipClassCP parentHasSpouse = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasSpouse")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr grandParent1HasSpouse;
-    grandParent1HasSpouse = CreateRelationship(*parentHasSpouse, *grandParent1, *grandParent2);
-    InsertInstance(ecdb, *parentHasSpouse, *grandParent1HasSpouse);
-    IECRelationshipInstancePtr grandParent2HasSpouse;
-    grandParent2HasSpouse = CreateRelationship(*parentHasSpouse, *grandParent2, *grandParent1);
-    InsertInstance(ecdb, *parentHasSpouse, *grandParent2HasSpouse);
+    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent1, grandParent2);
+    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent2, grandParent1);
 
     ecdb.SaveChanges();
 
     //Verify instances before deletion
-    ASSERT_TRUE(HasInstance(*grandParent1HasSpouse, ecdb));
-    ASSERT_TRUE(HasInstance(*grandParent2HasSpouse, ecdb));
+    ASSERT_TRUE(HasInstance(grandParent1HasSpouse));
+    ASSERT_TRUE(HasInstance(grandParent2HasSpouse));
 
     /*
     * Test 1: Delete GrandParent1
     * Validate grandParent1HasSpouse, grandParent2HasSpouse, grandParent1HasSingleParent have been deleted (orphaned relationships)
     * Validate singleParent is still around (referencing relationship with one parent remaining)
     */
-    DeleteInstance(*grandParent1, ecdb);
+    DeleteInstance(grandParent1);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*grandParent1, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent1HasSpouse, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent2HasSpouse, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent1HasSingleParent, ecdb));
+    ASSERT_FALSE(HasInstance(grandParent1));
+    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
+    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
+    ASSERT_FALSE(HasInstance(grandParent1HasSingleParent));
 
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
+    ASSERT_TRUE(HasInstance(singleParent));
 
     /*
     * Test 2: Delete GrandParent2
     * Validate grandParent2HasSingleParent has been deleted (orphaned relationship), *Validate singeParent has been deleted (held instance with no parents remaining)
     */
-    DeleteInstance(*grandParent2, ecdb);
+    DeleteInstance(grandParent2);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*grandParent2, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent2HasSingleParent, ecdb));
+    ASSERT_FALSE(HasInstance(grandParent2));
+    ASSERT_FALSE(HasInstance(grandParent2HasSingleParent));
 
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
-    ASSERT_TRUE(HasInstance(*singleParentHasChild1, ecdb));
-    ASSERT_TRUE(HasInstance(*singleParentHasChild2, ecdb));
-    ASSERT_TRUE(HasInstance(*child1, ecdb));
-    ASSERT_TRUE(HasInstance(*child2, ecdb));
+    ASSERT_TRUE(HasInstance(singleParent));
+    ASSERT_TRUE(HasInstance(singleParentHasChild1));
+    ASSERT_TRUE(HasInstance(singleParentHasChild2));
+    ASSERT_TRUE(HasInstance(child1));
+    ASSERT_TRUE(HasInstance(child2));
     }
 
 //---------------------------------------------------------------------------------------
@@ -226,101 +236,80 @@ TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
     *   Child1                                             Child2
     *
     */
-    ECClassCP personClass = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-    InsertInstance(ecdb, *personClass, *child1);
-    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-    InsertInstance(ecdb, *personClass, *child2);
-    IECInstancePtr singleParent = CreatePerson(*personClass, "Only", "singleParent");
-    InsertInstance(ecdb, *personClass, *singleParent);
-    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-    InsertInstance(ecdb, *personClass, *grandParent1);
-    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-    InsertInstance(ecdb, *personClass, *grandParent2);
+    ECInstanceKey child1 = InsertPerson("First", "Child");
+    ECInstanceKey child2 = InsertPerson("Second", "Child");
+    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
+    ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
 
     // Backward referencing relationship (GrandParent1, GrandParent2 <- SingleParent)
-    ECRelationshipClassCP ChildrenHaveManyParents = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "ChildrenHaveManyParents")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr singleParentHasGrandParent1;
-    singleParentHasGrandParent1 = CreateRelationship(*ChildrenHaveManyParents, *singleParent, *grandParent1);
-    InsertInstance(ecdb, *ChildrenHaveManyParents, *singleParentHasGrandParent1);
-    IECRelationshipInstancePtr singleParentHasGrandParent2;
-    singleParentHasGrandParent2 = CreateRelationship(*ChildrenHaveManyParents, *singleParent, *grandParent2);
-    InsertInstance(ecdb, *ChildrenHaveManyParents, *singleParentHasGrandParent2);
+    ECInstanceKey singleParentHasGrandParent1 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent1);
+    ECInstanceKey singleParentHasGrandParent2 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent2);
 
     //Forward Embedding relationship (SingleParent -> Child1, Child2)
-    ECRelationshipClassCP SingleParentHasChildren = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "SingleParentHasChildren")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr singleParentHasChild1;
-    singleParentHasChild1 = CreateRelationship(*SingleParentHasChildren, *singleParent, *child1);
-    InsertInstance(ecdb, *SingleParentHasChildren, *singleParentHasChild1);
-    IECRelationshipInstancePtr singleParentHasChild2;
-    singleParentHasChild2 = CreateRelationship(*SingleParentHasChildren, *singleParent, *child2);
-    InsertInstance(ecdb, *SingleParentHasChildren, *singleParentHasChild2);
+    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
+    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
 
     //Backward Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECRelationshipClassCP parentHasSpouse = ecdb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasSpouse_backward")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr grandParent1HasSpouse;
-    grandParent1HasSpouse = CreateRelationship(*parentHasSpouse, *grandParent1, *grandParent2);
-    InsertInstance(ecdb, *parentHasSpouse, *grandParent1HasSpouse);
-    IECRelationshipInstancePtr grandParent2HasSpouse;
-    grandParent2HasSpouse = CreateRelationship(*parentHasSpouse, *grandParent2, *grandParent1);
-    InsertInstance(ecdb, *parentHasSpouse, *grandParent2HasSpouse);
+    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent1, grandParent2);
+    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent2, grandParent1);
 
     ecdb.SaveChanges();
 
     //Validate Instance exists before deletion
-    ASSERT_TRUE(HasInstance(*singleParentHasChild1, ecdb));
+    ASSERT_TRUE(HasInstance(singleParentHasChild1));
 
     /*
     * Test 1: Delete Child1
     * Validate Child1 and singleParentHasChild1 have been deleted
     * Validate Child2 is Still there
     */
-    DeleteInstance(*child1, ecdb);
+    DeleteInstance(child1);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*child1, ecdb));
-    ASSERT_FALSE(HasInstance(*singleParentHasChild1, ecdb));
+    ASSERT_FALSE(HasInstance(child1));
+    ASSERT_FALSE(HasInstance(singleParentHasChild1));
 
-    ASSERT_TRUE(HasInstance(*child2, ecdb));
+    ASSERT_TRUE(HasInstance(child2));
 
     /*
     * Test 2: Delete Child2
     * Validate Child2 and singleParentHasChild2 have been deleted
     * Validate singleParent is still around (relationship grand parents remaining)
     */
-    DeleteInstance(*child2, ecdb);
+    DeleteInstance(child2);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*child2, ecdb));
-    ASSERT_FALSE(HasInstance(*singleParentHasChild2, ecdb));
+    ASSERT_FALSE(HasInstance(child2));
+    ASSERT_FALSE(HasInstance(singleParentHasChild2));
 
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
+    ASSERT_TRUE(HasInstance(singleParent));
 
     /*
     * Test 3: Delete GrandParent1
     * Validate GrandParent1, grandParent1HasSpouse, grandParent2HasSpouse, singleParentHasGrandParent1 have been deleted
     * Validate singleParent is still around (referencing relationship with one parent remaining)
     */
-    DeleteInstance(*grandParent1, ecdb);
+    DeleteInstance(grandParent1);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*grandParent1, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent1HasSpouse, ecdb));
-    ASSERT_FALSE(HasInstance(*grandParent2HasSpouse, ecdb));
-    ASSERT_FALSE(HasInstance(*singleParentHasGrandParent1, ecdb));
+    ASSERT_FALSE(HasInstance(grandParent1));
+    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
+    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
+    ASSERT_FALSE(HasInstance(singleParentHasGrandParent1));
 
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
+    ASSERT_TRUE(HasInstance(singleParent));
 
     /*
     * Test 4: Delete GrandParent2
     * Validate GrandParent2, singleParentHasGrandParent2 have been deleted, * Single parent has been deleted too as no parent exists anymore
     */
-    DeleteInstance(*grandParent2, ecdb);
+    DeleteInstance(grandParent2);
     ecdb.SaveChanges();
 
-    ASSERT_FALSE(HasInstance(*grandParent2, ecdb));
-    ASSERT_FALSE(HasInstance(*singleParentHasGrandParent2, ecdb));
-    ASSERT_TRUE(HasInstance(*singleParent, ecdb));
+    ASSERT_FALSE(HasInstance(grandParent2));
+    ASSERT_FALSE(HasInstance(singleParentHasGrandParent2));
+    ASSERT_TRUE(HasInstance(singleParent));
     }
 
 //---------------------------------------------------------------------------------------

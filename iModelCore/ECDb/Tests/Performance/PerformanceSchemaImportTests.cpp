@@ -8,9 +8,10 @@
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceSchemaImportTests : public ECDbTestFixture
+struct PerformanceSchemaImportTests : public SchemaImportTestFixture
     {
     static ECN::ECSchemaPtr CreateTestSchema(size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val(StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);
@@ -179,22 +180,15 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
     {
-    ECDb ecdb;
-    BeFileName applicationSchemaDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-    ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-
-
     ECSchemaPtr ecSchema;
     for (int i = 0; i < 5; i++)
         {
         double importTime = 0.0;
         double schemaExportTime = 0.0;
 
-        auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"schemaWithCAImportPerformance.ecdb");
-        ASSERT_EQ(stat, BE_SQLITE_OK);
+        ECDbR ecdb = SetupECDb("schemaWithCAImportPerformance.ecdb");
+        ASSERT_TRUE(ecdb.IsDbOpen());
+
         ecSchema = PerformanceSchemaImportTests::CreateTestSchema(5000, 100, true, true, true, i);
         ASSERT_TRUE(ecSchema.IsValid());
         bvector<ECSchemaCP> schemas;
@@ -227,17 +221,15 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    ASSERT_TRUE(BE_SQLITE_OK == ECDbTestUtility::CreateECDb(testecdb, nullptr, L"ImportSimpleSchema.ecdb"));
+    ECDbCR ecdb = SetupECDb("ImportSimpleSchema.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSchemaReadContextPtr context = nullptr;
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaptr != NULL);
+    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
+    ASSERT_TRUE(schemaptr != nullptr);
 
     StopWatch timer(true);
-    auto stat = testecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
+    BentleyStatus stat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
     timer.Stop();
     ASSERT_EQ(SUCCESS, stat);
 

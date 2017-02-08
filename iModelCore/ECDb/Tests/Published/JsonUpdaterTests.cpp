@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "ECDbTestProject.h"
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -72,7 +71,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     {
     ECDbCR ecdb = SetupECDb("jsonupdatertests.ecdb");
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECDb_FileInfo", "ExternalFileInfo");
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(testClass != nullptr);
 
     ECInstanceKey key;
