@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ChangeSet.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -320,13 +320,13 @@ public:
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct AbortOnConflictChangeSet : BeSQLite::ChangeSet
+{
+ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
     {
-    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
-        {
-        BeAssert(false);
-        return ChangeSet::ConflictResolution::Abort;
-        }
-    };
+    BeAssert(false);
+    return ChangeSet::ConflictResolution::Abort;
+    }
+};
 
 //=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their 
@@ -377,9 +377,17 @@ public:
     ChangeStream() {}
 
     //! Stream changes to a ChangeGroup. 
+    //! @param[out] changeGroup ChangeGroup to stream to stream the contents to
     //! @remarks Implement _InputPage to send the stream
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult ToChangeGroup(ChangeGroup& changeGroup);
+
+    //! Stream changes to an in-memory ChangeSet
+    //! @param[out] changeSet ChangeSet to stream the contents to
+    //! @param[in] invert Pass true if the input stream needs to be inverted
+    //! @remarks Implement _InputPage to send the stream
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    BE_SQLITE_EXPORT DbResult ToChangeSet(ChangeSet& changeSet, bool invert = false);
 
     //! Stream changes from another ChangeStream
     //! @param[in] inStream Another stream that provides input
@@ -390,7 +398,7 @@ public:
     BE_SQLITE_EXPORT DbResult FromChangeStream(ChangeStream& inStream, bool invert = false);
 
     //! Stream changes to another ChangeStream
-    //! @param[in] outStream Another stream that accepts the output
+    //! @param[out] outStream Another stream that accepts the output
     //! @param[in] invert Pass true if this stream needs to be inverted
     //! @remarks Implement _InputPage to send this stream. The output stream
     //! needs to implement _OutputPage to receive this stream. 
@@ -404,7 +412,7 @@ public:
     //! need to implement _InputPage to send the streams. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult FromConcatenatedChangeStreams(ChangeStream& inStream1, ChangeStream& inStream2);
-        
+    
     //! Dump the contents of this stream for debugging
     BE_SQLITE_EXPORT void Dump(Utf8CP label, DbCR db, bool isPatchSet = false, int detailLevel = 0);
 };
