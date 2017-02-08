@@ -549,24 +549,25 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
     {
-    auto model = GetViewedModel();
+    auto model = GetViewedModel();  // get the sheet model for this view
     if (nullptr == model)
         {
-        BeAssert(false);
+        BeAssert(false); // what happened?
         return;
         }
 
+    // Get the Sheet::Element to extract the sheet size
     auto sheetElement = GetDgnDb().Elements().Get<Sheet::Element>(model->GetModeledElementId());
     if (!sheetElement.IsValid())
         {
-        BeAssert(false);
+        BeAssert(false); // this is fatal
         return;
         }
     
+    // save the sheet size in this ViewController
     m_size.Init(sheetElement->GetWidth(), sheetElement->GetHeight());
 
     bvector<TreePtr> attachments;
-
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
@@ -648,12 +649,11 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
+    if (DrawPurpose::Pick != context.GetDrawPurpose())
+        return;
 
     for (auto& attach : m_attachments)
-        {
-        if (DrawPurpose::Pick == context.GetDrawPurpose())
-            attach->Pick((PickContext&)context);
-        }
+        attach->Pick((PickContext&)context);
     }
 
 /*---------------------------------------------------------------------------------**//**
