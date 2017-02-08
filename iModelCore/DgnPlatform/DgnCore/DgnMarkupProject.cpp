@@ -18,6 +18,8 @@
 
 #define MARKUPEXTERNALLINK_LinkedElementId "LinkedElementId"
 
+#define CATEGORY_RedlineImage "RedlineImage"
+
 static WCharCP s_markupDgnDbExt   = L".markupdb";
 static Utf8CP  s_projectType      = "Markup";
 
@@ -145,12 +147,15 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void createImageCategory(DgnDbR db)
     {
-    DrawingCategory imageCategory(db, "RedlineImage", DgnCategory::Rank::System);
+    DrawingCategory imageCategory(db, CATEGORY_RedlineImage, DgnCategory::Rank::System);
     DgnSubCategory::Appearance appearance;
     appearance.SetInvisible (false);
-    appearance.SetColor (ColorDef::MediumGrey());
+    appearance.SetColor (ColorDef(0xff,0xff,0xfe));
     appearance.SetWeight (0);
     appearance.SetTransparency (0);
+    appearance.SetDontSnap(true);
+    appearance.SetDontLocate(true);
+    appearance.SetDisplayPriority(-65535); // WIP_REDLINE - what is the lowest display priority possible?
     imageCategory.Insert(appearance);
     }
 
@@ -740,6 +745,8 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
+    view->SetSource(DgnViewSource::User);
+
     view->SetCode(code);
 
     //  The origin of a RedlineViewDefinition is always 0,0.
@@ -755,7 +762,9 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     auto& catsel = view->GetCategorySelector();
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
-        
+
+    catsel.AddCategory(DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage)));
+
     return view;
     }
 
@@ -766,26 +775,37 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
     {
     auto& db = GetDgnDb();
 
-    DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), "RedlineImage"));
+    DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage));
 
     DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
                             DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
 
-    // *** WIP_REDLINE - store ImageSource in geomstream - TBD
-    bvector<DPoint3d> points;
-    points.push_back(DPoint3d::From(origin.x,           origin.y));
-    points.push_back(DPoint3d::From(origin.x + size.x,  origin.y));
-    points.push_back(DPoint3d::From(origin.x + size.x,  origin.y + size.y));
-    points.push_back(DPoint3d::From(origin.x,           origin.y + size.y));
-    builder->Append(*ICurvePrimitive::CreateLineString(points));
+    IGraphicBuilder::TileCorners corners;
+    corners.m_pts[0] = DPoint3d::From(origin.x,           origin.y);            // lowerLeft
+    corners.m_pts[1] = DPoint3d::From(origin.x + size.x,  origin.y);            // lowerRight
+    corners.m_pts[2] = DPoint3d::From(origin.x,           origin.y + size.y);   // upperLeft
+    corners.m_pts[3] = DPoint3d::From(origin.x + size.x,  origin.y + size.y);   // upperRight
+    
+    Render::Image image(source);
+    if (!image.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    ImageGraphicPtr imageGraphic = ImageGraphic::Create(std::move(image), corners);
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(imageGraphic);
+
+    builder->Append(*geometry);
 
     if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP()))
         {
         BeAssert(false);
         return;
         }
+
     db.Elements().Insert(*gelem);
     }
 
