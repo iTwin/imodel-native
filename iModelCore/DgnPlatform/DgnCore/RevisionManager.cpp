@@ -242,9 +242,26 @@ void RevisionChangesFileReader::_Reset()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    02/2017
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    {
+    return RevisionManager::ConflictHandler(m_dgndb, cause, iter);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+    {
+    return RevisionManager::ConflictHandler(m_dgndb, cause, iter);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+// static
+ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, ChangeSet::ConflictCause cause, Changes::Change iter)
     {
     Utf8CP tableName = nullptr;
     int nCols, indirect;
@@ -253,14 +270,14 @@ ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
-    if (cause == ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
-       return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+    if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
+        return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Conflict detected - incoming revision %s:", indirect ? "skipped" : "replaced");
         BeAssert(tableName != nullptr);
-        iter.Dump(m_dgndb, false, 1);
+        iter.Dump(dgndb, false, 1);
         }
 
     /*

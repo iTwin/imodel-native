@@ -741,7 +741,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
 
-    AbortOnConflictChangeSet changeSet;
+    ApplyRevisionChangeSet changeSet(m_dgndb);
     DbResult result = changeStream.ToChangeSet(changeSet, reverse);
     BeAssert(result == BE_SQLITE_OK);
 

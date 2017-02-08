@@ -125,12 +125,27 @@ public:
 };
 
 //=======================================================================================
+//! ChangeSet used to apply revision changes to the local Db (sets up conflict handlers appropriately)
+// @bsiclass                                                 Ramanujam.Raman   02/17
+//=======================================================================================
+struct ApplyRevisionChangeSet : BeSQLite::ChangeSet
+{
+private:
+    DgnDbCR m_dgndb;
+public:
+    ApplyRevisionChangeSet(DgnDbCR dgndb) : m_dgndb(dgndb) {}
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
+};
+
+//=======================================================================================
 //! Utility to download and upload revisions of changes to/from the DgnDb. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct RevisionManager : NonCopyableClass
 {
 friend struct TxnManager;
+friend struct RevisionChangesFileReader;
+friend struct ApplyRevisionChangeSet;
 
 private:
     DgnDbR m_dgndb;
@@ -156,6 +171,7 @@ private:
 
     DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
     
+    static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 public:
     //! Constructor
     RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb) {}
