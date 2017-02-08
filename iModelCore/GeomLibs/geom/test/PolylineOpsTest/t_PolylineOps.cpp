@@ -758,8 +758,8 @@ TEST (Polyline, GreedyTriangleB)
         {
         auto baseFrame = Check::GetTransform ();
         for (auto splitSize : bvector <DPoint2d> {
-                DPoint2d::From (4.0, 2.0),
                 DPoint2d::From (4.0, 4.0),
+                DPoint2d::From (4.0, 2.0),
                 DPoint2d::From (4.0, 1.5),
                 DPoint2d::From (2.0, 0.7),
                 DPoint2d::From (0.8, 0.4),

@@ -3558,30 +3558,92 @@ void AddShiftedPoints (bvector<DPoint3d> &xyz0, bvector<DPoint3d> const &xyz1, D
     for(auto &xyz : xyz1)
         xyz0.push_back (xyz + shift);
     }
-// Find loop1 point closest to loop0.front ();
-// copy loop1 to loop1A with that as the start.
-bool AlignLoops (bvector<DPoint3d> const &loop0, bvector<DPoint3d> const &loop1, bvector<DPoint3d> &loop1A)
+
+ValidatedSize FindPointOnBothPlanes (bvector<DPoint3d> const &data, ClipPlaneCR plane0, ClipPlaneCR plane1, double tolerance)
     {
-    loop1A.clear ();
-    if (loop0.size () < 4 || loop1.size () < 4)
-        return false;
-    size_t closeIndex;
-    double minDistance;
-    DPoint3dOps::ClosestPoint (loop1, loop0.front (), closeIndex, minDistance);
-    size_t n1 = loop1.size ();
-    size_t n1C = n1 - 1;     // to skip closure point
-    for (size_t i = 0; i < n1C; i++)
-        loop1A.push_back (loop1[(closeIndex + i) % n1C]);
-    DPoint3dOps::Compress (loop1A, Angle::SmallAngle ()); // duplicates really should be identical
-    PolylineOps::EnforceClosure (loop1A);
-    DVec3d normal0 = PolygonOps::AreaNormal (loop0);
-    DVec3d normal1A = PolygonOps::AreaNormal (loop1A);
-    if (normal0.DotProduct (normal1A) < 0.0)
-        DPoint3dOps::Reverse (loop1A);
-    return true;
+    for (size_t i = 0; i < data.size (); i++)
+        {
+        if (plane0.IsPointOn (data[i], tolerance) && plane1.IsPointOn (data[i], tolerance))
+            return ValidatedSize (i, true);
+        }
+    return ValidatedSize (0, false);
     }
 
-void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, bvector<DPoint3d> &triangulationMate)
+void RebaseCyclicPoints (bvector<DPoint3d> const &source, size_t startIndex, bvector<DPoint3d> &dest)
+    {
+    dest.clear ();
+    size_t n = source.size ();
+    for (size_t i = 0; i < n; i++)
+        {
+        size_t j = (startIndex + i) % n;
+        if (i == 0 || !source[j].AlmostEqual (dest.back ()))
+            dest.push_back (source[j]);
+        }
+    PolylineOps::EnforceClosure (dest);
+    }
+
+// Find loop1 point closest to loop0.front ();
+// copy loop1 to loop1A with that as the start.
+bool AlignLoops
+(
+ConvexClipPlaneSet const &planes,
+size_t numLoopPlanes,   // consider plane pairs <i,i+1> cyclically up to numLoopPlanes
+DVec3d const &forwardVector,
+bvector<DPoint3d> const &loop0,
+bvector<bvector<DPoint3d>> const &loop1Candidates,
+bvector<DPoint3d> &loop0A,
+bvector<DPoint3d> &loop1A
+)
+    {
+    double tolerance = DoubleOps::SmallCoordinateRelTol (); // yes, treat it as an abstol.
+    // Find the loop1 loop with closest centroid to loop0 .
+    DPoint3d centroid0, centroid1;
+    DVec3d normal0, normal1;
+    double   area0, area1;
+    size_t index1 = SIZE_MAX;
+    double dMin = DBL_MAX;
+    PolygonOps::CentroidNormalAndArea (loop0, centroid0, normal0, area0);
+    for (size_t i = 0; i < loop1Candidates.size (); i++)
+        {
+        if (loop1Candidates[i].size () < 4)
+            continue;
+        PolygonOps::CentroidNormalAndArea (loop1Candidates[i], centroid1, normal1, area1);
+        double d = centroid0.Distance (centroid1);
+        if (d < dMin)
+            {
+            index1 = i;
+            dMin = d;
+            }
+        }
+    if (index1 == SIZE_MAX)
+        return false;
+
+    for (size_t i = 0; i < numLoopPlanes; i++)
+        {
+        ClipPlane planeX = planes[i];
+        ClipPlane planeY = planes[(i+1) % numLoopPlanes];
+        auto i0 = FindPointOnBothPlanes (loop0, planeX, planeY, tolerance);
+        if (i0.IsValid ())
+            {
+            auto i1 = FindPointOnBothPlanes (loop1Candidates[index1], planeX, planeY, tolerance);
+            if (i1.IsValid ())
+                {
+                RebaseCyclicPoints (loop0, i0.Value (), loop0A);
+                RebaseCyclicPoints (loop1Candidates[index1], i1.Value (), loop1A);
+                DVec3d normal0 = PolygonOps::AreaNormal (loop0A);
+                DVec3d normal1 = PolygonOps::AreaNormal (loop1A);
+                if (forwardVector.DotProduct (normal0) < 0.0)
+                    std::reverse (loop0A.begin (), loop0A.end ());
+                if (forwardVector.DotProduct (normal1) < 0.0)
+                    std::reverse (loop1A.begin (), loop1A.end ());
+                return true;
+                }
+            }
+        }
+    return false;
+    }
+
+void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, DVec3dCR viewVector, bvector<DPoint3d> &triangulationMate)
     {
     ClipPlaneSet clipper;
     clipper.push_back (planes);
@@ -3618,38 +3680,40 @@ void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, bvector<DPoint
 
 
 
-    size_t loopIndex, pointIndex;
-    double distance;
-    bvector<DPoint3d> loopA;
-    if (DPoint3dOps::ClosestPoint (loops, triangulationMate[0], loopIndex, pointIndex, distance)
-        && AlignLoops (triangulationMate, loops[loopIndex], loopA)
+    bvector<DPoint3d> loopA, loopB;
+    if (AlignLoops (
+            planes, triangulationMate.size () - 1, 
+            viewVector,
+            triangulationMate, loops,
+            loopA, loopB)
         )
         {
         Check::Shift (0, dy,0);
-        Check::SaveTransformed (triangulationMate);
-        Check::SaveTransformed (loops[loopIndex]);
+        Check::SaveTransformed (loopA);
+        Check::SaveTransformed (loopB);
         Check::True (loopA.size () > 0, "Aligned loop is nontrivial");
 
 
         Check::Shift (0, dy,0);
         Check::SaveTransformed (triangulationMate);
         Check::SaveTransformed (loopA);
+#define UseGreedyTriangles
 #ifdef GreedyTriangles
         bvector<int> indices;
         bvector<DTriangle3d> triangles;
-        PolylineOps::GreedyTriangulationBetweenLinestrings (triangulationMate, loopA, triangles, &indices);
+        PolylineOps::GreedyTriangulationBetweenLinestrings (loopA, loopB, triangles, &indices);
         Check::SaveTransformed (triangles, true);
-#endif
+#else
         MTGFacets *pFacets = jmdlMTGFacets_grab();
         jmdlMTGFacets_setNormalMode (pFacets, MTG_Facets_VertexOnly, 0, 0);
         if (jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries (
                             pFacets,
-                            &triangulationMate[0], (int)triangulationMate.size (),
-                            &loopA[0], (int)loopA.size ()
+                            &loopA[0], (int)loopA.size (),
+                            &loopB[0], (int)loopB.size ()
                             ))
             {
             /*size_t numFaceB = */AddMTGFacetsToIndexedPolyface (pFacets, *outsideMesh);
-
+#endif
             outsideMesh->AddPolygon (&triangulationMate[0], triangulationMate.size ());
             outsideMesh->Compress ();
 
@@ -3678,10 +3742,11 @@ Angle tiltAngle                 //!< [in] angle to tilt away from perpendicular 
     DVec3d viewVector = PolygonOps::AreaNormal (forwardFace);
     if (viewVector.z < 0.0)
         {
-        viewVector.z = - viewVector.z;
+        viewVector.Negate ();
         std::reverse (forwardFace.begin (), forwardFace.end ());
         }
     planes.AddSweptPolyline (forwardFace, viewVector, tiltAngle);
+    size_t numSidePlanes = planes.size ();
 
     ClipPlaneSet clipper;
     clipper.push_back (planes);
@@ -3696,25 +3761,48 @@ Angle tiltAngle                 //!< [in] angle to tilt away from perpendicular 
     bool badCuts;
     PolyfaceCoordinateMap::AddClippedPolyface (facets, insideMap.get (), outsideMap.get (), badCuts, &clipper, false, nullptr, &loops, &chains);
 
-    size_t loopIndex, pointIndex;
-    double distance;
-    bvector<DPoint3d> loopA;
+    bvector<DPoint3d> loopA, loopB;
     auto planeAngle = Angle::FromDegrees (10.0);
-    if (DPoint3dOps::ClosestPoint (loops, forwardFace[0], loopIndex, pointIndex, distance)
-        && AlignLoops (forwardFace, loops[loopIndex], loopA)
+    if (AlignLoops (planes, numSidePlanes,
+        viewVector,
+        forwardFace, loops,
+        loopA, loopB)
         )
         {
         bvector<int> indices;
         bvector<DTriangle3d> triangles;
-        PolylineOps::GreedyTriangulationBetweenLinestrings (forwardFace, loopA, triangles, &indices, planeAngle);
+        PolylineOps::GreedyTriangulationBetweenLinestrings (loopA, loopB, triangles, &indices, planeAngle);
+#define CheckCallsInCulvert
 #ifdef CheckCallsInCulvert
-        Check::SaveTransformed (triangles, true);
-        Check::SaveTransformed (forwardFace);
-        Check::SaveTransformed (loopA);
+        DRange3d facetRange = facets.PointRange ();
+        DRange3d loopRange = DRange3d::From (forwardFace);
+            {   // indent for scoped var ..
+            SaveAndRestoreCheckTransform transformSaver (0, facetRange.YLength (), 0);
+            for (auto &loop : loops)
+                {
+                Check::SaveTransformed (loop);
+                loopRange.Extend (loop);
+                }
+            Check::SaveTransformed (forwardFace);
+            Check::Shift (0, 2.0 * loopRange.YLength (), 0.0);
+            Check::SaveTransformed (loopA);
+            double dz = 0.1 * loopRange.ZLength ();
+            Check::SaveTransformed (loopB);
+            Check::Shift (0,0, dz);
+            Check::SaveTransformed (triangles, true);
+            Check::Shift (0,0, dz);
+            Check::SaveTransformed (loopA);
+            }
 #endif
-        outsideMap->AddPolygon (forwardFace);
+        outsideMap->AddPolygon (loopA);
+        DPoint3d reversePoints[3];
         for (auto &t : triangles)
-            outsideMap->AddPolygon (3, t.point);
+            {
+            reversePoints[0] = t.point[2];
+            reversePoints[1] = t.point[1];
+            reversePoints[2] = t.point[0];
+            outsideMap->AddPolygon (3, reversePoints);
+            }
         ok = true;
         }
     return ok ? outsideMesh : nullptr;
@@ -3752,37 +3840,42 @@ TEST(Polyface,CulvertPunchA)
     ConvexClipPlaneSet planes;
     planes.AddSweptPolyline (rectangle, viewVector, tilt);
 
-    DoClip (*surfaceFacets, planes, rectangle);
+    DoClip (*surfaceFacets, planes, viewVector, rectangle);
 
     planes.Add (ClipPlane::FromPointsAndDistanceAlongPlaneNormal (rectangle, viewVector, forwardClip, true));
     planes.Add (ClipPlane::FromPointsAndDistanceAlongPlaneNormal (rectangle, viewVector, reverseClip, true));
-    DoClip (*surfaceFacets, planes, rectangle);
-    Check::ClearGeometry ("Polyface.CulvertPunchB");
+    DoClip (*surfaceFacets, planes, viewVector, rectangle);
+    Check::ClearGeometry ("Polyface.CulvertPunchA");
     }
 
 TEST(Polyface,CulvertPunchB)
     {
     // Sort of a dtm ...
-    size_t numX = 15;
-    size_t numY = 20;
+    size_t numX = 8;
+    size_t numY = 14;
     double shiftX = (double) numX;
     double shiftY = (double) numY;
     auto dtm = PolyfaceWithSinusoidalGrid (numX, numY,    0.0, 0.3, 0.0, -0.25);\
     
-    double z0 = 0.1;
-    double z1 = 0.2;
-    bvector<DPoint3d> rectangle {
-        DPoint3d::From (2.1,5.2, z0),
-        DPoint3d::From (2.1,6.2, z1),
-        DPoint3d::From (4.1,6.2, z1),
-        DPoint3d::From (4.1,5.2, z0),
-        DPoint3d::From (2.1,5.2, z0),
-        };
 
-    // unused - double e = 0.001;
-    // unused viewVector - for (DVec3d viewVector : bvector<DVec3d> {DVec3d::From (e,e,1), DVec3d::From (0,-1,2), DVec3d::From (0,0,1)})
-    for (size_t i = 0; i < 3; ++i)
+    for (auto zData : bvector<DPoint2d>
+            {
+            DPoint2d::From (0.1, 0.2)
+            ,DPoint2d::From (-2.0, -1.0)
+            }
+            )
         {
+        double z0 = zData.x;
+        double z1 = zData.y;
+        // KNOWN PROBLEM: if the rectangle xy are exactly on integers, puncher sees overlapping edges instead of loops.
+        bvector<DPoint3d> rectangle {
+            DPoint3d::From (2.1,5.2, z0),
+            DPoint3d::From (2.1,6.2, z1),
+            DPoint3d::From (4.1,6.2, z1),
+            DPoint3d::From (4.1,5.2, z0),
+            DPoint3d::From (2.1,5.2, z0),
+            };
+
         for (Angle tilt : bvector<Angle>{ Angle::FromDegrees (0.0), Angle::FromDegrees (5.0), Angle::FromDegrees (15.0)})
             {
             auto baseFrame = Check::GetTransform ();
@@ -3804,6 +3897,7 @@ TEST(Polyface,CulvertPunchB)
                 Check::SetTransform (baseFrame);
                 Check::Shift (2.0 * shiftX, 0,0);
             }
+        Check::Shift (shiftX, 0, 0);
         }
     Check::ClearGeometry ("Polyface.CulvertPunchB");
     }

@@ -117,6 +117,9 @@ public:
     //! Return if the point is on or inside plane to tolerance.
     GEOMDLLIMPEXP bool IsPointOnOrInside (DPoint3dCR point, double tolerance) const;
 
+    //! Return if the point is on plane within tolerance
+    GEOMDLLIMPEXP bool IsPointOn (DPoint3dCR point, double tolerance) const;
+    
     //! Return the plane as origin and normal.
     GEOMDLLIMPEXP DPlane3d GetDPlane3d () const;
 
