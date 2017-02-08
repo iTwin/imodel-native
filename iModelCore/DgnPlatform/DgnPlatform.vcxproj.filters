@@ -707,6 +707,27 @@
     <ClInclude Include="DgnCore\ElementECInstanceAdapter.h">
       <Filter>PublicAPI\Annotations</Filter>
     </ClInclude>
+    <ClInclude Include="DgnCore\BisCoreNames.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\Dimension\DimStyleSchemaGenerator\pregenerated\DimStyleECProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\Dimension\DimensionInternal.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\Dimension\DimStyleInternal.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\Dimension\NoteInternal.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\DgnECInteropStringFormatter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlers\DgnECTypeAdapters.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">
@@ -749,15 +770,6 @@
     <ClCompile Include="DgnCore\ClipVector.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\ComponentModel.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\DgnAuthority.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\DgnBaseDomain.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="DgnCore\DgnCategory.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
@@ -797,9 +809,6 @@
     <ClCompile Include="DgnCore\DgnLight.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\DgnLink.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="DgnCore\DgnMarkupProject.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
@@ -810,9 +819,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DgnPropertyJson.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\DgnRangeTree.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DgnRscFont.cpp">
@@ -893,18 +899,6 @@
     <ClCompile Include="DgnCore\HypermodelingViewController.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\IAuxSystem.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\IFacetTopologyTable.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\ImageUtilities.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\LinuxGlobals.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="DgnCore\LocksManager.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
@@ -912,21 +906,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\MemoryManager.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\ModelSolverDef.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\NullContext.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\QueryModel.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\QueryView.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\RangeContext.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\RealityDataCache.cpp">
@@ -938,9 +917,6 @@
     <ClCompile Include="DgnCore\RevisionManager.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\SatelliteChangeSets.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="DgnCore\SearchableText.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
@@ -950,9 +926,6 @@
     <ClCompile Include="DgnCore\SectioningPhysicalViewController.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\SimplifyViewDrawGeom.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="DgnCore\SnapContext.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
@@ -960,9 +933,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\Sprites.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\SymbolContext.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\TextString.cpp">
@@ -990,9 +960,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\VecMathDGNTolerances.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\ViewAttachment.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\ViewContext.cpp">
@@ -1121,9 +1088,6 @@
     <ClCompile Include="DgnHandlers\HitDetail.cpp">
       <Filter>DgnHandlers</Filter>
     </ClCompile>
-    <ClCompile Include="DgnHandlers\PickContext.cpp">
-      <Filter>DgnHandlers</Filter>
-    </ClCompile>
     <ClCompile Include="DgnHandlers\RegionUtil.cpp">
       <Filter>DgnHandlers</Filter>
     </ClCompile>
@@ -1149,6 +1113,69 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\FacetCount.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\Sheet.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\BisCoreDomain.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\CodeAdmin.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\CodeSpec.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\DgnProvenance.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\FitContext.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\FunctionalDomain.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\GenericDomain.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\GraphiteResourceUri.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ImageResize.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ImageSource.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\LinkElement.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\MeshTile.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\RangeIndex.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\Render.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\RepositoryManager.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\SimplifyGraphic.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\SkyBox.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\SpatialViewController.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\TileTree.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnHandlers\DgnECInteropStringFormatter.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
   </ItemGroup>
