@@ -45,6 +45,10 @@ public:
     static RootPtr Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view);
     virtual ~Root() { ClearAllTiles(); }
 
+    size_t              MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR tileRange, int densityType, float densityValue) const;
+    PointCloudModelCR   GetPointCloudModel() const { return m_model; }
+
+
 };//     TileRoot
 
 
@@ -56,14 +60,13 @@ struct Tile : Dgn::TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
 private:
-    double          m_tolerance;
+    double                  m_tolerance;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     virtual double _GetMaximumSize() const override;
-    virtual void _DrawGraphics(TileTree::DrawArgsR args) const override;
 
 public:
     RootCR GetPointCloudRoot() const { return static_cast<RootCR>(GetRoot()); }
@@ -71,7 +74,7 @@ public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
 
-    double GetTolerance() const { return m_tolerance; }
+    double GetTolerance() const         { return m_tolerance; }
 
 };//     TileNode
 
