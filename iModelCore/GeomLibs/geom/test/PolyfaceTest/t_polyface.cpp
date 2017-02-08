@@ -3829,8 +3829,8 @@ TEST(Polyface,CulvertPunchA)
     bvector<DPoint3d> rectangle {
         DPoint3d::From (7,3,2),
         DPoint3d::From (7,8,2),
-        DPoint3d::From (7,8,5),
-        DPoint3d::From (7,3,5),
+        DPoint3d::From (8,8,5),
+        DPoint3d::From (8,3,5),
         DPoint3d::From (7,3,2)
         };
     DVec3d viewVector = DVec3d::From (-5,0,-1);
@@ -3855,13 +3855,12 @@ TEST(Polyface,CulvertPunchB)
     size_t numY = 14;
     double shiftX = (double) numX;
     double shiftY = (double) numY;
-    auto dtm = PolyfaceWithSinusoidalGrid (numX, numY,    0.0, 0.3, 0.0, -0.25);\
-    
+    auto dtm = PolyfaceWithSinusoidalGrid (numX, numY,    0.0, 0.3, 0.0, -0.25);
 
     for (auto zData : bvector<DPoint2d>
             {
             DPoint2d::From (0.1, 0.2)
-            ,DPoint2d::From (-2.0, -1.0)
+            ,DPoint2d::From (-1.5, -0.5)
             }
             )
         {

@@ -1950,7 +1950,7 @@ Angle planarContinuationAngle
     double radians = DoubleOps::MaxAbs (planarContinuationAngle.Radians (), Angle::MediumAngle ());
     DPoint3d xyzA, xyzB;
     DVec3d   crossA, crossB, forwardA, forwardB;
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
     GEOMAPI_PRINTF ("\nGreedyTriangulation %d %d\n", (int)linestringA.size (), (int)linestringB.size ());
 #endif
     while (baseA + 1 < nA && baseB + 1 < nB)
@@ -1959,7 +1959,7 @@ Angle planarContinuationAngle
             {
             size_t limitA = AdvanceToPlanarLimit (linestringA, baseA + 1, xyzA, crossA, forwardA, xyzB, crossB, forwardB, radians);
             size_t limitB = AdvanceToPlanarLimit (linestringB, baseB + 1, xyzB, crossB, forwardB, xyzA, crossA, forwardA, radians);
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
             GEOMAPI_PRINTF ("(n+n) (A %d %d)      (B %d %d)\n",
                                 (int)baseA, (int)limitA,
                                 (int)baseB, (int)limitB);
@@ -1972,55 +1972,29 @@ Angle planarContinuationAngle
             }
         else if (IsPlanarBase (linestringA, baseA + 1, linestringB, baseB, radians, xyzA, crossA, forwardA, xyzB, crossB, forwardB))
             {
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
             GEOMAPI_PRINTF ("    (A %d (+2))      (B %d (+1))\n",  (int)baseA,  (int)baseB);
+#endif
             AddGreedyTriangulationBetweenLinestrings (
                     linestringA, baseA, baseA + 2,
                     linestringB, baseB, baseB + 1,
                     triangles,
                     oneBasedIndexAB);
-#endif
             }
         else if (IsPlanarBase (linestringA, baseA, linestringB, baseB + 1, radians, xyzA, crossA, forwardA, xyzB, crossB, forwardB))
             {
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
             GEOMAPI_PRINTF ("    (A %d (+1))      (B %d (+2))\n",  (int)baseA,  (int)baseB);
+#endif
             AddGreedyTriangulationBetweenLinestrings (
                     linestringA, baseA, baseA + 1,
                     linestringB, baseB, baseB + 2,
                     triangles,
                     oneBasedIndexAB);
-#endif
             }
         else 
             {
-#ifdef PanicBySingleTriangles
-            TestTriangle triangleA (linestringA, baseA, baseA + 1, linestringB, baseB, 0);
-            TestTriangle triangleB (linestringB, baseB, baseB + 1, linestringA, baseA, 1);
-            if (triangleA.m_aspectRatio > triangleB.m_aspectRatio)
-                {
-#ifdef NoisyGreedyTriangulation
-                GEOMAPI_PRINTF ("shortA    (A %d (+2))      (B %d (+1))\n",  (int)baseA,  (int)baseB);
-#endif
-                AddGreedyTriangulationBetweenLinestrings (
-                        linestringA, baseA, baseA + 2,
-                        linestringB, baseB, baseB + 1,
-                        triangles,
-                        oneBasedIndexAB);
-                }
-            else
-                {
-#ifdef NoisyGreedyTriangulation
-                GEOMAPI_PRINTF ("shortB    (A %d (+1))      (B %d (+2))\n",  (int)baseA,  (int)baseB);
-#endif
-                AddGreedyTriangulationBetweenLinestrings (
-                        linestringA, baseA, baseA + 1,
-                        linestringB, baseB, baseB + 2,
-                        triangles,
-                        oneBasedIndexAB);
-                }
-#else
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
                 GEOMAPI_PRINTF ("SINGLE    (A %d)      (B %d)\n",  (int)baseA,  (int)baseB);
 #endif
                 AddGreedyTriangulationBetweenLinestrings (
@@ -2028,19 +2002,16 @@ Angle planarContinuationAngle
                         linestringB, baseB, baseB + 2,
                         triangles,
                         oneBasedIndexAB, 1);
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
                 GEOMAPI_PRINTF ("after    (A %d)      (B %d)\n",  (int)baseA,  (int)baseB);
-#endif
 #endif
             }
         }
-
-#ifdef NoisyGreedyTriangulation
+#ifdef PrintGreedyTriangles
     GEOMAPI_PRINTF ("final (A %d %d)      (B %d %d)\n",
                         (int)baseA, (int)linestringA.size (),
                         (int)baseB, (int)linestringB.size ());
 #endif
-
     // catch final ..
     AddGreedyTriangulationBetweenLinestrings (
                     linestringA, baseA, linestringA.size (),
