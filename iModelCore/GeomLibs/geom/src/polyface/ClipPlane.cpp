@@ -203,6 +203,14 @@ bool ClipPlane::IsPointOnOrInside (DPoint3dCR point, double tolerance) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
+bool ClipPlane::IsPointOn (DPoint3dCR point, double tolerance) const
+    {
+    return fabs (EvaluatePoint (point)) < tolerance;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 bool ClipPlane::IsPointOnOrInside (DPoint3dCR point) const
     {
     return EvaluatePoint (point) >= 0.0;

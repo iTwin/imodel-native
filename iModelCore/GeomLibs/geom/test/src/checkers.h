@@ -454,6 +454,27 @@ void Name1##Name2::go ()
 #define CHECK_EXPR(_Method_,_Condition_) Check::_Method_ (_Condition_, #_Method_ "?" #_Condition_)
 
 
+struct SaveAndRestoreCheckTransform
+{
+Transform m_baseTransform;
+DVec3d m_finalShift;
+SaveAndRestoreCheckTransform ()
+    {
+    m_finalShift.Zero ();
+    m_baseTransform = Check::GetTransform ();
+    }
+SaveAndRestoreCheckTransform (double dxFinal, double dyFinal, double dzFinal)
+    {
+    m_finalShift.Init (dxFinal, dyFinal, dzFinal);
+    m_baseTransform = Check::GetTransform ();
+    }
+
+~SaveAndRestoreCheckTransform ()
+    {
+    Check::SetTransform (m_baseTransform);
+    Check::Shift (m_finalShift.x, m_finalShift.y, m_finalShift.z);
+    }
+};
 
 
 struct TransformShifter
