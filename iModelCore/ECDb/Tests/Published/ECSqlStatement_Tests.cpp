@@ -576,6 +576,87 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlstructarray_unsetmembers.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="MyClass">
+                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
+          </ECEntityClass>
+          <ECStructClass typeName="LocationStruct">
+                <ECProperty propertyName="Street" typeName="string"/>
+                <ECStructProperty propertyName="City" typeName="CityStruct"/>
+          </ECStructClass>
+         <ECStructClass typeName="CityStruct">
+               <ECProperty propertyName="Name" typeName="string"/>
+               <ECProperty propertyName="State" typeName="string"/>
+               <ECProperty propertyName="Country" typeName="string"/>
+               <ECProperty propertyName="Zip" typeName="int"/>
+         </ECStructClass>
+        </ECSchema>
+        )xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Locations) VALUES(?)"));
+    IECSqlBinder& structArrayBinder = stmt.GetBinder(1);
+    //first element: don't bind anything
+    structArrayBinder.AddArrayElement();
+
+    {
+    //call BindNull on element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+    }
+
+    {
+    //bind to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindText("mainstreet", IECSqlBinder::MakeCopy::No));
+    }
+
+    {
+    //bind null to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    }
+
+    {
+    //call BindNull on struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //call BindNull on prim and struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //bind to prim member in struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"]["Zip"].BindInt(34000));
+    }
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+
+    Statement validateStmt;
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    Utf8String actualJson(validateStmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ(R"json([null,null,{"Street":"mainstreet"},{"Street":null},{"City":null},{"Street":null,"City":null},{"City":{"Zip":34000}}])json", actualJson.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                 09/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
@@ -1435,41 +1516,41 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                    02/16
+// @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
-    ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
+    const int perClassRowCount = 10;
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
-    ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances(ecdb, 1, "ClassP");
+    Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
-    Utf8String inXml, outXml;
-    for (IECInstancePtr inst : instanceList)
+    statement.BindInt64(1, 1000);
+    //add three array elements
+    const int count = 3;
+
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+
+    for (int i = 0; i < count; i++)
         {
-        ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
-        ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst, true));
-        inst->WriteToXmlString(inXml, true, true);
-        inXml += "\r\n";
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["i"].BindInt(i * 2);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
-    bvector<IECInstancePtr> out;
-    ECSqlStatement stmt;
-    auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
-    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    ECInstanceECSqlSelectAdapter classPReader(stmt);
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        auto inst = classPReader.GetInstance();
-        out.push_back(inst);
-        inst->WriteToXmlString(outXml, true, true);
-        outXml += "\r\n";
-        }
-
-    ASSERT_EQ(instanceList.size(), out.size());
-    ASSERT_TRUE(inXml == outXml);
+    auto stepStatus = statement.Step();
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     }
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                    02/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1707,42 +1788,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Affan.Khan                 01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
-    {
-    const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
-    Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
-
-    statement.BindInt64(1, 1000);
-    //add three array elements
-    const int count = 3;
-
-    IECSqlBinder& arrayBinder = statement.GetBinder(2);
-
-    for (int i = 0; i < count; i++)
-        {
-        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["i"].BindInt(i * 2);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["l"].BindInt64(i * 3);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        }
-
-    auto stepStatus = statement.Step();
-    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                01/17
