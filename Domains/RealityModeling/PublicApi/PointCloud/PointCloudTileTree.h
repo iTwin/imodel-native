@@ -46,7 +46,7 @@ public:
     virtual ~Root() { ClearAllTiles(); }
 
     PointCloudModelCR   GetPointCloudModel() const { return m_model; }
-    size_t  GetPoints (bvector<FPoint3d>& points, bvector<Byte>& colors, DRange3dCR tileRange, size_t maxCount) const;
+    size_t  GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, DRange3dCR tileRange, size_t maxCount) const;
 
 
 

@@ -60,7 +60,7 @@ BentleyStatus _LoadTile()
     static size_t               s_maxTilePointCount = 500000;
     static size_t               s_maxLeafPointCount = 20000;
     bvector<FPoint3d>           points;
-    bvector<Byte>               colors;
+    bvector<PointCloudColorDef> colors;
     size_t                      nPoints = root.GetPoints(points, colors, tile.GetRange(), s_maxTilePointCount);
     
     if (0 == nPoints)
@@ -68,14 +68,13 @@ BentleyStatus _LoadTile()
 
     Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
 
-    graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : &colors.front());
+    graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : (ByteCP) colors.data());
 
     if(nPoints < s_maxLeafPointCount)
         tile.SetIsLeaf();
 
     tile.AddGraphic(*graphic);
 
-#define DRAW_RANGE
 #ifdef DRAW_RANGE
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
@@ -143,13 +142,13 @@ static   BeMutex     s_queryMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<Byte>& colors, DRange3dCR tileRange, size_t maxCount) const
+size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, DRange3dCR tileRange, size_t maxCount) const
     {
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... The query buffer pool is not thread safe.     TODO - bypass it to make query multithreaded?
     Transform                   worldToScene;
     DRange3d                    sceneRange;
-    bool                        useRGB = m_model.GetPointCloudSceneP()->_HasRGBChannel();
-    PointCloudQueryBuffersPtr   queryBuffers = PointCloudQueryBuffers::Create(maxCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
+    bool                        colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
+    PointCloudQueryBuffersPtr   queryBuffers = PointCloudQueryBuffers::Create(maxCount, (uint32_t) PointCloudChannelId::Xyz | (colorsPresent ? (uint32_t) PointCloudChannelId::Rgb : 0));
 
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
@@ -174,6 +173,11 @@ size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<Byte>& colors, DRang
         cloudToTile.Multiply(tilePoint, pPoints[i]);
 
         points[i] = {(float) tilePoint.x, (float) tilePoint.y, (float) tilePoint.z}; 
+        }
+    if (colorsPresent)
+        {
+        colors.resize(nPoints);
+        memcpy (colors.data(), queryBuffers->GetRgbChannel()->GetChannelBuffer(), nPoints * sizeof(PointCloudColorDef));
         }
     return nPoints;
     }
