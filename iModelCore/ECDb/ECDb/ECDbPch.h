@@ -87,10 +87,9 @@
 #include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"
 #include "ECSql/PrimitiveECSqlField.h"
-#include "ECSql/PrimitiveArrayECSqlField.h"
 #include "ECSql/PointECSqlField.h"
 #include "ECSql/StructECSqlField.h"
-#include "ECSql/StructArrayECSqlField.h"
+#include "ECSql/ArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
 
 #include "ECSql/ECSqlBinder.h"
@@ -99,8 +98,7 @@
 #include "ECSql/NavigationPropertyECSqlBinder.h"
 #include "ECSql/PointECSqlBinder.h"
 #include "ECSql/PrimitiveECSqlBinder.h"
-#include "ECSql/PrimitiveArrayECSqlBinder.h"
-#include "ECSql/StructArrayECSqlBinder.h"
+#include "ECSql/ArrayECSqlBinder.h"
 #include "ECSql/StructECSqlBinder.h"
 
 #include "ECSql/ECSqlStatementNoopImpls.h"
