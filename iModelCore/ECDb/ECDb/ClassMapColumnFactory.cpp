@@ -24,7 +24,7 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ClassMapColumnFactory::Initialize()
+void ClassMapColumnFactory::Initialize()const
     {
     UsedColumnFinder::ColumnMap columnMap;
     if (UsedColumnFinder::Find(columnMap, m_classMap) == SUCCESS)
@@ -561,15 +561,37 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
 
     m_primaryHierarchy.insert(&currentClass);
     ClassMap const* currentClassMap = GetClassMap(currentClass);
+    if (currentClass.GetId() == m_classMap.GetClass().GetId())
+        {
+        for (ECClassCP baseClass : currentClass.GetBaseClasses())
+            {
+            ECEntityClassCP entityClass = baseClass->GetEntityClassCP();
+            if (entityClass && !entityClass->IsMixin())
+                {
+                if (ClassMap const* baseClassMap = GetClassMap(*baseClass))
+                    m_deepestClassMapped.insert(baseClassMap);
+                }
+            }
+        }
+
     if (currentClassMap && !currentClassMap->GetTables().empty())
         {
         if (currentClass.GetId() != m_classMap.GetClass().GetId())
             if (IsMappedIntoContextClassMapTables(*currentClassMap))
                 parentClassMap = currentClassMap;
 
-        for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass))
-            if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
-                return ERROR;
+        ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
+        if (derivedClasses.empty())
+            {
+            if (parentClassMap != nullptr)
+                m_deepestClassMapped.insert(parentClassMap);
+            }
+        else
+            {
+            for (ECClassCP derivedClass : derivedClasses)
+                if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
+                    return ERROR;
+            }
         }
     else
         {
@@ -619,7 +641,7 @@ ClassMapColumnFactory::UsedColumnFinder::UsedColumnFinder(ClassMap const& classM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryMixIns()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
     {
     Utf8CP mixInSql =
         "SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
@@ -660,20 +682,12 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryMixIns()
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& columnMap)
     {
-    if (m_classMap.GetClass().GetSchema().GetName() == "TestSchema")
-        {
-        printf("");
-        }
-    if (m_classMap.GetClass().GetName() == "D_B")
-        {
-        printf("");
-        }
     //Traverse derived class hierarchy and find deepest mapped classes. 
     //It also identify any mixin that it encounter
     if (TraverseClassHierarchy(m_classMap.GetClass(), nullptr) != SUCCESS)
         return ERROR;
 
-    if (QueryMixIns() != SUCCESS)
+    if (QueryRelevantMixIns() != SUCCESS)
         return ERROR;
 
     //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
@@ -750,12 +764,6 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             if (auto const* relECClassId = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable))
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassId->GetAccessString()), &relECClassId->GetColumn()));
             }
-        }
-
-    printf("%s=================================\r\n", m_classMap.GetClass().GetName().c_str());
-    for (auto const& key : columnMap)
-        {
-        printf("\t%s \t-> %s\r\n", key.first.c_str(), key.second->GetName().c_str());
         }
 
     return SUCCESS;

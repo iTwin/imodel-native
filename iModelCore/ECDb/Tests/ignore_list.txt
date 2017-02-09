@@ -25,7 +25,3 @@ ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
 #TFS 657660
 ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
-
-ECSchemaUpdateTests.DeleteProperties_TPH
-ECSchemaUpdateTests.DeleteProperties_JoinedTable
-ECSchemaUpdateTests.AddECPropertyToBaseClass

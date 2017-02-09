@@ -1832,7 +1832,6 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
     ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-
     SchemaItem modifiedSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"

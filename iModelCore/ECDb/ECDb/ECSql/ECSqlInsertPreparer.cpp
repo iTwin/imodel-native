@@ -25,10 +25,6 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ctx.PushScope(exp);
 
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-	if (classMap.GetClass().GetName().Equals("InformationContentElement"))
-		{
-		printf("");
-		}
     if (auto info = ctx.GetJoinedTableInfo())
         {
         ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());

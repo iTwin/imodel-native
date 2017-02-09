@@ -558,7 +558,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
    
-    bvector<ECPropertyCP> failedToLoadProperties;
+    //bvector<ECPropertyCP> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
@@ -575,7 +575,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             {
             if (ClassMapper::LoadPropertyMap(*this, *property, dbCtx) == nullptr)
                 {
-                failedToLoadProperties.push_back(property);
+                m_failedToLoadProperties.push_back(property);
                 }
             }
         else
@@ -589,10 +589,18 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
 
-    if (!failedToLoadProperties.empty())
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan  01/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::Update()
+    {
+    if (!m_failedToLoadProperties.empty())
         {
+        GetColumnFactory(true);
         //GetColumnFactory().Update(true);
-        for (ECPropertyCP property : failedToLoadProperties)
+        for (ECPropertyCP property : m_failedToLoadProperties)
             {
             PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
             if (propMap == nullptr)
@@ -603,7 +611,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 BeAssert(false);
                 return ERROR;
                 }
-            
+
             //Nav property maps cannot be saved here as they are not yet mapped.
             if (propMap->GetType() == PropertyMap::Type::Navigation)
                 continue;
@@ -623,11 +631,12 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             propMap->AcceptVisitor(saveVisitor);
             ctx.EndSaving(*this);
             }
+
+        m_failedToLoadProperties.clear();
         }
 
     return SUCCESS;
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
@@ -807,10 +816,12 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
+ClassMapColumnFactory const& ClassMap::GetColumnFactory(bool refresh) const
     {
     if (m_columnFactory == nullptr)
         m_columnFactory = std::make_unique<ClassMapColumnFactory>(*this);
+    else if (refresh)
+        m_columnFactory->Refresh();
 
     return *m_columnFactory;
     }

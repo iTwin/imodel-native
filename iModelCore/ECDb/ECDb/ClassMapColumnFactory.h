@@ -42,7 +42,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 BentleyStatus TraverseClassHierarchy(ECN::ECClassCR , ClassMap const*);
                 BentleyStatus FindRelationshipEndTableMaps();
                 BentleyStatus Execute(ColumnMap& );
-                BentleyStatus QueryMixIns();
+                BentleyStatus QueryRelevantMixIns();
             public:
                 static BentleyStatus Find(ColumnMap& , ClassMap const& );
             };
@@ -53,7 +53,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         mutable std::set<DbColumn const*> m_usedColumnSet;
         bool m_usesSharedColumnStrategy;
         mutable std::vector<const ClassMap*> m_compoundFilter;
-        void Initialize();
+        void Initialize() const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
@@ -75,9 +75,9 @@ struct ClassMapColumnFactory final : NonCopyableClass
 
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
-        void Refresh() { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         //This function either create a column or grab a existing column
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
+        void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         void Debug() const;
     };
 

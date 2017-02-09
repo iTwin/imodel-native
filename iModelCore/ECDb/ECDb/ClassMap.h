@@ -81,7 +81,6 @@ struct ClassMap : RefCountedBase
         private:
             ClassMap const& m_classMap;
             mutable ECN::ECClassId m_parentOfJoinedTableECClassId;
-
             TablePerHierarchyInfo const& GetTphInfo() const { return m_classMap.GetMapStrategy().GetTphInfo(); }
         public:
             explicit TablePerHierarchyHelper(ClassMap const& classMap) : m_classMap(classMap) {}
@@ -120,7 +119,7 @@ struct ClassMap : RefCountedBase
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bool m_isDirty;
-
+        bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
@@ -147,7 +146,7 @@ struct ClassMap : RefCountedBase
 
     public:
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
-
+        BentleyStatus Update();
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
@@ -160,7 +159,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-        ClassMapColumnFactory const& GetColumnFactory() const;
+        ClassMapColumnFactory const& GetColumnFactory(bool refresh = false) const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
         DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
