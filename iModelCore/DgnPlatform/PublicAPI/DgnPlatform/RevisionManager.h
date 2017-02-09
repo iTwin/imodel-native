@@ -153,10 +153,8 @@ private:
     DgnRevisionPtr m_currentRevision;
 
     RevisionStatus SaveParentRevisionId(Utf8StringCR revisionId);
-    RevisionStatus SaveReversedParentRevisionId(Utf8StringCR revisionId);
-    RevisionStatus DeleteReversedParentRevisionId();
-    Utf8String GetReversedParentRevisionId() const;
-    bool HasReversedRevisions() const;
+    RevisionStatus SaveReversedRevisionId(Utf8StringCR revisionId);
+    RevisionStatus DeleteReversedRevisionId();
 
     Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
@@ -182,13 +180,13 @@ public:
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
 
-    //! Get the parent revision id of any changes in the DgnDb
-    DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
-
     //! Merge a single revision to the Db
     //! @param[in] revision The revision to be merged
     //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
     DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
+
+    //! Get the Id of the last revision that was merged into or created from the Db. This is the parent for any new revisions that will be created. 
+    DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
     //! Start creating a new revision from the changes saved to the Db
     //! @return Newly created revision. Null if there was an error, or if 
@@ -239,6 +237,15 @@ public:
     //! @remarks After reinstating all the revisions, the user can make changes to the DgnDb and create new revisions
     //! again. @see ReverseRevision()
     DGNPLATFORM_EXPORT RevisionStatus ReinstateRevision(DgnRevisionCR revision);
+
+    //! Checks if the Db has reversed revisions
+    //! @see GetReversedRevisionId()
+    DGNPLATFORM_EXPORT bool HasReversedRevisions() const;
+
+    //! Get the last revision that the Db was reversed to
+    //! @remarks Returns an empty string if there aren't any reversed revisions. 
+    //! @see HasReversedRevisions()
+    DGNPLATFORM_EXPORT Utf8String GetReversedRevisionId() const;
 
     TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
 };

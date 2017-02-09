@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define CURRENT_REV_END_TXN_ID  "CurrentRevisionEndTxnId"
 #define INITIAL_PARENT_REV_ID   "InitialParentRevisionId"
 #define PARENT_REV_ID           "ParentRevisionId"
-#define REVERSED_PARENT_REV_ID  "ReversedParentRevisionId"
+#define REVERSED_REV_ID         "ReversedRevisionId"
 #define REVISION_FORMAT_VERSION  0x10
 // #define DEBUG_REVISION_KEEP_FILES 1
 
@@ -743,11 +743,11 @@ RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2017
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SaveReversedParentRevisionId(Utf8StringCR revisionId)
+RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
 
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_PARENT_REV_ID, revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_REV_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -760,9 +760,9 @@ RevisionStatus RevisionManager::SaveReversedParentRevisionId(Utf8StringCR revisi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2017
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::DeleteReversedParentRevisionId()
+RevisionStatus RevisionManager::DeleteReversedRevisionId()
     {
-    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_PARENT_REV_ID);
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_REV_ID);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -778,7 +778,7 @@ RevisionStatus RevisionManager::DeleteReversedParentRevisionId()
 bool RevisionManager::HasReversedRevisions() const
     {
     Utf8String reversedParentId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_REV_ID);
     return (result == BE_SQLITE_ROW);
     }
 
@@ -795,10 +795,10 @@ Utf8String RevisionManager::GetParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2017
 //---------------------------------------------------------------------------------------
-Utf8String RevisionManager::GetReversedParentRevisionId() const
+Utf8String RevisionManager::GetReversedRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_REV_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -1162,7 +1162,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedParentRevisionId();
+    Utf8String currentParentRevId = GetReversedRevisionId();
     if (currentParentRevId.empty())
         currentParentRevId = GetParentRevisionId();
 
@@ -1192,7 +1192,7 @@ RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedParentRevisionId();
+    Utf8String currentParentRevId = GetReversedRevisionId();
     if (currentParentRevId.empty())
         currentParentRevId = GetParentRevisionId();
 
