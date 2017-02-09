@@ -551,6 +551,14 @@ TEST_F(DgnModelTests, CodeUniqueness)
     DgnDbStatus stat;
     ASSERT_FALSE(ele->Update(&stat).IsValid());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
+    // Update Dgncode by getting uniqueDgncode
+    updatepartitionCode = InformationPartitionElement::CreateUniqueCode(*m_db->Elements().GetRootSubject(), "Testcode2");
+    ele->SetCode(updatepartitionCode);
+    ASSERT_TRUE(updatepartitionCode == ele->GetCode());
+    DgnElementCPtr updatedele = ele->Update(&stat);
+    ASSERT_TRUE(updatedele.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(updatepartitionCode == updatedele->GetCode());
    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
@@ -577,4 +585,14 @@ TEST_F(DgnModelTests, DefinitionModelCreation)
     ASSERT_EQ(DgnDbStatus::Success ,defmodel2c->Insert());
     ASSERT_EQ(defmodel2c->GetModeledElementId(), defp2->GetElementId());
     ASSERT_EQ(defmodel->DictionaryId(), defmodel2c->DictionaryId());
+
+    DgnCode partitionCode1 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement");
+    DgnElementId eleId1=m_db->Elements().QueryElementIdByCode(partitionCode1);
+    RefCountedCPtr<InformationPartitionElement> Infele1 = m_db->Elements().Get<InformationPartitionElement>(eleId1);
+    ASSERT_EQ(Infele1->GetDescription(), "This is new DefinitionPartition");
+
+    DgnCode partitionCode2 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement2");
+    DgnElementId eleId2 = m_db->Elements().QueryElementIdByCode(partitionCode2);
+    RefCountedCPtr<InformationPartitionElement> Infele2 = m_db->Elements().Get<InformationPartitionElement>(eleId2);
+    ASSERT_EQ(Infele2->GetDescription(), "This is second DefinitionPartition");
     }
