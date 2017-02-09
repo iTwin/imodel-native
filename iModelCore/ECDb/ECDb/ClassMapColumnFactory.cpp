@@ -53,7 +53,6 @@ DbColumn* ClassMapColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn
     if (outColumn == nullptr)
         return nullptr;
 
-    //AddColumnToCache(*outColumn, accessString);
     return outColumn;
     }
 
@@ -751,13 +750,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassId->GetAccessString()), &relECClassId->GetColumn()));
             }
         }
-
-    //printf("%s=================================\r\n", m_classMap.GetClass().GetName().c_str());
-    //for (auto const& key : columnMap)
-    //    {
-    //    printf("\t%s \t-> %s\r\n", key.first.c_str(), key.second->GetName().c_str());
-    //    }
-
+        
     return SUCCESS;
     }
 //------------------------------------------------------------------------------------------
