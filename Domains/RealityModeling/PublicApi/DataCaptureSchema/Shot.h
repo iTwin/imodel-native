@@ -88,6 +88,12 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     virtual void _OnDeleted() const override;
 
+    //! Called when an element is about to be deleted from the DgnDb.
+    //! Subclasses may override this method to control when/if their instances are deleted.
+    //! @return DgnDbStatus::Success to allow the delete, otherwise the delete will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnDelete, forwarding its status.
+    virtual Dgn::DgnDbStatus _OnDelete() const override;
+
     virtual Dgn::DgnCode _GenerateDefaultCode() const override;
 
 public:

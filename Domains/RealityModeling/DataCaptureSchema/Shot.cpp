@@ -377,6 +377,22 @@ void Shot::_OnUpdated(DgnElementCR original) const
     if (GetPoseId() != other->GetPoseId())
         UpdateShotIsTakenAtPoseRelationship(GetDgnDb());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                   02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus Shot::_OnDelete() const
+    {
+    //NEEDSWORK: not now    
+    // Verify if the associated Pose is use by another shot.  I no, delete the pose
+
+    // Remove the associated pose 
+    PoseCPtr posePtr = Pose::Get(GetDgnDb(), GetPoseId());
+    posePtr->Delete();
+    
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
