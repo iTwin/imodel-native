@@ -45,8 +45,9 @@ public:
     static RootPtr Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view);
     virtual ~Root() { ClearAllTiles(); }
 
-    size_t              MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR tileRange, int densityType, float densityValue) const;
     PointCloudModelCR   GetPointCloudModel() const { return m_model; }
+    size_t  GetPoints (bvector<FPoint3d>& points, bvector<Byte>& colors, DRange3dCR tileRange, size_t maxCount) const;
+
 
 
 };//     TileRoot

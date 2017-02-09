@@ -57,52 +57,33 @@ BentleyStatus _LoadTile()
     auto&                       tile = static_cast<TileR>(*m_tile);
     auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
     auto&                       system = *root.GetRenderSystem();
-    PointCloudModelCR           pointCloudModel = root.GetPointCloudModel();
     static size_t               s_maxTilePointCount = 500000;
     static size_t               s_maxLeafPointCount = 20000;
-    bool                        useRGB = pointCloudModel.GetPointCloudSceneP()->_HasRGBChannel();
-    PointCloudQueryBuffersPtr   queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
-    size_t                      nPoints = root.MakeQuery (queryBuffers, m_tile->GetRange(), QUERY_DENSITY_LIMIT, (float) s_maxTilePointCount);
-    DPoint3dCP                  pPoints;
-    Transform                   dgnToTile, cloudToTile;
-
-
-    dgnToTile.InverseOf(root.GetLocation());
-    cloudToTile = Transform::FromProduct(dgnToTile, pointCloudModel.GetSceneToWorld());
-    if (nullptr == (pPoints = queryBuffers->GetXyzChannel()->GetChannelBuffer()))
-        {
-        BeAssert(false && "No point cloud points");
+    bvector<FPoint3d>           points;
+    bvector<Byte>               colors;
+    size_t                      nPoints = root.GetPoints(points, colors, tile.GetRange(), s_maxTilePointCount);
+    
+    if (0 == nPoints)
         return ERROR;
-        } 
+
+    Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
+
+    graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : &colors.front());
+
     if(nPoints < s_maxLeafPointCount)
         tile.SetIsLeaf();
 
-    if (0 != nPoints)
-        {
-        bvector<FPoint3d>           cloudPoints(nPoints);
-
-        for(size_t i=0; i<nPoints; i++)
-            {
-            DPoint3d        tilePoint;
-
-            cloudToTile.Multiply(tilePoint, pPoints[i]);
-            cloudPoints[i] = {(float) tilePoint.x, (float) tilePoint.y, (float) tilePoint.z}; 
-            }
-        Render::GraphicBuilderPtr graphic = system._CreateGraphic(Graphic::CreateParams());
-
-        graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &cloudPoints.front(), useRGB ? (ByteCP) queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr);
+    tile.AddGraphic(*graphic);
 
 #define DRAW_RANGE
 #ifdef DRAW_RANGE
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Red());
+    GraphicParams params;
+    params.SetLineColor(ColorDef::Red());
 
-        graphic->ActivateGraphicParams(params);
-        graphic->AddRangeBox (tile.GetRange());
+    graphic->ActivateGraphicParams(params);
+    graphic->AddRangeBox (tile.GetRange());
 #endif
-        graphic->Close();
-        tile.AddGraphic(*graphic);
-        }
+    graphic->Close();
 
     return SUCCESS;  
     }
@@ -121,9 +102,7 @@ folly::Future<BentleyStatus> _GetFromSource()
     LoaderPtr me(this);
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
-
 };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -159,20 +138,44 @@ void Root::LoadRootTile(DRange3dCR tileRange)
     m_rootTile = Tile::Create(*this, tileRange);
     }
 
+static   BeMutex     s_queryMutex;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  Root::MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR tileRange, int densityType, float densityValue) const
+size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<Byte>& colors, DRange3dCR tileRange, size_t maxCount) const
     {
+    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... The query buffer pool is not thread safe.     TODO - bypass it to make query multithreaded?
     Transform                   worldToScene;
     DRange3d                    sceneRange;
-                                
+    bool                        useRGB = m_model.GetPointCloudSceneP()->_HasRGBChannel();
+    PointCloudQueryBuffersPtr   queryBuffers = PointCloudQueryBuffers::Create(maxCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
+
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
     
-    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
+    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, QUERY_DENSITY_LIMIT, (float) maxCount);
+    size_t                      nPoints = queryBuffers->GetPoints (queryHandle->GetHandle());
 
-    return queryBuffers->GetPoints (queryHandle->GetHandle());
+    if (0 == nPoints)
+        return 0;
+
+    DPoint3dCP                  pPoints = queryBuffers->GetXyzChannel()->GetChannelBuffer();
+    Transform                   dgnToTile, cloudToTile;
+
+    dgnToTile.InverseOf(GetLocation());
+    cloudToTile = Transform::FromProduct(dgnToTile, m_model.GetSceneToWorld());
+
+    points.resize(nPoints);
+    for(size_t i=0; i<nPoints; i++)
+        {
+        DPoint3d        tilePoint;
+
+        cloudToTile.Multiply(tilePoint, pPoints[i]);
+
+        points[i] = {(float) tilePoint.x, (float) tilePoint.y, (float) tilePoint.z}; 
+        }
+    return nPoints;
     }
 
 /*---------------------------------------------------------------------------------**//**
