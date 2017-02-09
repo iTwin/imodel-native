@@ -189,7 +189,7 @@ public:
     uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
 
     bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
-    bool IsFull() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() >= GetMaxIndex(); }
+    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
 
     typedef Map::const_iterator const_iterator;
     typedef const_iterator iterator;

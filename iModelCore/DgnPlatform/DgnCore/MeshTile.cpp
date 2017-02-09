@@ -3094,7 +3094,7 @@ FeatureAttributesMap::FeatureAttributesMap()
     {
     // 0 always maps to "no attributes defined"
     FeatureAttributes undefined;
-    GetIndex(undefined);
+    m_map[undefined] = 0;
 
     BeAssert(1 == GetCount());
     BeAssert(0 == GetIndex(undefined));
