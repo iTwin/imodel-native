@@ -959,7 +959,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::AddPropertyMapping(U
     {
     auto it = s_entries.find(oldFullyQualifiedName);
     if (s_entries.end() == it)
-        ECObjectsStatus::Error;
+        return ECObjectsStatus::Error;
 
     return it->second.AddPropertyMapping(oldPropertyName, newPropertyName);
     }
