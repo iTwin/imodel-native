@@ -3663,24 +3663,39 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
 
     if (!IsLoaded()) Load();
-    DRange2d rasterBox = sourceRasterP->GetTextureExtent(); 
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
     //get overlap between node and raster extent
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
-    
+
     unitTransform.Multiply(contentExtent.low, contentExtent.low);
     unitTransform.Multiply(contentExtent.high, contentExtent.high);
     if (!rasterBox.IntersectsWith(contentExtent)) return;
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
-    
+
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
     DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
-    
-        if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))
-            SplitNodeBasedOnImageRes();
+
+
+    if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))        
+        SplitNodeBasedOnImageRes();
+        
+
+
+    if (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels)
+        {
+        m_nodeHeader.m_textureResolution = std::max(contentExtent.XLength() / textureWidthInPixels, contentExtent.YLength() / textureHeightInPixels);
+        }
+    else
+        {
+        m_nodeHeader.m_textureResolution = std::max(pixSize.x, pixSize.y);
+        }
+
+
+    if (m_nodeHeader.m_geometricResolution == 0)m_nodeHeader.m_geometricResolution = m_nodeHeader.m_textureResolution;
         if (!tex.empty())
         PushTexture(tex.data(), tex.size());     
 
