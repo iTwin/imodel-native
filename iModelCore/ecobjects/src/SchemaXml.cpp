@@ -794,15 +794,13 @@ SchemaXmlReader::SchemaXmlReader(ECSchemaReadContextR context, BeXmlDomR xmlDom)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
+// @bsimethod                                   Caleb.Shafer                02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t checkSum)
+// static
+SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, BeXmlNodeP& schemaNode, BeXmlDomR xmlDom)
     {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-    StopWatch overallTimer("Overall schema de-serialization timer", true);
-
     BeXmlNodeP      rootNode;
-    rootNode = static_cast <BeXmlNodeP>(xmlDocGetRootElement(&(m_xmlDom.GetDocument())));
+    rootNode = static_cast <BeXmlNodeP>(xmlDocGetRootElement(&(xmlDom.GetDocument())));
     if (NULL == rootNode)
         {
         BeAssert(s_noAssert);
@@ -819,8 +817,6 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         }
 
     Utf8String version = schemaNamespace.substr(strlen(ECXML_URI) + 1);
-    int ecXmlMajorVersion, ecXmlMinorVersion;
-
     sscanf(version.c_str(), "%d.%d", &ecXmlMajorVersion, &ecXmlMinorVersion);
     if (2 != ecXmlMajorVersion && 3 != ecXmlMajorVersion)
         {
@@ -828,10 +824,9 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    m_xmlDom.RegisterNamespace(EC_NAMESPACE_PREFIX, schemaNamespace.c_str());
+    xmlDom.RegisterNamespace(EC_NAMESPACE_PREFIX, schemaNamespace.c_str());
 
-    BeXmlNodeP      schemaNode;
-    if ((BEXML_Success != m_xmlDom.SelectNode(schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode))
+    if ((BEXML_Success != xmlDom.SelectNode(schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode))
         {
         BeAssert(s_noAssert);
         LOG.errorv("Invalid ECSchemaXML: Missing a top-level %s node in the %s namespace", EC_SCHEMA_ELEMENT, schemaNamespace.c_str());
@@ -863,6 +858,26 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionRead, versionWrite, versionMinor).c_str());
 
+    schemaKey = SchemaKey(schemaName.c_str(), versionRead, versionWrite, versionMinor);
+
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t checkSum)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+    StopWatch overallTimer("Overall schema de-serialization timer", true);
+
+    BeXmlNodeP schemaNode;
+    SchemaKey schemaKey;
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+    status = ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, m_xmlDom);
+    if (SchemaReadStatus::Success != status)
+        return status;
+
     Utf8String alias; 
     // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
     if ((ecXmlMajorVersion == 3 && ecXmlMinorVersion >= 1) || ecXmlMajorVersion > 3)
@@ -877,10 +892,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     else
         {
         if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
-            alias = schemaName;
+            alias = schemaKey.GetName();
         }
 
-    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, alias, versionRead, versionWrite, versionMinor);
+    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaKey.GetName(), alias, schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor());
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 

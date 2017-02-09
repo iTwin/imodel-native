@@ -1640,6 +1640,64 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
     return schemaContext.LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
+    {
+    WString     errorString;
+    int         line = 0, linePos = 0;
+    if (NULL == xmlDom)
+        {
+        BeXmlDom::GetLastErrorString (errorString);
+        }
+    else
+        {
+        xmlDom->GetErrorMessage (errorString);
+        xmlDom->GetErrorLocation (line, linePos);
+        }
+
+    LOG.errorv (errorString.c_str());
+    LOG.errorv (L"line %d, position %d", line, linePos);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//---------------+---------------+---------------+---------------+---------------+-------
+static void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
+    {
+    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
+    schemaContext.AddSchemaPath(pathToThisSchema);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECSchemaPtr ECSchema::LocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext)
+    {
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, schemaXmlFile);
+    if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
+        {
+        BeAssert(s_noAssert);
+        LogXmlLoadError(xmlDom.get());
+        return nullptr;
+        }
+
+    SchemaKey searchKey;
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+    BeXmlNodeP schemaNode;
+    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, *xmlDom))
+        return nullptr;
+
+    ECSchemaPtr schema = LocateSchema(searchKey, schemaContext);
+    if (!schema.IsValid())
+        ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
+    return schema;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1850,38 +1908,6 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 
     m_knownSchemas.Insert(lookup, schemaOut);
     return schemaOut;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
-    {
-    WString     errorString;
-    int         line = 0, linePos = 0;
-    if (NULL == xmlDom)
-        {
-        BeXmlDom::GetLastErrorString (errorString);
-        }
-    else
-        {
-        xmlDom->GetErrorMessage (errorString);
-        xmlDom->GetErrorLocation (line, linePos);
-        }
-
-    LOG.errorv (errorString.c_str());
-    LOG.errorv (L"line %d, position %d", line, linePos);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
-    {
-    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
-    schemaContext.AddSchemaPath(pathToThisSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**

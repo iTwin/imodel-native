@@ -3564,6 +3564,14 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     ECOBJECTS_EXPORT static ECSchemaPtr LocateSchema(SchemaKeyR schemaKey, ECSchemaReadContextR schemaContext);
 
+    //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema paths
+    //! relative to the executing dll will be searched.
+    //! @remarks This will attempt to deserialize the provided schema xml file. 
+    //! @param[in]    schemaXmlFile       The absolute path of the schema that is being looked for
+    //! @param[in]    schemaContext       Required to create schemas
+    //! @return A valid ECSchemaPtr, IsValid() will be true, if the schema can be found or deserialized within the provided ECSchemaReadContext
+    ECOBJECTS_EXPORT static ECSchemaPtr LocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext);
+
     //! Reads an ECSchema from a UTF-8 encoded ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.

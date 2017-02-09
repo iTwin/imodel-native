@@ -16,9 +16,6 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-// NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
-#define SCHEMAS_PATH  L"" 
-
 struct SchemaTest : ECTestFixture {};
 struct SchemaSearchTest : ECTestFixture {};
 struct SchemaNameParsingTest : ECTestFixture {};
@@ -320,14 +317,93 @@ TEST_F(SchemaSearchTest, FindSchemaByName)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    EXPECT_TRUE(schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
-    EXPECT_TRUE(schema->FindSchema(SchemaKey("SchemaThatReferencez", 1, 0), SchemaMatchType::Exact) == NULL);
-    EXPECT_TRUE(schema->FindSchema(SchemaKey("SchemaThatReferences", 2, 0), SchemaMatchType::Exact) == NULL);
-    EXPECT_TRUE(schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 1), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE(nullptr != schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE(nullptr == schema->FindSchema(SchemaKey("SchemaThatReferencez", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE(nullptr == schema->FindSchema(SchemaKey("SchemaThatReferences", 2, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE(nullptr == schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 1), SchemaMatchType::Exact));
 
-    EXPECT_TRUE(schema->FindSchema(SchemaKey("BaseSchema", 1, 0), SchemaMatchType::Exact) != NULL);
-    EXPECT_TRUE(schema->FindSchemaP(SchemaKey("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
-    EXPECT_TRUE(schema->FindSchemaP(SchemaKey("a", 123, 456), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE(nullptr != schema->FindSchema(SchemaKey("BaseSchema", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE(nullptr != schema->FindSchemaP(SchemaKey("SchemaThatReferences", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE(nullptr == schema->FindSchemaP(SchemaKey("a", 123, 456), SchemaMatchType::Exact));
+    }
+
+void VerifySingleSchemaExists(ECSchemaReadContextR schemaContext, SchemaKey schemaKey)
+    {
+    bool found = false;
+    for (ECSchemaCP schema : schemaContext.GetCache().GetSchemas())
+        {
+        if (schema->GetSchemaKey().Matches(schemaKey, SchemaMatchType::Exact))
+            {
+            if (!found)
+                found = true;
+            else
+                {
+                EXPECT_TRUE(false);
+                break;
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaSearchTest, FindSchemaByFileName)
+    {
+    // Test success when the schema can be found
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaKey testKey("Widgets", 9, 6);
+
+    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+
+    // Check that if the schema is a duplicate it will be returned
+    ECSchemaPtr duplicateSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_TRUE(duplicateSchema.IsValid());
+    EXPECT_TRUE(duplicateSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+    
+    EXPECT_TRUE(schema->GetSchemaKey().Matches(duplicateSchema->GetSchemaKey(), SchemaMatchType::Exact));
+
+    // verify that there is only one in the schema cache
+    VerifySingleSchemaExists(*schemaContext, testKey);
+    }
+
+    {
+    SchemaKey testKey("Widgets", 9, 6);
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+
+    status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::DuplicateSchema, status);
+
+    ECSchemaPtr dupSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_TRUE(dupSchema.IsValid());
+    EXPECT_TRUE(dupSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+    
+    VerifySingleSchemaExists(*schemaContext, testKey);
+    }
+
+    // Test failure when a non xml file is passed
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema").c_str(), *schemaContext);
+    ASSERT_FALSE(schema.IsValid());
+    }
+
+    // Test failure when schema xml file does not exist
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_FALSE(schema.IsValid());
+    }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,9 +532,9 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
     {
     ECSchemaPtr schema;

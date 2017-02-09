@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,8 @@ public:
     SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, uint32_t checkSum);
 
     static void SetErrorHandling(bool doAssert);
+
+    static SchemaReadStatus ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, BeXmlNodeP& schemaNode, BeXmlDomR xmlDom);
 };
 
 // =====================================================================================
