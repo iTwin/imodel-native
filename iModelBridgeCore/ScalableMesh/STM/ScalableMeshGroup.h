@@ -201,9 +201,10 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override {}
 
 #ifdef SCALABLE_MESH_ATP
-        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR}
-        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override{return ERROR}
-        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override {return ERROR}
+        virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const { return ERROR; }
+        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
+        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override{return ERROR;}
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override {return ERROR;}
 #endif
 
         virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {}
