@@ -340,7 +340,18 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
         return;
 
     m_renderSystem = renderSys;
-    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    BeAssert(m_viewport.IsValid());
+
+    static bool s_useTiles = true;
+    if (s_useTiles)
+        {
+        m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
+    else
+        {
+    m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
+        (QuadTree::Tile*) new Tile(*this, QuadTree::TileId(0,0,0), nullptr) : new Tile2dModel(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
     }
 
 //=======================================================================================
@@ -361,10 +372,37 @@ struct SceneReadyTask : ProgressiveTask
             return ProgressiveTask::Completion::Aborted; // no, keep waiting
 
         m_tree.m_sceneReady = true; // yes, mark it as ready and draw its tiles
-        m_tree.DrawInView(context, m_tree.GetLocation(), m_tree.m_clip.get());
+//        m_tree.DrawInView(context, m_tree.GetLocation(), m_tree.m_clip.get());
         return ProgressiveTask::Completion::Finished; // we're done.
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth) const 
+    {
+    if (!m_graphic.IsValid())
+        {
+        auto vp = GetTree().m_viewport;
+        auto scene = vp->GetViewControllerR().GetScene();
+        if (!scene.IsValid())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        GraphicBranch branch;
+        for (auto& graphic : scene->m_graphics->m_list)
+            branch.Add(*graphic.m_ptr);
+        
+        Transform toNpc;
+        toNpc.InitFrom(*vp->GetWorldToNpcMap(), false);
+        m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
+        }
+
+    args.m_graphics.Add(*m_graphic);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16

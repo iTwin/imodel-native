@@ -450,7 +450,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    _AdjustAspectRatio(*viewController, false);
+    _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
 
     DPoint3d origin = viewController->GetOrigin();
     DVec3d   delta  = viewController->GetDelta();
