@@ -4747,7 +4747,6 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P0 FROM TestSchema.Element ORDER BY P1"));
-    //printf(statement.GetNativeSql());
     int rowCount = 0;
     Utf8CP expectedValues = "Hello World !!!";
     Utf8String actualValues;

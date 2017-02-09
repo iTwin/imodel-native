@@ -496,7 +496,8 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
     //this mixin has not be resolved. We need to find it implementation if avaliable.
     if (!m_mixins.empty())
         {
-        for (ECEntityClassCP unresolvedMixin : m_mixins)
+        std::vector<ECEntityClassCP> unresolvedMixins(m_mixins.begin(), m_mixins.end());
+        for (ECEntityClassCP unresolvedMixin : unresolvedMixins)
             {
             if (ResolveMixins(*unresolvedMixin) != SUCCESS)
                 return ERROR;

@@ -12134,7 +12134,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour2]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
-    printf(stmt.GetNativeSql());
     //ORDER BY does not work.
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
