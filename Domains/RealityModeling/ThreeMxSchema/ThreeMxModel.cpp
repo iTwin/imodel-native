@@ -405,8 +405,8 @@ struct  PublishTileNode : ModelTileNode
         
         ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, DgnElementId(), m_twoSidedTriangles, true); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, DgnElementId(), m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, TileVertexAttributes(), m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, TileVertexAttributes(), m_twoSidedTriangles, true); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
@@ -474,7 +474,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                     {
                     TileTextureImagePtr     tileTexture = TileTextureImage::Create(publishTexture->m_source);
                     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
-                    builder = TileMeshBuilder::Create(displayParams, 0.0, 0.0);
+                    builder = TileMeshBuilder::Create(displayParams, 0.0, 0.0, const_cast<TileVertexAttributesSetR>(GetAttributes()));
 
                     builderMap.Insert(publishTexture, builder);
                     }
@@ -492,7 +492,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, DgnElementId(), twoSidedTriangles, true);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, TileVertexAttributes(), twoSidedTriangles, true);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
