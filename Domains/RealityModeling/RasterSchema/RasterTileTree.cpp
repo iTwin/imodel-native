@@ -176,7 +176,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(RenderListContext&
     BeAssert(args.m_missing.size() < 200);  // More than 200 hundred tiles is suspicious.
 
     args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
+    args.DrawGraphics(m_root);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 

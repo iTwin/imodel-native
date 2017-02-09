@@ -163,7 +163,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(RenderListContext
         }
 
     args.RequestMissingTiles(m_scene, m_loads);
-    args.DrawGraphics(context);     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
+    args.DrawGraphics(m_scene);     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
