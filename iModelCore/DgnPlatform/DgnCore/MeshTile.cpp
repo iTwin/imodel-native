@@ -3114,10 +3114,10 @@ uint16_t FeatureAttributesMap::GetIndex(FeatureAttributesCR attr)
     else if (IsFull())
         return 0;
 
-    auto index = GetCount() + 1;
+    auto index = GetCount();
     m_map[attr] = index;
 
-    BeAssert(GetCount() == index);
+    BeAssert(GetCount() == index+1);
     
     return index;
     }
