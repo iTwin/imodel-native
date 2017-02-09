@@ -1012,6 +1012,8 @@ TEST_F(DependencyRevisionTest, UpdateCache)
 TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergeDependencyPermutations.bim");
+    
+    RevisionStatus status;
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();
@@ -1024,17 +1026,21 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     VerifyDependentProperties(depId, {456, 0, 123, 0});
     BackupTestFile();
 
-    // Create a revision with some direct changes to the dependent property
+    /*
+     * Create a revision with some direct changes to the dependent property
+     */
     UpdateDependentProperty(depId, 2, 789);
     VerifyDependentProperties(depId, {456, 0, 789, 0});
     m_db->SaveChanges();
     VerifyDependentProperties(depId, {456, 0, 123, 0});
 
-    DgnRevisionPtr directChangesRev = CreateRevision();
+    DgnRevisionPtr directChangesRev = CreateRevision(); // Will only contain LastMod change
     ASSERT_TRUE(directChangesRev.IsValid());
-    DumpRevision(*directChangesRev, "Direct Changes to Dependency:");
+    DumpRevision(*directChangesRev, "DirectChangesRev:");
 
-    // Create a revision with some indirect changes to the dependent property
+    /*
+     * Create a revision with some indirect changes to the dependent property
+     */
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
     m_db->SaveChanges("Revision");
@@ -1043,9 +1049,11 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
 
     DgnRevisionPtr indirectChangesRev = CreateRevision();
     ASSERT_TRUE(indirectChangesRev.IsValid());
-    DumpRevision(*indirectChangesRev, "Indirect Changes to Dependency:");
+    DumpRevision(*indirectChangesRev, "IndirectChangesRev:");
 
-    // Make direct changes, and merge the revision with indirect changes
+    /*
+     * Make direct changes, and merge the revision with indirect changes
+     */
     RestoreTestFile();
     UpdateDependentProperty(depId, 2, 789);
     m_db->SaveChanges();
@@ -1053,13 +1061,69 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*indirectChangesRev));
     VerifyDependentProperties(depId, {456, 0, 654, 0});
 
-    // Make indirect changes, and merge the revision with direct changes
+    // Create new revision
+    DgnRevisionPtr directAndIndirectChangesRev = CreateRevision(); // Will only contain LastMod change
+    ASSERT_TRUE(directAndIndirectChangesRev.IsValid());
+    DumpRevision(*directAndIndirectChangesRev, "DirectAndIndirectChangesRev:");
+
+    // Test reverse
+    status = m_db->Revisions().ReverseRevision(*directAndIndirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    status = m_db->Revisions().ReverseRevision(*indirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    // Test reinstate
+    status = m_db->Revisions().ReinstateRevision(*indirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    status = m_db->Revisions().ReinstateRevision(*directAndIndirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    /*
+     * Make indirect changes, and merge the revision with direct changes
+     */
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
     m_db->SaveChanges("Revision");
     VerifyRootProperty(rootId, 654);
     VerifyDependentProperties(depId, {456, 0, 654, 0});
     EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*directChangesRev));
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Create a new revision
+    DgnRevisionPtr indirectAndDirectChangesRev = CreateRevision();
+    ASSERT_TRUE(indirectAndDirectChangesRev.IsValid());
+    DumpRevision(*indirectAndDirectChangesRev, "IndirectAndDirectChangesRev:");
+
+    // Test reverse
+    status = m_db->Revisions().ReverseRevision(*indirectAndDirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    status = m_db->Revisions().ReverseRevision(*directChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    // Test reinstate
+    status = m_db->Revisions().ReinstateRevision(*directChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    status = m_db->Revisions().ReinstateRevision(*indirectAndDirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
     VerifyDependentProperties(depId, {456, 0, 654, 0});
     }
 
