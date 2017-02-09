@@ -752,11 +752,11 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             }
         }
 
-    printf("%s=================================\r\n", m_classMap.GetClass().GetName().c_str());
-    for (auto const& key : columnMap)
-        {
-        printf("\t%s \t-> %s\r\n", key.first.c_str(), key.second->GetName().c_str());
-        }
+    //printf("%s=================================\r\n", m_classMap.GetClass().GetName().c_str());
+    //for (auto const& key : columnMap)
+    //    {
+    //    printf("\t%s \t-> %s\r\n", key.first.c_str(), key.second->GetName().c_str());
+    //    }
 
     return SUCCESS;
     }
