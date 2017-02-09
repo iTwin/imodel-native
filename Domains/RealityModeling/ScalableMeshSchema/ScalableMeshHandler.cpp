@@ -703,37 +703,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         m_tryOpen = true;
         }
 
+    //On first draw, we make sure all models know which of the rendered models "belong" to each other and set the groups accordingly.
     if (!m_loadedAllModels)
         {
-        bvector<IMeshSpatialModelP> allScalableMeshes;
-        ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
-        if (!m_subModel) SetDefaultClipsActive();
-
-        for (auto& sm : allScalableMeshes)
-            {
-            BeFileName coveragePath = m_basePath;
-            coveragePath.AppendString(L"_terrain");
-            ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
-            if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
-                {
-                smP->GetScalableMesh()->SetInvertClip(true);
-                m_terrainParts.push_back(smP);
-                smP->m_subModel = true;
-                }
-            }
-        m_loadedAllModels = true;
-
-
-        bvector<uint64_t> ids;
-        m_smPtr->GetCoverageIds(ids);
-
-        for (auto& smP : m_terrainParts)
-            {
-            for (auto& id : ids)
-                {
-                smP->ActivateClip(id, ClipMode::Clip);
-                }
-            }
+        InitializeTerrainRegions();
         }
     
 
@@ -780,7 +753,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     
     DMatrix4d localToView(context.GetLocalToView());
                                    
-    bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
+    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
+
+    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
 
     //DPoint3d viewBox[8];
 
@@ -1390,6 +1365,38 @@ void ScalableMeshModel::RefreshClips()
     }
 
 
+void ScalableMeshModel::InitializeTerrainRegions()
+    {
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
+    if (!m_subModel) SetDefaultClipsActive();
+
+    for (auto& sm : allScalableMeshes)
+        {
+        BeFileName coveragePath = m_basePath;
+        coveragePath.AppendString(L"_terrain");
+        ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
+        if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
+            {
+            smP->GetScalableMesh()->SetInvertClip(true);
+            m_terrainParts.push_back(smP);
+            smP->m_subModel = true;
+            }
+        }
+    m_loadedAllModels = true;
+
+
+    bvector<uint64_t> ids;
+    m_smPtr->GetCoverageIds(ids);
+
+    for (auto& smP : m_terrainParts)
+        {
+        for (auto& id : ids)
+            {
+            smP->ActivateClip(id, ClipMode::Clip);
+            }
+        }
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2017
