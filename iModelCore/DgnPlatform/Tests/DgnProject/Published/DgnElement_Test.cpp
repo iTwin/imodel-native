@@ -2133,3 +2133,29 @@ TEST_F(DgnElementTests, TestSpatialLocation)
     ASSERT_TRUE(element2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, CreateSubjectChildElemet)
+    {
+    SetupSeedProject();
+    SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
+    ASSERT_TRUE(rootSubject.IsValid());
+    SubjectPtr subele=Subject::Create(*rootSubject, "SubjectChild","Child1");
+    ASSERT_TRUE(subele.IsValid());
+    DgnElementCPtr ele=subele->Insert();
+    ASSERT_TRUE(ele.IsValid());
+    ASSERT_EQ(ele->GetModelId(), rootSubject->GetModelId());
+    DgnElementCPtr elep = m_db->Elements().GetElement(ele->GetElementId());
+    ASSERT_EQ(elep->GetDisplayLabel(),"SubjectChild");
+    RefCountedCPtr<Subject> info=m_db->Elements().Get<Subject>(ele->GetElementId());
+    ASSERT_EQ(info->GetDescription(),"Child1");
+
+    SubjectCPtr subele2 = Subject::CreateAndInsert(*rootSubject, "SubjectChild2", "Child2");
+    ASSERT_TRUE(subele2.IsValid());
+    ASSERT_EQ(subele2->GetModelId(), rootSubject->GetModelId());
+    elep = m_db->Elements().GetElement(subele2->GetElementId());
+    ASSERT_EQ(elep->GetDisplayLabel(), "SubjectChild2");
+    info = m_db->Elements().Get<Subject>(subele2->GetElementId());
+    ASSERT_EQ(info->GetDescription(), "Child2");
+    }
