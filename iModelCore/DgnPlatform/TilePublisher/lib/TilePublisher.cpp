@@ -16,7 +16,7 @@ using namespace BentleyApi::Dgn::Render::Tile3d;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void batchIdsToJson(TileVertexAttributesSetCR attributes, Json::Value& value, DgnDbR db, bool is2d)
+static void batchIdsToJson(FeatureAttributesMapCR attributes, Json::Value& value, DgnDbR db, bool is2d)
     {
     static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
     static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
@@ -28,10 +28,11 @@ static void batchIdsToJson(TileVertexAttributesSetCR attributes, Json::Value& va
     Json::Value elementIds(Json::arrayValue);
     Json::Value categoryIds(Json::arrayValue);
 
+    // ###TODO: We need to put the full hierarchy...and query category ID by subcategory ID, not element ID
     bvector<DgnElementId> elements;
-    elements.resize(attributes.GetElements().size());
-    for (auto const& kvp : attributes.GetElements())
-        elements[kvp.second] = kvp.first;
+    elements.resize(attributes.size());
+    for (auto const& kvp : attributes)
+        elements[kvp.second] = kvp.first.GetElementId();
 
     for (auto elemIter = elements.begin(); elemIter != elements.end(); ++elemIter)
         {
@@ -53,7 +54,7 @@ static void batchIdsToJson(TileVertexAttributesSetCR attributes, Json::Value& va
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String batchIdsToJsonString(TileVertexAttributesSetCR attributes, DgnDbR db, bool is2d)
+static Utf8String batchIdsToJsonString(FeatureAttributesMapCR attributes, DgnDbR db, bool is2d)
     {
     Json::Value     value;
 
@@ -527,14 +528,14 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
     {
     PublishTileData     featureTableData, partData;
-    bvector<TileVertexAttributeIndices> attributeIndices;
+    bvector<uint16_t>   attributeIndices;
     bool                rotationPresent = false;
 
     featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
 
-    bvector<float>      upFloats, rightFloats;
-    TileVertexAttributesSet attributesSet;
-    DRange3d            positionRange = DRange3d::NullRange();
+    bvector<float>          upFloats, rightFloats;
+    FeatureAttributesMap    attributesSet;
+    DRange3d                positionRange = DRange3d::NullRange();
 
     for (auto& instance : part->Instances())
         {
@@ -561,7 +562,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         upFloats.push_back(up.z);
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
-        attributeIndices.push_back(attributesSet.GetIndices(instance.GetAttributes()));
+        attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
         }
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
@@ -655,11 +656,11 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     AddDefaultScene(tileData);
     AddMeshes(tileData, meshes);
 
-    TileVertexAttributesSetCR attributes = m_tile.GetAttributes();
+    FeatureAttributesMapCR attributes = m_tile.GetAttributes();
     Utf8String batchTableStr = validIdsPresent ? batchIdsToJsonString(attributes, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel()) : Utf8String();
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t zero = 0;
-    uint32_t b3dmNumBatches = validIdsPresent ? attributes.GetElements().size() : 0;
+    uint32_t b3dmNumBatches = validIdsPresent ? attributes.size() : 0;
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_b3dmMagic, 1, 4, outputFile);
@@ -1341,7 +1342,7 @@ static uint16_t octEncodeNormal (DVec3dCR vector)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMeshVertexAttribute (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max)
+Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max)
     {
     Utf8String          nameId =  Concat(name, id),
                         accessorId = Concat ("acc", nameId),
@@ -1444,14 +1445,10 @@ Utf8String TilePublisher::AddMeshVertexAttribute (PublishTileData& tileData, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<TileVertexAttributeIndices> const& attributes, Utf8StringCR idStr)
+void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
     {
     Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
                 accBatchId       = Concat("accBatch_", idStr);
-
-    bvector<uint16_t>   batchIds;
-    for (auto const& attribute : attributes)
-        batchIds.push_back(attribute.GetElementIndex());
 
     primitive["attributes"]["BATCHID"] = accBatchId;
 
@@ -1568,21 +1565,21 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), doBatchIds);
     primitive["mode"] = GLTF_TRIANGLES;
 
-    Utf8String      accPositionId =  AddMeshVertexAttribute (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+    Utf8String      accPositionId =  AddMeshVertexAttributes (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"] = accPositionId;
 
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
         {
         DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
-        primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttribute (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
+        primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttributes (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
         }
 
 
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
-        primitive["attributes"]["NORMAL"] = AddMeshVertexAttribute (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
+        primitive["attributes"]["NORMAL"] = AddMeshVertexAttributes (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
         }
 
     primitive["indices"] = AddMeshIndices (tileData, "Indices", indices, idStr);
@@ -1604,7 +1601,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
 
     bvector<DPoint3d>           points, directions;
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
-    bvector<TileVertexAttributeIndices> attributes;
+    bvector<uint16_t>           attributes;
     bvector<uint32_t>           indices;
     bvector<DPoint3d>           vertexDeltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
@@ -1677,10 +1674,10 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     primitive["material"] = AddPolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
     primitive["mode"] = GLTF_TRIANGLES;
 
-    Utf8String  accPositionId = AddMeshVertexAttribute (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
-    primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (tileData, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", VertexEncoding::StandardQuantization, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", VertexEncoding::StandardQuantization, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
+    primitive["attributes"]["DIRECTION"] = AddMeshVertexAttributes (tileData, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", VertexEncoding::StandardQuantization, &directionRange.low.x, &directionRange.high.x);
+    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttributes (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", VertexEncoding::StandardQuantization, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
 
     if (doBatchIds)

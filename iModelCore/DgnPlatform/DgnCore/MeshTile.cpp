@@ -755,12 +755,12 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, TileVertexAttributeIndicesCR attributes)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(point);
-    m_attributes.push_back(attributes);
+    m_attributes.push_back(attribute);
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
@@ -768,7 +768,7 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
-    m_validIdsPresent |= attributes.IsDefined();
+    m_validIdsPresent |= (0 != attribute);
     return index;
     }
 
@@ -895,7 +895,7 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, TileVertexAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -963,7 +963,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, TileVertexAttributesCR attributes, bool doVertexCluster)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster)
     {
     TilePolyline    newPolyline;
 
@@ -979,7 +979,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, TileVertexAtt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, TileVertexAttributesCR attributes, bool twoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams);
@@ -994,7 +994,7 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndices(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1008,7 +1008,7 @@ uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndices(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -2955,7 +2955,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
-        TileVertexAttributes attributes = geom->GetAttributes();
+        FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
@@ -2972,7 +2972,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<TileVertexAttributesSetR>(m_attributes));
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
             if (polyface.IsValid())
                 {
@@ -3008,7 +3008,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<TileVertexAttributesSetR>(m_attributes));
+                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels);
@@ -3071,7 +3071,7 @@ WString TileUtil::GetRootNameForModel(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileVertexAttributes::operator<(TileVertexAttributesCR rhs) const
+bool FeatureAttributes::operator<(FeatureAttributesCR rhs) const
     {
     if (IsUndefined())
         return rhs.IsDefined();
@@ -3090,13 +3090,15 @@ bool TileVertexAttributes::operator<(TileVertexAttributesCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileVertexAttributesSet::TileVertexAttributesSet()
+FeatureAttributesMap::FeatureAttributesMap()
     {
-    TileVertexAttributes undefined;
-    GetIndices(undefined);
+    // 0 always maps to "no attributes defined"
+    FeatureAttributes undefined;
+    GetIndex(undefined);
 
-    BeAssert(1 == m_elements.size());
-    BeAssert(1 == m_subcategories.size());
+    BeAssert(1 == GetCount());
+    BeAssert(0 == GetIndex(undefined));
+    BeAssert(1 == GetCount());
     BeAssert(!AnyDefined());
     BeAssert(!IsFull());
     }
@@ -3104,27 +3106,27 @@ TileVertexAttributesSet::TileVertexAttributesSet()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileVertexAttributeIndices TileVertexAttributesSet::GetIndices(TileVertexAttributesCR attr)
+uint16_t FeatureAttributesMap::GetIndex(FeatureAttributesCR attr)
     {
-    auto classIdx = static_cast<uint16_t>(attr.GetClass());
-    auto elemIter = m_elements.find(attr.GetElementId());
-    auto subcatIter = m_subcategories.find(attr.GetSubCategoryId());
-    if (m_subcategories.end() != subcatIter && m_elements.end() != elemIter)
-        return TileVertexAttributeIndices(elemIter->second, subcatIter->second, classIdx);
+    auto iter = m_map.find(attr);
+    if (m_map.end() != iter)
+        return iter->second;
     else if (IsFull())
-        return TileVertexAttributeIndices();
+        return 0;
 
-    uint16_t elemIdx = m_elements.end() != elemIter ? elemIter->second : AddIndex(m_elements, attr.GetElementId());
-    uint16_t subcatIdx = m_subcategories.end() != subcatIter ? subcatIter->second : AddIndex(m_subcategories, attr.GetSubCategoryId());
+    auto index = GetCount() + 1;
+    m_map[attr] = index;
 
-    return TileVertexAttributeIndices(elemIdx, subcatIdx, classIdx);
+    BeAssert(GetCount() == index);
+    
+    return index;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileVertexAttributeIndices TileVertexAttributesSet::GetIndices(TileGeometryCR geom)
+uint16_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
     {
-    return GetIndices(geom.GetAttributes());
+    return GetIndex(geom.GetAttributes());
     }
 

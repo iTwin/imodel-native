@@ -325,7 +325,7 @@ TileMeshPtr  TileReader::ReadMeshPrimitive(Json::Value const& primitiveValue)
             DgnElementId       entityId;
 
             if (SUCCESS == DgnElementId::FromString  (entityId, m_batchData["element"][batchId].asCString()))
-                mesh->EntityIdsR().push_back(entityId);
+                mesh->AttributesR().push_back(entityId);
             }
         }
 
