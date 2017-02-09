@@ -7824,7 +7824,13 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-    SMNodeGroup::Ptr group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode));
+    SMNodeGroup::Ptr group(
+#ifndef VANCOUVER_API
+        new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
+#else
+        SMNodeGroup::Create(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
+#endif
+    );
 
     group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
 

@@ -26,63 +26,63 @@ void DataSourceLocator::getURL(DataSourceURL &url)
 
 void DataSourceLocator::setService(DataSourceService * newService)
 {
-    service = newService;
+    m_service = newService;
 }
 
 DataSourceService * DataSourceLocator::getService(void)
 {
-    return service;
+    return m_service;
 }
 
 void DataSourceLocator::setAccount(DataSourceAccount * sourceAccount)
 {
-    account = sourceAccount;
+    m_account = sourceAccount;
 }
 
 DataSourceAccount * DataSourceLocator::getAccount(void) const
 {
-    return account;
+    return m_account;
 }
 
 void DataSourceLocator::setPrefixPath(const DataSourceURL & path)
 {
-    prefixPath = path;
+    m_prefixPath = path;
 }
 
 const DataSourceURL & DataSourceLocator::getPrefixPath(void)
 {
-    return prefixPath;
+    return m_prefixPath;
 }
 
 void DataSourceLocator::setSubPath(const DataSourceURL & path)
 {
-    subPath = path;
+    m_subPath = path;
 }
 
 const DataSourceURL & DataSourceLocator::getSubPath(void)
 {
-    return subPath;
+    return m_subPath;
 }
 
 void DataSourceLocator::setSegmentName(DataSourceURL & name)
 {
-    segmentName = name;
+    m_segmentName = name;
 }
 
 
 const DataSourceURL &DataSourceLocator::getSegmentName(void) const
 {
-    return segmentName;
+    return m_segmentName;
 }
 
 void DataSourceLocator::setMode(DataSourceMode sourceMode)
 {
-    mode = sourceMode;
+    m_mode = sourceMode;
 }
 
 DataSourceMode DataSourceLocator::getMode(void) const
 {
-    return mode;
+    return m_mode;
 }
 
 /*

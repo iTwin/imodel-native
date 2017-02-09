@@ -17,6 +17,7 @@
 #include "SMSQLiteFile.h"
 #include "Stores/SMStoreUtils.h"
 #include <condition_variable>
+#include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
 #include <queue>
 #include <iomanip>
@@ -326,6 +327,13 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             // A group contains at least its ID and the number of nodes within it.
             m_totalSize = 2 * sizeof(size_t);
             }
+
+#ifdef VANCOUVER_API
+        static SMNodeGroup* Create(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, const uint32_t& pi_pGroupID, SMNodeGroup::Ptr parentGroup = nullptr, StrategyType strategyType = StrategyType::NONE)
+            {
+            return new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, pi_pGroupID, parentGroup, strategyType);
+            }
+#endif
 
         static SMNodeGroup::Ptr CreateCesium3DTilesGroup(DataSourceAccount *dataSourceAccount, const uint32_t groupID)
             {

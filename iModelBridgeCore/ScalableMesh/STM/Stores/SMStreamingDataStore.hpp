@@ -13,7 +13,9 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
+#ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
+#endif
 #include <CloudDataSource\DataSourceAccount.h>
 #include <CloudDataSource\DataSourceAccountWSG.h>
 #include <CloudDataSource\DataSourceBuffered.h>
@@ -434,11 +436,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
         indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-        short groupMode = m_use_virtual_grouping;
-        memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
-        if (s_is_legacy_dataset) groupMode += 1;
-        assert((groupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
-        position += sizeof(groupMode);
+        short storedGroupMode = m_use_virtual_grouping;
+        memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
+        if (s_is_legacy_dataset) storedGroupMode += 1;
+        assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+        position += sizeof(storedGroupMode);
 
 
         // Parse rest of file -- group information
@@ -459,7 +461,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 }
 
             uint64_t group_totalSizeOfHeaders(0);
-            if (groupMode == SMNodeGroup::StrategyType::VIRTUAL)
+            if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
                 {
                 memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
                 position += sizeof(group_totalSizeOfHeaders);
@@ -471,12 +473,12 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
                                                              (uint32_t)group_id,
-                                                             SMNodeGroup::StrategyType(groupMode),
+                                                             SMNodeGroup::StrategyType(storedGroupMode),
                                                              group_numNodes,
                                                              group_totalSizeOfHeaders));
 
             // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
-            switch (groupMode)
+            switch (storedGroupMode)
                 {
                 case SMNodeGroup::StrategyType::NORMAL:
                     {
@@ -675,6 +677,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
     {
+#ifndef VANCOUVER_API
     // Get Cesium 3D tiles required properties
     Json::Value tile;
     tile["asset"]["version"] = "0.0";
@@ -696,10 +699,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     po_pBinaryData.reset(new Byte[utf8Node.size()]);
     memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
     po_pDataSize = (uint32_t)utf8Node.size();
+#else
+    assert(!"Not implemented");
+#endif
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile)
     {
+#ifndef VANCOUVER_API
     // compute node tolerance (for the geometric error)
     bool useContentExtent = header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume () > 0*/;
     DRange3d cesiumRange = useContentExtent ? header->m_contentExtent : header->m_nodeExtent;
@@ -734,6 +741,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     SMStreamingStore<EXTENT>::SerializeHeaderToJSON(header, blockID, smHeader);
 
     tile["SMHeader"] = smHeader;
+#else
+    assert(!"Not implemented");
+#endif
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)

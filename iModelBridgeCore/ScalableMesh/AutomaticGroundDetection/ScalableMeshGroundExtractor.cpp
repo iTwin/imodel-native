@@ -365,6 +365,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         
         textureGenerator->SetPixelSize(ComputeTextureResolution());
         textureGenerator->SetTextureTempDir(currentTextureDir);
+        textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
 
         DRange3d covExt = DRange3d::From(m_extractionArea);
 

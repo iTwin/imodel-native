@@ -13,6 +13,7 @@
 std::mutex s_consoleMutex;
 //#endif
 
+
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
 uint32_t s_max_group_depth = 4;
@@ -92,9 +93,9 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                         {
                         assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
                         BeFileName groupURL(jsonNode["content"]["url"].asString());
-                        WString groupIDStr = groupURL.GetFileNameWithoutExtension();
+                        WString groupIDStr = BEFILENAME(GetFileNameWithoutExtension, groupURL);
                         WString prefix = groupIDStr.substr(0, 2);
-                        WString extension = groupURL.GetExtension();
+                        WString extension = BEFILENAME(GetExtension, groupURL);
                         groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
                         uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
                         assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);

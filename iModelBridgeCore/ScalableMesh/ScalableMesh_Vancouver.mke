@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-     
+
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
@@ -42,10 +42,10 @@ always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
 
-always:
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+#always:
+#   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+#   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+#   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312
@@ -320,13 +320,22 @@ $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeade
 
 #$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-#-----------------------------------------------------------------------
-#   Build Tile Publisher
-#-----------------------------------------------------------------------
+$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
+$(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
+$(o)MapBoxTextureProvider$(oext) : $(stmDir)MapBoxTextureProvider.cpp $(stmDir)MapBoxTextureProvider.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+
+##-----------------------------------------------------------------------
+##   Build Tile Publisher
+##-----------------------------------------------------------------------
+#
+#$(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
+#
+#$(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores
@@ -466,10 +475,10 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
-    $(ContextSubpartsLibs)cpprest120_2_6.lib \
     $(ContextSubpartsLibs)PCLWrapper.lib \
     $(ContextSubpartsLibs)BeCurl.lib 
     
+#    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
@@ -491,7 +500,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)IppZlib.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)IppJpegLibTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \

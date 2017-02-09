@@ -22,7 +22,7 @@
 
 #include <ScalableMesh\IScalableMeshPolicy.h>
 
-template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>::SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<ImagePP::HRARaster> source)
+template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>::SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<HRARASTER> source)
     {
     m_nodeHeader = nodeHeader;
     m_dataType = dataType;

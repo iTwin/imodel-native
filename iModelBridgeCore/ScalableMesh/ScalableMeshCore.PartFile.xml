@@ -16,27 +16,6 @@
       </Bindings>
     </Part>
 
-    <Part Name="AzureSDK">
-        <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
-        <Bindings>
-            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
-            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
-        </Bindings>
-    </Part>
-
-    <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
-        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
-        <SubPart PartName="AzureSDK" />
-        <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
-            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
-            <VendorAPI Domain="CloudDataSource" />
-        </Bindings>
-    </Part>
-
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <SubPart PartName="PCLWrapper" />
@@ -48,7 +27,7 @@
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <!--<SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>-->
         <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <SubPart PartName="CloudDataSource" />
+        <SubPart PartName="CloudDataSource_Vancouver" PartFile="CloudDataSource"                      Repository="ScalableMesh"/>
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />

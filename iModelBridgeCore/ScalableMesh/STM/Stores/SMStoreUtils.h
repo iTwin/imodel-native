@@ -5,10 +5,25 @@
 #include <ImagePP\all\h\HPMDataStore.h>
 #include <ImagePP\all\h\HCDPacket.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
+#include <ImagePP\all\h\HRARaster.h>
 
 #include "ISMDataStore.h"
 #include "../SMSQLiteFile.h"
 
+#ifndef HRARASTER
+#ifndef VANCOUVER_API
+
+#define HRARASTER ImagePP::HRARaster
+#else
+#define HRARASTER HRARaster
+#endif
+#endif
+
+#ifndef VANCOUVER_API
+#define BEFILENAME(function, filename) filename.function()
+#else
+#define BEFILENAME(function, filename) BeFileName::function(filename.c_str());
+#endif
 
 template <class POINT> struct PointOp
     {

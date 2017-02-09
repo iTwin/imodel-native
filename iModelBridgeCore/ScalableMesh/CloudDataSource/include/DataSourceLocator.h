@@ -13,14 +13,14 @@ class DataSourceLocator
 
 protected:
 
-    DataSourceService                    *  service;
-    DataSourceAccount                    *  account;
+    DataSourceService                    *  m_service;
+    DataSourceAccount                    *  m_account;
 
-    DataSourceURL                           prefixPath;
-    DataSourceURL                           subPath;
-    DataSourceURL                           segmentName;
+    DataSourceURL                           m_prefixPath;
+    DataSourceURL                           m_subPath;
+    DataSourceURL                           m_segmentName;
 
-    DataSourceMode                          mode;
+    DataSourceMode                          m_mode;
 
 
 protected:
