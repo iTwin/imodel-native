@@ -154,9 +154,11 @@ enum class RevisionStatus : int
     FileNotFound, //!< File containing the changes to the revision is not found
     FileWriteError, //!< Error writing the contents of the revision to the backing change stream file
     InvalidId, //!< Invalid Revision Id
+    InvalidVersion, //! !< Invalid version of the revision
     InDynamicTransaction, //!< Cannot perform the operation since system is in the middle of a dynamic transaction
     IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
     IsNotCreatingRevision, //!< Cannot perform operation since the system is not creating a revision
+    ApplyError, //!< Error applying a revision when reversing or reinstating it
     MergeError, //!< Error merging changes from the revision to the Db
     MergePropagationError, //!< Error propagating the changes after the merge
     NothingToMerge, //!< No revisions to merge

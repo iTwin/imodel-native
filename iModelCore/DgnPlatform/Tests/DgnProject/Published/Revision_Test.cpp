@@ -1063,6 +1063,79 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     VerifyDependentProperties(depId, {456, 0, 654, 0});
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReverseAndReinstate)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReverseAndReinstate.bim");
+    m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id, Column1) VALUES(1,0)"), BE_SQLITE_OK);
+    m_db->SaveChanges("Created Initial Model");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Revision 1
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=1 WHERE Id=1"), BE_SQLITE_OK);
+    m_db->SaveChanges("Revision 1");
+    DgnRevisionPtr revision1 = CreateRevision();
+    ASSERT_TRUE(revision1.IsValid());
+
+    // Revision 2
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=2 WHERE Id=1"), BE_SQLITE_OK);
+    m_db->SaveChanges("Revision 2");
+    DgnRevisionPtr revision2 = CreateRevision();
+    ASSERT_TRUE(revision2.IsValid());
+
+    // Validate
+    Statement stmt;
+    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(stmt.GetValueInt(0), 2);
+
+    // Reverse Revision 2
+    RevisionStatus status = m_db->Revisions().ReverseRevision(*revision2);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+
+    // Validate
+    stmt.Finalize();
+    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(stmt.GetValueInt(0), 1);
+
+    // Reverse Revision 1
+    status = m_db->Revisions().ReverseRevision(*revision1);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+
+    // Validate
+    stmt.Finalize();
+    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(stmt.GetValueInt(0), 0);
+
+    // Reinstate Revision 1
+    status = m_db->Revisions().ReinstateRevision(*revision1);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+
+    // Validate
+    stmt.Finalize();
+    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(stmt.GetValueInt(0), 1);
+
+    // Reinstate Revision 2
+    status = m_db->Revisions().ReinstateRevision(*revision2);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+
+    // Validate
+    stmt.Finalize();
+    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(stmt.GetValueInt(0), 2);
+    }
+
 #ifdef DEBUG_REVISION_TEST_MANUAL
 // Tests that are useful for one off testing and performance. These aren't included
 // as part of the build, but used whenever necessary
