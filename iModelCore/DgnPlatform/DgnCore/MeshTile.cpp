@@ -22,7 +22,7 @@ BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
 
-static bool s_doInstancing = true;
+static bool s_doInstancing = false;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
@@ -521,6 +521,7 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
         m_categoryId = geometryParams->GetCategoryId();
         m_subCategoryId = geometryParams->GetSubCategoryId();
         m_materialId = geometryParams->GetMaterialId();
+        m_class = geometryParams->GetGeometryClass();
         }
     }
 
@@ -612,7 +613,7 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
     if (mesh.m_points.empty() ||
         m_normals.empty() != mesh.m_normals.empty() ||
         m_uvParams.empty() != mesh.m_uvParams.empty() ||
-        m_entityIds.empty() != mesh.m_entityIds.empty())
+        m_attributes.empty() != mesh.m_attributes.empty())
         {
         BeAssert (false && "add mesh empty or not compatible");
         }
@@ -625,8 +626,8 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
     if (!mesh.m_uvParams.empty())
         m_uvParams.insert (m_uvParams.end(), mesh.m_uvParams.begin(), mesh.m_uvParams.end());
 
-    if (!mesh.m_entityIds.empty())
-        m_entityIds.insert (m_entityIds.end(), mesh.m_entityIds.begin(), mesh.m_entityIds.end());
+    if (!mesh.m_attributes.empty())
+        m_attributes.insert(m_attributes.end(), mesh.m_attributes.begin(), mesh.m_attributes.end());
 
     for (auto& triangle : mesh.m_triangles)
         AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
@@ -681,6 +682,7 @@ TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsPtr& params, DPoint3dCP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
     {
+#if defined(TODO_ATTRIBUTES)
     bool                        deleteGeometryFound = false;
     bmap<uint32_t, uint32_t>    indexRemap;
     bvector<DPoint3d>           savePoints = m_points;
@@ -745,27 +747,28 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
             polyline++;
             }                                                                                                         
         }
+#endif
+
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, TileVertexAttributeIndicesCR attributes)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(point);
-    m_entityIds.push_back(entityId);
+    m_attributes.push_back(attributes);
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
-                                                                                                                 
 
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
-    m_validIdsPresent |= entityId.IsValid();
+    m_validIdsPresent |= attributes.IsDefined();
     return index;
     }
 
@@ -777,7 +780,9 @@ bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, Ve
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
 
-    COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
+    COMPARE_VALUES (lhs.m_attributes.GetElementId(), rhs.m_attributes.GetElementId());
+    COMPARE_VALUES (lhs.m_attributes.GetSubCategoryId(), rhs.m_attributes.GetSubCategoryId());
+    COMPARE_VALUES (lhs.m_attributes.GetClass(), rhs.m_attributes.GetClass());
 
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
@@ -890,7 +895,7 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, TileVertexAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -925,7 +930,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -946,7 +951,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -958,13 +963,13 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doVertexCluster)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, TileVertexAttributesCR attributes, bool doVertexCluster)
     {
     TilePolyline    newPolyline;
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, entityId);
+        VertexKey vertex(point, nullptr, nullptr, attributes);
 
         newPolyline.m_indices.push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
@@ -974,10 +979,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool twoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, TileVertexAttributesCR attributes, bool twoSidedTriangles, bool includeParams)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams);
+        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -989,7 +994,7 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndices(vertex.m_attributes));
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1003,7 +1008,7 @@ uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndices(vertex.m_attributes));
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1592,6 +1597,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
         // Require valid category/subcategory for sub-category appearance color/material...
         baseParams.SetCategoryId(GetDisplayParams()->GetCategoryId());
         baseParams.SetSubCategoryId(GetDisplayParams()->GetSubCategoryId());
+        baseParams.SetGeometryClass(GetDisplayParams()->GetClass());
 
         for (size_t i=0; i<polyfaces.size(); i++)
             {
@@ -2322,7 +2328,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
-    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(&graphicParams, &geomParams);
+    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(graphicParams, geomParams);
     DRange3d                range;
     auto const&             foundPart = m_geomParts.find (partId);
 
@@ -2902,7 +2908,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 meshPart = found->second;
                 }
 
-            meshPart->AddInstance (TileMeshInstance(geom->GetEntityId(), geom->GetTransform()));
+            meshPart->AddInstance (TileMeshInstance(geom->GetAttributes(), geom->GetTransform()));
             m_containsParts = true;
             }
         else
@@ -2933,9 +2939,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     // Convert to meshes
     MeshBuilderMap      builderMap;
-    size_t              geometryCount = 0;
     DRange3d            myTileRange = GetTileRange();
-
 
     for (auto& geom : geometries)
         {
@@ -2950,8 +2954,8 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
-        bool        maxGeometryCountExceeded = (++geometryCount > s_maxGeometryIdCount);
 
+        TileVertexAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
@@ -2968,7 +2972,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<TileVertexAttributesSetR>(m_attributes));
 
             if (polyface.IsValid())
                 {
@@ -2984,11 +2988,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        DgnElementId elemId;
-                        if (!maxGeometryCountExceeded)
-                            elemId = geom->GetEntityId();
-
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, hasTexture);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture);
                         }
                     }
                 }
@@ -3008,14 +3008,10 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
-
-                DgnElementId elemId;
-                if (geometryCount < s_maxGeometryIdCount)
-                    elemId = geom->GetEntityId();
+                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<TileVertexAttributesSetR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline (strokePoints, elemId, rangePixels < s_vertexClusterThresholdPixels);
+                    meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels);
                 }
             }
         }
@@ -3072,4 +3068,63 @@ WString TileUtil::GetRootNameForModel(DgnModelCR model)
     return name;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileVertexAttributes::operator<(TileVertexAttributesCR rhs) const
+    {
+    if (IsUndefined())
+        return rhs.IsDefined();
+    else if (rhs.IsUndefined())
+        return false;
+    else if (GetElementId() != rhs.GetElementId())
+        return GetElementId() < rhs.GetElementId();
+    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
+        return GetSubCategoryId() < rhs.GetSubCategoryId();
+    else if (GetClass() != rhs.GetClass())
+        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
+    else
+        return false;
+    }
  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileVertexAttributesSet::TileVertexAttributesSet()
+    {
+    TileVertexAttributes undefined;
+    GetIndices(undefined);
+
+    BeAssert(1 == m_elements.size());
+    BeAssert(1 == m_subcategories.size());
+    BeAssert(!AnyDefined());
+    BeAssert(!IsFull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileVertexAttributeIndices TileVertexAttributesSet::GetIndices(TileVertexAttributesCR attr)
+    {
+    auto classIdx = static_cast<uint16_t>(attr.GetClass());
+    auto elemIter = m_elements.find(attr.GetElementId());
+    auto subcatIter = m_subcategories.find(attr.GetSubCategoryId());
+    if (m_subcategories.end() != subcatIter && m_elements.end() != elemIter)
+        return TileVertexAttributeIndices(elemIter->second, subcatIter->second, classIdx);
+    else if (IsFull())
+        return TileVertexAttributeIndices();
+
+    uint16_t elemIdx = m_elements.end() != elemIter ? elemIter->second : AddIndex(m_elements, attr.GetElementId());
+    uint16_t subcatIdx = m_subcategories.end() != subcatIter ? subcatIter->second : AddIndex(m_subcategories, attr.GetSubCategoryId());
+
+    return TileVertexAttributeIndices(elemIdx, subcatIdx, classIdx);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileVertexAttributeIndices TileVertexAttributesSet::GetIndices(TileGeometryCR geom)
+    {
+    return GetIndices(geom.GetAttributes());
+    }
+

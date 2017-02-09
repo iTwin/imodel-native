@@ -37,6 +37,7 @@ BentleyStatus    TileReader::GetAccessorAndBufferView(Json::Value& accessor, Jso
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileDisplayParamsPtr TileReader::ReadDisplayParams(Json::Value const& primitiveValue)
     {
+#if defined(NEEDS_WORK_INCREMENTAL_TILES)
     auto&           materialName = primitiveValue["material"];
     Json::Value     materialValue, values, colorValue, materialIdValue;
     uint32_t        color = 0;
@@ -70,6 +71,9 @@ TileDisplayParamsPtr TileReader::ReadDisplayParams(Json::Value const& primitiveV
         color = colorDef.GetValue();
         }
     return TileDisplayParams::Create(color, materialId);
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,6 +300,7 @@ BentleyStatus TileReader::ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileMeshPtr  TileReader::ReadMeshPrimitive(Json::Value const& primitiveValue)
     {
+#if defined(NEEDS_WORK_INCREMENTAL_TILES)
     TileDisplayParamsPtr    displayParams;
 
     if(!(displayParams = ReadDisplayParams(primitiveValue)).IsValid())
@@ -325,6 +330,9 @@ TileMeshPtr  TileReader::ReadMeshPrimitive(Json::Value const& primitiveValue)
         }
 
     return mesh;
+#else
+    return nullptr;
+#endif
     }
 
 TileReader::~TileReader() { if(m_file) std::fclose(m_file); m_file = nullptr; }

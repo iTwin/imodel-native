@@ -13,91 +13,58 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchIdMap::BatchIdMap(TileSource source) : m_source(source)
+static void batchIdsToJson(TileVertexAttributesSetCR attributes, Json::Value& value, DgnDbR db, bool is2d)
     {
-    // Invalid ID always maps to the first batch table index
-    GetBatchId(BeInt64Id());
-    }
+    static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+    static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
-    {
-    auto found = m_map.find(elemId);
-    if (m_map.end() == found)
+    Utf8CP sql = is2d ? s_2dSql : s_3dSql;
+    BeSQLite::Statement stmt;
+    stmt.Prepare(db, sql);
+
+    Json::Value elementIds(Json::arrayValue);
+    Json::Value categoryIds(Json::arrayValue);
+
+    bvector<DgnElementId> elements;
+    elements.resize(attributes.GetElements().size());
+    for (auto const& kvp : attributes.GetElements())
+        elements[kvp.second] = kvp.first;
+
+    for (auto elemIter = elements.begin(); elemIter != elements.end(); ++elemIter)
         {
-        auto batchId = static_cast<uint16_t>(m_list.size());
-        if (batchId == 0xffff)
-            return 0;   // ###TODO: avoid hitting this limit...
+        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+        DgnCategoryId categoryId;
 
-        m_list.push_back(elemId);
-        found = m_map.insert(bmap<BeInt64Id, uint16_t>::value_type(elemId, batchId)).first;
+        stmt.BindId(1, *elemIter);
+        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+            categoryId = stmt.GetValueId<DgnCategoryId>(0);
+
+        categoryIds.append(categoryId.ToString());
+        stmt.Reset();
         }
 
-    return found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
-    {
-    switch (m_source)
-        {
-        case TileSource::None:
-        case TileSource::Model:
-        case TileSource::Element:
-            {
-            static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
-            static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
-
-            Utf8CP sql = is2d ? s_2dSql : s_3dSql;
-            BeSQLite::Statement stmt;
-            stmt.Prepare(db, sql);
-
-            Json::Value elementIds(Json::arrayValue);
-            Json::Value categoryIds(Json::arrayValue);
-
-            for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-                {
-                elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-                DgnCategoryId categoryId;
-
-                stmt.BindId(1, *elemIter);
-                if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-                    categoryId = stmt.GetValueId<DgnCategoryId>(0);
-
-                categoryIds.append(categoryId.ToString());
-                stmt.Reset();
-                }
-
-            value["element"] = elementIds;
-            value["category"] = categoryIds;
-            }
-        }
+    value["element"] = elementIds;
+    value["category"] = categoryIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BatchIdMap::ToJsonString(DgnDbR db, bool is2d) const
+static Utf8String batchIdsToJsonString(TileVertexAttributesSetCR attributes, DgnDbR db, bool is2d)
     {
     Json::Value     value;
 
-    ToJson (value, db, is2d);
+    batchIdsToJson (attributes, value, db, is2d);
     return Json::FastWriter().write(value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context)
+TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context) : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
@@ -560,13 +527,13 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
     {
     PublishTileData     featureTableData, partData;
-    bvector<uint16_t>   batchValues;
+    bvector<TileVertexAttributeIndices> attributeIndices;
     bool                rotationPresent = false;
 
     featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
 
     bvector<float>      upFloats, rightFloats;
-    BatchIdMap          batchIds(TileSource::Element);
+    TileVertexAttributesSet attributesSet;
     DRange3d            positionRange = DRange3d::NullRange();
 
     for (auto& instance : part->Instances())
@@ -594,7 +561,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         upFloats.push_back(up.z);
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
-        batchValues.push_back (batchIds.GetBatchId(instance.GetId()));
+        attributeIndices.push_back(attributesSet.GetIndices(instance.GetAttributes()));
         }
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
@@ -636,7 +603,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    Utf8String      batchTableStr = batchIds.ToJsonString (m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
+    Utf8String      batchTableStr = batchIdsToJsonString (attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
     // Pad the feature table string to insure that the binary is 4 byte aligned.
@@ -688,10 +655,11 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     AddDefaultScene(tileData);
     AddMeshes(tileData, meshes);
 
-    Utf8String batchTableStr = validIdsPresent ? m_batchIds.ToJsonString(m_context.GetDgnDb(), m_tile.GetModel().Is2dModel()) : Utf8String();
+    TileVertexAttributesSetCR attributes = m_tile.GetAttributes();
+    Utf8String batchTableStr = validIdsPresent ? batchIdsToJsonString(attributes, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel()) : Utf8String();
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t zero = 0;
-    uint32_t b3dmNumBatches = validIdsPresent ? m_batchIds.Count() : 0;
+    uint32_t b3dmNumBatches = validIdsPresent ? attributes.GetElements().size() : 0;
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_b3dmMagic, 1, 4, outputFile);
@@ -1476,15 +1444,14 @@ Utf8String TilePublisher::AddMeshVertexAttribute (PublishTileData& tileData, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr)
+void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<TileVertexAttributeIndices> const& attributes, Utf8StringCR idStr)
     {
     Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
                 accBatchId       = Concat("accBatch_", idStr);
 
     bvector<uint16_t>   batchIds;
-
-    for (auto const& elemId : entityIds)
-        batchIds.push_back(m_batchIds.GetBatchId(elemId));
+    for (auto const& attribute : attributes)
+        batchIds.push_back(attribute.GetElementIndex());
 
     primitive["attributes"]["BATCHID"] = accBatchId;
 
@@ -1593,7 +1560,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     Json::Value         primitive = Json::objectValue;
 
     if (doBatchIds)
-        AddMeshBatchIds(tileData, primitive, mesh.EntityIds(), idStr);
+        AddMeshBatchIds(tileData, primitive, mesh.Attributes(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     bool            isTextured = false;
@@ -1637,7 +1604,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
 
     bvector<DPoint3d>           points, directions;
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
-    bvector<DgnElementId>       entityIds;
+    bvector<TileVertexAttributeIndices> attributes;
     bvector<uint32_t>           indices;
     bvector<DPoint3d>           vertexDeltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
@@ -1692,13 +1659,13 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
 
             if (mesh.ValidIdsPresent())
                 {
-                auto&   entityId0 = mesh.EntityIds().at(polyline.m_indices[i]);
-                auto&   entityId1 = mesh.EntityIds().at(polyline.m_indices[i+1]);
+                auto&   attribute0 = mesh.Attributes().at(polyline.m_indices[i]);
+                auto&   attribute1 = mesh.Attributes().at(polyline.m_indices[i+1]);
 
-                entityIds.push_back (entityId0);
-                entityIds.push_back (entityId0);
-                entityIds.push_back (entityId1);
-                entityIds.push_back (entityId1);
+                attributes.push_back (attribute0);
+                attributes.push_back (attribute0);
+                attributes.push_back (attribute1);
+                attributes.push_back (attribute1);
                 }
             }
         }
@@ -1717,7 +1684,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
 
     if (doBatchIds)
-        AddMeshBatchIds(tileData, primitive, entityIds, idStr);
+        AddMeshBatchIds(tileData, primitive, attributes, idStr);
 
     AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 

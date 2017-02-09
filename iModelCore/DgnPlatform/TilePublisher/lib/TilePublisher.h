@@ -29,26 +29,6 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
 //=======================================================================================
-// Maps elements associated with vertices to indexes into a batch table in the b3dm.
-// @bsistruct                                                   Paul.Connelly   07/16
-//=======================================================================================
-struct BatchIdMap
-{
-private:
-    bmap<BeInt64Id, uint16_t>   m_map;
-    bvector<BeInt64Id>          m_list;
-    TileSource                  m_source;
-public:
-    BatchIdMap(TileSource source);
-
-    uint16_t GetBatchId(BeInt64Id entityId);
-    void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
-    Utf8String ToJsonString(DgnDbR db, bool is2d) const;
-
-    uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
-};
-
-//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
 struct  PublishTileData
@@ -204,7 +184,6 @@ struct TilePublisher
 
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
-    BatchIdMap              m_batchIds;
     DPoint3d                m_centroid;
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
@@ -238,7 +217,7 @@ private:
     Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
-    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
+    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<TileVertexAttributeIndices> const& attributes, Utf8StringCR idStr);
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds);
