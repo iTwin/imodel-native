@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/WString.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,7 @@ typedef Bstdcxx::basic_string <wchar_t,  std::char_traits<wchar_t>,  BentleyAllo
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
 struct AString : public bastring
-    {
+{
     AString() : bastring() {}
     AString(CharCP str) : bastring(str){}
     AString(bastring const& other) : bastring(other){}
@@ -49,7 +49,7 @@ struct AString : public bastring
 
     //! Computes the size, in bytes, of this string's data, including its NULL-terminator.
     size_type SizeInBytes() {return (sizeof (value_type) * (size() + 1));}
-    };
+};
 
 //=======================================================================================
 //! A string class that has many of the same capabilities as std::string, plus
@@ -59,7 +59,7 @@ struct AString : public bastring
 //  @bsiclass                                                   Keith.Bentley   03/11
 //=======================================================================================
 struct WString : public bwstring
-    {
+{
 protected:
     wchar_t* GetBase() {return const_cast<wchar_t*>(data());}
 
@@ -170,7 +170,7 @@ public:
        *  characters.  If @a __pos is beyond the end of the string, out_of_range
        *  is thrown.
       */
-    WString substr(size_type __pos = 0, size_type __n = npos) const { return WString(*this, __pos, __n); }
+    WString substr(size_type __pos = 0, size_type __n = npos) const {return WString(*this, __pos, __n);}
 
     //! Perform a case-insensitive comparison. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. @param other The other string.
     int CompareToI(WCharCP other) const {return BeStringUtilities::Wcsicmp(c_str(), other);}
@@ -241,7 +241,7 @@ public:
         }
 
     //! True if the provided string is NULL or contains no character data.
-    static bool IsNullOrEmpty(WCharCP str) { return (NULL == str) || (0 == str[0]); }
+    static bool IsNullOrEmpty(WCharCP str) {return (NULL == str) || (0 == str[0]);}
 
     //! Put quotes around a string.
     WStringR AddQuotes()
@@ -272,10 +272,10 @@ public:
     BENTLEYDLL_EXPORT size_t ReplaceAll(WCharCP subStringToReplace, WCharCP replacement);
 
     //! Find first occurrence of findString, ignoring case. @param findString The substring to find. @return location of substring or std::string::npos if not found.
-    BENTLEYDLL_EXPORT size_t FindI (WCharCP findString) const;
+    BENTLEYDLL_EXPORT size_t FindI(WCharCP findString) const;
 
     //! Replace first occurrence of findString with replaceString, ignoring case. @param findString The substring to find. @param replaceString The replacement string. @return true is a replacement is made.
-    BENTLEYDLL_EXPORT bool ReplaceI (WCharCP findString, WCharCP replaceString);
+    BENTLEYDLL_EXPORT bool ReplaceI(WCharCP findString, WCharCP replaceString);
 
     //! Replace the contents of this string with a formatted result. 
     //! @param format The sprintf-like format string. 
@@ -283,12 +283,13 @@ public:
     //! @note This function will fail to generate the complete formatted string <em>on some platforms</em> if the full string is longer than a fixed maximum. In that case, a truncated version is saved and BSIERROR is returned.
     //! @return non-zero error status if the if the format string and the args are not valid or if the formatted string was truncated
     BENTLEYDLL_EXPORT BentleyStatus VSprintf(WCharCP format, va_list argptr);
+
     //! Replace the contents of this string with a formatted result. 
     //! @param format The sprintf-like format string.
     //! @note This function will always succeed in generating the complete formatted string if the format string and the args are valid
     //! @return non-zero error status if the if the format string and the args are not valid
     BENTLEYDLL_EXPORT BentleyStatus Sprintf(WCharCP format, ...);
-    };
+};
 
 //=======================================================================================
 //! @ingroup GROUP_String
@@ -301,8 +302,6 @@ struct WPrintfString : WString
 
     //! Construct a WString from a format string and a va_list 
     BENTLEYDLL_EXPORT WPrintfString(WCharCP format, va_list);
-
-    //operator WCharCP(){return c_str();}
 };
 
 //=======================================================================================
@@ -313,7 +312,7 @@ struct WPrintfString : WString
 //  @bsiclass                                                   Keith.Bentley   04/11
 //=======================================================================================
 struct Utf8String : public bastring
-    {
+{
     Utf8String() : bastring() {}
     Utf8String(Utf8CP str) : bastring(str){}
     Utf8String(bastring const& other) : bastring(other){}
@@ -350,7 +349,7 @@ struct Utf8String : public bastring
     //! @return non-zero error status if the if the format string and the args are not valid
     BENTLEYDLL_EXPORT BentleyStatus Sprintf(Utf8CP format, ...);
     //! Utility function to test if \a value represents the empty string. This function interprets NULL to be the empty string.
-    static bool IsNullOrEmpty(Utf8CP value) { return ((NULL == value) || (0 == *value)); }
+    static bool IsNullOrEmpty(Utf8CP value) {return ((NULL == value) || (0 == *value));}
 
     //! Determine whether the supplied character is a whitespace character in the ascii (below 128) code page. This is necessary since
     //! the c "isspace" function is locale specific and sometimes returns true for the non-breaking-space character (0xA0), which is not a valid
@@ -366,11 +365,11 @@ struct Utf8String : public bastring
     //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
     //! @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. 
     //! @note Use only if you know that both strings contain only ASCII characters. 
-    int CompareToIAscii(Utf8CP other) const { return BeStringUtilities::StricmpAscii(c_str(), other); }
+    int CompareToIAscii(Utf8CP other) const {return BeStringUtilities::StricmpAscii(c_str(), other);}
     //! Perform a case-insensitive comparison. 
     //! @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. @param other The other string.
     //! @note Use only if you know that both strings contain only ASCII characters. 
-    int CompareToIAscii(Utf8StringCR other) const { return CompareToIAscii(other.c_str()); }
+    int CompareToIAscii(Utf8StringCR other) const {return CompareToIAscii(other.c_str());}
     //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
     int CompareTo(Utf8CP other) const {return ::strcmp(c_str(), other);}
     //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
@@ -385,10 +384,10 @@ struct Utf8String : public bastring
     bool EqualsI(Utf8CP other) const {return (0 == CompareToI(other));}
     //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
     //! @note Use only if you know that both strings contain only ASCII characters. 
-    bool EqualsIAscii(Utf8StringCR other) const { return (0 == CompareToIAscii(other.c_str())); }
+    bool EqualsIAscii(Utf8StringCR other) const {return (0 == CompareToIAscii(other.c_str()));}
     //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
     //! @note Use only if you know that both strings contain only ASCII characters. 
-    bool EqualsIAscii(Utf8CP other) const { return (0 == CompareToIAscii(other)); }
+    bool EqualsIAscii(Utf8CP other) const {return (0 == CompareToIAscii(other));}
     //! Checks if string ends with other string (case sensitive)
     BENTLEYDLL_EXPORT bool EndsWith(Utf8StringCR ending) const;
     //! Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
@@ -496,10 +495,10 @@ struct Utf8String : public bastring
         next = substr(offset, idelim-offset);
         return idelim+1;
         }
-    };
+};
 
 //=======================================================================================
-//! Construct a Utf8String by creating a formatted string.
+//! Construct a Utf8String from a printf format string and arguments.
 //! @ingroup GROUP_String
 //  @bsiclass                                                   Keith.Bentley   11/11
 //=======================================================================================
@@ -514,8 +513,7 @@ public:
     // N.B. Do NOT make this an overload of the constructor. If you pass a
     // single CharCP argument after 'format' (e.g.
     // Utf8PrintfString("%s","foo")), MSVC 14 will interpret that as a
-    // va_list, erroneously choosing the below parameter list, which leads to
-    // a crash.
+    // va_list, erroneously choosing the below parameter list, which leads to a crash.
     BENTLEYDLL_EXPORT static Utf8PrintfString CreateFromVaList(Utf8CP format, va_list);
 };
 
