@@ -17,9 +17,7 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
-extern bool s_stream_from_azure_using_curl;
 extern bool s_stream_using_cesium_3d_tiles_format;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
@@ -28,6 +26,7 @@ extern bool s_is_virtual_grouping;
 extern bool s_is_legacy_dataset;
 extern bool s_is_legacy_master_header;
 extern bool s_use_azure_sandbox;
+extern bool s_use_public_rds;
 extern bool s_use_qa_azure;
 
 //extern std::mutex fileMutex;

@@ -61,7 +61,6 @@ extern bool   GET_HIGHEST_RES;
 //DataSourceManager s_dataSourceManager;
 
 extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
@@ -878,23 +877,30 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         {
                         if (datasetName == L"marseille")
                             {
-                            s_stream_from_wsg = true; // Marseille uploaded to RDS only
-                            s_use_azure_sandbox = false;
-                            s_use_qa_azure = true;
+                            //s_stream_from_wsg = true; // Marseille uploaded to RDS only
+                            //s_use_azure_sandbox = false;
+                            //s_use_qa_azure = true;
+                            //streamingSourcePath = L"MarseilleCesium";
+
+                            s_stream_from_wsg = false; // It is now uploaded in a public azure storage account
                             s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
                             s_is_legacy_master_header = false; // groups are compressed in the master header
-                            streamingSourcePath = L"MarseilleCesium";
+                            streamingSourcePath = L"5ffc6e51-edc3-4fb3-8b4f-a4becbc045dd"; // NEEDS_WORK_STREAMING: this is the org ID which should be saved in the stub file?
+                            streamingSourcePath += L"/";
+                            streamingSourcePath += L"Marseille";
                             }
                         else if (datasetName == L"salt_lake_city")
                             {
                             s_stream_from_wsg = false; // Salt Lake City uploaded to sandbox Azure only 
                             s_use_azure_sandbox = true;
                             s_use_qa_azure = false;
-                            s_stream_from_azure_using_curl = true;
+                            s_stream_using_curl = true;
                             s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
                             s_is_legacy_master_header = false; // groups are compressed in the master header
 
-                            streamingSourcePath = L"05610e4c-79d4-43ef-a9e5-e02e6328d843/SaltLakeCityCesium";
+                            streamingSourcePath = L"05610e4c-79d4-43ef-a9e5-e02e6328d843"; // NEEDS_WORK_STREAMING: this is the org ID which should be saved in the stub file?
+                            streamingSourcePath += L"/";
+                            streamingSourcePath += L"SaltLakeCityCesium";
                             }
                         else
                             {

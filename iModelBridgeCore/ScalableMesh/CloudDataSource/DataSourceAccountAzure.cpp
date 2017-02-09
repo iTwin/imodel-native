@@ -122,7 +122,7 @@ DataSourceBuffer::Timeout DataSourceAccountAzure::getDefaultTimeout(void)
 
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
-    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+    if (account.length() == 0 || identifier.length() == 0 /*|| key.length() == 0*/)
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
                                                             // Set details in base class
     DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzure"), account, identifier, key);
@@ -216,8 +216,15 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
             })
             .wait();
     }
-    catch (...)
+    catch (const azure::storage::storage_exception& e)
     {
+        std::wcout << L"Error: " << e.what() << std::endl;
+        azure::storage::request_result result = e.result();
+        azure::storage::storage_extended_error extended_error = result.extended_error();
+        if (!extended_error.message().empty())
+            {
+            std::wcout << extended_error.message() << std::endl;
+            }
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
     }
 
