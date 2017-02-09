@@ -135,6 +135,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
+        void InitializeTerrainRegions();
+
                        
     protected:
 
