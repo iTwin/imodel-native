@@ -2,16 +2,16 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <ScalableMeshPCH.h>
 #include "SMNodeGroup.h"
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 std::mutex s_consoleMutex;
-#endif
+//#endif
 
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
