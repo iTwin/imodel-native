@@ -3647,9 +3647,17 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
         {
         // Get the relationship base class and compare its strength and direction
         ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
-        if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
-            !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
+        if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()))
             {
+            LOG.errorv("Strength Constraint Violation: Cannot not add '%s' as a base class to relationship class '%s' because they have different strength types.",
+                       relationshipBaseClass->GetFullName(), GetFullName());
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
+
+        if (!ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
+            {
+            LOG.errorv("Strength Direction Constraint Violation: Cannot not add '%s' as a base class to relationship class '%s' because they have different strength directions.",
+                       relationshipBaseClass->GetFullName(), GetFullName());
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
 
