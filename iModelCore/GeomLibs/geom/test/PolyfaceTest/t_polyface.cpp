@@ -3762,7 +3762,78 @@ TEST(Polyface,CulvertPunchA)
 
 
 
+//! Build a mesh that "connects" an above-ground culvert face to the nearby ground.
+//! The connector mesh can be perpendicular to the face, or graded at some angle from perpendicular
+PolyfaceHeaderPtr AddConvexCulvertToDTM
+(
+PolyfaceHeaderR facets,         //!< [in] DTM to be punched
+bvector<DPoint3d> forwardFaceIn,  //!< [in] exposed face of culvert.  !! This must be convex
+double maxDistanceBelow,        //!< [in] max plausible distance from culvert front face to ground contact.
+Angle tiltAngle                 //!< [in] angle to tilt away from perpendicular of the forward face.
+)
+    {
+    bool ok = false;
+    ConvexClipPlaneSet planes;
+    auto forwardFace = forwardFaceIn;
+    PolygonOps::ReverseForPreferedNormal (forwardFace, DVec3d::From (0,0,1));
+    DVec3d viewVector = PolygonOps::AreaNormal (forwardFace);
+    planes.AddSweptPolyline (forwardFace, viewVector, tiltAngle);
+    size_t numSidePlanes = planes.size ();
 
+    ClipPlaneSet clipper;
+    clipper.push_back (planes);
+
+    PolyfaceHeaderPtr insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceHeaderPtr outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceCoordinateMapPtr insideMap = PolyfaceCoordinateMap::Create (*insideMesh);
+    PolyfaceCoordinateMapPtr outsideMap = PolyfaceCoordinateMap::Create (*outsideMesh);
+
+    bvector<bvector<DPoint3d>> loops, chains;
+
+    bool badCuts;
+    PolyfaceCoordinateMap::AddClippedPolyface (facets, insideMap.get (), outsideMap.get (), badCuts, &clipper, false, nullptr, &loops, &chains);
+
+    bvector<DPoint3d> loopA, loopB;
+    auto planeAngle = Angle::FromDegrees (10.0);
+    size_t indexB;
+    if (AlignLoops (planes, numSidePlanes,
+        viewVector,
+        forwardFace, loops,
+        loopA, loopB, indexB)
+        )
+        {
+        bvector<int> indices;
+        bvector<DTriangle3d> triangles;
+        PolylineOps::GreedyTriangulationBetweenLinestrings (loopB, loopA, triangles, &indices, planeAngle);
+#define CheckCallsInCulvert_not
+#ifdef CheckCallsInCulvert
+        DRange3d facetRange = facets.PointRange ();
+        DRange3d loopRange = DRange3d::From (forwardFace);
+            {   // indent for scoped var ..
+            SaveAndRestoreCheckTransform transformSaver (0, facetRange.YLength (), 0);
+            for (auto &loop : loops)
+                {
+                Check::SaveTransformed (loop);
+                loopRange.Extend (loop);
+                }
+            Check::SaveTransformed (forwardFace);
+            Check::Shift (0, 2.0 * loopRange.YLength (), 0.0);
+            Check::SaveTransformed (loopA);
+            double dz = 0.1 * loopRange.ZLength ();
+            Check::SaveTransformed (loopB);
+            Check::Shift (0,0, dz);
+            Check::SaveTransformed (triangles, true);
+            Check::Shift (0,0, dz);
+            Check::SaveTransformed (loopA);
+            }
+#endif
+        outsideMap->AddPolygon (loopA);
+        for (auto &t : triangles)
+            outsideMap->AddPolygon (3, t.point);
+        ok = true;
+        }
+    return ok ? outsideMesh : nullptr;
+    }
 
 
 TEST(Polyface,CulvertPunchB)
