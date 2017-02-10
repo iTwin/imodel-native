@@ -312,6 +312,18 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::Create(PhysicalTypeRecipeCR modeledElement)
+    {
+    PhysicalModelPtr model = Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    if (model.IsValid())
+        model->m_isTemplate = true;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
@@ -325,6 +337,18 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement)
+    {
+    PhysicalModelPtr model = Create(modeledElement);
+    if (!model.IsValid())
+        return nullptr;
+
+    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalTypeRecipeCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
     if (!model.IsValid())
@@ -505,9 +529,9 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DrawingModel::_OnInsert()
     {
-    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid())
+    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<GraphicalTypeRecipe2d>(GetModeledElementId()).IsValid())
         {
-        BeAssert(false && "A DrawingModel should be modeling a Drawing element");
+        BeAssert(false && "A DrawingModel should be modeling a Drawing or GraphicalTypeRecipe2d element");
         return DgnDbStatus::BadElement;
         }
 
@@ -523,18 +547,9 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
 
-    if (!classId.IsValid() || !drawing.GetElementId().IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, drawing.GetElementId()));
     if (!model.IsValid())
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
     return dynamic_cast<DrawingModelP>(model.get());
     }
@@ -542,57 +557,18 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TemplateGeometryModel2d::_OnInsert()
+DrawingModelPtr DrawingModel::Create(GraphicalTypeRecipe2dCR recipe)
     {
-    SetIsTemplate(true);
-    return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TemplateGeometryModel2dPtr TemplateGeometryModel2d::Create(GraphicalTypeRecipe2dCR modeledElement)
-    {
-    DgnDbR db = modeledElement.GetDgnDb();
-    ModelHandlerR handler = dgn_ModelHandler::TemplateGeometry2d::GetHandler();
+    DgnDbR db = recipe.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
 
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, recipe.GetElementId()));
     if (!model.IsValid())
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
-    return dynamic_cast<TemplateGeometryModel2dP>(model.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TemplateGeometryModel3d::_OnInsert()
-    {
-    SetIsTemplate(true);
-    return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TemplateGeometryModel3dPtr TemplateGeometryModel3d::Create(PhysicalTypeRecipeCR modeledElement)
-    {
-    DgnDbR db = modeledElement.GetDgnDb();
-    ModelHandlerR handler = dgn_ModelHandler::TemplateGeometry3d::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return dynamic_cast<TemplateGeometryModel3dP>(model.get());
+    model->SetIsTemplate(true);
+    return dynamic_cast<DrawingModelP>(model.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

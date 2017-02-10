@@ -21,22 +21,22 @@ struct TypeRecipeTests : public DgnDbTestFixture
     GraphicalTypeRecipe2dCPtr InsertRecipe2d(DefinitionModelR, Utf8CP, DgnCategoryId);
     GraphicalType2dCPtr InsertType2d(GraphicalTypeRecipe2dCR, DefinitionModelR, Utf8CP);
 
-    TemplateGeometryModel2dPtr InsertTemplate2A(GraphicalTypeRecipe2dCR, DgnCategoryId);
-    DrawingGraphicPtr CreateTemplateGraphic(TemplateGeometryModel2dR, DgnCategoryId, DPoint2dCR, double, Utf8CP);
-    DrawingGraphicPtr CreateTemplateGraphic(TemplateGeometryModel2dR, DgnCategoryId, DSegment3dCR);
-    DrawingGraphicPtr CreateTemplateGraphic(TemplateGeometryModel2dR, DgnCategoryId, DEllipse3dCR);
-    DrawingGraphicPtr CreateTemplateGraphic(TemplateGeometryModel2dR, DgnCategoryId, ICurvePrimitiveCR);
-    DrawingGraphicPtr CreateTemplateGraphic(TemplateGeometryModel2dR, DgnCategoryId, GeometryBuilderR);
+    DrawingModelPtr InsertTemplate2A(GraphicalTypeRecipe2dCR, DgnCategoryId);
+    DrawingGraphicPtr CreateTemplateGraphic(DrawingModelR, DgnCategoryId, DPoint2dCR, double, Utf8CP);
+    DrawingGraphicPtr CreateTemplateGraphic(DrawingModelR, DgnCategoryId, DSegment3dCR);
+    DrawingGraphicPtr CreateTemplateGraphic(DrawingModelR, DgnCategoryId, DEllipse3dCR);
+    DrawingGraphicPtr CreateTemplateGraphic(DrawingModelR, DgnCategoryId, ICurvePrimitiveCR);
+    DrawingGraphicPtr CreateTemplateGraphic(DrawingModelR, DgnCategoryId, GeometryBuilderR);
     DrawingGraphicPtr CreateDrawingGraphic(DrawingModelR, DgnCategoryId, GraphicalType2dCR, DPoint2dCR, Utf8CP userLabel=nullptr);
     
     PhysicalTypeRecipeCPtr InsertRecipe3d(DefinitionModelR, Utf8CP, DgnCategoryId);
     PhysicalTypeCPtr InsertType3d(PhysicalTypeRecipeCR, DefinitionModelR, Utf8CP);
 
-    TemplateGeometryModel3dPtr InsertTemplate3B(PhysicalTypeRecipeCR, DgnCategoryId);
-    PhysicalElementPtr CreateTemplateObject(TemplateGeometryModel3dR, DgnCategoryId, DgnBoxDetailCR);
-    PhysicalElementPtr CreateTemplateObject(TemplateGeometryModel3dR, DgnCategoryId, DgnConeDetailCR);
-    PhysicalElementPtr CreateTemplateObject(TemplateGeometryModel3dR, DgnCategoryId, ISolidPrimitiveCR);
-    PhysicalElementPtr CreateTemplateObject(TemplateGeometryModel3dR, DgnCategoryId, GeometryBuilderR);
+    PhysicalModelPtr InsertTemplate3B(PhysicalTypeRecipeCR, DgnCategoryId);
+    PhysicalElementPtr CreateTemplateObject(PhysicalModelR, DgnCategoryId, DgnBoxDetailCR);
+    PhysicalElementPtr CreateTemplateObject(PhysicalModelR, DgnCategoryId, DgnConeDetailCR);
+    PhysicalElementPtr CreateTemplateObject(PhysicalModelR, DgnCategoryId, ISolidPrimitiveCR);
+    PhysicalElementPtr CreateTemplateObject(PhysicalModelR, DgnCategoryId, GeometryBuilderR);
     PhysicalElementPtr CreatePhysicalObject(PhysicalModelR, PhysicalTypeCR, DPoint3dCR, Utf8CP userLabel=nullptr);
 
     DgnGeometryPartId QueryGeometryPartId(TypeDefinitionElementCR);
@@ -78,11 +78,12 @@ PhysicalTypeRecipeCPtr TypeRecipeTests::InsertRecipe3d(DefinitionModelR model, U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-TemplateGeometryModel2dPtr TypeRecipeTests::InsertTemplate2A(GraphicalTypeRecipe2dCR recipe, DgnCategoryId categoryId)
+DrawingModelPtr TypeRecipeTests::InsertTemplate2A(GraphicalTypeRecipe2dCR recipe, DgnCategoryId categoryId)
     {
-    TemplateGeometryModel2dPtr model = TemplateGeometryModel2d::Create(recipe);
+    DrawingModelPtr model = DrawingModel::Create(recipe);
     BeAssert(model.IsValid());
     BeAssert(DgnDbStatus::Success == model->Insert());
+    BeAssert(model->IsTemplate());
 
     const double radius = 1.0;
     DrawingGraphicPtr line1 = CreateTemplateGraphic(*model, categoryId, DSegment3d::From(DPoint2d::From(-radius, 0), DPoint2d::From(radius, 0)));
@@ -101,7 +102,7 @@ TemplateGeometryModel2dPtr TypeRecipeTests::InsertTemplate2A(GraphicalTypeRecipe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2dR model, DgnCategoryId categoryId, DPoint2dCR origin, double textHeight, Utf8CP text)
+DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(DrawingModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double textHeight, Utf8CP text)
     {
     TextStringPtr textString = TextString::Create();
     textString->SetOrigin(DPoint3d::From(origin));
@@ -119,7 +120,7 @@ DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2dR model, DgnCategoryId categoryId, DSegment3dCR segment)
+DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(DrawingModelR model, DgnCategoryId categoryId, DSegment3dCR segment)
     {
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(segment);
     return curve.IsValid() ? CreateTemplateGraphic(model, categoryId, *curve) : nullptr;
@@ -128,7 +129,7 @@ DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2dR model, DgnCategoryId categoryId, DEllipse3dCR ellipse)
+DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(DrawingModelR model, DgnCategoryId categoryId, DEllipse3dCR ellipse)
     {
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc(ellipse);
     return curve.IsValid() ? CreateTemplateGraphic(model, categoryId, *curve) : nullptr;
@@ -137,7 +138,7 @@ DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2dR model, DgnCategoryId categoryId, ICurvePrimitiveCR curve)
+DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(DrawingModelR model, DgnCategoryId categoryId, ICurvePrimitiveCR curve)
     {
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, DPoint2d::FromZero());
     if (!builder.IsValid() || !builder->Append(curve))
@@ -149,7 +150,7 @@ DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(TemplateGeometryModel2dR model, DgnCategoryId categoryId, GeometryBuilderR builder)
+DrawingGraphicPtr TypeRecipeTests::CreateTemplateGraphic(DrawingModelR model, DgnCategoryId categoryId, GeometryBuilderR builder)
     {
     DrawingGraphicPtr element = DrawingGraphic::Create(model, categoryId);
     if (!element.IsValid())
@@ -249,11 +250,11 @@ PhysicalElementPtr TypeRecipeTests::CreatePhysicalObject(PhysicalModelR model, P
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-TemplateGeometryModel3dPtr TypeRecipeTests::InsertTemplate3B(PhysicalTypeRecipeCR recipe, DgnCategoryId categoryId)
+PhysicalModelPtr TypeRecipeTests::InsertTemplate3B(PhysicalTypeRecipeCR recipe, DgnCategoryId categoryId)
     {
-    TemplateGeometryModel3dPtr model = TemplateGeometryModel3d::Create(recipe);
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(recipe);
     BeAssert(model.IsValid());
-    BeAssert(DgnDbStatus::Success == model->Insert());
+    BeAssert(model->IsTemplate());
 
     const bool CAPPED = true;
     const double cubeWidth = 1.0;
@@ -273,7 +274,7 @@ TemplateGeometryModel3dPtr TypeRecipeTests::InsertTemplate3B(PhysicalTypeRecipeC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3dR model, DgnCategoryId categoryId, DgnBoxDetailCR boxDetail)
+PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(PhysicalModelR model, DgnCategoryId categoryId, DgnBoxDetailCR boxDetail)
     {
     ISolidPrimitivePtr box = ISolidPrimitive::CreateDgnBox(boxDetail);
     return box.IsValid() ? CreateTemplateObject(model, categoryId, *box) : nullptr;
@@ -282,7 +283,7 @@ PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3dR model, DgnCategoryId categoryId, DgnConeDetailCR coneDetail)
+PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(PhysicalModelR model, DgnCategoryId categoryId, DgnConeDetailCR coneDetail)
     {
     ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone(coneDetail);
     return cone.IsValid() ? CreateTemplateObject(model, categoryId, *cone) : nullptr;
@@ -291,7 +292,7 @@ PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3dR model, DgnCategoryId categoryId, ISolidPrimitiveCR solid)
+PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(PhysicalModelR model, DgnCategoryId categoryId, ISolidPrimitiveCR solid)
     {
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, DPoint3d::FromZero());
     if (!builder.IsValid() || !builder->Append(solid))
@@ -303,7 +304,7 @@ PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(TemplateGeometryModel3dR model, DgnCategoryId categoryId, GeometryBuilderR builder)
+PhysicalElementPtr TypeRecipeTests::CreateTemplateObject(PhysicalModelR model, DgnCategoryId categoryId, GeometryBuilderR builder)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
@@ -384,7 +385,7 @@ DgnDbStatus TypeRecipeTests::AppendInstanceSpecificGeometry(GeometryBuilderR bui
     if (!recipe.IsValid())
         return DgnDbStatus::BadRequest;
 
-    TemplateGeometryModel2dPtr templateModel = recipe->GetSub<TemplateGeometryModel2d>();
+    GeometricModelPtr templateModel = recipe->GetSub<GeometricModel>();
     if (!templateModel.IsValid())
         return DgnDbStatus::BadRequest;
 
@@ -499,7 +500,7 @@ TEST_F(TypeRecipeTests, CreateSampleBim)
     DefinitionModelPtr recipeModel2d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "2D Recipes");
     GraphicalTypeRecipe2dCPtr recipe2A = InsertRecipe2d(*recipeModel2d, "Recipe2-A", tbdCategory2d);
     GraphicalTypeRecipe2dCPtr recipe2B = InsertRecipe2d(*recipeModel2d, "Recipe2-B", tbdCategory2d);
-    TemplateGeometryModel2dPtr templateModel2A = InsertTemplate2A(*recipe2A, tbdCategory2d);
+    DrawingModelPtr templateModel2A = InsertTemplate2A(*recipe2A, tbdCategory2d);
 
     DefinitionModelPtr typeModel2d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "2D Types");
     GraphicalType2dCPtr type2A1 = InsertType2d(*recipe2A, *typeModel2d, "Type2-A-1");
@@ -508,7 +509,7 @@ TEST_F(TypeRecipeTests, CreateSampleBim)
     DefinitionModelPtr recipeModel3d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "3D Recipes");
     PhysicalTypeRecipeCPtr recipe3A = InsertRecipe3d(*recipeModel3d, "Recipe3-A", realCategory3d);
     PhysicalTypeRecipeCPtr recipe3B = InsertRecipe3d(*recipeModel3d, "Recipe3-B", realCategory3d);
-    TemplateGeometryModel3dPtr templateModel3B = InsertTemplate3B(*recipe3B, realCategory3d);
+    PhysicalModelPtr templateModel3B = InsertTemplate3B(*recipe3B, realCategory3d);
 
     DefinitionModelPtr typeModel3d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "3D Types");
     PhysicalTypeCPtr type3B1 = InsertType3d(*recipe3B, *typeModel3d, "Type3-B-1");

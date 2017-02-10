@@ -32,8 +32,6 @@ HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
-HANDLER_DEFINE_MEMBERS(TemplateGeometry2d)
-HANDLER_DEFINE_MEMBERS(TemplateGeometry3d)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(Definition)
@@ -120,8 +118,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
     RegisterHandler(Sheet::Handlers::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
-    RegisterHandler(dgn_ModelHandler::TemplateGeometry2d::GetHandler());
-    RegisterHandler(dgn_ModelHandler::TemplateGeometry3d::GetHandler());
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Role::GetHandler());

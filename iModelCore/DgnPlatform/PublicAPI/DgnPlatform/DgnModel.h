@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; struct TemplateGeometry2d; struct TemplateGeometry3d;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -918,6 +918,9 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
+
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTypeRecipeCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTypeRecipeCR modeledElement);
 };
 
 //=======================================================================================
@@ -1095,6 +1098,9 @@ protected:
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element
     DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
+
+    //! Create a DrawingModel that breaks down the specified GraphicalTypeRecipe2d element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(GraphicalTypeRecipe2dCR drawing);
 };
 
 //=======================================================================================
@@ -1132,42 +1138,6 @@ public:
         private: Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         protected: uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name);}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
-
-//=======================================================================================
-//! @ingroup GROUP_DgnModel
-// @bsiclass                                                    Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometryModel2d : GeometricModel2d
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel2d, GeometricModel2d);
-    friend struct dgn_ModelHandler::TemplateGeometry2d;
-
-protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    explicit TemplateGeometryModel2d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a TemplateGeometryModel2d that breaks down the specified type recipe
-    DGNPLATFORM_EXPORT static TemplateGeometryModel2dPtr Create(GraphicalTypeRecipe2dCR);
-};
-
-//=======================================================================================
-//! @ingroup GROUP_DgnModel
-// @bsiclass                                                    Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometryModel3d : GeometricModel3d
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel3d, GeometricModel3d);
-    friend struct dgn_ModelHandler::TemplateGeometry3d;
-
-protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    explicit TemplateGeometryModel3d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a TemplateGeometryModel3d that breaks down the specified type recipe
-    DGNPLATFORM_EXPORT static TemplateGeometryModel3dPtr Create(PhysicalTypeRecipeCR);
-};
 
 //=======================================================================================
 //! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain.
@@ -1236,18 +1206,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
     {
         MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for TemplateGeometryModel2d
-    struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometry2d : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel2d, TemplateGeometryModel2d, TemplateGeometry2d, Model, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for TemplateGeometryModel3d
-    struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometry3d : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel3d, TemplateGeometryModel3d, TemplateGeometry3d, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RoleModel

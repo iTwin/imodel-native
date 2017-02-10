@@ -207,18 +207,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TemplateGeometryModel2d" displayLabel="2D Template Geometry Model" description="A container for persisting 2D template geometry used to create new Drawing Graphic instances.">
-        <BaseClass>GraphicalModel2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TemplateGeometryModel3d" displayLabel="3D Template Geometry Model" description="A container for persisting 3D template geometry used to create new Physical Element instances.">
-        <BaseClass>GraphicalModel2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="RoleModel" displayLabel="Role Model" description="A container for persisting role elements.">
         <BaseClass>Model</BaseClass>
         <ECCustomAttributes>
