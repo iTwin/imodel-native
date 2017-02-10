@@ -156,10 +156,10 @@ TEST(DRange2d, RangeProjection3d)
 void arcSweepCheck(double degree, double sweep) 
     {
     DRange2d range = DRange2d::FromUnitArcSweep(Angle::FromDegrees(degree).Radians(), Angle::FromDegrees(sweep).Radians());
-    DRange2d range2 = DRange2d::From(Angle::FromDegrees(degree).Cos(),
-                                     Angle::FromDegrees(degree).Sin(),
-                                     Angle::FromDegrees(degree + sweep).Cos(),
-                                     Angle::FromDegrees(degree + sweep).Sin());
+    // unused - DRange2d range2 = DRange2d::From(Angle::FromDegrees(degree).Cos(),
+    //                                  Angle::FromDegrees(degree).Sin(),
+    //                                  Angle::FromDegrees(degree + sweep).Cos(),
+    //                                  Angle::FromDegrees(degree + sweep).Sin());
     if (abs(sweep) >= 360)
         {
         Check::Near(range.low.x, -1);
