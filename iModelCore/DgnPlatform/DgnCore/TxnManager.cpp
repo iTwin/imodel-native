@@ -553,7 +553,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         return OnCommitStatus::Continue;
         }
 
-    if (m_dgndb.Revisions().HasReversedRevisions())
+    if (isCommit && m_dgndb.Revisions().HasReversedRevisions())
         {
         BeAssert(false && "Cannot commit when revisions have been reversed. Abandon changes, reinstate revisions and try again");
         return OnCommitStatus::Abort;
