@@ -12,10 +12,10 @@
 #include "SMStreamingDataStore.h"
 #include "SMStreamingDataStore.hpp"
 
-bool s_stream_from_disk = false;
+bool s_stream_from_disk = true;
 bool s_stream_from_file_server = false;
 bool s_stream_from_grouped_store = true;
-bool s_stream_from_wsg = true;
+bool s_stream_from_wsg = false;
 bool s_stream_from_azure_using_curl = false;
 bool s_stream_using_cesium_3d_tiles_format = true;
 bool s_stream_using_curl = false;
