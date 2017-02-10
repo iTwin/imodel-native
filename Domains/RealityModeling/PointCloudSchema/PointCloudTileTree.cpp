@@ -61,7 +61,8 @@ BentleyStatus _LoadTile()
     static size_t               s_maxLeafPointCount = 20000;
     bvector<FPoint3d>           points(s_maxTilePointCount);
     bvector<PointCloudColorDef> colors(s_maxTilePointCount);
-    size_t                      nPoints = root.GetPoints(points, colors, tile.GetRange(), s_maxTilePointCount);
+    bool                        colorsPresent;
+    size_t                      nPoints = root.GetPoints(points, colors, colorsPresent, tile.GetRange(), s_maxTilePointCount);
     
     if (0 == nPoints)
         return SUCCESS;
@@ -81,6 +82,10 @@ BentleyStatus _LoadTile()
         }
 
     Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
+
+    // TODO - Add technique for monochrome point clouds...
+    if (!colorsPresent)
+        colors =  bvector<PointCloudColorDef> (nPoints, PointCloudColorDef(255, 255, 255));
 
     graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : (ByteCP) colors.data());
 
@@ -160,13 +165,13 @@ static   BeMutex     s_queryMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, DRange3dCR tileRange, size_t maxCount) const
+size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, bool& colorsPresent, DRange3dCR tileRange, size_t maxCount) const
     {
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
     Transform                   worldToScene;
     DRange3d                    sceneRange;
-    bool                        colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
-
+    
+    colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
     PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, QUERY_DENSITY_LIMIT, (float) maxCount);
