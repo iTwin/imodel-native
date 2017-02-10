@@ -362,17 +362,10 @@ BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECI
         ECValueBindingInfo const& memberBinding = *kvPair.second;
 
         //don't attempt to call ECSqlStatement::BindNull on the member as it will cause a null member to be created in the JSON
-        //for struct arrays. So if the struct member is null in the IECInstance, skip the call to BindValue.
-        if (memberBinding.HasPropertyIndex())
-            {
-            bool isNull = false;
-            if (ECObjectsStatus::Success != instance.GetInstance().IsPropertyNull(isNull, memberBinding.GetPropertyIndex()))
-                return ERROR;
-
-            if (isNull)
-                continue;
-            }
-
+        //for struct arrays. So if the struct member is unset in the IECInstance, skip the call to BindValue.
+        if (IsPropertyValueNull(instance.GetInstance(), memberBinding))
+            continue;
+        
         if (SUCCESS != BindValue(binder[kvPair.first], instance, memberBinding))
             return ERROR;
         }
@@ -414,12 +407,13 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
         if (ECObjectsStatus::Success != instance.GetValue(elementValue, arrayPropIndex, i))
             return ERROR;
 
-        if (elementValue.IsNull())
-            continue; //bind null in that case
-
         if (!valueBindingInfo.IsStructArray())
             {
             BeAssert(elementValue.IsPrimitive());
+
+            if (elementValue.IsNull())
+                continue; //bind null in that case
+
             if (SUCCESS != BindPrimitiveValue(arrayElementBinder, elementValue))
                 return ERROR;
             }
@@ -428,7 +422,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
             BeAssert(elementValue.IsStruct());
             BeAssert(arrayInfo.IsStructArray());
             IECInstancePtr structInstance = elementValue.GetStruct();
-            if (structInstance == nullptr)
+            if (structInstance == nullptr || IsPropertyValueNull(*structInstance, valueBindingInfo.GetStructArrayElementBindingInfo()))
                 continue; //bind null (extra check seems necessary as ECValue::IsNull always returns false for structs
 
             if (SUCCESS != BindStructValue(arrayElementBinder, ECInstanceInfo(*structInstance, false), valueBindingInfo.GetStructArrayElementBindingInfo()))
@@ -588,6 +582,47 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
 
     OptionsExp const* optionsExp = selectStmtExp->GetOptions();
     return optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
+    }
+
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECInstanceAdapterHelper::IsPropertyValueNull(ECN::IECInstanceCR instance, ECValueBindingInfo const& bindingInfo)
+    {
+    if (bindingInfo.GetType() == ECValueBindingInfo::Type::Struct)
+        {
+        StructECValueBindingInfo const& structBindingInfo = static_cast<StructECValueBindingInfo const&>(bindingInfo);
+        for (auto const& member : structBindingInfo.GetMemberBindingInfos())
+            {
+            if (!IsPropertyValueNull(instance, *member.second))
+                return false;
+            }
+
+        return true;
+        }
+
+
+    ECValue v;
+    instance.GetValue(v, bindingInfo.GetPropertyIndex());
+    switch (bindingInfo.GetType())
+        {
+            case ECValueBindingInfo::Type::Primitive:
+                return v.IsNull();
+
+            case ECValueBindingInfo::Type::Navigation:
+                return v.GetNavigationInfo().GetId<BeInt64Id>().IsValid();
+
+            case ECValueBindingInfo::Type::Array:
+                return v.IsNull() || v.GetArrayInfo().GetCount() == 0;
+
+            default:
+                BeAssert(false);
+                return false;
+        }
     }
 
 //---------------------------------------------------------------------------------------

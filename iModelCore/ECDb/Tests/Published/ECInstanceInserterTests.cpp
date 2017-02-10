@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "NestedStructArrayTestSchemaHelper.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -135,13 +136,60 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
     {
-    ECDbCR ecdb = SetupECDb("ecinstanceinserterstructarray.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbCR ecdb = SetupECDb("ecinstanceinserterstructarray.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="MyClass">
+                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
+          </ECEntityClass>
+          <ECStructClass typeName="LocationStruct">
+                <ECProperty propertyName="Street" typeName="string"/>
+                <ECStructProperty propertyName="City" typeName="CityStruct"/>
+          </ECStructClass>
+         <ECStructClass typeName="CityStruct">
+               <ECProperty propertyName="Name" typeName="string"/>
+               <ECProperty propertyName="State" typeName="string"/>
+               <ECProperty propertyName="Country" typeName="string"/>
+               <ECProperty propertyName="Zip" typeName="int"/>
+         </ECStructClass>
+        </ECSchema>
+        )xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    auto assertStructIsNullInECInstance = [] (IECInstanceCR instance, uint32_t arrayIndex, Utf8CP scenario)
+        {
+  /*      Utf8String propPath;
+        propPath.Sprintf("%s:Locations[%" PRIu32 "]", instance.GetClass().GetName().c_str(), arrayIndex);
+
+        bool isPropNull = false;
+        ASSERT_EQ(ECObjectsStatus::Success, instance.IsPropertyNull(isPropNull, "Locations", arrayIndex)) << propPath.c_str();
+        EXPECT_FALSE(isPropNull) << "expected behavior in ECObjects for structs. " << propPath.c_str();
+
+        LOG.debugv("%s - IsPropertyNull for %s: %s", scenario, propPath.c_str(), isPropNull ? "true" : "false");
+
+        ECValue structArrayElementVal;
+        ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(structArrayElementVal, "Locations", arrayIndex)) << propPath.c_str();
+        IECInstancePtr structArrayElement = structArrayElementVal.GetStruct();
+        EXPECT_FALSE(structArrayElementVal.IsNull()) << propPath.c_str();
+        EXPECT_TRUE(structArrayElement != nullptr) << propPath.c_str();
+
+        LOG.debugv("%s - GetValue for %s: ECValue::IsNull: %s", scenario, propPath.c_str(), structArrayElementVal.IsNull() ? "true" : "false");
+        LOG.debugv("%s - GetValue for %s: ECValue::GetStruct: %s", scenario, propPath.c_str(), structArrayElement == nullptr ? "nullptr" : "not nullptr");
+
+        if (structArrayElement == nullptr)
+            return;
+
+        ASSERT_EQ(ECObjectsStatus::Success, structArrayElement->IsPropertyNull(isPropNull, "City")) << propPath.c_str() << ".City";
+        EXPECT_FALSE(isPropNull) << "expected behavior in ECObjects for structs. " << instance.GetClass().GetName().c_str() << propPath.c_str() << ".City";
+        LOG.debugv("%s - IsPropertyNull for %s.City: %s", scenario, propPath.c_str(), isPropNull ? "true" : "false");
+        */
+        };
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "MyClass");
     ASSERT_TRUE(testClass != nullptr);
 
-    ECClassCP structClass = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
-    ASSERT_TRUE(structClass != nullptr);
+    ECClassCP locationStruct = ecdb.Schemas().GetECClass("TestSchema", "LocationStruct");
+    ASSERT_TRUE(locationStruct != nullptr);
 
     ECInstanceKey key;
     {
@@ -149,39 +197,98 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
     ASSERT_TRUE(inserter.IsValid());
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("PStruct_Array", 4));
 
-    //first element: set nullptr struct
+    uint32_t arrayIndex = 0;
+    //not set at all(just created by AddArrayElement call)
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("Locations", 1));
+    assertStructIsNullInECInstance(*instance, arrayIndex, "Just AddArrayElements");
+
+    //set nullptr struct as element
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("Locations", 1));
     ECValue structValue;
     ASSERT_EQ(SUCCESS, structValue.SetStruct(nullptr));
-    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 0));
+    ASSERT_TRUE(structValue.IsNull()) << "expected current ECObjects behavior";
+    arrayIndex++;
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("Locations", structValue, arrayIndex));
+    assertStructIsNullInECInstance(*instance, arrayIndex, "ECValue::SetStruct(nullptr)");
 
-    //second element: set empty struct
-    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    //set empty struct as element
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("Locations", 1));
+    IECInstancePtr locationStructInstance = locationStruct->GetDefaultStandaloneEnabler()->CreateInstance();
     structValue.Clear();
-    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
-    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 1));
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(locationStructInstance.get()));
+    ASSERT_FALSE(structValue.IsNull()) << "expected current ECObjects behavior";
+    arrayIndex++;
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("Locations", structValue, arrayIndex));
+    assertStructIsNullInECInstance(*instance, arrayIndex, "ECValue::SetStruct(Enabler::CreateInstance())");
 
-    //third element: set struct with a single property value set
-    structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ASSERT_EQ(ECObjectsStatus::Success, structInstance->SetValue("i", ECValue(123)));
+    //set struct with a single property value set as element
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("Locations", 1));
+    locationStructInstance = locationStruct->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, locationStructInstance->SetValue("Street", ECValue("mainstreet")));
     structValue.Clear();
-    ASSERT_EQ(SUCCESS, structValue.SetStruct(structInstance.get()));
-    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("PStruct_Array", structValue, 2));
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(locationStructInstance.get()));
+    arrayIndex++;
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("Locations", structValue, arrayIndex));
+    assertStructIsNullInECInstance(*instance, arrayIndex, "ECValue::SetStruct with a prim prop set");
 
-    //fourth element: not set at all(just created by AddArrayElement call)
+    //set struct with a member of the nested struct set
+    ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("Locations", 1));
+    locationStructInstance = locationStruct->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, locationStructInstance->SetValue("City.Zip", ECValue(34000)));
+    structValue.Clear();
+    ASSERT_EQ(SUCCESS, structValue.SetStruct(locationStructInstance.get()));
+    arrayIndex++;
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("Locations", structValue, arrayIndex));
+    assertStructIsNullInECInstance(*instance, arrayIndex, "ECValue::SetStruct with nested struct prop set");
+
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *instance));
     }
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT PStruct_Array FROM ecsqltest_PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE ECInstanceId=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String actualJson(stmt.GetValueText(0));
     actualJson.ReplaceAll(" ", "");
-    ASSERT_STRCASEEQ("[null,null,{\"i\":123},null]", actualJson.c_str());
+    ASSERT_STRCASEEQ(R"json([null,null,null,{"Street":"mainstreet"},{"City":{"Zip":34000}}])json", actualJson.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                    02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertIntoNestedStructArray)
+    {
+    ECDbR ecdb = SetupECDb("InsertStructArray.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
+
+    ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances(ecdb, 1, "ClassP");
+
+    Utf8String inXml, outXml;
+    for (IECInstancePtr inst : instanceList)
+        {
+        ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
+        ASSERT_TRUE(inserter.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst, true));
+        inst->WriteToXmlString(inXml, true, true);
+        inXml += "\r\n";
+        }
+
+    bvector<IECInstancePtr> out;
+    ECSqlStatement stmt;
+    auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
+    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
+    ECInstanceECSqlSelectAdapter classPReader(stmt);
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto inst = classPReader.GetInstance();
+        out.push_back(inst);
+        inst->WriteToXmlString(outXml, true, true);
+        outXml += "\r\n";
+        }
+
+    ASSERT_EQ(instanceList.size(), out.size());
+    ASSERT_TRUE(inXml == outXml);
+    }
 TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)
     {
     InsertRelationshipInstances("FolderHasDocuments", "Folder", "Document", "KitchenSink", 1, 1);

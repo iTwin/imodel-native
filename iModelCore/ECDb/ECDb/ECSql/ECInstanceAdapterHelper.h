@@ -319,6 +319,8 @@ struct ECInstanceAdapterHelper
 
         static IECSqlBinder::MakeCopy DetermineMakeCopy(ECN::ECValueCR);
 
+        static bool IsPropertyValueNull(ECN::IECInstanceCR, ECValueBindingInfo const&);
+
     public:
         //! Binds the respective ECValue (specified through @p valueBindingInfo) of the specified ECInstance
         //! to the specified ECSQL statement's binder.

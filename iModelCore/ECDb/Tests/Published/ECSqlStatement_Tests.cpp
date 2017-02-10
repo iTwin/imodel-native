@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
 #include "NestedStructArrayTestSchemaHelper.h"
+#include <Bentley/Base64Utilities.h>
 #include <cmath>
 #include <algorithm>
 #include <rapidjson/BeRapidJson.h>
@@ -573,6 +574,222 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
             ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
             }
         }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlprimarray_unsetmembers.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="MyClass">
+            <ECArrayProperty propertyName="Long_Array" typeName="long"/>
+            <ECArrayProperty propertyName="String_Array" typeName="string"/>
+            <ECArrayProperty propertyName="Blob_Array" typeName="binary"/>
+            <ECArrayProperty propertyName="P3d_Array" typeName="Point3d"/>
+        </ECEntityClass>
+    </ECSchema>
+    )xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    const uint64_t testValue = BeBriefcaseBasedId(BeBriefcaseId(444), INT64_C(1432342)).GetValue();
+    std::vector<std::pair<PrimitiveType, ECValue>> testValues {{PrimitiveType::PRIMITIVETYPE_Long, ECValue(testValue)},
+    {PrimitiveType::PRIMITIVETYPE_String, ECValue(R"text(Hello, "world")text")},
+    {PrimitiveType::PRIMITIVETYPE_Binary, ECValue((Byte const*) &testValue,sizeof(testValue))},
+    {PrimitiveType::PRIMITIVETYPE_Point3d, ECValue(DPoint3d::From(1.0, -1.5, 10.3))}};
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Long_Array,String_Array,Blob_Array,P3d_Array) VALUES(?,?,?,?)"));
+
+    for (int i = 0; i < 4; i++)
+        {
+        IECSqlBinder& arrayBinder = stmt.GetBinder(i + 1);
+        //first element: don't bind anything
+        arrayBinder.AddArrayElement();
+
+        {
+        //call BindNull on element
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+        }
+
+        {
+        //call BindNull on element
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        std::pair<PrimitiveType, ECValue> const& testValue = testValues[(size_t) i];
+        switch (testValue.first)
+            {
+                case PRIMITIVETYPE_Long:
+                    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(testValue.second.GetLong()));
+                    break;
+
+                case PRIMITIVETYPE_String:
+                    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(testValue.second.GetUtf8CP(), IECSqlBinder::MakeCopy::No));
+                    break;
+
+                case PRIMITIVETYPE_Binary:
+                {
+                size_t blobSize = 0;
+                void const* blob = testValue.second.GetBinary(blobSize);
+                ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+                break;
+                }
+
+                case PRIMITIVETYPE_Point3d:
+                    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindPoint3d(testValue.second.GetPoint3d()));
+                    break;
+
+                default:
+                    FAIL() << "Test has to be adjusted to new primitive type";
+            }
+        }
+        }
+
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+
+    Statement validateStmt;
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Long_Array,String_Array,Blob_Array,P3d_Array FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+
+
+    for (int i = 0; i < 4; i++)
+        {
+        Utf8String actualJson(validateStmt.GetValueText(i));
+        
+        rapidjson::Document expectedJson(rapidjson::kArrayType);
+        expectedJson.PushBack(rapidjson::Value(rapidjson::kNullType).Move(), expectedJson.GetAllocator());
+        expectedJson.PushBack(rapidjson::Value(rapidjson::kNullType).Move(), expectedJson.GetAllocator());
+
+        std::pair<PrimitiveType, ECValue> const& testValue = testValues[(size_t) i];
+        switch (testValue.first)
+            {
+                case PRIMITIVETYPE_Long:
+                    expectedJson.PushBack(rapidjson::Value(testValue.second.GetLong()).Move(), expectedJson.GetAllocator());
+                    break;
+
+                case PRIMITIVETYPE_String:
+                {
+                rapidjson::GenericStringRef<Utf8Char> stringValue(testValue.second.GetUtf8CP(), (rapidjson::SizeType) strlen(testValue.second.GetUtf8CP()));
+                expectedJson.PushBack(rapidjson::Value(stringValue).Move(), expectedJson.GetAllocator());
+                break;
+                }
+
+                case PRIMITIVETYPE_Binary:
+                {
+                size_t blobSize = 0;
+                Byte const* blob = testValue.second.GetBinary(blobSize);
+
+                rapidjson::Value val;
+                ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::BinaryToJson(val, blob, blobSize, expectedJson.GetAllocator()));
+                expectedJson.PushBack(val.Move(), expectedJson.GetAllocator());
+                break;
+                }
+
+                case PRIMITIVETYPE_Point3d:
+                {
+                rapidjson::Value val;
+                ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::Point3dToJson(val, testValue.second.GetPoint3d(), expectedJson.GetAllocator()));
+                expectedJson.PushBack(val.Move(), expectedJson.GetAllocator());
+                break;
+                }
+                default:
+                    FAIL() << "Test has to be adjusted to new primitive type";
+
+            }
+
+        rapidjson::StringBuffer expectedJsonStr;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(expectedJsonStr);
+        expectedJson.Accept(writer);
+        ASSERT_STRCASEEQ(expectedJsonStr.GetString(), actualJson.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlstructarray_unsetmembers.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="MyClass">
+                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
+          </ECEntityClass>
+          <ECStructClass typeName="LocationStruct">
+                <ECProperty propertyName="Street" typeName="string"/>
+                <ECStructProperty propertyName="City" typeName="CityStruct"/>
+          </ECStructClass>
+         <ECStructClass typeName="CityStruct">
+               <ECProperty propertyName="Name" typeName="string"/>
+               <ECProperty propertyName="State" typeName="string"/>
+               <ECProperty propertyName="Country" typeName="string"/>
+               <ECProperty propertyName="Zip" typeName="int"/>
+         </ECStructClass>
+        </ECSchema>
+        )xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Locations) VALUES(?)"));
+    IECSqlBinder& structArrayBinder = stmt.GetBinder(1);
+    //first element: don't bind anything
+    structArrayBinder.AddArrayElement();
+
+    {
+    //call BindNull on element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+    }
+
+    {
+    //bind to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindText("mainstreet", IECSqlBinder::MakeCopy::No));
+    }
+
+    {
+    //bind null to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    }
+
+    {
+    //call BindNull on struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //call BindNull on prim and struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //bind to prim member in struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"]["Zip"].BindInt(34000));
+    }
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+
+    Statement validateStmt;
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    Utf8String actualJson(validateStmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ(R"json([null,null,{"Street":"mainstreet"},{"Street":null},{"City":null},{"Street":null,"City":null},{"City":{"Zip":34000}}])json", actualJson.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1435,41 +1652,41 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                    02/16
+// @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
-    ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
+    const int perClassRowCount = 10;
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
-    ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances(ecdb, 1, "ClassP");
+    Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
-    Utf8String inXml, outXml;
-    for (IECInstancePtr inst : instanceList)
+    statement.BindInt64(1, 1000);
+    //add three array elements
+    const int count = 3;
+
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+
+    for (int i = 0; i < count; i++)
         {
-        ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
-        ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst, true));
-        inst->WriteToXmlString(inXml, true, true);
-        inXml += "\r\n";
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["i"].BindInt(i * 2);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["l"].BindInt64(i * 3);
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
+        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
-    bvector<IECInstancePtr> out;
-    ECSqlStatement stmt;
-    auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
-    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    ECInstanceECSqlSelectAdapter classPReader(stmt);
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        auto inst = classPReader.GetInstance();
-        out.push_back(inst);
-        inst->WriteToXmlString(outXml, true, true);
-        outXml += "\r\n";
-        }
-
-    ASSERT_EQ(instanceList.size(), out.size());
-    ASSERT_TRUE(inXml == outXml);
+    auto stepStatus = statement.Step();
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     }
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                    02/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1707,42 +1924,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Affan.Khan                 01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
-    {
-    const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
-    Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
-
-    statement.BindInt64(1, 1000);
-    //add three array elements
-    const int count = 3;
-
-    IECSqlBinder& arrayBinder = statement.GetBinder(2);
-
-    for (int i = 0; i < count; i++)
-        {
-        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-        ECSqlStatus stat = arrayElementBinder["d"].BindDouble(i * PI);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["i"].BindInt(i * 2);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["l"].BindInt64(i * 3);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["p2d"].BindPoint2d(DPoint2d::From(i, i + 1));
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        }
-
-    auto stepStatus = statement.Step();
-    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                01/17
@@ -2102,12 +2284,10 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
     {
-    const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10);
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PA (Dt_Array, DtUtc_Array) VALUES(:dt,:dtutc)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PA (Dt_Array, DtUtc_Array) VALUES(:dt,:dtutc)"));
 
     std::vector<DateTime> testDates = {DateTime(DateTime::Kind::Utc, 2014, 07, 07, 12, 0),
         DateTime(DateTime::Kind::Unspecified, 2014, 07, 07, 12, 0),
@@ -2132,7 +2312,7 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
         IECSqlBinder& arrayElementBinder = arrayBinderDtUtc.AddArrayElement();
 
         ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::Error;
-        ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate));
+        ASSERT_EQ(expectedStat, arrayElementBinder.BindDateTime(testDate)) << testDate.ToString().c_str();
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
@@ -2143,12 +2323,10 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
     {
-    const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10);
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)"));
 
     auto bindArrayValues = [&statement] (int count)
         {
@@ -2186,12 +2364,10 @@ TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
     {
-    const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10);
 
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)"));
 
     auto bindArrayValues = [&statement] (int count)
         {
@@ -2229,8 +2405,7 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
-    const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10);
 
     auto testFunction = [this, &ecdb] (Utf8CP insertECSql, bool bindExpectedToSucceed, int structParameterIndex, Utf8CP structValueJson, Utf8CP verifySelectECSql, int structValueIndex)
         {
@@ -4572,7 +4747,6 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P0 FROM TestSchema.Element ORDER BY P1"));
-    //printf(statement.GetNativeSql());
     int rowCount = 0;
     Utf8CP expectedValues = "Hello World !!!";
     Utf8String actualValues;
