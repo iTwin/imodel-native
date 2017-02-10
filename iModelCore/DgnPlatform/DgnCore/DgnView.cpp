@@ -1266,15 +1266,15 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
-            value.SetLong(viewDef.GetDisplayStyleId().GetValue());
+            value.SetNavigationInfo(viewDef.GetDisplayStyleId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
 
-            DgnElementId id((uint64_t) value.GetLong());
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto style = el.GetDgnDb().Elements().Get<Dgn::DisplayStyle>(id);
             if (!style.IsValid())
                 return DgnDbStatus::BadArg;
@@ -1288,15 +1288,15 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
-            value.SetLong(viewDef.GetCategorySelectorId().GetValue());
+            value.SetNavigationInfo(viewDef.GetCategorySelectorId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
 
-            DgnElementId id((uint64_t) value.GetLong());
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto cats = el.GetDgnDb().Elements().Get<Dgn::CategorySelector>(id);
             if (!cats.IsValid())
                 return DgnDbStatus::BadArg;
@@ -1464,12 +1464,14 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
         [](ECValueR value, DgnElementCR el)
             {
             SpatialViewDefinitionCR viewDef = (SpatialViewDefinitionCR)el;
-            value.SetLong(viewDef.GetModelSelectorId().GetValue());
+            value.SetNavigationInfo(viewDef.GetModelSelectorId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            DgnElementId id((uint64_t) value.GetLong());
+            if (!value.IsNavigation())
+                return DgnDbStatus::BadArg;
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto modelSel = el.GetDgnDb().Elements().Get<ModelSelector>(id);
             if (!modelSel.IsValid())
                 return DgnDbStatus::BadArg;
