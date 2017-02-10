@@ -438,20 +438,31 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     {
     assert(pi_pDataStore != nullptr);
 
+    static double startTime = clock();
+    static std::atomic<uint64_t> loadDataTime = 0;
+    static std::atomic<uint64_t> convertTime = 0;
+    static std::atomic<uint64_t> storeTime = 0;
+
     if (!IsLoaded())
         Load();
-
-    double t = 0;
-    if (this->m_nodeHeader.m_level == 0)
-        {
-        t = clock();
-        }
 
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
     static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
 #ifndef VANCOUVER_API
             // Gather all data in one place
+            double t = clock();
+            node->GetPointsPtr();
+            node->GetPtsIndicePtr();
+            node->GetUVCoordsPtr();
+            node->GetUVsIndicesPtr();
+            node->GetTextureCompressedPtr();
+
+            loadDataTime += clock() - t;
+
+            // Convert data
+            t = clock();
+
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
             IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
 
@@ -459,14 +470,17 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             bvector<Byte> cesiumData;
             cesiumPublisher->Publish(nodeP, Transform::FromIdentity(), cesiumData);
 
+            convertTime += clock() - t;
+
             // Store data
+            t = clock();
             ISMTileMeshDataStorePtr tileStore;
             bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
             assert(result == true); // problem getting the tile mesh data store
 
             if (!cesiumData.empty())
                 tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
-
+            storeTime += clock() - t;
         //// Store header
         //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
@@ -536,9 +550,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     if (this->m_nodeHeader.m_level == 0)
         {
         //distributor->Go();
-        t = clock() - t;
-        std::cout << "Time to process tree: " << t / CLOCKS_PER_SEC << std::endl;
+        std::cout << "Time to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
         distributor = nullptr;
+        std::cout << "Time to gather data: " << (double)loadDataTime / CLOCKS_PER_SEC / 7 << std::endl;
+        std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / 7 << std::endl;
+        std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / 7 << std::endl;
+        std::cout << "Total time: " << (double)(clock() - startTime) / CLOCKS_PER_SEC << std::endl;
         }
     }
 
@@ -619,75 +636,88 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
     {
+
+    static std::atomic<uint64_t> loadHeaderTime = 0;
+    static std::atomic<uint64_t> loadDataTime = 0;
+    double t = 0;
+    if (this->m_nodeHeader.m_level == 0)
+        {
+        t = clock();
+        }
+
     if (!IsLoaded())
+        {
+        uint64_t loadTime = clock();
         Load();
+        loadHeaderTime += clock() - loadTime;
+        }
 
     nLoaded++;
 
-    auto loadNodeHelper = [](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
-        {
-        //node->LoadTreeNode(nLoaded, level, headersOnly);
-        if (!node->IsLoaded())
-            node->Load();
-        SetThreadAvailableAsync(threadId);
-        };
-    //static auto* s_distributor = new SMNodeDistributor<SMMeshIndexNode<POINT, EXTENT>*>(loadNodeHelper);
 
-    if (!headersOnly)
+
+    //auto loadNodeHelper = [&loadHeaderTime](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    //    {
+    //    //node->LoadTreeNode(nLoaded, level, headersOnly);
+    //    if (!node->IsLoaded())
+    //        {
+    //        uint64_t loadTime = clock();
+    //        node->Load();
+    //        loadHeaderTime += clock() - loadTime;
+    //        }
+    //    SetThreadAvailableAsync(threadId);
+    //    };
+    typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
+    static Distribution_Type::Ptr distributor(new Distribution_Type([](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
-        RunOnNextAvailableThread(std::bind([](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
-            {
-            if (node->GetNbPoints() > 0)
+            uint64_t loadTime = clock();
+            node->GetPointsPtr();
+            node->GetPtsIndicePtr();
+            if (node->m_nodeHeader.m_isTextured)
                 {
-                // Points
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-                // Indices
-                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
-
-                if (node->m_nodeHeader.m_isTextured)
-                    {
-                    // UVs
-                    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
-
-                    // UVIndices
-                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
-
-                    // Texture
-                    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texturePtr(node->GetTexturePtr());
-                    }
+                node->GetUVCoordsPtr();
+                node->GetUVsIndicesPtr();
+                node->GetTexturePtr();
                 }
-            SetThreadAvailableAsync(threadId);
-            }, this, std::placeholders::_1));
-        }
+            loadDataTime += clock() - loadTime;
+        }));
 
-    if (level != 0 && this->GetLevel() + 1 > level) return;
+    if (headersOnly || (level != 0 && this->GetLevel() + 1 > level)) return;
 
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
             //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_pSubNodeNoSplit)));
-            RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
+            //RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
             m_pSubNodeNoSplit->LoadTreeNode(nLoaded, level, headersOnly);
             }
         else
             {
-            for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
-                {
-                //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNodes])));
-                RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNodes], std::placeholders::_1));
-                }
+            //for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+            //    {
+            //    //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNodes])));
+            //    RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNodes], std::placeholders::_1));
+            //    }
             for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                 {
                 m_apSubNodes[indexNodes]->LoadTreeNode(nLoaded, level, headersOnly);
                 }
             }
         }
+    if (this->GetNbPoints() > 0)
+        {
+        distributor->AddWorkItem(this/*, false*/);
+        }
+
     if (m_nodeHeader.m_level == 0)
         {
-        WaitForThreadStop();
-        //delete s_distributor;
+        std::cout << "Time to process tree: " << (clock() - t) / CLOCKS_PER_SEC << std::endl;
+        //WaitForThreadStop();
+        distributor = nullptr;
+        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
+        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
+        std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
         }
 
     }
@@ -3448,8 +3478,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
-   if (m_SMIndex->IsTerrain() == false) 
-       return poolMemItemPtr;
+   //if (m_SMIndex->IsTerrain() == false) 
+    //   return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
@@ -3854,6 +3884,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
     bvector<bpair<double, int>> metadata;
+    DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
+    bool polyInclusion = false;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -3863,6 +3895,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
+            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength()) extentOfBiggestPoly = polyExtent;
+            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly)) polyInclusion = true;
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);
@@ -3883,6 +3917,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     diffSetPtr->clear();
     for(auto& skirt: skirts) diffSetPtr->push_back(skirt);
     m_nbClips = skirts.size();
+
+
     
             
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
@@ -3916,7 +3952,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             );
 
         bool hasClip = false;
-        if (!m_nodeHeader.m_arePoints3d)
+        if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
             {
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)

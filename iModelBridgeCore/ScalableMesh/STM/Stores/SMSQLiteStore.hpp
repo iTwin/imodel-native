@@ -804,6 +804,15 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
     {
+    switch (m_dataType)
+        {
+        case SMStoreDataType::Coverage:
+            m_smSQLiteFile->DeleteCoveragePolygon(blockID.m_integerID);
+            return true;
+        case SMStoreDataType::ClipDefinition:
+            m_smSQLiteFile->DeleteClipPolygon(blockID.m_integerID);
+            return true;
+        }
     return false;
     }
 

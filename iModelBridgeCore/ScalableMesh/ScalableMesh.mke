@@ -318,6 +318,8 @@ $(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtiliti
 
 $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h ${MultiCompileDepends}
 
+$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------

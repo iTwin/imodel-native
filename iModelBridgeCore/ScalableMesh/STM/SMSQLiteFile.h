@@ -204,6 +204,9 @@ public:
 
     virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize) { assert(false); }
+
+    virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
+    virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
     
     bool m_autocommit = true;
     static const SchemaVersion CURRENT_VERSION;

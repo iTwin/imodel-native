@@ -9,9 +9,9 @@
 #include <ScalableMeshPCH.h>
 #include "SMNodeGroup.h"
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 std::mutex s_consoleMutex;
-#endif
+//#endif
 
 
 uint32_t s_max_number_nodes_in_group = 100;

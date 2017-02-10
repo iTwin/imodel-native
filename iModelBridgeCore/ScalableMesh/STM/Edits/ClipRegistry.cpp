@@ -6,7 +6,7 @@
 |       $Date: 2015/09/14 15:28:03 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -227,6 +227,24 @@ void ClipRegistry::GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys)
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
     clipDefinitionExOpsPtr->GetAllPolys(allPolys);
+    }
+
+void ClipRegistry::GetAllCoverageIds(bvector<uint64_t>& allIds)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->GetAllIDs(allIds);
+    }
+
+
+void ClipRegistry::DeleteCoverage(uint64_t id)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    dataStore->DestroyBlock(id);
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
