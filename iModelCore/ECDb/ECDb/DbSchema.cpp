@@ -551,7 +551,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual,ExclusiveRootClassId, PrimaryTableId) VALUES (?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Table(Id,Name,Type,IsVirtual,ExclusiveRootClassId,ParentTableId) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -562,10 +562,9 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
     if (table.HasExclusiveRootECClass())
         stmt->BindId(5, table.GetExclusiveRootECClassId());
 
-    if (auto primaryTable = table.GetParentOfJoinedTable())
-        stmt->BindId(6, primaryTable->GetId());
-    else
-        stmt->BindNull(6);
+    DbTable const* parentTable = table.GetParentOfJoinedTable();
+    if (parentTable != nullptr)
+        stmt->BindId(6, parentTable->GetId());
 
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -607,7 +606,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         }
 
     bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap = GetPersistedColumnMap(table.GetId());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name =?, Type =?, IsVirtual=?, PrimaryTableId=? WHERE Id = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name=?,Type=?,IsVirtual=?,ParentTableId=? WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -615,8 +614,9 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
     stmt->BindText(1, table.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(table.GetType()));
     stmt->BindBoolean(3, table.GetPersistenceType() == PersistenceType::Virtual);
-    if (auto primaryTable = table.GetParentOfJoinedTable())
-        stmt->BindId(4, primaryTable->GetId());
+    DbTable const* parentTable = table.GetParentOfJoinedTable();
+    if (parentTable != nullptr)
+        stmt->BindId(4, parentTable->GetId());
     else
         stmt->BindNull(4);
 
@@ -970,7 +970,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     {
     tableP = nullptr;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT t.Id, t.Type, t.IsVirtual, t.ExclusiveRootClassId, primaryT.Name FROM ec_Table t LEFT JOIN ec_Table primaryT ON t.PrimaryTableId = primaryT.Id WHERE t.Name = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT t.Id, t.Type, t.IsVirtual, t.ExclusiveRootClassId, parentT.Name FROM ec_Table t LEFT JOIN ec_Table parentT ON t.ParentTableId = parentT.Id WHERE t.Name = ?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -985,17 +985,17 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     if (!stmt->IsColumnNull(3))
         exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
 
-    Utf8CP primaryTableName = stmt->GetValueText(4);
+    Utf8CP parentTableName = stmt->GetValueText(4);
 
-    DbTable const* primaryTable = nullptr;
-    if (!Utf8String::IsNullOrEmpty(primaryTableName))
+    DbTable const* parentTable = nullptr;
+    if (!Utf8String::IsNullOrEmpty(parentTableName))
         {
-        primaryTable = FindTable(primaryTableName);
-        BeAssert(primaryTable != nullptr && "Failed to find primary table");
+        parentTable = FindTable(parentTableName);
+        BeAssert(parentTable != nullptr && "Failed to find parent table of joined table");
         BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
         }
 
-    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, exclusiveRootClassId, primaryTable);
+    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, exclusiveRootClassId, parentTable);
     if (table == nullptr)
         {
         BeAssert(false && "Failed to create table definition");

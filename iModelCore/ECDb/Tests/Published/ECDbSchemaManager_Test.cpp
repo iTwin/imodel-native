@@ -629,8 +629,8 @@ TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDbSystem", "PrimitiveArray");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('ECDbSystem', 'PrimitiveArray') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("MetaSchema", "ECClassDef");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('MetaSchema', 'ECClassDef') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);

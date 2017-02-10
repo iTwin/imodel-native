@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayECSqlBinder.h $
+|     $Source: ECDb/ECSql/ArrayECSqlBinder.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct StructArrayECSqlBinder : public ECSqlBinder
+struct ArrayECSqlBinder : public ECSqlBinder
     {
 private:
 
@@ -98,8 +98,8 @@ private:
     IECSqlBinder& _AddArrayElement() override { return m_rootBinder->AddArrayElement(); }
 
 public:
-    StructArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);
-    ~StructArrayECSqlBinder() {}
+    ArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);
+    ~ArrayECSqlBinder() {}
     };
 
 

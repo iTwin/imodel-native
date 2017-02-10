@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayECSqlField.cpp $
+|     $Source: ECDb/ECSql/ArrayECSqlField.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -488,14 +488,14 @@ int ArrayJsonECSqlValue::_GetArrayLength() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructArrayECSqlField::StructArrayECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
+ArrayECSqlField::ArrayECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
     : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(rapidjson::kArrayType), m_value(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlField::_OnAfterStep()
+ECSqlStatus ArrayECSqlField::_OnAfterStep()
     {
     DoReset();
 
@@ -519,7 +519,7 @@ ECSqlStatus StructArrayECSqlField::_OnAfterStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlField::_OnAfterReset()
+ECSqlStatus ArrayECSqlField::_OnAfterReset()
     {
     DoReset();
     return ECSqlStatus::Success;
@@ -528,7 +528,7 @@ ECSqlStatus StructArrayECSqlField::_OnAfterReset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-void StructArrayECSqlField::DoReset() const
+void ArrayECSqlField::DoReset() const
     {
     m_json.Clear();
     m_value = nullptr;
@@ -537,7 +537,7 @@ void StructArrayECSqlField::DoReset() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlPrimitiveValue const& StructArrayECSqlField::_GetPrimitive() const
+IECSqlPrimitiveValue const& ArrayECSqlField::_GetPrimitive() const
     {
     LOG.error("Type mismatch. Cannot call primitive IECSqlValue getters on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
@@ -546,7 +546,7 @@ IECSqlPrimitiveValue const& StructArrayECSqlField::_GetPrimitive() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructValue const& StructArrayECSqlField::_GetStruct() const
+IECSqlStructValue const& ArrayECSqlField::_GetStruct() const
     {
     LOG.error("Type mismatch. Cannot call GetStruct on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetStruct();

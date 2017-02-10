@@ -55,11 +55,8 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
                 break;
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
-                stat = CreatePrimitiveArrayField(field, startColumnIndex, ctx, ecsqlColumnInfo, valueTypeInfo.GetPrimitiveType());
-                break;
-
             case ECSqlTypeInfo::Kind::StructArray:
-                stat = CreateStructArrayField(field, startColumnIndex, ctx, ecsqlColumnInfo);
+                stat = CreateArrayField(field, startColumnIndex, ctx, ecsqlColumnInfo);
                 break;
 
             case ECSqlTypeInfo::Kind::Navigation:
@@ -97,14 +94,8 @@ ECSqlStatus ECSqlFieldFactory::CreateChildField(std::unique_ptr<ECSqlField>& chi
         return CreatePrimitiveField(childField, sqlColumnIndex, ctx, columnInfo, primitiveType);
         }
 
-    if (childProperty.GetIsPrimitiveArray())
-        {
-        PrimitiveType primitiveType = childProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        return CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, columnInfo, primitiveType);
-        }
-
-    if (childProperty.GetIsStructArray())
-        return CreateStructArrayField(childField, sqlColumnIndex, ctx, columnInfo);
+    if (childProperty.GetIsArray())
+        return CreateArrayField(childField, sqlColumnIndex, ctx, columnInfo);
 
     if (childProperty.GetIsNavigation())
         {
@@ -183,29 +174,12 @@ ECSqlStatus ECSqlFieldFactory::CreateNavigationPropertyField(std::unique_ptr<ECS
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlFieldFactory::CreatePrimitiveArrayField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo, PrimitiveType primitiveType)
-    {
-    ECClassCP primArraySystemClass = ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetClassForPrimitiveArrayPersistence(primitiveType);
-    if (primArraySystemClass == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    field = std::unique_ptr<ECSqlField>(new PrimitiveArrayECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++, *primArraySystemClass));
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlFieldFactory::CreateStructArrayField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
+ECSqlStatus ECSqlFieldFactory::CreateArrayField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
     {
-    field = std::unique_ptr<ECSqlField>(new StructArrayECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++));
+    field = std::unique_ptr<ECSqlField>(new ArrayECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++));
     return ECSqlStatus::Success;
     }
 

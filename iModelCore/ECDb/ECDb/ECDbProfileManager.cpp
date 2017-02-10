@@ -450,7 +450,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     //ec_Table
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Table("
                            "Id INTEGER PRIMARY KEY,"
-                           "PrimaryTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
+                           "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
@@ -460,7 +460,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_PrimaryTableId ON ec_Table(PrimaryTableId);"
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON ec_Table(ParentTableId);"
                            "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON ec_Table(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

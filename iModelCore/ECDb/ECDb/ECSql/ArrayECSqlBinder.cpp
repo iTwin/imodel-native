@@ -1,7 +1,7 @@
 /*------------------
 --------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayECSqlBinder.cpp $
+|     $Source: ECDb/ECSql/ArrayECSqlBinder.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,17 +15,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructArrayECSqlBinder::StructArrayECSqlBinder(ECSqlStatementBase& stmt, ECSqlTypeInfo const& typeInfo)
+ArrayECSqlBinder::ArrayECSqlBinder(ECSqlStatementBase& stmt, ECSqlTypeInfo const& typeInfo)
     : ECSqlBinder(stmt, typeInfo, 1, true, true)
     {
-    BeAssert(GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray);
+    BeAssert(GetTypeInfo().IsArray());
     Initialize();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2016
 //---------------------------------------------------------------------------------------
-void StructArrayECSqlBinder::Initialize()
+void ArrayECSqlBinder::Initialize()
     {
     // root binder refers to the entire struct array, not just the first array element
     BeAssert(m_json.IsNull() || m_json.IsArray());
@@ -38,7 +38,7 @@ void StructArrayECSqlBinder::Initialize()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::_OnBeforeStep()
+ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
     {
     const uint32_t arrayLength = m_json.IsNull() ? 0 : (uint32_t) m_json.Size();
     ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), arrayLength);
@@ -63,7 +63,7 @@ ECSqlStatus StructArrayECSqlBinder::_OnBeforeStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-StructArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
+ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
     : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr)
     {
     BeAssert(m_json != nullptr);
@@ -74,7 +74,7 @@ StructArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-StructArrayECSqlBinder::JsonValueBinder::JsonValueBinder(JsonValueBinder&& rhs)
+ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(JsonValueBinder&& rhs)
     : m_ecdb(std::move(rhs.m_ecdb)), m_typeInfo(std::move(rhs.m_typeInfo)), m_json(std::move(rhs.m_json)), m_jsonAllocator(std::move(rhs.m_jsonAllocator)), m_currentArrayElementBinder(std::move(rhs.m_currentArrayElementBinder))
     {
     if (!rhs.m_structMemberBinders.empty())
@@ -84,7 +84,7 @@ StructArrayECSqlBinder::JsonValueBinder::JsonValueBinder(JsonValueBinder&& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-StructArrayECSqlBinder::JsonValueBinder& StructArrayECSqlBinder::JsonValueBinder::operator=(JsonValueBinder&& rhs)
+ArrayECSqlBinder::JsonValueBinder& ArrayECSqlBinder::JsonValueBinder::operator=(JsonValueBinder&& rhs)
     {
     if (this == &rhs)
         return *this;
@@ -105,7 +105,7 @@ StructArrayECSqlBinder::JsonValueBinder& StructArrayECSqlBinder::JsonValueBinder
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindNull()
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindNull()
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -118,7 +118,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindBoolean(bool value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindBoolean(bool value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Boolean);
     if (!stat.IsSuccess())
@@ -131,7 +131,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindBlob(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindBlob(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
@@ -144,7 +144,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindBlob(void const* value
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindZeroBlob(int blobSize)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindZeroBlob(int blobSize)
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -157,7 +157,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindZeroBlob(int blobSize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_DateTime);
     if (!stat.IsSuccess())
@@ -182,7 +182,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDateTime(double julian
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
     const double jd = DateTime::MsecToRationalDay(julianDayMsec);
     return _BindDateTime(jd, metadata);
@@ -191,7 +191,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDateTime(uint64_t juli
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDouble(double value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindDouble(double value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Double);
     if (!stat.IsSuccess())
@@ -205,7 +205,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindInt(int value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindInt(int value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Integer);
     if (!stat.IsSuccess())
@@ -218,7 +218,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindInt64(int64_t value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindInt64(int64_t value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Long);
     if (!stat.IsSuccess())
@@ -231,7 +231,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindPoint2d(DPoint2dCR value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindPoint2d(DPoint2dCR value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Point2d);
     if (!stat.IsSuccess())
@@ -243,7 +243,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindPoint2d(DPoint2dCR val
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindPoint3d(DPoint3dCR value)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindPoint3d(DPoint3dCR value)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_Point3d);
     if (!stat.IsSuccess())
@@ -255,7 +255,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindPoint3d(DPoint3dCR val
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int stringLength)
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int stringLength)
     {
     ECSqlStatus stat = FailIfTypeMismatch(PRIMITIVETYPE_String);
     if (!stat.IsSuccess())
@@ -275,7 +275,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::_BindText(Utf8CP value, IEC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_BindStructMember(Utf8CP structMemberPropertyName)
+IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -305,7 +305,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_BindStructMember(Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
+IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -334,7 +334,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_BindStructMember(ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::CreateStructMemberBinder(ECN::ECPropertyCR memberProp)
+IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::CreateStructMemberBinder(ECN::ECPropertyCR memberProp)
     {
     BeAssert(m_json != nullptr);
     BeAssert(m_jsonAllocator != nullptr);
@@ -355,7 +355,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::CreateStructMemberBinder(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_AddArrayElement()
+IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::_AddArrayElement()
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -380,7 +380,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::MoveCurrentArrayElementBinder(ECDbCR ecdb, ECSqlTypeInfo const& arrayTypeInfo)
+IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::MoveCurrentArrayElementBinder(ECDbCR ecdb, ECSqlTypeInfo const& arrayTypeInfo)
     {
     BeAssert(m_json->IsArray());
     m_json->PushBack(rapidjson::Value().Move(), *m_jsonAllocator);
@@ -393,7 +393,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::MoveCurrentArrayElementBi
         }
 
     if (arrayTypeInfo.GetKind() == ECSqlTypeInfo::Kind::PrimitiveArray)
-        m_currentArrayElementBinder = std::make_unique<JsonValueBinder>(ecdb, ECSqlTypeInfo(arrayTypeInfo.GetPrimitiveType()), newArrayElementJson, *m_jsonAllocator);
+        m_currentArrayElementBinder = std::make_unique<JsonValueBinder>(ecdb, ECSqlTypeInfo(arrayTypeInfo.GetPrimitiveType(), false, &arrayTypeInfo.GetDateTimeInfo()), newArrayElementJson, *m_jsonAllocator);
     else
         {
         BeAssert(arrayTypeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray);
@@ -406,7 +406,7 @@ IECSqlBinder& StructArrayECSqlBinder::JsonValueBinder::MoveCurrentArrayElementBi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-void StructArrayECSqlBinder::JsonValueBinder::Reset()
+void ArrayECSqlBinder::JsonValueBinder::Reset()
     {
     m_json->SetNull();
     m_structMemberBinders.clear();
@@ -416,7 +416,7 @@ void StructArrayECSqlBinder::JsonValueBinder::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::PrimitiveType boundType) const
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::PrimitiveType boundType) const
     {
     ECSqlStatus stat = FailIfInvalid();
     if (!stat.IsSuccess())
@@ -451,7 +451,7 @@ ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::Pri
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayECSqlBinder::JsonValueBinder::FailIfInvalid() const
+ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfInvalid() const
     {
     if (m_json == nullptr)
         {
