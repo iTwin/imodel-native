@@ -401,20 +401,6 @@ void MultiplyAffine
 TransformR out,
 TransformCR in
 ) const;
-//!
-//! Matrix*point multiplication, using full 4d points but assuming the
-//! matrix is has 3D only scaling and translation.
-//!
-//! @param [out] outPoint Array of homogeneous products A*pPoint[i]
-//! @param [in] inPoint Array of homogeneous points
-//! @param [in] n number of points
-//!
-void MultiplyScaleAndTranslate
-(
-DPoint4dP       outPoint,
-DPoint4dCP      inPoint,
-int             n
-) const;
 
 //!
 //! Matrix times vector multiplication, assume 0001 4th row
@@ -442,21 +428,6 @@ void MultiplyAffineVectors
 (
 DPoint3dP       out,
 DPoint3dCP      in,
-int             n
-) const;
-
-//!
-//! Matrix*point multiplication, using only scale and translate entries from the
-//! matrix.
-//!
-//! @param [out] outPoint Array of products A*pPoint[i]
-//! @param [in] inPoint Array of input points
-//! @param [in] n number of points
-//!
-void MultiplyScaleAndTranslate
-(
-DPoint3dP       outPoint,
-DPoint3dCP      inPoint,
 int             n
 ) const;
 
