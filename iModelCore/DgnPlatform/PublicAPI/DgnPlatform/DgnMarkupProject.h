@@ -65,9 +65,6 @@ DGNPLATFORM_TYPEDEFS(MarkupExternalLinkGroup)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct RedlineModelHandler;
-struct SpatialRedlineModelHandler;
-
 namespace dgn_ElementHandler {struct RedlineElementHandler; struct RedlineViewDef;}
 
 namespace dgn_ModelHandler {struct Redline;}
@@ -323,7 +320,6 @@ struct SpatialRedlineModel : SpatialModel
 private:
 
     friend struct DgnMarkupProject;
-    friend struct SpatialRedlineModelHandler;
 
 protected:
     static SpatialRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel);

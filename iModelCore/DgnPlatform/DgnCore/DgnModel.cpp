@@ -1290,7 +1290,7 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
     if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
-        modeledElementId = DgnElementId((uint64_t) v.GetLong());
+        modeledElementId = DgnElementId((uint64_t) v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
     DgnModel::CreateParams params(db, classId, modeledElementId, inGuiList);
     return params;
     }

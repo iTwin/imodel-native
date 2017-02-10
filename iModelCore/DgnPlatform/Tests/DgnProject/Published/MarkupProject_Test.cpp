@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/MarkupProject_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -66,6 +66,18 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
     createStatus = rdlModel->Insert();
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
+
+#ifdef WIP_TEST_REDLINE_IMAGE
+    //  Store an image in the redline mdoel
+    BeFile blah;
+    ASSERT_EQ(BeFileStatus::Success, blah.Open("d:/photo/cat_small.jpg", BeFileAccess::Read));
+    ByteStream bytes;
+    ASSERT_EQ(BeFileStatus::Success, blah.ReadEntireFile(bytes));
+    Render::Image image = Render::Image::FromJpeg(bytes.GetData(), bytes.GetSize(), Render::Image::Format::Rgba, Render::Image::BottomUp::Yes);
+    ASSERT_TRUE(image.IsValid());
+    Render::ImageSource imageSource(image, Render::ImageSource::Format::Jpeg);
+    rdlModel->StoreImage(imageSource, DPoint2d::FromZero(), DVec2d::From(0.5, 0.5));
+#endif
 
     ASSERT_EQ( rdlModel->GetDgnMarkupProject(), mproject.get() );
 
