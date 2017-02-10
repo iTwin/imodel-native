@@ -1012,6 +1012,8 @@ TEST_F(DependencyRevisionTest, UpdateCache)
 TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergeDependencyPermutations.bim");
+    
+    RevisionStatus status;
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();
@@ -1024,17 +1026,21 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     VerifyDependentProperties(depId, {456, 0, 123, 0});
     BackupTestFile();
 
-    // Create a revision with some direct changes to the dependent property
+    /*
+     * Create a revision with some direct changes to the dependent property
+     */
     UpdateDependentProperty(depId, 2, 789);
     VerifyDependentProperties(depId, {456, 0, 789, 0});
     m_db->SaveChanges();
     VerifyDependentProperties(depId, {456, 0, 123, 0});
 
-    DgnRevisionPtr directChangesRev = CreateRevision();
+    DgnRevisionPtr directChangesRev = CreateRevision(); // Will only contain LastMod change
     ASSERT_TRUE(directChangesRev.IsValid());
-    DumpRevision(*directChangesRev, "Direct Changes to Dependency:");
+    DumpRevision(*directChangesRev, "DirectChangesRev:");
 
-    // Create a revision with some indirect changes to the dependent property
+    /*
+     * Create a revision with some indirect changes to the dependent property
+     */
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
     m_db->SaveChanges("Revision");
@@ -1043,9 +1049,11 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
 
     DgnRevisionPtr indirectChangesRev = CreateRevision();
     ASSERT_TRUE(indirectChangesRev.IsValid());
-    DumpRevision(*indirectChangesRev, "Indirect Changes to Dependency:");
+    DumpRevision(*indirectChangesRev, "IndirectChangesRev:");
 
-    // Make direct changes, and merge the revision with indirect changes
+    /*
+     * Make direct changes, and merge the revision with indirect changes
+     */
     RestoreTestFile();
     UpdateDependentProperty(depId, 2, 789);
     m_db->SaveChanges();
@@ -1053,7 +1061,36 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*indirectChangesRev));
     VerifyDependentProperties(depId, {456, 0, 654, 0});
 
-    // Make indirect changes, and merge the revision with direct changes
+    // Create new revision
+    DgnRevisionPtr directAndIndirectChangesRev = CreateRevision(); // Will only contain LastMod change
+    ASSERT_TRUE(directAndIndirectChangesRev.IsValid());
+    DumpRevision(*directAndIndirectChangesRev, "DirectAndIndirectChangesRev:");
+
+    // Test reverse
+    status = m_db->Revisions().ReverseRevision(*directAndIndirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    status = m_db->Revisions().ReverseRevision(*indirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    // Test reinstate
+    status = m_db->Revisions().ReinstateRevision(*indirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    status = m_db->Revisions().ReinstateRevision(*directAndIndirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    /*
+     * Make indirect changes, and merge the revision with direct changes
+     */
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
     m_db->SaveChanges("Revision");
@@ -1061,6 +1098,54 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     VerifyDependentProperties(depId, {456, 0, 654, 0});
     EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*directChangesRev));
     VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Create a new revision
+    DgnRevisionPtr indirectAndDirectChangesRev = CreateRevision();
+    ASSERT_TRUE(indirectAndDirectChangesRev.IsValid());
+    DumpRevision(*indirectAndDirectChangesRev, "IndirectAndDirectChangesRev:");
+
+    // Test reverse
+    status = m_db->Revisions().ReverseRevision(*indirectAndDirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    status = m_db->Revisions().ReverseRevision(*directChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    // Test reinstate
+    status = m_db->Revisions().ReinstateRevision(*directChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 123);
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    status = m_db->Revisions().ReinstateRevision(*indirectAndDirectChangesRev);
+    ASSERT_TRUE(RevisionStatus::Success == status);
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+bool ValidateValue(DgnDbCR db, Utf8CP sql, int expectedValue)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, sql))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    return (expectedValue == stmt.GetValueInt(0));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1068,7 +1153,7 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
 //---------------------------------------------------------------------------------------
 TEST_F(RevisionTestFixture, ReverseAndReinstate)
     {
-    // Setup baseline
+    /* Setup baseline */
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReverseAndReinstate.bim");
     m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id, Column1) VALUES(1,0)"), BE_SQLITE_OK);
@@ -1077,63 +1162,82 @@ TEST_F(RevisionTestFixture, ReverseAndReinstate)
     ASSERT_TRUE(initialRevision.IsValid());
     BackupTestFile();
 
-    // Revision 1
+    RevisionManagerR revMgr = m_db->Revisions();
+
+    /* Create Revision 1 */
     ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=1 WHERE Id=1"), BE_SQLITE_OK);
     m_db->SaveChanges("Revision 1");
     DgnRevisionPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
 
-    // Revision 2
+    /* Create Revision 2 */
     ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=2 WHERE Id=1"), BE_SQLITE_OK);
     m_db->SaveChanges("Revision 2");
     DgnRevisionPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
 
     // Validate
-    Statement stmt;
-    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(stmt.GetValueInt(0), 2);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 2));
+    ASSERT_FALSE(revMgr.HasReversedRevisions());
+    ASSERT_STREQ(revision2->GetId().c_str(), revMgr.GetParentRevisionId().c_str());
+    ASSERT_TRUE(revMgr.GetReversedRevisionId().empty());
 
-    // Reverse Revision 2
-    RevisionStatus status = m_db->Revisions().ReverseRevision(*revision2);
+    /* Reverse Revision 2 */
+    RevisionStatus status = revMgr.ReverseRevision(*revision2);
     ASSERT_TRUE(RevisionStatus::Success == status);
 
     // Validate
-    stmt.Finalize();
-    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(stmt.GetValueInt(0), 1);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
+    ASSERT_TRUE(revMgr.HasReversedRevisions());
+    ASSERT_STREQ(revision2->GetId().c_str(), revMgr.GetParentRevisionId().c_str());
+    ASSERT_STREQ(revision1->GetId().c_str(), revMgr.GetReversedRevisionId().c_str());
 
-    // Reverse Revision 1
-    status = m_db->Revisions().ReverseRevision(*revision1);
+    /* Reverse Revision 1 */
+    status = revMgr.ReverseRevision(*revision1);
     ASSERT_TRUE(RevisionStatus::Success == status);
 
     // Validate
-    stmt.Finalize();
-    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(stmt.GetValueInt(0), 0);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 0));
+    ASSERT_TRUE(revMgr.HasReversedRevisions());
+    ASSERT_STREQ(revision2->GetId().c_str(), revMgr.GetParentRevisionId().c_str());
+    ASSERT_STREQ(initialRevision->GetId().c_str(), revMgr.GetReversedRevisionId().c_str());
 
-    // Reinstate Revision 1
-    status = m_db->Revisions().ReinstateRevision(*revision1);
+    // Commit with reversed revisions should fail
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=108 WHERE Id=1"), BE_SQLITE_OK);
+    BeTest::SetFailOnAssert(false);
+    DbResult result = m_db->SaveChanges("Revision Invalid");
+    BeTest::SetFailOnAssert(true);
+    ASSERT_NE(BE_SQLITE_OK, result);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 108));
+    result = m_db->AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 0));
+
+    /* Reinstate Revision 1 */
+    status = revMgr.ReinstateRevision(*revision1);
     ASSERT_TRUE(RevisionStatus::Success == status);
 
     // Validate
-    stmt.Finalize();
-    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(stmt.GetValueInt(0), 1);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
+    ASSERT_TRUE(revMgr.HasReversedRevisions());
+    ASSERT_STREQ(revision2->GetId().c_str(), revMgr.GetParentRevisionId().c_str());
+    ASSERT_STREQ(revision1->GetId().c_str(), revMgr.GetReversedRevisionId().c_str());
 
-    // Reinstate Revision 2
-    status = m_db->Revisions().ReinstateRevision(*revision2);
+    /* Reinstate Revision 2 */
+    status = revMgr.ReinstateRevision(*revision2);
     ASSERT_TRUE(RevisionStatus::Success == status);
 
     // Validate
-    stmt.Finalize();
-    ASSERT_TRUE(BE_SQLITE_OK == stmt.Prepare(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(stmt.GetValueInt(0), 2);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 2));
+    ASSERT_FALSE(revMgr.HasReversedRevisions());
+    ASSERT_STREQ(revision2->GetId().c_str(), revMgr.GetParentRevisionId().c_str());
+    ASSERT_TRUE(revMgr.GetReversedRevisionId().empty());
+
+    // Commit with reinstated revisions should succeed again
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column1=108 WHERE Id=1"), BE_SQLITE_OK);
+    result = m_db->SaveChanges("Revision 3");
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 108));
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL

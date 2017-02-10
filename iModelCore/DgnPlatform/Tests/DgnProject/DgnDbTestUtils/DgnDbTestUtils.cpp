@@ -87,7 +87,7 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 Sheet::ElementPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, height, width, name);
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, DPoint2d::From(width,height), name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;

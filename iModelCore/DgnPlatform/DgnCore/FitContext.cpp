@@ -81,6 +81,16 @@ void FitContext::ExtendFitRange(ElementAlignedBox3dCR elementBox, TransformCR pl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FitContext::ExtendFitRange(AxisAlignedBox3dCR elementBox)
+    {
+    Frustum box(elementBox);
+    box.Multiply(m_trans); // put 8 corners from axis coordintes to view coordinates
+    m_fitRange.Extend(box.m_pts, 8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FitContext::_VisitGeometry(GeometrySourceCR source) 

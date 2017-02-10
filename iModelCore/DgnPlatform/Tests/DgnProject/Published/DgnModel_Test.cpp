@@ -551,6 +551,14 @@ TEST_F(DgnModelTests, CodeUniqueness)
     DgnDbStatus stat;
     ASSERT_FALSE(ele->Update(&stat).IsValid());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
+    // Update Dgncode by getting uniqueDgncode
+    updatepartitionCode = InformationPartitionElement::CreateUniqueCode(*m_db->Elements().GetRootSubject(), "Testcode2");
+    ele->SetCode(updatepartitionCode);
+    ASSERT_TRUE(updatepartitionCode == ele->GetCode());
+    DgnElementCPtr updatedele = ele->Update(&stat);
+    ASSERT_TRUE(updatedele.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(updatepartitionCode == updatedele->GetCode());
    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
@@ -577,4 +585,48 @@ TEST_F(DgnModelTests, DefinitionModelCreation)
     ASSERT_EQ(DgnDbStatus::Success ,defmodel2c->Insert());
     ASSERT_EQ(defmodel2c->GetModeledElementId(), defp2->GetElementId());
     ASSERT_EQ(defmodel->DictionaryId(), defmodel2c->DictionaryId());
+
+    DgnCode partitionCode1 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement");
+    DgnElementId eleId1=m_db->Elements().QueryElementIdByCode(partitionCode1);
+    RefCountedCPtr<InformationPartitionElement> Infele1 = m_db->Elements().Get<InformationPartitionElement>(eleId1);
+    ASSERT_EQ(Infele1->GetDescription(), "This is new DefinitionPartition");
+
+    DgnCode partitionCode2 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement2");
+    DgnElementId eleId2 = m_db->Elements().QueryElementIdByCode(partitionCode2);
+    RefCountedCPtr<InformationPartitionElement> Infele2 = m_db->Elements().Get<InformationPartitionElement>(eleId2);
+    ASSERT_EQ(Infele2->GetDescription(), "This is second DefinitionPartition");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, GenericGroupModelCreation)
+    {
+    SetupSeedProject();
+    GroupInformationPartitionPtr ginfop=GroupInformationPartition::Create(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement", "This is GroupInformationPartitionElement");
+    DgnElementCPtr elep = ginfop->Insert();
+    ASSERT_TRUE(elep.IsValid());
+    GenericGroupModelPtr genricgroupmodel=GenericGroupModel::CreateAndInsert(*elep);
+    ASSERT_TRUE(genricgroupmodel.IsValid());
+    GenericGroupPtr group=GenericGroup::Create(*genricgroupmodel);
+    DgnElementCPtr ele=group->Insert();
+    ASSERT_TRUE(ele.IsValid());
+    ASSERT_EQ(ele->GetModelId(), genricgroupmodel->GetModeledElementId());
+
+    GroupInformationPartitionCPtr ginfop2 = GroupInformationPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement2", "GroupInformationPartitionElement2");
+    ASSERT_TRUE(ginfop2.IsValid());
+    GenericGroupModelPtr genricgroupmodelc = GenericGroupModel::Create(*ginfop2);
+    ASSERT_EQ(DgnDbStatus::Success, genricgroupmodelc->Insert());
+    GenericGroupPtr group2 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele2 = group2->Insert();
+    ASSERT_TRUE(ele2.IsValid());
+    ASSERT_EQ(ele2->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    GenericGroupPtr group3 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele3 = group3->Insert();
+    ASSERT_TRUE(ele3.IsValid());
+    ASSERT_EQ(ele3->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    bvector<DgnModelId> idList;
+    idList =m_db->Models().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_GroupModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    ASSERT_EQ(2,idList.size());
+    ASSERT_EQ(genricgroupmodel->GetModelId(), idList[0]);
+    ASSERT_EQ(genricgroupmodelc->GetModelId(), idList[1]);
     }

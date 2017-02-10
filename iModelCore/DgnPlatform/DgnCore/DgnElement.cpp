@@ -457,11 +457,12 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
         return nullptr;
 
-    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId));
+    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
     if (description && *description)
         subject->SetDescription(description);
 

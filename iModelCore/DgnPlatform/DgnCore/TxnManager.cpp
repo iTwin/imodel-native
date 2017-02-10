@@ -553,7 +553,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         return OnCommitStatus::Continue;
         }
 
-    if (m_dgndb.Revisions().HasReversedRevisions())
+    if (isCommit && m_dgndb.Revisions().HasReversedRevisions())
         {
         BeAssert(false && "Cannot commit when revisions have been reversed. Abandon changes, reinstate revisions and try again");
         return OnCommitStatus::Abort;
@@ -741,7 +741,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
 
-    AbortOnConflictChangeSet changeSet;
+    ApplyRevisionChangeSet changeSet(m_dgndb);
     DbResult result = changeStream.ToChangeSet(changeSet, reverse);
     BeAssert(result == BE_SQLITE_OK);
 
@@ -762,12 +762,10 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     RevisionStatus status;
     RevisionManagerR revMgr = m_dgndb.Revisions();
     if (reverse)
-        status = revMgr.SaveReversedParentRevisionId(revision.GetParentId());
+        status = revMgr.SaveReversedRevisionId(revision.GetParentId());
     else
-        status = (revision.GetId() == revMgr.GetParentRevisionId()) ? revMgr.DeleteReversedParentRevisionId() : revMgr.SaveReversedParentRevisionId(revision.GetId());
+        status = (revision.GetId() == revMgr.GetParentRevisionId()) ? revMgr.DeleteReversedRevisionId() : revMgr.SaveReversedRevisionId(revision.GetId());
         
-    // DeleteReversedParentRevisionId
-    status = m_dgndb.Revisions().SaveReversedParentRevisionId(reverse ? revision.GetParentId() : revision.GetId());
     if (status == RevisionStatus::Success)
         {
         DbResult result = m_dgndb.SaveChanges("");
