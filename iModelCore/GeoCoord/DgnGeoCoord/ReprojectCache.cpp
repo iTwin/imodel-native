@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/ReprojectCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -767,8 +767,10 @@ static bool untransformedAttachment (bool& refElementReprojected, DgnModelRefCP 
     // if it's in the "CouldBeReprojectedList" of the parentModelRef, then we've changed the origin and transform
     //  in RefAttachHandler::_OnGeoCoordinateReprojection, and we should not conclude that this reference is
     //  not to be reprojected.
-    ReprojectionInfo*  reprojectInfo;
-    if (NULL != (reprojectInfo = static_cast <ReprojectionInfo*> (refP->FindAppData (ReprojectionInfo::GetKey()))))
+    ReprojectionInfo*   reprojectInfo;
+    DgnModelP           parentModel = parentModelRef->GetDgnModelP();
+        return false;
+    if ( (nullptr != parentModel) && (nullptr != (reprojectInfo = static_cast <ReprojectionInfo*> (parentModel->FindAppData (ReprojectionInfo::GetKey())))) )
         {
         T_AttachIdList::iterator iterator;
         for (iterator = reprojectInfo->m_couldBeReprojectedArray.begin(); iterator != reprojectInfo->m_couldBeReprojectedArray.end(); iterator++)
@@ -776,7 +778,7 @@ static bool untransformedAttachment (bool& refElementReprojected, DgnModelRefCP 
             ElementId testElementId = (ElementId) *iterator;
             if (testElementId == refP->GetElementId())
                 {
-                refElementReprojected = false;
+                refElementReprojected = true;
                 return true;
                 }
             }
@@ -808,7 +810,7 @@ static void reportDatumShiftError (DgnGCSP sourceGCS, DgnGCSP targetGCS, DgnMode
     WString     fileName  = modelRef->GetDgnFileP()->GetFileName();
 
     BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_DatumError);
-    message.Sprintf (format, sourceGCS->GetDatumName(), targetGCS->GetDatumName(), fileName.c_str(), modelName);
+    message.Sprintf (format.c_str(), sourceGCS->GetDatumName(), targetGCS->GetDatumName(), fileName.c_str(), modelName);
     NotifyMessageDetails details (OutputMessagePriority::Error, message.c_str());
     NotificationManager::OutputMessage (details);
     }
@@ -848,7 +850,7 @@ static void getLinearTransformMessages (WStringR message, WStringR detailMessage
 
     // mark it as reprojected, even though no reprojection was actually required.
     BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_SubstituteLinearTransform);
-    message.Sprintf (format, fileName.c_str(), modelName);
+    message.Sprintf (format.c_str(), fileName.c_str(), modelName);
     BaseGeoCoordResource::GetLocalizedString (detailMessage, DGNGEOCOORD_Msg_SubstituteLinearTransformDetails);
     }
 
