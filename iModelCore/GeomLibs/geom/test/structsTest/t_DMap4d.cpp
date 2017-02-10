@@ -46,3 +46,44 @@ TEST(DMap4d, Explode)
     Check::Near(translation, DPoint3d::From(4, 3, 2));
     Check::Near(perspective, DPoint4d::From(0, 0, 0, 1));
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMap4d, IdentityMap)
+    {
+    DMap4d identityMap = DMap4d::FromIdentity();
+    Check::Near(identityMap.M0, identityMap.M1);
+    
+    DPoint3d point = DPoint3d::From(4, 1, 9);
+    DPoint4d retPoint = identityMap.M0.Multiply(point, 1);
+    Check::Near(retPoint, DPoint4d::From(point, 1), "Not an Identity Transform");
+    }
+
+void isAffinePerspective(DMap4d mat) 
+    {
+    if (mat.M0.coff[3][3] == 1)
+        Check::True(mat.IsAffine());
+    else
+        Check::True(mat.IsPerspective());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMap4d, CheckAffine)
+    {
+    isAffinePerspective(DMap4d::FromIdentity());
+    isAffinePerspective(DMap4d::FromTranslation(4, 3, 2));
+    isAffinePerspective(DMap4d::FromRotation(15, 1.2, 0.2, 0.4));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMap4d, Sandwitch)
+    {
+    DMap4d mapA = DMap4d::FromRotation(22, 2, 2, 1);
+    DMap4d mapB = DMap4d::FromTranslation(4, 2, 1);
+
+    DMap4d resMap;
+    resMap.SandwichOfBABinverse(mapA, mapB);
+    Check::Near(mapA.M0, resMap.M0);
+    }

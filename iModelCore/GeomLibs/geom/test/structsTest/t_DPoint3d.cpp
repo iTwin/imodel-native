@@ -1298,3 +1298,33 @@ TEST(DPoint3d, MaxAbsIndex)
     point = DPoint3d::From(-2.334, -1.234, -4.43);    
     Check::ExactDouble(2, point.MaxAbsIndex());
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPoint3d, FromRotationAngle)
+    {
+    DPoint3d pnt3d[] = { DPoint3d::FromProduct(DPoint3d::From(3, 3, 5),
+                                           RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()),
+                                           DVec3d::From(4, 4, 4)) };
+    
+    DPoint3d::AddToArray(pnt3d, 1, DPoint3d::From(2, 2, 3));
+
+    DPoint3d expectedPnt = DPoint3d::From(9, 3.536, 13.464);
+    Check::True(expectedPnt.AlmostEqualXY(pnt3d[0], 0.0005));
+    
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPoint3d, Rotate360)
+    {
+    bvector<DPoint3d> pnt3d = { DPoint3d::From(2, 2, 0),
+                                DPoint3d::From(0.2, 0.2, 0),
+                                DPoint3d::From(0.11, 1, 0) };
+    bvector<DPoint3d> pnt3dExp = pnt3d;
+    pnt3d[0].RotateXY(Angle::FromDegrees(360).Radians());
+    pnt3d[1].RotateXY(Angle::FromDegrees(360).Radians());
+    pnt3d[2].RotateXY(Angle::FromDegrees(360).Radians());
+
+    Check::True(DPoint3d::AlmostEqualXY(pnt3d, pnt3dExp));
+    }
