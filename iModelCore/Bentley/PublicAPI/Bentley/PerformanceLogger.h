@@ -10,11 +10,11 @@
 #include <Logging/bentleylogging.h>
 
 #define PERFLOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
-#define PERFLOG_START(application,feature) PERFLOG.infov("PerformanceLogger;%s;%s;Start;%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
-#define PERFLOG_FINISH(application,feature) PERFLOG.infov("PerformanceLogger;%s;%s;Finish;%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
+#define PERFLOG_START(application,feature) PERFLOG.infov("%s,%s,Start,%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
+#define PERFLOG_FINISH(application,feature) PERFLOG.infov("%s,%s,Finish,%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
 
 /*
- * Useage Examples:
+ * Usage Examples:
  *
  * PERFLOG_START("Core", "Opening the DgnDb")
  * PERFLOG_FINISH("Core", "Opening the DgnDb")
