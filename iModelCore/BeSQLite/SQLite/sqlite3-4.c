@@ -968,8 +968,13 @@ SQLITE_PRIVATE void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n
       /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
       ** use it as the variable number */
       i64 i;
-      int bOk = 0==sqlite3Atoi64(&z[1], &i, n-1, SQLITE_UTF8);
-      x = (ynVar)i;
+      int bOk;
+      if( n==2 ){ /*OPTIMIZATION-IF-TRUE*/
+        i = z[1]-'0';  /* The common case of ?N for a single digit N */
+        bOk = 1;
+      }else{
+        bOk = 0==sqlite3Atoi64(&z[1], &i, n-1, SQLITE_UTF8);
+      }
       testcase( i==0 );
       testcase( i==1 );
       testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
@@ -979,6 +984,7 @@ SQLITE_PRIVATE void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n
             db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
         return;
       }
+      x = (ynVar)i;
       if( x>pParse->nVar ){
         pParse->nVar = (int)x;
         doAdd = 1;
@@ -1413,33 +1419,41 @@ SQLITE_PRIVATE IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   }
   return pNew;
 }
-SQLITE_PRIVATE Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
-  Select *pNew, *pPrior;
+SQLITE_PRIVATE Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
+  Select *pRet = 0;
+  Select *pNext = 0;
+  Select **pp = &pRet;
+  Select *p;
+
   assert( db!=0 );
-  if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*p) );
-  if( pNew==0 ) return 0;
-  pNew->pEList = sqlite3ExprListDup(db, p->pEList, flags);
-  pNew->pSrc = sqlite3SrcListDup(db, p->pSrc, flags);
-  pNew->pWhere = sqlite3ExprDup(db, p->pWhere, flags);
-  pNew->pGroupBy = sqlite3ExprListDup(db, p->pGroupBy, flags);
-  pNew->pHaving = sqlite3ExprDup(db, p->pHaving, flags);
-  pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, flags);
-  pNew->op = p->op;
-  pNew->pPrior = pPrior = sqlite3SelectDup(db, p->pPrior, flags);
-  if( pPrior ) pPrior->pNext = pNew;
-  pNew->pNext = 0;
-  pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
-  pNew->pOffset = sqlite3ExprDup(db, p->pOffset, flags);
-  pNew->iLimit = 0;
-  pNew->iOffset = 0;
-  pNew->selFlags = p->selFlags & ~SF_UsesEphemeral;
-  pNew->addrOpenEphm[0] = -1;
-  pNew->addrOpenEphm[1] = -1;
-  pNew->nSelectRow = p->nSelectRow;
-  pNew->pWith = withDup(db, p->pWith);
-  sqlite3SelectSetName(pNew, p->zSelName);
-  return pNew;
+  for(p=pDup; p; p=p->pPrior){
+    Select *pNew = sqlite3DbMallocRawNN(db, sizeof(*p) );
+    if( pNew==0 ) break;
+    pNew->pEList = sqlite3ExprListDup(db, p->pEList, flags);
+    pNew->pSrc = sqlite3SrcListDup(db, p->pSrc, flags);
+    pNew->pWhere = sqlite3ExprDup(db, p->pWhere, flags);
+    pNew->pGroupBy = sqlite3ExprListDup(db, p->pGroupBy, flags);
+    pNew->pHaving = sqlite3ExprDup(db, p->pHaving, flags);
+    pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, flags);
+    pNew->op = p->op;
+    pNew->pNext = pNext;
+    pNew->pPrior = 0;
+    pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
+    pNew->pOffset = sqlite3ExprDup(db, p->pOffset, flags);
+    pNew->iLimit = 0;
+    pNew->iOffset = 0;
+    pNew->selFlags = p->selFlags & ~SF_UsesEphemeral;
+    pNew->addrOpenEphm[0] = -1;
+    pNew->addrOpenEphm[1] = -1;
+    pNew->nSelectRow = p->nSelectRow;
+    pNew->pWith = withDup(db, p->pWith);
+    sqlite3SelectSetName(pNew, p->zSelName);
+    *pp = pNew;
+    pp = &pNew->pPrior;
+    pNext = pNew;
+  }
+
+  return pRet;
 }
 #else
 SQLITE_PRIVATE Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
@@ -6725,6 +6739,12 @@ static const FuncDef statPushFuncdef = {
 ** has type BLOB but it is really just a pointer to the Stat4Accum object.
 ** The content to returned is determined by the parameter J
 ** which is one of the STAT_GET_xxxx values defined above.
+**
+** The stat_get(P,J) function is not available to generic SQL.  It is
+** inserted as part of a manually constructed bytecode program.  (See
+** the callStatGet() routine below.)  It is guaranteed that the P
+** parameter will always be a poiner to a Stat4Accum object, never a
+** NULL.
 **
 ** If neither STAT3 nor STAT4 are enabled, then J is always
 ** STAT_GET_STAT1 and is hence omitted and this routine becomes
@@ -14319,7 +14339,9 @@ SQLITE_PRIVATE void sqlite3GenerateRowDelete(
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
+    if( pParse->nested==0 ){
+      sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
+    }
     if( eMode!=ONEPASS_OFF ){
       sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }
@@ -19514,16 +19536,23 @@ SQLITE_PRIVATE void sqlite3CompleteInsertion(
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i],
-                         aRegIdx[i]+1,
-                         pIdx->uniqNotNull ? pIdx->nKeyCol: pIdx->nColumn);
-    pik_flags = 0;
-    if( useSeekResult ) pik_flags = OPFLAG_USESEEKRESULT;
+    pik_flags = (useSeekResult ? OPFLAG_USESEEKRESULT : 0);
     if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
       assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
       pik_flags |= (update_flags & OPFLAG_SAVEPOSITION);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+      if( update_flags==0 ){
+        sqlite3VdbeAddOp4(v, OP_InsertInt, 
+            iIdxCur+i, aRegIdx[i], 0, (char*)pTab, P4_TABLE
+        );
+        sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
+      }
+#endif
     }
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i],
+                         aRegIdx[i]+1,
+                         pIdx->uniqNotNull ? pIdx->nKeyCol: pIdx->nColumn);
     sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;
@@ -22428,7 +22457,7 @@ SQLITE_PRIVATE const char *sqlite3JournalModename(int eMode){
 ** Locate a pragma in the aPragmaName[] array.
 */
 static const PragmaName *pragmaLocate(const char *zName){
-  int upr, lwr, mid, rc;
+  int upr, lwr, mid = 0, rc;
   lwr = 0;
   upr = ArraySize(aPragmaName)-1;
   while( lwr<=upr ){
@@ -29471,7 +29500,15 @@ static int withExpand(
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
-    sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+    if( bMayRecursive ){
+      Select *pPrior = pSel->pPrior;
+      assert( pPrior->pWith==0 );
+      pPrior->pWith = pSel->pWith;
+      sqlite3WalkSelect(pWalker, pPrior);
+      pPrior->pWith = 0;
+    }else{
+      sqlite3WalkSelect(pWalker, pSel);
+    }
     pParse->pWith = pWith;
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
@@ -29515,10 +29552,12 @@ static int withExpand(
 */
 static void selectPopWith(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
-  With *pWith = findRightmost(p)->pWith;
-  if( pWith!=0 ){
-    assert( pParse->pWith==pWith );
-    pParse->pWith = pWith->pOuter;
+  if( pParse->pWith && p->pPrior==0 ){
+    With *pWith = findRightmost(p)->pWith;
+    if( pWith!=0 ){
+      assert( pParse->pWith==pWith );
+      pParse->pWith = pWith->pOuter;
+    }
   }
 }
 #else
@@ -29568,8 +29607,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  if( pWalker->xSelectCallback2==selectPopWith ){
-    sqlite3WithPush(pParse, findRightmost(p)->pWith, 0);
+  if( p->pWith ){
+    sqlite3WithPush(pParse, p->pWith, 0);
   }
 
   /* Make sure cursor numbers have been assigned to all entries in
@@ -29856,9 +29895,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  if( (pSelect->selFlags & SF_MultiValue)==0 ){
-    w.xSelectCallback2 = selectPopWith;
-  }
+  w.xSelectCallback2 = selectPopWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 

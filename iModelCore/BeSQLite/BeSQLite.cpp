@@ -835,6 +835,23 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
         {
         Utf8String lastError = GetLastError(); // keep on separate line for debugging
         LOG.errorv("Error \"%s\" SQL: %s", lastError.c_str(), sql);
+
+        if (BE_SQLITE_LOCKED == rc)
+            {
+            sqlite3_stmt* stmt = nullptr;
+            while (nullptr != (stmt = sqlite3_next_stmt(m_dbFile->m_sqlDb, stmt)))
+                {
+                if (sqlite3_stmt_busy(stmt))
+                    {
+                    Utf8String openStatement(sqlite3_sql(stmt));
+                    if (openStatement.empty())
+                        LOG.errorv("Transaction is active.");
+                    else
+                        LOG.errorv("Busy: '%s'", openStatement.c_str());
+                    }
+                }
+            }
+
         BeAssert(false);  // If you EXPECT failures to be non-exceptional, call TryExecuteSql
         }
     return rc;
