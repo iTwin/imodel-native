@@ -75,15 +75,3 @@ TEST(DMap4d, CheckAffine)
     isAffinePerspective(DMap4d::FromTranslation(4, 3, 2));
     isAffinePerspective(DMap4d::FromRotation(15, 1.2, 0.2, 0.4));
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Farhad.Kabir                    02/17
-//---------------------------------------------------------------------------------------
-TEST(DMap4d, Sandwitch)
-    {
-    DMap4d mapA = DMap4d::FromRotation(22, 2, 2, 1);
-    DMap4d mapB = DMap4d::FromTranslation(4, 2, 1);
-
-    DMap4d resMap;
-    resMap.SandwichOfBABinverse(mapA, mapB);
-    Check::Near(mapA.M0, resMap.M0);
-    }
