@@ -127,7 +127,8 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
-                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
 
 
 %include $(sharedMki)LinkLibrary.mki

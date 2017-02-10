@@ -59,12 +59,26 @@ BentleyStatus _LoadTile()
     auto&                       system = *root.GetRenderSystem();
     static size_t               s_maxTilePointCount = 500000;
     static size_t               s_maxLeafPointCount = 20000;
-    bvector<FPoint3d>           points;
-    bvector<PointCloudColorDef> colors;
+    bvector<FPoint3d>           points(s_maxTilePointCount);
+    bvector<PointCloudColorDef> colors(s_maxTilePointCount);
     size_t                      nPoints = root.GetPoints(points, colors, tile.GetRange(), s_maxTilePointCount);
     
     if (0 == nPoints)
-        return ERROR;
+        return SUCCESS;
+
+    Transform                   dgnToTile, cloudToTile;
+
+    dgnToTile.InverseOf(root.GetLocation());
+    cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
+
+    for(size_t i=0; i<nPoints; i++)
+        {
+        DPoint3d        tmpPoint = {points[i].x, points[i].y, points[i].z};
+
+        cloudToTile.Multiply(tmpPoint);
+
+        points[i] = {(float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z}; 
+        }
 
     Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
 
@@ -135,6 +149,10 @@ double Tile::_GetMaximumSize() const
 void Root::LoadRootTile(DRange3dCR tileRange)
     {
     m_rootTile = Tile::Create(*this, tileRange);
+#ifdef ASYNCH_ROOT
+    auto result = _RequestTile(*m_rootTile, nullptr);
+    result.wait();
+#endif
     }
 
 static   BeMutex     s_queryMutex;
@@ -144,42 +162,16 @@ static   BeMutex     s_queryMutex;
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, DRange3dCR tileRange, size_t maxCount) const
     {
-    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... The query buffer pool is not thread safe.     TODO - bypass it to make query multithreaded?
+    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
     Transform                   worldToScene;
     DRange3d                    sceneRange;
     bool                        colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
-    PointCloudQueryBuffersPtr   queryBuffers = PointCloudQueryBuffers::Create(maxCount, (uint32_t) PointCloudChannelId::Xyz | (colorsPresent ? (uint32_t) PointCloudChannelId::Rgb : 0));
 
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
-    
     PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, QUERY_DENSITY_LIMIT, (float) maxCount);
-    size_t                      nPoints = queryBuffers->GetPoints (queryHandle->GetHandle());
 
-    if (0 == nPoints)
-        return 0;
-
-    DPoint3dCP                  pPoints = queryBuffers->GetXyzChannel()->GetChannelBuffer();
-    Transform                   dgnToTile, cloudToTile;
-
-    dgnToTile.InverseOf(GetLocation());
-    cloudToTile = Transform::FromProduct(dgnToTile, m_model.GetSceneToWorld());
-
-    points.resize(nPoints);
-    for(size_t i=0; i<nPoints; i++)
-        {
-        DPoint3d        tilePoint;
-
-        cloudToTile.Multiply(tilePoint, pPoints[i]);
-
-        points[i] = {(float) tilePoint.x, (float) tilePoint.y, (float) tilePoint.z}; 
-        }
-    if (colorsPresent)
-        {
-        colors.resize(nPoints);
-        memcpy (colors.data(), queryBuffers->GetRgbChannel()->GetChannelBuffer(), nPoints * sizeof(PointCloudColorDef));
-        }
-    return nPoints;
+    return (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), maxCount, (float*)points.data(), colorsPresent? (Byte*) colors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
