@@ -749,6 +749,23 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingGraphicPtr DrawingGraphic::Create(GeometricModel2dCR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::DrawingGraphic::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
+    }
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -2991,6 +3008,14 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TypeRecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<TypeRecipeElement>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
@@ -2999,11 +3024,59 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalTypeRecipeCPtr PhysicalType::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<PhysicalTypeRecipe>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalTypeRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalTypeRecipe, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
     {
     return GetDgnDb().Elements().Get<GraphicalType2d>(GetGraphicalTypeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalTypeRecipe2dCPtr GraphicalType2d::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalTypeRecipe2d>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalTypeRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalTypeRecipe2d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**

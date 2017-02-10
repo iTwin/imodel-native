@@ -207,10 +207,22 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for PhysicalTypeRecipe
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalTypeRecipe : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalTypeRecipe, Dgn::PhysicalTypeRecipe, PhysicalTypeRecipe, Definition, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for GraphicalType2d
     struct EXPORT_VTABLE_ATTRIBUTE GraphicalType2d : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalType2d, Dgn::GraphicalType2d, GraphicalType2d, Definition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for GraphicalTypeRecipe2d
+    struct EXPORT_VTABLE_ATTRIBUTE GraphicalTypeRecipe2d : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalTypeRecipe2d, Dgn::GraphicalTypeRecipe2d, GraphicalTypeRecipe2d, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for Subject

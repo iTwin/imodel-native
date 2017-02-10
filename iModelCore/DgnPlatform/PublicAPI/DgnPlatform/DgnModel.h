@@ -15,21 +15,14 @@
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
-DGNPLATFORM_TYPEDEFS(GeometricModel)
-DGNPLATFORM_TYPEDEFS(DefinitionModel)
-DGNPLATFORM_TYPEDEFS(GeometricModel2d)
-DGNPLATFORM_TYPEDEFS(GeometricModel3d)
-DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler { struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; }
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; struct TemplateGeometry2d; struct TemplateGeometry3d;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -490,7 +483,7 @@ public:
     bool IsTemplate() const {return m_isTemplate;}
 
     //! @private
-    void SetTemplate(bool b) {m_isTemplate = b;}
+    void SetIsTemplate(bool b) {m_isTemplate = b;}
 
     //! @name Dynamic casting to DgnModel subclasses
     //@{
@@ -1141,6 +1134,42 @@ public:
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometryModel2d : GeometricModel2d
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel2d, GeometricModel2d);
+    friend struct dgn_ModelHandler::TemplateGeometry2d;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    explicit TemplateGeometryModel2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a TemplateGeometryModel2d that breaks down the specified type recipe
+    DGNPLATFORM_EXPORT static TemplateGeometryModel2dPtr Create(GraphicalTypeRecipe2dCR);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometryModel3d : GeometricModel3d
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel3d, GeometricModel3d);
+    friend struct dgn_ModelHandler::TemplateGeometry3d;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    explicit TemplateGeometryModel3d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a TemplateGeometryModel3d that breaks down the specified type recipe
+    DGNPLATFORM_EXPORT static TemplateGeometryModel3dPtr Create(PhysicalTypeRecipeCR);
+};
+
+//=======================================================================================
 //! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain.
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -1179,7 +1208,7 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for Drawing
+    //! The ModelHandler for DrawingModel
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
@@ -1207,6 +1236,18 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
     {
         MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for TemplateGeometryModel2d
+    struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometry2d : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel2d, TemplateGeometryModel2d, TemplateGeometry2d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for TemplateGeometryModel3d
+    struct EXPORT_VTABLE_ATTRIBUTE TemplateGeometry3d : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateGeometryModel3d, TemplateGeometryModel3d, TemplateGeometry3d, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RoleModel

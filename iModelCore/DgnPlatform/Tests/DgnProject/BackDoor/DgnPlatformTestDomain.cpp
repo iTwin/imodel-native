@@ -20,7 +20,9 @@ DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
+HANDLER_DEFINE_MEMBERS(TestPhysicalTypeRecipeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
+HANDLER_DEFINE_MEMBERS(TestGraphicalTypeRecipe2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
@@ -327,19 +329,45 @@ TestSpatialLocationPtr TestSpatialLocation::Create(SpatialModelR model, DgnCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
+TestPhysicalTypePtr TestPhysicalType::Create(DefinitionModelR model, Utf8CP name)
     {
+    DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(TestPhysicalTypeHandler::GetHandler());
-    return new TestPhysicalType(CreateParams(db, DgnModel::DictionaryId(), classId));
+    DgnCode code = CreateCode(model, name);
+    return new TestPhysicalType(CreateParams(db, model.GetModelId(), classId, code));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TestPhysicalTypeRecipePtr TestPhysicalTypeRecipe::Create(DefinitionModelR model, Utf8CP name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTypeRecipeHandler::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TestPhysicalTypeRecipe(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestGraphicalType2dPtr TestGraphicalType2d::Create(DgnDbR db)
+TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8CP name)
     {
+    DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(TestGraphicalType2dHandler::GetHandler());
-    return new TestGraphicalType2d(CreateParams(db, DgnModel::DictionaryId(), classId));
+    DgnCode code = CreateCode(model, name);
+    return new TestGraphicalType2d(CreateParams(db, model.GetModelId(), classId, code));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGraphicalTypeRecipe2dPtr TestGraphicalTypeRecipe2d::Create(DefinitionModelR model, Utf8CP name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestGraphicalTypeRecipe2dHandler::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TestGraphicalTypeRecipe2d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -463,7 +491,9 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
+    RegisterHandler(TestPhysicalTypeRecipeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
+    RegisterHandler(TestGraphicalTypeRecipe2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());

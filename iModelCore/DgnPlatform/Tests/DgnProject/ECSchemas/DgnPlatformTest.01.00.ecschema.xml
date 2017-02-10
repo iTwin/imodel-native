@@ -263,6 +263,12 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
+    <ECEntityClass typeName="TestPhysicalTypeRecipe">
+        <BaseClass>bis:PhysicalTypeRecipe</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestGraphicalType2d">
         <BaseClass>bis:GraphicalType2d</BaseClass>
         <ECCustomAttributes>
@@ -270,6 +276,12 @@
         </ECCustomAttributes>
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestGraphicalTypeRecipe2d">
+        <BaseClass>bis:GraphicalTypeRecipe2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
     <ECEntityClass typeName="PerfElement">

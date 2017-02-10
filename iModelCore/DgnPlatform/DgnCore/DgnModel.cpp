@@ -540,6 +540,62 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TemplateGeometryModel2d::_OnInsert()
+    {
+    SetIsTemplate(true);
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TemplateGeometryModel2dPtr TemplateGeometryModel2d::Create(GraphicalTypeRecipe2dCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::TemplateGeometry2d::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<TemplateGeometryModel2dP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TemplateGeometryModel3d::_OnInsert()
+    {
+    SetIsTemplate(true);
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TemplateGeometryModel3dPtr TemplateGeometryModel3d::Create(PhysicalTypeRecipeCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::TemplateGeometry3d::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<TemplateGeometryModel3dP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)

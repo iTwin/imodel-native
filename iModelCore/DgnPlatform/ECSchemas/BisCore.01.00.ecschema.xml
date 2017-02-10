@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="BisCore" alias="bis" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="BisCore" alias="bis" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
 
     <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
@@ -202,6 +202,18 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel" displayLabel="Sheet Model" description="A container for persisting sheet views and graphics.">
+        <BaseClass>GraphicalModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TemplateGeometryModel2d" displayLabel="2D Template Geometry Model" description="A container for persisting 2D template geometry used to create new Drawing Graphic instances.">
+        <BaseClass>GraphicalModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TemplateGeometryModel3d" displayLabel="3D Template Geometry Model" description="A container for persisting 3D template geometry used to create new Physical Element instances.">
         <BaseClass>GraphicalModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -498,8 +510,46 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
+    <ECEntityClass typeName="TypeDefinitionElement" modifier="Abstract" displayLabel="Type Definition" description="Defines a set of properties (the 'type') that can be associated with an element.">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECNavigationProperty propertyName="Recipe" relationshipName="TypeIsDerivedFromRecipe" direction="Forward">
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypeRecipeElement" modifier="Abstract" displayLabel="Type Recipe" description="Defines a recipe for generating a type.">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECProperty propertyName="OutputCategory" typeName="long">
+            <!-- WIP: Should be NavigationProperty -->
+            <!-- IsNullable = False -->
+        </ECProperty>
+        <!--
+        <ECNavigationProperty propertyName="OutputCategory" relationshipName="RecipeSpecifiesOutputCategory" direction="Forward">
+        </ECNavigationProperty>
+        -->
+    </ECEntityClass>
+    <!--
+    <ECRelationshipClass typeName="RecipeSpecifiesOutputCategory" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
+            <Class class="TypeRecipeElement" />
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="generates" polymorphic="true">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+    -->
+    <ECRelationshipClass typeName="TypeIsDerivedFromRecipe" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
+            <Class class="DefinitionElement" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
+            <Class class="TypeRecipeElement"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
+        <BaseClass>TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -515,9 +565,25 @@
             <Class class="PhysicalType"/>
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="PhysicalTypeRecipe" modifier="Abstract" displayLabel="Physical Type Recipe" description="Defines a recipe for generating Physical Types.">
+        <BaseClass>TypeRecipeElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PhysicalTypeIsDerivedFromRecipe" strength="referencing" modifier="None">
+        <BaseClass>TypeIsDerivedFromRecipe</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
+            <Class class="PhysicalType" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
+            <Class class="PhysicalTypeRecipe"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type" description="Defines a set of properties (the 'type') that can be associated with a 2D Graphical Element.">
-        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -531,6 +597,22 @@
         </Source>
         <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="GraphicalType2d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="GraphicalTypeRecipe2d" modifier="Abstract" displayLabel="2D Graphical Type Recipe" description="Defines a recipe for generating 2D Graphical Types.">
+        <BaseClass>TypeRecipeElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="GraphicalType2dIsDerivedFromRecipe" strength="referencing" modifier="None">
+        <BaseClass>TypeIsDerivedFromRecipe</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
+            <Class class="GraphicalType2d" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
+            <Class class="GraphicalTypeRecipe2d"/>
         </Target>
     </ECRelationshipClass>
 
@@ -918,10 +1000,10 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="PhysicalType" relationshipName="PhysicalElementIsOfType" direction="Forward">
-          <ECCustomAttributes>
-            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract" displayLabel="Spatial Location Element" description="A Spatial Location Element identifies a 'tracked' real world location but has no mass and cannot be 'touched'.">

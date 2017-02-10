@@ -69,37 +69,44 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static LinkModelPtr InsertLinkModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a DefinitionModel
+    //! @note Also creates a DefinitionPartition for the DefinitionModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static DefinitionModelPtr InsertDefinitionModel(DgnDbR, Utf8CP partitionName);
+
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
                                       StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
 
-    //! Create a Drawing view
-    static DrawingViewDefinitionPtr InsertDrawingView(DrawingModelR model, Utf8CP viewDescr=nullptr);
+    //! Insert a Drawing view
+    static DrawingViewDefinitionPtr InsertDrawingView(DrawingModelR model, Utf8CP viewName=nullptr);
 
     static void FitView(DgnDbR db, DgnViewId viewId);
 
-    //! Create a new PERSISTENT modelselector
-    static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model);
+    //! Insert a new persistent modelselector
+    static ModelSelectorCPtr InsertModelSelector(DgnDbR db, Utf8CP name, DgnModelId model);
 
-    //! Create a new DrawingCategory
+    //! Insert a new DrawingCategory
     static DgnCategoryId InsertDrawingCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Rank rank = DgnCategory::Rank::Application);
-    //! Create a new DrawingCategory
+    //! Insert a new DrawingCategory
     static DgnCategoryId InsertDrawingCategory(DgnDbR, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank = DgnCategory::Rank::Application);
     //! Get the first DrawingCategory in the DgnDb
+    //! @deprecated
     //! @note Instead of using this method you should explicitly insert a DrawingCategory as part of the test setup
     //! @see InsertDrawingCategory
     static DgnCategoryId GetFirstDrawingCategoryId(DgnDbR);
 
-    //! Create a new SpatialCategory
+    //! Insert a new SpatialCategory
     static DgnCategoryId InsertSpatialCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Rank rank = DgnCategory::Rank::Application);
-    //! Create a new SpatialCategory
+    //! Insert a new SpatialCategory
     static DgnCategoryId InsertSpatialCategory(DgnDbR, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank = DgnCategory::Rank::Application);
     //! Get the first SpatialCategory in the DgnDb
+    //! @deprecated
     //! @note Instead of using this method you should explicitly insert a SpatialCategory as part of the test setup
     //! @see InsertSpatialCategory
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
-    //! Create a new CodeSpec
+    //! Insert a new CodeSpec
     static CodeSpecId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);
     
     //! Update the project extents
