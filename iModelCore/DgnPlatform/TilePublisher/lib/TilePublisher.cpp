@@ -13,53 +13,310 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void batchIdsToJson(FeatureAttributesMapCR attributes, Json::Value& value, DgnDbR db, bool is2d)
+//=======================================================================================
+// We use a hierarchical batch table to organize features by element and subcategory,
+// and subcategories by category
+// Each feature has a batch table class corresponding to its DgnGeometryClass.
+// The feature classes have no properties, only parents for classification.
+// The element, category, and subcategory classes each have an ID property.
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct BatchTableBuilder
+{
+private:
+    struct SubcatInfo { uint32_t m_index; uint32_t m_catIndex; };
+
+    enum ClassIndex
     {
-    static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
-    static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
+        kClass_Primary,
+        kClass_Construction,
+        kClass_Dimension,
+        kClass_Pattern,
+        kClass_Element,
+        kClass_SubCategory,
+        kClass_Category,
 
-    Utf8CP sql = is2d ? s_2dSql : s_3dSql;
-    BeSQLite::Statement stmt;
-    stmt.Prepare(db, sql);
+        kClass_COUNT,
+        kClass_FEATURE_COUNT = kClass_Pattern+1,
+    };
 
-    Json::Value elementIds(Json::arrayValue);
-    Json::Value categoryIds(Json::arrayValue);
-
-    // ###TODO: We need to put the full hierarchy...and query category ID by subcategory ID, not element ID
-    bvector<DgnElementId> elements;
-    elements.resize(attributes.size());
-    for (auto const& kvp : attributes)
-        elements[kvp.second] = kvp.first.GetElementId();
-
-    for (auto elemIter = elements.begin(); elemIter != elements.end(); ++elemIter)
+    static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-        DgnCategoryId categoryId;
+        "Primary", "Construction", "Dimension", "Pattern", "Element", "SubCategory", "Category"
+        };
 
-        stmt.BindId(1, *elemIter);
-        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-            categoryId = stmt.GetValueId<DgnCategoryId>(0);
+    Json::Value                         m_json; // "HIERARCHY": object
+    DgnDbR                              m_db;
+    FeatureAttributesMapCR              m_attrs;
+    bmap<DgnElementId, uint32_t>        m_elems;
+    bmap<DgnSubCategoryId, SubcatInfo>  m_subcats;
+    bmap<DgnCategoryId, uint32_t>       m_cats;
 
-        categoryIds.append(categoryId.ToString());
-        stmt.Reset();
+    template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
+        {
+        return map.find(key);
+        }
+    template<typename T, typename U> static uint32_t FindOrInsert(T& map, U const& key)
+        {
+        auto iter = Find(map, key);
+        if (iter != map.end())
+            return iter->second;
+
+        uint32_t index = static_cast<uint32_t>(map.size());
+        map[key] = index;
+        return index;
+        }
+    template<typename T, typename U> static uint32_t GetIndex(T& map, U const& key)
+        {
+        auto iter = Find(map, key);
+        BeAssert(iter != map.end());
+        return iter->second;
         }
 
-    value["element"] = elementIds;
-    value["category"] = categoryIds;
+    uint32_t MapElementIndex(DgnElementId id) { return FindOrInsert(m_elems, id); }
+    uint32_t GetElementIndex(DgnElementId id) { return GetIndex(m_elems, id); }
+    uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
+    uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
+    SubcatInfo MapSubCategoryInfo(DgnSubCategoryId id);
+    SubcatInfo GetSubCategoryInfo(DgnSubCategoryId id);
+
+    Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
+    static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
+
+    void DefineClasses();
+    void MapFeatures();
+    void MapParents();
+    void MapElements(uint32_t offset);
+    void MapSubCategories(uint32_t offset, uint32_t categoriesOffset);
+    void MapCategories(uint32_t offset);
+
+    void Build();
+public:
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db)
+        : m_json(Json::objectValue), m_db(db), m_attrs(attrs)
+        {
+        Build();
+        }
+
+    Json::Value& GetHierarchy() { return m_json; }
+    Utf8String ToString()
+        {
+        Json::Value json;
+        json["HIERARCHY"] = GetHierarchy();
+        return Json::FastWriter().write(json);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::Build()
+    {
+    m_json["parentCounts"] = Json::arrayValue;
+    m_json["classIds"] = Json::arrayValue;
+    m_json["parentIds"] = Json::arrayValue;
+
+    // Set up the "classes" array. For each member, defines "name" property only. "length" and "instances" property TBD.
+    DefineClasses();
+
+    // Makes sure every instance of every class is assigned an index into the "classIds" array (relative to the index of
+    // the first instance of that class).
+    // Adds index for each Feature into "classIds" (index == batch ID)
+    // Sets "parentCounts" for each Feature (all == 2)
+    // Sets "length" for each of the Feature classes
+    MapFeatures();
+
+    // Populates "classes" for all instances of abstract (parent) classes
+    // Populates the "parentIds" and "parentCounts" arrays for all instances of all classes
+    // Sets the "length" and "instances" property of "classes" member for each abstract (parent) class
+    // Sets "instancesLength" to the total number of instances of all classes.
+    MapParents();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String batchIdsToJsonString(FeatureAttributesMapCR attributes, DgnDbR db, bool is2d)
+auto BatchTableBuilder::GetFeatureClassIndex(DgnGeometryClass geomClass) -> ClassIndex
     {
-    Json::Value     value;
+    switch (geomClass)
+        {
+        case DgnGeometryClass::Primary:         return kClass_Primary;
+        case DgnGeometryClass::Construction:    return kClass_Construction;
+        case DgnGeometryClass::Dimension:       return kClass_Dimension;
+        case DgnGeometryClass::Pattern:         return kClass_Pattern;
+        default:
+            BeAssert(false);
+            return kClass_Primary;
+        }
+    }
 
-    batchIdsToJson (attributes, value, db, is2d);
-    return Json::FastWriter().write(value);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapSubCategories(uint32_t offset, uint32_t categoriesOffset)
+    {
+    Json::Value& subcats = GetClass(kClass_SubCategory);
+    subcats["length"] = m_subcats.size();
+
+    Json::Value &instances = (subcats["instances"] = Json::objectValue),
+                &subcat_id = (instances["subcategory"] = Json::arrayValue),
+                &classIds = m_json["classIds"],
+                &parentCounts = m_json["parentCounts"],
+                &parentIds = m_json["parentIds"];
+
+    uint32_t parentIdsOffset = static_cast<uint32_t>(m_attrs.size()) * 2; // 2 parents per feature followed by 1 parent per subcategory
+    for (auto const& kvp : m_subcats)
+        {
+        Json::Value::ArrayIndex index = kvp.second.m_index;
+        subcat_id[index] = kvp.first.ToString();
+
+        classIds[index + offset] = kClass_SubCategory;
+        parentCounts[index + offset] = 1;
+        parentIds[index + parentIdsOffset] = kvp.second.m_catIndex + categoriesOffset;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapCategories(uint32_t offset)
+    {
+    Json::Value& cats = GetClass(kClass_Category);
+    cats["length"] = m_cats.size();
+
+    Json::Value &instances = (cats["instances"] = Json::objectValue),
+                &cat_id = (instances["category"] = Json::arrayValue),
+                &classIds = m_json["classIds"],
+                &parentCounts = m_json["parentCounts"];
+
+    for (auto const& kvp : m_cats)
+        {
+        classIds[offset + kvp.second] = kClass_Category;
+        parentCounts[offset + kvp.second] = 0;
+        cat_id[kvp.second] = kvp.first.ToString();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapElements(uint32_t offset)
+    {
+    Json::Value& elements = GetClass(kClass_Element);
+    elements["length"] = m_elems.size();
+
+    Json::Value& instances = (elements["instances"] = Json::objectValue);
+    Json::Value& elem_id = (instances["element"] = Json::arrayValue);
+    Json::Value& classIds = m_json["classIds"];
+    Json::Value& parentCounts = m_json["parentCounts"];
+    for (auto const& kvp : m_elems)
+        {
+        classIds[offset + kvp.second] = kClass_Element;
+        parentCounts[offset + kvp.second] = 0;
+        elem_id[kvp.second] = kvp.first.ToString();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapParents()
+    {
+    uint32_t elementsOffset = static_cast<uint32_t>(m_attrs.size());
+    uint32_t subcatsOffset = elementsOffset + static_cast<uint32_t>(m_elems.size());
+    uint32_t catsOffset = subcatsOffset + static_cast<uint32_t>(m_subcats.size());
+    uint32_t totalInstances = catsOffset + static_cast<uint32_t>(m_cats.size());
+
+    m_json["instancesLength"] = totalInstances;
+
+    // Now that every instance of every class has an index into "classIds", we can map parent IDs
+    Json::Value& parentIds = m_json["parentIds"];
+    for (auto const& kvp : m_attrs)
+        {
+        FeatureAttributesCR attr = kvp.first;
+        uint32_t index = kvp.second * 2; // 2 parents per feature
+
+        parentIds[index] = elementsOffset + GetElementIndex(attr.GetElementId());
+        parentIds[index+1] = subcatsOffset + GetSubCategoryInfo(attr.GetSubCategoryId()).m_index;
+        }
+
+    // Set "instances" and "length" to Element class, and add elements to "classIds"
+    MapElements(elementsOffset);
+
+    // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
+    MapSubCategories(subcatsOffset, catsOffset);
+    MapCategories(catsOffset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapFeatures()
+    {
+    Json::Value& classIds = m_json["classIds"];
+    Json::Value& parentCounts = m_json["parentCounts"];
+
+    uint32_t instanceCounts[kClass_FEATURE_COUNT] = { 0 };
+
+    for (auto const& kvp : m_attrs)
+        {
+        FeatureAttributesCR attr = kvp.first;
+        uint32_t index = kvp.second;
+        ClassIndex classIndex = GetFeatureClassIndex(attr.GetClass());
+
+        classIds[index] = classIndex;
+        parentCounts[index] = 2; // element, subcategory
+
+        ++instanceCounts[classIndex];
+
+        // Ensure all parent instances are mapped
+        MapElementIndex(attr.GetElementId());
+        MapSubCategoryInfo(attr.GetSubCategoryId());
+        }
+
+    // Set the number of instances of each class
+    for (uint8_t classIndex = 0; classIndex < kClass_FEATURE_COUNT; classIndex++)
+        GetClass(static_cast<ClassIndex>(classIndex))["length"] = instanceCounts[classIndex];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::DefineClasses()
+    {
+    auto& classes = (m_json["classes"] = Json::arrayValue);
+    for (uint8_t i = 0; i < kClass_COUNT; i++)
+        {
+        auto& cls = (classes[i] = Json::objectValue);
+        cls["name"] = s_classNames[i];
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+auto BatchTableBuilder::MapSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
+    {
+    auto iter = Find(m_subcats, id);
+    if (iter != m_subcats.end())
+        return iter->second;
+
+    DgnCategoryId catId = DgnSubCategory::QueryCategoryId(m_db, id);
+    SubcatInfo info;
+    info.m_index = static_cast<uint32_t>(m_subcats.size());
+    info.m_catIndex = MapCategoryIndex(catId);
+    m_subcats[id] = info;
+    return info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
+    {
+    auto iter = Find(m_subcats, id);
+    BeAssert(iter != m_subcats.end());
+    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -604,7 +861,8 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    Utf8String      batchTableStr = batchIdsToJsonString (attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
+    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb());
+    Utf8String      batchTableStr = batchTableBuilder.ToString();
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
     // Pad the feature table string to insure that the binary is 4 byte aligned.
@@ -657,7 +915,13 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     AddMeshes(tileData, meshes);
 
     FeatureAttributesMapCR attributes = m_tile.GetAttributes();
-    Utf8String batchTableStr = validIdsPresent ? batchIdsToJsonString(attributes, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel()) : Utf8String();
+    Utf8String batchTableStr;
+    if (validIdsPresent)
+        {
+        BatchTableBuilder batchTableBuilder(attributes, m_context.GetDgnDb());
+        batchTableStr = batchTableBuilder.ToString();
+        }
+
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t zero = 0;
     uint32_t b3dmNumBatches = validIdsPresent ? attributes.size() : 0;
