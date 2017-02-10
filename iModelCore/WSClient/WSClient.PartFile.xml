@@ -15,9 +15,10 @@
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PC"/>
         <SubPart PartName="WebServicesClient-iOS"/>
+        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
     </Part>
     
-    <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*">
+    <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesClient-Library"/>
         <SubPart PartName="WebServicesClient-Library-Android"/>
@@ -28,6 +29,10 @@
         <SubPart PartName="WebServicesClient-PublicAPI" LibType="Static"/>
         <SubPart PartName="WebServicesClient-Library" LibType="Static"/>
         <SubPart PartName="WSClient-Xliffs" LibType="Static"/>
+    </Part>
+
+    <Part Name="WebServicesClient-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Library-Android" />
     </Part>
 
     <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
@@ -162,17 +167,22 @@
     <Part Name="ConnectWebServicesClientC">
         <SubPart PartName="ConnectWebServicesClientC-PC" />
         <SubPart PartName="ConnectWebServicesClientC-iOS" LibType="Static"/>
+        <SubPart PartName="ConnectWebServicesClientC-Android" LibType="Static"/>
     </Part>
     
-    <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*">
+    <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />
-        <SubPart PartName="ConnectWebServicesClientC-Library-Android" />
     </Part>
     
     <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />        
+    </Part>
+
+    <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
+        <SubPart PartName="ConnectWebServicesClientC-Library-Android" />
     </Part>
 
     <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
