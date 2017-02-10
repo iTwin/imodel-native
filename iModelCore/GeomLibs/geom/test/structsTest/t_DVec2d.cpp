@@ -724,3 +724,15 @@ TEST(DVec2d, ThreeDTo2D)
     DVec2d vec2d2 = DVec2d::From(vec3d1.x, vec3d1.y);
     Check::Near(vec2d2, vec2d);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DVec2d, RotationEqual)
+    {
+    DVec2d vec0 = DVec2d::From(3, 2);
+    vec0.Rotate90CW();
+    vec0.Rotate90CW();
+    vec0.Rotate90CW();
+    
+    vec0.AlmostEqual(DVec2d::From(-3, 2));
+    }
