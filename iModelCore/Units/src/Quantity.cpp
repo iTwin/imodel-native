@@ -21,7 +21,7 @@ static almost_equal(const T x, const T y, int ulp)
     // and multiplied by the desired precision in ULPs (units in the last place)
     return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
         // unless the result is subnormal            
-        || std::abs(x - y) < std::numeric_limits<T>::min();
+        || std::abs(x - y) < std::numeric_limits<T>::min();  // 0 00000000001 0000000000000000000000000000000000000000
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -35,6 +35,16 @@ QuantityPtr Quantity::Create (double magnitude, Utf8CP unitName)
 
     return new Quantity (magnitude, unit);
     }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                             David Fox-Rabinovitz     02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+QuantityPtr Quantity::Create (double magnitude, UnitCP unit)
+    {
+    return new Quantity (magnitude, unit);
+    }
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -78,11 +88,39 @@ BentleyStatus Quantity::ConvertTo(Utf8CP unitName, double& value) const
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                               David.Fox-Rabinovitz     02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
+    {
+    if (m_unit == unit)
+        {
+        value = m_magnitude;
+        return SUCCESS;
+        }
+
+    value = m_unit->Convert(m_magnitude, unit);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuantityPtr Quantity::ConvertTo(Utf8CP unitName) const
     {
     double newValue; 
+    if (SUCCESS != ConvertTo(unitName, newValue))
+        return nullptr;
+
+    return Quantity::Create(newValue, unitName);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                            David.Fox-Rabinovitz     02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+QuantityPtr Quantity::ConvertTo(UnitCP unitName) const
+    {
+    double newValue;
     if (SUCCESS != ConvertTo(unitName, newValue))
         return nullptr;
 

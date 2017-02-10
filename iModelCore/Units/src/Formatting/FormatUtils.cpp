@@ -199,6 +199,36 @@ size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
         return index;
     }
 
+Utf8CP Utils::GetFormatProblemDescription(FormatProblemCode code)
+    {
+    switch (code)
+        {
+        case FormatProblemCode::NoProblems:
+            return "No problem";
+        case FormatProblemCode::CNS_UncomparableUnits:
+            return "Uncomparable Units";
+        case FormatProblemCode::CNS_InconsistentFactorSet:
+            return "Inconsistent set of ratios";
+        case FormatProblemCode::CNS_InconsistentUnitSet:
+            return "Inconsistent set of units";
+        case FormatProblemCode::CNS_InvalidMajorUnit:
+            return "Invalid or undefined Major Unit";
+        case FormatProblemCode::CNS_InvalidUnitName:
+            return "Invalid unit name";
+        default:
+            return "invalid error code";
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//----------------------------------------------------------------------------------------
+bool Utils::AreUnitsComparable(UnitCP un1, UnitCP un2) 
+    {
+    PhenomenonCP ph1 = (nullptr == un1) ? nullptr : un1->GetPhenomenon();
+    PhenomenonCP ph2 = (nullptr == un2) ? nullptr : un2->GetPhenomenon();
+    return (ph1 == ph2);
+    }
 
  //===================================================
  //

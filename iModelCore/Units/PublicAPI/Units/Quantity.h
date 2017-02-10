@@ -32,14 +32,17 @@ private:
     UnitCP       m_unit;
 
     BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
+    BentleyStatus ConvertTo(UnitCP unit, double& value) const;
 public:
+    //UNITS_EXPORT static Quantity (double magnitude, Utf8CP unitName);
     UNITS_EXPORT static QuantityPtr Create(double magnitude, Utf8CP unitName);
+    UNITS_EXPORT static QuantityPtr Create(double magnitude, UnitCP unit);
 
     double GetMagnitude() const { return m_magnitude; }
     UnitCP GetUnit () const { return m_unit; }
 
     UNITS_EXPORT QuantityPtr ConvertTo(Utf8CP unitName) const;
-
+    UNITS_EXPORT QuantityPtr ConvertTo(UnitCP unit) const;
     // Tolerance is factor used to scale the machine epsilon in order to determine
     // the acceptable level of error.  1000 is chosen as a default.
     UNITS_EXPORT void SetTolerance(unsigned int tolerance) { m_tolerance = tolerance; }

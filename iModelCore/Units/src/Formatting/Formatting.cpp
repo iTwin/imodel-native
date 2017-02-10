@@ -292,7 +292,7 @@ double NumericFormatSpec::RoundedValue(double dval, double round)
 // If the destination buffer is shorter than source, only the right portion of the source 
 // will be copied. The destination will be terminated by zero if so indicated by the bool flag
 //  and the useful capacity of the destination buffer will be reduced by 1 
-int NumericFormatSpec::RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen)
+int NumericFormatSpec::RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen)
     {
     if (nullptr == src)
         srcLen = 0;
@@ -314,7 +314,7 @@ int NumericFormatSpec::RightAlignedCopy(CharP dest, int destLen, bool termZero, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::IntPartToText (double n, CharP bufOut, int bufLen, bool useSeparator)
+int NumericFormatSpec::IntPartToText (double n, Utf8P bufOut, int bufLen, bool useSeparator)
     {
     char sign = '+';
     char buf[64];
@@ -375,7 +375,7 @@ int NumericFormatSpec::IntPartToText (double n, CharP bufOut, int bufLen, bool u
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatInteger (int n, CharP bufOut,  int bufLen)
+int NumericFormatSpec::FormatInteger (int n, Utf8P bufOut,  int bufLen)
     {
     char sign = '+';
     char buf[64];
@@ -438,7 +438,7 @@ int NumericFormatSpec::FormatInteger (int n, CharP bufOut,  int bufLen)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero)
+int NumericFormatSpec::FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
     {
     char sign = '+';
     char buf[64];
@@ -484,7 +484,7 @@ int NumericFormatSpec::FormatIntegerSimple (int n, CharP bufOut, int bufLen, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::TrimTrailingZeroes(CharP buf, int index)
+int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index)
     {
     if (nullptr == buf)
         return index;
@@ -510,7 +510,7 @@ int NumericFormatSpec::TrimTrailingZeroes(CharP buf, int index)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-size_t NumericFormatSpec::InsertChar(CharP buf, size_t index, char c, int num)
+size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num)
     {
     if (nullptr != buf && 0 < num)
         {
@@ -540,7 +540,7 @@ int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormatSpec::FormatDouble(double dval, CharP buf, size_t bufLen, int prec, double round)
+size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec, double round)
     {
     double ival;
     Utf8Char sign = '+';
@@ -800,7 +800,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
  // this function returns the number of bytes that was not populated - in case of success it will 0
- int NumericFormatSpec::FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen)
+ int NumericFormatSpec::FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen)
  {
      char binBuf[8];
      unsigned char mask = 0x80;
@@ -817,7 +817,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormatSpec::FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[64];
 
@@ -834,7 +834,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormatSpec::FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryInt (int n, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
 
@@ -850,7 +850,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
  }
 
- int NumericFormatSpec::FormatBinaryDouble (double x, CharP bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryDouble (double x, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
      union { unsigned int ival[2]; double x; }temp;
@@ -969,7 +969,7 @@ bool FormatConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t index
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-bool FormatConstant::GetTrailingBits(unsigned char c, CharP outBits)
+bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
     {
     if (nullptr != outBits)
         {

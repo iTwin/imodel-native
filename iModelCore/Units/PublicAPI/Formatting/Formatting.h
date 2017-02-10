@@ -21,12 +21,15 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(QuantityTriadSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatName)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatNameMap)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 FORMATTING_TYPEDEFS(FormatDictionary)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormatSpec)
 FORMATTING_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
+
 //===================================================
 //
 // Enumerations
@@ -239,7 +242,7 @@ enum class FormatProblemCode
     NoProblems = 0,
     CNS_InconsistentFactorSet = 51,  //!< All ratio factors between units must be bigger than one
     CNS_InconsistentUnitSet = 52,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
-    CNS_IncompatibleUnits = 53,      //!< Units provided on the argument list are not compatible
+    CNS_UncomparableUnits = 53,      //!< Units provided on the argument list are not comparable
     CNS_InvalidUnitName = 54,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
     CNS_InvalidMajorUnit = 55,       //!< The MajorUnit in ComboNumbers is null or invalid
     QT_PhenomenonNotDefined = 101,
@@ -250,7 +253,7 @@ enum class FormatProblemCode
     };
 
 //! Type of the ComboSpec describes one of allowable value transformations
-enum class ComboSpecType
+enum class CompositeSpecType
     {
     Undefined = 0, //!< program failes to infer the type (default)
     Single = 1,    //!< trivial case when Combo effectively is not used - not prohibited though
@@ -275,6 +278,8 @@ struct Utils
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
     UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
     UNITS_EXPORT static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return (nullptr == name || strlen(name) == 0)? subs : name; }
+    UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
+    UNITS_EXPORT static bool AreUnitsComparable(UnitCP un1, UnitCP u2);
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
@@ -382,7 +387,7 @@ public:
     UNITS_EXPORT static const bool IsLittleEndian();
     UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
     static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
-    UNITS_EXPORT static bool GetTrailingBits(unsigned char c, CharP outBits);
+    UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
     UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
     static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
     static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
@@ -487,8 +492,8 @@ private:
     UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
     UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round);
-    UNITS_EXPORT int TrimTrailingZeroes(CharP buf, int index);
-    UNITS_EXPORT size_t InsertChar(CharP buf, size_t index, char c, int num);
+    UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index);
+    UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num);
     NumericFormatSpec() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
 
 public:
@@ -544,13 +549,11 @@ public:
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
     bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
-    UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator);
     
-    
-    UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
-    UNITS_EXPORT int static FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
-    UNITS_EXPORT size_t FormatDouble(double dval, CharP buf, size_t bufLen, int prec = -1, double round = -1.0);
-    //Utf8P
+    UNITS_EXPORT int FormatInteger (int n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT int static FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+    UNITS_EXPORT size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0);
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8P stdName, double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
@@ -562,12 +565,11 @@ public:
 
     //FormatDoubleStd
 
-
-    UNITS_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
-    UNITS_EXPORT int FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryDouble (double x, CharP bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT static int RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen);
+    UNITS_EXPORT int FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT int FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryInt (int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryDouble (double x, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
     UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
     UNITS_EXPORT Utf8String FormatInteger(int ival);
     UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
@@ -594,42 +596,86 @@ public:
 //=======================================================================================
 struct CompositeValueSpec
     {
-private:
-    static const size_t  majorUOM  = 0;
-    static const size_t  middleUOM = 1;
-    static const size_t  minorUOM  = 2;
-    static const size_t  subUOM    = 3;
-    size_t m_ratio[subUOM];
-    UnitCP m_units[subUOM +1];
-    Utf8CP m_unitLabel[subUOM +1];
+    friend struct CompositeValue;
+protected:
+    static const size_t  indxMajor  = 0;
+    static const size_t  indxMiddle = 1;
+    static const size_t  indxMinor  = 2;
+    static const size_t  indxSub    = 3;
+    static const size_t  indxInput  = 4;
+    static const size_t  indxLimit  = 5;   
+    size_t m_ratio[indxSub];
+    UnitCP m_units[indxLimit];
+    Utf8CP m_unitLabel[indxLimit];
     FormatProblemCode m_problemCode;
-    ComboSpecType m_type;
+    CompositeSpecType m_type;
+    NumericFormatSpecCP m_formatSpec;
 
     bool SetUnitLabel(int index, Utf8CP label);
     bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
-    ComboSpecType InferSpecType();
+    CompositeSpecType InferSpecType();
     //bool IsUnitPairMatch(UnitCP unit, UnitCP subunit);
     size_t UnitRatio(UnitCP upper, UnitCP lower);
-    void ResetType() { m_type = ComboSpecType::Undefined; }
+    void ResetType() { m_type = CompositeSpecType::Undefined; }
     void CheckRatios();
     CompositeValueSpec();
     void Init();
+    void SetRatios(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub);
+    void SetUnits(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit);
+    UnitCP SetInputUnit(UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
+    void SetUnitRatios();
+    bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
+    size_t GetRightmostRatioIndex();
+    UnitCP GetSmallestUnit();
 public:
 
     UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
     UNITS_EXPORT CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit=nullptr, UnitCP MinorUnit=nullptr, UnitCP subUnit = nullptr);
     UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
-    UNITS_EXPORT void SetUnitLabels(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUnit = nullptr, Utf8CP subUnit = nullptr);
+    UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
+    UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[indxMajor]; }
+    UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[indxMiddle]; }
+    UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[indxMinor]; }
+    UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[indxSub]; }
 
-    UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[majorUOM]; }
-    UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[majorUOM]; }
-    UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[majorUOM]; }
-    UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[majorUOM]; }
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     bool NoProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
+    size_t GetMajorToMiddleRatio() { return m_ratio[indxMajor]; }
+    size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
+    size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
+    UNITS_EXPORT Utf8CP GetProblemDescription();
+    UNITS_EXPORT NumericFormatSpecCP AssignFormatSpec(NumericFormatSpecCP spec) { return (m_formatSpec = spec); }
+
+    UNITS_EXPORT CompositeValue DecomposeValue(double dval, UnitCP uom = nullptr);
+    UNITS_EXPORT Utf8String DecomposeValue(double dval, Utf8CP uomName = nullptr);
+
     };
 
+
+struct CompositeValue
+    {
+private:
+    double m_parts[CompositeValueSpec::indxLimit];
+    FormatProblemCode m_problemCode;
+
+    void Init();
+public:
+    UNITS_EXPORT CompositeValue();
+    double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
+    double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
+    double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
+    double SetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub] = dval; }
+    double SetInput(double dval)  { return m_parts[CompositeValueSpec::indxInput] = dval; }
+
+    double GetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor]; }
+    double GetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle]; }
+    double GetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor]; }
+    double GetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub]; }
+    double GetInput(double dval)  { return m_parts[CompositeValueSpec::indxInput]; }
+    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+    bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    };
 //=======================================================================================
 //! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
 //! Can be used for presenting angular measurement in the form of Degrees, Minutes and Seconds or 

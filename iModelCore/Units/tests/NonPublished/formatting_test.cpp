@@ -26,6 +26,8 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 TEST(FormattingTest, PhysValues)
     {
+    // preparing pointers to various Unit definitions used in the following tests
+    //  adding practically convenient aliases/synonyms to selected Units
     UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
     UnitRegistry::Instance().AddSynonym("YRD", "YARD");
     UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
@@ -33,12 +35,20 @@ TEST(FormattingTest, PhysValues)
     UnitCP yrdsdUOM = UnitRegistry::Instance().LookupUnit("YRDS");
   
     UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
+    UnitRegistry::Instance().AddSynonym("FT", "FOOT");
+    UnitRegistry::Instance().AddSynonym("IN", "INCH");
     UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
     UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
     UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
     UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
 
+    // creating several quantites of various kinds using two different constructors:
+    //  one with the Uint Name and another with the pointer to a Unit definition
     QuantityPtr len = Quantity::Create(22.7, "M");
+    QuantityPtr lenU = Quantity::Create(22.7, UnitRegistry::Instance().LookupUnit("M"));
+    QuantityPtr ang = Quantity::Create(135.0 + 23.0 / 120.0, "ARC_DEG");
+    QuantityPtr angU = Quantity::Create(135.0 + 23.0 / 120.0, degUOM);
+
     QuantityTriadSpec qtr = QuantityTriadSpec(*len, yrdUOM, ftUOM, inUOM);
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
@@ -49,13 +59,19 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yardUOM).c_str());
     EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yrdsdUOM).c_str());
 
-    QuantityPtr ang = Quantity::Create(135.0 + 23.0/120.0, "ARC_DEG");
-
     QuantityTriadSpec atr = QuantityTriadSpec(*ang, degUOM, minUOM, secUOM);
+    QuantityTriadSpec atrU = QuantityTriadSpec(*angU, degUOM, minUOM, secUOM);
     atr.SetTopUnitLabel("\xC2\xB0");
     atr.SetMidUnitLabel(u8"'");
     atr.SetLowUnitLabel(u8"\"");
+
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
+    EXPECT_STREQ ("135 ARC_DEG 11 ARC_MINUTE 30 ARC_SECOND", atrU.FormatQuantTriad(" ", 4).c_str());
+    atrU.SetTopUnitLabel("\xC2\xB0");
+    atrU.SetMidUnitLabel(u8"'");
+    atrU.SetLowUnitLabel(u8"\"");
+
+    EXPECT_STREQ (u8"135° 11' 30\"", atrU.FormatQuantTriad("", 4).c_str());
 
     atr.SetTopUnitLabel(u8"°");
     atr.SetMidUnitLabel(u8"'");
@@ -101,7 +117,7 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4", 65.0, "KM/HR", "MPH", " mph", nullptr).c_str()); 
 
     // Volumes
-    EXPECT_STREQ ("405.0 CUB.FT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", nullptr, " ").c_str());
+    EXPECT_STREQ ("405.0 CFT", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.FT", "CFT", " ").c_str());
     EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
     EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4", 543.6700, "GALLON", "LITRE", "L", " ").c_str());
 
@@ -118,6 +134,17 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("35.273962_OZM", NumericFormatSpec::StdFormatPhysValue("real", 1.0, "KG", "OZM", nullptr, "_").c_str());
     EXPECT_STREQ ("1.0 KG", NumericFormatSpec::StdFormatPhysValue("real", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
     EXPECT_STREQ ("4068.7986 OZM", NumericFormatSpec::StdFormatPhysValue("real4", 115.3485, "KG", "OZM", nullptr, " ").c_str());
+
+    CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
+
+    if (cvs.NoProblem())
+        {
+        LOG.infov("MajorToMid %d", cvs.GetMajorToMiddleRatio());
+        LOG.infov("MidToMinor %d", cvs.GetMiddleToMinorRatio());
+        LOG.infov("MinorToSub %d", cvs.GetMinorToSubRatio());
+        }
+    else
+        LOG.infov("Error: %s", cvs.GetProblemDescription());
 
     }
 

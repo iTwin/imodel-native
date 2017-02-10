@@ -23,9 +23,9 @@ void CompositeValueSpec::Init()
     {
     memset(m_ratio, 0, sizeof(m_ratio));
     memset(m_units, 0, sizeof(m_units));
-    memset(m_unitLabel, 0, sizeof(m_unitLabel));
     m_problemCode = FormatProblemCode::NoProblems;
-    m_type = ComboSpecType::Undefined;
+    m_type = CompositeSpecType::Undefined;
+    m_formatSpec = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
         {
         if (unit->GetPhenomenon() != subunit->GetPhenomenon())
             {
-            UpdateProblemCode(FormatProblemCode::CNS_IncompatibleUnits);
+            UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
             }
         double rat = unit->Convert(1.0, subunit);
         if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
@@ -60,54 +60,93 @@ size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
 void CompositeValueSpec::CheckRatios()
     {
     size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
-    if (1 < m_ratio[majorUOM]) ratioBits |= 0x1;
-    if (1 < m_ratio[middleUOM]) ratioBits |= 0x2;
-    if (1 < m_ratio[minorUOM]) ratioBits |= 0x4;
-    m_type = ComboSpecType::Undefined;
+    if (1 < m_ratio[indxMajor]) ratioBits |= 0x1;
+    if (1 < m_ratio[indxMiddle]) ratioBits |= 0x2;
+    if (1 < m_ratio[indxMinor]) ratioBits |= 0x4;
+    m_type = CompositeSpecType::Undefined;
 
     switch (ratioBits)
         {
         case 0x3:
-            m_type = ComboSpecType::Triple;
+            m_type = CompositeSpecType::Triple;
             break;
         case 0x7:
-            m_type = ComboSpecType::Quatro;
+            m_type = CompositeSpecType::Quatro;
             break;
         case 0x1:
-            m_type = ComboSpecType::Double;
+            m_type = CompositeSpecType::Double;
             break;
         case 0:
-            m_type = ComboSpecType::Single;
+            m_type = CompositeSpecType::Single;
             break;
         default:
             UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
             break;
         }
     }
+
+void CompositeValueSpec::SetRatios(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
+    {
+    m_ratio[indxMajor] = MajorToMiddle;
+    m_ratio[indxMiddle] = MiddleToMinor;
+    m_ratio[indxMinor] = MinorToSub;
+    }
+
+void CompositeValueSpec::SetUnits(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
+    {
+    m_units[indxMajor] = MajorUnit;
+    m_units[indxMiddle] = MiddleUnit;
+    m_units[indxMinor] = MinorUnit;
+    m_units[indxSub] = SubUnit;
+    }
+
+void CompositeValueSpec::SetUnitRatios()
+    {
+    m_ratio[indxMajor] = UnitRatio(m_units[indxMajor], m_units[indxMiddle]);
+    m_ratio[indxMiddle] = UnitRatio(m_units[indxMiddle], m_units[indxMinor]);
+    m_ratio[indxMinor] = UnitRatio(m_units[indxMinor], m_units[indxSub]);
+    }
+
 //---------------------------------------------------------------------------------------
-// The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
-//   possible (within the current triad concept). This function will return -1 if Units do not qualify:
-//    1. Units do not belong to the same Phenomenon
-//    2. Ratio of major/minor < 1
-//    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
+// returns the smallest partial unit or null if no units were defined
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-//size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subUnit)
-//    {
-//    if (nullptr != unit && nullptr != subUnit && (unit->GetPhenomenon() == subUnit->GetPhenomenon()))
-//        {
-//        double rat = unit->Convert(1.0, subUnit);
-//        double ratInt = 0.0;
-//        double fract = modf(rat, &ratInt);
-//        size_t intRat = static_cast<size_t>(ratInt);
-//        if (FormatConstant::IsNegligible(fract) && 1 < intRat)
-//            return static_cast<size_t>(intRat);
-//        else
-//           UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
-//        }
-//    return 0;
-//    }
+UnitCP CompositeValueSpec::GetSmallestUnit()
+    {
+    if (CompositeSpecType::Undefined != m_type)
+        {
+        for (int i = indxSub; i >= 0; i--)
+            {
+            if (nullptr != m_units[i])
+                return m_units[i];
+            }
+        }
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// returns true if error is detected. Otherwise - false - same as IsError()
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit)
+    {
+    UnitCP un = UnitRegistry::Instance().LookupUnit(MajorUnit);
+    if (nullptr == un)
+        return UpdateProblemCode(FormatProblemCode::CNS_InvalidMajorUnit);
 
+    m_units[indxMajor] = un;
+    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MiddleUnit)))
+        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+
+    m_units[indxMiddle] = un;
+    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MinorUnit)))
+        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+
+    m_units[indxMinor] = un;
+    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(SubUnit)))
+        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+    m_units[indxSub] = un;
+    return false;
+    }
 
 //---------------------------------------------------------------------------------------
 // Constructor has three call formats that could use default values of arguments
@@ -120,9 +159,7 @@ void CompositeValueSpec::CheckRatios()
 CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
     {
     Init();
-    m_ratio[majorUOM] = MajorToMiddle;
-    m_ratio[middleUOM] = MiddleToMinor;
-    m_ratio[minorUOM] = MinorToSub;
+    SetRatios(MajorToMiddle, MiddleToMinor, MinorToSub);
     CheckRatios();
     }
 
@@ -133,48 +170,23 @@ CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMino
 CompositeValueSpec::CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
     {
     Init();
-    m_units[majorUOM] = MajorUnit;
-    m_units[middleUOM] = MiddleUnit;
-    m_units[minorUOM] = MinorUnit;
-    m_units[subUOM] = SubUnit;
-    m_ratio[majorUOM] = UnitRatio(m_units[majorUOM], m_units[middleUOM]);
-    m_ratio[middleUOM] = UnitRatio(MiddleUnit, MinorUnit);
-    m_ratio[minorUOM] = UnitRatio(MinorUnit, SubUnit);
+    SetUnits(MajorUnit, MiddleUnit, MinorUnit, SubUnit);
+    SetUnitRatios();
     CheckRatios();
     }
+
+
+
 //---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
 CompositeValueSpec::CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit)
     {
-    UnitCP un = UnitRegistry::Instance().LookupUnit(MajorUnit);
-    if(nullptr == un)
-        UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
-    while(NoProblem())
+    Init();
+    if (!SetUnitNames(MajorUnit, MiddleUnit, MinorUnit, SubUnit))
         {
-        m_units[majorUOM] = un;
-        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MiddleUnit)))
-            {
-            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
-            break;
-            }
-        m_units[middleUOM] = un;
-        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MinorUnit)))
-            {
-            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
-            break;
-            }
-        m_units[minorUOM] = un;
-        if (nullptr == (un = UnitRegistry::Instance().LookupUnit(SubUnit)))
-            {
-            UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
-            break;
-            }
-        m_units[subUOM] = un;
-        m_ratio[majorUOM] = UnitRatio(m_units[majorUOM], m_units[middleUOM]);
-        m_ratio[middleUOM] = UnitRatio(m_units[middleUOM], m_units[minorUOM]);
-        m_ratio[minorUOM] = UnitRatio(m_units[minorUOM], m_units[subUOM]);
+        SetUnitRatios();
         CheckRatios();
         }
     }
@@ -198,6 +210,10 @@ bool CompositeValueSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonC
     return IsProblem();
     }
 
+Utf8CP CompositeValueSpec::GetProblemDescription()
+    {
+    return Utils::GetFormatProblemDescription(m_problemCode);
+    }
 //---------------------------------------------------------------------------------------
 // The problem code will be updated only if it was not already set to some non-zero value
 //   this approach is not the best, but witout a standard method for collection multiple 
@@ -210,6 +226,53 @@ bool CompositeValueSpec::UpdateProblemCode(FormatProblemCode code)
         m_problemCode = code;
     return IsProblem();
     }
+
+//---------------------------------------------------------------------------------------
+// if uom is not provided we assume that the value is defined in the smallest units defined
+//   in the current spec. 
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+//CompositeValue CompositeValueSpec::DecomposeValue(double dval, UnitCP uom)
+//    {
+//    CompositeValue cv = CompositeValue();
+//    UnitCP smallest = GetSmallestUnit();
+//    if (!Utils::AreUnitsComparable(uom, smallest))
+//        {
+//        UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
+//        }
+//    else
+//        {
+//        if (nullptr != uom) // we need to convert the given value to the smallest units
+//            {
+//            QuantityPtr qty = Quantity::Create(dval, uom);
+//
+//            }
+//        }
+//    }
+
+//===================================================
+//
+// CompositeValue Methods
+//
+//===================================================
+void CompositeValue::Init()
+    {
+    memset(m_parts, 0, sizeof(m_parts));
+    m_problemCode = FormatProblemCode::NoProblems;
+    }
+
+CompositeValue::CompositeValue()
+    {
+    Init();
+    }
+
+bool CompositeValue::UpdateProblemCode(FormatProblemCode code)
+    {
+    if (m_problemCode == FormatProblemCode::NoProblems)
+        m_problemCode = code;
+    return IsProblem();
+    }
+
 
 //===================================================
 //
