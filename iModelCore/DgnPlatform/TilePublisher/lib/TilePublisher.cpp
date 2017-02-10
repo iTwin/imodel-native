@@ -794,6 +794,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     FeatureAttributesMap    attributesSet;
     DRange3d                positionRange = DRange3d::NullRange();
 
+    bool validIdsPresent = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
@@ -820,6 +821,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
+        validIdsPresent |= (0 != attributeIndices.back());
         }
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
@@ -850,7 +852,13 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     featureTableData.m_json["POSITION_QUANTIZED"]["byteOffset"] = featureTableData.BinaryDataSize();
     featureTableData.AddBinaryData(quantizedPosition.data(), quantizedPosition.size()*sizeof(uint16_t));
-                  
+
+    if (validIdsPresent)
+        {
+        featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
+        }
+
     featureTableData.PadBinaryDataToBoundary(4);
     if (rotationPresent)
         {
