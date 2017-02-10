@@ -702,6 +702,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         m_tryOpen = true;
         }
+    if (m_smPtr == 0) return; //if open failed, we can't draw anything
 
     //On first draw, we make sure all models know which of the rendered models "belong" to each other and set the groups accordingly.
     if (!m_loadedAllModels)
@@ -1326,6 +1327,7 @@ void ScalableMeshModel::ActivateClip(uint64_t clipId, ClipMode mode)
         for (auto& model : m_terrainParts)
             model->ActivateClip(clipId, mode);
         }
+
     }
 
 //----------------------------------------------------------------------------------------
@@ -1561,8 +1563,7 @@ void ScalableMeshModel::SetDefaultClipsActive()
     {
 
         bvector<uint64_t> allClips;
-        bset<uint64_t> clipsToShow;
-        bset<uint64_t> clipsShown;
+
 
         _StartClipMaskBulkInsert();
         GetClipSetIds(allClips);
