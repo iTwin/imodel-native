@@ -1316,8 +1316,8 @@ TEST(RotMatrix, TriangularMatrix)
     DRange1d upperRange = triangularMatrix.UpperTriangleAbsRange();
     DRange1d lowerRange = triangularMatrix.LowerTriangleAbsRange();
     DRange1d diagonalRange = triangularMatrix.DiagonalAbsRange();
-    double_t low;
-    double_t high;
+    double low;
+    double high;
     upperRange.GetLowHigh(low, high);
     Check::ExactDouble(1, low);
     Check::ExactDouble(2, high);
@@ -1334,7 +1334,7 @@ TEST(RotMatrix, TriangularMatrix)
 TEST(RotMatrix, Quaternion)
     {
     RotMatrix rotMat = RotMatrix::FromRowValues(1, 0, 0, 1, 1, 0, 2, 0, 1);
-    double_t angle = rotMat.ColumnXAngleXY();
+    double angle = rotMat.ColumnXAngleXY();
     Angle a = Angle::FromDegrees(45);
     Check::Near(a.Radians(), angle);
     rotMat = RotMatrix::FromRowValues(1, 0, 0, 3, 1, 0, 2, 0, 1);

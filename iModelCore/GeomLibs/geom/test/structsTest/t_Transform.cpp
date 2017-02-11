@@ -1339,7 +1339,7 @@ TEST(Transform, MatrixColumnMagnitude)
     Transform tr;
     tr.InitFromScaleFactors(5, 8, 3);
     Check::ExactDouble(5.0, tr.MatrixColumnMagnitude(0));
-    double_t mag = tr.ColumnXMagnitude();
+    double mag = tr.ColumnXMagnitude();
     Check::ExactDouble(5.0, mag);
     }
 //---------------------------------------------------------------------------------------

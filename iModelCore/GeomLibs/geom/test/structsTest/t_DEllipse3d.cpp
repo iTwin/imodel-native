@@ -1984,40 +1984,60 @@ void CheckC1 (CurveVectorCR curves, size_t i)
 
     }
 
-void TestMultiRadiusFillet (DPoint3dCR pointA, DPoint3dCR pointB, DPoint3dCR pointC)
+void TestMultiRadiusFillet (DPoint3dCR pointA, DPoint3dCR pointB, DPoint3dCR pointC, bool reverse)
     {
+    double a = 15.0;
+    SaveAndRestoreCheckTransform shifter (a,0,0);
     auto options = IFacetOptions::CreateForCurves ();
     bvector <double> radii;
+    bvector<DPoint3d> cornerPoints {pointB, pointA, pointC,
+            DPoint3d::FromInterpolate (pointC, 0.1, pointB)
+            };
     for (size_t i = 2; i < 5; i++)
         {
+        Check::SaveTransformed (cornerPoints);
         radii.push_back ((double)i);
         auto vectorA = DVec3d::FromStartEnd (pointA, pointB);
         auto vectorB = DVec3d::FromStartEnd (pointA, pointC);
-        auto curves = CurveCurve::ConstructMultiRadiusBlend (pointA, vectorA, vectorB, radii);
+        auto curves = CurveCurve::ConstructMultiRadiusBlend (pointA, vectorA, vectorB, radii, reverse);
         if (Check::True (curves.IsValid ()))
             {
-            Check::Print (radii, "Radii");
-            Check::Print (*curves, "Fillets");
+            Check::SaveTransformed (*curves);
             bvector<DPoint3d> strokes;
             curves->AddStrokePoints (strokes, *options);
-            Check::Print (strokes, "strokes");
-
             for (size_t i = 0; i + 1 < curves->size (); i++)
                 CheckC1 (*curves, i);
             }
+        Check::Shift (0,a,0);
         }
     }
 
-TEST(DEllipse3d,MultiRadiusFillet)
+void testMultiRadiusFillet (bool reverse)
     {
-    DPoint3d pointA = DPoint3d::From (10, 0,0);
-    DPoint3d pointB = DPoint3d::From ( 0, 0,0);
+    DPoint3d pointA = DPoint3d::From ( 0, 0,0);
+    DPoint3d pointB = DPoint3d::From (10, 0,0);
     DPoint3d pointC = DPoint3d::From ( 0,10,0);
-    DPoint3d pointB1 = DPoint3d::From (1,2,0);
-    TestMultiRadiusFillet (pointA, pointB, pointC);
-    TestMultiRadiusFillet (pointA, pointB1, pointC);
-
+    for (auto delta : bvector<DVec3d> {DVec3d::From (0,0,0), DVec3d::From (2,1,0), DVec3d::From (-1,2,0)})
+        {
+        TestMultiRadiusFillet (pointA + delta, pointB, pointC, reverse);
+        TestMultiRadiusFillet (pointA + delta, pointC, pointB, reverse);
+        }
     }
+
+TEST(DEllipse3d,MultiRadiusFilletShortTurn)
+    {
+    testMultiRadiusFillet (false);
+    Check::ClearGeometry ("DEllipse3d.MultiRadiusFilletShortTurn");
+    }
+
+
+TEST(DEllipse3d,MultiRadiusFilletLongTurn)
+    {
+    testMultiRadiusFillet (true);
+    Check::ClearGeometry ("DEllipse3d.MultiRadiusFilletLongTurn");
+    }
+
+
 void testSymmetricFilletWithTaper
 (
 DPoint3dCR pointBefore,

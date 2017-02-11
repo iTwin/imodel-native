@@ -1074,11 +1074,16 @@ ICurvePrimitiveR curveA,
 ICurvePrimitiveR curveB,
 double fractionA,
 double fractionB,
-bvector<double> radii
+bvector<double> radii,
+bool reverse
 )
     {
-
-    auto chain = CurveCurve::ConstructMultiRadiusBlend (curveA, curveB, radii, fractionA, fractionB);
+    double a = 18.0;
+    SaveAndRestoreCheckTransform shifter (0,a,0);
+    Check::SaveTransformed (curveA);
+    Check::SaveTransformed (curveB);
+    auto chain = CurveCurve::ConstructMultiRadiusBlend (curveA, curveB, radii, fractionA, fractionB, reverse);
+    Check::SaveTransformed (*chain);
     if (
             Check::True (chain.IsValid (), "Chain returned")
         &&  Check::Size (radii.size(), chain->size (), "num arcs")
@@ -1091,41 +1096,41 @@ bvector<double> radii
             Check::Parallel (end.direction, start.direction, "Confirm tangency A");
             Check::Near (end.origin, start.origin, "Tangent point A");
             }
-        Check::PrintIndent (2);
-        Check::Print (curveA);
-        Check::Print (curveB);
-        Check::Print (chain, "MultiRadiusBlend");
         }
     }
 
 
 TEST(CurveCurve,MultiRadiusBlend)
     {
+    double b = 15.0;
     double r = 2.0;
-    bvector<double> radii;
-    for (size_t i = 0; i < 3; i++, r += 0.5)
+    for (bool reverse : bvector<bool> {false, true})
         {
-        radii.push_back (r);
+        bvector<double> radii;
+        for (size_t i = 0; i < 3; i++, r += 0.5)
+            {
+            SaveAndRestoreCheckTransform shifter (b,0,0);
+            radii.push_back (r);
+            auto lineA = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0));
+            auto lineB = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 0,10,0));
+            testCurveCurveConstructMultiRadiusBlend (*lineA, *lineB, 0.3, 0.3, radii, reverse);
 
-        auto lineA = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0));
-        auto lineB = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 0,10,0));
-        testCurveCurveConstructMultiRadiusBlend (*lineA, *lineB, 0.3, 0.3, radii);
-
-
-        auto arcA = ICurvePrimitive::CreateArc (DEllipse3d::FromStartTangentNormalRadiusSweep (
-                            DPoint3d::From (0,0,0),
-                            DVec3d::From (1,-0.3,0),
-                            DVec3d::From (0,0,1),
-                            20.0, Angle::DegreesToRadians (30)
-                            ));
-        auto arcB = ICurvePrimitive::CreateArc (DEllipse3d::FromStartTangentNormalRadiusSweep (
-                            DPoint3d::From (0,0,0),
-                            DVec3d::From (0,1,0),
-                            DVec3d::From (0,0,1),
-                            -10.0, Angle::DegreesToRadians (30)
-                            ));
-        testCurveCurveConstructMultiRadiusBlend (*arcA, *arcB, 0.3, 0.3, radii);
+            auto arcA = ICurvePrimitive::CreateArc (DEllipse3d::FromStartTangentNormalRadiusSweep (
+                                DPoint3d::From (0,0,0),
+                                DVec3d::From (1,-0.3,0),
+                                DVec3d::From (0,0,1),
+                                20.0, Angle::DegreesToRadians (30)
+                                ));
+            auto arcB = ICurvePrimitive::CreateArc (DEllipse3d::FromStartTangentNormalRadiusSweep (
+                                DPoint3d::From (0,0,0),
+                                DVec3d::From (0,1,0),
+                                DVec3d::From (0,0,1),
+                                -10.0, Angle::DegreesToRadians (30)
+                                ));
+            testCurveCurveConstructMultiRadiusBlend (*arcA, *arcB, 0.3, 0.3, radii, reverse);
+            }
         }
+    Check::ClearGeometry ("CurveCurve.MultiRadiusBlend");
     }
 
 TEST(CurveVectorWithDistanceIndex,XYLength1)

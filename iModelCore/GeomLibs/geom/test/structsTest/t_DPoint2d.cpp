@@ -343,9 +343,9 @@ TEST(DPoint2d, SumOfTwoVectorsWithScale)
     {
     DPoint2d dpMain;
     DPoint2d dpFirst = DPoint2d::From(3, 5);
-    double_t scale1 = 2;
+    double scale1 = 2;
     DPoint2d dpSecond = DPoint2d::From(6, 8);
-    double_t scale2 = 3;
+    double scale2 = 3;
     dpMain.SumOf(dpFirst, scale1, dpSecond, scale2);
     Check::Near(24, dpMain.x);
     Check::Near(34, dpMain.y);
@@ -357,7 +357,7 @@ TEST(DPoint2d, ScaleToLength)
     {
     DPoint2d dpMain;
     DPoint2d dpOriginal1 = DPoint2d::From(6, 8);
-    double_t length = 5;
+    double length = 5;
     Check::Near(10, dpMain.ScaleToLength(dpOriginal1, length));
     Check::Near(3, dpMain.x);
     Check::Near(4, dpMain.y);
@@ -415,7 +415,7 @@ TEST(DPoint2d, FromOne)
 //---------------------------------------------------------------------------------------
 TEST(DPoint2d, FromArray)
     {
-    double_t pts[] = { 3, 4 };
+    double pts[] = { 3, 4 };
     DPoint2d point2 = DPoint2d::FromArray(pts);
     point2.ScaleToLength(point2, 2);
     Check::ExactDouble(0.4 * 3, point2.x);

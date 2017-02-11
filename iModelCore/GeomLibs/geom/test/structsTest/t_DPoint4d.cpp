@@ -39,10 +39,10 @@ TEST_F(DPoint4d_F, GetSetComponents)
     point4D.SetComponent(20.2, 1);
     Check::ExactDouble(20.2, point4D.GetComponent(1));
     point4D.SetComponents(9.8, 12.3, 8.2, 22.1);
-    double_t x_comp;
-    double_t y_comp;
-    double_t z_comp;
-    double_t w_comp;
+    double x_comp;
+    double y_comp;
+    double z_comp;
+    double w_comp;
     point4D.GetComponents(x_comp, y_comp, z_comp, w_comp);
     Check::ExactDouble(point4D.GetComponent(0), x_comp);
     Check::ExactDouble(point4D.GetComponent(1), y_comp);
@@ -81,7 +81,7 @@ TEST_F(DPoint4d_F, Disconnect)
 //---------------------------------------------------------------------------------------
 TEST_F(DPoint4d_F, InitFromArray)
     {
-    double_t ptArray[] = { 9.2, 2.9, 2.2, 8.2 };
+    double ptArray[] = { 9.2, 2.9, 2.2, 8.2 };
     DPoint4d pnt4;
     pnt4.InitFromArray(ptArray);
     Check::ExactDouble(9.2, pnt4.GetComponent(0));
@@ -97,7 +97,7 @@ TEST_F(DPoint4d_F, IsEqual)
     DPoint4d point1 = DPoint4d::From(9.2, 2.9, 2.2, 8.2);
     DPoint4d point2 = DPoint4d::From(9.1, 2.7, 2.25, 8.45);
     Check::False(point1.IsEqual(point2));
-    double_t tolerance = 0.4;
+    double tolerance = 0.4;
     Check::True(point1.IsEqual(point2, tolerance));
     }
 //---------------------------------------------------------------------------------------
@@ -125,7 +125,7 @@ TEST_F(DPoint4d_F, Scale)
     {
     DPoint4d point1;
     DPoint4d point2 = DPoint4d::From(9.1, -2.7, 2.25, -8.45);
-    double_t scale = 3;
+    double scale = 3;
     point1.Scale(point2, scale);
     Check::Near (27.3, point1.GetComponent(0));
     Check::Near (-8.1, point1.GetComponent(1));
@@ -158,7 +158,7 @@ TEST_F(DPoint4d_F, WeightedDifference)
     DPoint3d point1 = DPoint3d::From(2.3, 5.2, 9.7);
     DPoint4d point2 = DPoint4d::From(9.1, -2.7, 2.25, 2);
     DPoint4d fin;
-    double_t wA = 3;
+    double wA = 3;
     fin.WeightedDifferenceOf(point1, wA, point2);
     Check::Near(-22.7, fin.GetComponent(0));
     Check::Near(18.5, fin.GetComponent(1));
@@ -178,7 +178,7 @@ TEST_F(DPoint4d_F, Normalize)
     Check::Near(1, point.w);
 
     DPoint4d point2 = DPoint4d::From(3, 6, 9, 2);
-    double_t magnit = 11.2249721603;
+    double magnit = 11.2249721603;
     point.NormalizePlaneOf(point2);
     Check::Near(1.5 / magnit, point.GetComponent(0));
     Check::Near(3 / magnit, point.GetComponent(1));

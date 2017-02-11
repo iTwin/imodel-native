@@ -640,9 +640,9 @@ TEST(DVec2d, InitFromSum)
     DVec2d vector1 = DVec2d::From(4, 5);
     DVec2d vector2 = DVec2d::From(1, 3);
     DVec2d vector3 = DVec2d::From(5, 9);
-    double_t scale1 = 2;
-    double_t scale2 = 1.5;
-    double_t scale3 = 0.25;
+    double scale1 = 2;
+    double scale2 = 1.5;
+    double scale3 = 0.25;
     DVec2d res = DVec2d::FromSumOf(vector0, vector1, scale1);
     Check::Near(10, res.GetComponent(0));
     Check::Near(13, res.GetComponent(1));
@@ -671,8 +671,8 @@ TEST(DVec2d, DotProduct)
     {
     DVec2d vec0 = DVec2d::From(2, 3);
     DVec2d vec1 = DVec2d::From(5, 6);
-    double_t res = vec0.DotProduct(vec1);
-    double_t resExpected = vec0.Magnitude() * vec1.Magnitude() * cos(vec0.AngleTo(vec1));
+    double res = vec0.DotProduct(vec1);
+    double resExpected = vec0.Magnitude() * vec1.Magnitude() * cos(vec0.AngleTo(vec1));
     Check::Near(resExpected, res);
     }
 //---------------------------------------------------------------------------------------
