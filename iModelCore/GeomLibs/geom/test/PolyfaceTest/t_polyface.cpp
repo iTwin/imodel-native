@@ -3762,7 +3762,6 @@ TEST(Polyface,CulvertPunchA)
 
 
 
-
 //! Build a mesh that "connects" an above-ground culvert face to the nearby ground.
 //! The connector mesh can be perpendicular to the face, or graded at some angle from perpendicular
 PolyfaceHeaderPtr AddConvexCulvertToDTM

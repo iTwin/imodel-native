@@ -1369,7 +1369,7 @@ TEST(Angle, AcosAsin)
 //---------------------------------------------------------------------------------------
 TEST(Angle, PeriodShift)
     {
-    double_t periodShift = Angle::PeriodShift(Angle::DegreesToRadians(90), 2);
+    double periodShift = Angle::PeriodShift(Angle::DegreesToRadians(90), 2);
     Check::Near(Angle::DegreesToRadians(90) + Angle::TwoPi() * 2, periodShift);
     }
 //---------------------------------------------------------------------------------------
@@ -1377,7 +1377,7 @@ TEST(Angle, PeriodShift)
 //---------------------------------------------------------------------------------------
 TEST(Angle, ForwardComplement)
     {
-    double_t complement = Angle::ForwardComplement(Angle::DegreesToRadians(90));
+    double complement = Angle::ForwardComplement(Angle::DegreesToRadians(90));
     Check::Near(Angle::DegreesToRadians(360) - Angle::DegreesToRadians(90), complement);
     complement = Angle::ForwardComplement(Angle::DegreesToRadians(370));
     Check::Near(Angle::DegreesToRadians(360) - Angle::DegreesToRadians(10), complement);
@@ -1387,13 +1387,13 @@ TEST(Angle, ForwardComplement)
 //---------------------------------------------------------------------------------------
 TEST(Angle, TrigCombination)
     {
-    double_t constCoff = 2;
-    double_t cosCoff = 2;
-    double_t sinCoff = 3;
+    double constCoff = 2;
+    double cosCoff = 2;
+    double sinCoff = 3;
     auto cosAngle = Angle::FromDegrees(60);
     auto sinAngle = Angle::FromDegrees(60);
-    double_t expectedTrig = constCoff + cosCoff * cosAngle.Cos() + sinCoff * sinAngle.Sin();
-    double_t resTrig = Angle::EvaluateTrigCombination(constCoff, cosCoff, sinCoff, Angle::DegreesToRadians(60));
+    double expectedTrig = constCoff + cosCoff * cosAngle.Cos() + sinCoff * sinAngle.Sin();
+    double resTrig = Angle::EvaluateTrigCombination(constCoff, cosCoff, sinCoff, Angle::DegreesToRadians(60));
     Check::Near(expectedTrig, resTrig);
     }
 //---------------------------------------------------------------------------------------

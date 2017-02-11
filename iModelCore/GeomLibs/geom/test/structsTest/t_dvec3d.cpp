@@ -1331,9 +1331,9 @@ TEST(DVec3d, FromSumOfVectors)
     DVec3d vec1 = DVec3d::From(3, 7);
     DVec3d vec2 = DVec3d::From(3, 2, 7);
     DVec3d vec3 = DVec3d::From(1, 5, 1);
-    double_t scale1 = 3.1;
-    double_t scale2 = 1.6;
-    double_t scale3 = 4.9;
+    double scale1 = 3.1;
+    double scale2 = 1.6;
+    double scale3 = 4.9;
     vecRes = DVec3d::FromSumOf(vec0, vec1, scale1);
     Check::Near(11.3, vecRes.GetComponent(0));
     Check::Near(24.7, vecRes.GetComponent(1));

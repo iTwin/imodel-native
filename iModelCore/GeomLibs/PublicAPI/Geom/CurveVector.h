@@ -1387,7 +1387,9 @@ static GEOMDLLIMPEXP CurveVectorPtr ConstructMultiRadiusBlend
 DPoint3dCR corner,          //!< [in] corner of nominal sharp turn.
 DVec3dCR   vectorA,         //!< [in] outbound vector on A side.
 DVec3dCR   vectorB,         //!< [in] outbound vector on B side.
-bvector<double> radii       //! [in] vector of successive radii on the transition.
+bvector<double> radii,      //!< [in] vector of successive radii on the transition.
+bool revese = false         //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
+
 );
 
 //! Search for a multi-radius blend near given start fractions.
@@ -1397,7 +1399,8 @@ ICurvePrimitiveR curveA,    //!< First source set
 ICurvePrimitiveR curveB,    //!< second source set
 bvector<double> radii,      //!< [in] radii for fillets
 double &fractionA,          //!< [in,out] fraction on curveA
-double &fractionB           //!< [in,out] fraction on curveB
+double &fractionB,          //!< [in,out] fraction on curveB
+bool reverse = false        //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
 );
 //! Compute taperFilletTaper transition in the smaller sector between the vectors.
 //! Optional offset are shifts that are positive "into" the sector of construction.

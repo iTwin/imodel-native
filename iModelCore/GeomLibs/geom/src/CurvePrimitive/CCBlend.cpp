@@ -427,29 +427,46 @@ CurveVectorPtr CurveCurve::ConstructMultiRadiusBlend
 DPoint3dCR corner,          //!< [in] corner of nominal sharp turn.
 DVec3dCR   vectorA,         //!< [in] outbound vector on A side.
 DVec3dCR   vectorB,         //!< [in] outbound vector on B side.
-bvector<double> radii       //! [in] vector of successive radii on the transition.
+bvector<double> radii,       //!< [in] vector of successive radii on the transition.
+bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
 )
     {
     if (radii.empty ())
         return nullptr;
     DPoint3dDVec3dDVec3d skewBasis (corner, vectorA, vectorB);
-    DVec3d vectorA1 = vectorA;
+    DVec3d vectorA1 = vectorA, currentTangent;
     vectorA1.Negate ();
+    double interiorTurnRadians = vectorA1.AngleTo (vectorB);
+    double totalTurnRadians;
+    double radiusSign;
+    // set up so   ..
+    // currentTangent is the true angle of start tangent.
+    // totalTurnRadians is the (positive) total turn
+    if (!reverse)
+        {
+        totalTurnRadians = interiorTurnRadians;        // That's positive
+        currentTangent = vectorA1;
+        radiusSign = -1.0;
+        }
+    else
+        {
+        totalTurnRadians = Angle::TwoPi () - interiorTurnRadians;
+        currentTangent = vectorA;
+        radiusSign = 1.0;
+        }
     auto planeNormal = DVec3d::FromCrossProduct (vectorB, vectorA1);
-    double totalTurnRadians = vectorB.AngleTo (vectorA1);        // That's positive
     // start out along the x axis and append successive radii.
     double singleTurnRadians = totalTurnRadians / (double)radii.size ();
-    DVec3d tangent = vectorA1;
+
     DPoint3d xyz = corner;
     auto curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     for(auto &radius : radii)
         {
-
-        auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (xyz, tangent, planeNormal, -radius, singleTurnRadians);
+        auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (xyz, currentTangent, planeNormal, radiusSign * radius, singleTurnRadians);
         if (!arc.IsValid ())
             return nullptr;
         curves->push_back (ICurvePrimitive::CreateArc (arc.Value ()));
-        curves->back ()->FractionToPoint (1.0, xyz, tangent);
+        curves->back ()->FractionToPoint (1.0, xyz, currentTangent);
         }
 
     // xyz is the final point.
@@ -663,14 +680,16 @@ CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR ta
 struct MultiRadiusBlendConstructionObject : public CompoundBlendConstructionObject
 {
 bvector<double> m_radii;
-MultiRadiusBlendConstructionObject (bvector<double> radii)
+bool m_reverseBlend;
+MultiRadiusBlendConstructionObject (bvector<double> radii, bool reverseBlend)
     :
-    m_radii (radii)
+    m_radii (radii),
+    m_reverseBlend (reverseBlend)
     {}
 
 CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override 
     {
-    return CurveCurve::ConstructMultiRadiusBlend (corner, tangentA, tangentB, m_radii);
+    return CurveCurve::ConstructMultiRadiusBlend (corner, tangentA, tangentB, m_radii, m_reverseBlend);
     }
 };
 
@@ -877,13 +896,14 @@ ICurvePrimitiveR curveA,    //!< First source set
 ICurvePrimitiveR curveB,    //!< second source set
 bvector<double> radii,      //!< [in] radii for fillets
 double &fractionA,          //!< [in,out] fraction on curveA
-double &fractionB           //!< [in,out] fraction on curveB
+double &fractionB,           //!< [in,out] fraction on curveB
+bool reverse                  //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
 )
     {
     double maxStep = 0.30;
     double tol = Angle::SmallAngle ();
     NewtonIterationsRRToRR newton (tol);
-    MultiRadiusBlendConstructionObject blendBuilder (radii);
+    MultiRadiusBlendConstructionObject blendBuilder (radii, reverse);
     ParameterToPointEvaluator::CurvePrimitiveEvaluator evaluatorA (curveA);
     ParameterToPointEvaluator::CurvePrimitiveEvaluator evaluatorB (curveB);
     CompoundBlendFunction F (blendBuilder, evaluatorA, evaluatorB);

@@ -7,7 +7,7 @@ TEST(DRange1d, DefaultRange)
     {
     DRange1d infRange = DRange1d::InfiniteRange();
     Check::True(infRange.IsDoublyInfinite());
-    double_t infLow, infHigh;
+    double infLow, infHigh;
 
     Check::True(infRange.GetLowHigh(infLow, infHigh));
     DRange1d expLow, expHigh;

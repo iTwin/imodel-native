@@ -1014,61 +1014,6 @@ int   n
     }
 
 
-/*-----------------------------------------------------------------*//**
-* Matrix*point multiplication, using full 4d points but assuming the
-* matrix is has 3D only scaling and translation.
-
-* @param [out] outPoint Array of homogeneous products A*pPoint[i]
-* @param [in] inPoint Array of homogeneous points
-* @param [in] n number of points
-* @indexVerb
-* @bsimethod                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DMatrix4d::MultiplyScaleAndTranslate
-(
-DPoint4dP pOutPoint,
-DPoint4dCP pInPoint,
-int   n
-) const
-    {
-    int i;
-    const DPoint4d *pCurrPoint;
-    DPoint4d *pDest;
-    double x,y,z,w;
-    double sx, sy, sz, tx, ty, tz;
-
-    sx = this->coff[0][0];
-    sy = this->coff[1][1];
-    sz = this->coff[2][2];
-
-    tx = this->coff[0][3];
-    ty = this->coff[1][3];
-    tz = this->coff[2][3];
-
-    for ( i = 0 , pCurrPoint = pInPoint , pDest = pOutPoint ;
-          i < n ;
-          i++, pCurrPoint++, pDest++ )
-        {
-        x = pCurrPoint->x;
-        y = pCurrPoint->y;
-        z = pCurrPoint->z;
-        w = pDest->w = pCurrPoint->w;
-        if ( pDest->w == 1.0 )
-            {
-            /* Both the input and output have w=1 */
-            pDest->x = sx * x + tx;
-            pDest->y = sy * y + ty;
-            pDest->z = sz * z + tz;
-            }
-        else
-            {
-            pDest->x = sx * x + w * tx;
-            pDest->y = sy * y + w * ty;
-            pDest->z = sz * z + w * tz;
-            }
-        }
-    }
-
 
 /*-----------------------------------------------------------------*//**
 * Matrix times vector multiplication, assume 0001 4th row
@@ -1205,50 +1150,6 @@ TransformCR in
     }
 
 
-
-/*-----------------------------------------------------------------*//**
-* Matrix*point multiplication, using only scale and translate entries from the
-* matrix.
-
-* @param [out] outPoint Array of products A*pPoint[i]
-* @param [in] inPoint Array of input points
-* @param [in] n number of points
-* @indexVerb
-* @bsimethod                                                    EarlinLutz      12/97
-+----------------------------------------------------------------------*/
-void DMatrix4d::MultiplyScaleAndTranslate
-(
-DPoint3dP pOutPoint,
-DPoint3dCP pInPoint,
-int   n
-) const
-    {
-    int i;
-    const DPoint3d *pCurrPoint;
-    DPoint3d *pDest;
-    double x,y,z;
-    double sx, sy, sz, tx, ty, tz;
-
-    sx = this->coff[0][0];
-    sy = this->coff[1][1];
-    sz = this->coff[2][2];
-
-    tx = this->coff[0][3];
-    ty = this->coff[1][3];
-    tz = this->coff[2][3];
-
-    for ( i = 0 , pCurrPoint = pInPoint , pDest = pOutPoint;
-          i < n ;
-          i++, pCurrPoint++, pDest++ )
-        {
-        x = pCurrPoint->x;
-        y = pCurrPoint->y;
-        z = pCurrPoint->z;
-        pDest->x = sx * x + tx;
-        pDest->y = sy * y + ty;
-        pDest->z = sz * z + tz;
-        }
-    }
 
 
 /*-----------------------------------------------------------------*//**
