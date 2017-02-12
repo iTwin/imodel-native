@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/funcs/biarc.cpp $
+|     $Source: geom/src/structs/cpp/refmethods/biarc.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -65,22 +65,24 @@ bool            isUnimodel
     }
 
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          02/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    calculateBiarc
+bool calculateBiarc
 (
-DPoint3d        *arcPointsP,
-DPoint3d        *point0P,
-DPoint3d        *point1P,
-DPoint3d        *tangent0P,
-DPoint3d        *tangent1P
+DEllipse3dR ellipse0,
+DEllipse3dR ellipse1,
+DPoint3dCP point0P,
+DPoint3dCP point1P,
+DVec3dCP tangent0P,
+DVec3dCP tangent1P
 )
     {
     bool        isUnimodel;
     double      radius0, radius1, magnitude, cosine0, cosine1, sine0, sine1,
                 tmp, tmp0, tmp1;
-    DPoint3d    chord, dir0, dir1, mid, center0, center1, normal;
+    DPoint3d    chord, dir0, dir1, center0, center1, normal;
 
     /* Compute the radii for arcs */
     bsiDPoint3d_subtractDPoint3dDPoint3d (&chord, point1P, point0P);
@@ -126,6 +128,7 @@ DPoint3d        *tangent1P
     bsiDPoint3d_crossProduct (&dir1, tangent1P, &normal);
     calcBiarcCenters (center0, center1, *point0P, *point1P, dir0, dir1, radius0, radius1, isUnimodel);
 
+    DPoint3d pointC;
     /* Create points on arc */
     if (isUnimodel)
         {
@@ -142,23 +145,39 @@ DPoint3d        *tangent1P
                 bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center1, &center0);
             }
         bsiDPoint3d_normalizeInPlace (&dir0);
-        bsiDPoint3d_addScaledDPoint3d (arcPointsP+2, &center0, &dir0, radius0);
+        bsiDPoint3d_addScaledDPoint3d (&pointC, &center0, &dir0, radius0);
         }
     else
         {
-        bsiDPoint3d_interpolate (arcPointsP+2,  &center0, 0.5,  &center1);
+        bsiDPoint3d_interpolate (&pointC,  &center0, 0.5,  &center1);
         }
-    arcPointsP[0] = *point0P;
-    arcPointsP[4] = *point1P;
-    bsiDPoint3d_interpolate (&mid,  point0P, 0.5,  arcPointsP+2);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &mid, &center0);
-    bsiDPoint3d_normalizeInPlace (&dir0);
-    bsiDPoint3d_addScaledDPoint3d (arcPointsP+1, &center0, &dir0, radius0);
-    bsiDPoint3d_interpolate (&mid,  point1P, 0.5,  arcPointsP+2);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &mid, &center1);
-    bsiDPoint3d_normalizeInPlace (&dir0);
-    bsiDPoint3d_addScaledDPoint3d (arcPointsP+3, &center1, &dir0, radius1);
+    DVec3d vector0A = DVec3d::FromStartEnd (center0, *point0P);
+    DVec3d vector0C = DVec3d::FromStartEnd (center0, pointC);
+    DVec3d vector1C = DVec3d::FromStartEnd (center1, pointC);
+    DVec3d vector1B = DVec3d::FromStartEnd (center1, *point1P);
+    double theta0 = vector0A.AngleTo (vector0C);
+    double theta1 = vector1C.AngleTo (vector1B);
+    DVec3d normal0 = DVec3d::FromNormalizedCrossProduct (vector0A, vector0C);
+    DVec3d normal1 = DVec3d::FromNormalizedCrossProduct (vector1C, vector1B);
+    DVec3d perp0 = DVec3d::FromCrossProduct (normal0, vector0A);
+    DVec3d perp1 = DVec3d::FromCrossProduct (normal1, vector1C);
+    ellipse0 = DEllipse3d::FromVectors (center0, vector0A, perp0, 0.0, theta0);
+    ellipse1 = DEllipse3d::FromVectors (center1, vector1C, perp1, 0.0, theta1);
+    return true;
     }
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          02/95
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DEllipse3d::Construct_Biarcs
+(
+DEllipse3dR ellipse0,
+DEllipse3dR ellipse1,
+DPoint3dCR pointA,
+DVec3dCR   tangentA,
+DPoint3dCR pointB,
+DVec3dCR   tangentB
+)
+    {
+    return calculateBiarc (ellipse0, ellipse1, &pointA, &pointB, &tangentA, &tangentB);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

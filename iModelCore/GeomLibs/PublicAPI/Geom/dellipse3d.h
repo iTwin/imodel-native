@@ -1803,6 +1803,15 @@ double fraction,                            //!< [in] fraction to evaluate ellip
 DPoint3dCR searchPoint                      //!< [in] search point.
 );
 
+static bool Construct_Biarcs
+(
+DEllipse3dR arcA,
+DEllipse3dR arcB,
+DPoint3dCR pointA,
+DVec3dCR  tangentA,
+DPoint3dCR pointB,
+DVec3dCR  tangentB
+);
 #endif
 
 };

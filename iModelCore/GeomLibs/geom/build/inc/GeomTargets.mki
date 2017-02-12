@@ -250,7 +250,7 @@ $(OUT_DIR)complex$(OUT_EXT)         : $(geomSrcFuncs)complex.cpp        $(OTHER_
 
 $(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcFuncs)biarc.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcStructsCpp)refmethods/biarc.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)ellipsefillet$(OUT_EXT)   : $(geomSrcFuncs)ellipsefillet.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
