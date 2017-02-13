@@ -34,16 +34,16 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus DoMapSchemas() const;
         ClassMappingStatus MapClass(ECN::ECClassCR) const;
         BentleyStatus SaveDbSchema() const;
-        BentleyStatus CreateOrUpdateRequiredTables(DbSchemaModificationToken const*) const;
+        BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
-        BentleyStatus PurgeOrphanTables(DbSchemaModificationToken const*) const;
+        BentleyStatus PurgeOrphanTables() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         BentleyStatus UpdateECClassIdColumnIfRequired(DbTable&, bset<ClassMap*> const&) const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
-        static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList);
+        static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixIns);
 
     public:
         explicit ECDbMap(ECDbCR ecdb);
@@ -57,7 +57,7 @@ struct ECDbMap :NonCopyableClass
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-        BentleyStatus MapSchemas(SchemaImportContext&, DbSchemaModificationToken const*) const;
+        BentleyStatus MapSchemas(SchemaImportContext&) const;
 
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;

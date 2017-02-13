@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchemaPersistenceManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -76,7 +76,7 @@ private:
 public:
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
-    static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&, DbSchemaModificationToken const*);
+    static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 

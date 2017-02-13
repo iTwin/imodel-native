@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaImportContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,6 +15,81 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //*************************************************************************************
 // SchemaImportContext
 //*************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus SchemaImportContext::QueryMixIns(ECDbCR ecdb, DbTable const& table, std::vector<ECEntityClassCP>& mixIns)
+	{
+	if (!table.GetExclusiveRootECClassId().IsValid())
+		{
+		BeAssert(false && "This only apply to TPH");
+		return ERROR;
+		}
+
+	if (!mixIns.empty())
+		mixIns.clear();
+
+	Utf8CP mixInSql =
+		"SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
+		"	INNER JOIN " TABLE_ClassHasBaseClasses " CHBC ON CHBC.ClassId = CCH.ClassId "
+		"WHERE CCH.BaseClassId = ?  AND CHBC.BaseClassId IN ( "
+		"	SELECT CA.ContainerId FROM " TABLE_Class " C "
+		"		INNER JOIN " TABLE_Schema " S ON S.Id = C.SchemaId "
+		"		INNER JOIN " TABLE_CustomAttribute " CA ON CA.ClassId = C.Id "
+		"	WHERE C.Name = 'IsMixin' AND S.Name='CoreCustomAttributes') "
+		"GROUP BY CHBC.BaseClassId ";
+
+	CachedStatementPtr stmt = ecdb.GetCachedStatement(mixInSql);
+	stmt->BindId(1, table.GetExclusiveRootECClassId());
+	while (stmt->Step() == BE_SQLITE_ROW)
+		{
+		ECClassId mixInId = stmt->GetValueId<ECClassId>(0);
+		ECClassCP classCP = ecdb.Schemas().GetECClass(mixInId);
+		if (!classCP->IsEntityClass())
+			{
+			mixIns.clear();
+			BeAssert(false && "SQL query has issue. Something changed about Mixin CA");
+			return ERROR;
+			}
+		ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(classCP);
+		if (!entityClass->IsMixin())
+			{
+			mixIns.clear();
+			BeAssert(false && "SQL query has issue. Expecting MixIn");
+			return ERROR;
+			}
+
+		mixIns.push_back(entityClass);
+		//Load its derived classes as well.
+		}
+
+	return SUCCESS;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2017
+//---------------------------------------------------------------------------------------
+std::vector<ECN::ECEntityClassCP> const* SchemaImportContext::QueryMixIns(ECDbCR ecdb, DbTable const& table) const
+	{
+	auto itor = m_mixInCachePerTable.find(&table);
+	if (itor != m_mixInCachePerTable.end())
+		{
+		BeAssert(false && "API should be classed for TPH");
+		return itor->second.get();
+		}
+
+	std::vector<ECEntityClassCP>* mixIns = new std::vector<ECEntityClassCP>();
+	if (QueryMixIns(ecdb, table, *mixIns) == ERROR)
+		{
+		delete mixIns;
+		mixIns = nullptr;
+		BeAssert(false && "API should be classed for TPH");
+		}
+
+	m_mixInCachePerTable.insert(std::make_pair(&table, std::unique_ptr<std::vector<ECEntityClassCP>>(mixIns)));
+	return mixIns;
+	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------

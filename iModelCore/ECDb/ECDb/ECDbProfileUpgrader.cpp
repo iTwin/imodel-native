@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
-    StopWatch timer(true);
+    PERFLOG_START("ECDb", "profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
@@ -40,20 +40,13 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetTokenManager().GetDbSchemaModificationToken());
-    timer.Stop();
+    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetSettings().GetECSchemaImportToken());
+    PERFLOG_FINISH("ECDb", "profile schema import");
     if (importStat != SUCCESS)
         {
         LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas and the MetaSchema ECSchema into the file '%s' failed.",
                    ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
-        }
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        {
-        LOG.debugv("Imported ECDb system ECSchemas and MetaSchema ECSchema into the file '%s' in %.4f msecs.",
-                   ecdb.GetDbFileName(),
-                   timer.GetElapsedSeconds() * 1000.0);
         }
 
     return BE_SQLITE_OK;
@@ -109,55 +102,8 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDbSystem' alias='ecdbsys' description='Helper ECSchema for ECDb internal purposes.' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "<ECSchema schemaName='ECDbSystem' alias='ecdbsys' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
-        "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
-        "        <ECCustomAttributes> "
-        "            <ClassMap xmlns='ECDbMap.02.00.00'> "
-        "                <MapStrategy>NotMapped</MapStrategy>"
-        "            </ClassMap> "
-        "        </ECCustomAttributes> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='BinaryArray' modifier='Sealed'> "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='binary'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='BooleanArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='boolean'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='DateTimeArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='dateTime'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='DoubleArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='double'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='IntegerArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='int'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='GeometryArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='Bentley.Geometry.Common.IGeometry'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='LongArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='long'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='Point2dArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='point2d'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='Point3dArray' modifier='Sealed'> "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='point3d'/> "
-        "    </ECEntityClass> "
-        "    <ECEntityClass typeName='StringArray' modifier='Sealed' > "
-        "        <BaseClass>PrimitiveArray</BaseClass> "
-        "        <ECArrayProperty propertyName='Array' typeName='string'/> "
-        "    </ECEntityClass> "
         "    <ECEntityClass typeName='ClassECSqlSystemProperties' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00.00'>"

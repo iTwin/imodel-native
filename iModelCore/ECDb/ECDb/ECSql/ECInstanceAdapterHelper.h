@@ -38,28 +38,34 @@ struct ECValueBindingInfo : NonCopyableClass
             };
 
     protected:
-        static const int UNSET_INDEX = 0;
+        static const int UNSET_PARAMETERINDEX = 0;
 
     private:
         Type m_type;
-        int m_ecsqlParameterIndex;
+        int m_ecsqlParameterIndex = UNSET_PARAMETERINDEX;
+        bool m_hasPropertyIndex = false;
+        uint32_t m_propertyIndex = 0;
 
     protected:
-        ECValueBindingInfo(Type type, int ecsqlParameterIndex)
-            : m_type(type), m_ecsqlParameterIndex(ecsqlParameterIndex)
+        ECValueBindingInfo(Type type, int ecsqlParameterIndex) : m_type(type), m_ecsqlParameterIndex(ecsqlParameterIndex) {}
+
+        ECValueBindingInfo(Type type, int ecsqlParameterIndex, uint32_t propertyIndex)
+            : m_type(type), m_ecsqlParameterIndex(ecsqlParameterIndex), m_hasPropertyIndex(true), m_propertyIndex(propertyIndex)
             {}
 
     public:
         virtual ~ECValueBindingInfo() {}
+        Type GetType() const { return m_type; }
 
         //! Only binding infos for top-level properties have a corresponding ECSQL parameter index.
         //! Binding infos for nested properties don't. Use this to tell between the two.
-        bool HasECSqlParameterIndex() const { return m_ecsqlParameterIndex > UNSET_INDEX; }
+        bool HasECSqlParameterIndex() const { return m_ecsqlParameterIndex > UNSET_PARAMETERINDEX; }
         //! Gets the ECSQL parameter index to which this binding info maps to.
         //! Only call this for top-level properties. Don't call it for nested properties.
         int GetECSqlParameterIndex() const { BeAssert(HasECSqlParameterIndex());  return m_ecsqlParameterIndex; }
 
-        Type GetType() const { return m_type; }
+        bool HasPropertyIndex() const { return m_hasPropertyIndex; }
+        uint32_t GetPropertyIndex() const { BeAssert(HasPropertyIndex());  return m_propertyIndex; }
     };
 
 //======================================================================================
@@ -73,7 +79,7 @@ struct ECValueBindingInfoFactory
         ~ECValueBindingInfoFactory();
 
     public:
-        static std::unique_ptr<ECValueBindingInfo> CreateBindingInfo(ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, int ecsqlParameterIndex);
+        static std::unique_ptr<ECValueBindingInfo> CreateBindingInfo(ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8StringCR propertyAccessString, int ecsqlParameterIndex);
         static std::unique_ptr<ECValueBindingInfo> CreateSystemBindingInfo(ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex);
     };
 
@@ -104,15 +110,11 @@ struct ECSqlSystemPropertyBindingInfo : ECValueBindingInfo
 struct PrimitiveECValueBindingInfo : ECValueBindingInfo
     {
     private:
-        uint32_t m_propertyIndex;
-
-        PrimitiveECValueBindingInfo(uint32_t propertyIndex, int ecsqlParameterIndex) :  ECValueBindingInfo(Type::Primitive, ecsqlParameterIndex), m_propertyIndex(propertyIndex) {}
+        PrimitiveECValueBindingInfo(int ecsqlParameterIndex, uint32_t propertyIndex) :  ECValueBindingInfo(Type::Primitive, ecsqlParameterIndex, propertyIndex) {}
 
     public:
-        static std::unique_ptr<PrimitiveECValueBindingInfo> Create(uint32_t propertyIndex, int ecsqlParameterIndex);
+        static std::unique_ptr<PrimitiveECValueBindingInfo> Create(int ecsqlParameterIndex, uint32_t propertyIndex);
         ~PrimitiveECValueBindingInfo() {}
-
-        uint32_t GetPropertyIndex() const { return m_propertyIndex; }
     };
 
 //======================================================================================
@@ -124,10 +126,10 @@ struct StructECValueBindingInfo : ECValueBindingInfo
     private:
         std::map<ECN::ECPropertyId, std::unique_ptr<ECValueBindingInfo>> m_memberBindingInfos;
 
-        StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
+        StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8StringCP parentPropertyAccessString, int ecsqlParameterIndex);
 
     public:
-        static std::unique_ptr<StructECValueBindingInfo> Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
+        static std::unique_ptr<StructECValueBindingInfo> Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8StringCP parentPropertyAccessString, int ecsqlParameterIndex);
         static std::unique_ptr<StructECValueBindingInfo> CreateForNestedStruct(ECN::ECStructClassCR);
 
         ~StructECValueBindingInfo() {}
@@ -142,16 +144,14 @@ struct StructECValueBindingInfo : ECValueBindingInfo
 struct ArrayECValueBindingInfo : ECValueBindingInfo
     {
     private:
-        uint32_t m_arrayPropIndex;
-        std::unique_ptr<StructECValueBindingInfo> m_structArrayElementBindingInfo;
+        std::unique_ptr<StructECValueBindingInfo> m_structArrayElementBindingInfo = nullptr;
 
-        ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex);
+        ArrayECValueBindingInfo(ECN::ECPropertyCR prop, int ecsqlParameterIndex, uint32_t arrayPropIndex);
 
     public:
-        static std::unique_ptr<ArrayECValueBindingInfo> Create(ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex);
+        static std::unique_ptr<ArrayECValueBindingInfo> Create(ECN::ECPropertyCR prop, int ecsqlParameterIndex, uint32_t arrayPropIndex);
 
         ~ArrayECValueBindingInfo() {}
-        uint32_t GetArrayPropertyIndex() const { return m_arrayPropIndex; }
 
         //! Indicates whether this is a binding for a struct array or not.
         bool IsStructArray() const { return m_structArrayElementBindingInfo != nullptr; }
@@ -166,18 +166,15 @@ struct ArrayECValueBindingInfo : ECValueBindingInfo
 struct NavigationECValueBindingInfo : ECValueBindingInfo
     {
     private:
-        uint32_t m_propertyIndex;
-        NavigationECValueBindingInfo(uint32_t propertyIndex, int ecsqlParameterIndex) : ECValueBindingInfo(Type::Navigation, ecsqlParameterIndex), m_propertyIndex(propertyIndex) {}
+        NavigationECValueBindingInfo(int ecsqlParameterIndex, uint32_t propertyIndex) : ECValueBindingInfo(Type::Navigation, ecsqlParameterIndex, propertyIndex) {}
 
     public:
-        static std::unique_ptr<NavigationECValueBindingInfo> Create(uint32_t propertyIndex, int ecsqlParameterIndex) 
+        static std::unique_ptr<NavigationECValueBindingInfo> Create(int ecsqlParameterIndex, uint32_t propertyIndex)
             {
-            return std::unique_ptr<NavigationECValueBindingInfo>(new NavigationECValueBindingInfo(propertyIndex, ecsqlParameterIndex));
+            return std::unique_ptr<NavigationECValueBindingInfo>(new NavigationECValueBindingInfo(ecsqlParameterIndex, propertyIndex));
             }
 
         ~NavigationECValueBindingInfo() {}
-
-        uint32_t GetPropertyIndex() const { return m_propertyIndex; }
     };
 
 //======================================================================================
@@ -257,7 +254,7 @@ struct ECValueBindingInfoCollection
         //!Generates and adds a new binding info for the given parameter.
         //!@return SUCCESS in case of success, ERROR otherwise
         BentleyStatus AddBindingInfo(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, int ecsqlParameterIndex);
-        BentleyStatus AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex);
+        BentleyStatus AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString, int ecsqlParameterIndex);
         //!Generates and adds a new binding info for the specified ECSQL System property for the given parameter.
         //!@return binding info in case of success, nullptr otherwise
         ECSqlSystemPropertyBindingInfo* AddBindingInfo(ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex);
@@ -321,6 +318,8 @@ struct ECInstanceAdapterHelper
         static BentleyStatus BindECSqlSystemPropertyValue(IECSqlBinder&, ECInstanceInfo const&, ECSqlSystemPropertyBindingInfo const&);
 
         static IECSqlBinder::MakeCopy DetermineMakeCopy(ECN::ECValueCR);
+
+        static bool IsPropertyValueNull(ECN::IECInstanceCR, ECValueBindingInfo const&);
 
     public:
         //! Binds the respective ECValue (specified through @p valueBindingInfo) of the specified ECInstance

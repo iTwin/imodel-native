@@ -102,17 +102,15 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PrimitiveECSqlBinder.h \
                 $(baseDir)ECSql/PointECSqlBinder.h \
                 $(baseDir)ECSql/StructECSqlBinder.h \
-                $(baseDir)ECSql/PrimitiveArrayECSqlBinder.h \
-                $(baseDir)ECSql/StructArrayECSqlBinder.h \
+                $(baseDir)ECSql/ArrayECSqlBinder.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlBinder.h \
                 $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointECSqlField.h \
-                $(baseDir)ECSql/PrimitiveArrayECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
                 $(baseDir)ECSql/StructECSqlField.h \
-                $(baseDir)ECSql/StructArrayECSqlField.h \
+                $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)DbSchema.h \
@@ -321,9 +319,7 @@ $(o)PointECSqlBinder$(oext):                                  $(baseDir)ECSql/Po
 
 $(o)StructECSqlBinder$(oext):                                 $(baseDir)ECSql/StructECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayECSqlBinder$(oext):                         $(baseDir)ECSql/PrimitiveArrayECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)StructArrayECSqlBinder$(oext):                            $(baseDir)ECSql/StructArrayECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ArrayECSqlBinder$(oext):                                  $(baseDir)ECSql/ArrayECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/NavigationPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -335,15 +331,13 @@ $(o)ECSqlField$(oext):                                        $(baseDir)ECSql/EC
 
 $(o)ECSqlFieldFactory$(oext):                                 $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayECSqlField$(oext):                          $(baseDir)ECSql/PrimitiveArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/PrimitiveECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PointECSqlField$(oext):                                   $(baseDir)ECSql/PointECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructECSqlField$(oext):                                  $(baseDir)ECSql/StructECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayECSqlField$(oext):                             $(baseDir)ECSql/StructArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ArrayECSqlField$(oext):                                   $(baseDir)ECSql/ArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

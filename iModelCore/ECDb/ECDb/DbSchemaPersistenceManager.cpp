@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
-    StopWatch timer(true);
+    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
         return ERROR;
 
@@ -49,8 +49,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
     ")"
     "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))*/
 
-    timer.Stop();
-    LOG.debugv("Re-populated table '" TABLE_ClassHierarchyCache "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
     return SUCCESS;
     }
 
@@ -60,7 +59,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
-    StopWatch timer(true);
+    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
         return ERROR;
 
@@ -75,8 +74,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
                                         "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
-    timer.Stop();
-    LOG.debugv("Re-populated " TABLE_ClassHasTablesCache " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
     return SUCCESS;
     }
 
@@ -84,7 +82,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
-DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table, DbSchemaModificationToken const* mayModifyDbSchemaToken)
+DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
     if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
@@ -99,19 +97,6 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
 
     if (mode == CreateOrUpdateTableResult::WasUpToDate)
         return mode;
-
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(MayModifyDbSchemaPolicyAssertion(ecdb, mayModifyDbSchemaToken));
-    if (!policy.IsSupported())
-        {
-        //until we can enforce this, we just issue a warning, so that people can fix their ECSchemas
-        LOG.warningv("DB-schema modifying ECSchema import: %s table '%s'.",
-                       mode == CreateOrUpdateTableResult::Created ? "created" : "modified", table.GetName().c_str());
-        /*ecdb.GetECDbImplR().GetIssueReporter().Report(
-               "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to %s table '%s'.",
-                      mode == CreateOrUpdateTableResult::Created ? "create" : "modify", table.GetName().c_str());
-        return CreateOrUpdateTableResult::Error;
-        */
-        }
 
     BentleyStatus stat = SUCCESS;
     if (mode == CreateOrUpdateTableResult::Created)

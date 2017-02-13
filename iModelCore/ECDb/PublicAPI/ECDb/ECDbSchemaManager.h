@@ -80,7 +80,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDbMap* m_dbMap;
         BeMutex& m_mutex;
 
-        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, DbSchemaModificationToken const*) const;
+        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const*) const;
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
@@ -109,12 +109,14 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //!                     (the method detects that they are already imported, and simply skips them)
         //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
         //!                     If any duplicates are found in @p schemas an error will returned.
-        //! @param [in] token Token required to perform ECSchema imports that modify the DB schema if the
-        //! the ECDb file was set-up with the option "DB Schema modification token validation".
-        //! If the option is not set or if the import does not modify the DB schema, nullptr can be passed for @p token.
+        //! @param [in] token Token required to perform ECSchema imports if the
+        //! the ECDb file was set-up with the option "ECSchema import token validation".
+        //! If the option is set, the schema import will fail without a valid token.
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpdate
-        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, DbSchemaModificationToken const* token = nullptr) const;
+        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const* token = nullptr) const;
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for

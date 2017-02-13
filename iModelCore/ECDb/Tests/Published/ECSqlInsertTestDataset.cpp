@@ -1229,7 +1229,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests(ECDbR
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%s, %s, %s);",
-                     psaInstanceId.ToString().c_str(), psaInstanceId.ToString().c_str(), thBaseClassId.ToString().c_str());
+                     psaInstanceId.ToString().c_str(), psaClassId.ToString().c_str(), th3InstanceId.ToString().c_str());
     ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     }
 

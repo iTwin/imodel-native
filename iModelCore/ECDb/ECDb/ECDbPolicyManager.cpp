@@ -58,8 +58,8 @@ ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
             case ECDbPolicyAssertion::Type::ECCrudPermission:
                 return DoGetPolicy(static_cast<ECCrudPermissionPolicyAssertion const&> (assertion));
 
-            case ECDbPolicyAssertion::Type::MayModifyDbSchema:
-                return DoGetPolicy(static_cast<MayModifyDbSchemaPolicyAssertion const&> (assertion));
+            case ECDbPolicyAssertion::Type::ECSchemaImportPermission:
+                return DoGetPolicy(static_cast<ECSchemaImportPermissionPolicyAssertion const&> (assertion));
 
             default:
                 return ECDbPolicy::CreateNotSupported();
@@ -171,7 +171,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const&
     if (ecdb.IsReadonly())
         return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
 
-    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetTokenManager().GetECCrudWriteToken();
+    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetSettings().GetECCrudWriteToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
         return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data without ECCrudWriteToken."));
 
@@ -182,9 +182,9 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const&
 // @bsimethod                                 Krischan.Eberle                    12/2016
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetPolicy(MayModifyDbSchemaPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSchemaImportPermissionPolicyAssertion const& assertion)
     {
-    DbSchemaModificationToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetTokenManager().GetDbSchemaModificationToken();
+    ECSchemaImportToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetSettings().GetECSchemaImportToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
         return ECDbPolicy::CreateNotSupported();
 

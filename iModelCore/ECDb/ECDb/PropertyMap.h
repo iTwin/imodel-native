@@ -73,6 +73,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         PropertyMap const* Find(Utf8CP accessString) const;
         const_iterator begin() const { return m_directDecendentList.begin(); }
         const_iterator end() const { return m_directDecendentList.end(); }
+		bool empty() const { return m_directDecendentList.empty(); }
     };
 
 //=======================================================================================
@@ -312,7 +313,7 @@ struct StructPropertyMap final : CompoundDataPropertyMap
 struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     public:
-        static const DbColumn::Type COLUMN_DATATYPE = DbColumn::Type::Blob;
+        static const DbColumn::Type COLUMN_DATATYPE = DbColumn::Type::Text;
 
     private:
         PrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, classMap, ecProperty, column) {}

@@ -14,6 +14,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define TABLE_ECIndex "ec_Index"
 #define TABLE_ECIndexColumn "ec_IndexColumn"
+#define TABLE_ClassHasBaseClasses "ec_ClassHasBaseClasses"
+#define TABLE_CustomAttribute "ec_CustomAttribute"
+#define TABLE_Class "ec_Class"
+#define TABLE_Schema "ec_Schema"
 
 #define TABLE_ClassHierarchyCache "ec_cache_ClassHierarchy"
 #define TABLE_ClassHasTablesCache "ec_cache_ClassHasTables"

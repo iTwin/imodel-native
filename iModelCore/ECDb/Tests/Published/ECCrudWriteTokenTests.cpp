@@ -19,16 +19,13 @@ struct ECCrudWriteTokenTestFixture : public ECDbTestFixture
 protected:
     struct RestrictedECDb : ECDb
         {
-        private:
-            ECCrudWriteToken const* m_token;
-
         public:
             explicit RestrictedECDb() : ECDb()
                 {
-                m_token = &EnableECCrudWriteTokenValidation();
+                ApplyECDbSettings(true, false, true);
                 }
 
-            ECCrudWriteToken const* GetToken() const { return m_token; }
+            ECCrudWriteToken const* GetToken() const { return GetECDbSettings().GetECCrudWriteToken(); }
         };
     };
 

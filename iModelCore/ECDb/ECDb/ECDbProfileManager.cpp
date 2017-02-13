@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <Bentley/PerformanceLogger.h>
 #include "SqlNames.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -19,11 +18,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
     {
-    LOG.debugv("Creating " PROFILENAME " profile in %s...", ecdb.GetDbFileName());
-
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
-    StopWatch timer(true);
     DbResult stat = CreateECProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
@@ -49,13 +45,7 @@ DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
         }
 
     ecdb.SaveChanges();
-    timer.Stop();
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        LOG.infov("Created " PROFILENAME " profile (in %.4lf msecs) in '%s'.", timer.GetElapsedSeconds() * 1000.0, ecdb.GetDbFileName());
-
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
-
     return BE_SQLITE_OK;
     }
 
@@ -108,15 +98,13 @@ struct ProfileUpgradeContext : NonCopyableClass
 //static
 DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
-    StopWatch timer(true);
-
     bool runProfileUpgrade = false;
     SchemaVersion actualProfileVersion(0, 0, 0, 0);
     DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
     if (!runProfileUpgrade)
         return stat;
 
-    PERFLOG_START("Core", "Upgrading the ECDb profile");
+    PERFLOG_START("ECDb", "profile upgrade");
 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
@@ -144,7 +132,6 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
     //after upgrade procedure set new profile version in ECDb file
     stat = AssignProfileVersion(ecdb, false);
 
-    timer.Stop();
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
@@ -155,12 +142,11 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
-                  actualProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(),
-                  timer.GetElapsedSeconds(), ecdb.GetDbFileName());
+        LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s in file '%s'.",
+                  actualProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(), ecdb.GetDbFileName());
         }
 
-    PERFLOG_FINISH("Core", "Upgrading the ECDb profile");
+    PERFLOG_FINISH("ECDb", "profile upgrade");
     return BE_SQLITE_OK;
     }
 
@@ -464,7 +450,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     //ec_Table
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Table("
                            "Id INTEGER PRIMARY KEY,"
-                           "PrimaryTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
+                           "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
@@ -474,7 +460,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_PrimaryTableId ON ec_Table(PrimaryTableId);"
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON ec_Table(ParentTableId);"
                            "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON ec_Table(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

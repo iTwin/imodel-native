@@ -236,37 +236,4 @@ int ECSqlSystemPropertyInfo::Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSy
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    affan.khan      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType primitiveType) const
-    {
-    switch (primitiveType)
-        {
-            case PRIMITIVETYPE_Binary:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "BinaryArray");
-            case PRIMITIVETYPE_Boolean:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "BooleanArray");
-            case PRIMITIVETYPE_DateTime:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "DateTimeArray");
-            case PRIMITIVETYPE_Double:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "DoubleArray");
-            case PRIMITIVETYPE_Integer:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "IntegerArray");
-            case PRIMITIVETYPE_Long:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "LongArray");
-            case PRIMITIVETYPE_Point2d:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "Point2dArray");
-            case PRIMITIVETYPE_Point3d:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "Point3dArray");
-            case PRIMITIVETYPE_String:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "StringArray");
-            case PRIMITIVETYPE_IGeometry:
-                return Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, "GeometryArray");
-            default:
-                BeAssert(false && "Unsupported primitive type. Adjust this method for new value of ECN::PrimitiveType enum");
-                return nullptr;
-        }
-    }
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
