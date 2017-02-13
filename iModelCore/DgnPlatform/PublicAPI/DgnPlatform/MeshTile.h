@@ -33,7 +33,6 @@ BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
 BENTLEY_RENDER_TYPEDEFS(TileGenerationCache);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
-BENTLEY_RENDER_TYPEDEFS(TileModelDelta);
 BENTLEY_RENDER_TYPEDEFS(TileGeomPart);
 BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributes);
@@ -50,7 +49,6 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGenerationCache);
-BENTLEY_RENDER_REF_COUNTED_PTR(TileModelDelta);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeomPart);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -611,55 +609,6 @@ public:
     bool AcceptElement(DgnElementId elementId) const { return _AcceptElement(elementId); }
 };
 
-//=======================================================================================            a
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-struct TileModelDelta : RefCountedBase, ITileGenerationFilter
-    {
-    struct ElementState
-        {
-        private:
-        int64_t         m_lastModifiedTime;
-        uint32_t        m_facetCount;
-
-        public:
-        ElementState() { }
-        ElementState(int64_t lastModified,  uint32_t facetCount) : m_lastModifiedTime(lastModified), m_facetCount(facetCount) { }
-        uint32_t GetFacetCount() const { return m_facetCount; }
-        int64_t GetLastModifiedTime() const { return m_lastModifiedTime; }
-
-        Json::Value GetJsonValue () const;
-        void SetFacetCount(uint32_t facetCount) { m_facetCount = facetCount; }
-        };
-
-
-    void Save ();                         // Save to file.
-    bool ChangesPresent() const { return m_deleted.empty() && m_added.empty(); }
-    bool DoPublish(DgnElementId id) { return m_added.find(id) != m_added.end(); }
-    ElementState* GetElementState(DgnElementId id) { auto const& found = m_elementStates.find(id); return found == m_elementStates.end() ? nullptr : &found->second; }
-    static TileModelDeltaPtr Create(DgnModelCR model, BeFileNameCR dataDirectory) { return new TileModelDelta(model, dataDirectory); }
-    bset<DgnElementId> const& GetAdded() const { return m_added; }
-    bset<DgnElementId> const& GetDeleted() const { return m_deleted; }
-    DGNPLATFORM_EXPORT bool DoIncremental (TileNodeCR tile) const;     // Return true if this previously generated tile is available and compatible with the current tile.
-
-
-    bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
-
-
-private:
-    BeFileName                          m_dataDirectory;
-
-    BeFileName                          m_fileName;
-    WString                             m_rootName;
-    bmap<DgnElementId, ElementState>    m_elementStates;
-    bset<DgnElementId>                  m_deleted;                  // A change will be handled as a delete/add.
-    bset<DgnElementId>                  m_added;
-    Json::Value                         m_previousTileSet;
-
-protected:    
-    TileModelDelta(DgnModelCR model, BeFileNameCR dataDirectory);       // Constructor for current model state.
-    };
-
 //=======================================================================================
 //! Caches information used during tile generation.
 // @bsistruct                                                   Paul.Connelly   09/16
@@ -755,9 +704,8 @@ protected:
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
     virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const = 0;
-    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
+    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
     virtual void _ClearGeometry() { }
-    virtual TileModelDeltaCP _GetModelDelta() const { return nullptr; }
     virtual WString _GetFileExtension() const = 0;
 
 public:
@@ -796,9 +744,8 @@ public:
     uint16_t GetAttributesIndex(FeatureAttributesCR attr) { return GetAttributes().GetIndex(attr); }
     uint16_t GetAttributesIndex(TileGeometryCR geometry) { return GetAttributes().GetIndex(geometry.GetAttributes()); }
 
-    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, modelDelta, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
+    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }
-    TileModelDeltaCP GetModelDelta() const { return _GetModelDelta(); }
     WString GetFileExtension() const { return _GetFileExtension(); }
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const
         { return _GeneratePublishableGeometry(dgndb, normalMode, twoSidedTileTriangles, doSurfacesOnly, filter); }
@@ -814,7 +761,6 @@ struct ElementTileNode : TileNode
 private:
     bool                    m_isLeaf;
     TileGeometryList        m_geometries;
-    TileModelDeltaCP        m_modelDelta;
     mutable bool            m_containsParts;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} // A deep tree can trigger this assertion erroneously.
@@ -823,21 +769,20 @@ private:
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
 
 protected:
-    ElementTileNode(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) : TileNode(model, transformFromDgn), m_isLeaf(false), m_modelDelta(modelDelta), m_containsParts(false) { }
-    ElementTileNode(DgnModelCR model, TileModelDeltaCP modelDelta, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
-        : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_modelDelta(modelDelta), m_containsParts(false) { }
+    ElementTileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, transformFromDgn), m_isLeaf(false), m_containsParts(false) { }
+    ElementTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
+        : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_containsParts(false) { }
 
 
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool, bool, ITileGenerationFilterCP filter) const override;
-    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
+    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     void _ClearGeometry() override { m_geometries.clear(); }
-    TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
     WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:
-    static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) { return new ElementTileNode(model, modelDelta, transformFromDgn); }
-    static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
-        { return new ElementTileNode(model, modelDelta, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
+    static ElementTileNodePtr Create(DgnModelCR model, TransformCR transformFromDgn) { return new ElementTileNode(model, transformFromDgn); }
+    static ElementTileNodePtr Create(DgnModelCR model, DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
+        { return new ElementTileNode(model, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
@@ -885,8 +830,6 @@ struct TileGenerator
         virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) { return TileGeneratorStatus::Success; }
         //! Invoked after a model is processed, with the result of processing.
         virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) { return status; }
-        //! Return true to invoke incremental model publishing.
-        virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) { return false; }
         };
 
     //! Accumulates statistics during tile generation
@@ -905,7 +848,6 @@ private:
     BeAtomic<uint32_t>                      m_totalTiles;
     uint32_t                                m_totalModels;
     BeAtomic<uint32_t>                      m_completedModels;
-    bmap<DgnModelId, TileModelDeltaPtr>     m_modelDeltas;
 
     struct ElementTileContext
         {
@@ -916,11 +858,10 @@ private:
         double                  m_leafTolerance;
         bool                    m_surfacesOnly;
         size_t                  m_maxPointsPerTile;
-        TileModelDeltaP         m_modelDelta;
 
 
-        ElementTileContext(TileGenerationCacheR cache, DgnModelR model, TileModelDeltaP modelDelta, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
-            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_modelDelta(modelDelta), m_surfacesOnly(surfacesOnly) { }
+        ElementTileContext(TileGenerationCacheR cache, DgnModelR model, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
+            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }
         };
 
     struct ElementTileResult
@@ -935,7 +876,7 @@ private:
     typedef folly::Future<TileGeneratorStatus> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
-    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta);
+    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus PopulateCache(ElementTileContext context);
     FutureElementTileResult GenerateTileset(TileGeneratorStatus status, ElementTileContext context);
     FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
@@ -951,7 +892,6 @@ public:
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
     ITileGenerationProgressMonitorR GetProgressMeter() { return m_progressMeter; }
-    TileModelDeltaPtr GetTileModelDelta(DgnModelId modelId) { auto const& found = m_modelDeltas.find(modelId); return found == m_modelDeltas.end() ? nullptr : found->second; }
 
     DGNPLATFORM_EXPORT TileGeneratorStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
 };

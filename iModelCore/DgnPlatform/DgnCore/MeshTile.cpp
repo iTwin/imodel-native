@@ -231,132 +231,6 @@ END_UNNAMED_NAMESPACE
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value     TileModelDelta::ElementState::GetJsonValue () const
-    {
-    Json::Value value(Json::objectValue);
-
-    value["time"] = m_lastModifiedTime;
-    value["count"] = m_facetCount;
-
-    return value;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileModelDelta::Save()
-    {
-    Json::Value     value (Json::objectValue);
-
-    for (auto& curr : m_elementStates)
-        value[curr.first.ToString().c_str()] = curr.second.GetJsonValue();
-
-    if (SUCCESS != TileUtil::WriteJsonToFile (m_fileName.c_str(), value))
-        BeAssert (false && "Unable to open model state file");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory) : m_dataDirectory (dataDirectory), m_rootName(TileUtil::GetRootNameForModel(model))
-    {
-    for (auto& it : model.MakeIterator())
-        {
-        int64_t         milliseconds;
-
-        if (SUCCESS == it.GetLastModifyTime().ToUnixMilliseconds (milliseconds)) 
-            m_elementStates.Insert (it.GetElementId(), ElementState(milliseconds, 0));
-        }
-    
-    m_fileName = BeFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
-
-    BeFile          inputFile;
-    ByteStream      inputData;
-    Json::Value     value;
-    Json::Reader    reader;
-
-    if (BeFileStatus::Success != inputFile.Open (m_fileName.c_str(), BeFileAccess::Read) ||
-        BeFileStatus::Success != inputFile.ReadEntireFile (inputData) ||
-        !reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value))
-        {
-        for (auto& element : m_elementStates)
-            m_added.insert (element.first);
-
-        return;
-        }
-
-
-    auto    members = value.getMemberNames();
-
-    for (auto& member : members)
-        {
-        DgnElementId    id;
-
-        if (SUCCESS == BeInt64Id::FromString (id, member.c_str()))
-            {
-            auto const&     found = m_elementStates.find(id);
-            Json::Value&    previousElementState = value[member.c_str()];
-            int64_t         previousTime = previousElementState["time"].asInt64();
-            int32_t         previousFacetCount = previousElementState["count"].asInt();
-
-            if (found != m_elementStates.end() && previousTime == found->second.GetLastModifiedTime())
-                found->second.SetFacetCount (previousFacetCount);
-            else
-                m_deleted.insert(id);
-            }
-        }
-    for (auto& elementState : m_elementStates)
-        if (0 == elementState.second.GetFacetCount())
-            m_added.insert (elementState.first);
-
-    TileUtil::ReadJsonFromFile (m_previousTileSet, BeFileName (nullptr, dataDirectory.c_str(), m_rootName.c_str(), L"json").c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus findTileValue (Json::Value& tile, Json::Value const& tileSet, bvector<size_t>& tilePath)
-    {
-    if (tilePath.empty())
-        {
-        tile = tileSet;
-        return SUCCESS;
-        }
-    
-    Json::Value     children = tileSet["children"];
-    uint32_t        index = tilePath.back();
-
-    if (children.isNull() || index >= children.size() )
-        return ERROR;
-
-
-    tilePath.pop_back();
-    return findTileValue (tile, children[index], tilePath);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileModelDelta::DoIncremental (TileNodeCR tile) const
-    {
-    Json::Value     previousTile;
-    BeFile          testFile;
-    BeFileName      tileFileName (nullptr, m_dataDirectory.c_str(), tile.GetFileName (m_rootName.c_str(), L"b3dm").c_str(), nullptr);
-    bvector<size_t> tilePath;
-
-    for (TileNodeCP pathTile = &tile; nullptr != pathTile->GetParent(); pathTile = pathTile->GetParent())
-        tilePath.push_back (pathTile->GetSiblingIndex());
-
-    return SUCCESS == findTileValue (previousTile, m_previousTileSet["root"], tilePath) && 
-           fabs(previousTile["geometricError"].asDouble() - tile.GetTolerance()) < 1.0E-8 &&
-           BeFileStatus::Success == testFile.Open (tileFileName.c_str(), BeFileAccess::Read);
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1806,10 +1680,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     else
         {
         BeFileName          dataDirectory;
-        TileModelDeltaPtr   modelDelta;
-
-        if (pCollector->_DoIncrementalModelPublish (dataDirectory, *modelPtr))
-            modelDelta = TileModelDelta::Create (model, dataDirectory);
 
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
@@ -1818,7 +1688,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         .then([=](TileGeneratorStatus status)
             {
             if (TileGeneratorStatus::Success == status)
-                return GenerateElementTiles(*pCollector, leafTolerance, surfacesOnly, maxPointsPerTile, *modelPtr, modelDelta.get());
+                return GenerateElementTiles(*pCollector, leafTolerance, surfacesOnly, maxPointsPerTile, *modelPtr);
 
             return folly::makeFuture(ElementTileResult(status, nullptr));
             })
@@ -1832,9 +1702,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](TileGeneratorStatus status)
             {
-            if (modelDelta.IsValid())
-                modelDelta->Save ();
-
             return status;
             });
         }
@@ -1843,10 +1710,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta)
+TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext  context(*cache, model, modelDelta, collector, leafTolerance, surfacesOnly, maxPointsPerTile);
+    ElementTileContext  context(*cache, model, collector, leafTolerance, surfacesOnly, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGeneratorStatus status)
         {
@@ -1873,11 +1740,11 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(TileGenera
     auto& cache = *context.m_cache;
     if (TileGeneratorStatus::Success != status)
         {
-        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, context.m_modelDelta, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
+        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
 
-    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, context.m_modelDelta, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
     return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
     }
 
@@ -1907,13 +1774,13 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
         // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
         // elements too small to be included in this tile)
-        tile.CollectGeometry(generationCache, m_dgndb, context.m_modelDelta, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
+        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
         ElementTileResult result(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
-        if (tile.GetGeometries().empty() && nullptr == tile.GetModelDelta())
+        if (tile.GetGeometries().empty())
             return result;
 
         tile.SetIsEmpty(false);
@@ -1934,7 +1801,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange());
         for (auto& subRange : subRanges)
             {
-            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), tile.GetModelDelta(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
 
             tile.GetChildren().push_back(child);
             }
@@ -2206,7 +2073,6 @@ private:
     DRange3d                    m_tileRange;
     Transform                   m_transformFromDgn;
     TileGeometryList            m_curElemGeometries;
-    TileModelDeltaP             m_modelDelta;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
     bool*                       m_leafThresholdExceeded;
@@ -2250,8 +2116,8 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
-        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_modelDelta(modelDelta),
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
+        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
@@ -2469,27 +2335,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     try
         {
-        TileModelDelta::ElementState*    elementState = nullptr;
-        if (nullptr != m_modelDelta)
-            {
-            if (nullptr == (elementState = m_modelDelta->GetElementState(elemId)))
-                {
-                BeAssert (false && "Unexpected Element");
-                return;
-                }
-            if (!m_modelDelta->DoPublish(elemId))
-                {
-                DRange3d intersection = DRange3d::FromIntersection (dgnRange, m_range, true);
-
-                if (intersection.IsNull())
-                    return;
-
-                m_leafCount += (size_t) ((double) elementState->GetFacetCount() * intersection.DiagonalDistance() / dgnRange.DiagonalDistance());
-                *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
-
-                return;
-                }
-            }
         m_curElemGeometries.clear();
         bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
         if (!haveCached)
@@ -2501,13 +2346,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             PushGeometry(*geom);
 
         if (!haveCached)
-            {
-            if (nullptr != elementState && 0 == elementState->GetFacetCount())    
-                for (auto& geom : m_curElemGeometries)
-                    elementState->SetFacetCount(elementState->GetFacetCount() + geom->GetFacetCount(*m_targetFacetOptions));
-
             m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
-            }
         }
     catch (...)
         {
@@ -2850,12 +2689,12 @@ template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_Stroke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
     auto is2d = cache.GetModel().Is2dModel();
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
