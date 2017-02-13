@@ -6792,6 +6792,130 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                  02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Backward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "For a FKRelationship class with strength 'embedding', the cardinality 1-N requires the direction to be 'forward'.")); //Fails because the direction is Forward despite setting it to Backward.
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'forward' for a 1-N cardinality, is expected to succeed."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding'  direction='Backward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'Backward' for a N-1 cardinality, is expected to succeed.")); //Fails because the direction is Forward despite setting it to Backward.
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "For a FKRelationship class with strength 'embedding', the cardinality N-1 requires the direction to be 'Backward'."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'Backward' for a 1-1 cardinality, is expected to succeed."));
+
+    AssertSchemaImport(testSchemas, "StrengthDirectionValidityTest.ecdb");
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
