@@ -21,10 +21,6 @@
   typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-# include <iostream>
-#endif
-
 BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
@@ -146,9 +142,6 @@ namespace Json {
       void skipSpaces();
       bool match( Location pattern, 
                   int patternLength );
-      bool readComment();
-      bool readCStyleComment();
-      bool readCppStyleComment();
       bool readString();
       void readNumber();
       bool readValue();
@@ -180,11 +173,6 @@ namespace Json {
                                      int &line,
                                      int &column ) const;
       Utf8StringAlias getLocationLineAndColumn( Location location ) const;
-      void addComment( Location begin, 
-                       Location end, 
-                       CommentPlacement placement );
-      void skipCommentTokens( Token &token );
-   
       typedef std::stack<Value *> Nodes;
       Nodes nodes_;
       Errors errors_;

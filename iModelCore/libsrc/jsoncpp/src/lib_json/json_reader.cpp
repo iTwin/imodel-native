@@ -11,9 +11,6 @@
 #include <utility>
 #include <cstdio>
 #include <cstring>
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-# include <iostream>
-#endif
 #include <stdexcept>
 #include <Bentley/BeAssert.h>
 
@@ -105,25 +102,6 @@ Reader::parse( const Utf8String &document,
 }
 
 
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-bool
-Reader::parse( std::istream& sin,
-               Value &root,
-               bool collectComments )
-{
-   //std::istream_iterator<char> begin(sin);
-   //std::istream_iterator<char> end;
-   // Those would allow streamed input from a file, if parse() were a
-   // template function.
-
-   // Since std::string is reference-counted, this at least does not
-   // create an extra copy.
-   Utf8String doc;
-   std::getline(sin, doc, (char)EOF);
-   return parse( doc, root, collectComments );
-}
-#endif
-
 bool 
 Reader::parse( const char *beginDoc, const char *endDoc, 
                Value &root,
@@ -136,7 +114,6 @@ Reader::parse( const char *beginDoc, const char *endDoc,
 
    begin_ = beginDoc;
    end_ = endDoc;
-   collectComments_ = collectComments;
    current_ = begin_;
    lastValueEnd_ = 0;
    lastValue_ = 0;
@@ -148,9 +125,7 @@ Reader::parse( const char *beginDoc, const char *endDoc,
    
    bool successful = readValue();
    Token token;
-   skipCommentTokens( token );
-   if ( collectComments_  &&  !commentsBefore_.empty() )
-      root.setComment( commentsBefore_, commentAfter );
+   readToken( token );
    if ( features_.strictRoot_ )
    {
       if ( !root.isArray()  &&  !root.isObject() )
@@ -172,15 +147,8 @@ bool
 Reader::readValue()
 {
    Token token;
-   skipCommentTokens( token );
+   readToken( token );
    bool successful = true;
-
-   if ( collectComments_  &&  !commentsBefore_.empty() )
-   {
-      currentValue().setComment( commentsBefore_, commentBefore );
-      commentsBefore_ = "";
-   }
-
 
    switch ( token.type_ )
    {
@@ -218,25 +186,6 @@ Reader::readValue()
    return successful;
 }
 
-
-void 
-Reader::skipCommentTokens( Token &token )
-{
-   if ( features_.allowComments_ )
-   {
-      do
-      {
-         readToken( token );
-      }
-      while ( token.type_ == tokenComment );
-   }
-   else
-   {
-      readToken( token );
-   }
-}
-
-
 bool 
 Reader::expectToken( TokenType type, Token &token, const char *message )
 {
@@ -271,10 +220,6 @@ Reader::readToken( Token &token )
    case '"':
       token.type_ = tokenString;
       ok = readString();
-      break;
-   case '/':
-      token.type_ = tokenComment;
-      ok = readComment();
       break;
    case '0':
    case '1':
@@ -349,81 +294,6 @@ Reader::match( Location pattern,
    current_ += patternLength;
    return true;
 }
-
-
-bool
-Reader::readComment()
-{
-   Location commentBegin = current_ - 1;
-   Char c = getNextChar();
-   bool successful = false;
-   if ( c == '*' )
-      successful = readCStyleComment();
-   else if ( c == '/' )
-      successful = readCppStyleComment();
-   if ( !successful )
-      return false;
-
-   if ( collectComments_ )
-   {
-      CommentPlacement placement = commentBefore;
-      if ( lastValueEnd_  &&  !containsNewLine( lastValueEnd_, commentBegin ) )
-      {
-         if ( c != '*'  ||  !containsNewLine( commentBegin, current_ ) )
-            placement = commentAfterOnSameLine;
-      }
-
-      addComment( commentBegin, current_, placement );
-   }
-   return true;
-}
-
-
-void 
-Reader::addComment( Location begin, 
-                    Location end, 
-                    CommentPlacement placement )
-{
-   BeAssert( collectComments_ );
-   if ( placement == commentAfterOnSameLine )
-   {
-      BeAssert( lastValue_ != 0 );
-      lastValue_->setComment( Utf8String( begin, end ), placement );
-   }
-   else
-   {
-      if ( !commentsBefore_.empty() )
-         commentsBefore_ += "\n";
-      commentsBefore_ += Utf8String( begin, end );
-   }
-}
-
-
-bool 
-Reader::readCStyleComment()
-{
-   while ( current_ != end_ )
-   {
-      Char c = getNextChar();
-      if ( c == '*'  &&  *current_ == '/' )
-         break;
-   }
-   return getNextChar() == '/';
-}
-
-
-bool 
-Reader::readCppStyleComment()
-{
-   while ( current_ != end_ )
-   {
-      Char c = getNextChar();
-      if (  c == '\r'  ||  c == '\n' )
-         break;
-   }
-   return true;
-}
-
 
 void 
 Reader::readNumber()
@@ -870,18 +740,6 @@ Reader::getFormattedErrorMessages() const
    }
    return formattedMessage;
 }
-
-
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-std::istream& operator>>( std::istream &sin, Value &root )
-{
-    Json::Reader reader;
-    bool ok = reader.parse(sin, root, true);
-    //JSON_ASSERT( ok );
-    if (!ok) throw std::runtime_error(reader.getFormattedErrorMessages());
-    return sin;
-}
-#endif
 
 
 } // namespace Json

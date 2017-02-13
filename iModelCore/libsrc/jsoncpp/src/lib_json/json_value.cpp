@@ -10,9 +10,6 @@
 #  include "json_batchallocator.h"
 # endif // #ifndef JSON_USE_SIMPLE_INTERNAL_ALLOCATOR
 #endif // if !defined(JSON_IS_AMALGAMATION)
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-# include <iostream>
-#endif
 #include <utility>
 #include <stdexcept>
 #include <cstring>
@@ -97,39 +94,6 @@ releaseStringValue( char *value )
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
 namespace Json {
-
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// class Value::CommentInfo
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-
-
-Value::CommentInfo::CommentInfo()
-   : comment_( 0 )
-{
-}
-
-Value::CommentInfo::~CommentInfo()
-{
-   if ( comment_ )
-      releaseStringValue( comment_ );
-}
-
-
-void 
-Value::CommentInfo::setComment( const char *text )
-{
-   if ( comment_ )
-      releaseStringValue( comment_ );
-   JSON_ASSERT( text != 0 );
-   JSON_ASSERT_MESSAGE( text[0]=='\0' || text[0]=='/', "Comments must start with /");
-   // It seems that /**/ style comments are acceptable as well.
-   comment_ = duplicateStringValue( text );
-}
-
 
 // //////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////
@@ -240,7 +204,6 @@ Value::CZString::isStaticString() const
 Value::Value( ValueType type )
    : type_( type )
    , allocated_( 0 )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -282,7 +245,6 @@ Value::Value( ValueType type )
 
 Value::Value( UInt value )
    : type_( uintValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -292,7 +254,6 @@ Value::Value( UInt value )
 
 Value::Value( Int value )
    : type_( intValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -304,7 +265,6 @@ Value::Value( Int value )
 
 Value::Value( Int64 value )
    : type_( intValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -314,7 +274,6 @@ Value::Value( Int64 value )
 
 Value::Value( UInt64 value )
    : type_( uintValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -363,7 +322,6 @@ Value::Value( unsigned long value )
 
 Value::Value( double value )
    : type_( realValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -387,7 +345,6 @@ Value::Value( double value )
 Value::Value( const char *value )
    : type_( stringValue )
    , allocated_( true )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -400,7 +357,6 @@ Value::Value( const char *beginValue,
               const char *endValue )
    : type_( stringValue )
    , allocated_( true )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -413,7 +369,6 @@ Value::Value( const char *beginValue,
 Value::Value( const Utf8String &value )
    : type_( stringValue )
    , allocated_( true )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -426,7 +381,6 @@ Value::Value( const Utf8String &value )
 Value::Value( const StaticString &value )
    : type_( stringValue )
    , allocated_( false )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -450,7 +404,6 @@ Value::Value( const CppTL::ConstString &value )
 
 Value::Value( bool value )
    : type_( booleanValue )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -461,7 +414,6 @@ Value::Value( bool value )
 
 Value::Value( const Value &other )
    : type_( other.type_ )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -500,23 +452,12 @@ Value::Value( const Value &other )
    default:
       JSON_ASSERT_UNREACHABLE;
    }
-   if ( other.comments_ )
-   {
-      comments_ = new CommentInfo[numberOfCommentPlacement];
-      for ( int comment =0; comment < numberOfCommentPlacement; ++comment )
-      {
-         const CommentInfo &otherComment = other.comments_[comment];
-         if ( otherComment.comment_ )
-            comments_[comment].setComment( otherComment.comment_ );
-      }
-   }
 }
 
 // BENTLEY CHANGE: added the move constructor
 Value::Value( Value &&other )
    : type_( ValueType::nullValue )
    , allocated_( 0 )
-   , comments_( 0 )
 # ifdef JSON_VALUE_USE_INTERNAL_MAP
    , itemIsUsed_( 0 )
 #endif
@@ -555,9 +496,6 @@ Value::~Value()
    default:
       JSON_ASSERT_UNREACHABLE;
    }
-
-   if ( comments_ )
-      delete[] comments_;
 }
 
 Value &
@@ -1529,40 +1467,6 @@ Value::isObject() const
 {
    return type_ == nullValue  ||  type_ == objectValue;
 }
-
-
-void 
-Value::setComment( const char *comment,
-                   CommentPlacement placement )
-{
-   if ( !comments_ )
-      comments_ = new CommentInfo[numberOfCommentPlacement];
-   comments_[placement].setComment( comment );
-}
-
-
-void 
-Value::setComment( const Utf8String &comment,
-                   CommentPlacement placement )
-{
-   setComment( comment.c_str(), placement );
-}
-
-
-bool 
-Value::hasComment( CommentPlacement placement ) const
-{
-   return comments_ != 0  &&  comments_[placement].comment_ != 0;
-}
-
-Utf8String 
-Value::getComment( CommentPlacement placement ) const
-{
-   if ( hasComment(placement) )
-      return comments_[placement].comment_;
-   return "";
-}
-
 
 Utf8String 
 Value::toStyledString() const

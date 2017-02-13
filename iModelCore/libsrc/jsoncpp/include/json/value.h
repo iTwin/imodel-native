@@ -56,19 +56,6 @@ namespace Json {
       objectValue    ///< object value (collection of name/value pairs).
    };
 
-   enum CommentPlacement
-   {
-      commentBefore = 0,        ///< a comment placed on the line before a value
-      commentAfterOnSameLine,   ///< a comment just after a value on the same line
-      commentAfter,             ///< a comment on the line after a value (only make sense for root value)
-      numberOfCommentPlacement
-   };
-
-//# ifdef JSON_USE_CPPTL
-//   typedef CppTL::AnyEnumerator<const char *> EnumMemberNames;
-//   typedef CppTL::AnyEnumerator<const Value &> EnumValues;
-//# endif
-
    /** \brief Lightweight wrapper to tag static string.
     *
     * Value constructor and objectValue member assignement takes advantage of the
@@ -455,16 +442,6 @@ namespace Json {
 //      EnumValues enumValues() const;
 //# endif
 
-      /// Comments must be //... or /* ... */
-      void setComment( const char *comment,
-                       CommentPlacement placement );
-      /// Comments must be //... or /* ... */
-      void setComment( const Utf8StringAlias &comment,
-                       CommentPlacement placement );
-      bool hasComment( CommentPlacement placement ) const;
-      /// Include delimiters and embedded newlines.
-      Utf8StringAlias getComment( CommentPlacement placement ) const;
-
       Utf8StringAlias toStyledString() const;
 
       const_iterator begin() const;
@@ -500,24 +477,6 @@ namespace Json {
 # endif // # ifdef JSON_VALUE_USE_INTERNAL_MAP
 
    private:
-      struct CommentInfo
-      {
-         CommentInfo();
-         ~CommentInfo();
-
-         void setComment( const char *text );
-
-         char *comment_;
-      };
-
-      //struct MemberNamesTransform
-      //{
-      //   typedef const char *result_type;
-      //   const char *operator()( const CZString &name ) const
-      //   {
-      //      return name.c_str();
-      //   }
-      //};
 
       union ValueHolder
       {
@@ -539,7 +498,6 @@ namespace Json {
       unsigned int itemIsUsed_ : 1;      // used by the ValueInternalMap container.
       int memberNameIsStatic_ : 1;       // used by the ValueInternalMap container.
 # endif
-      CommentInfo *comments_;
    };
 
 
@@ -1143,6 +1101,5 @@ public: // overridden from ValueArrayAllocator
 
 } // namespace Json
 END_BENTLEY_NAMESPACE
-
 
 #endif // CPPTL_JSON_H_INCLUDED
