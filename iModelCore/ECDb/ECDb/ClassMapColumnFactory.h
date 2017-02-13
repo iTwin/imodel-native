@@ -33,7 +33,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 ClassMap const& m_classMap; //Context Class for which to find used columns
 
             private:
-                UsedColumnFinder(ClassMap const& classMap);				
+                UsedColumnFinder(ClassMap const& classMap);
                 ClassMap const* GetClassMap(ECN::ECClassCR ) const;
                 bool IsMappedIntoContextClassMapTables(ClassMap const& ) const;
                 bool IsMappedIntoContextClassMapTables(PropertyMap const& ) const;

@@ -609,7 +609,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
     {
     for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(m_classMap.GetClass().GetId()))
         {
-        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()		
+        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()
         ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetECClass(relKey.first);
         BeAssert(relClass != nullptr);
         ClassMap const* relMap = m_classMap.GetDbMap().GetClassMap(*relClass);

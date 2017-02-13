@@ -7551,225 +7551,225 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, AddingECEnumerationIntegerType)
-	{
-	SchemaItem schemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
-		"   <ECEnumerator value = '0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = '1' displayLabel = 'bat' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	SetupECDb("schemaupdate.ecdb", schemaItem);
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-	SchemaItem editedSchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
-		"   <ECEnumerator value = '0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = '1' displayLabel = 'bat' />"
-		"   <ECEnumerator value = '2' displayLabel = 'exe' />"
-		"   <ECEnumerator value = '3' displayLabel = 'dll' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
-	
-	bool asserted = false;
-	AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-	ASSERT_FALSE(asserted);
-	ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
-	ASSERT_TRUE(updatedEnum != nullptr);
-	ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
-	ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
-	ASSERT_EQ(false, updatedEnum->GetIsStrict());
-	ASSERT_EQ(PRIMITIVETYPE_Integer, updatedEnum->GetType());
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "   <ECEnumerator value = '2' displayLabel = 'exe' />"
+        "   <ECEnumerator value = '3' displayLabel = 'dll' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
+    
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(updatedEnum != nullptr);
+    ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
+    ASSERT_EQ(false, updatedEnum->GetIsStrict());
+    ASSERT_EQ(PRIMITIVETYPE_Integer, updatedEnum->GetType());
 
-	std::function<void(int32_t, Utf8CP)> assertEnumerator = [&](int32_t value, Utf8CP displayLabel)
-		{
-		ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
-		ASSERT_TRUE(newEnum != nullptr);
-		ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
-		};
+    std::function<void(int32_t, Utf8CP)> assertEnumerator = [&](int32_t value, Utf8CP displayLabel)
+        {
+        ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
+        ASSERT_TRUE(newEnum != nullptr);
+        ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
+        };
 
-	assertEnumerator(0, "txt");
-	assertEnumerator(1, "bat");
-	assertEnumerator(2, "exe");
-	assertEnumerator(3, "dll");
-	}
+    assertEnumerator(0, "txt");
+    assertEnumerator(1, "bat");
+    assertEnumerator(2, "exe");
+    assertEnumerator(3, "dll");
+    }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, AddingECEnumerationStringType)
-	{
-	SchemaItem schemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
-		"   <ECEnumerator value = 't0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = 't1' displayLabel = 'bat' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = 't0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = 't1' displayLabel = 'bat' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	SetupECDb("schemaupdate.ecdb", schemaItem);
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-	SchemaItem editedSchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
-		"   <ECEnumerator value = 't0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = 't1' displayLabel = 'bat' />"
-		"   <ECEnumerator value = 't2' displayLabel = 'exe' />"
-		"   <ECEnumerator value = 't3' displayLabel = 'dll' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
+        "   <ECEnumerator value = 't0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = 't1' displayLabel = 'bat' />"
+        "   <ECEnumerator value = 't2' displayLabel = 'exe' />"
+        "   <ECEnumerator value = 't3' displayLabel = 'dll' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	bool asserted = false;
-	AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-	ASSERT_FALSE(asserted);
-	ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
-	ASSERT_TRUE(updatedEnum != nullptr);
-	ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
-	ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
-	ASSERT_EQ(false, updatedEnum->GetIsStrict());
-	ASSERT_EQ(PRIMITIVETYPE_String, updatedEnum->GetType());
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(updatedEnum != nullptr);
+    ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
+    ASSERT_EQ(false, updatedEnum->GetIsStrict());
+    ASSERT_EQ(PRIMITIVETYPE_String, updatedEnum->GetType());
 
-	std::function<void(Utf8CP, Utf8CP)> assertEnumerator = [&](Utf8CP value, Utf8CP displayLabel)
-		{
-		ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
-		ASSERT_TRUE(newEnum != nullptr);
-		ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
-		};
+    std::function<void(Utf8CP, Utf8CP)> assertEnumerator = [&](Utf8CP value, Utf8CP displayLabel)
+        {
+        ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
+        ASSERT_TRUE(newEnum != nullptr);
+        ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
+        };
 
-	assertEnumerator("t0", "txt");
-	assertEnumerator("t1", "bat");
-	assertEnumerator("t2", "exe");
-	assertEnumerator("t3", "dll");
-	}
+    assertEnumerator("t0", "txt");
+    assertEnumerator("t1", "bat");
+    assertEnumerator("t2", "exe");
+    assertEnumerator("t3", "dll");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnumerators)
-	{
-	SchemaItem schemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test1Display' description='Test1Desc'>"
-		"   <ECEnumerator value = '0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = '1' displayLabel = 'bat' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	SetupECDb("schemaupdate.ecdb", schemaItem);
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-	SchemaItem editedSchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
-		"   <ECEnumerator value = '10' displayLabel = 'txt1' />"
-		"   <ECEnumerator value = '11' displayLabel = 'bat1' />"
-		"   <ECEnumerator value = '12' displayLabel = 'exe1' />"
-		"   <ECEnumerator value = '13' displayLabel = 'dll1' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test2Display' description='Test2Desc'>"
+        "   <ECEnumerator value = '10' displayLabel = 'txt1' />"
+        "   <ECEnumerator value = '11' displayLabel = 'bat1' />"
+        "   <ECEnumerator value = '12' displayLabel = 'exe1' />"
+        "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	bool asserted = false;
-	AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-	ASSERT_FALSE(asserted);
-	ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
-	ASSERT_TRUE(updatedEnum != nullptr);
-	ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
-	ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
-	ASSERT_EQ(false, updatedEnum->GetIsStrict());
-	ASSERT_EQ(PRIMITIVETYPE_Integer, updatedEnum->GetType());
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(updatedEnum != nullptr);
+    ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
+    ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
+    ASSERT_EQ(false, updatedEnum->GetIsStrict());
+    ASSERT_EQ(PRIMITIVETYPE_Integer, updatedEnum->GetType());
 
-	std::function<void(int32_t, Utf8CP)> assertEnumerator = [&](int32_t value, Utf8CP displayLabel)
-		{
-		ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
-		ASSERT_TRUE(newEnum != nullptr);
-		ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
-		};
+    std::function<void(int32_t, Utf8CP)> assertEnumerator = [&](int32_t value, Utf8CP displayLabel)
+        {
+        ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
+        ASSERT_TRUE(newEnum != nullptr);
+        ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
+        };
 
-	assertEnumerator(10, "txt1");
-	assertEnumerator(11, "bat1");
-	assertEnumerator(12, "exe1");
-	assertEnumerator(13, "dll1");
-	}
+    assertEnumerator(10, "txt1");
+    assertEnumerator(11, "bat1");
+    assertEnumerator(12, "exe1");
+    assertEnumerator(13, "dll1");
+    }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromUnStrictToStrict)
-	{
-	SchemaItem schemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
-		"   <ECEnumerator value = '0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = '1' displayLabel = 'bat' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	SetupECDb("schemaupdate.ecdb", schemaItem);
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-	SchemaItem editedSchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test2Display' description='Test2Desc'>"
-		"   <ECEnumerator value = '10' displayLabel = 'txt1' />"
-		"   <ECEnumerator value = '11' displayLabel = 'bat1' />"
-		"   <ECEnumerator value = '12' displayLabel = 'exe1' />"
-		"   <ECEnumerator value = '13' displayLabel = 'dll1' />"
-		" </ECEnumeration>"
-		"</ECSchema>",false,"Cannot change IsStrict from false to true");
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test2Display' description='Test2Desc'>"
+        "   <ECEnumerator value = '10' displayLabel = 'txt1' />"
+        "   <ECEnumerator value = '11' displayLabel = 'bat1' />"
+        "   <ECEnumerator value = '12' displayLabel = 'exe1' />"
+        "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
+        " </ECEnumeration>"
+        "</ECSchema>",false,"Cannot change IsStrict from false to true");
 
-	bool asserted = false;
-	AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-	ASSERT_FALSE(asserted);
-	}
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
-	{
-	SchemaItem schemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test1Display' description='Test1Desc'>"
-		"   <ECEnumerator value = '0' displayLabel = 'txt' />"
-		"   <ECEnumerator value = '1' displayLabel = 'bat' />"
-		" </ECEnumeration>"
-		"</ECSchema>");
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+        " </ECEnumeration>"
+        "</ECSchema>");
 
-	SetupECDb("schemaupdate.ecdb", schemaItem);
-	ASSERT_TRUE(GetECDb().IsDbOpen());
-	ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-	SchemaItem editedSchemaItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		" <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test2Display' description='Test2Desc'>"
-		"   <ECEnumerator value = '10' displayLabel = 'txt1' />"
-		"   <ECEnumerator value = '11' displayLabel = 'bat1' />"
-		"   <ECEnumerator value = '12' displayLabel = 'exe1' />"
-		"   <ECEnumerator value = '13' displayLabel = 'dll1' />"
-		" </ECEnumeration>"
-		"</ECSchema>", false, "Cannot change Strict Enum (Only Adding new properties allowed");
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test2Display' description='Test2Desc'>"
+        "   <ECEnumerator value = '10' displayLabel = 'txt1' />"
+        "   <ECEnumerator value = '11' displayLabel = 'bat1' />"
+        "   <ECEnumerator value = '12' displayLabel = 'exe1' />"
+        "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
+        " </ECEnumeration>"
+        "</ECSchema>", false, "Cannot change Strict Enum (Only Adding new properties allowed");
 
-	bool asserted = false;
-	AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-	ASSERT_FALSE(asserted);
-	}
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

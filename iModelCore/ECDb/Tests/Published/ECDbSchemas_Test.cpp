@@ -24,27 +24,27 @@ TEST_F(ECDbSchemaTests, OrderOfPropertyIsPreservedInTableColumns)
                                                    "<ECSchema schemaName=\"OrderSchema\" alias=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                    "  <ECStructClass typeName=\"OrderedStruct\">"
                                                    "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
-                                                   "	 <ECProperty propertyName=\"g\" typeName=\"int\"/>"
-                                                   "	 <ECProperty propertyName=\"c\" typeName=\"dateTime\"/>"
+                                                   "     <ECProperty propertyName=\"g\" typeName=\"int\"/>"
+                                                   "     <ECProperty propertyName=\"c\" typeName=\"dateTime\"/>"
                                                    "   <ECProperty propertyName=\"z\" typeName=\"point3d\"/>"
-                                                   "	 <ECProperty propertyName=\"y\" typeName=\"point2d\"/>"
-                                                   "	 <ECProperty propertyName=\"t\" typeName=\"boolean\"/>"
+                                                   "     <ECProperty propertyName=\"y\" typeName=\"point2d\"/>"
+                                                   "     <ECProperty propertyName=\"t\" typeName=\"boolean\"/>"
                                                    "   <ECProperty propertyName=\"u\" typeName=\"double\"/>"
-                                                   "	 <ECProperty propertyName=\"k\" typeName=\"string\"/>"
-                                                   "	 <ECProperty propertyName=\"r\" typeName=\"string\"/>"
+                                                   "     <ECProperty propertyName=\"k\" typeName=\"string\"/>"
+                                                   "     <ECProperty propertyName=\"r\" typeName=\"string\"/>"
                                                    "  </ECStructClass>"
                                                    "  <ECEntityClass typeName=\"PropertyOrderTest\" >"
                                                    "   <ECProperty propertyName=\"x\" typeName=\"string\"/>"
-                                                   "	 <ECProperty propertyName=\"h\" typeName=\"int\"/>"
-                                                   "	 <ECProperty propertyName=\"i\" typeName=\"dateTime\"/>"
+                                                   "     <ECProperty propertyName=\"h\" typeName=\"int\"/>"
+                                                   "     <ECProperty propertyName=\"i\" typeName=\"dateTime\"/>"
                                                    "   <ECProperty propertyName=\"d\" typeName=\"point3d\"/>"
-                                                   "	 <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
-                                                   "	 <ECProperty propertyName=\"f\" typeName=\"boolean\"/>"
-                                                   "	 <ECStructArrayProperty propertyName=\"sarray\" typeName=\"OrderedStruct\"/>"
+                                                   "     <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
+                                                   "     <ECProperty propertyName=\"f\" typeName=\"boolean\"/>"
+                                                   "     <ECStructArrayProperty propertyName=\"sarray\" typeName=\"OrderedStruct\"/>"
                                                    "   <ECProperty propertyName=\"e\" typeName=\"double\"/>"
-                                                   "	 <ECProperty propertyName=\"p\" typeName=\"string\"/>"
-                                                   "	 <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
-                                                   "	 <ECProperty propertyName=\"z\" typeName=\"long\"/>"
+                                                   "     <ECProperty propertyName=\"p\" typeName=\"string\"/>"
+                                                   "     <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
+                                                   "     <ECProperty propertyName=\"z\" typeName=\"long\"/>"
                                                    "  </ECEntityClass>"
                                                    "</ECSchema>"));
 
@@ -115,7 +115,7 @@ TEST_F (ECDbSchemaTests, ImportDiamondInheritanceECSchema)
     {
     ECDbCR ecdb = SetupECDb("DiamondInheritance.ecdb", BeFileName(L"DiamondInheritance.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-	ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
+    ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
     }
 
 /*---------------------------------------------------------------------------------**//**

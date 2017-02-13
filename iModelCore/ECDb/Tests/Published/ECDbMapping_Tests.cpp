@@ -11,7 +11,88 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
+#if 0
+enum class ClassType
+    {
+    Base,
+    Derived,
+    };
+struct Derived;
+struct Base
+    {
+    private:
+        ClassType m_type;
+        virtual Derived const* _GetDerivedCP() const { return nullptr; }
+    protected:
+        Base(ClassType type) :m_type(type)
+            {}
+    public:
+        Base() :m_type(ClassType::Base)
+            {}
+        ClassType GetType() const { return m_type; }
+        Derived const* GetDerivedCP_UsingVirtualMethod() const { return _GetDerivedCP(); }
+        Derived const* GetDerivedCP_DynamicCast() const;
+        Derived const* GetDerivedCP_StaticCastByType() const;
+    };
 
+struct Derived : Base
+    {
+    private:
+        virtual Derived const* _GetDerivedCP() const override { return this; }
+    protected:
+        Derived(ClassType type) :Base(type)
+            {}
+    public:
+        Derived() :Base(ClassType::Derived)
+            {}
+    };
+
+
+
+
+Derived const* Base::GetDerivedCP_DynamicCast() const { return dynamic_cast<Derived const*>(this); }
+Derived const* Base::GetDerivedCP_StaticCastByType() const { if (GetType() == ClassType::Derived) return static_cast<Derived const*>(this); return nullptr; }
+
+TEST_F(ECDbMappingTestFixture, PerfCast)
+    {
+
+
+    Base const* base;
+    //Derived const* derived;
+    Derived instanceDerived;
+    base = &instanceDerived;
+    const int max = 1000000000;
+    StopWatch timer;
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_DynamicCast();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_DynamicCast() %.4f sec\r\n", timer.GetElapsedSeconds());
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_UsingVirtualMethod();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_UsingVirtualMethod() %.4f sec\r\n", timer.GetElapsedSeconds());
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_StaticCastByType();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_StaticCastByType() %.4f sec\r\n", timer.GetElapsedSeconds());
+
+    }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -11818,6 +11899,10 @@ struct ECSqlHelper
             return stmt.Step();
             }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     {
     SetupECDb("diamond_problem.ecdb",
@@ -11859,7 +11944,7 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
             "      </Target>"
             "   </ECRelationshipClass>"
             "   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassB' strength='Referencing' modifier='Sealed'>"
-            "       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "		
+            "       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "
             "      <Source cardinality='(0,1)' polymorphic='False'>"
             "          <Class class ='PrimaryClassA' />"
             "      </Source>"
@@ -11889,6 +11974,10 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     //This does not work with overflow property
     //ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
     {
 
@@ -12010,16 +12099,16 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
         SubObject22(P0, IB1, P21, IB2, P22)
         SubObject23(P0, IB1, P21, IB2, P22, IB3, P23)
 */
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject1	(P0, IB1, P1)						VALUES ('P0-1', 'IB1-1', 'P1-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject2	(P0, IB2, P2)						VALUES ('P0-2', 'IB2-1', 'P2-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject3	(P0, IB3, P3)						VALUES ('P0-3', 'IB3-1', 'P3-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject123(P0, IB1, IB2, IB3, P123)			VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject11	(P0, IB1, P11)						VALUES ('P0-5', 'IB1-3', 'P11-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject12	(P0, IB1, P11, IB2, P12)			VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject13	(P0, IB1, P11, IB2, P12, IB3, P13)	VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject21	(P0, IB1, P21)						VALUES ('P0-8', 'IB1-6', 'P21-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject22	(P0, IB1, P21, IB2, P22)			VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject23	(P0, IB1, P21, IB2, P22, IB3, P23)	VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject1    (P0, IB1, P1)                        VALUES ('P0-1', 'IB1-1', 'P1-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject2    (P0, IB2, P2)                        VALUES ('P0-2', 'IB2-1', 'P2-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject3    (P0, IB3, P3)                        VALUES ('P0-3', 'IB3-1', 'P3-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject123(P0, IB1, IB2, IB3, P123)              VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject11    (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject12    (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject13    (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject21    (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject22    (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject23    (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')");
     GetECDb().SaveChanges();
 
     //====[Foo.Object]====================================================
@@ -12238,7 +12327,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/16
+// @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     {
