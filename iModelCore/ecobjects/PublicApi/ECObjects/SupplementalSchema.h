@@ -249,7 +249,7 @@ public:
 
 private:
     Utf8String m_primarySchemaName;
-    ECSchemaP m_schemaToSupplement;
+    // unused - ECSchemaP m_schemaToSupplement;
     SchemaNamePurposeMap m_supplementalSchemaNamesAndPurposes;
     ECSchemaCachePtr m_schemaCache;
     bool m_createCopyOfSupplementalCustomAttribute;
