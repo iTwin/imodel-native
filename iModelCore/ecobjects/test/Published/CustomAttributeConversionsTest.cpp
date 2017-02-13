@@ -1999,6 +1999,7 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
     EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
 
     EXPECT_TRUE(schema->IsSupplemented());
+    EXPECT_FALSE(schema->IsSupplementalSchema());
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *m_coreCASchema));
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schema, *m_bscaSchema));
 

@@ -316,6 +316,18 @@ ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(Utf8
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECClassCP CoreCustomAttributeHelper::GetClass(Utf8CP attributeName)
+    {
+    ECClassCP ecClass = CoreCustomAttributesSchemaHolder::GetSchema()->GetClassCP(attributeName);
+    if (nullptr == ecClass)
+        return nullptr;
+    return ecClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
     {
     return CoreCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);

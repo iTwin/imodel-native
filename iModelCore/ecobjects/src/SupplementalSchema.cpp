@@ -536,7 +536,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses(
     for (IECInstancePtr const & customAttribute: supplementalCustomAttributes)
         {
         Utf8String className = customAttribute->GetClass().GetName();
-        if (0 == strcmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
+        if (0 == strcmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()) || 0 == strcmp(s_bscaCustomAttributeAccessor, className.c_str()))
             continue;
 
         IECInstancePtr supplementalCustomAttribute = m_createCopyOfSupplementalCustomAttribute ? customAttribute->CreateCopyThroughSerialization() : customAttribute;
@@ -1095,7 +1095,7 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     if (!instance.IsValid())
         return instance;
 
-    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetCustomAttributeClass("SchemaNameAndPurpose");
+    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetClass("SchemaNameAndPurpose");
     if (nullptr == schemaNameAndPurpose)
         return instance;
 
@@ -1117,8 +1117,8 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
 
         ECValue v;
         v.SetStruct (memberInst.get());
+        instance->AddArrayElements("SupplementalSchemaNamesAndPurposes", 1);
         instance->SetValue ("SupplementalSchemaNamesAndPurposes", v, arrayIndex++);
-
         }
 
     return instance;

@@ -81,6 +81,11 @@ public:
     //! @return An ECCustomAttributeClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
     ECOBJECTS_EXPORT static ECCustomAttributeClassCP GetCustomAttributeClass(Utf8CP attributeName);
 
+    //! Returns the specified ECClass from the CoreCustomAttributes schema
+    //! @param[in] attributeName The name of the ECClass
+    //! @return An ECClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
+    ECOBJECTS_EXPORT static ECClassCP GetClass(Utf8CP attributeName);
+
     //! Creates a custom attribute instance for the given custom attribute from the CoreCustomAttributes schema
     //! @remarks The only supported custom attributes at this time are SupplementalSchemaMetaData, SupplementalProvenance, and
     //! IsMixin. If any other custom attributes are desired, use GetCustomAttributeClass and create an instance from the resulting
