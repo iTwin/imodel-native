@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Client\Response\WSCreateObjectResponse.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Client\Response\WSFileResponse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -414,9 +411,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Client\WSError.xliff.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSCreateObjectResponse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h">
@@ -849,6 +843,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -70,6 +70,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ProgressFilterTests.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />

@@ -3864,7 +3864,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
-        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -3890,7 +3890,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(cachedFilePath, filePath);
-        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -4014,7 +4014,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
 
         EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "NewRemoteId"), _, _))
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
-        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -4281,7 +4281,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
 
     EXPECT_CALL(GetMockClient(), SendDeleteObjectRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSDeleteObjectResult::Success())));
@@ -4310,7 +4310,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
 
     int onProgressCount = 0;
     double expectedSyncedValues[2] = {0, 1};
@@ -4424,13 +4424,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
         {
         progress(0, 2);
         progress(2, 2);
-        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
         }))
             .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
-            return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+            return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
             }));
 
         int onProgressCount = 0;
