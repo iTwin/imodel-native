@@ -313,7 +313,7 @@ struct StructPropertyMap final : CompoundDataPropertyMap
 struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     public:
-        static const DbColumn::Type COLUMN_DATATYPE = DbColumn::Type::Blob;
+        static const DbColumn::Type COLUMN_DATATYPE = DbColumn::Type::Text;
 
     private:
         PrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, classMap, ecProperty, column) {}

@@ -583,15 +583,14 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
                 ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.AlternativePresentationUnits";
             else
                 {
-                Json::Value actualAltPresUnitsJson;
-                Json::Reader reader;
-                ASSERT_TRUE(reader.Parse(val.GetText(), actualAltPresUnitsJson, false)) << "KindOfQuantityDef.AlternativePresentationUnits";
+                IECSqlArrayValue const& arrayVal = val.GetArray();
+                ASSERT_EQ((int) expectedKoq.GetAlternativePresentationUnitList().size(), arrayVal.GetArrayLength()) << "KindOfQuantityDef.AlternativePresentationUnits";
 
-                ASSERT_EQ(expectedKoq.GetAlternativePresentationUnitList().size(), actualAltPresUnitsJson.size()) << "KindOfQuantityDef.AlternativePresentationUnits";
-
-                for (size_t i = 0; i < expectedKoq.GetAlternativePresentationUnitList().size(); i++)
+                size_t i = 0;
+                for (IECSqlValue const* arrayElementVal : arrayVal)
                     {
-                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), actualAltPresUnitsJson[(Json::ArrayIndex) i].asCString()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), arrayElementVal->GetText()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                    i++;
                     }
                 }
 

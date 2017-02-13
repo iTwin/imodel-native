@@ -29,7 +29,7 @@ void ClassMapColumnFactory::Initialize()const
     UsedColumnFinder::ColumnMap columnMap;
     if (UsedColumnFinder::Find(columnMap, m_classMap) == SUCCESS)
         {
-        for (auto const& entry : columnMap)
+        for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
             {
             AddColumnToCache(*entry.second, entry.first);
             }
@@ -53,7 +53,6 @@ DbColumn* ClassMapColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn
     if (outColumn == nullptr)
         return nullptr;
 
-    //AddColumnToCache(*outColumn, accessString);
     return outColumn;
     }
 
@@ -65,23 +64,25 @@ void ClassMapColumnFactory::SetupCompoundFilter(bset<const ClassMap*> const* add
     if (m_compoundFilter.size() != 1 || additionalFilter != nullptr)
         {
         m_compoundFilter.clear();
-        m_compoundFilter.push_back(&GetClassMap());
+        m_compoundFilter.push_back(&m_classMap);
         }
 
-    if (additionalFilter)
-        for (const ClassMap* additionalClassMap : *additionalFilter)
+    if (!additionalFilter)
+        return;
+
+    for (ClassMap const* additionalClassMap : *additionalFilter)
+        {
+        if (additionalClassMap == &m_classMap)
+            continue;
+
+        if (additionalClassMap->GetJoinedTable().GetId() != GetTable().GetId())
             {
-            if (additionalClassMap == &GetClassMap())
-                continue;
-
-            if (additionalClassMap->GetJoinedTable().GetId() != GetTable().GetId())
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            m_compoundFilter.push_back(additionalClassMap);
+            BeAssert(false);
+            continue;
             }
+
+        m_compoundFilter.push_back(additionalClassMap);
+        }
     }
 
 //------------------------------------------------------------------------------------------
@@ -100,9 +101,9 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
     SetupCompoundFilter(additionalFilter);
     bool foundColumn = false;
     DbColumn* outColumn = nullptr;
-    //First try to find exisitng map
+    //First try to find existing map
     std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii>::iterator itor;
-    for (const ClassMap* classMapFilter : m_compoundFilter)
+    for (ClassMap const* classMapFilter : m_compoundFilter)
         {
         itor = classMapFilter->GetColumnFactory().m_usedColumnMap.find(accessString);
         if (itor != m_usedColumnMap.end())
@@ -137,7 +138,7 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
     //Register column
     if (outColumn)
         {
-        for (const ClassMap* classMapFilter : m_compoundFilter)
+        for (ClassMap const* classMapFilter : m_compoundFilter)
             classMapFilter->GetColumnFactory().AddColumnToCache(*outColumn, accessString);
         }
 
@@ -150,7 +151,7 @@ DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, 
 //-----------------------------------------------------------------------------------------
 bool ClassMapColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
     {
-    for (const ClassMap* classMap : m_compoundFilter)
+    for (ClassMap const* classMap : m_compoundFilter)
         {
         if (classMap->GetColumnFactory().m_usedColumnSet.find(&column) != classMap->GetColumnFactory().m_usedColumnSet.end())
             return true;
@@ -410,7 +411,7 @@ ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().Get
 void ClassMapColumnFactory::Debug() const
     {
     NativeSqlBuilder sql;
-    sql.Append("ClassMap : ").AppendLine(GetClassMap().GetClass().GetFullName());
+    sql.Append("ClassMap : ").AppendLine(m_classMap.GetClass().GetFullName());
 
     for (auto const& pair : m_usedColumnMap)
         {
@@ -475,17 +476,17 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
                 ECEntityClassCP entityClassMap = static_cast<ECEntityClassCP>(baseClass);
                 if (entityClassMap->IsMixin())
                     {
-                    auto itor = m_mixIns.find(entityClassMap);
-                    if (itor == m_mixIns.end())
+                    auto itor = m_mixins.find(entityClassMap);
+                    if (itor == m_mixins.end())
                         {
                         //current class interface. We had not added them before 
                         //so add them now.
-                        m_mixIns.insert(entityClassMap);
+                        m_mixins.insert(entityClassMap);
                         }
                     else 
                         {
                         //Remove the mixin as we already have implementation
-                        m_mixIns.erase(itor);
+                        m_mixins.erase(itor);
                         }
                     }
                 }
@@ -493,12 +494,12 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
         }
 
     //this mixin has not be resolved. We need to find it implementation if avaliable.
-    if (!m_mixIns.empty())
+    if (!m_mixins.empty())
         {
-        std::vector<ECEntityClassCP> collection(m_mixIns.begin(), m_mixIns.end());
-        for (auto unresolvedMixIn : collection)
+        std::vector<ECEntityClassCP> unresolvedMixins(m_mixins.begin(), m_mixins.end());
+        for (ECEntityClassCP unresolvedMixin : unresolvedMixins)
             {
-            if (ResolveMixins(*unresolvedMixIn) == ERROR)
+            if (ResolveMixins(*unresolvedMixin) != SUCCESS)
                 return ERROR;
             }
         }
@@ -515,26 +516,21 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins(ECN::ECClas
         return SUCCESS;
 
     ClassMap const* currentClassMap = GetClassMap(currentClass);
-    if (currentClassMap && !currentClassMap->GetTables().empty())
+    if (currentClassMap && !currentClassMap->GetTables().empty() &&
+        currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
         {
-        if (currentClass.GetId() != m_classMap.GetClass().GetId())
+        for (ECClassCP baseClass : currentClass.GetBaseClasses())
             {
-            if (IsMappedIntoContextClassMapTables(*currentClassMap))
+            if (baseClass->IsEntityClass())
                 {
-                for (ECClassCP baseClass : currentClass.GetBaseClasses())
+                ECEntityClassCP entityClassMap = baseClass->GetEntityClassCP();
+                if (entityClassMap->IsMixin())
                     {
-                    if (baseClass->IsEntityClass())
+                    auto itor = m_mixins.find(entityClassMap);
+                    if (itor != m_mixins.end())
                         {
-                        ECEntityClassCP entityClassMap = static_cast<ECEntityClassCP>(baseClass);
-                        if (entityClassMap->IsMixin())
-                            {
-                            auto itor = m_mixIns.find(entityClassMap);
-                            if (itor != m_mixIns.end())
-                                {
-                                m_mixIns.erase(itor);
-                                m_mixInsImpl[entityClassMap] = currentClassMap;
-                                }
-                            }
+                        m_mixins.erase(itor);
+                        m_mixinImpls[entityClassMap] = currentClassMap;
                         }
                     }
                 }
@@ -543,7 +539,9 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins(ECN::ECClas
 
     for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass))
         {
-        if (m_mixIns.empty()) return SUCCESS;
+        if (m_mixins.empty()) 
+            return SUCCESS;
+
         if (ResolveMixins(*derivedClass) != SUCCESS)
             return ERROR;
         }
@@ -574,11 +572,16 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
             }
         }
 
-    if (currentClassMap && !currentClassMap->GetTables().empty())
+    if (currentClassMap == nullptr || currentClassMap->GetTables().empty())
         {
-        if (currentClass.GetId() != m_classMap.GetClass().GetId())
-            if (IsMappedIntoContextClassMapTables(*currentClassMap))
-                parentClassMap = currentClassMap;
+        if (parentClassMap != nullptr)
+            m_deepestClassMapped.insert(parentClassMap);
+
+        return SUCCESS;
+        }
+
+    if (currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
+        parentClassMap = currentClassMap;
 
         ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
         if (derivedClasses.empty())
@@ -589,14 +592,9 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
         else
             {
             for (ECClassCP derivedClass : derivedClasses)
-                if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
-                    return ERROR;
+            if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
+                return ERROR;
             }
-        }
-    else
-        {
-        if (parentClassMap != nullptr)
-            m_deepestClassMapped.insert(parentClassMap);
         }
 
     return SUCCESS;
@@ -637,42 +635,37 @@ ClassMapColumnFactory::UsedColumnFinder::UsedColumnFinder(ClassMap const& classM
     {
     m_contextMapTableSet.insert(classMap.GetTables().begin(), classMap.GetTables().end());
     }
-//*************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryMixIns()
     {
-    Utf8CP mixInSql =
-        "SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
-        "   INNER JOIN " TABLE_ClassHasBaseClasses " CHBC ON CHBC.ClassId = CCH.ClassId "
-        "WHERE CCH.BaseClassId = ?  AND CHBC.BaseClassId IN ( "
-        "   SELECT CA.ContainerId FROM " TABLE_Class " C "
-        "       INNER JOIN " TABLE_Schema " S ON S.Id = C.SchemaId "
-        "       INNER JOIN " TABLE_CustomAttribute " CA ON CA.ClassId = C.Id "
-        "   WHERE C.Name = 'IsMixin' AND S.Name='CoreCustomAttributes') "
-        "GROUP BY CHBC.BaseClassId ";
-
     ECDbCR ecdb = m_classMap.GetDbMap().GetECDb();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(mixInSql);
-    stmt->BindId(1, m_classMap.GetClass().GetId());
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        "SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
+        "INNER JOIN " TABLE_ClassHasBaseClasses " CHBC ON CHBC.ClassId = CCH.ClassId "
+        "WHERE CCH.BaseClassId=? AND CHBC.BaseClassId IN ("
+        "SELECT CA.ContainerId FROM " TABLE_Class " C"
+        "                      INNER JOIN " TABLE_Schema " S ON S.Id=C.SchemaId"
+        "                      INNER JOIN " TABLE_CustomAttribute " CA ON CA.ClassId = C.Id "
+        "                      WHERE C.Name = 'IsMixin' AND S.Name='CoreCustomAttributes') "
+        "GROUP BY CHBC.BaseClassId");
+
+    if (BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()))
+        return ERROR;
+
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECClassId mixInId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP classCP = ecdb.Schemas().GetECClass(mixInId);
-        if (!classCP->IsEntityClass())
+        ECClassId mixinId = stmt->GetValueId<ECClassId>(0);
+        ECClassCP classCP = ecdb.Schemas().GetECClass(mixinId);
+        if (!classCP->IsEntityClass() || !classCP->GetEntityClassCP()->IsMixin())
             {
             BeAssert(false && "SQL query has issue. Something changed about Mixin CA");
             return ERROR;
             }
-        ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(classCP);
-        if (!entityClass->IsMixin())
-            {
-            BeAssert(false && "SQL query has issue. Expecting MixIn");
-            return ERROR;
-            }
 
-        m_mixIns.insert(entityClass);
+        m_mixins.insert(classCP->GetEntityClassCP());
         }
 
     return SUCCESS;
@@ -687,14 +680,14 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
     if (TraverseClassHierarchy(m_classMap.GetClass(), nullptr) != SUCCESS)
         return ERROR;
 
-    if (QueryRelevantMixIns() != SUCCESS)
+    if (QueryMixIns() != SUCCESS)
         return ERROR;
 
     //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
     if (ResolveMixins() != SUCCESS)
         return ERROR;
 
-    //Find relationship that is relevent to current class so to adds its column to used column list
+    //Find relationship that is relevant to current class so to adds its column to used column list
     if (FindRelationshipEndTableMaps() != SUCCESS)
         return ERROR;
 
@@ -724,7 +717,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             }
         }
 
-    for (std::pair<ECEntityClassCP, ClassMapCP > const& entry : m_mixInsImpl)
+    for (std::pair<ECEntityClassCP, ClassMapCP > const& entry : m_mixinImpls)
         {
         std::set<Utf8CP, CompareIUtf8Ascii> mixInPropertySet;
         for (ECPropertyCP property : entry.first->GetProperties(true))
@@ -758,27 +751,27 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
         RelationshipConstraintMap const& persistedEnd = relClassEndTableMap->GetConstraintMap(relClassEndTableMap->GetForeignEnd());
         for (DbTable const* mappedTable : m_classMap.GetTables())
             {
-            if (auto const* ecInstanceId = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable))
-                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceId->GetAccessString()), &ecInstanceId->GetColumn()));
+            SystemPropertyMap::PerTablePrimitivePropertyMap const* ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
+            if (ecInstanceIdPropMap != nullptr)
+                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
 
-            if (auto const* relECClassId = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable))
-                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassId->GetAccessString()), &relECClassId->GetColumn()));
+            SystemPropertyMap::PerTablePrimitivePropertyMap const* relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
+            if (relECClassIdPropMap != nullptr)
+                columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
             }
         }
+    //    {
 
- 
     return SUCCESS;
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Find(ClassMapColumnFactory::UsedColumnFinder::ColumnMap& columnMap, ClassMap const& classMap)
     {
     UsedColumnFinder calc(classMap);
-    if (calc.Execute(columnMap) != SUCCESS)
-        return ERROR;
-
-    return SUCCESS;
+    return calc.Execute(columnMap);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

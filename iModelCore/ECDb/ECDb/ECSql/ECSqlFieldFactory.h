@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,8 +28,7 @@ struct ECSqlFieldFactory
         static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
         static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
         static ECSqlStatus CreateNavigationPropertyField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
-        static ECSqlStatus CreatePrimitiveArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
-        static ECSqlStatus CreateStructArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
+        static ECSqlStatus CreateArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
         static ECSqlStatus CreateStructMemberFields(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECN::ECStructClassCR, ECSqlColumnInfo const&);
         static ECSqlStatus CreateChildField(std::unique_ptr<ECSqlField>& childField, ECSqlPrepareContext&, int& sqlColumnIndex, ECSqlColumnInfo const& parentFieldColumnInfo, ECN::ECPropertyCR childProperty);
 

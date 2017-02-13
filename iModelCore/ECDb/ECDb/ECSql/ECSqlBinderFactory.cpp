@@ -78,9 +78,8 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
             }
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
-                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
-                return std::unique_ptr<ECSqlBinder>(new StructArrayECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new ArrayECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::Navigation:
             {
             std::unique_ptr<NavigationPropertyECSqlBinder> navPropBinder(new NavigationPropertyECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));

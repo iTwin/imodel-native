@@ -148,8 +148,6 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
 
-        ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType) const;
-
         void ClearCache() const { m_byPropIdCache.clear(); }
     };
 
