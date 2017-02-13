@@ -583,18 +583,17 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
     if (currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
         parentClassMap = currentClassMap;
 
-        ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
-        if (derivedClasses.empty())
-            {
-            if (parentClassMap != nullptr)
-                m_deepestClassMapped.insert(parentClassMap);
-            }
-        else
-            {
-            for (ECClassCP derivedClass : derivedClasses)
+    ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
+    if (derivedClasses.empty())
+        {
+        if (parentClassMap != nullptr)
+            m_deepestClassMapped.insert(parentClassMap);
+        }
+    else
+        {
+        for (ECClassCP derivedClass : derivedClasses)
             if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
                 return ERROR;
-            }
         }
 
     return SUCCESS;
@@ -639,7 +638,7 @@ ClassMapColumnFactory::UsedColumnFinder::UsedColumnFinder(ClassMap const& classM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryMixIns()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
     {
     ECDbCR ecdb = m_classMap.GetDbMap().GetECDb();
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
@@ -680,7 +679,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
     if (TraverseClassHierarchy(m_classMap.GetClass(), nullptr) != SUCCESS)
         return ERROR;
 
-    if (QueryMixIns() != SUCCESS)
+    if (QueryRelevantMixIns() != SUCCESS)
         return ERROR;
 
     //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
