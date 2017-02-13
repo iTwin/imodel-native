@@ -27,6 +27,7 @@ namespace IndexECPlugin.Source.QueryProviders
         private ECQuerySettings m_querySettings;
         private IInstanceCacheManager m_instanceCacheManager;
         private IECSchema m_schema;
+        private bool m_cacheIsActive = false;
 
         Dictionary<IECClass, List<IECInstance>> m_storageForCaching;
 
@@ -158,9 +159,12 @@ namespace IndexECPlugin.Source.QueryProviders
             Schema = schema;
             m_dataSource = dataSource;
 
-            m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
-
-            InstanceCacheManager = cacheManager;
+            if ( cacheManager != null )
+                {
+                m_cacheIsActive = true;
+                m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
+                InstanceCacheManager = cacheManager;
+                }
             }
 
 
@@ -172,21 +176,29 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
         /// <param name="schema">The schema of the ECPlugin</param>
         /// <param name="dataSource">The data source representing the sub API</param>
-        public SubAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema, DataSource dataSource)
+        /// <param name="activateCache">If the sub API uses the cache, set to true, otherwise, false.</param>
+        public SubAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema, DataSource dataSource, bool activateCache)
             {
             Query = query;
             QuerySettings = querySettings;
-            m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
+            
             Schema = schema;
             m_dataSource = dataSource;
 
-            uint daysCacheIsValid;
-
-            if( !UInt32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
+            if ( activateCache )
                 {
-                daysCacheIsValid = 10;
+                m_cacheIsActive = true;
+
+                uint daysCacheIsValid;
+
+                if ( !UInt32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
+                    {
+                    daysCacheIsValid = 10;
+                    }
+
+                m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
+                InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, connectionString, querySettings, new DbQuerier());
                 }
-            InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, connectionString, querySettings, new DbQuerier());
 
             }
 
@@ -304,12 +316,15 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="instance">The instance to insert in the cache</param>
         protected void PrepareInstanceForCaching (IECInstance instance)
             {
-            IECClass baseClass = GetCacheBaseClass(instance.ClassDefinition);
-            if ( !m_storageForCaching.Keys.Contains(baseClass) )
+            if ( m_cacheIsActive )
                 {
-                m_storageForCaching.Add(baseClass, new List<IECInstance>());
+                IECClass baseClass = GetCacheBaseClass(instance.ClassDefinition);
+                if ( !m_storageForCaching.Keys.Contains(baseClass) )
+                    {
+                    m_storageForCaching.Add(baseClass, new List<IECInstance>());
+                    }
+                m_storageForCaching[baseClass].Add(instance);
                 }
-            m_storageForCaching[baseClass].Add(instance);
             }
 
         private IECClass GetCacheBaseClass (IECClass ecClass)
@@ -332,11 +347,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private void PrepareCachingStatements ()
             {
-            //Parallel.ForEach(m_storageForCaching, (instancesGroup) =>
-            foreach ( var instancesGroup in m_storageForCaching )
+            if ( m_cacheIsActive )
                 {
-                InstanceCacheManager.PrepareCacheInsertStatement(instancesGroup.Value, instancesGroup.Key, null);
-                //});
+                //Parallel.ForEach(m_storageForCaching, (instancesGroup) =>
+                foreach ( var instancesGroup in m_storageForCaching )
+                    {
+                    InstanceCacheManager.PrepareCacheInsertStatement(instancesGroup.Value, instancesGroup.Key, null);
+                    //});
+                    }
                 }
             }
 
@@ -345,19 +363,26 @@ namespace IndexECPlugin.Source.QueryProviders
         //are not modified on the main thread while they are still used to create the statement.
         private void SendCachingStatements ()
             {
-            InstanceCacheManager.SendAllPreparedCacheInsertStatements();
+            if ( m_cacheIsActive )
+                {
+                InstanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }
             }
 
         private List<IECInstance> CreateInstancesFromInstanceIdList (IEnumerable<string> instanceIdSet, IECClass ecClass, SelectCriteria selectClause)
             {
             List<IECInstance> instanceList = new List<IECInstance>();
-            List<IECInstance> cachedInstances = InstanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
-            CompleteInstances(cachedInstances, ecClass);
-            CreateCacheRelatedInstances(cachedInstances, selectClause.SelectedRelatedInstances);
+            List<IECInstance> cachedInstances = null;
+            if ( m_cacheIsActive )
+                {
+                cachedInstances = InstanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
+                CompleteInstances(cachedInstances, ecClass);
+                CreateCacheRelatedInstances(cachedInstances, selectClause.SelectedRelatedInstances);
+                }
             //We create the requested instances that were not in the cache
             foreach ( string sourceID in instanceIdSet )
                 {
-                IECInstance instance = cachedInstances.FirstOrDefault(inst => inst.InstanceId == sourceID);
+                IECInstance instance = cachedInstances == null ? null : cachedInstances.FirstOrDefault(inst => inst.InstanceId == sourceID);
                 if ( instance == null || (bool) instance.ExtendedData["Complete"] == false )
                     {
                     try

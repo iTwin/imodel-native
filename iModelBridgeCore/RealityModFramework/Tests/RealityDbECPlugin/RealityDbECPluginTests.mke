@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: Tests/RealityDbECPlugin/RealityDbECPluginTests.mke $
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
@@ -78,6 +78,7 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
+            $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
             $(baseDir)Tests/InstanceComplementTests.cs \
             $(baseDir)Tests/InstanceOverriderTests.cs \
