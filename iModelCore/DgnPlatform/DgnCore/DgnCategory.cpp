@@ -747,7 +747,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
     DgnCategoryId categoryId;
         {
         ECValue v;
-        if (ECObjectsStatus::Success != properties.GetValue(v, "ParentId") || v.IsNull())
+        if (ECObjectsStatus::Success != properties.GetValue(v, "Parent") || v.IsNull())
             {
             stat = DgnDbStatus::InvalidParent;
             return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
@@ -795,7 +795,10 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN:
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
+    bset<Utf8String> ignoreProps;
+    ignoreProps.insert("Parent");
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, false, ignoreProps);
+
     stat = ele->_SetPropertyValues(properties, filter);
     return (DgnDbStatus::Success == stat) ? ele : nullptr;
     }
@@ -859,8 +862,8 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             auto& el = (DgnSubCategory&) elIn;
-            if (el.IsDefaultSubCategory())
-                return DgnDbStatus::ReadOnly; // default sub-categories don't have a description
+            //if (el.IsDefaultSubCategory())
+            //    return DgnDbStatus::ReadOnly; // default sub-categories don't have a description
             el.SetDescription(value.GetUtf8CP());
             return DgnDbStatus::Success;
             });
@@ -874,7 +877,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             },
         [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsInteger())
+            if (!value.IsUtf8())
                 return DgnDbStatus::BadArg;
             auto& el = (DgnSubCategory&) elIn;
             el.m_data.m_appearance.FromJson(value.GetUtf8CP());
