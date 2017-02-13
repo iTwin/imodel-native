@@ -1036,4 +1036,84 @@ TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
     VerifyTestInstance(readbackInstance.get(), false, true);
     }
 
+void VerifyShouldNotSerializeProperties(IECInstanceP instance)
+    {
+    ECClassCR ecClass = instance->GetClass();
+    for (ECPropertyP ecProp : ecClass.GetProperties())
+        {
+        bool serialize = true;
+        instance->ShouldSerializeProperty(serialize, ecProp->GetName().c_str());
+        EXPECT_FALSE(serialize) << "The property " << ecProp->GetName().c_str() << " should not be serialized but was returned that it should.";
+        }
+    }
+
+void VerifyShouldSerializeProperty(IECInstanceR instance, Utf8CP propertyAccessor, bool shouldBeSerialized = true)
+    {
+    bool serialize = false;
+    EXPECT_EQ(ECObjectsStatus::Success, instance.ShouldSerializeProperty(serialize, propertyAccessor));
+    if (shouldBeSerialized)
+        EXPECT_TRUE(serialize) << propertyAccessor << " is no longer empty so needs to be serialized";
+    else
+        EXPECT_FALSE(serialize) << propertyAccessor << " is empty and should not be serialized";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer     02/2017
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceSerializationTest, TestShouldSerializeProperty)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SimpleTest_SecondSchema.02.00.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassCP testClass = schema->GetClassCP("TestClass");
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_TRUE(instance.IsValid());
+    VerifyShouldNotSerializeProperties(instance.get());
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("BooleanMember", ECValue(true)));
+    VerifyShouldSerializeProperty(*instance.get(), "BooleanMember");
+    
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("BooleanMember", ECValue()));
+    VerifyShouldSerializeProperty(*instance.get(), "BooleanMember", false);
+    
+    EXPECT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("IntArray", 2));
+    VerifyShouldSerializeProperty(*instance.get(), "IntArray");
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->RemoveArrayElement("IntArray", 1));
+    VerifyShouldSerializeProperty(*instance.get(), "IntArray");
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->RemoveArrayElement("IntArray", 0));
+    VerifyShouldSerializeProperty(*instance.get(), "IntArray", false);
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("EmbeddedStruct.Struct1IntMember", ECValue(22)));
+    VerifyShouldSerializeProperty(*instance.get(), "EmbeddedStruct");
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("EmbeddedStruct.Struct1IntMember", ECValue()));
+    VerifyShouldSerializeProperty(*instance.get(), "EmbeddedStruct", false);
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("StructArray", 1));
+    VerifyShouldSerializeProperty(*instance.get(), "StructArray");
+
+    ECClassCP structClass = schema->GetClassCP("Struct2");
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue structValue;
+    structValue.SetStruct(structInstance.get());
+    instance->SetValue("StructArray", structValue, 0);
+    VerifyShouldSerializeProperty(*instance.get(), "StructArray");
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->RemoveArrayElement("StructArray", 0));
+    VerifyShouldSerializeProperty(*instance.get(), "StructArray", false);
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("SecondEmbeddedStruct.NestedArray", 2));
+    VerifyShouldSerializeProperty(*instance.get(), "SecondEmbeddedStruct");
+    VerifyShouldSerializeProperty(*instance.get(), "SecondEmbeddedStruct.NestedArray");
+
+    EXPECT_EQ(ECObjectsStatus::Success, instance->RemoveArrayElement("SecondEmbeddedStruct.NestedArray", 0));
+    EXPECT_EQ(ECObjectsStatus::Success, instance->RemoveArrayElement("SecondEmbeddedStruct.NestedArray", 0));
+    VerifyShouldSerializeProperty(*instance.get(), "SecondEmbeddedStruct", false);
+    VerifyShouldSerializeProperty(*instance.get(), "SecondEmbeddedStruct.NestedArray", false);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

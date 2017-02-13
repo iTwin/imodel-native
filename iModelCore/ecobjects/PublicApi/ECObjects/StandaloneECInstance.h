@@ -229,11 +229,12 @@ protected:
     ECOBJECTS_EXPORT MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
     ECOBJECTS_EXPORT ECDBuffer*          _GetECDBuffer() const override;
     ECOBJECTS_EXPORT size_t              _GetOffsetToIECInstance () const override;
+    ECOBJECTS_EXPORT ECObjectsStatus _GetIsPropertyNull(bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override 
+        {return GetShouldSerializeProperty(serialize, propertyIndex, useArrayIndex, arrayIndex);}
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT IECInstanceP        _GetAsIECInstance () const override;
-
-    ECOBJECTS_EXPORT ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
 
 public:
     // We use this as an optimization for setting struct array members.

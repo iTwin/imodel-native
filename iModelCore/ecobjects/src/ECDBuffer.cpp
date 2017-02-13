@@ -1727,12 +1727,10 @@ uint32_t            index
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
+bool ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
     {
-    if (propertyLayout.GetTypeDescriptor().IsStruct())
-        return true;    // embedded structs always null
-    else if (!useIndex && propertyLayout.GetTypeDescriptor().IsArray())
-        return false;   // arrays are never null
+    if (propertyLayout.GetTypeDescriptor().IsStruct() || (!useIndex && propertyLayout.GetTypeDescriptor().IsArray()))
+        return false;    // arrays and embedded structs never null
 
     uint32_t nullflagsOffset;
     uint32_t nullflagsBitmask;
@@ -2886,6 +2884,53 @@ ECObjectsStatus       ECDBuffer::GetIsNullValueFromMemory (bool& isNull, uint32_
         }
 
     isNull = !propertyLayout->HoldsCalculatedProperty() && IsPropertyValueNull (*propertyLayout, useIndex, index);
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECDBuffer::GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useIndex, uint32_t index) const
+    {
+    PropertyLayoutCP propertyLayout = nullptr;
+    ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex(propertyLayout, propertyIndex);
+    if (ECObjectsStatus::Success != status || nullptr == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;
+
+    if (useIndex)
+        {
+        if (!propertyLayout->GetTypeDescriptor().IsArray())
+            {
+            BeAssert(false && "You cannot use an array index if the property is not an array!");
+            return ECObjectsStatus::PropertyNotFound;
+            }
+
+        if (index >= GetReservedArrayCount(*propertyLayout))
+            return ECObjectsStatus::IndexOutOfRange;
+        }
+    else if (!useIndex && propertyLayout->GetTypeDescriptor().IsArray())
+        {
+        serialize = (0 != (uint32_t) GetReservedArrayCount(*propertyLayout));
+        return ECObjectsStatus::Success;
+        }
+
+    if (propertyLayout->GetTypeDescriptor().IsStruct())
+        {
+        uint32_t childIndex = GetClassLayout().GetFirstChildPropertyIndex(propertyIndex);
+        while (0 != childIndex)
+            {
+            if (ECObjectsStatus::Success != (status = GetShouldSerializeProperty(serialize, childIndex, useIndex, index)))
+                return status;
+
+            if (serialize)
+                break;
+            
+            childIndex = GetClassLayout().GetNextChildPropertyIndex(propertyIndex, childIndex);
+            }
+        }
+    else
+        serialize = propertyLayout->HoldsCalculatedProperty() || !IsPropertyValueNull(*propertyLayout, useIndex, index);
+
     return ECObjectsStatus::Success;
     }
 

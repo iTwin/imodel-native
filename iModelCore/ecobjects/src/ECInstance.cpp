@@ -1165,6 +1165,49 @@ ECObjectsStatus IECInstance::ValidateNavigationMetadata(uint32_t propertyIndex, 
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                  02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::_GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const
+    {
+    // This is the default implementation. Using the ECDbuffer implementation will be more efficient.
+    bool isNull;
+    ECObjectsStatus status;
+    if (ECObjectsStatus::Success != (status = _GetIsPropertyNull(isNull, propertyIndex, useArrayIndex, arrayIndex)))
+        return status;
+
+    serialize = !isNull;
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                  02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::ShouldSerializeProperty(bool& serialize, Utf8CP propertyAccessString) const
+    {
+    uint32_t propertyIndex = 0;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+    
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    return _GetShouldSerializeProperty(serialize, propertyIndex, false, 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                  02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::ShouldSerializeProperty(bool& serialize, Utf8CP propertyAccessString, uint32_t arrayIndex) const
+    {
+    uint32_t propertyIndex = 0;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    return _GetShouldSerializeProperty(serialize, propertyIndex, true, arrayIndex);
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //  ECInstanceInteropHelper
 /////////////////////////////////////////////////////////////////////////////////////////

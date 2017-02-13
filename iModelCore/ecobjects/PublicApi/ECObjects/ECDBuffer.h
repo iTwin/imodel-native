@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -591,6 +591,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (uint32_t propIdx);
     ECOBJECTS_EXPORT Utf8String       InstanceDataToString (Utf8CP indent) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (bool& isNull, uint32_t propertyIndex, bool useIndex, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useIndex, uint32_t index) const;
 
     ECOBJECTS_EXPORT ECObjectsStatus  CopyPropertiesFromBuffer (ECDBufferCR src);
 

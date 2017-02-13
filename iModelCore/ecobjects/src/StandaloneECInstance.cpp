@@ -657,12 +657,15 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Prop
         if (status != ECObjectsStatus::Success)
             return status;
 
-        // get struct value id from ecValue
-        StructValueIdentifier structValueId = v.GetInteger ();    
+        if (!v.IsNull())
+            {
+            // get struct value id from ecValue
+            StructValueIdentifier structValueId = v.GetInteger();
 
-        status = RemoveStructStructArrayEntry (structValueId);       
-        if (status != ECObjectsStatus::Success)
-            return status;
+            status = RemoveStructStructArrayEntry(structValueId);
+            if (status != ECObjectsStatus::Success)
+                return status;
+            }
        }   
 
     return RemoveArrayElementsFromMemory (propertyLayout, removeIndex, removeCount);

@@ -59,6 +59,8 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
     ECOBJECTS_EXPORT ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
     ECOBJECTS_EXPORT ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override 
+        {return GetShouldSerializeProperty(serialize, propertyIndex, useArrayIndex, arrayIndex);}
 
     ECOBJECTS_EXPORT ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
     ECOBJECTS_EXPORT ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
@@ -68,8 +70,8 @@ protected:
     ECOBJECTS_EXPORT ClassLayoutCR       _GetClassLayout () const override;
     ECOBJECTS_EXPORT ECEnablerCR         _GetEnabler () const override;
     ECOBJECTS_EXPORT MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
-    ECOBJECTS_EXPORT size_t              _GetOffsetToIECInstance () const override;
+    ECOBJECTS_EXPORT virtual size_t _GetObjectSize () const;
+    ECOBJECTS_EXPORT size_t _GetOffsetToIECInstance () const override;
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT IECInstanceP            _GetAsIECInstance () const override;
 

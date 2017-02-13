@@ -249,6 +249,8 @@ protected:
     virtual Utf8String          _ToString (Utf8CP indent) const = 0;
     //! Returns the offset to the IECInstance
     virtual size_t              _GetOffsetToIECInstance () const = 0;
+    //! Returns whether the property should be serialized
+    virtual ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
 
     //! Check for Null property value
     //! @param[out] isNull          If successful, will contain true if property value is NULL.
@@ -567,6 +569,34 @@ public:
     ECOBJECTS_EXPORT MemoryECInstanceBase const*    GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance.
     ECOBJECTS_EXPORT MemoryECInstanceBase*          GetAsMemoryECInstanceP(); //!< Returns the instance as a MemoryECInstance.
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const; //!< Returns the offset to the IECInstance
+
+    //! Check if property should be serialized
+    //! @param[out] serialize               If successful, will contain true if property value should be serialized.
+    //! @param[in]  propertyAccessString    Name of the property to retrieve
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus ShouldSerializeProperty(bool& serialize, Utf8CP propertyAccessString) const;
+
+    //! Check if property should be serialized
+    //! @param[out] serialize               If successful, will contain true if property value should be serialized.
+    //! @param[in]  propertyAccessString    Name of the property to retrieve
+    //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus ShouldSerializeProperty(bool& serialize, Utf8CP propertyAccessString, uint32_t arrayIndex) const;
+
+    //! Check if property should be serialized
+    //! @note The property index is 1-based!
+    //! @param[out] serialize       If successful, will contain true if property value should be serialized.
+    //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECObjectsStatus ShouldSerializeProperty(bool& serialize, uint32_t propertyIndex) const {return _GetShouldSerializeProperty(serialize, propertyIndex, false, 0);}
+
+    //! Check if property should be serialized
+    //! @note The property index is 1-based!
+    //! @param[out] serialize       If successful, will contain true if property value should be serialized.
+    //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
+    //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECObjectsStatus ShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, uint32_t arrayIndex) const {return _GetShouldSerializeProperty(serialize, propertyIndex, true, arrayIndex);}
 
     //! Returns a dump of the instance
     //! @param[in] indent   String to prepend to each line of the dump
