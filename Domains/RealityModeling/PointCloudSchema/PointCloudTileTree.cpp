@@ -57,51 +57,61 @@ BentleyStatus _LoadTile()
     auto&                       tile = static_cast<TileR>(*m_tile);
     auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
     auto&                       system = *root.GetRenderSystem();
-    static size_t               s_maxTilePointCount = 500000;
+    static size_t               s_maxTilePointCount = 1000000;
     static size_t               s_maxLeafPointCount = 20000;
     bvector<FPoint3d>           points(s_maxTilePointCount);
     bvector<PointCloudColorDef> colors(s_maxTilePointCount);
     bool                        colorsPresent;
-    size_t                      nPoints = root.GetPoints(points, colors, colorsPresent, tile.GetRange(), s_maxTilePointCount);
+    static   BeMutex            s_queryMutex;
+    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
+    PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTilePointCount);
+    size_t                      nPoints, totalPoints = 0;
     
-    if (0 == nPoints)
-        return SUCCESS;
-
-    Transform                   dgnToTile, cloudToTile;
-
-    dgnToTile.InverseOf(root.GetLocation());
-    cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
-
-    for(size_t i=0; i<nPoints; i++)
+    while (0 != (nPoints = (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), s_maxTilePointCount, (float*)points.data(), colorsPresent? (Byte*) colors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr)))
         {
-        DPoint3d        tmpPoint = {points[i].x, points[i].y, points[i].z};
+        Transform                   dgnToTile, cloudToTile;
+        Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
 
-        cloudToTile.Multiply(tmpPoint);
+        dgnToTile.InverseOf(root.GetLocation());
+        cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
 
-        points[i] = {(float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z}; 
+        for(size_t i=0; i<nPoints; i++)
+            {
+            DPoint3d        tmpPoint = {points[i].x, points[i].y, points[i].z};
+
+            cloudToTile.Multiply(tmpPoint);
+
+            points[i] = {(float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z}; 
+            }
+
+
+        // TODO - Add technique for monochrome point clouds...
+        if (!colorsPresent)
+            colors =  bvector<PointCloudColorDef> (nPoints, PointCloudColorDef(255, 255, 255));
+
+        graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : (ByteCP) colors.data());
+
+        tile.AddGraphic(*graphic);
+        totalPoints += nPoints;
+        graphic->Close();
         }
 
-    Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
-
-    // TODO - Add technique for monochrome point clouds...
-    if (!colorsPresent)
-        colors =  bvector<PointCloudColorDef> (nPoints, PointCloudColorDef(255, 255, 255));
-
-    graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : (ByteCP) colors.data());
-
-    if(nPoints < s_maxLeafPointCount)
+    if(totalPoints < s_maxLeafPointCount)
         tile.SetIsLeaf();
 
-    tile.AddGraphic(*graphic);
-
 #ifdef DRAW_RANGE
-    GraphicParams params;
+    {
+    GraphicParams               params;
+    Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
+
     params.SetLineColor(ColorDef::Red());
 
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox (tile.GetRange());
-#endif
     graphic->Close();
+    tile.AddGraphic();
+    }
+#endif
 
     return SUCCESS;  
     }
@@ -155,28 +165,52 @@ void Root::LoadRootTile(DRange3dCR tileRange)
     {
     m_rootTile = Tile::Create(*this, tileRange);
 #ifdef ASYNCH_ROOT
+    // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
     auto result = _RequestTile(*m_rootTile, nullptr);
     result.wait();
 #endif
     }
 
-static   BeMutex     s_queryMutex;
+PointCloudQueryHandlePtr createBoundingBoxQuery (PointCloudSceneP scene, DRange3dCR sceneRange, size_t maxCount)
+    {
+    return scene->CreateBoundingBoxQuery(sceneRange, QUERY_DENSITY_LIMIT, (float) maxCount);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  Root::GetPoints (bvector<FPoint3d>& points, bvector<PointCloudColorDef>& colors, bool& colorsPresent, DRange3dCR tileRange, size_t maxCount) const
+PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileRange, size_t maxCount) const
     {
-    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
-    Transform                   worldToScene;
-    DRange3d                    sceneRange;
+    Transform           worldToScene;
+    DRange3d            sceneRange;
     
     colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
-    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, QUERY_DENSITY_LIMIT, (float) maxCount);
 
-    return (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), maxCount, (float*)points.data(), colorsPresent? (Byte*) colors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
+    DVec3d              diagonalVector = sceneRange.DiagonalVector();
+    Transform           eyeTransform = Transform::FromProduct (Transform::From(-1.0, -1.0, -1.0), 
+                                                               Transform::FromScaleFactors(2.0 / diagonalVector.x, 2.0/diagonalVector.y, 2.0/diagonalVector.z), 
+                                                               Transform::From(-sceneRange.low.x, -sceneRange.low.y, -sceneRange.low.z));
+    DMatrix4d           identityMatrix, eyeMatrix = DMatrix4d::From(eyeTransform);
+
+
+    identityMatrix.InitIdentity();
+
+    ptSetViewProjectionMatrix(&identityMatrix.coff[0][0], true);
+    ptSetViewEyeMatrix(&eyeMatrix.coff[0][0], true);
+    ptSetViewportSize(0, 0, 512, 512);
+
+    PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateFrustumPointsQuery());
+
+    ptResetQuery(queryHandle->GetHandle());
+    ptSetQueryScope(queryHandle->GetHandle(), m_model.GetPointCloudSceneP()->GetSceneHandle());
+    ptSetQueryDensity (queryHandle->GetHandle(), QUERY_DENSITY_VIEW_COMPLETE, 1.0);
+
+    while (0 != ptPtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true))
+        BeDuration::FromMilliseconds(10).Sleep();
+
+    return queryHandle;
     }
 
 /*---------------------------------------------------------------------------------**//**
