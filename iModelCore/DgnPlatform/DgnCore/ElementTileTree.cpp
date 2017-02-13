@@ -2747,7 +2747,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (nullptr == polyface || 0 == polyface->GetPointCount())
         return;
 
-    DisplayParamsR displayParams = *tilePolyface.m_displayParams;
+    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
+    DisplayParamsR displayParams = *geom.GetDisplayParamsPtr();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.QueryTexture(&db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
 
