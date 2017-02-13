@@ -58,6 +58,7 @@ namespace ViewProperties
     static Utf8CP str_Jpeg() {return "jpeg";}
     static Utf8CP str_Png() {return "png";}
     static Utf8CP str_Clip() {return "clip";}
+    static Utf8CP str_IsCameraOn() {return "IsCameraOn";}
 };
 
 using namespace ViewProperties;
@@ -1018,6 +1019,8 @@ void CameraViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forI
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
     BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1042,6 +1045,7 @@ DgnDbStatus CameraViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement
     m_camera.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
     m_camera.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
     m_camera.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
+    SetCameraOn(stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn())));
 
     return DgnDbStatus::Success;
     }
@@ -1055,7 +1059,7 @@ bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
         return false;
 
     auto& other = (CameraViewDefinition&) in;
-    return m_camera.IsEqual(other.m_camera);
+    return (IsCameraOn() == other.IsCameraOn()) && m_camera.IsEqual(other.m_camera);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1527,7 +1531,7 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
         [](ECValueR value, DgnElementCR el)
             {
             CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetLong(viewDef.GetFocusDistance());
+            value.SetDouble(viewDef.GetFocusDistance());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
@@ -1537,6 +1541,23 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
 
             CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
             viewDef.SetFocusDistance(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
+            value.SetBoolean(viewDef.IsCameraOn());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBoolean())
+                return DgnDbStatus::BadArg;
+
+            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
+            viewDef.SetCameraOn(value.GetBoolean());
             return DgnDbStatus::Success;
             });
     }

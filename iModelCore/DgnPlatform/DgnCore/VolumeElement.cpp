@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VolumeElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -406,18 +406,16 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
-#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
     // Turn camera off
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
-    bool wasCameraOn = viewController->IsCameraOn();
-    viewController->SetCameraOn (false); 
-    viewport.SynchWithViewController (false); 
-%else
-    if (viewController->IsCameraView())
+    bool wasCameraOn = false;
+    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
+    if (nullptr != cameraViewController)
         {
-        BeAssert(false && "VolumeElement can't work with camera views?");
+        wasCameraOn = cameraViewController->IsCameraOn();
+        cameraViewController->SetCameraOn (false); 
+        viewport.SynchWithViewController (false); 
         }
-#endif
 
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
     
@@ -451,10 +449,11 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     FindElements (elementIds, fence, stmt, dgnDb);
 
     // Turn camera back on
-#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
-    viewController->SetCameraOn (wasCameraOn);
-    viewport.SynchWithViewController (false);
-#endif
+    if (wasCameraOn)
+        {
+        cameraViewController->SetCameraOn (wasCameraOn);
+        viewport.SynchWithViewController (false);
+        }
     }
 
 //--------------------------------------------------------------------------------------
