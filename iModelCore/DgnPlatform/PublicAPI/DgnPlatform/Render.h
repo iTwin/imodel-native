@@ -846,7 +846,7 @@ private:
 
 public:
     GeometryParams() {}
-    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId) {}
+    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId.IsValid() ? subCategoryId : DgnCategory::GetDefaultSubCategoryId(categoryId)) {}
 
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
