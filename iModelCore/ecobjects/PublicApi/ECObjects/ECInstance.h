@@ -250,7 +250,7 @@ protected:
     //! Returns the offset to the IECInstance
     virtual size_t              _GetOffsetToIECInstance () const = 0;
     //! Returns whether the property should be serialized
-    virtual ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
 
     //! Check for Null property value
     //! @param[out] isNull          If successful, will contain true if property value is NULL.
