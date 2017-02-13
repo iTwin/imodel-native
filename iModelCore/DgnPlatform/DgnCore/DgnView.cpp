@@ -1031,6 +1031,7 @@ void CameraViewDefinition::_CopyFrom(DgnElementCR el)
     T_Super::_CopyFrom(el);
     auto other = static_cast<CameraViewDefinitionCP>(&el);
     m_camera = other->m_camera;
+    m_isCameraOn = other->m_isCameraOn;
     }
 
 /*---------------------------------------------------------------------------------**//**
