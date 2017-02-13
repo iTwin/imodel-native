@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -259,7 +259,7 @@ WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& respons
             related["instanceId"] = "";
             }
 
-        return WSCreateObjectResult::Success(createdObject);
+        return WSCreateObjectResult::Success({HttpStringBody::Create(Json::FastWriter::ToString(createdObject))});
         }
     return WSCreateObjectResult::Error(response);
     }
@@ -273,7 +273,7 @@ WSUpdateObjectResult WebApiV1::ResolveUpdateObjectResponse(HttpResponse& respons
         {
         return WSUpdateObjectResult::Error(response);
         }
-    return WSUpdateObjectResult::Success();
+    return WSUpdateObjectResult::Success({});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1036,9 +1036,9 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
-            return WSUpdateObjectResult::Success();
+            return WSDeleteObjectResult::Success();
             }
-        return WSUpdateObjectResult::Error(httpResponse);
+        return WSDeleteObjectResult::Error(httpResponse);
         });
     }
 
@@ -1064,7 +1064,7 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
-            return WSUpdateFileResult::Success();
+            return WSUpdateFileResult::Success({});
             }
         return WSUpdateFileResult::Error(httpResponse);
         });

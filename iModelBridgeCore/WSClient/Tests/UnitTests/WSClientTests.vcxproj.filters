@@ -158,6 +158,7 @@
     <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -328,6 +329,7 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

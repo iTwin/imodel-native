@@ -2,7 +2,7 @@
 #
 #     $Source: Client/Client.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -14,13 +14,13 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 #--------------------------------------------------------------------------------------
 ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                         \
                     $(ClientMkiPublicApiDir)ObjectId.h                           \
-                    $(ClientMkiPublicApiDir)Response/WSCreateObjectResponse.h    \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h            \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h           \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h         \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h         \
                     $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h         \
-                    $(ClientMkiPublicApiDir)WSChangeset.h                 \
+                    $(ClientMkiPublicApiDir)Response/WSUploadResponse.h          \
+                    $(ClientMkiPublicApiDir)WSChangeset.h                        \
                     $(ClientMkiPublicApiDir)WSClient.h                           \
                     $(ClientMkiPublicApiDir)WSError.h                            \
                     $(ClientMkiPublicApiDir)WSInfo.h                             \
@@ -94,8 +94,6 @@ $(o)WSQuery$(oext)                          : $(ClientMkiSourceDir)WSQuery.cpp $
 $(o)WSRepository$(oext)                     : $(ClientMkiSourceDir)WSRepository.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WSRepositoryClient$(oext)               : $(ClientMkiSourceDir)WSRepositoryClient.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)WSCreateObjectResponse$(oext)           : $(ClientMkiSourceDir)Response/WSCreateObjectResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WSFileResponse$(oext)                   : $(ClientMkiSourceDir)Response/WSFileResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

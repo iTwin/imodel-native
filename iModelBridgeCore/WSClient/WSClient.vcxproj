@@ -160,7 +160,6 @@
     <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
     <ClCompile Include="Connect\Passport.cpp" />
-    <ClCompile Include="Client\Response\WSCreateObjectResponse.cpp" />
     <ClCompile Include="Client\Response\WSFileResponse.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReaderV1.cpp" />
@@ -295,6 +294,7 @@
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSChangeset.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
@@ -321,7 +321,6 @@
     <ClInclude Include="PublicAPI\WebServices\Licensing\MobileTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSCreateObjectResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV1.h" />

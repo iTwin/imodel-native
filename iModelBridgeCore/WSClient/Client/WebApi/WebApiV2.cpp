@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -231,7 +231,7 @@ WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(HttpResponse& respons
     {
     if (HttpStatus::Created == response.GetHttpStatus())
         {
-        return WSCreateObjectResult::Success(response.GetBody().AsJson());
+        return WSCreateObjectResult::Success({response.GetContent()->GetBody()});
         }
     return WSCreateObjectResult::Error(response);
     }
@@ -243,7 +243,7 @@ WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(HttpResponse& respons
     {
     if (HttpStatus::OK == response.GetHttpStatus())
         {
-        return WSUpdateObjectResult::Success();
+        return WSUpdateObjectResult::Success({});
         }
     return WSUpdateObjectResult::Error(response);
     }
@@ -609,9 +609,9 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
-            return WSUpdateObjectResult::Success();
+            return WSDeleteObjectResult::Success();
             }
-        return WSUpdateObjectResult::Error(httpResponse);
+        return WSDeleteObjectResult::Error(httpResponse);
         });
     }
 
@@ -652,7 +652,7 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == response.GetHttpStatus())
             {
-            finalResult->SetSuccess();
+            finalResult->SetSuccess({});
             return;
             }
 
@@ -683,7 +683,7 @@ ICancellationTokenPtr ct
 
             if (confirmationId.empty())
                 {
-                finalResult->SetSuccess();
+                finalResult->SetSuccess({});
                 return;
                 }
 
@@ -696,7 +696,7 @@ ICancellationTokenPtr ct
                     finalResult->SetError(response);
                     return;
                     }
-                finalResult->SetSuccess();
+                finalResult->SetSuccess({});
                 });
             });
         })

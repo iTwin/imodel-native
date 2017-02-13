@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -419,11 +419,9 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
                 return SUCCESS;
                 };
 
-            //! TODO: return HttpBody from WSCreateObjectResult
-            rapidjson::Document rapidJsonBody;
-            JsonUtil::ToRapidJson(objectsResult.GetValue().GetObject(), rapidJsonBody);
-
-            if (SUCCESS != changeset->ExtractNewIdsFromResponse(rapidJsonBody, handler))
+            rapidjson::Document jsonBody;
+            objectsResult.GetValue().GetJson(jsonBody);
+            if (SUCCESS != changeset->ExtractNewIdsFromResponse(jsonBody, handler))
                 {
                 SetError();
                 return;
@@ -632,7 +630,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(ChangeGroupPtr chang
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, false);
 
         m_ds->GetClient()->SendDeleteObjectRequest(revision->GetObjectId(), guard)
-            ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
+            ->Then(m_ds->GetCacheAccessThread(), [=] (WSDeleteObjectResult& result)
             {
             if (!result.IsSuccess())
                 {

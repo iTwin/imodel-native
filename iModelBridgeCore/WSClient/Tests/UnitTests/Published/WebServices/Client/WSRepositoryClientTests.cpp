@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1135,7 +1135,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2F
                 }
             })");
 
-    EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    Json::Value jsonBody;
+    response.GetValue().GetJson(jsonBody);
+    EXPECT_EQ(expectedObject, jsonBody);
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
@@ -1157,9 +1159,8 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     ASSERT_TRUE(response.IsSuccess());
 
     // Assert
-    auto a = response.GetValue().GetObject().toStyledString();
     rapidjson::Document responseJson;
-    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+    response.GetValue().GetJson(responseJson);
 
     bmap<ObjectId, ObjectId> ids;
     EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
@@ -1200,7 +1201,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJ
     auto response = client->SendCreateObjectRequest(creationJson)->GetResult();
 
     ASSERT_TRUE(response.IsSuccess());
-    EXPECT_EQ(responseObject, response.GetValue().GetObject());
+    Json::Value jsonBody;
+    response.GetValue().GetJson(jsonBody);
+    EXPECT_EQ(responseObject, jsonBody);
     }
 
 #ifdef USE_GTEST
