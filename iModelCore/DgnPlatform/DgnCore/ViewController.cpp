@@ -456,6 +456,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     SetFocusDistance(focusDistance);
     SetOrigin(viewOrg);
     SetExtents(viewDelta);
+    SetCameraOn(true);
     SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
@@ -1065,6 +1066,7 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     DPoint3d origin;
     origin.SumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
 
+    SetCameraOn(true);
     SetEyePoint(eyePoint);
     SetRotation(rotation);
     SetFocusDistance(focusDist);

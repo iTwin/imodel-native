@@ -327,7 +327,13 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
     if (!spatialView.IsValid())
         return nullptr;
 
-    return new NonVisibleViewport (nullptr, *spatialView->LoadViewController());
+    ViewControllerPtr viewController = spatialView->LoadViewController();
+
+    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
+    if (nullptr != cameraViewController)
+        cameraViewController->GetCameraViewDefinition().SetCameraOn(false);
+
+    return new NonVisibleViewport (nullptr, *viewController);
     }
     
 //--------------------------------------------------------------------------------------
