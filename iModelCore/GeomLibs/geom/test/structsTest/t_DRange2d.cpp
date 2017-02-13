@@ -160,7 +160,7 @@ void arcSweepCheck(double degree, double sweep)
     //                                  Angle::FromDegrees(degree).Sin(),
     //                                  Angle::FromDegrees(degree + sweep).Cos(),
     //                                  Angle::FromDegrees(degree + sweep).Sin());
-    if (abs(sweep) >= 360)
+        if (::fabs(sweep) >= 360)
         {
         Check::Near(range.low.x, -1);
         Check::Near(range.low.y, -1);
