@@ -738,7 +738,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
             if (relECClassIdPropMap != nullptr)
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
             }
-    //    }
+        }
         
     return SUCCESS;
     }
