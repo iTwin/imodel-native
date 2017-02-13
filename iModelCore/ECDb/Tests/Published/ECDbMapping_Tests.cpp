@@ -3131,6 +3131,77 @@ TEST_F(ECDbMappingTestFixture, Overflow_UpdateComplexTypes)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
+    {
+    std::vector<SchemaItem> testItems;
+
+    testItems.push_back(SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' >"
+        "    <BaseClass>Model</BaseClass>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+        "    </ECCustomAttributes>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..N)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", false, "ForeignKey End of a relationship mapped to a Joined Table, doesn't allow the strength to be 'embedding'."));
+
+    testItems.push_back(SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' >"
+        "    <BaseClass>Model</BaseClass>"
+        "    <ECProperty propertyName='Prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='referencing' direction='Forward'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+        "         <OnDeleteAction>Cascade</OnDeleteAction>"
+        "        </ForeignKeyConstraint>"
+        "    </ECCustomAttributes>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..N)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", false, "The ForeignKeyConstraintCA can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'."));
+
+    AssertSchemaImport(testItems, "ForeignKeyOnJoinedTable.ecdb");
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
