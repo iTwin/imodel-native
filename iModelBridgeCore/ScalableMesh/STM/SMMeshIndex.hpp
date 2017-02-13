@@ -3871,6 +3871,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<bpair<double, int>> metadata;
     DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
+    size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -3880,8 +3881,32 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
-            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength()) extentOfBiggestPoly = polyExtent;
-            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly)) polyInclusion = true;
+            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
+                {
+                extentOfBiggestPoly = polyExtent;
+                indexOfBiggestPoly = polys.size() - 1;
+                }
+            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly))
+                {
+                bool allInPoly = true;
+                for (auto&pt : polys.back())
+                    {
+                    if (!polyExtent.IsContainedXY(pt)) allInPoly = false;
+                    }
+                if (allInPoly)
+                    {
+                    auto curvePtr = ICurvePrimitive::CreateLineString(polys.back());
+                    auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+                    auto outerCurvePtr = ICurvePrimitive::CreateLineString(polys[indexOfBiggestPoly]);
+                    auto outerCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, outerCurvePtr);
+
+                    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *outerCurveVectorPtr);
+                    if (!intersection.IsNull())
+                        polyInclusion = true;
+                    }
+                }
+
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);
