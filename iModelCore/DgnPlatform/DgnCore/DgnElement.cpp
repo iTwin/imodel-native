@@ -752,7 +752,7 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingGraphicPtr DrawingGraphic::Create(GeometricModel2dCR model, DgnCategoryId categoryId)
+DrawingGraphicPtr DrawingGraphic::Create(GraphicalModel2dCR model, DgnCategoryId categoryId)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::DrawingGraphic::GetHandler());
@@ -764,6 +764,43 @@ DrawingGraphicPtr DrawingGraphic::Create(GeometricModel2dCR model, DgnCategoryId
         }
 
     return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+NestedTypeLocation2dPtr NestedTypeLocation2d::Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR nestedType, DPoint2dCR location)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::NestedTypeLocation2d::GetHandler());
+    DgnClassId relClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_NestedTypeLocation2dRefersToType);
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
+        return nullptr;
+
+    NestedTypeLocation2dPtr nestedTypeLocation = new NestedTypeLocation2d(CreateParams(db, model.GetModelId(), classId, categoryId));
+    if (!nestedTypeLocation.IsValid())
+        return nullptr;
+
+    ICurvePrimitivePtr point = ICurvePrimitive::CreateLine(DSegment3d::From(location, location));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*nestedTypeLocation);
+    if (!point.IsValid() || !builder.IsValid() || !builder->Append(*point))
+        return nullptr;
+
+    if (BentleyStatus::SUCCESS != builder->Finish(*nestedTypeLocation))
+        return nullptr;
+
+    nestedTypeLocation->SetNestedType(nestedType.GetElementId(), relClassId);
+    nestedTypeLocation->SetLocation(location);
+    return nestedTypeLocation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalType2dCPtr NestedTypeLocation2d::GetNestedType() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalType2d>(GetNestedTypeId());
     }
 
 //=======================================================================================
@@ -3010,9 +3047,9 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypeRecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
     {
-    return GetDgnDb().Elements().Get<TypeRecipeElement>(GetRecipeId());
+    return GetDgnDb().Elements().Get<RecipeElement>(GetRecipeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3034,17 +3071,17 @@ DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalTypeRecipeCPtr PhysicalType::GetRecipe() const
+PhysicalRecipeCPtr PhysicalType::GetRecipe() const
     {
-    return GetDgnDb().Elements().Get<PhysicalTypeRecipe>(GetRecipeId());
+    return GetDgnDb().Elements().Get<PhysicalRecipe>(GetRecipeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode PhysicalTypeRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalTypeRecipe, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalRecipe, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3066,17 +3103,17 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicalTypeRecipe2dCPtr GraphicalType2d::GetRecipe() const
+GraphicalRecipe2dCPtr GraphicalType2d::GetRecipe() const
     {
-    return GetDgnDb().Elements().Get<GraphicalTypeRecipe2d>(GetRecipeId());
+    return GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetRecipeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GraphicalTypeRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalTypeRecipe2d, *model.GetModeledElement(), name);
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalRecipe2d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**

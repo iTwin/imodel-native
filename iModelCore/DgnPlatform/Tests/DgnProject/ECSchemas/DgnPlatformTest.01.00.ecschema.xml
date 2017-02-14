@@ -263,8 +263,8 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TestPhysicalTypeRecipe">
-        <BaseClass>bis:PhysicalTypeRecipe</BaseClass>
+    <ECEntityClass typeName="TestPhysicalRecipe">
+        <BaseClass>bis:PhysicalRecipe</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -277,8 +277,8 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TestGraphicalTypeRecipe2d">
-        <BaseClass>bis:GraphicalTypeRecipe2d</BaseClass>
+    <ECEntityClass typeName="TestGraphicalRecipe2d">
+        <BaseClass>bis:GraphicalRecipe2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

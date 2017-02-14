@@ -50,9 +50,9 @@
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
-#define DPTEST_CLASS_TestPhysicalTypeRecipe "TestPhysicalTypeRecipe"
+#define DPTEST_CLASS_TestPhysicalRecipe "TestPhysicalRecipe"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
-#define DPTEST_CLASS_TestGraphicalTypeRecipe2d "TestGraphicalTypeRecipe2d"
+#define DPTEST_CLASS_TestGraphicalRecipe2d "TestGraphicalRecipe2d"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 #define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
@@ -413,27 +413,27 @@ struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestPhysicalTypeRecipe : Dgn::PhysicalTypeRecipe
+struct TestPhysicalRecipe : Dgn::PhysicalRecipe
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTypeRecipe, Dgn::PhysicalTypeRecipe)
-    friend struct TestPhysicalTypeRecipeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, Dgn::PhysicalRecipe)
+    friend struct TestPhysicalRecipeHandler;
 
 protected:
-    explicit TestPhysicalTypeRecipe(CreateParams const& params) : T_Super(params) {}
+    explicit TestPhysicalRecipe(CreateParams const& params) : T_Super(params) {}
 
 public:
-    static RefCountedPtr<TestPhysicalTypeRecipe> Create(Dgn::DefinitionModelR, Utf8CP name);
+    static RefCountedPtr<TestPhysicalRecipe> Create(Dgn::DefinitionModelR, Utf8CP name);
 };
 
-typedef RefCountedPtr<TestPhysicalTypeRecipe> TestPhysicalTypeRecipePtr;
-typedef RefCountedCPtr<TestPhysicalTypeRecipe> TestPhysicalTypeRecipeCPtr;
+typedef RefCountedPtr<TestPhysicalRecipe> TestPhysicalRecipePtr;
+typedef RefCountedCPtr<TestPhysicalRecipe> TestPhysicalRecipeCPtr;
 
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestPhysicalTypeRecipeHandler : Dgn::dgn_ElementHandler::PhysicalTypeRecipe
+struct TestPhysicalRecipeHandler : Dgn::dgn_ElementHandler::PhysicalRecipe
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTypeRecipe, TestPhysicalTypeRecipe, TestPhysicalTypeRecipeHandler, Dgn::dgn_ElementHandler::PhysicalTypeRecipe, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, TestPhysicalRecipe, TestPhysicalRecipeHandler, Dgn::dgn_ElementHandler::PhysicalRecipe, )
 };
 
 //=======================================================================================
@@ -471,27 +471,27 @@ struct TestGraphicalType2dHandler : Dgn::dgn_ElementHandler::GraphicalType2d
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestGraphicalTypeRecipe2d : Dgn::GraphicalTypeRecipe2d
+struct TestGraphicalRecipe2d : Dgn::GraphicalRecipe2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalTypeRecipe2d, Dgn::GraphicalTypeRecipe2d)
-    friend struct TestGraphicalTypeRecipe2dHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, Dgn::GraphicalRecipe2d)
+    friend struct TestGraphicalRecipe2dHandler;
 
 protected:
-    explicit TestGraphicalTypeRecipe2d(CreateParams const& params) : T_Super(params) {}
+    explicit TestGraphicalRecipe2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    static RefCountedPtr<TestGraphicalTypeRecipe2d> Create(Dgn::DefinitionModelR, Utf8CP name);
+    static RefCountedPtr<TestGraphicalRecipe2d> Create(Dgn::DefinitionModelR, Utf8CP name);
 };
 
-typedef RefCountedPtr<TestGraphicalTypeRecipe2d> TestGraphicalTypeRecipe2dPtr;
-typedef RefCountedCPtr<TestGraphicalTypeRecipe2d> TestGraphicalTypeRecipe2dCPtr;
+typedef RefCountedPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dPtr;
+typedef RefCountedCPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dCPtr;
 
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestGraphicalTypeRecipe2dHandler : Dgn::dgn_ElementHandler::GraphicalTypeRecipe2d
+struct TestGraphicalRecipe2dHandler : Dgn::dgn_ElementHandler::GraphicalRecipe2d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalTypeRecipe2d, TestGraphicalTypeRecipe2d, TestGraphicalTypeRecipe2dHandler, Dgn::dgn_ElementHandler::GraphicalTypeRecipe2d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, TestGraphicalRecipe2d, TestGraphicalRecipe2dHandler, Dgn::dgn_ElementHandler::GraphicalRecipe2d, )
 };
 
 //=======================================================================================

@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalType; struct PhysicalTypeRecipe; struct GraphicalType2d; struct GraphicalTypeRecipe2d; struct Session;
+    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct NestedTypeLocation2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -2433,7 +2433,28 @@ public:
     //! Create a DrawingGraphic from CreateParams.
     static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
     //! Create an instance of a DrawingGraphic by specifying the model and category
-    DGNPLATFORM_EXPORT static DrawingGraphicPtr Create(GeometricModel2dCR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static DrawingGraphicPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE NestedTypeLocation2d : GraphicalElement2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_NestedTypeLocation2d, GraphicalElement2d)
+    friend struct dgn_ElementHandler::NestedTypeLocation2d;
+
+protected:
+    DgnDbStatus SetNestedType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("NestedType", graphicalTypeId, relClassId);}
+    DgnDbStatus SetLocation(DPoint2dCR location) {return SetPropertyValue("Location", location);}
+    explicit NestedTypeLocation2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static NestedTypeLocation2dPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR type, DPoint2dCR location);
+    DgnElementId GetNestedTypeId() const {return GetPropertyValueId<DgnElementId>("NestedType");}
+    DPoint2d GetLocation() const {return GetPropertyValueDPoint2d("Location");}
+    DGNPLATFORM_EXPORT GraphicalType2dCPtr GetNestedType() const;
 };
 
 //=======================================================================================
@@ -2731,34 +2752,34 @@ protected:
 public:
     //! Set the recipe for this TypeDefinitionElement
     //! @param[in] recipeId The DgnElementId of the recipe to be associated with this TypeDefinitionElement
-    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of TypeIsDerivedFromRecipe
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of TypeDefinitionHasRecipe
     DgnDbStatus SetRecipe(DgnElementId recipeId, ECN::ECClassId relClassId) {return SetPropertyValue("Recipe", recipeId, relClassId);}
 
     //! Get the DgnElementId of the recipe for this TypeDefinitionElement
     //! @return Will be invalid if there is no recipe associated with this TypeDefinitionElement
     DgnElementId GetRecipeId() const {return GetPropertyValueId<DgnElementId>("Recipe");}
 
-    //! Get the TypeRecipeElement for this TypeDefinitionElement
-    //! @return Will be invalid if there is no TypeRecipeElement associated with this TypeDefinitionElement
-    DGNPLATFORM_EXPORT TypeRecipeElementCPtr GetRecipe() const;
+    //! Get the RecipeElement for this TypeDefinitionElement
+    //! @return Will be invalid if there is no RecipeElement associated with this TypeDefinitionElement
+    DGNPLATFORM_EXPORT RecipeElementCPtr GetRecipe() const;
 };
 
 //=======================================================================================
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/17
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypeRecipeElement : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE RecipeElement : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
 
 protected:
-    virtual PhysicalTypeRecipeCP _ToPhysicalTypeRecipe() const {return nullptr;}
-    virtual GraphicalTypeRecipe2dCP _ToGraphicalTypeRecipe2d() const {return nullptr;}
-    explicit TypeRecipeElement(CreateParams const& params) : T_Super(params) {}
+    virtual PhysicalRecipeCP _ToPhysicalRecipe() const {return nullptr;}
+    virtual GraphicalRecipe2dCP _ToGraphicalRecipe2d() const {return nullptr;}
+    explicit RecipeElement(CreateParams const& params) : T_Super(params) {}
 
 public:
-    PhysicalTypeRecipeCP ToPhysicalTypeRecipe() const {return _ToPhysicalTypeRecipe();}             //!< more efficient substitute for dynamic_cast<PhysicalTypeRecipeCP>(el)
-    GraphicalTypeRecipe2dCP ToGraphicalTypeRecipe2d() const {return _ToGraphicalTypeRecipe2d();}    //!< more efficient substitute for dynamic_cast<GraphicalTypeRecipe2dCP>(el)
+    PhysicalRecipeCP ToPhysicalRecipe() const {return _ToPhysicalRecipe();}             //!< more efficient substitute for dynamic_cast<PhysicalRecipeCP>(el)
+    GraphicalRecipe2dCP ToGraphicalRecipe2d() const {return _ToGraphicalRecipe2d();}    //!< more efficient substitute for dynamic_cast<GraphicalRecipe2dCP>(el)
 
     DgnDbStatus SetOutputCategory(DgnCategoryId categoryId) {return SetPropertyValue("OutputCategory", static_cast<int64_t>(categoryId.GetValue()));}
     DgnCategoryId GetOutputCategoryId() const {return DgnCategoryId(GetPropertyValueUInt64("OutputCategory"));}
@@ -2783,26 +2804,26 @@ public:
     //! Create a DgnCode for a PhysicalType element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
 
-    //! Get the PhysicalTypeRecipe for this PhysicalType
-    //! @return Will be invalid if there is no PhysicalTypeRecipe associated with this PhysicalType
-    DGNPLATFORM_EXPORT PhysicalTypeRecipeCPtr GetRecipe() const;
+    //! Get the PhysicalRecipe for this PhysicalType
+    //! @return Will be invalid if there is no PhysicalRecipe associated with this PhysicalType
+    DGNPLATFORM_EXPORT PhysicalRecipeCPtr GetRecipe() const;
 };
 
 //=======================================================================================
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/17
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalTypeRecipe : TypeRecipeElement
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalRecipe : RecipeElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalTypeRecipe, TypeRecipeElement)
-    friend struct dgn_ElementHandler::PhysicalTypeRecipe;
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalRecipe, RecipeElement)
+    friend struct dgn_ElementHandler::PhysicalRecipe;
 
 protected:
-    PhysicalTypeRecipeCP _ToPhysicalTypeRecipe() const override {return this;}
-    explicit PhysicalTypeRecipe(CreateParams const& params) : T_Super(params) {}
+    PhysicalRecipeCP _ToPhysicalRecipe() const override {return this;}
+    explicit PhysicalRecipe(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Create a DgnCode for a PhysicalTypeRecipe element within the scope of the specified model
+    //! Create a DgnCode for a PhysicalRecipe element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
 };
 
@@ -2822,26 +2843,26 @@ public:
     //! Create a DgnCode for a GraphicalType2d element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
 
-    //! Get the GraphicalTypeRecipe2d for this GraphicalType2d
-    //! @return Will be invalid if there is no GraphicalTypeRecipe2d associated with this GraphicalType2d
-    DGNPLATFORM_EXPORT GraphicalTypeRecipe2dCPtr GetRecipe() const;
+    //! Get the GraphicalRecipe2d for this GraphicalType2d
+    //! @return Will be invalid if there is no GraphicalRecipe2d associated with this GraphicalType2d
+    DGNPLATFORM_EXPORT GraphicalRecipe2dCPtr GetRecipe() const;
 };
 
 //=======================================================================================
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/17
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GraphicalTypeRecipe2d : TypeRecipeElement
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalRecipe2d : RecipeElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GraphicalTypeRecipe2d, TypeRecipeElement)
-    friend struct dgn_ElementHandler::GraphicalTypeRecipe2d;
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GraphicalRecipe2d, RecipeElement)
+    friend struct dgn_ElementHandler::GraphicalRecipe2d;
 
 protected:
-    virtual GraphicalTypeRecipe2dCP _ToGraphicalTypeRecipe2d() const {return this;}
-    explicit GraphicalTypeRecipe2d(CreateParams const& params) : T_Super(params) {}
+    virtual GraphicalRecipe2dCP _ToGraphicalRecipe2d() const {return this;}
+    explicit GraphicalRecipe2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Create a DgnCode for a GraphicalTypeRecipe2d element within the scope of the specified model
+    //! Create a DgnCode for a GraphicalRecipe2d element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
 };
 

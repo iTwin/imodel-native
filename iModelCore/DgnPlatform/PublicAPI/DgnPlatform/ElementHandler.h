@@ -147,6 +147,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for NestedTypeLocation2d
+    struct EXPORT_VTABLE_ATTRIBUTE NestedTypeLocation2d : Geometric2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_NestedTypeLocation2d, Dgn::NestedTypeLocation2d, NestedTypeLocation2d, Geometric2d, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for RoleElement
     struct EXPORT_VTABLE_ATTRIBUTE Role : Element
     {
@@ -207,10 +213,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for PhysicalTypeRecipe
-    struct EXPORT_VTABLE_ATTRIBUTE PhysicalTypeRecipe : Definition
+    //! The ElementHandler for PhysicalRecipe
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalRecipe : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalTypeRecipe, Dgn::PhysicalTypeRecipe, PhysicalTypeRecipe, Definition, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalRecipe, Dgn::PhysicalRecipe, PhysicalRecipe, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GraphicalType2d
@@ -219,10 +225,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalType2d, Dgn::GraphicalType2d, GraphicalType2d, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for GraphicalTypeRecipe2d
-    struct EXPORT_VTABLE_ATTRIBUTE GraphicalTypeRecipe2d : Definition
+    //! The ElementHandler for GraphicalRecipe2d
+    struct EXPORT_VTABLE_ATTRIBUTE GraphicalRecipe2d : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalTypeRecipe2d, Dgn::GraphicalTypeRecipe2d, GraphicalTypeRecipe2d, Definition, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalRecipe2d, Dgn::GraphicalRecipe2d, GraphicalRecipe2d, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for Subject
