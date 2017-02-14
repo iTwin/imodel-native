@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Azure/AzureBlobStorageClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,22 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 // WebServices Client API for connecting to Azure blob storage.
 //--------------------------------------------------------------------------------------+
 typedef std::shared_ptr<struct IAzureBlobStorageClient> IAzureBlobStorageClientPtr;
-typedef AsyncResult<void, HttpError> AzureResult;
+typedef std::shared_ptr<struct AzureBlobStorageClient> AzureBlobStorageClientPtr;
+typedef AsyncResult<struct AzureFileResponse, HttpError> AzureResult;
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AzureFileResponse
+    {
+    private:
+        Utf8String m_eTag;
+
+    public:
+        AzureFileResponse() {};
+        AzureFileResponse(Utf8String eTag) : m_eTag(eTag) {};
+        Utf8String GetETag() const { return m_eTag; };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Andrius.Zonys   01/2016
@@ -58,6 +73,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
 
     private:
         AzureBlobStorageClient(IHttpHandlerPtr customHandler);
+        static AzureResult ResolveFinalResponse(HttpResponseCR httpResponse);
         AsyncTaskPtr<AzureResult> SendChunkAndContinue
             (
             Utf8StringCR url,
@@ -85,11 +101,12 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             };
 
         //! @param[in] customHandler - custom http handler for testing purposes.
-        WSCLIENT_EXPORT static std::shared_ptr<AzureBlobStorageClient> Create
+        WSCLIENT_EXPORT static AzureBlobStorageClientPtr Create
             (
             IHttpHandlerPtr customHandler = nullptr
             );
 
+        //! Download file from Azure blob
         WSCLIENT_EXPORT AsyncTaskPtr<AzureResult> SendGetFileRequest
             (
             Utf8StringCR url,
@@ -98,6 +115,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        //! Update file in Azure blob. Does chunked upload in blocks.
         WSCLIENT_EXPORT AsyncTaskPtr<AzureResult> SendUpdateFileRequest
             (
             Utf8StringCR url,

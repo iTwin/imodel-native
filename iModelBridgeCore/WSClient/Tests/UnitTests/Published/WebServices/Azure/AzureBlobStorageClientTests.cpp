@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Azure/AzureBlobStorageClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AzureBlobStorageClientTests.h"
@@ -26,11 +26,12 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
         EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
 
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "FooBoo"}});
         });
 
-    auto response = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", fileName)->GetResult();
-    EXPECT_TRUE(response.IsSuccess());
+    auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", fileName)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)
@@ -62,12 +63,14 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSu
         {
         EXPECT_STREQ("SASUrl&comp=blocklist", request.GetUrl().c_str());
         EXPECT_STREQ("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList><Latest>MDAwMDA=</Latest><Latest>MDAwMDE=</Latest><Latest>MDAwMDI=</Latest></BlockList>", request.GetRequestBody()->AsString().c_str());
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "FooBoo"}});
         });
 
     BeFileName fileName = StubFileWithSize(chunkSize * 3 - 200); // two 4MB chunks and one smaller.
 
-    EXPECT_TRUE(client->SendUpdateFileRequest("SASUrl", fileName)->GetResult().IsSuccess());
+    auto result = client->SendUpdateFileRequest("SASUrl", fileName)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_ReturnsError)
@@ -92,5 +95,6 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_R
 
     BeFileName fileName = StubFileWithSize(chunkSize * 3 - 200); // two 4MB chunks and one smaller.
 
-    EXPECT_FALSE(client->SendUpdateFileRequest("SASUrl", fileName)->GetResult().IsSuccess());
+    auto result = client->SendUpdateFileRequest("SASUrl", fileName)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
     }

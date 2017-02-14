@@ -2,7 +2,7 @@
 |
 |     $Source: Azure/AzureBlobStorageClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -17,27 +17,22 @@ const uint32_t AzureBlobStorageClient::Timeout::Transfer::Upload = 30;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAzureBlobStorageClient::~IAzureBlobStorageClient()
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Andrius.Zonys   01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 AzureBlobStorageClient::AzureBlobStorageClient(IHttpHandlerPtr customHandler) :
 m_customHandler(customHandler)
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<AzureBlobStorageClient> AzureBlobStorageClient::Create
-(
-IHttpHandlerPtr customHandler
-)
+IAzureBlobStorageClient::~IAzureBlobStorageClient()
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Andrius.Zonys   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AzureBlobStorageClientPtr AzureBlobStorageClient::Create(IHttpHandlerPtr customHandler)
     {
-    return std::shared_ptr<AzureBlobStorageClient>(new AzureBlobStorageClient(customHandler));
+    return AzureBlobStorageClientPtr(new AzureBlobStorageClient(customHandler));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -60,6 +55,17 @@ ICancellationTokenPtr           ct
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AzureResult AzureBlobStorageClient::ResolveFinalResponse(HttpResponseCR httpResponse)
+    {
+    if (!httpResponse.IsSuccess())
+        return AzureResult::Error(httpResponse);
+
+    return AzureResult::Success({httpResponse.GetHeaders().GetETag()});
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendGetFileRequest
@@ -76,12 +82,9 @@ ICancellationTokenPtr ct
     SetCommonRequestOptions(request, HttpRequest::ResumeTransfer, AzureBlobStorageClient::Timeout::Transfer::FileDownload, progressCallback, ct);
 
     return request.PerformAsync()
-        ->Then<AzureResult>([=] (HttpResponse& httpResponse)
+        ->Then<AzureResult>([=] (HttpResponseCR httpResponse)
         {
-        if (httpResponse.IsSuccess ())
-            return AzureResult::Success();
-        else
-            return AzureResult::Error(httpResponse);
+        return ResolveFinalResponse(httpResponse);
         });
     }
 
@@ -92,7 +95,7 @@ AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendChunkAndContinue
 (
 Utf8StringCR url,
 Utf8String blockIds,
-HttpBodyPtr httpBody,
+HttpBodyPtr body,
 uint64_t fileSize,
 uint64_t chunkSize,
 int chunkNumber,
@@ -114,28 +117,25 @@ ICancellationTokenPtr ct
 
     HttpRequest request(blockUrl, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-    request.SetRequestBody(HttpRangeBody::Create(httpBody, chunkSize * chunkNumber, bytesTo));
+    request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
     SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
     std::shared_ptr<AzureResult> finalResult = std::make_shared<AzureResult>();
     return request.PerformAsync()
-        ->Then([=] (const HttpResponse& httpResponse)
+        ->Then([=] (HttpResponseCR httpResponse)
         {
         if (!httpResponse.IsSuccess())
             {
-            finalResult->SetError (httpResponse);
+            finalResult->SetError(httpResponse);
             return;
             }
 
         if (chunkNumber + 1 < ceil((double) fileSize / chunkSize))
             {
-            SendChunkAndContinue(url, blockIds, httpBody, fileSize, chunkSize, chunkNumber + 1, progressCallback, ct)
+            SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, chunkNumber + 1, progressCallback, ct)
                 ->Then([=] (const AzureResult& result)
                 {
-                if (result.IsSuccess())
-                    finalResult->SetSuccess ();
-                else
-                    finalResult->SetError(result.GetError());
+                *finalResult = result;
                 });
             return;
             }
@@ -148,12 +148,9 @@ ICancellationTokenPtr ct
         SetCommonRequestOptions(finalRequest, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
         finalRequest.PerformAsync()
-            ->Then([=] (const HttpResponse& httpResponse)
+            ->Then([=] (HttpResponseCR httpResponse)
             {
-            if (httpResponse.IsSuccess())
-                finalResult->SetSuccess();
-            else
-                finalResult->SetError (httpResponse);
+            *finalResult = ResolveFinalResponse(httpResponse);
             });
         })->Then<AzureResult>([=]
             {
@@ -172,21 +169,21 @@ HttpRequest::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    BeFile beFile;
-    beFile.Open(filePath, BeFileAccess::Read);
+    BeFile file;
+    file.Open(filePath, BeFileAccess::Read);
 
     uint64_t fileSize;
-    if (BeFileStatus::Success != beFile.GetSize(fileSize))
+    if (BeFileStatus::Success != file.GetSize(fileSize))
         {
         HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid file.")), "", ConnectionStatus::None, HttpStatus::BadRequest);
         return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error(HttpError(response)));
         }
-    beFile.Close();
+    file.Close();
 
     uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
 
-    HttpBodyPtr httpBody = HttpFileBody::Create(filePath);
+    HttpBodyPtr body = HttpFileBody::Create(filePath);
     Utf8String blockIds = "";
 
-    return SendChunkAndContinue(url, blockIds, httpBody, fileSize, chunkSize, 0, progressCallback, ct);
+    return SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, 0, progressCallback, ct);
     }
