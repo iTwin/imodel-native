@@ -592,7 +592,9 @@ void Tile::Draw(DrawArgsR args, int depth) const
 
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
         DPoint3d center = args.GetTileCenter(*this);
-        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+
+        static double   s_minPixelSizeAtPoint = 1.0E-3;
+        double          pixelSize = radius / std::max (s_minPixelSizeAtPoint : args.m_context.GetPixelSizeAtPoint(&center));
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 

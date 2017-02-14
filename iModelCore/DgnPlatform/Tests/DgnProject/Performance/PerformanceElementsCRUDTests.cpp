@@ -679,3 +679,72 @@ TEST_F(ElementLocksPerformanceTest, Briefcase_Insert1000) { TestInsert(true, 100
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementLocksPerformanceTest, Briefcase_Insert10000) { TestInsert(true, 10000); }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct QueryCategoryIdPerformanceTest : PerformanceElementsCRUDTestFixture
+{
+    DgnSubCategoryId    m_subCategoryId;
+
+    void Initialize();
+
+    template<typename T> double TimeStatement(T& stmt, uint32_t nIterations, Utf8CP sql)
+        {
+        StopWatch timer(true);
+        for (uint32_t i = 0; i < nIterations; i++)
+            {
+            stmt.BindId(1, m_subCategoryId);
+            stmt.Step();
+            stmt.Reset();
+            }
+
+        double elapsed = timer.GetCurrentSeconds();
+#if defined(QUERY_CATEGORY_ID_OUTPUT_RESULTS)
+        printf("%f seconds to execute %u iterations of statement: %s\n", elapsed, nIterations, sql);
+#endif
+        return elapsed;
+        }
+
+    double TimeSQLStatement(Utf8CP sql, uint32_t nIterations) { return TimeStatement(*m_db->GetCachedStatement(sql), nIterations, sql); }
+    double TimeECSqlStatement(Utf8CP ecsql, uint32_t nIterations)
+        {
+        auto stmt = m_db->GetPreparedECSqlStatement(ecsql);
+        double elapsed = TimeStatement(*stmt, nIterations, ecsql);
+
+#if defined(QUERY_CATEGORY_ID_EXPLAIN_QUERY)
+        printf("Native SQL: %s\n", stmt->GetNativeSql());
+        auto exp1 = m_db->ExplainQuery(stmt->GetNativeSql(), false),
+             exp2 = m_db->ExplainQuery(stmt->GetNativeSql(), true);
+
+        printf("ExplainQuery(false) =>\n%s\n", exp1.c_str());
+        printf("ExplainQuery(true) => \n%s\n", exp2.c_str());
+#endif
+
+        return elapsed;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryCategoryIdPerformanceTest::Initialize()
+    {
+    SetUpTestDgnDb(L"QueryCategoryIdsPerf.ibim", PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0);
+    m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(m_defaultCategoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryCategoryIdPerformanceTest, TimeStatements)
+    {
+    Initialize();
+
+    constexpr uint32_t nIterations = 500000;
+    TimeSQLStatement("SELECT ParentId from bis_Element WHERE Id=?", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=?", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? ECSqlOptions NoECClassIdFilter", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=?", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=? ECSqlOptions NoECClassIdFilter", nIterations);
+    }
+
