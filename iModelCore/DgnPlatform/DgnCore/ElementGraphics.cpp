@@ -1132,6 +1132,180 @@ void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicBuilderR grap
         }
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void WireframeGeomUtil::DrawControlPolygon(MSBsplineSurfaceCR surface, Render::GraphicBuilderR graphic, Render::GraphicParamsCR params)
+    {
+    bvector<DPoint3d> poles;
+
+    surface.GetUnWeightedPoles(poles);
+
+    if (0 == poles.size())
+        return;
+
+    Render::GraphicParams poleParams(params);
+
+    poleParams.SetWidth(params.GetWidth()+5);
+    graphic.ActivateGraphicParams(poleParams, nullptr);
+
+    graphic.AddPointString((int) poles.size(), &poles.front());
+
+    poleParams.SetWidth(1);
+    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    graphic.ActivateGraphicParams(poleParams, nullptr);
+
+    size_t uNumPoles = surface.GetNumUPoles();
+    size_t vNumPoles = surface.GetNumVPoles();
+
+    bvector<DPoint3d> uPoles;
+    bvector<DPoint3d> vPoles;
+
+    uPoles.resize(surface.uParams.closed ? uNumPoles+1 : uNumPoles);
+    vPoles.resize(surface.vParams.closed ? vNumPoles+1 : vNumPoles);
+
+    for (size_t i=0; i < vNumPoles; i++)
+        {
+        memcpy(&uPoles[0], &poles.at(uNumPoles * i), uNumPoles * sizeof(DPoint3d));
+
+        if (surface.uParams.closed)
+            uPoles[uNumPoles] = uPoles[0];
+
+        graphic.AddLineString((int) uPoles.size(), &uPoles.front());
+        }
+
+    for (size_t i=0; i < uNumPoles; i++)
+        {
+        for (size_t j=0; j < vNumPoles; j++)
+            vPoles[j] = poles.at(i + j * uNumPoles);
+
+        if (surface.vParams.closed)
+            vPoles[vNumPoles] = vPoles[0];
+
+        graphic.AddLineString((int) vPoles.size(), &vPoles.front());
+        }
+
+    graphic.ActivateGraphicParams(params, nullptr); // Restore params...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                                      Brien.Bastings  03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+static void computeInterpolationCurveTangentPoints(DPoint3dR startTangentPt, DPoint3dR endTangentPt, MSInterpolationCurveCR curve)
+    {
+    startTangentPt.SumOf(curve.fitPoints[0], curve.startTangent, curve.fitPoints[0].Distance(curve.fitPoints[1]) * 0.5);
+    endTangentPt.SumOf(curve.fitPoints[curve.params.numPoints-1], curve.endTangent, curve.fitPoints[curve.params.numPoints-1].Distance(curve.fitPoints[curve.params.numPoints-2]) * 0.5);
+    }
+    
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::GraphicBuilderR graphic, Render::GraphicParamsCR params, bool is3d, double zDepth)
+    {
+    MSInterpolationCurveCP fitCurve = curve.GetInterpolationCurveCP();
+
+    if (nullptr != fitCurve)
+        {
+        Render::GraphicParams poleParams(params);
+
+        poleParams.SetWidth(params.GetWidth()+5);
+        graphic.ActivateGraphicParams(poleParams, nullptr);
+
+        if (!is3d)
+            {
+            bvector<DPoint3d> points;
+
+            for (int32_t i=0; i < fitCurve->params.numPoints; i++)
+                {
+                DPoint3d pt = fitCurve->fitPoints[i];
+
+                pt.z = zDepth;
+                points.push_back(pt);
+                }
+
+            graphic.AddPointString((int) points.size(), &points.front());
+            }
+        else
+            {
+            graphic.AddPointString(fitCurve->params.numPoints, fitCurve->fitPoints);
+            }
+
+        if (!fitCurve->params.isPeriodic)
+            {
+            DPoint3d tangentPoints[4];
+
+            // Compute interpolation curve tangent points...
+            computeInterpolationCurveTangentPoints(tangentPoints[0], tangentPoints[2], *fitCurve);
+
+            if (!is3d)
+                {
+                tangentPoints[0].z = zDepth;
+                tangentPoints[2].z = zDepth;
+                }
+
+            // Display fat dots for start/end tangent points...
+            graphic.AddPointString(1, &tangentPoints[0]);
+            graphic.AddPointString(1, &tangentPoints[2]);
+
+            // Display dotted style start/end tangent lines...
+            poleParams.SetWidth(1);
+            poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+            graphic.ActivateGraphicParams(poleParams, nullptr);
+
+            tangentPoints[1] = fitCurve->fitPoints[0];
+            tangentPoints[3] = fitCurve->fitPoints[fitCurve->params.numPoints-1];
+
+            if (!is3d)
+                {
+                tangentPoints[1].z = zDepth;
+                tangentPoints[3].z = zDepth;
+                }
+
+            graphic.AddLineString(2, &tangentPoints[0]);
+            graphic.AddLineString(2, &tangentPoints[2]);
+            }
+
+        graphic.ActivateGraphicParams(params, nullptr); // Restore params...
+        return;
+        }
+
+    MSBsplineCurveCP bcurve = curve.GetProxyBsplineCurveCP();
+
+    if (nullptr == bcurve || bcurve->GetIntOrder() < 1 || bcurve->GetIntNumPoles() < 1)
+        return;
+
+    bvector<DPoint3d> poles;
+
+    bcurve->GetUnWeightedPoles(poles);
+
+    if (0 == poles.size())
+        return;
+
+    if (!is3d)
+        {
+        for (DPoint3dR pt : poles)
+            pt.z = zDepth;
+        }
+
+    Render::GraphicParams poleParams(params);
+
+    poleParams.SetWidth(params.GetWidth()+5);
+    graphic.ActivateGraphicParams(poleParams, nullptr);
+
+    graphic.AddPointString((int) poles.size(), &poles.front());
+    
+    poleParams.SetWidth(1);
+    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    graphic.ActivateGraphicParams(poleParams, nullptr);
+
+    if (bcurve->params.closed)
+        poles.push_back(poles.front());
+
+    graphic.AddLineString((int) poles.size(), &poles.front());
+
+    graphic.ActivateGraphicParams(params, nullptr); // Restore params...
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/12
 +===============+===============+===============+===============+===============+======*/

@@ -3682,6 +3682,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
@@ -3736,6 +3740,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
