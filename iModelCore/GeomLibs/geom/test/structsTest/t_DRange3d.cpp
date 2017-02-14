@@ -302,3 +302,127 @@ TEST(DRange3d, SquaredDistance)
     squareDistanceOfRanges(DRange3d::From(DPoint3d::From(0.1, 6.5, 2), DPoint3d::From(6, 3, 7)),
                            DRange3d::From(DPoint3d::From(2, 4, 2.3), DPoint3d::From(5.5, 6, 7.1)));
     }
+
+void checkParallelPerpPlanes(DPoint3d pntlow, DPoint3d pnthigh) 
+    {
+    DRange3d range3d = DRange3d::From(pntlow, pnthigh);
+    DPoint3d originArray[6], normalArray[6];
+    range3d.Get6Planes(originArray, normalArray);
+    int j = 0;
+    for (int i = 0; i < 6; i++) 
+        {
+        if (abs(i-j) == 3 || abs(i-j) == 0)
+            Check::Parallel(DVec3d::From(normalArray[j]), DVec3d::From(normalArray[i]), "Planes are not Parallel");
+        else
+            Check::Perpendicular(DVec3d::From(normalArray[j]), DVec3d::From(normalArray[i]), "Planes are not Perpendicular");
+        if (i == 5)
+            {
+            i = 0; j = j + 1;
+            if (j == 6)
+                break;
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, GetPlanes)
+    {
+    checkParallelPerpPlanes(DPoint3d::From(1, 1, 1), DPoint3d::From(8, 8, 9));
+    checkParallelPerpPlanes(DPoint3d::From(2, 1, 4), DPoint3d::From(0.8, 8, 2));
+    checkParallelPerpPlanes(DPoint3d::From(1, 5.3, 1), DPoint3d::From(0, 8, -1));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, RangeRestrict)
+    {
+    DRange3d range = DRange3d::From(DPoint3d::From(3, 4, 1), DPoint3d::From(7, 6, 4));
+    range.RestrictToMinMax(DRange3d::From(DPoint3d::From(5, 5, 5), DPoint3d::From(9, 9, 9)),
+                           DRange3d::From(DPoint3d::From(6, 6, 6), DPoint3d::From(8, 8, 8)));
+    Check::ExactDouble(range.low.x, 6);
+    Check::ExactDouble(range.low.y, 6);
+    Check::ExactDouble(range.low.z, 6);
+    Check::ExactDouble(range.high.x, 8);
+    Check::ExactDouble(range.high.y, 8);
+    Check::ExactDouble(range.high.z, 8);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, RangeScaling)
+    {
+    DRange3d range = DRange3d::From(DPoint3d::From(3, 4, 1), DPoint3d::From(7, 6, 4));
+    double vol0 = range.Volume();
+    range.ScaleAboutCenter(DRange3d::From(DPoint3d::From(3, 4, 1), DPoint3d::From(7, 6, 4)), 2);
+    double vol1 = range.Volume();
+    Check::True(vol1 > vol0);
+    }
+
+void checkIntersection(DRange3d range0, DRange3d range1) 
+    {
+    DRange3d rangeIntersected;
+    rangeIntersected.IntersectionOf(range0, range1);
+    if (range0.IntersectsWith(range1))
+        Check::True(rangeIntersected.Volume() <= range0.Volume());
+    else
+        return;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, RangesIntersection)
+    {
+    checkIntersection(DRange3d::From(DPoint3d::From(4, 4, 4), DPoint3d::From(6, 6, 6)),
+                      DRange3d::From(DPoint3d::From(5, 5, 5), DPoint3d::From(7, 7, 7)));
+    checkIntersection(DRange3d::From(DPoint3d::From(0.4, 0.4, 0.4), DPoint3d::From(0.6, 0.6, 0.6)),
+                      DRange3d::From(DPoint3d::From(0.5, 0.5, 0.5), DPoint3d::From(0.7, 0.7, 0.7)));
+    checkIntersection(DRange3d::From(DPoint3d::From(-1, -0.5, -3), DPoint3d::From(6, 6, 6)),
+                      DRange3d::From(DPoint3d::From(1, 0, 3), DPoint3d::From(7, 7, 7)));
+    checkIntersection(DRange3d::From(DPoint3d::From(-4, -4, -4), DPoint3d::From(-6, -6, -6)),
+                      DRange3d::From(DPoint3d::From(-5, -5, -5), DPoint3d::From(-7, -7, -7)));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, PointInRange)
+    {
+    DRange3d range0 = DRange3d::From(DPoint3d::From(4, 4, 4), DPoint3d::From(6, 6, 6));
+    Check::True(range0.IsContained(DPoint3d::From(5, 5, 5), 3));
+    Check::False(range0.IsContained(DPoint3d::From(6, 6, 7), 3));
+    Check::True(range0.IsContained(DPoint3d::From(6, 6, 7), 2));
+    Check::False(range0.IsContained(DPoint3d::From(5, 7, 7), 2));
+    Check::True(range0.IsContained(DPoint3d::From(5, 7, 7), 1));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, MaxCoordinate)
+    {
+    DRange3d range0 = DRange3d::From(DPoint3d::From(2, 3, -1), DPoint3d::From(6, -5, -7));
+    Check::ExactDouble(range0.MaxAbs(), 7);
+    DRange1d range1d = range0.GetComponentDRange1d(1);
+    Check::ExactDouble(range1d.low, -5);
+    Check::ExactDouble(range1d.high, 3);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange3d, IndependentIntersection)
+    {
+    Transform transf = Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(90).Radians()));
+    DPoint3d points[2] = { DPoint3d::From(6, 6, 6), DPoint3d::From(9, 9, 9) };
+    double weihgts[2] = { 1, 1 };
+    
+    DRange3d range0 = DRange3d::From(transf, points, weihgts, 2);
+    
+    DPoint3d points2[2] = { DPoint3d::From(-9, 6, 6), DPoint3d::From(-6, 9, 9) };
+    DRange3d range1 = DRange3d::From(points2, weihgts, 2);
+    Check::ExactDouble(range1.low.x, range0.low.x);
+    Check::ExactDouble(range1.low.y, range0.low.y);
+    Check::ExactDouble(range1.low.z, range0.low.z);
+    Check::ExactDouble(range1.high.x, range0.high.x);  
+    Check::ExactDouble(range1.high.y, range0.high.y);
+    Check::ExactDouble(range1.high.z, range0.high.z);
+    }

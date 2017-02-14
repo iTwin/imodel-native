@@ -1328,3 +1328,24 @@ TEST(DPoint3d, Rotate360)
 
     Check::True(DPoint3d::AlmostEqualXY(pnt3d, pnt3dExp));
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPoint3d, ToleranceScale)
+    {
+    DPoint3d pnt1 = DPoint3d::From(4, 5, 2);
+    DPoint3d pnt2 = DPoint3d::From(2, 2, 3);
+    DPoint3d point3[2] = { DPoint3d::From(4, 5, 2), DPoint3d::From(2, 2, 3) };
+    DPoint3d point, pointOrginal;
+
+    double tol = 0.025;
+    point.AddToArray(point3, 2, DPoint3d::From(tol, tol, tol));
+    pointOrginal.DifferenceOf(pnt2, pnt1);
+    point.DifferenceOf(point3[1], point3[0]);
+    Check::Near(point, pointOrginal);
+
+    bvector<DPoint3d> pntLeft = { pnt1, pnt2 };
+    bvector<DPoint3d> pntRight = { point3[0], point3[1] };
+
+    DPoint3d::AlmostEqualXY(pntLeft, pntRight, tol);
+    }

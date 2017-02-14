@@ -29,6 +29,12 @@ TEST_F(DPoint4d_F, DotProduct)
     Check::Near (47.64, point4D.DotProductXYZ(refPoint));
     Check::Near (68.08, point4D.DotProductXYW(refPoint));
     Check::Near (80.4, point4D.DotProduct(refPoint));
+
+    DPoint4d point4d = DPoint4d::From(4, 6, 8, 1);
+    double prod0 = point4d.DotProduct(DPoint4d::From(0.2, 0.2, -0.4, 2));
+
+    double prod1 = point4d.DotProduct(DPoint3d::From(0.2, 0.2, -0.4), 2);
+    Check::Near(prod0, prod1);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    12/16
@@ -253,4 +259,65 @@ TEST_F(DPoint4d_F, IsEqualCheck)
     Check::False(dpnt2.IsEqual(dpnt1));
     Check::False(dpnt2.IsEqual(dpnt1, 0.1));
     Check::True(dpnt2.IsEqual(dpnt1, 0.1, 1.0));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST_F(DPoint4d_F, MatrixInverseMultiple)
+    {
+    DMatrix4d mat = DMatrix4d::FromRowValues(1, 0, 0, 0,
+                                             0, 1, 0, 0,
+                                             0, 0, 1, 0,
+                                             0, 0, 0, 1);
+    DMatrix4d matInv;
+    matInv.QrInverseOf(mat);
+    DMatrix4d mat4d[2] = { mat,  matInv};
+    DPoint4d point4d = DPoint4d::FromMultiply(mat4d, DPoint4d::From(4, 7, 4, 1));
+    Check::Near(point4d, DPoint4d::From(4, 7, 4, 1));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST_F(DPoint4d_F, AlmostEqual)
+    {
+    bvector< DPoint4d> dataA = { DPoint4d::From(0.3,0.5,-0.3,0),
+                                 DPoint4d::From(2, 1, 4, 1),
+                                 DPoint4d::From(8, 1, 2, 3), };
+    
+    bvector< DPoint4d> dataB = { DPoint4d::From(0.354,0.5,-0.3,0.0040),
+                                 DPoint4d::From(2, 1.052, 4, 1.099),
+                                 DPoint4d::From(8.00000002, 1, 2, 3.01133), };
+    DPoint4d pnt = DPoint4d::From(0, 0, 0, 0);
+    bool flage = pnt.AlmostEqual(dataA, dataB, 0.055, 0.1);
+    Check::True(flage);
+    flage = pnt.AlmostEqualReversed(dataA, dataB, 0.055, 0.1);
+    Check::False(flage);
+    dataA = { DPoint4d::From(8, 1, 2, 3),
+              DPoint4d::From(2, 1, 4, 1),
+              DPoint4d::From(0.3,0.5,-0.3,0), };
+    flage = pnt.AlmostEqualReversed(dataA, dataB, 0.055, 0.1);
+    Check::True(flage);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST_F(DPoint4d_F, RealSquaredDistance)
+    {
+    DPoint4d pont4= DPoint4d::From(0.4, 2, 99, 2);
+    double sqrdDistance, sqrdDistance4d;
+    pont4.RealDistanceSquared(&sqrdDistance, DPoint3d::From(4, 3, 1));
+
+    pont4.RealDistanceSquared(&sqrdDistance4d, DPoint4d::From(DPoint3d::From(4, 3, 1), 1));
+    Check::Near(sqrdDistance, sqrdDistance4d);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST_F(DPoint4d_F, RealSquaredDistanceXY)
+    {
+    DPoint4d pont = DPoint4d::From(0.3, 0.4, 0.9, 1);
+    double sqrd;
+    pont.RealDistanceSquaredXY(&sqrd, DPoint3d::From(4.2, 2.3, 5.9));
+    double distance2d = DPoint2d::From(0.3, 0.4).DistanceSquared(DPoint2d::From(4.2, 2.3));
+    Check::Near(sqrd, distance2d);
     }
