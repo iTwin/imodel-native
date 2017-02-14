@@ -929,7 +929,7 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
     auto now = BeTimePoint::Now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime(), m_root.m_clip.get());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 

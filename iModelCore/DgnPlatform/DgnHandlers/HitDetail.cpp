@@ -330,10 +330,9 @@ size_t GeomDetail::GetPointCount() const
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
             return m_primitive->GetLineStringCP ()->size();
-
-        default:
-            return 0;
         }
+
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,10 +354,9 @@ bool GeomDetail::IsValidEdgeHit() const
         case HitGeomType::Curve:
         case HitGeomType::Arc:
             return true;
-
-        default:
-            return false;
         }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,10 +364,7 @@ bool GeomDetail::IsValidEdgeHit() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
     {
-    if (!m_primitive.IsValid())
-        return NULL;
-
-    return m_primitive->GetId();
+    return m_primitive.IsValid() ? m_primitive->GetId() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

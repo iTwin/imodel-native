@@ -197,8 +197,8 @@ void DgnModelTests::TestRangeIndex2d()
 
     m_db->SaveChanges();
 
-    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
-    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -1.0);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 1.0);
     AxisAlignedBox3d box(low, high);
 
     AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();

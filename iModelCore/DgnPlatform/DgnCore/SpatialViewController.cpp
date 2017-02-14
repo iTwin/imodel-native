@@ -352,7 +352,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
         for (auto& thisScore : results.m_scores)
             {
             if (rangeQuery.TestElement(thisScore.second))
-                context.VisitElement(thisScore.second, true);
+                context.VisitElement(thisScore.second);
 
             if (context.CheckStop())
                 return;
@@ -366,7 +366,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     while ((thisId = rangeQuery.StepRtree()).IsValid())
         {
         if (rangeQuery.TestElement(thisId))
-            context.VisitElement(thisId, true);
+            context.VisitElement(thisId);
 
         if (context.CheckStop())
             return;
@@ -736,7 +736,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
         {
         if (!scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
-            if (SUCCESS != context.VisitElement(thisId, true)) // no, draw it now
+            if (SUCCESS != context.VisitElement(thisId)) // no, draw it now
                 {
                 m_abortedElement = thisId;
                 break;
