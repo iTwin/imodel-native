@@ -450,7 +450,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    _AdjustAspectRatio(*viewController, true);
+    _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
 
     DPoint3d origin = viewController->GetOrigin();
     DVec3d   delta  = viewController->GetDelta();
@@ -474,8 +474,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
             DRange3d  extents = m_viewController->GetViewedExtents(*this);
             if (extents.IsEmpty())
                 {
-                extents.low.z = -DgnUnits::OneMillimeter();
-                extents.high.z = DgnUnits::OneMillimeter();
+                extents.low.z = -Render::Target::Get2dFrustumDepth();
+                extents.high.z = Render::Target::Get2dFrustumDepth();
                 }
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
@@ -489,7 +489,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             m_isCameraOn = false;
             if (cameraView)
                 {
-                m_isCameraOn = true;
+                m_isCameraOn = cameraView->IsCameraOn();
                 m_camera = cameraView->GetCameraViewDefinition().GetCameraR();
 
                 if (m_isCameraOn)
@@ -520,8 +520,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
         {
         AlignWithRootZ();
 
-        delta.z  =  200. * DgnUnits::OneMillimeter();
-        origin.z = -100. * DgnUnits::OneMillimeter();
+        delta.z  =  2. * Render::Target::Get2dFrustumDepth();
+        origin.z = -Render::Target::Get2dFrustumDepth();
         }
 
     m_viewOrg   = origin;
@@ -609,7 +609,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     delta.DifferenceOf(range.high, range.low);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
         WorldToNpc(npcPts, worldPts, 2);
@@ -736,7 +736,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         // get current box in view coordinates
         Frustum frust = GetFrustum(DgnCoordSystem::View, false);
@@ -808,7 +808,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
         centerNpc.Init(.5, .5, .5);
@@ -1243,6 +1243,8 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
+    if (m_renderTarget.IsValid())
+        m_renderTarget->_QueueReset();
     }
 
 /*---------------------------------------------------------------------------------**//**

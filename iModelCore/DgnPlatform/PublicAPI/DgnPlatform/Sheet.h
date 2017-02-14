@@ -65,6 +65,7 @@ public:
 
     //! Create a DgnCode for a Sheet in the specified DocumentListModel
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+
     //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
@@ -73,11 +74,10 @@ public:
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
     //! @param[in] scale The sheet's drawing scale
-    //! @param[in] height The sheet height (meters)
-    //! @param[in] width The sheet width (meters)
+    //! @param[in] size The sheet size (meters)
     //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name);
 
     //! Creates a new Sheet in the specified InformationModel
     //! @param[in] model The model where the Sheet element will be inserted by the caller.
@@ -215,9 +215,6 @@ namespace Attachment
         //! Get the transfrom from sheet view coordinates to attachment view coordinates
         Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
 
-        //! Convert a point from tile world coordinates to sheet world coordinates (z will always be 0).
-        DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
-
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetClips() const {return m_attachClips.get();}
     };
@@ -243,6 +240,19 @@ namespace Attachment
         Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
         ~Tree(){ClearAllTiles();}
         DgnElementId GetAttachmentId() const {return m_attachmentId;}
+    };
+
+    struct Tile2dModel : TileTree::QuadTree::Tile
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
+        using T_Super::Tile;
+
+        bool _HasChildren() const override {return false;}
+        ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return nullptr;}
+        void _DrawGraphics(TileTree::DrawArgsR args, int depth) const override;
+        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
+        Tree& GetTree() const {return (Tree&) m_root;}
     };
 
     struct Tile : TileTree::QuadTree::Tile
@@ -279,16 +289,19 @@ struct ViewController : Dgn::ViewController2d
     friend SheetViewDefinition;
 
 protected:
+    DPoint2d m_size;
     bvector<Attachment::TreePtr> m_attachments;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
     void _CreateTerrain(TerrainContextR context) override;
     void _LoadState() override;
-    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
+    FitComplete _ComputeFitRange(FitContextR context) override;
 
-    //! Construct a new SheetViewController.
-    ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
+    void DrawBorder(ViewContextR context) const;
+    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
+    AxisAlignedBox3d GetSheetExtents() const {return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0));}
+    ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
 };
 
 //=======================================================================================

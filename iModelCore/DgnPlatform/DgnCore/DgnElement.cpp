@@ -290,6 +290,48 @@ DgnDbStatus DgnElement::_OnInsert()
     return GetModel()->_OnInsertElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
+    {
+    Utf8String out = GetDisplayLabel() + delimiter;
+
+    auto geom = ToGeometrySource();
+    if (geom)
+        {
+        DgnCategoryCPtr category = DgnCategory::Get(GetDgnDb(), geom->GetCategoryId());
+        if (category.IsValid())
+            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue() + delimiter;
+        }
+
+    return out + DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + GetModel()->GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
+    {
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_GraphicDerivedFromElement) " WHERE SourceECInstanceId=?");
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    statement->BindId(1, GetElementId());
+    return BE_SQLITE_ROW == statement->Step() ? GetDgnDb().Elements().GetElement(statement->GetValueId<DgnElementId>(0)) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const 
+    {
+    auto source = GetDerivedFromElement();
+    return source.IsValid() ? source->GetInfoString(delimiter) : T_Super::_GetInfoString(delimiter);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -415,11 +457,12 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
         return nullptr;
 
-    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId));
+    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
     if (description && *description)
         subject->SetDescription(description);
 
@@ -1382,16 +1425,17 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
     if (ecOther.IsValid())
         {
+        bool sameClass = (GetElementClassId() == other.GetElementClassId());
         // Note that we are NOT necessarily going to call _SetPropertyValue on each property. 
         // If the subclass needs to validate specific auto-handled properties even during copying, then it
         // must override _CopyFrom and validate after the copy is done.
-        // TRICKY: Don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
+        // TRICKY: If copying between elements of the same class, don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
         //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
         //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
-        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, false, ecOther.CalculateBytesUsed());
+        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, !sameClass, ecOther.CalculateBytesUsed());
         if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
             {
-            if (GetElementClassId() != other.GetElementClassId())
+            if (!sameClass)
                 ecThis.CopyDataBuffer(ecOther, true);
             else
                 ecThis.CopyFromBuffer(ecOther);
@@ -1842,8 +1886,9 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -halfMillimeter();
-    range.high.z = halfMillimeter();
+
+    range.low.z = -Render::Target::Get2dFrustumDepth(); // this makes range span all possible display priority values
+    range.high.z = Render::Target::Get2dFrustumDepth();
 
     return range;
     }

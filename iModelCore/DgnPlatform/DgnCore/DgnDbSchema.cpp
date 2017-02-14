@@ -59,7 +59,7 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
     : m_props(eclass.GetProperties(true)), m_end(m_props.end()), m_stype(stype), m_wantCustomHandledProps(wantCustomHandledProps)
     {
     #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
-        printf("%s\n", eclass.GetName().c_str());
+        printf("%s\n", eclass.GetFullName());
         printf("---------------------------\n");
     #endif
     m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
@@ -85,7 +85,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
                     {
                     ECN::ECValue v;
                     if (ECN::ECObjectsStatus::Success == ca->GetValue(v, caprop->GetName().c_str()) && !v.IsNull())
-                        printf("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                        printf("\t\t%s=%s\n", caprop->GetName().c_str(), v.ToString().c_str());
                     else
                         printf ("\t\t%s (missing)\n", caprop->GetName().c_str());
                     }
@@ -151,7 +151,7 @@ static void importBisCoreSchema(DgnDbCR db)
     ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
     BeAssert(bisCoreSchema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetDbSchemaModificationToken());
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetECSchemaImportToken());
     BeAssert(status == SUCCESS);
     }
 

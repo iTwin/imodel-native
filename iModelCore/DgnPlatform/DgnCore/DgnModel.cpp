@@ -153,7 +153,7 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnModel::GetName() const
     {
-    // WIP: keep this method around to avoid having to change too much source code.  Use the CodeValue of the modeled element as this model's name.
+    // WIP: keep this method around to avoid having to change too much source code. Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetModeledElement();
     return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
     }
@@ -1321,7 +1321,7 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
     if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
-        modeledElementId = DgnElementId((uint64_t) v.GetLong());
+        modeledElementId = DgnElementId((uint64_t) v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
     DgnModel::CreateParams params(db, classId, modeledElementId, inGuiList);
     return params;
     }
@@ -1461,8 +1461,8 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
                     "DGN_point(g.Origin_X,g.Origin_Y,0),"
                     "DGN_angles(g.Rotation,0,0),"
                     "DGN_bbox("
-                        "g.BBoxLow_X,g.BBoxLow_Y,0,"
-                        "g.BBoxHigh_X,g.BBoxHigh_Y,0))))"
+                        "g.BBoxLow_X,g.BBoxLow_Y,-1,"
+                        "g.BBoxHigh_X,g.BBoxHigh_Y,1))))"
         " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement2d) " As g"
         " WHERE e.ModelId=? AND e.Id=g.ElementId");
 

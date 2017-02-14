@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderMaterial.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -10,20 +10,20 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonRenderMaterial::Load(DgnMaterialId materialId, DgnDbR dgnDb)
+RenderingAssetCP RenderingAsset::Load(DgnMaterialId materialId, DgnDbR dgnDb)
     {
     DgnMaterialCPtr material = DgnMaterial::Get(dgnDb, materialId);
-    return material.IsValid() ? material->GetRenderingAsset(m_value) : ERROR;
+    return material.IsValid() ? &material->GetRenderingAsset() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RgbFactor  JsonRenderMaterial::GetColor(Utf8CP name) const
+RgbFactor  RenderingAsset::GetColor(Utf8CP name) const
     {
     RgbFactor rgb = {0.0, 0.0, 0.0};
 
-    JsonValueCR value = m_value[name];
+    JsonValueCR value = GetValue(name);
     if (value.size() < 3)
         {
         BeAssert(false);
@@ -56,13 +56,13 @@ static DPoint2d getDPoint2dValue(JsonValueCR rootValue, Utf8CP key)
     return point;
     }
 
-DPoint2d JsonRenderMaterial::TextureMap::GetScale() const {return getDPoint2dValue(m_value, RENDER_MATERIAL_PatternScale);}
-DPoint2d JsonRenderMaterial::TextureMap::GetOffset() const {return getDPoint2dValue(m_value, RENDER_MATERIAL_PatternOffset);}
+DPoint2d RenderingAsset::TextureMap::GetScale() const {return getDPoint2dValue(m_value, RENDER_MATERIAL_PatternScale);}
+DPoint2d RenderingAsset::TextureMap::GetOffset() const {return getDPoint2dValue(m_value, RENDER_MATERIAL_PatternOffset);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double JsonRenderMaterial::TextureMap::GetUnitScale(Units units) const
+double RenderingAsset::TextureMap::GetUnitScale(Units units) const
     {
     switch (units)
         {
@@ -87,7 +87,7 @@ double JsonRenderMaterial::TextureMap::GetUnitScale(Units units) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Material::MapMode JsonRenderMaterial::TextureMap::GetMode() const 
+Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const 
     {
     Json::Value const& value = m_value[RENDER_MATERIAL_PatternMapping];
     if (!value.isInt())
@@ -102,7 +102,7 @@ Render::Material::MapMode JsonRenderMaterial::TextureMap::GetMode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonRenderMaterial::TextureMap::Units JsonRenderMaterial::TextureMap::GetUnits() const 
+RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const 
     {
     Json::Value const& value = m_value[RENDER_MATERIAL_PatternScaleMode];
      if (!value.isInt())
@@ -117,22 +117,24 @@ JsonRenderMaterial::TextureMap::Units JsonRenderMaterial::TextureMap::GetUnits()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-Render::Material::Trans2x3 JsonRenderMaterial::TextureMap::GetTransform() const
+Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
     {
     Render::Material::Trans2x3 trans;
 
     for (size_t i=0; i<2; i++)
+        {
         for (size_t j=0; j<3; j++)
             trans.m_val[i][j] = (i==j) ? 1.0 : 0.0;
+        }
     
-    double          angleRadians    = Angle::DegreesToRadians(GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
-    double          cosAngle        = cos(angleRadians);
-    double          sinAngle        = sin(angleRadians);
-    bool            xFlip           = GetBool(RENDER_MATERIAL_PatternFlipU, false);
-    bool            yFlip           = GetBool(RENDER_MATERIAL_PatternFlipV, false);
-    DPoint2d        scale           = GetScale();
-    DPoint2d        offset          = GetOffset();
-    static double   s_minScale      = 1.0E-10;
+    double angleRadians= Angle::DegreesToRadians(GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
+    double cosAngle = cos(angleRadians);
+    double sinAngle = sin(angleRadians);
+    bool xFlip = GetBool(RENDER_MATERIAL_PatternFlipU, false);
+    bool yFlip = GetBool(RENDER_MATERIAL_PatternFlipV, false);
+    DPoint2d scale = GetScale();
+    DPoint2d offset = GetOffset();
+    static double s_minScale = 1.0E-10;
  
     Units units = GetUnits();
     if (Units::Relative != units)
@@ -174,7 +176,7 @@ Render::Material::Trans2x3 JsonRenderMaterial::TextureMap::GetTransform() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId JsonRenderMaterial::TextureMap::GetTextureId() const
+DgnTextureId RenderingAsset::TextureMap::GetTextureId() const
     {
     JsonValueCR textureIdValue = m_value[RENDER_MATERIAL_TextureId];
     return textureIdValue.isNull() ? DgnTextureId() : DgnTextureId(textureIdValue.asUInt64());
@@ -183,9 +185,9 @@ DgnTextureId JsonRenderMaterial::TextureMap::GetTextureId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonRenderMaterial::TextureMap JsonRenderMaterial::GetPatternMap()
+RenderingAsset::TextureMap RenderingAsset::GetPatternMap() const
     {
-    JsonValueCR maps = m_value[RENDER_MATERIAL_Map];
+    JsonValueCR maps = GetValue(RENDER_MATERIAL_Map);
     if (maps.isNull())
         return TextureMap(maps, TextureMap::Type::Pattern); // return invalid value
 
@@ -195,23 +197,20 @@ JsonRenderMaterial::TextureMap JsonRenderMaterial::GetPatternMap()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  JsonRenderMaterial::SetColor(Utf8CP keyword, RgbFactor color)
+void  RenderingAsset::SetColor(Utf8CP keyword, RgbFactor color)
     {
-    Json::Value    colorValue;
-
+    JsonValueR colorValue = GetValueR(keyword);
     colorValue[0] = color.red;
     colorValue[1] = color.green;
     colorValue[2] = color.blue;
-
-    m_value[keyword] = colorValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonRenderMaterial::Relocate(DgnImportContext& context) 
+BentleyStatus RenderingAsset::Relocate(DgnImportContext& context) 
     {
-    JsonRenderMaterial::TextureMap patternMap = GetPatternMap();
+    auto patternMap = GetPatternMap();
     if (!patternMap.IsValid())
         return ERROR;
 
@@ -219,30 +218,29 @@ BentleyStatus JsonRenderMaterial::Relocate(DgnImportContext& context)
     if (!newId.IsValid())
         return ERROR;
 
-    m_value[RENDER_MATERIAL_Map][RENDER_MATERIAL_TextureId] = newId.GetValue();
+    GetValueR(RENDER_MATERIAL_Map)[RENDER_MATERIAL_TextureId] = newId.GetValue();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId JsonRenderMaterial::TextureMap::Relocate(DgnImportContext& context) 
+DgnTextureId RenderingAsset::TextureMap::Relocate(DgnImportContext& context) 
     {
     DgnTextureId thisId = GetTextureId();
     return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
-static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, JsonRenderMaterial::TextureMap::Units units)
+static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, RenderingAsset::TextureMap::Units units)
     {
     for (size_t i=0; i < visitor.NumEdgesThisFace(); i++)
         {
         DPoint2d        param = DPoint2d::From (0.0, 0.0);
 
-        if (JsonRenderMaterial::TextureMap::Units::Relative == units || !visitor.TryGetDistanceParameter (i, param))
+        if (RenderingAsset::TextureMap::Units::Relative == units || !visitor.TryGetDistanceParameter (i, param))
             visitor.TryGetNormalizedParameter (i, param);
 
         uvTransform.Multiply (params[i], param);
@@ -317,7 +315,7 @@ static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR v
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const
+BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const
     {
     Transform           uvTransform = GetTransform().GetTransform();
 

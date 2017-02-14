@@ -1102,8 +1102,8 @@ TEST_F(SchemaVisualizationTests, TestSchemaDiagram)
     bvector<ECSchemaCP> scope;
     scope.push_back(manager.GetECSchema(BIS_ECSCHEMA_NAME));
     scope.push_back(manager.GetECSchema("ECDbMap"));
-    scope.push_back(manager.GetECSchema("ECDb_FileInfo"));
-    scope.push_back(manager.GetECSchema("ECDb_System"));
+    scope.push_back(manager.GetECSchema("ECDbFileInfo"));
+    scope.push_back(manager.GetECSchema("ECDbSystem"));
 
     SchemaDiagramStringBuilder sdb(GetMetaSchema());
     bvector<Utf8String> instanceStrings;
@@ -1151,8 +1151,8 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
     bvector<ECSchemaCP> scope;
     scope.push_back(manager.GetECSchema(BIS_ECSCHEMA_NAME));
     scope.push_back(manager.GetECSchema("ECDbMap"));
-    scope.push_back(manager.GetECSchema("ECDb_FileInfo"));
-    scope.push_back(manager.GetECSchema("ECDb_System"));
+    scope.push_back(manager.GetECSchema("ECDbFileInfo"));
+    scope.push_back(manager.GetECSchema("ECDbSystem"));
 
     ClassDiagramStringBuilder cdb(GetMetaSchema());
     bvector<Utf8String> instanceStrings;

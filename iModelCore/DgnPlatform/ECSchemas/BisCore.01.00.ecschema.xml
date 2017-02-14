@@ -2042,6 +2042,9 @@
     <ECEntityClass typeName="CameraViewDefinition" displayLabel="Camera View Definition" description="A spatial view that shows a perspective projection.">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="IsCameraOn" typeName="boolean" displayLabel="Is Camera On" description="Is the camera actually turned on?">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Eye Point" description="Camera eye point">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>

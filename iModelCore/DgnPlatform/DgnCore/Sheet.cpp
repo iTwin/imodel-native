@@ -58,7 +58,7 @@ DgnCode Sheet::Element::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
+ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoint2dCR size, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(Handlers::Element::GetHandler());
@@ -71,8 +71,8 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, doubl
 
     auto sheet = new Element(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
-    sheet->SetHeight(height);
-    sheet->SetWidth(width);
+    sheet->SetWidth(size.x);
+    sheet->SetHeight(size.y);
     return sheet;
     }
 
@@ -340,7 +340,18 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
         return;
 
     m_renderSystem = renderSys;
-    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    BeAssert(m_viewport.IsValid());
+
+    static bool s_useTiles = false; // debugging - to be removed.
+    if (s_useTiles)
+        {
+        m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
+    else
+        {
+        m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
+            (QuadTree::Tile*) new Tile(*this, QuadTree::TileId(0,0,0), nullptr) : new Tile2dModel(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
     }
 
 //=======================================================================================
@@ -365,6 +376,35 @@ struct SceneReadyTask : ProgressiveTask
         return ProgressiveTask::Completion::Finished; // we're done.
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth) const 
+    {
+    if (!m_graphic.IsValid())
+        {
+        auto vp = GetTree().m_viewport;
+        auto scene = vp->GetViewControllerR().GetScene();
+        if (!scene.IsValid())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        GraphicBranch branch;
+        branch.SetViewFlags(vp->GetViewFlags());
+
+        for (auto& graphic : scene->m_graphics->m_list)
+            branch.Add(*graphic.m_ptr);
+        
+        Transform toNpc;
+        toNpc.InitFrom(*vp->GetWorldToNpcMap(), false);
+        m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
+        }
+
+    args.m_graphics.Add(*m_graphic);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
@@ -433,6 +473,17 @@ bool Attachment::Tree::Pick(PickContext& context)
     return context._ProcessSheetAttachment(*m_viewport);
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/17
+//=======================================================================================
+struct RectanglePoints
+{
+    DPoint2d m_pts[5];
+    RectanglePoints(double x, double y) {memset(m_pts, 0, sizeof(m_pts)); m_pts[1].x=m_pts[2].x=x; m_pts[2].y=m_pts[3].y=y;}
+    operator DPoint2dP() {return m_pts;}
+    operator DPoint2dCP() const {return m_pts;}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -465,16 +516,12 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     // now expand the frustum in one direction so that the view is square (so we can use square tiles)
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
-    m_viewport->SetupFromViewController();
 
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
-    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
-    m_viewport->SetupFromFrustum(frust);
-
-    auto& def=view->GetViewDefinition();
+    auto& def = view->GetViewDefinition();
+    auto& style = def.GetDisplayStyle();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    def.GetDisplayStyle().SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+    style.SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
 
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
@@ -484,27 +531,28 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         env.m_skybox.m_enabled = false;
         }
 
+    m_viewport->SetupFromViewController();
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
+    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    m_viewport->SetupFromFrustum(frust);
+
     // max pixel size is half the length of the diagonal.
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
-    range.low.z = 0;
-    Transform trans = Transform::From(range.low);
+    DPoint3d org = range.low;
+    org.z = 0.0;
+    Transform trans = Transform::From(org);
     trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
     SetLocation(trans);
 
-    trans.form3d[2][2] = m_viewport->GetWorldToNpcMap()->M1.coff[2][2];   // m_toParent is attach NPC -> sheet world. Set z values to sheet NPC.
-    trans.form3d[2][3] = m_viewport->GetWorldToNpcMap()->M1.coff[2][3];
-    m_viewport->m_toParent = trans;
+    bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
+    m_viewport->m_toParent.ScaleMatrixColumns(m_scale.x, m_scale.y, 1.0);
 
     // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
-    DPoint2d clipPts[5];
-    memset(clipPts, 0, sizeof(clipPts)); 
-    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
-    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
-    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(1.0/m_scale.x, 1.0/m_scale.y), 5, false, nullptr, nullptr, nullptr).get());
     
     auto attachClip = attach->GetClip();
     if (attachClip.IsValid())
@@ -516,6 +564,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         }
 
     m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
+
     SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
@@ -544,15 +593,25 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
     {
-    auto model = GetViewedModel();
+    auto model = GetViewedModel();  // get the sheet model for this view
     if (nullptr == model)
         {
-        BeAssert(false);
+        BeAssert(false); // what happened?
         return;
         }
 
-    bvector<TreePtr> attachments;
+    // Get the Sheet::Element to extract the sheet size
+    auto sheetElement = GetDgnDb().Elements().Get<Sheet::Element>(model->GetModeledElementId());
+    if (!sheetElement.IsValid())
+        {
+        BeAssert(false); // this is fatal
+        return;
+        }
+    
+    // save the sheet size in this ViewController
+    m_size.Init(sheetElement->GetWidth(), sheetElement->GetHeight());
 
+    bvector<TreePtr> attachments;
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
@@ -573,6 +632,43 @@ void Sheet::ViewController::_LoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::DrawBorder(ViewContextR context) const
+    {
+    Render::GraphicBuilderPtr border = context.CreateGraphic();
+    RectanglePoints rect(m_size.x, m_size.y);
+    border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, GraphicParams::LinePixels::Solid);
+    border->AddLineString2d(5, rect, 0.0);
+
+    double shadowWidth = .01 * m_size.Distance(DPoint2d::FromZero());
+    double keyValues[] = {0.0, 0.5};
+    ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
+
+    DPoint2d points[7];
+    points[0].y = points[1].y = points[6].y = 0.0;
+    points[0].x = shadowWidth;
+    points[1].x = points[2].x = m_size.x;
+    points[3].x = points[4].x = m_size.x + shadowWidth;
+    points[2].y = points[3].y = m_size.y - shadowWidth;
+    points[4].y = points[5].y = -shadowWidth;
+    points[5].x = points[6].x = shadowWidth;
+
+    GradientSymbPtr gradient = GradientSymb::Create();
+    gradient->SetMode(Render::GradientSymb::Mode::Linear);
+    gradient->SetAngle(-45.0);
+    gradient->SetKeys(2, keyColors, keyValues);
+ 
+    GraphicParams params;
+    params.SetLineColor(keyColors[0]);
+    params.SetGradient(gradient.get());
+    border->ActivateGraphicParams(params);
+
+    border->AddShape2d(7, points, true, 0.0);
+    context.OutputGraphic(*border, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
@@ -583,6 +679,8 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
 
     for (auto& attach : m_attachments)
         attach->Draw(context);
+
+    DrawBorder(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,15 +693,20 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
-
     if (DrawPurpose::Pick != context.GetDrawPurpose())
         return;
 
     for (auto& attach : m_attachments)
-        {
-        if (attach->Pick((PickContext&)context))
-            return;
-        }
+        attach->Pick((PickContext&)context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ViewController::FitComplete Sheet::ViewController::_ComputeFitRange(FitContextR context) 
+    {
+    context.ExtendFitRange(GetSheetExtents());
+    return FitComplete::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,14 +724,3 @@ Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
     return tileToSheet;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d Viewport::ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR attachWorld)
-    {
-    DPoint3d point = WorldToView(attachWorld);
-    GetTransformToSheet(sheetVp).Multiply(point);   
-    point = sheetVp.ViewToWorld(point);
-    point.z = 0.0; // sheets are always 2d
-    return point;
-    }
