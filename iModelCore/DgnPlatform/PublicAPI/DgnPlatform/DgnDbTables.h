@@ -677,11 +677,11 @@ public:
 //=======================================================================================
 struct DgnUnits
 {
-    static double const OneMeter() {return 1.0;}
-    static double const OneKilometer() {return 1000.0 * OneMeter();}
-    static double const OneMillimeter() {return OneMeter() / 1000.0;}
-    static double const OneCentimeter() {return OneMeter() / 100.0;}
-    static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double constexpr OneMeter() {return 1.0;}
+    static double constexpr OneKilometer() {return 1000.0 * OneMeter();}
+    static double constexpr OneMillimeter() {return OneMeter() / 1000.0;}
+    static double constexpr OneCentimeter() {return OneMeter() / 100.0;}
+    static double constexpr DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
 };
 
 //=======================================================================================

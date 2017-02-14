@@ -155,7 +155,7 @@ static void createImageCategory(DgnDbR db)
     appearance.SetTransparency (0);
     appearance.SetDontSnap(true);
     appearance.SetDontLocate(true);
-    appearance.SetDisplayPriority(-65535); // WIP_REDLINE - what is the lowest display priority possible?
+    appearance.SetDisplayPriority(-50); // Use a negative display priority that is not too near the minimim.
     imageCategory.Insert(appearance);
     }
 

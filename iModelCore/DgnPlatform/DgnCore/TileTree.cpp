@@ -201,7 +201,6 @@ BentleyStatus TileLoader::DoReadFromDb()
     return SUCCESS;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
@@ -737,15 +736,9 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
 * Add the Render::Graphics from all tiles that were found from this draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(ViewContextR context)
+void DrawArgs::DrawGraphics(RootR root)
     {
-    ViewFlags flags = context.GetViewFlags();
-    flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.SetShowTextures(true);
-    flags.SetShowVisibleEdges(false);
-    flags.SetShowShadows(false);
-    flags.SetIgnoreLighting(true);
-
+    ViewFlags flags = root._GetDrawViewFlags(m_context);
     DrawBranch(flags, m_graphics, 0.0, "Main");
     DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
     DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
@@ -794,6 +787,20 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewFlags Root::_GetDrawViewFlags(RenderContextCR context) const 
+    {
+    ViewFlags flags = context.GetViewFlags();
+    flags.SetRenderMode(Render::RenderMode::SmoothShade);
+    flags.SetShowTextures(true);
+    flags.SetShowVisibleEdges(false);
+    flags.SetShowShadows(false);
+    flags.SetIgnoreLighting(true);
+    return flags;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVectorCP clips)
@@ -830,7 +837,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
         args.Clear(); // clear graphics/missing from previous attempt
         }
 
-    args.DrawGraphics(context);
+    args.DrawGraphics(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -924,7 +931,7 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
     auto now = BeTimePoint::Now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime(), m_root.m_clip.get());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 
@@ -938,7 +945,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderList
         }
 
     args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
+    args.DrawGraphics(m_root);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 

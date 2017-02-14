@@ -366,75 +366,6 @@ PublisherContext::PublisherContext::Statistics::~Statistics()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModelDeltaCR modelDelta)
-    {
-#ifdef NEEDS_WORK_INCREMENTAL_GENERATE_INSTANCE_SUPPORT
-    TileReader          tileReader;
-    TileMeshList        oldMeshes, newMeshes;
-                                                        
-    if (modelDelta.DoIncremental(m_tile) &&
-        TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
-        return IncrementalStatus::Regenerate;
-
-    bool        geometryRemoved = false;
-    DRange3d    publishedRange = DRange3d::NullRange();
-
-    if (!modelDelta.GetDeleted().empty())
-        for (auto& mesh : oldMeshes)
-            geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
-
-    if (!modelDelta.GetAdded().empty())
-        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), &modelDelta);
-
-    if (newMeshes.empty())
-        {
-        if (!geometryRemoved)
-            {
-            for (auto& oldMesh : oldMeshes)
-                publishedRange.Extend (oldMesh->GetRange());
-
-            m_tile.SetPublishedRange (publishedRange);
-            return IncrementalStatus::UsePrevious;
-            }
-        m_meshes = oldMeshes;
-        }
-    else
-        {
-        // Merge old meshes with new ones.
-        bmap<TileMeshMergeKey, TileMeshPtr>  meshMap;
-    
-        for (auto& oldMesh : oldMeshes)
-            if (!oldMesh->IsEmpty())
-                meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
-
-        for (auto& newMesh : newMeshes)
-            {
-            TileMeshMergeKey    key(*newMesh);
-            auto const&         found = meshMap.find(key);
-
-            if (meshMap.find(key) == meshMap.end())
-                meshMap.Insert (key, newMesh);
-            else
-                found->second->AddMesh (*newMesh);
-            }
-        for (auto& curr : meshMap)
-            {
-            m_meshes.push_back (curr.second);
-            }
-        }
-    for (auto& mesh : m_meshes)
-        publishedRange.Extend (mesh->GetRange());
-
-    m_tile.SetPublishedRange (publishedRange);
-    return IncrementalStatus::Success;
-#else
-    return IncrementalStatus::Regenerate;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     {
     BeAssert (!range.IsNull());
@@ -471,9 +402,7 @@ void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AppendProgramAttribute(Json::Value& program, Utf8CP attrName)
     {
-    Json::Value obj;
-    obj[attrName] = Json::objectValue;
-    program["attributes"].append(obj);
+    program["attributes"].append(attrName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -564,28 +493,7 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    TileModelDeltaCP            modelDelta;
-    PublishableTileGeometry     publishableGeometry;
-
-    if (nullptr != (modelDelta = m_tile.GetModelDelta()))
-        {
-        switch (IncrementalGenerate(*modelDelta))
-            {
-            case IncrementalStatus::UsePrevious:        // There are no changes within this tile - use previously generated tile.
-                return PublisherContext::Status::Success;
-
-            case IncrementalStatus::Regenerate:
-                publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
-                break;
-
-             case IncrementalStatus::Success:
-                break;
-            }
-        }
-    else
-        {
-        publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
-        }
+    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
@@ -794,6 +702,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     FeatureAttributesMap    attributesSet;
     DRange3d                positionRange = DRange3d::NullRange();
 
+    bool validIdsPresent = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
@@ -820,6 +729,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
+        validIdsPresent |= (0 != attributeIndices.back());
         }
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
@@ -850,7 +760,13 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     featureTableData.m_json["POSITION_QUANTIZED"]["byteOffset"] = featureTableData.BinaryDataSize();
     featureTableData.AddBinaryData(quantizedPosition.data(), quantizedPosition.size()*sizeof(uint16_t));
-                  
+
+    if (validIdsPresent)
+        {
+        featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
+        }
+
     featureTableData.PadBinaryDataToBoundary(4);
     if (rotationPresent)
         {
@@ -1990,8 +1906,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental, TextureMode textureMode)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental), m_textureMode(textureMode)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -2060,7 +1976,7 @@ PublisherContext::Status PublisherContext::InitializeDirectories(BeFileNameCR da
         return Status::CantWriteToBaseDirectory;
 
     bool dataDirExists = BeFileName::DoesPathExist(dataDir);
-    if (dataDirExists && !m_publishIncremental && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
+    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
         return Status::CantCreateSubDirectory;
     else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(dataDir))
         return Status::CantCreateSubDirectory;
@@ -2236,18 +2152,6 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PublisherContext::_DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model)
-    {
-    if (!m_publishIncremental)
-        return false;
-
-    dataDirectory = GetDataDirForModel(model);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
@@ -2270,7 +2174,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
 
         WriteModelTileset(*rootTile);
         }
-    else if (!m_publishIncremental)
+    else
         {
         CleanDirectories(GetDataDirForModel(model));
         }
