@@ -14,8 +14,10 @@
     
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PC"/>
+        
+        <!-- N.B. Do NOT add LibType="Static" here. See comments on WebServicesClient-Android-Shim as to why. -->
         <SubPart PartName="WebServicesClient-iOS"/>
-        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
+        <SubPart PartName="WebServicesClient-Android-Shim"/>
     </Part>
     
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
@@ -29,6 +31,20 @@
         <SubPart PartName="WebServicesClient-PublicAPI" LibType="Static"/>
         <SubPart PartName="WebServicesClient-Library" LibType="Static"/>
         <SubPart PartName="WSClient-Xliffs" LibType="Static"/>
+    </Part>
+
+    <!--
+        Cannot directly add a SubPart in WebServicesClient to
+        WebServicesClient-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="WebServicesClient-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
     </Part>
 
     <Part Name="WebServicesClient-Android" OnlyPlatforms="Android*">
