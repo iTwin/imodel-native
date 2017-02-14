@@ -744,5 +744,7 @@ TEST_F(QueryCategoryIdPerformanceTest, TimeStatements)
     TimeSQLStatement("SELECT ParentId from bis_Element WHERE Id=?", nIterations);
     TimeECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=?", nIterations);
     TimeECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? ECSqlOptions NoECClassIdFilter", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=?", nIterations);
+    TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=? ECSqlOptions NoECClassIdFilter", nIterations);
     }
 
