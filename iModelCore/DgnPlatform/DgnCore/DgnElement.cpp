@@ -1832,8 +1832,9 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -halfMillimeter();
-    range.high.z = halfMillimeter();
+
+    range.low.z = -Render::Target::Get2dFrustumDepth(); // this makes range span all possible display priority values
+    range.high.z = Render::Target::Get2dFrustumDepth();
 
     return range;
     }

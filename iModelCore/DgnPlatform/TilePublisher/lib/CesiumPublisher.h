@@ -47,7 +47,6 @@ protected:
     bool                            m_surfacesOnly = false;
     bool                            m_verbose = false;
     bool                            m_overwriteExisting = true;
-    bool                            m_publish = false;
     bool                            m_wantProgressOutput = true;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
@@ -67,7 +66,6 @@ public:
     bool WantProgressOutput() const { return m_wantProgressOutput; }
     GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
-    bool GetIncremental() const { return m_publish; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -124,8 +122,8 @@ protected:
         void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool publishIncremental, bool verbose, TextureMode textureMode, bool wantProgressOutput)
-        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, publishIncremental, textureMode),
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput)
+        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode),
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
@@ -134,7 +132,7 @@ public:
 
     TilesetPublisher(DgnDbR db, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
         : TilesetPublisher(db, viewsToPublish, defaultView, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
-            params.GetDepth(), params.SurfacesOnly(), params.GetIncremental(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
 
     TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
 

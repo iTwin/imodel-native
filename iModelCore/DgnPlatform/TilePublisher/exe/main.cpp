@@ -39,7 +39,6 @@ enum class ParamId
     GlobeTerrain,
     DisplayGlobe,
     NoReplace,
-    Incremental,
     VerboseStatistics,
     TextureMode,
     Invalid,
@@ -254,10 +253,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::NoReplace:
                 m_overwriteExisting = false;
                 break;
-            case ParamId::Incremental:
-                m_publish = true;
-                break;
-
             case ParamId::TextureMode:
                 {
                 WString     textureModeString = arg.m_value;

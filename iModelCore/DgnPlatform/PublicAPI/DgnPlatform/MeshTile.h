@@ -33,9 +33,10 @@ BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
 BENTLEY_RENDER_TYPEDEFS(TileGenerationCache);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
-BENTLEY_RENDER_TYPEDEFS(TileModelDelta);
 BENTLEY_RENDER_TYPEDEFS(TileGeomPart);
 BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
+BENTLEY_RENDER_TYPEDEFS(FeatureAttributes);
+BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -48,7 +49,6 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGenerationCache);
-BENTLEY_RENDER_REF_COUNTED_PTR(TileModelDelta);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeomPart);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -70,18 +70,6 @@ enum class TileGeneratorStatus
     Success = SUCCESS,  //!< Operation successful
     NoGeometry,         //!< Operation produced no geometry
     Aborted,            //!< Operation was aborted - perhaps by user, or caller, or because contents of model changed
-};
-
-//=======================================================================================
-//! Describes the type of entity from which a tile node or mesh was produced.
-//! The IDs of the source entities are recorded in the TileMesh as BeInt64Ids.
-// @bsistruct                                                   Paul.Connelly   10/16
-//=======================================================================================
-enum class TileSource
-{
-    Element,    //!< Geometry in the tile is associated with DgnElementIds
-    Model,      //!< Geometry in the tile is associated with DgnModelIds
-    None,       //!< No IDs are associated with geometry in the tile
 };
 
 //=======================================================================================
@@ -116,25 +104,25 @@ private:
     uint32_t                        m_rasterWidth;
     DgnMaterialId                   m_materialId;
     mutable TileTextureImagePtr     m_textureImage;
+    DgnGeometryClass                m_class = DgnGeometryClass::Primary;
     bool                            m_ignoreLighting;
 
     DGNPLATFORM_EXPORT TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0) { }
-    TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0) {}
+    TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0), m_class(geometryParams.GetGeometryClass()) {}
     TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0) {}
 public:
-    static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
-    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return Create(&graphicParams, &geometryParams, ignoreLighting); }
-    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(graphicParams, geometryParams, ignoreLighting); }
+    static TileDisplayParamsPtr Create() { return new TileDisplayParams(nullptr, nullptr, false); }
+    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(&graphicParams, &geometryParams, false); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
-    static TileDisplayParamsPtr Create(uint32_t fillColor, DgnMaterialId materialId) { return new TileDisplayParams(fillColor, materialId); }
 
     DGNPLATFORM_EXPORT bool operator<(TileDisplayParams const& rhs) const;
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
     DgnMaterialId GetMaterialId() const { return m_materialId; }
+    DgnGeometryClass GetClass() const { return m_class; }
     uint32_t GetFillColor() const { return m_fillColor; }
     uint32_t GetRasterWidth() const { return m_rasterWidth; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }
@@ -145,20 +133,85 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct FeatureAttributes
+{
+private:
+    DgnElementId        m_elementId;
+    DgnSubCategoryId    m_subCategoryId;
+    DgnGeometryClass    m_class;
+
+    bool AreIdsValid() const { BeAssert(m_elementId.IsValid() == m_subCategoryId.IsValid()); return m_elementId.IsValid(); }
+public:
+    FeatureAttributes() : m_class(DgnGeometryClass::Primary) { }
+    FeatureAttributes(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+    FeatureAttributes(DgnElementId elementId, TileDisplayParamsCR params) : FeatureAttributes(elementId, params.GetSubCategoryId(), params.GetClass()) { }
+
+    DgnElementId GetElementId() const { return m_elementId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+    DgnGeometryClass GetClass() const { return m_class; }
+
+    bool operator==(FeatureAttributesCR rhs) const
+        {
+        if (IsUndefined() && rhs.IsUndefined())
+            return true;
+        else
+            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(FeatureAttributesCR rhs) const;
+
+    bool IsDefined() const { BeAssert(AreIdsValid() || DgnGeometryClass::Primary == GetClass()); return AreIdsValid(); }
+    bool IsUndefined() const { return !IsDefined(); }
+};
+
+//=======================================================================================
+//! For a tile, records unique vertex attributes and associates each with an index.
+//! The index is 16 bits because we limit geometry IDs to 0xffff per-tile
+//! Index 0 always corresponds to an undefined attribute.
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct FeatureAttributesMap
+{
+    typedef bmap<FeatureAttributes, uint16_t> Map;
+private:
+    Map     m_map;
+
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+public:
+    DGNPLATFORM_EXPORT FeatureAttributesMap();
+
+    DGNPLATFORM_EXPORT uint16_t GetIndex(FeatureAttributesCR attr);
+    DGNPLATFORM_EXPORT uint16_t GetIndex(TileGeometryCR geom);
+    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
+
+    bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
+    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
+
+    typedef Map::const_iterator const_iterator;
+    typedef const_iterator iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    uint16_t GetCount() const { return static_cast<uint16_t>(size()); }
+};
+
+//=======================================================================================
 //! Represents a mesh instance.
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
 struct TileMeshInstance
 {
 private:
-    DgnElementId        m_instanceId;
+    FeatureAttributes   m_attributes;
     Transform           m_transform;
 
 public:
-    DgnElementId GetId() const { return m_instanceId; }
+    FeatureAttributesCR GetAttributes() const { return m_attributes; }
     TransformCR GetTransform() const { return m_transform; }
-    TileMeshInstance (DgnElementId instanceId , TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
-
+    TileMeshInstance (FeatureAttributesCR attributes, TransformCR transform) : m_attributes(attributes), m_transform(transform) { }
 };  // TileMeshInstance
 
 //=======================================================================================
@@ -229,16 +282,16 @@ public:
 struct TileMesh : RefCountedBase
 {
 private:
-    TileDisplayParamsPtr    m_displayParams;
-    bvector<TileTriangle>   m_triangles;
-    bvector<TilePolyline>   m_polylines;
-    bvector<DPoint3d>       m_points;
-    bvector<DVec3d>         m_normals;
-    bvector<DPoint2d>       m_uvParams;
-    bvector<DgnElementId>   m_entityIds;
-    bool                    m_validIdsPresent;
+    TileDisplayParamsPtr        m_displayParams;
+    bvector<TileTriangle>       m_triangles;
+    bvector<TilePolyline>       m_polylines;
+    bvector<DPoint3d>           m_points;
+    bvector<DVec3d>             m_normals;
+    bvector<DPoint2d>           m_uvParams;
+    bvector<uint16_t>           m_attributes;
+    bool                        m_validIdsPresent = false;
 
-    explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params), m_validIdsPresent(false) { }
+    TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 public:
     static TileMeshPtr Create(TileDisplayParamsPtr& params) { return new TileMesh(params); }
@@ -255,19 +308,21 @@ public:
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<DgnElementId> const& EntityIds() const { return m_entityIds; } //!< Vertex attribute array specifying the ID of the entity(element or model) from which the vertex was produced
+    bvector<uint16_t> const& Attributes() const { return m_attributes; } //!< Vertex attribute array specifying the subcategory, element, and class associated with the vertex
     bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<DgnElementId>& EntityIdsR() { return m_entityIds; }
+    bvector<uint16_t>& AttributesR() { return m_attributes; }
 
     TileTriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
     DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
-    DgnElementId GetEntityId(uint32_t index) const { auto pId = GetMember(m_entityIds, index); return nullptr != pId ? *pId : DgnElementId(); }
-    DgnElementId GetTriangleEntityId(TileTriangleCR triangle) const { return GetEntityId(triangle.m_indices[0]); }
-    DgnElementId GetPolylineEntityId(TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? DgnElementId() : GetEntityId(polyline.GetIndices().front()); }
+
+    uint16_t GetAttributesIndex(uint32_t index) const { auto pAttr = GetMember(m_attributes, index); return nullptr != pAttr ? *pAttr : 0; }
+    uint16_t GetTriangleAttributesIndex(TileTriangleCR triangle) const { return GetAttributesIndex(triangle.m_indices[0]); }
+    uint16_t GetPolylineAttributesIndex(TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? 0 : GetAttributesIndex(polyline.GetIndices().front()); }
+
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     DRange3d GetRange() const { return DRange3d::From(m_points); }
     DRange3d GetUVRange() const { return DRange3d::From(m_uvParams, 0.0); }
@@ -278,7 +333,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId);
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -318,15 +373,15 @@ struct TileMeshBuilder : RefCountedBase
 {
     struct VertexKey
         {
-        DPoint3d        m_point;
-        DVec3d          m_normal;
-        DPoint2d        m_param;
-        DgnElementId    m_entityId;
-        bool            m_normalValid = false;
-        bool            m_paramValid = false;
+        DPoint3d            m_point;
+        DVec3d              m_normal;
+        DPoint2d            m_param;
+        FeatureAttributes   m_attributes;
+        bool                m_normalValid = false;
+        bool                m_paramValid = false;
 
         VertexKey() { }
-        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_entityId(entityId)
+        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr)
             {
             if(m_normalValid) m_normal = *normal;
             if(m_paramValid) m_param = *param;
@@ -365,15 +420,16 @@ private:
     double                  m_areaTolerance;
     size_t                  m_triangleIndex;
     RenderingAssetCP        m_material = nullptr;
+    FeatureAttributesMapR   m_attributes;
 
-    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0) {  }
+    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+            m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) {  }
 public:
-    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
+    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, DgnElementId entityId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool duplicateTwoSidedTileTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams);
 
     void AddMesh(TileTriangleCR triangle);
     void AddTriangle(TileTriangleCR triangle);
@@ -480,6 +536,8 @@ public:
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount(IFacetOptionsR options) const;
     size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
+
+    FeatureAttributes GetAttributes() const { return m_params.IsValid() ? FeatureAttributes(GetEntityId(), *m_params) : FeatureAttributes(); }
     
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
@@ -550,55 +608,6 @@ public:
     //! Invoked for each element in the tile's range. Returns false to exclude the element from the tile geometry, or true to include it.
     bool AcceptElement(DgnElementId elementId) const { return _AcceptElement(elementId); }
 };
-
-//=======================================================================================            a
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-struct TileModelDelta : RefCountedBase, ITileGenerationFilter
-    {
-    struct ElementState
-        {
-        private:
-        int64_t         m_lastModifiedTime;
-        uint32_t        m_facetCount;
-
-        public:
-        ElementState() { }
-        ElementState(int64_t lastModified,  uint32_t facetCount) : m_lastModifiedTime(lastModified), m_facetCount(facetCount) { }
-        uint32_t GetFacetCount() const { return m_facetCount; }
-        int64_t GetLastModifiedTime() const { return m_lastModifiedTime; }
-
-        Json::Value GetJsonValue () const;
-        void SetFacetCount(uint32_t facetCount) { m_facetCount = facetCount; }
-        };
-
-
-    void Save ();                         // Save to file.
-    bool ChangesPresent() const { return m_deleted.empty() && m_added.empty(); }
-    bool DoPublish(DgnElementId id) { return m_added.find(id) != m_added.end(); }
-    ElementState* GetElementState(DgnElementId id) { auto const& found = m_elementStates.find(id); return found == m_elementStates.end() ? nullptr : &found->second; }
-    static TileModelDeltaPtr Create(DgnModelCR model, BeFileNameCR dataDirectory) { return new TileModelDelta(model, dataDirectory); }
-    bset<DgnElementId> const& GetAdded() const { return m_added; }
-    bset<DgnElementId> const& GetDeleted() const { return m_deleted; }
-    DGNPLATFORM_EXPORT bool DoIncremental (TileNodeCR tile) const;     // Return true if this previously generated tile is available and compatible with the current tile.
-
-
-    bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
-
-
-private:
-    BeFileName                          m_dataDirectory;
-
-    BeFileName                          m_fileName;
-    WString                             m_rootName;
-    bmap<DgnElementId, ElementState>    m_elementStates;
-    bset<DgnElementId>                  m_deleted;                  // A change will be handled as a delete/add.
-    bset<DgnElementId>                  m_added;
-    Json::Value                         m_previousTileSet;
-
-protected:    
-    TileModelDelta(DgnModelCR model, BeFileNameCR dataDirectory);       // Constructor for current model state.
-    };
 
 //=======================================================================================
 //! Caches information used during tile generation.
@@ -676,16 +685,17 @@ public:
 struct TileNode : RefCountedBase
 {
 protected:
-    DRange3d            m_dgnRange;
-    TileNodeList        m_children;
-    size_t              m_depth;
-    size_t              m_siblingIndex;
-    double              m_tolerance;
-    TileNodeP           m_parent;
-    Transform           m_transformFromDgn;
-    mutable DRange3d    m_publishedRange;
-    DgnModelCPtr        m_model;
-    bool                m_isEmpty;
+    DRange3d                m_dgnRange;
+    TileNodeList            m_children;
+    size_t                  m_depth;
+    size_t                  m_siblingIndex;
+    double                  m_tolerance;
+    TileNodeP               m_parent;
+    Transform               m_transformFromDgn;
+    mutable DRange3d        m_publishedRange;
+    DgnModelCPtr            m_model;
+    FeatureAttributesMap    m_attributes;
+    bool                    m_isEmpty;
 
     TileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
     TileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
@@ -693,11 +703,9 @@ protected:
 
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
-    virtual TileSource _GetSource() const = 0;
     virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const = 0;
-    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
+    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
     virtual void _ClearGeometry() { }
-    virtual TileModelDeltaCP _GetModelDelta() const { return nullptr; }
     virtual WString _GetFileExtension() const = 0;
 
 public:
@@ -731,10 +739,13 @@ public:
     void SetIsEmpty(bool isEmpty) { m_isEmpty = isEmpty; }
     bool GetIsEmpty() const { return m_isEmpty; }
 
-    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, modelDelta, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
+    FeatureAttributesMapCR GetAttributes() const { return m_attributes; }
+    FeatureAttributesMapR GetAttributes() { return m_attributes; }
+    uint16_t GetAttributesIndex(FeatureAttributesCR attr) { return GetAttributes().GetIndex(attr); }
+    uint16_t GetAttributesIndex(TileGeometryCR geometry) { return GetAttributes().GetIndex(geometry.GetAttributes()); }
+
+    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }
-    TileSource GetSource() const { return _GetSource(); }
-    TileModelDeltaCP GetModelDelta() const { return _GetModelDelta(); }
     WString GetFileExtension() const { return _GetFileExtension(); }
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const
         { return _GeneratePublishableGeometry(dgndb, normalMode, twoSidedTileTriangles, doSurfacesOnly, filter); }
@@ -750,7 +761,6 @@ struct ElementTileNode : TileNode
 private:
     bool                    m_isLeaf;
     TileGeometryList        m_geometries;
-    TileModelDeltaCP        m_modelDelta;
     mutable bool            m_containsParts;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;} // A deep tree can trigger this assertion erroneously.
@@ -759,22 +769,20 @@ private:
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
 
 protected:
-    ElementTileNode(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) : TileNode(model, transformFromDgn), m_isLeaf(false), m_modelDelta(modelDelta), m_containsParts(false) { }
-    ElementTileNode(DgnModelCR model, TileModelDeltaCP modelDelta, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
-        : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_modelDelta(modelDelta), m_containsParts(false) { }
+    ElementTileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, transformFromDgn), m_isLeaf(false), m_containsParts(false) { }
+    ElementTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
+        : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_containsParts(false) { }
 
 
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool, bool, ITileGenerationFilterCP filter) const override;
-    TileSource _GetSource() const override final { return TileSource::Element; }
-    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
+    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     void _ClearGeometry() override { m_geometries.clear(); }
-    TileModelDeltaCP _GetModelDelta() const override { return m_modelDelta; }
     WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:
-    static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, TransformCR transformFromDgn) { return new ElementTileNode(model, modelDelta, transformFromDgn); }
-    static ElementTileNodePtr Create(DgnModelCR model, TileModelDeltaCP modelDelta, DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
-        { return new ElementTileNode(model, modelDelta, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
+    static ElementTileNodePtr Create(DgnModelCR model, TransformCR transformFromDgn) { return new ElementTileNode(model, transformFromDgn); }
+    static ElementTileNodePtr Create(DgnModelCR model, DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
+        { return new ElementTileNode(model, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
@@ -795,8 +803,6 @@ protected:
     ModelTileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, transformFromDgn) { }
     ModelTileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance) { m_isEmpty = false; }
-
-    TileSource _GetSource() const override final { return TileSource::Model; }
 };
 
 //=======================================================================================
@@ -824,8 +830,6 @@ struct TileGenerator
         virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) { return TileGeneratorStatus::Success; }
         //! Invoked after a model is processed, with the result of processing.
         virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) { return status; }
-        //! Return true to invoke incremental model publishing.
-        virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) { return false; }
         };
 
     //! Accumulates statistics during tile generation
@@ -844,7 +848,6 @@ private:
     BeAtomic<uint32_t>                      m_totalTiles;
     uint32_t                                m_totalModels;
     BeAtomic<uint32_t>                      m_completedModels;
-    bmap<DgnModelId, TileModelDeltaPtr>     m_modelDeltas;
 
     struct ElementTileContext
         {
@@ -855,11 +858,10 @@ private:
         double                  m_leafTolerance;
         bool                    m_surfacesOnly;
         size_t                  m_maxPointsPerTile;
-        TileModelDeltaP         m_modelDelta;
 
 
-        ElementTileContext(TileGenerationCacheR cache, DgnModelR model, TileModelDeltaP modelDelta, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
-            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_modelDelta(modelDelta), m_surfacesOnly(surfacesOnly) { }
+        ElementTileContext(TileGenerationCacheR cache, DgnModelR model, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
+            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }
         };
 
     struct ElementTileResult
@@ -874,7 +876,7 @@ private:
     typedef folly::Future<TileGeneratorStatus> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
-    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta);
+    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus PopulateCache(ElementTileContext context);
     FutureElementTileResult GenerateTileset(TileGeneratorStatus status, ElementTileContext context);
     FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
@@ -890,7 +892,6 @@ public:
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
     ITileGenerationProgressMonitorR GetProgressMeter() { return m_progressMeter; }
-    TileModelDeltaPtr GetTileModelDelta(DgnModelId modelId) { auto const& found = m_modelDeltas.find(modelId); return found == m_modelDeltas.end() ? nullptr : found->second; }
 
     DGNPLATFORM_EXPORT TileGeneratorStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
 };
