@@ -594,7 +594,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
         DPoint3d center = args.GetTileCenter(*this);
 
         static double   s_minPixelSizeAtPoint = 1.0E-3;
-        double          pixelSize = radius / std::max (s_minPixelSizeAtPoint : args.m_context.GetPixelSizeAtPoint(&center));
+        double          pixelSize = radius / std::max (s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 

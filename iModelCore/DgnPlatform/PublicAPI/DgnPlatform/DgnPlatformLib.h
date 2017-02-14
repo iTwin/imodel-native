@@ -257,7 +257,7 @@ public:
             virtual void _OnGraphicsRemoved(Render::GraphicSet&) {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
-            DGNPLATFORM_EXPORT virtual void _OnReversedChanges(TxnManager&);
+            DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnUndoRedo(TxnManager&, TxnAction);
 
             //! @name Transaction Monitors

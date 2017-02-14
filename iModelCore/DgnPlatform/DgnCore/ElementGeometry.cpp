@@ -3165,7 +3165,7 @@ IndexedGeomMap m_map;
 
 virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
 virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
-virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 
 static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
@@ -3682,6 +3682,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
@@ -3736,6 +3740,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
