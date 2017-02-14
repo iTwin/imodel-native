@@ -489,7 +489,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             m_isCameraOn = false;
             if (cameraView)
                 {
-                m_isCameraOn = true;
+                m_isCameraOn = cameraView->IsCameraOn();
                 m_camera = cameraView->GetCameraViewDefinition().GetCameraR();
 
                 if (m_isCameraOn)
@@ -609,7 +609,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     delta.DifferenceOf(range.high, range.low);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
         WorldToNpc(npcPts, worldPts, 2);
@@ -736,7 +736,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         // get current box in view coordinates
         Frustum frust = GetFrustum(DgnCoordSystem::View, false);
@@ -808,7 +808,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView)
+    if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
         centerNpc.Init(.5, .5, .5);

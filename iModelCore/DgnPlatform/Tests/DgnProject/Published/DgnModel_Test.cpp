@@ -596,3 +596,37 @@ TEST_F(DgnModelTests, DefinitionModelCreation)
     RefCountedCPtr<InformationPartitionElement> Infele2 = m_db->Elements().Get<InformationPartitionElement>(eleId2);
     ASSERT_EQ(Infele2->GetDescription(), "This is second DefinitionPartition");
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, GenericGroupModelCreation)
+    {
+    SetupSeedProject();
+    GroupInformationPartitionPtr ginfop=GroupInformationPartition::Create(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement", "This is GroupInformationPartitionElement");
+    DgnElementCPtr elep = ginfop->Insert();
+    ASSERT_TRUE(elep.IsValid());
+    GenericGroupModelPtr genricgroupmodel=GenericGroupModel::CreateAndInsert(*elep);
+    ASSERT_TRUE(genricgroupmodel.IsValid());
+    GenericGroupPtr group=GenericGroup::Create(*genricgroupmodel);
+    DgnElementCPtr ele=group->Insert();
+    ASSERT_TRUE(ele.IsValid());
+    ASSERT_EQ(ele->GetModelId(), genricgroupmodel->GetModeledElementId());
+
+    GroupInformationPartitionCPtr ginfop2 = GroupInformationPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement2", "GroupInformationPartitionElement2");
+    ASSERT_TRUE(ginfop2.IsValid());
+    GenericGroupModelPtr genricgroupmodelc = GenericGroupModel::Create(*ginfop2);
+    ASSERT_EQ(DgnDbStatus::Success, genricgroupmodelc->Insert());
+    GenericGroupPtr group2 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele2 = group2->Insert();
+    ASSERT_TRUE(ele2.IsValid());
+    ASSERT_EQ(ele2->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    GenericGroupPtr group3 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele3 = group3->Insert();
+    ASSERT_TRUE(ele3.IsValid());
+    ASSERT_EQ(ele3->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    bvector<DgnModelId> idList;
+    idList =m_db->Models().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_GroupModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    ASSERT_EQ(2,idList.size());
+    ASSERT_EQ(genricgroupmodel->GetModelId(), idList[0]);
+    ASSERT_EQ(genricgroupmodelc->GetModelId(), idList[1]);
+    }
