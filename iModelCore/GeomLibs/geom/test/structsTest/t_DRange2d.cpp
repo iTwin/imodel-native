@@ -156,10 +156,6 @@ TEST(DRange2d, RangeProjection3d)
 void arcSweepCheck(double degree, double sweep) 
     {
     DRange2d range = DRange2d::FromUnitArcSweep(Angle::FromDegrees(degree).Radians(), Angle::FromDegrees(sweep).Radians());
-    // unused - DRange2d range2 = DRange2d::From(Angle::FromDegrees(degree).Cos(),
-    //                                  Angle::FromDegrees(degree).Sin(),
-    //                                  Angle::FromDegrees(degree + sweep).Cos(),
-    //                                  Angle::FromDegrees(degree + sweep).Sin());
     if (abs(sweep) >= 360)
         {
         Check::Near(range.low.x, -1);
@@ -185,4 +181,29 @@ TEST(DRange2d, ArcSweep)
     arcSweepCheck(30, -780);
     arcSweepCheck(45, 135);
     arcSweepCheck(135, 90);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange2d, MaximalAxis)
+    {
+    DRange2d range = DRange2d::From(4, 3, 8, 9);
+    Check::ExactDouble(1, range.IndexOfMaximalAxis());
+    range.Extend(DPoint4d::From(15, 11, 9, 1));
+    Check::ExactDouble(0, range.IndexOfMaximalAxis());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DRange2d, CornersAndPlanes)
+    {
+    DRange2d range = DRange2d::From(3, 3, 8, 9);
+    //Get4Lines  (DPoint2dP originArray, DPoint2dP normalArray) 
+    DPoint2d corners[4];
+
+    range.Get4Corners(corners);
+    Check::Near(corners[0], DPoint2d::From(3, 3));
+    Check::Near(corners[1], DPoint2d::From(8, 3));
+    Check::Near(corners[2], DPoint2d::From(3, 9));
+    Check::Near(corners[3], DPoint2d::From(8, 9));
     }
