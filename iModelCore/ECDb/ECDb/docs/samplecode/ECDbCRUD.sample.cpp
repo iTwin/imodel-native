@@ -63,14 +63,12 @@ BentleyStatus ECDb_ECSqlSelectStructProps()
         {
         Utf8CP firstName = statement.GetValueText(0);
         //second item in select clause is a struct prop, so call GetStructReader
-        IECSqlStructValue const& addressStructValue = statement.GetValueStruct(1);
+        IECSqlValue const& addressStructValue = statement.GetValue(1);
 
         // Print out the address for each employee
         printf("Employee %s:\n", firstName);
-        const int addressMemberCount = addressStructValue.GetMemberCount();
-        for (int i = 0; i < addressMemberCount; i++)
+        for (IECSqlValue const& addressMemberValue : addressStructValue.GetStructIterable())
             {
-            IECSqlValue const& addressMemberValue = addressStructValue.GetValue(i);
             ECSqlColumnInfoCR addressMemberColumnInfo = addressMemberValue.GetColumnInfo();
 
             //print out name of address member
@@ -150,14 +148,14 @@ BentleyStatus ECDb_ECSqlSelectPrimArrayProps()
         {
         Utf8CP firstName = statement.GetValueText(0);
         Utf8CP lastName = statement.GetValueText(1);
-        IECSqlArrayValue const& mobilePhoneArrayValue = statement.GetValueArray(2);
+        IECSqlValue const& mobilePhoneArrayValue = statement.GetValue(2);
 
         printf("Mobile numbers for %s %s:\n", firstName, lastName);
         int arrayIndex = 0;
-        for (IECSqlValue const* arrayMemberValue : mobilePhoneArrayValue)
+        for (IECSqlValue const& arrayMemberValue : mobilePhoneArrayValue.GetArrayIterable())
             {
             //Primitive arrays always have one column. Therefore always pass 0 to the reader when retrieving array values.
-            Utf8CP mobileNumber = arrayMemberValue->GetText();
+            Utf8CP mobileNumber = arrayMemberValue.GetText();
             printf("#%d: %s\n", arrayIndex + 1, mobileNumber);
             arrayIndex++;
             }
@@ -182,21 +180,18 @@ BentleyStatus ECDb_ECSqlSelectStructArrayProps()
     while (BE_SQLITE_ROW == statement.Step())
         {
         Utf8CP firstName = statement.GetValueText(0);
-        IECSqlArrayValue const& certStructArray = statement.GetValueArray(1);
+        IECSqlValue const& certStructArray = statement.GetValue(1);
         //now iterate over struct array elements. Each steps moves one struct element further in the array.
         // Print out the certifications for each employee
         printf("Employee %s\n", firstName);
         printf("  Certifications:\n");
         int arrayIndex = 0;
-        for (IECSqlValue const* arrayElement : certStructArray)
+        for (IECSqlValue const& certStructVal : certStructArray.GetArrayIterable())
             {
             printf("  #%d:\n", arrayIndex + 1);
-            IECSqlStructValue const& certStructArrayElement = arrayElement->GetStruct();
-            const int memberCount = certStructArrayElement.GetMemberCount();
-            for (int i = 0; i < memberCount; i++)
+            for (IECSqlValue const& certMemberVal : certStructVal.GetStructIterable())
                 {
-                IECSqlValue const& certMember = certStructArrayElement.GetValue(i);
-                ECSqlColumnInfoCR certMemberColumnInfo = certMember.GetColumnInfo();
+                ECSqlColumnInfoCR certMemberColumnInfo = certMemberVal.GetColumnInfo();
 
                 //print out name of cert member
                 Utf8StringCR certMemberColumnName = certMemberColumnInfo.GetProperty()->GetName();
@@ -206,13 +201,13 @@ BentleyStatus ECDb_ECSqlSelectStructArrayProps()
                 switch (type)
                     {
                         case PRIMITIVETYPE_String:
-                            printf("%s", certMember.GetText());
+                            printf("%s", certMemberVal.GetText());
                             break;
                         case PRIMITIVETYPE_Integer:
-                            printf("%d", certMember.GetInt());
+                            printf("%d", certMemberVal.GetInt());
                             break;
                         case PRIMITIVETYPE_DateTime:
-                            printf("%s", certMember.GetDateTime().ToString().c_str());
+                            printf("%s", certMemberVal.GetDateTime().ToString().c_str());
                             break;
                         default:
                             //For the sake of simplicity the struct in this example has only properties of type String, Integer,
@@ -626,14 +621,12 @@ BentleyStatus ECDb_ECSqlColumnInfoOnNestedLevels()
         printColumnInfoCategoryLambda(certArrayColumnInfo);
 
         printf("\nStruct array element level\n");
-        IECSqlArrayValue const& certArray = statement.GetValueArray(1);
-        for (IECSqlValue const* arrayElement : certArray)
+        IECSqlValue const& certArray = statement.GetValue(1);
+        for (IECSqlValue const& certElement : certArray.GetArrayIterable())
             {
-            IECSqlStructValue const& certElement = arrayElement->GetStruct();
-            int arrayColumnCount = certElement.GetMemberCount();
-            for (int i = 0; i < arrayColumnCount; i++)
+            for (IECSqlValue const& certMember : certElement.GetStructIterable())
                 {
-                ECSqlColumnInfoCR certMemberColumnInfo = certElement.GetValue(i).GetColumnInfo();
+                ECSqlColumnInfoCR certMemberColumnInfo = certMember.GetColumnInfo();
                 printColumnInfoCategoryLambda(certMemberColumnInfo);
                 }
 

@@ -136,31 +136,26 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
         }
 
     // Process nested children
-    IECSqlStructValue const* structValue = nullptr;
+    IECSqlValue const* structValue = nullptr;
     if (ecProperty->GetIsStruct())
         {
         bool isInlinedStructMember = (isRootReader && (columnInfo.GetPropertyPath().Size() > 1));
         if (!isInlinedStructMember)
-            structValue = &ecsqlValue.GetStruct();
+            structValue = &ecsqlValue;
         }
     else if (ecProperty->GetIsStructArray())
         {
-        IECSqlArrayValue const& arrayValue = ecsqlValue.GetArray();
-        auto arrayIt = arrayValue.begin();
-        if (arrayIt != arrayValue.end())
-            {
-            IECSqlValue const* arrayElementValue = *arrayIt;
-            structValue = &arrayElementValue->GetStruct();
-            }
+        auto arrayIt = ecsqlValue.GetArrayIterable().begin();
+        if (arrayIt != ecsqlValue.GetArrayIterable().end())
+            structValue = &*arrayIt;
         }
 
     if (structValue != nullptr)
         {
         //TODO: root class handling should not be necessary for struct members, right? Krischan.
         bvector<ECClassCP> structRootClasses;
-        int memberCount = structValue->GetMemberCount();
-        for (int i = 0; i < memberCount; i++)
-            AddChildNodes(*childNodes[ecProperty->GetName()], structRootClasses, structValue->GetValue(i));
+        for (IECSqlValue const& memberVal : structValue->GetStructIterable())
+            AddChildNodes(*childNodes[ecProperty->GetName()], structRootClasses, memberVal);
         }
     }
 
@@ -846,13 +841,12 @@ bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue con
 bool JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     bool status = true;
-    IECSqlArrayValue const&  structArrayValue = ecsqlValue.GetArray();
 
     int ii = 0;
     auto temp = Json::Value(Json::arrayValue);
-    for (IECSqlValue const* arrayElementValue : structArrayValue)
+    for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (!JsonFromStruct(temp[ii++], *arrayElementValue))
+        if (!JsonFromStruct(temp[ii++], arrayElementValue))
             status = false;
         }
     if (m_structArrayAsString)
@@ -868,13 +862,12 @@ bool JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlVal
 bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
     bool status = true;
-    IECSqlArrayValue const&  primArrayValue = ecsqlValue.GetArray();
 
     int ii = 0;
     jsonValue = Json::Value(Json::arrayValue);
-    for (IECSqlValue const* arrayElementValue : primArrayValue)
+    for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (!JsonFromPrimitive(jsonValue[ii++], *arrayElementValue, property, true))
+        if (!JsonFromPrimitive(jsonValue[ii++], arrayElementValue, property, true))
             status = false;
         }
 
@@ -886,14 +879,10 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSql
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonECSqlSelectAdapter::JsonFromStruct(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
-    IECSqlStructValue const& structECSqlValue = ecsqlValue.GetStruct();
-
     bool rStatus = true;
     jsonValue = Json::Value(Json::objectValue);
-    int count = structECSqlValue.GetMemberCount();
-    for (int memberIndex = 0; memberIndex < count; memberIndex++)
+    for (IECSqlValue const& structMemberValue : ecsqlValue.GetStructIterable())
         {
-        IECSqlValue const& structMemberValue = structECSqlValue.GetValue(memberIndex);
         ECPropertyCP ecLeafProperty = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(ecLeafProperty != nullptr && "TODO: Adjust code as ColumnInfo::GetProperty can be null.");
         if (!JsonFromPropertyValue(jsonValue[ecLeafProperty->GetName().c_str()], structMemberValue))

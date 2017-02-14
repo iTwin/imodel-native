@@ -13,12 +13,34 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
-struct StructECSqlField : public ECSqlField, public IECSqlStructValue
+struct StructECSqlField final : public ECSqlField, IECSqlValue::IIterable
     {
     friend struct ECSqlFieldFactory;
 
     private:
-        std::vector<std::unique_ptr<ECSqlField>> m_structFields;
+        struct IteratorState final : IIteratorState
+            {
+        private:
+            mutable std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii>::const_iterator m_it;
+            std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii>::const_iterator m_endIt;
+
+            IteratorState(IteratorState const& rhs) : m_it(rhs.m_it), m_endIt(rhs.m_endIt) {}
+
+            std::unique_ptr<IIteratorState> _Copy() const override { return std::unique_ptr<IIteratorState>(new IteratorState(*this)); }
+            void _MoveToNext(bool onInitializingIterator) const override 
+                { 
+                if (!onInitializingIterator) 
+                    ++m_it; 
+                }
+
+            bool _IsAtEnd() const override { return m_it == m_endIt; }
+            IECSqlValue const& _GetCurrent() const override { return *m_it->second; }
+
+            public:
+                explicit IteratorState(std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii> const& memberFields) : IIteratorState(), m_it(memberFields.begin()), m_endIt(memberFields.end()) {}
+            };
+
+        std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii> m_structMemberFields;
 
         StructECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
         //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
@@ -26,13 +48,30 @@ struct StructECSqlField : public ECSqlField, public IECSqlStructValue
         void AppendField(std::unique_ptr<ECSqlField> field);
 
         bool _IsNull() const override;
-        IECSqlPrimitiveValue const& _GetPrimitive() const override;
-        IECSqlStructValue const& _GetStruct() const override { return *this; }
-        IECSqlArrayValue const& _GetArray() const override;
 
-        int _GetMemberCount() const override { return static_cast<int>(m_structFields.size()); }
-        IECSqlValue const& _GetValue(int columnIndex) const override;
-        Collection const& _GetChildren() const override { return m_structFields; }
+        IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
+        IIterable const& _GetStructIterable() const override { return *this; }
+        const_iterator _CreateIterator() const override { return const_iterator(std::make_unique<IteratorState>(m_structMemberFields)); }
+
+        void const* _GetBlob(int* blobSize) const override;
+        bool _GetBoolean() const override;
+        uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
+        double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+        double _GetDouble() const override;
+        int _GetInt() const override;
+        int64_t _GetInt64() const override;
+        Utf8CP _GetText() const override;
+        DPoint2d _GetPoint2d() const override;
+        DPoint3d _GetPoint3d() const override;
+        IGeometryPtr _GetGeometry() const override;
+
+        int _GetArrayLength() const override;
+        IIterable const& _GetArrayIterable() const override;
+
+        //ECSqlField
+        ECSqlStatus _OnAfterReset() override;
+        ECSqlStatus _OnAfterStep() override;
+
     };
 
 

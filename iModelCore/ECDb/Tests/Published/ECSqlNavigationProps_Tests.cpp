@@ -741,12 +741,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
 
     //alternative API via struct value
-    IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
-    ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
-    ASSERT_STREQ("Model.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue.GetValue(0).GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
-    ASSERT_STREQ("Model.RelECClassId", navValue.GetValue(1).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(modelHasElementsClassId.GetValue(), navValue.GetValue(1).GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
+    IECSqlValue const& navValue = stmt.GetValue(0);
+    ASSERT_STREQ("Model.Id", navValue["Id"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue[0].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_STREQ("Model.RelECClassId", navValue["RelECClassId"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementsClassId.GetValue(), navValue["RelECClassId"].GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
     stmt.Finalize();
 
     //Nav prop in where clause
@@ -859,12 +858,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
 
     //alternative API via struct value
-    IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
-    ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
-    ASSERT_STREQ("Parent.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), navValue.GetValue(0).GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
-    ASSERT_STREQ("Parent.RelECClassId", navValue.GetValue(1).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), navValue.GetValue(1).GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
+    IECSqlValue const& navValue = stmt.GetValue(0);
+    ASSERT_STREQ("Parent.Id", navValue["Id"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), navValue[0].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_STREQ("Parent.RelECClassId", navValue["RelECClassId"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), navValue["RelECClassId"].GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
 
     stmt.Reset();
     stmt.ClearBindings();
@@ -1244,13 +1242,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     ASSERT_TRUE(modelVal.GetColumnInfo().GetDataType().IsNavigation());
     ASSERT_TRUE(modelVal.GetColumnInfo().GetProperty()->GetIsNavigation());
 
-    IECSqlValue const& modelIdVal = modelVal.GetStruct().GetValue(0);
+    IECSqlValue const& modelIdVal = modelVal["Id"];
     ASSERT_STRCASEEQ("Model.Id", modelIdVal.GetColumnInfo().GetPropertyPath().ToString().c_str());
     ASSERT_TRUE(modelIdVal.GetColumnInfo().GetDataType().IsPrimitive());
     ASSERT_EQ(PRIMITIVETYPE_Long, modelIdVal.GetColumnInfo().GetDataType().GetPrimitiveType());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), modelIdVal.GetId<ECInstanceId>().GetValue());
 
-    IECSqlValue const& modelRelClassIdVal = modelVal.GetStruct().GetValue(1);
+    IECSqlValue const& modelRelClassIdVal = modelVal["RelECClassId"];
     ASSERT_STRCASEEQ("Model.RelECClassId", modelRelClassIdVal.GetColumnInfo().GetPropertyPath().ToString().c_str());
     ASSERT_TRUE(modelRelClassIdVal.GetColumnInfo().GetDataType().IsPrimitive());
     ASSERT_EQ(PRIMITIVETYPE_Long, modelRelClassIdVal.GetColumnInfo().GetDataType().GetPrimitiveType());
@@ -1270,7 +1268,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
             }
         }
     ASSERT_TRUE(navPropIx >= 0);
-    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueStruct(navPropIx).GetValue(0).GetId<ECInstanceId>().GetValue());
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValue(navPropIx)[0].GetId<ECInstanceId>().GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 

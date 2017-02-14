@@ -8,23 +8,18 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
-#include "IECSqlPrimitiveValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECSqlField : public ECSqlField, public IECSqlPrimitiveValue
+struct PrimitiveECSqlField final : public ECSqlField
     {
 private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
     bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
-
-    IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
-    IECSqlStructValue const& _GetStruct() const override;
-    IECSqlArrayValue const& _GetArray() const override;
 
     void const* _GetBlob(int* blobSize) const override;
     bool _GetBoolean() const override { return  GetSqliteStatement().GetValueBoolean(m_sqliteColumnIndex); }
@@ -37,6 +32,12 @@ private:
     DPoint2d _GetPoint2d() const override;
     DPoint3d _GetPoint3d() const override;
     IGeometryPtr _GetGeometry() const override;
+
+    IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
+    IIterable const& _GetStructIterable() const override;
+
+    int _GetArrayLength() const override;
+    IIterable const& _GetArrayIterable() const override;
 
 public:
     PrimitiveECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);

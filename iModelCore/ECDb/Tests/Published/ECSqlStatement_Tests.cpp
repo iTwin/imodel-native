@@ -393,17 +393,20 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
             ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
             }
 
-        IECSqlStructValue const& structVal = stmt.GetValueStruct(0);
-        ASSERT_EQ((int) ecdb.Schemas().GetECClass("TestSchema", "MyStruct")->GetPropertyCount(), structVal.GetMemberCount());
-        for (int i = 0; i < structVal.GetMemberCount(); i++)
+        const int expectedMembersCount = (int) ecdb.Schemas().GetECClass("TestSchema", "MyStruct")->GetPropertyCount();
+        IECSqlValue const& structVal = stmt.GetValue(0);
+        int actualMembersCount = 0;
+        for (IECSqlValue const& memberVal : structVal.GetStructIterable())
             {
-            ASSERT_TRUE(structVal.GetValue(i).IsNull());
+            actualMembersCount++;
+            ASSERT_TRUE(memberVal.IsNull());
             }
+        ASSERT_EQ(expectedMembersCount, actualMembersCount);
 
-        IECSqlArrayValue const& structMemberStructArrayVal = stmt.GetValueArray(1);
+        IECSqlValue const& structMemberStructArrayVal = stmt.GetValue(1);
         ASSERT_EQ(0, structMemberStructArrayVal.GetArrayLength());
 
-        IECSqlArrayValue const& structArrayVal = stmt.GetValueArray(2);
+        IECSqlValue const& structArrayVal = stmt.GetValue(2);
         ASSERT_EQ(0, structArrayVal.GetArrayLength());
         }
 
@@ -436,20 +439,16 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
             {
             IECSqlValue const& val = stmt.GetValue(i);
             ASSERT_FALSE(val.IsNull()) << i << " " << stmt.GetECSql();
-            IECSqlArrayValue const& arrayVal = val.GetArray();
-            ASSERT_EQ(2, arrayVal.GetArrayLength());
-            for (IECSqlValue const* elementVal : arrayVal)
+            ASSERT_EQ(2, val.GetArrayLength());
+            for (IECSqlValue const& elementVal : val.GetArrayIterable())
                 {
-                ASSERT_TRUE(elementVal != nullptr) << i << " " << stmt.GetECSql();
-                ASSERT_TRUE(elementVal->IsNull()) << i << " " << stmt.GetECSql();
+                ASSERT_TRUE(elementVal.IsNull()) << i << " " << stmt.GetECSql();
 
                 if (val.GetColumnInfo().GetDataType().IsStructArray())
                     {
-                    IECSqlStructValue const& structVal = elementVal->GetStruct();
-                    ASSERT_EQ(val.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
-                    for (int j = 0; j < structVal.GetMemberCount(); j++)
+                    for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
                         {
-                        ASSERT_TRUE(structVal.GetValue(j).IsNull());
+                        ASSERT_TRUE(memberVal.IsNull());
                         }
                     }
                 }
@@ -478,18 +477,18 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
         ASSERT_FALSE(stmt.IsValueNull(0));
-        IECSqlArrayValue const& arrayVal = stmt.GetValueArray(0);
+        IECSqlValue const& arrayVal = stmt.GetValue(0);
         ASSERT_EQ(1, arrayVal.GetArrayLength());
-        IECSqlValue const* elementVal = *arrayVal.begin();
-        ASSERT_TRUE(elementVal != nullptr) << stmt.GetECSql();
-        ASSERT_TRUE(elementVal->IsNull()) << stmt.GetECSql();
+        IECSqlValue const& elementVal = *arrayVal.GetArrayIterable().begin();
+        ASSERT_TRUE(elementVal.IsNull()) << stmt.GetECSql();
 
-        IECSqlStructValue const& structVal = elementVal->GetStruct();
-        ASSERT_EQ(stmt.GetColumnInfo(0).GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
-        for (int i = 0; i < structVal.GetMemberCount(); i++)
+        int memberCount = 0;
+        for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
             {
-            ASSERT_TRUE(structVal.GetValue(i).IsNull());
+            memberCount++;
+            ASSERT_TRUE(memberVal.IsNull());
             }
+        ASSERT_EQ((int) arrayVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), memberCount);
         }
 
     //*** nested struct being partially set
@@ -516,30 +515,30 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
         ASSERT_FALSE(stmt.IsValueNull(0));
-        IECSqlArrayValue const& arrayVal = stmt.GetValueArray(0);
+        IECSqlValue const& arrayVal = stmt.GetValue(0);
         ASSERT_EQ(1, arrayVal.GetArrayLength());
-        IECSqlValue const* elementVal = *arrayVal.begin();
-        ASSERT_TRUE(elementVal != nullptr) << stmt.GetECSql();
-        ASSERT_FALSE(elementVal->IsNull()) << stmt.GetECSql();
-
-        IECSqlStructValue const& structArrayElementVal = elementVal->GetStruct();
-        ASSERT_EQ(stmt.GetColumnInfo(0).GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structArrayElementVal.GetMemberCount());
-        for (int i = 0; i < structArrayElementVal.GetMemberCount(); i++)
+        IECSqlValue const& structArrayElementVal = *arrayVal.GetArrayIterable().begin();
+        ASSERT_FALSE(structArrayElementVal.IsNull()) << stmt.GetECSql();
+        for (IECSqlValue const& memberVal : structArrayElementVal.GetStructIterable())
             {
-            IECSqlValue const& memberVal = structArrayElementVal.GetValue(i);
             if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("struct_array"))
                 {
-                for (int j = 0; j < memberVal.GetStruct().GetMemberCount(); j++)
+                ASSERT_EQ(1, memberVal.GetArrayLength()) << "struct_array";
+                int memberCount = 0;
+                IECSqlValue const& nestedStructVal = *memberVal.GetArrayIterable().begin();
+                for (IECSqlValue const& nestedMemberVal : nestedStructVal.GetStructIterable())
                     {
-                    IECSqlValue const& nestedMemberVal = memberVal.GetStruct().GetValue(j);
+                    memberCount++;
                     if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("i"))
                         ASSERT_EQ(3, nestedMemberVal.GetInt());
                     else
                         ASSERT_TRUE(nestedMemberVal.IsNull());
                     }
+                ASSERT_EQ((int) nestedStructVal.GetColumnInfo().GetStructType()->GetPropertyCount(), memberCount);
                 }
             else
-                ASSERT_TRUE(memberVal.IsNull()) << i;
+                ASSERT_TRUE(memberVal.IsNull());
+
             }
         }
     
@@ -884,13 +883,8 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructs)
         if (checkIsNull)
             ASSERT_TRUE(colVal.IsNull());
 
-        IECSqlStructValue const& structColVal = colVal.GetStruct();
-        const int actualStructMemberCount = structColVal.GetMemberCount();
-        ASSERT_EQ((int) expected.GetPropertyCount(), actualStructMemberCount);
-
-        for (int i = 0; i < actualStructMemberCount; i++)
+        for (IECSqlValue const& memberVal : colVal.GetStructIterable())
             {
-            IECSqlValue const& memberVal = structColVal.GetValue(i);
             if (checkIsNull)
                 ASSERT_TRUE(memberVal.IsNull());
             }
@@ -965,7 +959,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
         if (checkIsNull)
             {
             ASSERT_TRUE(colVal.IsNull());
-            ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
+            ASSERT_EQ(0, colVal.GetArrayLength());
             }
         };
 
@@ -1041,7 +1035,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
         if (checkIsNull)
             {
             ASSERT_TRUE(colVal.IsNull());
-            ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
+            ASSERT_EQ(0, colVal.GetArrayLength());
             }
         };
 
@@ -2259,20 +2253,20 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
-    IECSqlArrayValue const& intArray = statement.GetValueArray(0);
+    IECSqlValue const& intArray = statement.GetValue(0);
     size_t expectedIndex = 0;
-    for (IECSqlValue const* arrayElement : intArray)
+    for (IECSqlValue const& arrayElement : intArray.GetArrayIterable())
         {
-        int actualArrayElement = arrayElement->GetInt();
+        int actualArrayElement = arrayElement.GetInt();
         ASSERT_EQ(expectedIntArray[expectedIndex], actualArrayElement);
         expectedIndex++;
         }
 
-    IECSqlArrayValue const& stringArray = statement.GetValueArray(1);
+    IECSqlValue const& stringArray = statement.GetValue(1);
     expectedIndex = 0;
-    for (IECSqlValue const* arrayElement : stringArray)
+    for (IECSqlValue const& arrayElement : stringArray.GetArrayIterable())
         {
-        auto actualArrayElement = arrayElement->GetText();
+        auto actualArrayElement = arrayElement.GetText();
         ASSERT_STREQ(expectedStringArray[expectedIndex].c_str(), actualArrayElement);
         expectedIndex++;
         }
@@ -3228,7 +3222,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
     AssertColumnInfo("Dt_Array", false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
-    auto const& topLevelArrayValue = stmt.GetValueArray(0);
+    auto const& topLevelArrayValue = stmt.GetValue(0);
 
     //out of bounds test
     ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid()) << "ECSqlStatement::GetColumnInfo (-1) is expected to fail";
@@ -3236,9 +3230,9 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     
     //In array level
     int arrayIndex = 0;
-    for (IECSqlValue const* arrayElement : topLevelArrayValue)
+    for (IECSqlValue const& arrayElement : topLevelArrayValue.GetArrayIterable())
         {
-        auto const& arrayElementColumnInfo = arrayElement->GetColumnInfo();
+        auto const& arrayElementColumnInfo = arrayElement.GetColumnInfo();
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf("Dt_Array[%d]", arrayIndex);
         AssertColumnInfo(nullptr, false, expectedPropPath.c_str(), "PSA", "c", arrayElementColumnInfo);
@@ -3271,24 +3265,23 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
     }
 
     //SAStructProp.PStructProp level
-    auto const& topLevelStructValue = stmt.GetValueStruct(0);
-    auto const& nestedStructPropColumnInfo = topLevelStructValue.GetValue(0).GetColumnInfo(); //0 refers to first member in SAStructProp which is PStructProp
+    auto const& topLevelStructValue = stmt.GetValue(0);
+    auto const& nestedStructPropColumnInfo = topLevelStructValue["PStructProp"].GetColumnInfo();
     AssertColumnInfo("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, nestedStructPropColumnInfo);
-    auto const& nestedStructValue = topLevelStructValue.GetValue(0).GetStruct();
+    auto const& nestedStructValue = topLevelStructValue[0];
 
     //SAStructProp.PStructProp.XXX level
-    auto const& firstStructMemberColumnInfo = nestedStructValue.GetValue(0).GetColumnInfo();
+    auto const& firstStructMemberColumnInfo = nestedStructValue["b"].GetColumnInfo();
     AssertColumnInfo("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, firstStructMemberColumnInfo);
 
-    auto const& secondStructMemberColumnInfo = nestedStructValue.GetValue(1).GetColumnInfo();
+    auto const& secondStructMemberColumnInfo = nestedStructValue["bi"].GetColumnInfo();
     AssertColumnInfo("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, secondStructMemberColumnInfo);
 
-    auto const& eighthStructMemberColumnInfo = nestedStructValue.GetValue(8).GetColumnInfo();
+    auto const& eighthStructMemberColumnInfo = nestedStructValue["p2d"].GetColumnInfo();
     AssertColumnInfo("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, eighthStructMemberColumnInfo);
 
-    //out of bounds test
-    ASSERT_FALSE(nestedStructValue.GetValue(-1).GetColumnInfo().IsValid());
-    ASSERT_FALSE(nestedStructValue.GetValue(nestedStructValue.GetMemberCount()).GetColumnInfo().IsValid());
+    //invalid struct members
+    ASSERT_FALSE(nestedStructValue[""].GetColumnInfo().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3307,45 +3300,35 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
     AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
-    auto const& topLevelStructValue = stmt.GetValueStruct(0);
+    auto const& topLevelStructValue = stmt.GetValue(0);
 
-    //out of bounds test
-    {
     ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid());
-    ASSERT_FALSE(stmt.GetColumnInfo(2).IsValid());
-    }
 
     //SAStructProp.PStruct_Array level
-    int columnIndex = 1;
-    auto const& pstructArrayColumnInfo = topLevelStructValue.GetValue(columnIndex).GetColumnInfo();
-    AssertColumnInfo("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayColumnInfo);
-    auto const& pstructArrayValue = topLevelStructValue.GetValue(columnIndex).GetArray();
+    auto const& pstructArrayValue = topLevelStructValue["PStruct_Array"];
+    AssertColumnInfo("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayValue.GetColumnInfo());
 
     //out of bounds test
-    ASSERT_FALSE(topLevelStructValue.GetValue(-1).GetColumnInfo().IsValid()) << "GetValue (-1).GetColumnInfo () for struct value";
-    ASSERT_FALSE(topLevelStructValue.GetValue(topLevelStructValue.GetMemberCount()).GetColumnInfo().IsValid()) << "GetValue (N).GetColumnInfo with N being too large index for struct value";
+    ASSERT_FALSE(topLevelStructValue[""].GetColumnInfo().IsValid()) << "GetValue ("").GetColumnInfo () for struct value";
 
     //SAStructProp.PStruct_Array[] level
     int arrayIndex = 0;
     Utf8String expectedPropPath;
-    for (IECSqlValue const* arrayElement : pstructArrayValue)
+    for (IECSqlValue const& arrayElement : pstructArrayValue.GetArrayIterable())
         {
-        IECSqlStructValue const& pstructArrayElement = arrayElement->GetStruct();
         //first struct member
-        auto const& arrayElementFirstColumnInfo = pstructArrayElement.GetValue(0).GetColumnInfo();
+        auto const& arrayElementFirstColumnInfo = arrayElement["b"].GetColumnInfo();
         ASSERT_FALSE(arrayElementFirstColumnInfo.IsValid());
 
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].b", arrayIndex);
         AssertColumnInfo("b", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementFirstColumnInfo);
 
         //second struct member
-        auto const& arrayElementSecondColumnInfo = pstructArrayElement.GetValue(1).GetColumnInfo();
+        auto const& arrayElementSecondColumnInfo = arrayElement["bi"].GetColumnInfo();
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].bi", arrayIndex);
         AssertColumnInfo("bi", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementSecondColumnInfo);
 
-        //out of bounds test
-        ASSERT_FALSE(pstructArrayElement.GetValue(-1).GetColumnInfo().IsValid()) << "GetValue (-1).GetColumnInfo () for struct array value";
-        ASSERT_FALSE(pstructArrayElement.GetValue(pstructArrayElement.GetMemberCount()).GetColumnInfo().IsValid()) << "GetValue (N).GetColumnInfo with N being too large index for struct array value";
+        ASSERT_FALSE(arrayElement["foo"].GetColumnInfo().IsValid());
 
         arrayIndex++;
         }
@@ -3701,11 +3684,11 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 
         ASSERT_TRUE(statement.GetValueBoolean(0)) << "First column value is expected to be true";
 
-        IECSqlArrayValue const& arrayVal = statement.GetValueArray(1);
+        IECSqlValue const& arrayVal = statement.GetValue(1);
         int i = 0;
-        for (IECSqlValue const* arrayElem : arrayVal)
+        for (IECSqlValue const& arrayElem : arrayVal.GetArrayIterable())
             {
-            IGeometryPtr actualGeom = arrayElem->GetGeometry();
+            IGeometryPtr actualGeom = arrayElem.GetGeometry();
             ASSERT_TRUE(actualGeom != nullptr);
 
             AssertGeometry(*expectedGeoms[i], *actualGeom, "PASpatial.Geometry_Array");
@@ -3726,11 +3709,11 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
         {
         rowCount++;
 
-        IECSqlArrayValue const& arrayVal = statement.GetValueArray(0);
+        IECSqlValue const& arrayVal = statement.GetValue(0);
         int i = 0;
-        for (IECSqlValue const* arrayElem : arrayVal)
+        for (IECSqlValue const& arrayElem : arrayVal.GetArrayIterable())
             {
-            IGeometryPtr actualGeom = arrayElem->GetGeometry();
+            IGeometryPtr actualGeom = arrayElem.GetGeometry();
             ASSERT_TRUE(actualGeom != nullptr);
 
             AssertGeometry(*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp.Geometry_Array");
@@ -3751,10 +3734,9 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
         {
         rowCount++;
 
-        IECSqlStructValue const& structVal = statement.GetValueStruct(0);
-        for (int i = 0; i < structVal.GetMemberCount(); i++)
+        IECSqlValue const& structVal = statement.GetValue(0);
+        for (IECSqlValue const& structMemberVal : structVal.GetStructIterable())
             {
-            IECSqlValue const& structMemberVal = structVal.GetValue(0);
             Utf8StringCR structMemberName = structMemberVal.GetColumnInfo().GetProperty()->GetName();
             if (structMemberName.Equals("Geometry"))
                 {
@@ -3763,11 +3745,10 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
                 }
             else if (structMemberName.Equals("Geometry_Array"))
                 {
-                IECSqlArrayValue const& arrayVal = structMemberVal.GetArray();
                 int i = 0;
-                for (IECSqlValue const* arrayElem : arrayVal)
+                for (IECSqlValue const& arrayElem : structMemberVal.GetArrayIterable())
                     {
-                    IGeometryPtr actualGeom = arrayElem->GetGeometry();
+                    IGeometryPtr actualGeom = arrayElem.GetGeometry();
                     ASSERT_TRUE(actualGeom != nullptr);
 
                     AssertGeometry(*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp > Geometry_Array");
@@ -3841,16 +3822,16 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
 
     AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(0), "Geometry property");
     size_t arrayIndex = 0;
-    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(1))
+    for (IECSqlValue const& arrayElementVal : statement.GetValue(1).GetArrayIterable())
         {
-        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property");
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal.GetGeometry(), "Geometry array property");
         arrayIndex++;
         }
     AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(2), "Geometry property overflow");
     arrayIndex = 0;
-    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(3))
+    for (IECSqlValue const& arrayElementVal : statement.GetValue(3).GetArrayIterable())
         {
-        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property overflow");
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal.GetGeometry(), "Geometry array property overflow");
         arrayIndex++;
         }
     }
@@ -3920,7 +3901,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA"));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto &pStructArray = stmt.GetValue(0).GetArray();
+        auto const& pStructArray = stmt.GetValue(0);
         ASSERT_EQ(3, pStructArray.GetArrayLength());
         }
     }
@@ -4080,13 +4061,12 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto &pStructArray = stmt.GetValue(0).GetArray();
+        auto &pStructArray = stmt.GetValue(0);
         ASSERT_EQ(3, pStructArray.GetArrayLength());
         //need to Verify all values
         /*  for (auto const & arrayItem : pStructArray)
         {
-        IECSqlStructValue const & structValue = arrayItem->GetStruct();
-        IECSqlValue const & value= structValue.GetValue(0);
+        IECSqlValue const & value= arrayItem->operator[](0);
         value.GetDouble();
         }
 
@@ -4182,7 +4162,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     while (selectStatement.Step() == BE_SQLITE_ROW)
         {
-        auto &pStructArray = selectStatement.GetValue(0).GetArray();
+        auto const& pStructArray = selectStatement.GetValue(0);
         ASSERT_EQ(count, pStructArray.GetArrayLength());
         }
 
@@ -4214,7 +4194,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     while (statement.Step() == BE_SQLITE_ROW)
         {
-        auto &pStructArray = statement.GetValue(0).GetArray();
+        auto const& pStructArray = statement.GetValue(0);
         ASSERT_EQ(count, pStructArray.GetArrayLength());
         }
     statement.Finalize();
@@ -4389,21 +4369,21 @@ TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
         {
         ASSERT_STREQ("Foo", stmt.GetValueText(0));
 
-        IECSqlArrayValue const& StringArray = stmt.GetValueArray(1);
+        IECSqlValue const& StringArray = stmt.GetValue(1);
         size_t expectedIndex = 0;
 
-        for (IECSqlValue const* arrayElement : StringArray)
+        for (IECSqlValue const& arrayElement : StringArray.GetArrayIterable())
             {
-            Utf8CP actualArrayElement = arrayElement->GetText();
+            Utf8CP actualArrayElement = arrayElement.GetText();
             ASSERT_STREQ(expectedStringArray[expectedIndex].c_str(), actualArrayElement);
             expectedIndex++;
             }
 
-        IECSqlArrayValue const& IntArray = stmt.GetValueArray(2);
+        IECSqlValue const& IntArray = stmt.GetValue(2);
         expectedIndex = 0;
-        for (IECSqlValue const* arrayElement : IntArray)
+        for (IECSqlValue const& arrayElement : IntArray.GetArrayIterable())
             {
-            int actualArrayElement = arrayElement->GetInt();
+            int actualArrayElement = arrayElement.GetInt();
             ASSERT_EQ(expectedIntArray[expectedIndex], actualArrayElement);
             expectedIndex++;
             }

@@ -92,7 +92,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlInsertPreparer.h \
                 $(baseDir)ECSql/ECSqlUpdatePreparer.h \
                 $(baseDir)ECSql/ECSqlDeletePreparer.h \
-                $(baseDir)ECSql/IECSqlPrimitiveValue.h \
                 $(baseDir)ECSql/ECSqlPreparedStatement.h \
                 $(baseDir)ECSql/ECSqlStatementBase.h \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \

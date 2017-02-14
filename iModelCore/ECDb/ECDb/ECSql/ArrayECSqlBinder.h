@@ -15,11 +15,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct ArrayECSqlBinder : public ECSqlBinder
+struct ArrayECSqlBinder final : public ECSqlBinder
     {
 private:
 
-    struct JsonValueBinder : IECSqlBinder
+    struct JsonValueBinder final : IECSqlBinder
         {
         private:
             ECDb const* m_ecdb = nullptr;
