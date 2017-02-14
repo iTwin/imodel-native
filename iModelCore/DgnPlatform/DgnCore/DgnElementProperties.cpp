@@ -724,7 +724,7 @@ BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, E
     if (propertiesToBind.empty())
         return m_updaters[eclassId] = nullptr;
 
-    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind, "NoECClassIdFilter");
+    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECCrudWriteToken(), propertiesToBind, "NoECClassIdFilter ReadonlyPropertiesAreUpdatable");
     }
 
 /*---------------------------------------------------------------------------------**//**

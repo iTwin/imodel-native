@@ -112,7 +112,7 @@ void FitContext::AcceptRangeElement(DgnElementId id)
     if (!m_params.m_useElementAlignedBox)
         m_fitRange.Extend(m_lastRange);
     else
-        VisitElement(id, true);
+        VisitElement(id);
     }
 
 BEGIN_UNNAMED_NAMESPACE
