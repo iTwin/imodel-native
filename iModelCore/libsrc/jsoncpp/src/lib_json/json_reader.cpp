@@ -107,17 +107,9 @@ Reader::parse( const char *beginDoc, const char *endDoc,
                Value &root,
                bool collectComments )
 {
-   if ( !features_.allowComments_ )
-   {
-      collectComments = false;
-   }
-
    begin_ = beginDoc;
    end_ = endDoc;
    current_ = begin_;
-   lastValueEnd_ = 0;
-   lastValue_ = 0;
-   commentsBefore_ = "";
    errors_.clear();
    while ( !nodes_.empty() )
       nodes_.pop();
@@ -125,7 +117,7 @@ Reader::parse( const char *beginDoc, const char *endDoc,
    
    bool successful = readValue();
    Token token;
-   readToken( token );
+   skipCommentTokens( token );
    if ( features_.strictRoot_ )
    {
       if ( !root.isArray()  &&  !root.isObject() )
@@ -147,7 +139,7 @@ bool
 Reader::readValue()
 {
    Token token;
-   readToken( token );
+   skipCommentTokens( token );
    bool successful = true;
 
    switch ( token.type_ )
@@ -177,14 +169,27 @@ Reader::readValue()
       return addError( "Syntax error: value, object or array expected.", token );
    }
 
-   if ( collectComments_ )
-   {
-      lastValueEnd_ = current_;
-      lastValue_ = &currentValue();
-   }
-
    return successful;
 }
+
+
+void 
+Reader::skipCommentTokens( Token &token )
+{
+   if ( features_.allowComments_ )
+   {
+      do
+      {
+         readToken( token );
+      }
+      while ( token.type_ == tokenComment );
+   }
+   else
+   {
+      readToken( token );
+   }
+}
+
 
 bool 
 Reader::expectToken( TokenType type, Token &token, const char *message )
@@ -220,6 +225,10 @@ Reader::readToken( Token &token )
    case '"':
       token.type_ = tokenString;
       ok = readString();
+      break;
+   case '/':
+      token.type_ = tokenComment;
+      ok = readComment();
       break;
    case '0':
    case '1':
@@ -294,6 +303,49 @@ Reader::match( Location pattern,
    current_ += patternLength;
    return true;
 }
+
+
+bool
+Reader::readComment()
+{
+   Location commentBegin = current_ - 1;
+   Char c = getNextChar();
+   bool successful = false;
+   if ( c == '*' )
+      successful = readCStyleComment();
+   else if ( c == '/' )
+      successful = readCppStyleComment();
+   if ( !successful )
+      return false;
+
+   return true;
+}
+
+bool 
+Reader::readCStyleComment()
+{
+   while ( current_ != end_ )
+   {
+      Char c = getNextChar();
+      if ( c == '*'  &&  *current_ == '/' )
+         break;
+   }
+   return getNextChar() == '/';
+}
+
+
+bool 
+Reader::readCppStyleComment()
+{
+   while ( current_ != end_ )
+   {
+      Char c = getNextChar();
+      if (  c == '\r'  ||  c == '\n' )
+         break;
+   }
+   return true;
+}
+
 
 void 
 Reader::readNumber()
