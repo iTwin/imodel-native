@@ -2602,12 +2602,22 @@ private:
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
+
+    static Render::ViewFlags GetDefaultViewFlags()
+        {
+        // Ensure all classes/types of elements included...visibility can be controlled by declarative styling.
+        // Most default to on.
+        Render::ViewFlags flags;
+        flags.SetShowConstructions(true);
+        return flags;
+        }
 public:
     TileGeometryProcessorContext(TileGeometryProcessor& processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
     m_statement(db.GetCachedStatement(T::GetSql()))
         {
         SetDgnDb(db);
-    m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        SetViewFlags(GetDefaultViewFlags());
         }
 
 /*---------------------------------------------------------------------------------**//**
