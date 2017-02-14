@@ -85,15 +85,15 @@ DVec3dCP tangent1P
     DPoint3d    chord, dir0, dir1, center0, center1, normal;
 
     /* Compute the radii for arcs */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&chord, point1P, point0P);
-    magnitude = bsiDPoint3d_magnitude (&chord);
-    bsiDPoint3d_normalizeInPlace (&chord);
-    cosine0 = bsiDPoint3d_dotProduct (&chord, tangent0P);
-    cosine1 = bsiDPoint3d_dotProduct (&chord, tangent1P);
+    chord.DifferenceOf (*point1P, *point0P);
+    magnitude = chord.Magnitude ();
+    chord.Normalize ();
+    cosine0 = chord.DotProduct (*tangent0P);
+    cosine1 = chord.DotProduct (*tangent1P);
     sine0 = sqrt(1.0 - cosine0 * cosine0);
     sine1 = sqrt(1.0 - cosine1 * cosine1);
-    bsiDPoint3d_crossProduct (&dir0, tangent0P, &chord);
-    bsiDPoint3d_crossProduct (&dir1, tangent1P, &chord);
+    dir0.CrossProduct (*tangent0P, chord);
+    dir1.CrossProduct (*tangent1P, chord);
 
     static double s_normalFlipTol = 1.0e-8;
     // TR #116288:
@@ -103,7 +103,7 @@ DVec3dCP tangent1P
     // To rule this out, allow for some floating point slop in the negativity test below.
     // Using isUnimodal = false for the (near) tangency case avoids the bad intermediate value in computing the arc radii.
     // The same problem occurs (and is fixed by this change) if tangent1 is (nearly) parallel to chord.
-    isUnimodel = bsiDPoint3d_dotProduct (&dir0, &dir1) < -s_normalFlipTol;
+    isUnimodel = dir0.DotProduct (dir1) < -s_normalFlipTol;
     if (isUnimodel)
         {
         tmp0 = 1.0 - cosine0;
@@ -119,13 +119,13 @@ DVec3dCP tangent1P
 
     // TR #116288: avoid colinear tangent & chord---caller ensures one tangent is not colinear
     if (fabs (cosine0) < fabs (cosine1))
-        bsiDPoint3d_crossProduct (&normal, &chord, tangent0P);
+        normal.CrossProduct (chord, *tangent0P);
     else
-        bsiDPoint3d_crossProduct (&normal, &chord, tangent1P);
+        normal.CrossProduct (chord, *tangent1P);
 
     /* Compute the centers for the arcs */
-    bsiDPoint3d_crossProduct (&dir0, tangent0P, &normal);
-    bsiDPoint3d_crossProduct (&dir1, tangent1P, &normal);
+    dir0.CrossProduct (*tangent0P, normal);
+    dir1.CrossProduct (*tangent1P, normal);
     calcBiarcCenters (center0, center1, *point0P, *point1P, dir0, dir1, radius0, radius1, isUnimodel);
 
     DPoint3d pointC;
@@ -134,22 +134,22 @@ DVec3dCP tangent1P
         {
         if (DoubleOps::AlmostEqual (radius0, radius1))
             {
-            bsiDPoint3d_interpolate (&dir0,  point0P, 0.5,  point1P);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &dir0, &center0);
+            dir0.Interpolate (*point0P, 0.5, *point1P);
+            dir0.DifferenceOf (dir0, center0);
             }
         else
             {
             if (radius1 >= radius0)
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center0, &center1);
+                dir0.DifferenceOf (center0, center1);
             else
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&dir0, &center1, &center0);
+                dir0.DifferenceOf (center1, center0);
             }
-        bsiDPoint3d_normalizeInPlace (&dir0);
-        bsiDPoint3d_addScaledDPoint3d (&pointC, &center0, &dir0, radius0);
+        dir0.Normalize ();
+        pointC.SumOf (center0, dir0, radius0);
         }
     else
         {
-        bsiDPoint3d_interpolate (&pointC,  &center0, 0.5,  &center1);
+        pointC.Interpolate (center0, 0.5, center1);
         }
     DVec3d vector0A = DVec3d::FromStartEnd (center0, *point0P);
     DVec3d vector0C = DVec3d::FromStartEnd (center0, pointC);

@@ -1367,6 +1367,28 @@ bool    DPoint3dOps::PrincipalExtents (bvector<DPoint3d> const &points, Transfor
     if (DPoint3dOps::PrincipalAxes (points, localToWorld0, worldToLocal0, moments))
         {
         DRange3d localRange = DPoint3dOps::Range (&points, worldToLocal0);
+        DRange3d localRange1;
+        return LocalRangeToOrderedExtents (localToWorld0, localRange, originWithExtentVectors, localToWorldOut, worldToLocalOut, localRange1);
+        }
+    localToWorldOut.InitIdentity ();
+    worldToLocalOut.InitIdentity ();
+    originWithExtentVectors.InitIdentity ();
+    return false;
+    }
+bool DPoint3dOps::LocalRangeToOrderedExtents
+(
+TransformCR localToWorld0, //!< [in] local coordinate frame (assumed rigid)
+DRange3dCR localRange,    //!< [in] range cube in local coordinates
+TransformR extentTransform,  //!< [out] transform with origin at lower left of range, xyz columns as full extent of the ranges, with x largest, then y, and z smallest.
+TransformR localToWorldOut,  //!< [out] rigid frame
+TransformR worldToLocalOut,   //!< [out] inverse of rigid frame.
+DRange3dR  localRangeOut     //!< [out] range in sorted system.
+)
+    {
+    RotMatrix axes;
+    localToWorld0.GetMatrix (axes);
+    if (axes.IsOrthogonal ())
+        {
         DVec3d diagonal = DVec3d::FromStartEnd (localRange.low, localRange.high);
         int ix, iy, iz;
         Angle::Cyclic3dAxes (iz, ix, iy, diagonal.MinAbsIndex ());
@@ -1389,10 +1411,11 @@ bool    DPoint3dOps::PrincipalExtents (bvector<DPoint3d> const &points, Transfor
 
         localToWorldOut.InitFromOriginAndVectors (centroid, xAxis, yAxis, zAxis);
         worldToLocalOut.InverseOf (localToWorldOut);
-        DRange3d localRange1 = DPoint3dOps::Range (&points, worldToLocalOut);
-        DVec3d diagonal1 = DVec3d::FromStartEnd (localRange1.low, localRange1.high);
+        Transform oldLocalToNewLocal = worldToLocalOut * localToWorld0;
+        oldLocalToNewLocal.Multiply (localRangeOut, localRange);
+        DVec3d diagonal1 = DVec3d::FromStartEnd (localRangeOut.low, localRangeOut.high);
         DPoint3d worldOrigin;
-        localToWorldOut.Multiply (worldOrigin, localRange1.low);
+        localToWorldOut.Multiply (worldOrigin, localRangeOut.low);
         xAxis.Scale (diagonal1.x);
         yAxis.Scale (diagonal1.y);
         zAxis.Scale (diagonal1.z);
@@ -1402,11 +1425,9 @@ bool    DPoint3dOps::PrincipalExtents (bvector<DPoint3d> const &points, Transfor
             std::swap (xAxis, yAxis);
             xAxis.Negate ();
             }
-        originWithExtentVectors.InitFromOriginAndVectors (worldOrigin, xAxis, yAxis, zAxis);
-        return true;
+        extentTransform.InitFromOriginAndVectors (worldOrigin, xAxis, yAxis, zAxis);
         }
-    originWithExtentVectors.InitIdentity ();
-    return false;   
+    return true;
     }
 
 bool    DPoint3dOps::PrincipalExtents (bvector<DPoint3d> const &points, TransformR originWithExtentVectors)
@@ -1448,6 +1469,20 @@ static void SortMoments (RotMatrixR axes, DVec3dR moments)
         axes.ScaleColumns (1.0, 1.0, -1.0);
     }
 
+void DPoint3dOps::AccumulateToMomentSumUpperTriangle (DMatrix4dR sums, DPoint3dCR origin, DPoint3dCR xyz)
+    {
+    DVec3d uvw = xyz - origin;
+    sums.coff[0][0] += uvw.x * uvw.x;
+    sums.coff[0][1] += uvw.x * uvw.y;
+    sums.coff[0][2] += uvw.x * uvw.z;
+    sums.coff[0][3] += uvw.x;
+    sums.coff[1][1] += uvw.y * uvw.y;
+    sums.coff[1][2] += uvw.y * uvw.z;
+    sums.coff[1][3] += uvw.y;
+    sums.coff[2][2] += uvw.z * uvw.z;
+    sums.coff[2][3] += uvw.z;
+    sums.coff[3][3] += 1.0;
+    }
 DMatrix4d DPoint3dOps::MomentSums (DPoint3dCR origin, bvector<DPoint3d> const &points)
     {
     DPoint3d uvw;
