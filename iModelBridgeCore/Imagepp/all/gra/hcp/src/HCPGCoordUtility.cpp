@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGCoordUtility.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
@@ -80,20 +80,23 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
     uint32_t ProjLinearUnit = 0;
     uint32_t GeogAngularUnit = 0;
 
-    // Set Unit field
-    if (BeStringUtilities::Stricmp(pErmUnits, "FEET") == 0 || BeStringUtilities::Stricmp(pErmUnits, "U.S. SURVEY FOOT") == 0)
-        ProjLinearUnit = TIFFGeo_Linear_Foot_US_Survey; // US Foot
-    else if (BeStringUtilities::Stricmp(pErmUnits, "IFEET") == 0)
-        ProjLinearUnit = TIFFGeo_Linear_Foot; // Foot
-    else if (BeStringUtilities::Stricmp(pErmUnits, "DEGREES") == 0)
-        GeogAngularUnit = 9102; // Degree
-    else if (BeStringUtilities::Stricmp(pErmUnits, "METERS") == 0)
-        ProjLinearUnit = TIFFGeo_Linear_Meter; // Meter
-    else if (BeStringUtilities::Stricmp(pErmUnits, "IMPERIAL YARD") == 0)
-        ProjLinearUnit = TIFFGeo_British_Yard_1895;
-    else
+    if (0 != *pErmUnits) // We do not always have units.
         {
-        HASSERT_DATA(0); //Check if it isn't a new unit that should be handled by a special case
+        // Set Unit field
+        if (BeStringUtilities::Stricmp(pErmUnits, "FEET") == 0 || BeStringUtilities::Stricmp(pErmUnits, "U.S. SURVEY FOOT") == 0)
+            ProjLinearUnit = TIFFGeo_Linear_Foot_US_Survey; // US Foot
+        else if (BeStringUtilities::Stricmp(pErmUnits, "IFEET") == 0)
+            ProjLinearUnit = TIFFGeo_Linear_Foot; // Foot
+        else if (BeStringUtilities::Stricmp(pErmUnits, "DEGREES") == 0)
+            GeogAngularUnit = 9102; // Degree
+        else if (BeStringUtilities::Stricmp(pErmUnits, "METERS") == 0)
+            ProjLinearUnit = TIFFGeo_Linear_Meter; // Meter
+        else if (BeStringUtilities::Stricmp(pErmUnits, "IMPERIAL YARD") == 0)
+            ProjLinearUnit = TIFFGeo_British_Yard_1895;
+        else
+            {
+            HASSERT_DATA(0); //Check if it isn't a new unit that should be handled by a special case
+            }
         }
 
     // We build a set of geoTIFF keys according to ECW ids we obtain...
