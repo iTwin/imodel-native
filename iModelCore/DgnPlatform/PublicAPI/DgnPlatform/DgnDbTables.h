@@ -618,9 +618,13 @@ private:
     mutable IGeoCoordinateServicesP m_geoServices = nullptr;
 
     DgnGeoLocation(DgnDbR db);
-    void LoadProjectExtents() const;
+    void    LoadProjectExtents() const;
 
 public:
+    //! @private
+    //! Called only internally, on the rare occasions when a new GCS has been stored to the DgnDb.
+    void    NewGCSStored () {m_hasCheckedForGCS = false;}
+
     //! @private
     //! Return a reasonable value that can be used if the project extents have never been established for this BIM.
     //! This is an arbitrary volume intended to represent a cube of a reasonable size, if we have no idea what is being modeled by
