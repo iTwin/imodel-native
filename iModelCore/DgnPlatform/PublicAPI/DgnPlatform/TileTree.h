@@ -221,6 +221,7 @@ protected:
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
     virtual ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) = 0;
+    DGNPLATFORM_EXPORT virtual Render::ViewFlags _GetDrawViewFlags(RenderContextCR) const;
 
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
@@ -245,7 +246,7 @@ public:
     virtual Utf8String _ConstructTileName(TileCR tile) const {return m_rootDir + tile._GetTileName();}
 
     //! Ctor for Root.
-    //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()
+    //! @param db The DgnDb from which this Root was created. This is needed to call GeoLocation().GetDgnGCS()
     //! @param location The transform from tile coordinates to BIM world coordinates.
     //! @param rootUrl The root url for loading tiles. This name will be prepended to tile names.
     //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.
@@ -272,7 +273,8 @@ public:
     //! @note This method must be called from the client thread
     DGNPLATFORM_EXPORT void DrawInView(RenderListContext& context, TransformCR, ClipVectorCP);
 
-    DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP clips);
+    //! Perform a pick operation on the contents of this tree
+    DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);
 };
 
 //=======================================================================================
@@ -311,7 +313,7 @@ protected:
     BentleyStatus DoSaveToDb();
 
 public:
-    bool IsCanceledOrAbandoned() const { return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned(); }
+    bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -413,7 +415,7 @@ struct DrawArgs : TileArgs
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
-    DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
+    DGNPLATFORM_EXPORT void DrawGraphics(RootR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
 };
 
@@ -477,7 +479,7 @@ struct Tile : TileTree::Tile
     bool m_isLeaf;
     TileId m_id; 
     Render::IGraphicBuilder::TileCorners m_corners; 
-    Render::GraphicPtr m_graphic;                   
+    mutable Render::GraphicPtr m_graphic;                   
 
     Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
 
