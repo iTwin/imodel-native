@@ -13,6 +13,7 @@
 #define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
 #define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
 #define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
+#define HEADER_MasFileETag              "Mas-File-ETag"
 
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
@@ -230,9 +231,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(HttpResponse& resp
 WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(HttpResponse& response) const
     {
     if (HttpStatus::Created == response.GetHttpStatus())
-        {
-        return WSCreateObjectResult::Success({response.GetContent()->GetBody()});
-        }
+        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
     return WSCreateObjectResult::Error(response);
     }
 
@@ -242,10 +241,18 @@ WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(HttpResponse& respons
 WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(HttpResponse& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
-        {
-        return WSUpdateObjectResult::Success({});
-        }
+        return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
     return WSUpdateObjectResult::Error(response);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+WSUploadResponse WebApiV2::ResolveUploadResponse(HttpResponse& response) const
+    {
+    auto body = response.GetContent()->GetBody();
+    auto eTag = response.GetHeaders().GetValue(HEADER_MasFileETag);
+    return WSUploadResponse(body, eTag);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -652,7 +659,7 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == response.GetHttpStatus())
             {
-            finalResult->SetSuccess({});
+            finalResult->SetSuccess(ResolveUploadResponse(response));
             return;
             }
 
@@ -673,30 +680,24 @@ ICancellationTokenPtr ct
             return;
             }
 
-        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult result)
+        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult)
             {
-            if (!result.IsSuccess())
+            if (!azureResult.IsSuccess())
                 {
-                finalResult->SetError(result.GetError());
+                finalResult->SetError(azureResult.GetError());
                 return;
                 }
-
+                
+            finalResult->SetSuccess({nullptr, azureResult.GetValue().GetETag()});
             if (confirmationId.empty())
-                {
-                finalResult->SetSuccess({});
                 return;
-                }
 
             HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
             request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
             request.PerformAsync()->Then([=] (HttpResponse& response)
                 {
                 if (HttpStatus::OK != response.GetHttpStatus())
-                    {
                     finalResult->SetError(response);
-                    return;
-                    }
-                finalResult->SetSuccess({});
                 });
             });
         })

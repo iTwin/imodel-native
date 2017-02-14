@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -43,6 +43,7 @@ struct WebApiV2 : public WebApi
         WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response) const;
         WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
+        WSUploadResponse ResolveUploadResponse(HttpResponse& response) const;
         WSObjectsResult ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId = nullptr) const;
 
         HttpRequest CreateFileDownloadRequest
