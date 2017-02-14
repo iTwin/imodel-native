@@ -1985,7 +1985,7 @@ public:
     Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle.Radians(), 1.0, 1.0); return t;}
 
     //! Calculate an AxisAlignedBox3d for this Placement2d.
-    //! @note the z values are arbitrarily set to +-.5 mm.
+    //! @note the z values are set to +-1m
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
     //! Determine whether this Placement2d is valid
