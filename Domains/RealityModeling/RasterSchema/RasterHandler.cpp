@@ -292,10 +292,7 @@ AxisAlignedBox3d RasterModel::_QueryModelRange() const
     {
     _Load(nullptr);
     if (!m_root.IsValid())
-        {
-        BeAssert(false);
         return AxisAlignedBox3d();
-        }
 
     ElementAlignedBox3d range = m_root->ComputeRange();
     if (!range.IsValid())
@@ -353,10 +350,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     _Load(&context.GetTargetR().GetSystem());
 
     if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
-        {
-        BeAssert(false);
         return;
-        }
 
     Transform depthTransfo;
     ComputeDepthTransformation(depthTransfo, context);
