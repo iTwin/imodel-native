@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementProperties.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,6 +34,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     ep.SetFillDisplay(Render::FillDisplay::Always);
 
     Render::GradientSymbPtr   gradient = Render::GradientSymb::Create();
+    Render::GradientSymbPtr   gradientcopy = Render::GradientSymb::Create();
     double   keyValues[2];
     ColorDef    keyColors[2];
 
@@ -73,6 +74,8 @@ TEST_F (ElementDisplayProperties, SetGradient)
         EXPECT_EQ(1.0, gradient->GetShift());
         EXPECT_EQ(2, gradient->GetNKeys());
         }
+    gradientcopy->CopyFrom(*gradient);
+    ASSERT_TRUE(gradientcopy->operator==(*gradient));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1,6 +1,6 @@
 ﻿//-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextBlock_Test.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"
@@ -401,8 +401,14 @@ TEST_F(AnnotationTextBlockTest, ToString)
 
     text->GetParagraphsR().push_back(para2);
 
-    Utf8PrintfString expectedString("%s %s%s/%s%s", STR_1.c_str(), STR_2.c_str(), STR_3.c_str(), STR_4.c_str(), STR_5.c_str());
+    //Append Run
+    AnnotationTextRunPtr textRun3 = AnnotationTextRun::Create(db, fileStyle->GetElementId(), "Run Contetents");
+    ASSERT_TRUE(textRun3.IsValid());
+    text->AppendRun(*textRun3);
+
+    Utf8PrintfString expectedString("%s %s%s/%s%s%s", STR_1.c_str(), STR_2.c_str(), STR_3.c_str(), STR_4.c_str(), STR_5.c_str(), textRun3->GetContent().c_str());
     textStr = text->ToString();
     
     EXPECT_TRUE(0 == strcmp(expectedString.c_str(), textStr.c_str()));
+    
     }

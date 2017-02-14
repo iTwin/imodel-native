@@ -31,14 +31,14 @@ BEGIN_UNNAMED_NAMESPACE
 struct TxnMonitorVerifier : TxnMonitor
 {
     bool m_OnTxnClosedCalled;
-    bool m_OnTxnReversedCalled;
+    bool m_OnTxnAppliedCalled;
     bset<BeInt64Id> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
     void Clear();
     void _OnCommit(TxnManager&) override;
-    void _OnReversedChanges(TxnManager&) override { m_OnTxnReversedCalled = true; }
+    void _OnAppliedChanges(TxnManager&) override { m_OnTxnAppliedCalled = true; }
 };
 
 /*=================================================================================**//**
@@ -128,7 +128,7 @@ TxnMonitorVerifier::~TxnMonitorVerifier()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnMonitorVerifier::Clear()
 {
-    m_OnTxnClosedCalled = m_OnTxnReversedCalled = false;
+    m_OnTxnClosedCalled = m_OnTxnAppliedCalled = false;
     m_adds.clear(); m_deletes.clear(); m_mods.clear();
 }
 

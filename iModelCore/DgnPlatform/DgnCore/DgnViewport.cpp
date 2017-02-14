@@ -450,7 +450,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    _AdjustAspectRatio(*viewController, false);
+    _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
 
     DPoint3d origin = viewController->GetOrigin();
     DVec3d   delta  = viewController->GetDelta();
@@ -474,8 +474,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
             DRange3d  extents = m_viewController->GetViewedExtents(*this);
             if (extents.IsEmpty())
                 {
-                extents.low.z = -DgnUnits::OneMillimeter();
-                extents.high.z = DgnUnits::OneMillimeter();
+                extents.low.z = -Render::Target::Get2dFrustumDepth();
+                extents.high.z = Render::Target::Get2dFrustumDepth();
                 }
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
@@ -520,8 +520,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
         {
         AlignWithRootZ();
 
-        delta.z  =  200. * DgnUnits::OneMillimeter();
-        origin.z = -100. * DgnUnits::OneMillimeter();
+        delta.z  =  2. * Render::Target::Get2dFrustumDepth();
+        origin.z = -Render::Target::Get2dFrustumDepth();
         }
 
     m_viewOrg   = origin;
@@ -1243,6 +1243,8 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
+    if (m_renderTarget.IsValid())
+        m_renderTarget->_QueueReset();
     }
 
 /*---------------------------------------------------------------------------------**//**

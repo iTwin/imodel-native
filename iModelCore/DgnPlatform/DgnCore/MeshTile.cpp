@@ -23,7 +23,6 @@ BEGIN_UNNAMED_NAMESPACE
 constexpr double s_half2dDepthRange = 10.0;
 
 static bool s_doInstancing = true;
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
 // The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
@@ -2075,6 +2074,7 @@ private:
     TileGeometryList            m_curElemGeometries;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
+    double                      m_minLineStyleWidth;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -2120,17 +2120,20 @@ public:
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
-        static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
+        static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
+        static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
 
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
-        m_minTextBoxSize  = s_minTextBoxSize * tolerance;
+        m_minTextBoxSize  = s_minTextBoxToleranceRatio * tolerance;
+        m_minLineStyleWidth = s_minLineStyleWidthToleranceRatio * tolerance;
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    bool DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&) const  { return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
 
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
@@ -2155,6 +2158,7 @@ public:
         }
 
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -2408,7 +2412,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     clone->GetRange(range);
     tf.Multiply(thisTileRange, range);
 
-    if (!s_doInstancing || !thisTileRange.IsContained(m_tileRange))
+    if (!thisTileRange.IsContained(m_tileRange))
         {
         IGeometryPtr geom = IGeometry::Create(clone);
         return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
@@ -2602,12 +2606,22 @@ private:
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
+
+    static Render::ViewFlags GetDefaultViewFlags()
+        {
+        // Ensure all classes/types of elements included...visibility can be controlled by declarative styling.
+        // Most default to on.
+        Render::ViewFlags flags;
+        flags.SetShowConstructions(true);
+        return flags;
+        }
 public:
     TileGeometryProcessorContext(TileGeometryProcessor& processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
     m_statement(db.GetCachedStatement(T::GetSql()))
         {
         SetDgnDb(db);
-    m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        SetViewFlags(GetDefaultViewFlags());
         }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2615,7 +2629,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    if (s_doInstancing)  // && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  Mirroring???
+    if (graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
@@ -2628,6 +2642,7 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
         }
     return nullptr;
     }
+
 };
 
 /*---------------------------------------------------------------------------------**//**

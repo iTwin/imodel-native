@@ -380,9 +380,9 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     auto& box = volume[JSON_Box];
 
     AppendPoint(box, center);
-    AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x), 0.0, 0.0));
-    AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y), 0.0));
-    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)));
+    AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x)/2.0, 0.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y)/2.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z/2.0)));
     }
 
 
@@ -402,9 +402,7 @@ void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AppendProgramAttribute(Json::Value& program, Utf8CP attrName)
     {
-    Json::Value obj;
-    obj[attrName] = Json::objectValue;
-    program["attributes"].append(obj);
+    program["attributes"].append(attrName);
     }
 
 /*---------------------------------------------------------------------------------**//**

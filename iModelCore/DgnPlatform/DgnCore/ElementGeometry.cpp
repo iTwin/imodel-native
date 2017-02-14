@@ -317,7 +317,7 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
-    // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
+#if defined (NOT_NOW_NEEDSWORK_TOO_SLOW)
     IFacetOptionsPtr facetOpt = IFacetOptions::Create();
 
     facetOpt->SetMinPerBezier(3);
@@ -328,6 +328,16 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
     builder->Add(geom);
 
     return getRange(builder->GetClientMeshR(), range, transform);
+#else
+    // NEEDSWORK: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...but using IPolyfaceConstruction is too slow...
+    //            Earlin will add a new method to get a better compromise range that ignores trim boundaries...
+    if (nullptr != transform)
+        geom.GetPoleRange(range, *transform);
+    else
+        geom.GetPoleRange(range);
+
+   return true;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -3155,7 +3165,7 @@ IndexedGeomMap m_map;
 
 virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
 virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
-virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 
 static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
@@ -3672,6 +3682,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
@@ -3726,6 +3740,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
+
+                // NOTE: We no longer want to support the surface/control polygon visibility options.
+                //       Display of the control polygon is something that should be left to specific tools and modify handles.
+                //       WireframeGeomUtil::DrawControlPolygon was created to help tools that wish to show the control polygon.
                 break;
                 }
 
