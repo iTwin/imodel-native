@@ -54,8 +54,8 @@ struct NullContext : ViewContext
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
-        void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
+        void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override {return new NullGraphic();}
     };
 
 protected:

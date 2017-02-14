@@ -1252,8 +1252,8 @@ protected:
     virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
-    virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR) const = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
+    virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
 };
 
 //=======================================================================================
@@ -1279,7 +1279,7 @@ public:
     GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
     template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
 
-    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
+    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
 
     operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
     DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
@@ -1456,7 +1456,7 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {m_builder->_AddSubGraphic(graphic, subToGraphic, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {m_builder->_AddSubGraphic(graphic, subToGraphic, params, clip);}
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.

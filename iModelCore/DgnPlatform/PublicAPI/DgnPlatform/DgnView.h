@@ -958,9 +958,17 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
     friend struct ViewController;
 
 protected:
+    bool m_isCameraOn = true;    //!< if true, m_camera is valid.
     Camera m_camera;  //!< The camera used for this view.
 
-    explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) {}
+    explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) 
+        {
+        // not valid, but better than random
+        m_isCameraOn = false;
+        memset(&m_camera, 0, sizeof(m_camera));
+        m_camera.InvalidateFocus();
+        }
+
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
@@ -969,7 +977,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     CameraViewDefinitionCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
-    bool _IsEyePointAbove(double elevation) const override {return GetEyePoint().z > elevation;}
+    bool _IsEyePointAbove(double elevation) const override {return !m_isCameraOn? T_Super::_IsEyePointAbove(elevation): (GetEyePoint().z > elevation);}
     DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
     DGNPLATFORM_EXPORT void SaveCamera();
     DGNPLATFORM_EXPORT DPoint3d _GetTargetPoint() const override;
@@ -996,6 +1004,16 @@ public:
 
     //! Get a writable reference to the camera for this view
     Camera& GetCameraR() {return m_camera;}
+
+    //! Determine whether the camera is on for this view
+    bool IsCameraOn() const {return m_isCameraOn;}
+
+    //! Turn the camera on or off for this view
+    //! @param[in] val whether the camera is to be on or off
+    void SetCameraOn(bool val) {m_isCameraOn = val;}
+
+    //! Determine whether the camera is valid for this view
+    bool IsCameraValid() const {return m_camera.IsValid();}
 
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT double CalcLensAngle() const;

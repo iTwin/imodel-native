@@ -609,6 +609,7 @@ public:
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private Current Placement2d as of last call to Append when creating a 2d GeometryStream
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
+    size_t GetCurrentSize() const {return m_writer.m_buffer.size();} //!< @private Current size of GeometryStream being constructed by this builder
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream(GeometryStreamR); //!< @private GeometryStream being constructed by this builder
 
     //! Return the GeometryStreamEntryId for the GeometricPrimitve last added to the builder. Used to identify a specific GeometricPrimitive in the GeometryStream in places like HitDetail.
