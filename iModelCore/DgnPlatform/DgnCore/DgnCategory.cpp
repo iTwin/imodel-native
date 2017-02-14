@@ -862,8 +862,8 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             auto& el = (DgnSubCategory&) elIn;
-            //if (el.IsDefaultSubCategory())
-            //    return DgnDbStatus::ReadOnly; // default sub-categories don't have a description
+            if (el.IsDefaultSubCategory())
+                return DgnDbStatus::ReadOnly; // default sub-categories don't have a description
             el.SetDescription(value.GetUtf8CP());
             return DgnDbStatus::Success;
             });
