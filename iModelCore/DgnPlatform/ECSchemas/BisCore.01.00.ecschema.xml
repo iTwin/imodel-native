@@ -642,6 +642,15 @@
             <Class class="InformationPartitionElement"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="SubjectOwnsChildSubjects" strength="embedding" modifier="None">
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="Subject"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract" displayLabel="Information Partition" description="An Information Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Model.">
         <BaseClass>InformationContentElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>

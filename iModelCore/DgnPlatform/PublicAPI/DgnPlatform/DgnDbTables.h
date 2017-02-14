@@ -125,6 +125,7 @@
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
 #define BIS_REL_PhysicalTypeHasRecipe               "PhysicalTypeHasRecipe"
+#define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
 //-----------------------------------------------------------------------------------------
