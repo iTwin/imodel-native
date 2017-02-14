@@ -115,10 +115,16 @@ ICancellationTokenPtr ct
     if (bytesTo >= fileSize)
         bytesTo = fileSize - 1;
 
+    auto onBlockProgress = [=] (double bytesTransfered, double bytesTotal)
+        {
+        if (progressCallback)
+            progressCallback((double) chunkNumber * (double) chunkSize + bytesTransfered, (double) fileSize);
+        };
+
     HttpRequest request(blockUrl, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
-    SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
+    SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, onBlockProgress, ct);
 
     std::shared_ptr<AzureResult> finalResult = std::make_shared<AzureResult>();
     return request.PerformAsync()
@@ -140,12 +146,15 @@ ICancellationTokenPtr ct
             return;
             }
 
+        if (progressCallback)
+            progressCallback((double) fileSize, (double) fileSize);
+
         Utf8String finalBody = Utf8PrintfString("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>%s</BlockList>", blockIds.c_str());
         Utf8String blockListUrl = Utf8PrintfString("%s&comp=blocklist", url.c_str());
 
         HttpRequest finalRequest(blockListUrl, "PUT", m_customHandler);
         finalRequest.SetRequestBody(HttpStringBody::Create(finalBody));
-        SetCommonRequestOptions(finalRequest, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
+        SetCommonRequestOptions(finalRequest, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, nullptr, ct);
 
         finalRequest.PerformAsync()
             ->Then([=] (HttpResponseCR httpResponse)
@@ -184,6 +193,9 @@ ICancellationTokenPtr ct
 
     HttpBodyPtr body = HttpFileBody::Create(filePath);
     Utf8String blockIds = "";
+
+    if (progressCallback)
+        progressCallback(0, (double) fileSize);
 
     return SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, 0, progressCallback, ct);
     }
