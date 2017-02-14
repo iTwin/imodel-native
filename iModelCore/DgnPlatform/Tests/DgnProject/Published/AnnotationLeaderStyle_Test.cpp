@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/AnnotationLeaderStyle_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -40,10 +40,12 @@ TEST_F(AnnotationLeaderStyleTest, PropertyBagTypes)
     ColorDef lineColor(0xff, 0x00, 0x00);                                                       STYLE_PTR->SetLineColorValue(lineColor);\
     ColorDef terminatorColor(0xff, 0xff, 0x00);                                                 STYLE_PTR->SetTerminatorColorValue(terminatorColor);\
     AnnotationLeaderLineType lineType = AnnotationLeaderLineType::Curved;                       STYLE_PTR->SetLineType(lineType);\
+    AnnotationColorType  linecolortype = AnnotationColorType ::RGBA;                            STYLE_PTR->SetLineColorType(linecolortype);\
     uint32_t lineWeight=3;                                                                      STYLE_PTR->SetLineWeight(lineWeight); \
     double terminatorScaleFactor = 2.1;                                                         STYLE_PTR->SetTerminatorScaleFactor(terminatorScaleFactor);\
     AnnotationLeaderTerminatorType terminatorType = AnnotationLeaderTerminatorType::OpenArrow;  STYLE_PTR->SetTerminatorType(terminatorType); \
-    uint32_t terminatorWeight = 3;                                                              STYLE_PTR->SetTerminatorWeight(terminatorWeight); 
+    AnnotationColorType terminatorcolortype = AnnotationColorType::RGBA;                        STYLE_PTR->SetTerminatorColorType(terminatorcolortype);\
+    uint32_t terminatorWeight = 3;                                                              STYLE_PTR->SetTerminatorWeight(terminatorWeight);
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
@@ -51,11 +53,12 @@ TEST_F(AnnotationLeaderStyleTest, PropertyBagTypes)
     EXPECT_TRUE(lineColor == STYLE_PTR->GetLineColorValue());\
     EXPECT_TRUE(terminatorColor == STYLE_PTR->GetTerminatorColorValue());\
     EXPECT_TRUE(lineType == STYLE_PTR->GetLineType());\
+    EXPECT_TRUE(linecolortype == STYLE_PTR->GetLineColorType());\
     EXPECT_TRUE(lineWeight == STYLE_PTR->GetLineWeight());\
     EXPECT_TRUE(terminatorScaleFactor == STYLE_PTR->GetTerminatorScaleFactor());\
     EXPECT_TRUE(terminatorType == STYLE_PTR->GetTerminatorType());\
-    EXPECT_TRUE(terminatorWeight == STYLE_PTR->GetTerminatorWeight());
-
+    EXPECT_TRUE(terminatorcolortype == STYLE_PTR->GetTerminatorColorType());\
+    EXPECT_TRUE(terminatorWeight == STYLE_PTR->GetTerminatorWeight());\
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.
 // @bsimethod                                                   Umar.Hayat     07/15

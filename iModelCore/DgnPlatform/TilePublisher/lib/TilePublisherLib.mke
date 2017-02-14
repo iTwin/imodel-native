@@ -25,8 +25,6 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 
-$(o)TileReader$(oext) : $(SrcDir)TileReader.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
-
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h $(SrcDir)CesiumPublisher.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

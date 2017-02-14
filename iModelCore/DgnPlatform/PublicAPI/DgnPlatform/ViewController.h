@@ -740,6 +740,17 @@ public:
 
     /** @name Camera */
 /** @{ */
+
+    //! Determine whether the camera is on for this view
+    bool IsCameraOn() const {return GetCameraViewDefinition().IsCameraOn();}
+
+    //! Determine whether the camera is valid for this view
+    bool IsCameraValid() const {return GetCameraViewDefinition().IsCameraValid();}
+
+    //! Turn the camera on or off for this view
+    //! @param[in] val whether the camera is to be on or off
+    void SetCameraOn(bool val) {GetCameraViewDefinition().SetCameraOn(val);}
+
     //! Calculate the lens angle formed by the current delta and focus distance
     double CalcLensAngle() const {return GetCameraViewDefinition().CalcLensAngle();}
 

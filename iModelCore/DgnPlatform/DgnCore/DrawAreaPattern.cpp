@@ -431,13 +431,68 @@ double          scale
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary, DgnGeometryPartCR symbol, DPoint2dCR low, DPoint2dCR high, DPoint2dCR spacing, double scale, TransformCR orgTrans, DPoint3dCP symbolCorners)
+    {
+    ClipVectorPtr clip = ClipVector::CreateFromCurveVector(boundary, 0.0, Angle::FromDegrees(20.0).Radians());
+
+    if (!clip.IsValid())
+        return false;
+
+    DgnViewportP  vp = context.GetViewport();
+    bool          isSimplify = graphic.IsSimplifyGraphic();
+    bool          wasAborted = false;
+    DPoint2d      patOrg;
+    DPoint3d      tileCorners[8];
+    Transform     symbolTrans;
+    GraphicParams graphicParams;
+
+    // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
+    context.CookGeometryParams(params, graphicParams);
+
+    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
+        {
+        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
+            {
+            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, params.GetNetDisplayPriority());
+            symbolTrans.Multiply(tileCorners, symbolCorners, 8);
+
+            if (isSimplify && vp)
+                {
+                Transform symbolToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), symbolTrans);
+                ElementAlignedBox3d range = symbol.GetBoundingBox();
+
+                symbolToWorld.Multiply(range, range);
+
+                if (!context.IsRangeVisible(range))
+                    continue; // Symbol range doesn't overlap pick...
+                }
+
+            ClipPlaneContainment containment = clip->front()->ClassifyPointContainment(tileCorners, 8); // First primitive should be outer loop...need to ignore holes...
+
+            if (ClipPlaneContainment_StronglyOutside == containment)
+                continue;
+
+            GeometryStreamIO::Collection collection(symbol.GetGeometryStream().GetData(), symbol.GetGeometryStream().GetSize());
+            GraphicBuilderPtr partBuilder = graphic.CreateSubGraphic(symbolTrans, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
+
+            collection.Draw(*partBuilder, context, params, false, &symbol);
+
+            if (wasAborted = context.WasAborted())
+                break;
+
+            partBuilder->Close(); 
+            graphic.AddSubGraphic(*partBuilder, symbolTrans, graphicParams, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
+            }
+        }
+
+    return wasAborted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/07
++---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
-    // NEEDSWORK_PATTERN_GEOMETRY_MAP: Need to draw using geometry map texture, this is just test code to verify pattern cell conversion by drawing un-clipped tiles...
-    static int s_testPatternTiles;
-    if (!s_testPatternTiles)
-        return;
-
     PatternParamsCR pattern = *params.GetPatternParams();
     DgnGeometryPartCPtr symbolGeometry = context.GetDgnDb().Elements().Get<DgnGeometryPart>(pattern.GetSymbolId());
 
@@ -476,25 +531,23 @@ static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR gra
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear(&orgTrans, NULL, &rMatrix, &origin, scale, scale, 0.0);
     symbolRange.Get8Corners(symbolCorners);
 
-    bool        wasAborted = false;
-    DPoint2d    patOrg;
-    DPoint3d    tileCorners[8];
-    Transform   symbolTrans;
-
-    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
+    // NOTE: Union regions aren't valid clip boundaries, need to push separate clip for each solid area...
+    if (boundary.IsUnionRegion())
         {
-        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
+        for (ICurvePrimitivePtr curve : boundary)
             {
-            if (context.CheckStop())
-                return;
+            if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                continue;
 
-            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, params.GetNetDisplayPriority());
-            symbolTrans.Multiply(tileCorners, symbolCorners, 8);
-
-            Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, pattern.GetSymbolId(), symbolTrans, params);
-            wasAborted = context.WasAborted();
+            // NOTE: Cell tile exclusion check makes sending all tiles for each solid area less offensive (union regions also fairly rare)...
+            if (DrawCellTiles(context, graphic, params, *curve->GetChildCurveVectorCP(), *symbolGeometry, low, high, spacing, scale, orgTrans, symbolCorners))
+                break; // Was aborted...
             }
+
+        return;
         }
+
+    DrawCellTiles(context, graphic, params, boundary, *symbolGeometry, low, high, spacing, scale, orgTrans, symbolCorners);
     }
 
 /*---------------------------------------------------------------------------------**//**

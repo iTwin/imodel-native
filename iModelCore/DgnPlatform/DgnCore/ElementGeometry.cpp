@@ -317,7 +317,7 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
-    // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
+#if defined (NOT_NOW_NEEDSWORK_TOO_SLOW)
     IFacetOptionsPtr facetOpt = IFacetOptions::Create();
 
     facetOpt->SetMinPerBezier(3);
@@ -328,6 +328,16 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
     builder->Add(geom);
 
     return getRange(builder->GetClientMeshR(), range, transform);
+#else
+    // NEEDSWORK: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...but using IPolyfaceConstruction is too slow...
+    //            Earlin will add a new method to get a better compromise range that ignores trim boundaries...
+    if (nullptr != transform)
+        geom.GetPoleRange(range, *transform);
+    else
+        geom.GetPoleRange(range);
+
+   return true;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**

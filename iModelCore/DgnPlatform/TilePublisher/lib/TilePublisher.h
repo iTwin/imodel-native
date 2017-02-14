@@ -29,26 +29,6 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
 //=======================================================================================
-// Maps elements associated with vertices to indexes into a batch table in the b3dm.
-// @bsistruct                                                   Paul.Connelly   07/16
-//=======================================================================================
-struct BatchIdMap
-{
-private:
-    bmap<BeInt64Id, uint16_t>   m_map;
-    bvector<BeInt64Id>          m_list;
-    TileSource                  m_source;
-public:
-    BatchIdMap(TileSource source);
-
-    uint16_t GetBatchId(BeInt64Id entityId);
-    void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
-    Utf8String ToJsonString(DgnDbR db, bool is2d) const;
-
-    uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
-};
-
-//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
 struct  PublishTileData
@@ -119,10 +99,9 @@ protected:
     bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
     bool                                    m_publishSurfacesOnly;
-    bool                                    m_publishIncremental;
     TextureMode                             m_textureMode;
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, bool publishIncremental = true, TextureMode textureMode = TextureMode::Embedded);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
@@ -142,7 +121,6 @@ protected:
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
-    TILEPUBLISHER_EXPORT bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
     void WriteModelTileset(TileNodeCR rootTile);
 public:
@@ -154,7 +132,6 @@ public:
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
-    bool GetPublishIncremental() const { return m_publishIncremental; }
     TextureMode GetTextureMode() const { return m_textureMode; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
@@ -204,7 +181,6 @@ struct TilePublisher
 
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
-    BatchIdMap              m_batchIds;
     DPoint3d                m_centroid;
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
@@ -235,10 +211,10 @@ private:
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
     void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
-    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
+    Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
-    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
+    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr);
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds);
@@ -250,10 +226,6 @@ private:
     Utf8String AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
-
-    enum IncrementalStatus { UsePrevious, Regenerate, Success };
-    IncrementalStatus IncrementalGenerate(TileModelDeltaCR modelDelta);
-
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
@@ -264,70 +236,6 @@ public:
     static WCharCP GetBinaryDataFileExtension(bool containsParts) { return containsParts ? L"cmpt" : L"b3dm"; }
 
 };
-
-//=======================================================================================
-//! Read a single tile.
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-struct TileReader
-{
-private:
-    std::FILE*          m_file;
-    Json::Value         m_scene;
-    Json::Value         m_materialValues;
-    Json::Value         m_accessors;      
-    Json::Value         m_bufferViews;
-    Json::Value         m_batchData;
-    ByteStream          m_binaryData;
-
-
-
-    TileMeshPtr             ReadMeshPrimitive(Json::Value const& primitiveValue);
-    TileDisplayParamsPtr    ReadDisplayParams(Json::Value const& primitiveValue);
-
-    BentleyStatus           GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bufferView, Json::Value const& primitiveValue, const char* accessorName);
-    BentleyStatus           ReadVertexAttributes(bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* attributeName);
-    BentleyStatus           ReadIndices(TileMeshR mesh, Json::Value const& primitiveValue);
-    BentleyStatus           ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
-
-
-    template <typename T> BentleyStatus  ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
-        {
-        bvector <double>    values;
-        size_t              nComponents = sizeof(T)/sizeof(double);
-
-        if(SUCCESS != ReadVertexAttributes(values, primitiveValue, nComponents, attributeName))
-            return ERROR;
-
-        size_t              nElements = values.size() / nComponents;
-
-        vertexValues.resize(nElements);
-        memcpy (vertexValues.data(), values.data(), nElements * nComponents * sizeof(double));
-
-        return SUCCESS;
-        }
-
-public:
-    enum class Status
-        {
-        Success = SUCCESS,
-        UnableToOpenFile,
-        InvalidHeader,
-        ReadError,
-        BatchTableParseError,
-        SceneParseError,
-        SceneDataError,
-        TileSetParseError,
-        };
-
-
-    TileReader() : m_file(nullptr) { }
-    ~TileReader();
-    TILEPUBLISHER_EXPORT Status  ReadTile(TileMeshList& meshes, BeFileNameCR file);
-    TILEPUBLISHER_EXPORT Status  TileReader::ReadTileSet(Json::Value& tileSet, BeFileNameCR fileName);
-
-};
-
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 
