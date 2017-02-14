@@ -834,6 +834,8 @@ static bool SurfaceIntersectRay (MSBsplineSurfaceCR surface, DRay3dCR ray, bvect
 
 
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1103,4 +1105,164 @@ double*             tolerance           /* => tolerance to use in calculation */
     return SUCCESS;
     }
 #endif    
+
+struct GridProcessor
+{
+MSBsplineSurfaceCR m_surface;
+size_t m_numUGrid, m_numVGrid;
+bool m_reverseU;
+bool m_evaluateDerivatives;
+BSurfPatch      patch;
+GridArrays      grid;
+
+GridProcessor
+(
+MSBsplineSurfaceCR surface,
+bool reverseU = false,
+bool evaluateDerivatives = false
+)
+    : m_surface (surface),
+      m_reverseU (reverseU),
+      m_evaluateDerivatives (evaluateDerivatives)
+      {
+      }
+// virtual method for a patch processor
+struct IGridPatchProcessor
+{
+virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+    GridArrays &grid, size_t numU, size_t numV) = 0;
+};
+void Process (IGridPatchProcessor &patchProcessor)
+    {
+    size_t                  numU, numV;
+    m_surface.GetIntervalCounts (numU, numV); // number of bezier patches in each direction
+    GridArrays      grid;
+    size_t          numUGrid = DefaultRayPierceGridDensity (m_surface.GetUOrder());
+    size_t          numVGrid = DefaultRayPierceGridDensity (m_surface.GetVOrder());
+
+    for (size_t uIndex = 0; uIndex < numU; uIndex++)
+        {
+        for (size_t vIndex = 0; vIndex < numV; vIndex++)
+            {
+            if (m_surface.GetPatch (patch, uIndex, vIndex) && !patch.isNullU && !patch.isNullV)
+                {
+                grid.EvaluateBezier (0.0, 1.0, numUGrid, 0.0, 1.0, numVGrid, patch, m_reverseU, m_evaluateDerivatives);
+                patchProcessor.Process (patch, uIndex, vIndex, grid, numUGrid, numVGrid);
+                }
+            }
+        }
+
+    }
+};
+
+struct PatchMomentSums : GridProcessor::IGridPatchProcessor
+{
+private:
+DMatrix4d m_sums;
+DPoint3d m_origin;
+public:
+PatchMomentSums (DPoint3dCR origin) {Clear (); m_origin = origin;}
+void Clear (){ m_sums = DMatrix4d::FromZero ();}
+
+virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+    GridArrays &grid, size_t numU, size_t numV) override
+    {
+    for (auto &xyz : grid.xyz)
+        DPoint3dOps::AccumulateToMomentSumUpperTriangle (m_sums, m_origin, xyz);
+    }
+DMatrix4d GetSymmetricSums ()
+    {
+    DMatrix4d sums = m_sums;
+    sums.CopyUpperTriangleToLower ();
+    return sums;
+    }
+};
+
+struct PatchRangeAccumulator: GridProcessor::IGridPatchProcessor
+{
+private:
+DRange3d m_range;
+Transform m_transform;
+public:
+PatchRangeAccumulator (TransformCR transform) : m_transform (transform) {Clear ();}
+void Clear (){ m_range.Init ();}
+
+virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+    GridArrays &grid, size_t numU, size_t numV) override
+    {
+    m_range.Extend (m_transform, grid.xyz);
+    }
+DRange3d GetRange () {return m_range;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz 02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MSBsplineSurface::TightPrincipalExtents (TransformR originWithExtentVectors, TransformR centroidAlLocalToWorld, TransformR centroidalWorldToLocal, DRange3dR centroidalRange) const
+    {
+    DPoint3d pole0 = GetUnWeightedPole (0);
+    PatchMomentSums summer (pole0);
+    GridProcessor surfaceProcessor (*this);
+    surfaceProcessor.Process (summer);
+    DMatrix4d sums = summer.GetSymmetricSums ();
+    centroidAlLocalToWorld.InitIdentity ();
+    centroidalWorldToLocal.InitIdentity ();
+    originWithExtentVectors.InitIdentity ();
+    centroidalRange.Init ();
+    DVec3d centroid;
+    RotMatrix axes;
+    DVec3d moments;
+    double volume;
+    if (sums.ConvertInertiaProductsToPrincipalMoments (volume, centroid, axes, moments))
+        {
+        Transform localToWorld = Transform::From (axes, pole0 + centroid);
+        Transform worldToLocal;
+        worldToLocal.InverseOf (localToWorld);
+        PatchRangeAccumulator localRangeAccumulator (worldToLocal);
+        surfaceProcessor.Process (localRangeAccumulator);
+        DRange3d localRange = localRangeAccumulator.GetRange ();
+        return DPoint3dOps::LocalRangeToOrderedExtents (localToWorld, localRange, originWithExtentVectors, centroidAlLocalToWorld, centroidalWorldToLocal, centroidalRange);
+        }
+    return false;
+    }
+
+
+struct PatchPointAccumulator: GridProcessor::IGridPatchProcessor
+{
+private:
+DPoint3dDoubleUVArrays &m_data;
+double m_patchCount;
+public:
+PatchPointAccumulator (DPoint3dDoubleUVArrays &data) : m_data(data), m_patchCount (0) {}
+
+virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+    GridArrays &grid, size_t numU, size_t numV) override
+    {
+    for (size_t i = 0; i < grid.xyz.size(); i++)
+        {
+        m_data.m_xyz.push_back (grid.xyz[i]);
+        m_data.m_f.push_back (m_patchCount);
+        m_data.m_uv.push_back (grid.uv[i]);   // need to map up to surface !!!
+        }
+    m_patchCount += 1.0;
+    }
+};
+
+    //! Return array of points on the surface.
+    //! The points data is:
+    //!<ul>
+    //!<li>m_xyz = coordinates
+    //!<li>m_f = index of bezier patch.
+    //!<li>m_uv = surface parametric coordinate
+    //!</ul>
+void MSBsplineSurface::EvaluatePoints (DPoint3dDoubleUVArrays &data, IFacetOptionsCP options) const
+    {
+    GridProcessor surfaceProcessor (*this);
+    data.m_xyz.clear ();
+    data.m_f.clear ();
+    data.m_uv.clear ();
+    PatchPointAccumulator accumulator (data);
+    surfaceProcessor.Process (accumulator);
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE    

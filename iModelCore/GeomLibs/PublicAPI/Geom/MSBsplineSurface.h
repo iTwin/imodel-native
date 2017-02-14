@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/MSBsplineSurface.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -300,8 +300,24 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     void GetPoleRange (DRange3dR range) const;
     //! Get the range of the transformed poles of the B-spline surface
     void GetPoleRange (DRange3dR range, TransformCR transform) const;
+    //! Return an aligned range of (moderatly dense) points on the surface.
+    //! Return range in principal system (See DPoint3dOps::PrincipalExtents)
 
-
+    bool TightPrincipalExtents
+    (
+    TransformR originWithExtentVectors, //!< [out] (non-uniform scale) transform with origin at a corner of the aligned range, x,y,z along 3 along the entire length of the 3 perpendicular edges through that point.
+    TransformR centroidAlLocalToWorld, //!< [out] unit coordinate frame with origin at an approximate centroid of points on the surface
+    TransformR centroidalWorldToLocal, //!< [out] inverse of the centroidalLocalToWorld
+    DRange3dR centroidalRange //!< [out] range of the surface in the centroidal frame.
+    ) const;
+    //! Return array of points on the surface.
+    //! The points data is:
+    //!<ul>
+    //!<li>m_xyz = coordinates
+    //!<li>m_f = index of bezier patch.
+    //!<li>m_uv = surface parametric coordinate
+    //!</ul>
+    void EvaluatePoints (DPoint3dDoubleUVArrays &points, IFacetOptionsCP options = nullptr) const;
 
 //! Return the true allocated size of the pole array....
     bool AreUKnotsValid (bool clampingRequired) const;

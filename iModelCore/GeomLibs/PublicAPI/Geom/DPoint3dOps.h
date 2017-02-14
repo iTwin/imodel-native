@@ -788,14 +788,31 @@ static GEOMDLLIMPEXP bool    PrincipalExtents (bvector<DPoint3d> const &points, 
 static GEOMDLLIMPEXP bool    PrincipalExtents (bvector<DPoint3d> const &points, TransformR originWithExtentVectors, TransformR localToWorld, TransformR worldToLocal);
 
 
-
+//! Convert local coordinates range data to "lower left corner" extent box transform.
+//! @return false if localToWorld is not orthogonal.
+static GEOMDLLIMPEXP bool LocalRangeToOrderedExtents
+(
+TransformCR localToWorld, //!< [in] local coordinate frame (assumed rigid)
+DRange3dCR localRange,    //!< [in] range cube in local coordinates
+TransformR extentTransform,  //!< [out] transform with origin at lower left of range, xyz columns as full extent of the ranges, z the smallest direction, others shuffled to favor z and then x being positive.
+TransformR centroidAlLocalToWorld,  //!< [out] rigid frame, same origin as localToWorld
+TransformR centroidalWorldToLocal,   //!< [out] inverse of rigid frame.
+DRange3dR  centroidalRange     //!< [out] range in sorted system.
+);
 
 //! Accumulate (points[i]-origin) into moments sums.
 //! The summed terms are [xx xy xz x], [yx yy yz y], [zx zy zz z], [x y z 1]
 //! @param [in] origin reference point.
 //! @param [in] points array of points.
 static GEOMDLLIMPEXP DMatrix4d MomentSums (DPoint3dCR origin, bvector<DPoint3d> const &points);
-
+//! Accumulate products xx xy etc into a moment sum matrix.
+//! Only the diagonal and upper triangle are accumulated.
+static GEOMDLLIMPEXP void AccumulateToMomentSumUpperTriangle
+(
+DMatrix4dR sums,    //!< [in,out] evolving sums
+DPoint3dCR origin,  //!< [in] origin for xyz vectors
+DPoint3dCR point    //!< [in] point for accumulation
+);
 };
 //! @description Operations in which an array of points is understood to be connected as a polyline (but not closed as a polygon).
 //! @ingroup BentleyGeom_Operations
