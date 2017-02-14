@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IChangeManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -211,7 +211,7 @@ struct IChangeManager::ObjectChange
     public:
         WSCACHE_EXPORT ObjectChange();
         WSCACHE_EXPORT ObjectChange(ECInstanceKeyCR instanceKey, ChangeStatus changeStatus, SyncStatus syncStatus, uint64_t changeNumber);
-        virtual ~ObjectChange() {/* required because this has virtual functions*/}
+        virtual ~ObjectChange() {/* required because this has virtual functions*/ }
         WSCACHE_EXPORT ECInstanceKeyCR GetInstanceKey() const;
         WSCACHE_EXPORT void SetInstanceKey(ECInstanceKeyCR instanceKey);
         WSCACHE_EXPORT ChangeStatus GetChangeStatus() const;
@@ -303,62 +303,27 @@ struct IChangeManager::Revision
         uint64_t m_revisionNumber = 0;
 
     public:
-        ECInstanceKeyCR GetInstanceKey() const
-            {
-            return m_instanceKey;
-            }
-        void SetInstanceKey(ECInstanceKey value)
-            {
-            m_instanceKey = value;
-            }
-        ObjectIdCR GetObjectId() const
-            {
-            return m_objectId;
-            }
-        void SetObjectId(ObjectId value)
-            {
-            m_objectId = value;
-            }
-        void SetRemoteId(Utf8String remoteId)
-            {
-            m_objectId.remoteId = remoteId;
-            }
-        ChangeStatus GetChangeStatus() const
-            {
-            return m_changeStatus;
-            }
-        void SetChangeStatus(ChangeStatus value)
-            {
-            m_changeStatus = value;
-            }
-        SyncStatus GetSyncStatus() const
-            {
-            return m_syncStatus;
-            }
-        void SetSyncStatus(SyncStatus value)
-            {
-            m_syncStatus = value;
-            }
-        uint64_t GetChangeNumber() const
-            {
-            return m_changeNumber;
-            }
-        void SetChangeNumber(uint64_t value)
-            {
-            m_changeNumber = value;
-            }
-        uint64_t GetRevisionNumber() const
-            {
-            return m_revisionNumber;
-            }
-        void SetRevisionNumber(uint64_t value)
-            {
-            m_revisionNumber = value;
-            }
-        bool IsValid() const
-            {
-            return m_instanceKey.IsValid() && m_changeStatus != ChangeStatus::NoChange;
-            }
+        ECInstanceKeyCR GetInstanceKey() const { return m_instanceKey; }
+        void SetInstanceKey(ECInstanceKey value) { m_instanceKey = value; }
+
+        ObjectIdCR GetObjectId() const { return m_objectId; }
+        void SetObjectId(ObjectId value) { m_objectId = value; }
+        //! Set new remote id for synced instance
+        void SetRemoteId(Utf8String remoteId) { m_objectId.remoteId = remoteId; }
+
+        ChangeStatus GetChangeStatus() const { return m_changeStatus; }
+        void SetChangeStatus(ChangeStatus value) { m_changeStatus = value; }
+
+        SyncStatus GetSyncStatus() const { return m_syncStatus; }
+        void SetSyncStatus(SyncStatus value) { m_syncStatus = value; }
+
+        uint64_t GetChangeNumber() const { return m_changeNumber; }
+        void SetChangeNumber(uint64_t value) { m_changeNumber = value; }
+
+        uint64_t GetRevisionNumber() const { return m_revisionNumber; }
+        void SetRevisionNumber(uint64_t value) { m_revisionNumber = value; }
+
+        bool IsValid() const { return m_instanceKey.IsValid() && m_changeStatus != ChangeStatus::NoChange; }
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -371,15 +336,9 @@ struct IChangeManager::InstanceRevision : public IChangeManager::Revision
 
     public:
         //! Get changed instance properties
-        JsonValuePtr GetChangedProperties() const
-            {
-            return m_changedProperties;
-            }
+        JsonValuePtr GetChangedProperties() const { return m_changedProperties; }
         //! Set changed instance properties
-        void SetChangedProperties(JsonValuePtr value)
-            {
-            m_changedProperties = value;
-            }
+        void SetChangedProperties(JsonValuePtr value) { m_changedProperties = value; }
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -389,18 +348,17 @@ struct IChangeManager::FileRevision : public IChangeManager::Revision
     {
     protected:
         BeFileName m_filePath;
+        Utf8String m_fileCacheTag;
 
     public:
         //! Get modified file path
-        BeFileNameCR GetFilePath() const
-            {
-            return m_filePath;
-            }
+        BeFileNameCR GetFilePath() const { return m_filePath; }
         //! Set modified file path
-        void SetFilePath(BeFileName value)
-            {
-            m_filePath = value;
-            };
+        void SetFilePath(BeFileName value) { m_filePath = value; };
+        //! Get file cache tag used to check server for changes
+        Utf8StringCR GetFileCacheTag() const { return m_fileCacheTag; }
+        //! Set new file cache tag
+        void SetFileCacheTag(Utf8String value) { m_fileCacheTag = value; };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -230,18 +230,18 @@ WSCreateObjectResult StubWSCreateObjectResult()
     return WSCreateObjectResult::Error(StubHttpResponse(ConnectionStatus::CouldNotConnect));
     }
 
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId)
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId, Utf8StringCR fileEtag)
     {
     StubInstances instances;
     instances.Add(objectId);
-    return instances.ToWSCreateObjectResult();
+    return instances.ToWSCreateObjectResult(fileEtag);
     }
 
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId)
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId, Utf8StringCR fileETag)
     {
     StubInstances instances;
     instances.Add(sourceId).AddRelated(relationshipId, targetId);
-    return instances.ToWSCreateObjectResult();
+    return instances.ToWSCreateObjectResult(fileETag);
     }
 
 CacheEnvironment StubCacheEnvironemnt()

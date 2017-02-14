@@ -400,12 +400,12 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize);
 
         m_ds->GetClient()->SendCreateObjectRequest(creationJson, filePath, guard->GetProgressCallback(), guard)
-            ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& objectsResult)
+            ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& creationResult)
             {
-            if (!objectsResult.IsSuccess())
+            if (!creationResult.IsSuccess())
                 {
                 m_totalBytesToUpload -= currentFileSize;
-                HandleSyncError(objectsResult.GetError(), changeGroup, objectLabel);
+                HandleSyncError(creationResult.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
@@ -420,7 +420,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
                 };
 
             rapidjson::Document jsonBody;
-            objectsResult.GetValue().GetJson(jsonBody);
+            creationResult.GetValue().GetJson(jsonBody);
             if (SUCCESS != changeset->ExtractNewIdsFromResponse(jsonBody, handler))
                 {
                 SetError();
@@ -438,6 +438,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
 
             if (nullptr != fileRevision)
                 {
+                fileRevision->SetFileCacheTag(creationResult.GetValue().GetFileETag());
                 if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*fileRevision))
                     {
                     SetError();
@@ -588,6 +589,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
 
             auto txn = m_ds->StartCacheTransaction();
             m_totalBytesUploaded += currentFileSize;
+            revision->SetFileCacheTag(result.GetValue().GetFileETag());
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*revision))
                 {
                 SetError();

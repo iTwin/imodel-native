@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -74,8 +74,8 @@ WSInfoResult StubWSInfoResult(BeVersion webApiVersion = BeVersion(2, 0));
 WSObjectsResult StubWSObjectsResult();
 WSObjectsResult StubWSObjectsResult(ObjectIdCR objectId);
 WSCreateObjectResult StubWSCreateObjectResult();
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId);
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId);
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId, Utf8StringCR fileEtag = "");
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId, Utf8StringCR fileEtag = "");
 
 CacheEnvironment StubCacheEnvironemnt();
 

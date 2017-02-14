@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/StubInstances.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ struct StubInstances
         //! Create server changeset response body JSON string
         Utf8String ToChangesetResponseJson() const;
         //! Create server object creation result
-        WSCreateObjectResult ToWSCreateObjectResult() const;
+        WSCreateObjectResult ToWSCreateObjectResult(Utf8StringCR fileETag = "") const;
     };
 
 struct StubInstances::StubRelationshipInstances
