@@ -402,9 +402,7 @@ void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AppendProgramAttribute(Json::Value& program, Utf8CP attrName)
     {
-    Json::Value obj;
-    obj[attrName] = Json::objectValue;
-    program["attributes"].append(obj);
+    program["attributes"].append(attrName);
     }
 
 /*---------------------------------------------------------------------------------**//**
