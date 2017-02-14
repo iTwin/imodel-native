@@ -427,13 +427,11 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
-#if defined (BENTLEY_CHANGE)
     if (compression >= (1.0 - s_flatViewFractionTolerance))
         {
         SetCameraOn(false);
         return ViewportStatus::Success;
         }
-#endif
 
     DPoint3d viewOrg     = frustPts[NPC_000];
     DVec3d viewDelta     = GetExtents();

@@ -517,14 +517,8 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
 
-    auto& def=view->GetViewDefinition();
-    auto& style= def.GetDisplayStyle();
-
-    auto flags = style.GetViewFlags(); //!!!! TEMPORARY - We need to set these on conversion
-    flags.SetShowDimensions(true);     //!!!! TEMPORARY - We need to set these on conversion
-    flags.SetShowFill(true);           //!!!! TEMPORARY - We need to set these on conversion
-    flags.SetShowWeights(true);        //!!!! TEMPORARY - We need to set these on conversion
-    style.SetViewFlags(flags);         //!!!! TEMPORARY - We need to set these on conversion
+    auto& def = view->GetViewDefinition();
+    auto& style = def.GetDisplayStyle();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
     style.SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
