@@ -156,7 +156,7 @@ TEST(DRange2d, RangeProjection3d)
 void arcSweepCheck(double degree, double sweep) 
     {
     DRange2d range = DRange2d::FromUnitArcSweep(Angle::FromDegrees(degree).Radians(), Angle::FromDegrees(sweep).Radians());
-    if (abs(sweep) >= 360)
+        if (::fabs(sweep) >= 360)
         {
         Check::Near(range.low.x, -1);
         Check::Near(range.low.y, -1);
