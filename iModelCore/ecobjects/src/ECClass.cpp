@@ -1885,7 +1885,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         {
         if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
+            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) because their types differ or the base class is sealed.",
                        GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
                        baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
             return SchemaReadStatus::InvalidECSchemaXml;
