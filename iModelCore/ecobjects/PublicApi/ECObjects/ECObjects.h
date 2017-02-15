@@ -89,6 +89,8 @@ EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
+EC_TYPEDEFS(ECSchemaValidator);
+EC_TYPEDEFS(IECSchemaValidator);
 
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);

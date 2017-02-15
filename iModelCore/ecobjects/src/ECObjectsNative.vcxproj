@@ -70,6 +70,7 @@
     <ClCompile Include="ECRelationshipPath.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
+    <ClCompile Include="ECSchemaValidator.cpp" />
     <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
