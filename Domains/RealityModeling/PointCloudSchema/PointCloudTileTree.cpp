@@ -15,6 +15,134 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 USING_NAMESPACE_POINTCLOUD_TILETREE
 
 
+static int  s_nominalTileSize = 512;
+
+
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader)
+DEFINE_REF_COUNTED_PTR(Loader)
+
+//=======================================================================================
+// Since we can only create one tile at a time, we serialize all requests through a single thread.
+// This avoids all of the requests blocking in the IoPool.
+// @bsiclass                                                    Mathieu.Marchand 12/16
+//=======================================================================================
+struct PointCloudFileThread : BeFolly::ThreadPool
+    {
+    PointCloudFileThread() : ThreadPool(1, "RasterFile") {}
+    static PointCloudFileThread& Get() { static folly::Singleton<PointCloudFileThread> s_pool; return *s_pool.try_get_fast(); }
+    };
+
+//=======================================================================================
+// @bsistruct                                                    Ray.Bentley    02/2017
+//=======================================================================================
+struct Loader : TileTree::TileLoader
+{
+    DEFINE_T_SUPER(TileTree::TileLoader);
+
+private:
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileName(tile)) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus _LoadTile() override 
+    { 
+    TileR   tile = static_cast<TileR> (*m_tile);
+
+    tile.Read(m_tileBytes);
+    return tile.AddGraphics (); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> _GetFromSource()
+    {
+    RefCountedPtr<Loader> me(this);
+    return folly::via(&PointCloudFileThread::Get(), [me] ()
+        {
+        if (me->IsCanceledOrAbandoned())
+            return ERROR;
+
+        return me->DoGetFromSource();
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DoGetFromSource()
+    {
+    auto&                       tile = static_cast<TileR>(*m_tile);
+    auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
+    static const size_t         s_maxTileBatchCount = 500000;
+    static size_t               s_maxLeafPointCount = 20000;
+    static double               s_minLeafSize = 1.0;        // Minimum of 1 meter...
+    bool                        colorsPresent;
+    static   BeMutex            s_queryMutex;
+    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
+    PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
+    size_t                      nBatchPoints = 0;
+    bvector<FPoint3d>           batchPoints(s_maxTileBatchCount), points;
+    bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
+    Transform                   dgnToTile, cloudToTile;
+
+    dgnToTile.InverseOf(root.GetLocation());
+    cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
+
+    while (0 != (nBatchPoints = (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr)))
+        {
+        for(size_t i=0; i<nBatchPoints; i++)
+            {
+            DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
+
+            cloudToTile.Multiply(tmpPoint);
+
+            FPoint3d        fPoint = { (float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z };
+
+            points.push_back(fPoint);
+            if (colorsPresent)
+                colors.push_back(batchColors[i]);
+            }
+        }
+    m_saveToCache = true;
+
+    if (points.size() > s_maxLeafPointCount)
+        tile.SetIsLeaf();
+
+    // TODO - Add technique for monochrome point clouds...
+    if (!colorsPresent)
+        colors = bvector<PointCloudColorDef> (points.size(), PointCloudColorDef(255, 255, 255));
+
+    Json::Value     featureTable;
+    bool            rgbPresent = colors.size() == points.size();
+
+    featureTable["POINTS_LENGTH"] = points.size();
+    featureTable["POSITION"]["byteOffset"] = 0;
+    if (rgbPresent)
+        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(FPoint3d);
+
+    Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
+    uint32_t        featureTableStrLen = featureTableStr.size();
+
+    m_tileBytes.Append((uint8_t const*) &featureTableStrLen, sizeof(featureTableStrLen));
+    m_tileBytes.Append((uint8_t const*) featureTableStr.c_str(), featureTableStrLen);
+    if (!points.empty())
+        {
+        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(FPoint3d));
+        if (rgbPresent)
+            m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
+        }
+
+    return SUCCESS;
+    }
+
+
+public:
+    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+};
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -32,111 +160,11 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
     }
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader)
-DEFINE_REF_COUNTED_PTR(Loader)
-
-//=======================================================================================
-// @bsistruct                                                    Ray.Bentley    02/2017
-//=======================================================================================
-struct Loader : TileTree::TileLoader
-{
-    DEFINE_T_SUPER(TileTree::TileLoader);
-
-private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads, "") { }
-
-    folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
-    folly::Future<BentleyStatus> _SaveToDb() override   { return SUCCESS; }
-    BentleyStatus DoGetFromSource() { return IsCanceledOrAbandoned() ? ERROR : SUCCESS; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus _LoadTile()
-    {
-    auto&                       tile = static_cast<TileR>(*m_tile);
-    auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
-    auto&                       system = *root.GetRenderSystem();
-    static size_t               s_maxTilePointCount = 1000000;
-    static size_t               s_maxLeafPointCount = 20000;
-    bvector<FPoint3d>           points(s_maxTilePointCount);
-    bvector<PointCloudColorDef> colors(s_maxTilePointCount);
-    bool                        colorsPresent;
-    static   BeMutex            s_queryMutex;
-    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
-    PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTilePointCount);
-    size_t                      nPoints, totalPoints = 0;
-    
-    while (0 != (nPoints = (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), s_maxTilePointCount, (float*)points.data(), colorsPresent? (Byte*) colors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr)))
-        {
-        Transform                   dgnToTile, cloudToTile;
-        Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
-
-        dgnToTile.InverseOf(root.GetLocation());
-        cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
-
-        for(size_t i=0; i<nPoints; i++)
-            {
-            DPoint3d        tmpPoint = {points[i].x, points[i].y, points[i].z};
-
-            cloudToTile.Multiply(tmpPoint);
-
-            points[i] = {(float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z}; 
-            }
-
-
-        // TODO - Add technique for monochrome point clouds...
-        if (!colorsPresent)
-            colors =  bvector<PointCloudColorDef> (nPoints, PointCloudColorDef(255, 255, 255));
-
-        graphic->AddPointCloud((int) nPoints, DPoint3d::FromZero(), &points.front(), colors.empty() ? nullptr : (ByteCP) colors.data());
-
-        tile.AddGraphic(*graphic);
-        totalPoints += nPoints;
-        graphic->Close();
-        }
-
-    if(totalPoints < s_maxLeafPointCount)
-        tile.SetIsLeaf();
-
-#ifdef DRAW_RANGE
-    {
-    GraphicParams               params;
-    Render::GraphicBuilderPtr   graphic = system._CreateGraphic(Graphic::CreateParams());
-
-    params.SetLineColor(ColorDef::Red());
-
-    graphic->ActivateGraphicParams(params);
-    graphic->AddRangeBox (tile.GetRange());
-    graphic->Close();
-    tile.AddGraphic();
-    }
-#endif
-
-    return SUCCESS;  
-    }
-
-
-public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> _GetFromSource()
-    {
-    LoaderPtr me(this);
-    return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
-    }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState) 
-    {
+    {                                                                        
     return Loader::Create(*this, loadState);
     }
 
@@ -150,13 +178,81 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return 512; // ###TODO: come up with a decent value, and account for device ppi
+    return s_nominalTileSize; // ###TODO: come up with a decent value, and account for device ppi
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
+    {
+    if (streamBuffer.empty())
+        return ERROR;
+
+    uint32_t        featureTableStrLen;
+
+    streamBuffer.ReadBytes(&featureTableStrLen, sizeof(featureTableStrLen));
+    bvector<char>       featureTableData(featureTableStrLen);
+    Json::Value         featureTable;
+    Json::Reader        reader;                                                                                                                        
+    
+    if(!streamBuffer.ReadBytes(featureTableData.data(), featureTableStrLen) ||
+       !reader.parse(featureTableData.data(), featureTableData.data() + featureTableStrLen, featureTable))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    uint32_t      nPoints = featureTable["POINTS_LENGTH"].asUInt();
+    uint32_t      binaryPos = streamBuffer.GetPos(), positionOffset, rgbOffset;
+    
+    if (featureTable.isMember("POSITION"))
+        {
+        m_points.resize(nPoints);                                      
+        
+        streamBuffer.SetPos(binaryPos + (positionOffset = featureTable["POSITION"]["byteOffset"].asUInt()));;
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(FPoint3d)))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+
+    if (featureTable.isMember("RGB"))
+        {
+        m_colors.resize(nPoints);
+
+        streamBuffer.SetPos(binaryPos + (rgbOffset = featureTable["RGB"]["byteOffset"].asUInt()));
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_colors.data(), nPoints * sizeof(PointCloudColorDef)))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        }
+    return SUCCESS; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Tile::AddGraphics () 
+    {
+    if (!m_points.empty())
+        {
+        auto&                       root   = static_cast<RootCR>(GetRoot());
+        Render::GraphicBuilderPtr   graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
+
+        graphic->AddPointCloud((int) m_points.size(), DPoint3d::FromZero(), &m_points.front(), (ByteCP) m_colors.data());
+        graphic->Close();
+        AddGraphic(*graphic);
+        }
+
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -164,6 +260,7 @@ double Tile::_GetMaximumSize() const
 void Root::LoadRootTile(DRange3dCR tileRange)
     {
     m_rootTile = Tile::Create(*this, tileRange);
+
 #ifdef ASYNCH_ROOT
     // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
     auto result = _RequestTile(*m_rootTile, nullptr);
@@ -199,7 +296,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
 
     ptSetViewProjectionMatrix(&identityMatrix.coff[0][0], true);
     ptSetViewEyeMatrix(&eyeMatrix.coff[0][0], true);
-    ptSetViewportSize(0, 0, 512, 512);
+    ptSetViewportSize(0, 0, s_nominalTileSize, s_nominalTileSize);
 
     PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateFrustumPointsQuery());
 
@@ -207,6 +304,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     ptSetQueryScope(queryHandle->GetHandle(), m_model.GetPointCloudSceneP()->GetSceneHandle());
     ptSetQueryDensity (queryHandle->GetHandle(), QUERY_DENSITY_VIEW_COMPLETE, 1.0);
 
+    // Ick... the points are being loaded from the .pod file in another thread...
     while (0 != ptPtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true))
         BeDuration::FromMilliseconds(10).Sleep();
 
@@ -219,6 +317,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
 Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_model(model), m_name(model.GetName())
     {
+    CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
     }
 
 /*---------------------------------------------------------------------------------**//**

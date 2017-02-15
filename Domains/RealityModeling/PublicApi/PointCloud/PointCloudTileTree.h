@@ -44,7 +44,7 @@ private:
 public:
     static RootPtr Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view);
     virtual ~Root() { ClearAllTiles(); }
-
+                                                                                                                                 
     PointCloudModelCR           GetPointCloudModel() const { return m_model; }
     PointCloudQueryHandlePtr    InitQuery (bool& colorsPresent, DRange3dCR tileRange, size_t maxCount) const;
 
@@ -60,7 +60,9 @@ struct Tile : Dgn::TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
 private:
-    double                  m_tolerance;
+    double                      m_tolerance;
+    bvector<FPoint3d>           m_points;
+    bvector<PointCloudColorDef> m_colors;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
@@ -71,8 +73,13 @@ private:
 public:
     RootCR GetPointCloudRoot() const { return static_cast<RootCR>(GetRoot()); }
 
+    bvector<FPoint3d>& Points() { return m_points; };
+    bvector<PointCloudColorDef>& Colors() { return m_colors; };
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
+
+    BentleyStatus Read (TileTree::StreamBuffer& streamBuffer);
+    BentleyStatus AddGraphics ();
 
     double GetTolerance() const         { return m_tolerance; }
 

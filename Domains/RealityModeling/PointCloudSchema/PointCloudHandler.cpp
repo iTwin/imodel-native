@@ -319,6 +319,9 @@ void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
     {
-    return PointCloudTileTree::Root::Create(*this, context.GetTargetR().GetSystem(), view);
+    if (!m_tileTree.IsValid())
+        m_tileTree = PointCloudTileTree::Root::Create(*this, context.GetTargetR().GetSystem(), view);
+
+    return m_tileTree;
     }
 
