@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/DelegationTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,12 +25,11 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         IImsClientPtr m_client;
         Utf8String m_rpUri;
         IConnectTokenProviderPtr m_parentTokenProvider;
+        UniqueTaskHolder<SamlTokenResult> m_tokenRetrieveTask;
 
         SamlTokenPtr m_token;
         uint32_t m_tokenLifetime;
         DateTime m_tokenUpdateDate;
-
-        UniqueTaskHolder<SamlTokenResult> m_tokenRetriever;
 
         uint32_t m_tokenRequestLifetime;
         uint32_t m_tokenExpirationThreshold;

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.h $
+|     $Source: Tests/CompatibilityTests/TestsHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,10 +20,10 @@ class TestsHost : public RefCounted<BeTest::Host>
         void InitLibs();
         void SetupTestEnvironment();
         void InitLibraries();
-        void InitLogging();
+        void InitLogging(int logLevel);
 
     protected:
-        TestsHost(const char* programPath);
+        TestsHost(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel);
 
         virtual void* _InvokeP(const char* function_and_args) override;
 
@@ -33,5 +33,6 @@ class TestsHost : public RefCounted<BeTest::Host>
         virtual void _GetTempDir(BeFileName& path) override;
 
     public:
-        static RefCountedPtr<TestsHost> Create(const char* programPath);
+        static RefCountedPtr<TestsHost> Create(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel);
+        static Utf8String& GetErrorLog();
     };

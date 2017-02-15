@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectSignInManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -160,7 +160,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param rpUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
-        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR rpUrl, IHttpHandlerPtr httpHandler = nullptr) override;
+        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) override;
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
         //! Only use this if AuthenticationHandlerPtr cannot be used.

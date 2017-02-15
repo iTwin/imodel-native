@@ -1,15 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
-    <ClCompile Include="TestUtils\TestMain.cpp" />
-    <ClCompile Include="TestUtils\TestsHelper.cpp" />
-    <ClCompile Include="TestUtils\TestsHost.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClient.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="Parser\TestData.cpp" />
+    <ClCompile Include="Parser\ArgumentParserTests.cpp" />
+    <ClCompile Include="Parser\ArgumentParser.cpp" />
+    <ClCompile Include="RepositoryCompatibilityTests.cpp" />
+    <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="TestsHost.cpp" />
+    <ClCompile Include="Logging\GenericLogProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
-    <ClInclude Include="TestUtils\TestsHelper.h" />
-    <ClInclude Include="TestUtils\TestsHost.h" />
+    <ClInclude Include="Disk\DiskRepositoryClient.h" />
+    <ClInclude Include="Parser\TestData.h" />
+    <ClInclude Include="Parser\ArgumentParser.h" />
+    <ClInclude Include="RepositoryCompatibilityTests.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="TestsHost.h" />
+    <ClInclude Include="Logging\GenericLogProvider.h" />
+    <ClInclude Include="Logging\GenericLogProviderActivator.h" />
+    <ClInclude Include="Logging\Logging.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />

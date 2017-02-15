@@ -13,9 +13,9 @@
 #include <Bentley/Tasks/AsyncResult.h>
 #include <Bentley/Tasks/LimitingTaskQueue.h>
 #include <WebServices/Client/ObjectId.h>
-#include <WebServices/Client/Response/WSCreateObjectResponse.h>
 #include <WebServices/Client/Response/WSFileResponse.h>
 #include <WebServices/Client/Response/WSObjectsResponse.h>
+#include <WebServices/Client/Response/WSUploadResponse.h>
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSQuery.h>
@@ -33,11 +33,11 @@ typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 
 typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
 typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
-typedef AsyncResult<WSCreateObjectResponse, WSError>    WSCreateObjectResult;
+typedef AsyncResult<WSUploadResponse, WSError>          WSCreateObjectResult;
 typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
-typedef AsyncResult<void, WSError>                      WSUpdateObjectResult;
+typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateObjectResult;
+typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateFileResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
-typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
 typedef AsyncResult<void, WSError>                      WSVoidResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
@@ -189,6 +189,7 @@ struct IWSRepositoryClient
         //!     WSG 2.0: creation format is fully supported. <b>When root instanceId is specified, POST will be done to that instance, if and only if, the objectId parameter has an empty remoteId.</b>
         //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
         //!     Server version can be checked by using GetWSClient()->GetServerInfo()
+        //! @return JSON representing created data and new file ETag if available
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR objectId,
@@ -205,6 +206,7 @@ struct IWSRepositoryClient
         //! @param filePath [optional]  file path to upload. Only supported from WebApi 2.4
         //! @param uploadProgressCallback [optional] file upload progress
         //! @param ct [optional] 
+        //! @return empty JSON and new file ETag if available
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
@@ -221,6 +223,12 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Update file on server for given object.
+        //! @param objectId - object identifier to update file for
+        //! @param filePath - path to file to use for update
+        //! @param uploadProgressCallback - file upload progress
+        //! @param ct
+        //! @return empty JSON and and new file ETag if available
         virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,

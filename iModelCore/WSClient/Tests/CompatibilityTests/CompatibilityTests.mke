@@ -2,11 +2,13 @@
 #
 #     $Source: Tests/CompatibilityTests/CompatibilityTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
 %include mdl.mki
+
+wsClientUnitTestsDir = $(SrcRoot)WSClient/Tests/UnitTests/Published/
 
 #---------------------------------------------------------------------------------------+
 #   Compile unit tests
@@ -40,6 +42,19 @@ _vsProject = 1
 
 %include $(MOBILEDGNSDK_ROOT)build/MobileDgnSdk.mki
 %include $(MOBILEDGNSDK_DIR_BuildPlatform)deliver.mki
+
+#---------------------------------------------------------------------------------------+
+#   Compile test utilities
+#---------------------------------------------------------------------------------------+
+
+# Compile rule
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# Sources to compile
+$(o)StubInstances$(oext) : $(wsClientUnitTestsDir)Utils/StubInstances.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
 
 #---------------------------------------------------------------------------------------+
 #   Link test executable
@@ -76,3 +91,9 @@ GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesClient$(libext)
 GUNITTEST_NOEXEC = 1
 
 %include $(SrcRoot)bsicommon/sharedmki/gunittest.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver
+#---------------------------------------------------------------------------------------+
+$(BuildContext)Delivery/$(BEGTEST_NAME)$(exeext) : $(o)$(BEGTEST_NAME)$(exeext)
+    $(LinkFirstDepToFirstTarget)

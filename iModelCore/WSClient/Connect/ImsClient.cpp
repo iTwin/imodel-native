@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ImsClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -138,7 +138,7 @@ uint64_t lifetime
 
         if (response.GetHttpStatus() == HttpStatus::InternalServerError)
             LOG.errorv("ImsClient: Received server error. Make sure that relying party URI '%s' is correct and registered for IMS service '%s'",
-            rpUri.c_str(), stsUrl.c_str());
+                rpUri.c_str(), stsUrl.c_str());
 
         if (response.GetHttpStatus() != HttpStatus::OK)
             return SamlTokenResult::Error({response});

@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingDataSource.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -246,10 +246,17 @@ ICancellationTokenPtr ct
                     openResult->SetError({});
                     }
                 }
-                
+
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
                 openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+
+            if (!openResult->IsSuccess())
+                {
+                LOG.errorv("CachingDataSource::OpenOrCreate() error: %s %s",
+                    openResult->GetError().GetMessage().c_str(),
+                    openResult->GetError().GetDescription().c_str());
+                }
 
             return *openResult;
             });
@@ -346,7 +353,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                 auto txn = StartCacheTransaction();
                 // MetaSchema instances are read-only in ECDb, need to use different schema
                 SchemaChangeWSObjectsResponse response(objectsResult.GetValue(), SCHEMA_WSCacheMetaSchema);
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, response))
+                if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, response))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;
@@ -429,7 +436,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     auto txn = StartCacheTransaction();
                     if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemaPaths))
                         {
-                        result->SetError(Status::RepositorySchemaError);
+                        result->SetError(Status::SchemaError);
                         return;
                         }
 
@@ -735,9 +742,10 @@ ICancellationTokenPtr ct
                 WSObjectsResponseCR response = objectsResult.GetValue();
 
                 bset<ObjectId> rejected;
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct))
+                auto status = txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct);
+                if (CacheStatus::OK != status)
                     {
-                    result->SetError({ICachingDataSource::Status::InternalCacheError, ct});
+                    result->SetError({status, ct});
                     return;
                     }
 
