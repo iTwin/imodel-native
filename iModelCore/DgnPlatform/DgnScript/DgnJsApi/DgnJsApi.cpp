@@ -694,7 +694,7 @@ bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
 //---------------------------------------------------------------------------------------
 JsECSqlArrayValueP JsECSqlValue::GetArray()
     {
-    return new JsECSqlArrayValue(m_value->GetArray());
+    return new JsECSqlArrayValue(*m_value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -792,7 +792,7 @@ JsDRange3dP JsPreparedECSqlStatement::GetValueDRange3d(int32_t col)
 JsECSqlArrayValueP JsPreparedECSqlStatement::GetValueArray(int32_t col)
     {
     CHECK_GET_VALUE_ARGS(col, nullptr);
-    IECSqlArrayValue const& arrayValue = m_stmt->GetValueArray(col);
+    IECSqlValue const& arrayValue = m_stmt->GetValue(col);
     return new JsECSqlArrayValue(arrayValue);
     }
 
