@@ -4663,7 +4663,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
             }
         }
 
-    if (m_elParams == elParams)
+    if (m_elParams.IsEquivalent(elParams))
         return true;
 
     m_elParams = elParams;

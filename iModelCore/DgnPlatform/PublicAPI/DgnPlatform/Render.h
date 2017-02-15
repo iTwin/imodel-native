@@ -891,8 +891,8 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two GeometryParams.
-    DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
+    //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
+    DGNPLATFORM_EXPORT bool IsEquivalent(GeometryParamsCR) const;
 
     //! copy operator
     DGNPLATFORM_EXPORT GeometryParamsR operator=(GeometryParamsCR rhs);
