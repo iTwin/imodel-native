@@ -1079,12 +1079,15 @@ private:
         Render::SystemP system = m_processor.GetRoot().GetRenderSystem();
         return nullptr != system ? system->_GetMaterial(id, m_processor.GetDgnDb()) : nullptr;
         }
+
+    static Render::ViewFlags GetDefaultViewFlags();
 public:
     GeometryProcessorContext(TileGeometryProcessor& processor, RootR root, LoadContextCR loadContext)
         : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(root.Is3d() ? GeometrySelector3d::GetSql() : GeometrySelector2d::GetSql())), m_loadContext(loadContext)
         {
         SetDgnDb(root.GetDgnDb());
         m_is3dView = root.Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        SetViewFlags(GetDefaultViewFlags());
         }
 
     bool AcceptElement(DgnElementId elem, DgnCategoryId cat) const { return m_loadContext.AcceptElement(elem, cat); }
@@ -2747,7 +2750,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (nullptr == polyface || 0 == polyface->GetPointCount())
         return;
 
-    DisplayParamsR displayParams = *tilePolyface.m_displayParams;
+    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
+    DisplayParamsR displayParams = *geom.GetDisplayParamsPtr();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.QueryTexture(&db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
 
@@ -3260,6 +3264,18 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
 #endif
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::ViewFlags GeometryProcessorContext::GetDefaultViewFlags()
+    {
+    // We need to generate all the geometry - visibility of stuff like text, constructions, etc will be handled in shaders
+    // Most default to 'on'
+    Render::ViewFlags flags;
+    flags.SetShowConstructions(true);
+    return flags;
     }
 
 /*---------------------------------------------------------------------------------**//**

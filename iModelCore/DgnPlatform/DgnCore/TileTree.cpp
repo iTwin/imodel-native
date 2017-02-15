@@ -604,7 +604,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     // ###TODO_ELEMENT_TILE: It would be nice to be able to generate only the tiles we need for the current frustum.
     // However, if we don't generate parents before children, then when the viewing frustum changes we will have nothing to draw until more tiles load.
     // So for now we do similarly to 3mx: only process children after parent is ready.
-#define TILETREE_SKIP_INTERMEDIATES
+//#define TILETREE_SKIP_INTERMEDIATES
 #if defined(TILETREE_SKIP_INTERMEDIATES)
     DgnDb::VerifyClientThread();
 
