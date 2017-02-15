@@ -168,11 +168,8 @@ void ECSqlStatementTestFixture::VerifyECSqlValue(ECSqlStatement const& statement
         else //structs
             {
             ASSERT_TRUE(typeInfo.IsStruct());
-            IECSqlStructValue const& actualStructValue = actualValue.GetStruct();
-            const int structMemberCount = actualStructValue.GetMemberCount();
-            for (int i = 0; i < structMemberCount; i++)
+            for (IECSqlValue const& actualMemberValue : actualValue.GetStructIterable())
                 {
-                auto const& actualMemberValue = actualStructValue.GetValue(i);
                 Utf8String memberName(actualMemberValue.GetColumnInfo().GetProperty()->GetName());
                 Json::Value expectedMemberValue = expectedValue.get(memberName, Json::Value(Json::nullValue));
                 VerifyECSqlValue(statement, expectedMemberValue, actualMemberValue);
@@ -183,13 +180,11 @@ void ECSqlStatementTestFixture::VerifyECSqlValue(ECSqlStatement const& statement
         }
 
     ASSERT_EQ(Json::ValueType::arrayValue, expectedType);
-    IECSqlArrayValue const& actualArrayValue = actualValue.GetArray();
     int actualArrayLength = 0;
-    for (IECSqlValue const* actualArrayElement : actualArrayValue)
+    for (IECSqlValue const& actualArrayElement : actualValue.GetArrayIterable())
         {
-        ASSERT_TRUE(actualArrayElement != nullptr);
         actualArrayLength++;
-        VerifyECSqlValue(statement, expectedValue[actualArrayLength - 1], *actualArrayElement);
+        VerifyECSqlValue(statement, expectedValue[actualArrayLength - 1], actualArrayElement);
         }
 
     ASSERT_EQ((int) expectedValue.size(), actualArrayLength);

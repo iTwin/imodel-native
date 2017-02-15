@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
+InstanceCRUDTests.*     # No need to run with the build, used by testing after build for verifying CRUD operations.
 ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run with build.
 
 #----------------------------------------------------------------------------------------
@@ -15,6 +15,9 @@ ECDbMappingTestFixture.AddDerivedClassOfConstraintOnNsideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
+#TFS 660645
+ECDbMappingTestFixture.StrengthDirectionValidityOnEndTableRelationship
+
 #TFS 520654
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
@@ -26,6 +29,5 @@ ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 #TFS 657660
 ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
 
-ECSchemaUpdateTests.DeleteProperties_TPH
-ECSchemaUpdateTests.DeleteProperties_JoinedTable
-ECSchemaUpdateTests.AddECPropertyToBaseClass
+ECDbMappingTestFixture.MixInAsRelationshipEnd2
+ECDbMappingTestFixture.MixInAsRelationshipEnd3

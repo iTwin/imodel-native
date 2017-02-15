@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbDateTime_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -275,15 +275,15 @@ TEST_F(ECDbDateTimeTests, ECSqlStatementGetValueDateTime)
     const int expectedArraySize = (int) expectedArrayDateTimeElements.size();
     const int arrayPropertyIndex = (int) nonArrayDataCount;
 
-    IECSqlArrayValue const& arrayValue = statement.GetValueArray(arrayPropertyIndex);
+    IECSqlValue const& arrayValue = statement.GetValue(arrayPropertyIndex);
     int actualArraySize = arrayValue.GetArrayLength();
 
     EXPECT_EQ(expectedArraySize, actualArraySize) << "Unexpected size of returned DateTime array";
     uint32_t expectedIndex = 0;
-    for (IECSqlValue const* arrayElementValue : arrayValue)
+    for (IECSqlValue const& arrayElementValue : arrayValue.GetArrayIterable())
         {
         DateTimeCR expected = expectedArrayDateTimeElements[expectedIndex];
-        DateTime actual = arrayElementValue->GetDateTime();
+        DateTime actual = arrayElementValue.GetDateTime();
         AssertDateTime(expected, actual, false, "Unexpected date time for property 'utcarray'");
         expectedIndex++;
         }
@@ -292,32 +292,30 @@ TEST_F(ECDbDateTimeTests, ECSqlStatementGetValueDateTime)
     const size_t expectedStructArraySize = expectedStructArrayElements.size();
     const int structArrayPropertyIndex = arrayPropertyIndex + 1;
 
-    IECSqlArrayValue const& structArrayValue = statement.GetValueArray(structArrayPropertyIndex);
+    IECSqlValue const& structArrayValue = statement.GetValue(structArrayPropertyIndex);
     size_t actualArrayElementCount = 0;
-    for (IECSqlValue const* arrayElement : structArrayValue)
+    for (IECSqlValue const& arrayElement : structArrayValue.GetArrayIterable())
         {
-        IECSqlStructValue const& structArrayElement = arrayElement->GetStruct();
-
         IECInstancePtr expectedStructInstance = expectedStructArrayElements[actualArrayElementCount];
         ECValue v;
         expectedStructInstance->GetValue(v, "nodatetimeinfo");
         DateTime expected = v.GetDateTime();
 
-        DateTime actual = structArrayElement.GetValue(0).GetDateTime();
+        DateTime actual = arrayElement["nodatetimeinfo"].GetDateTime();
         Utf8String assertMessage;
         assertMessage.Sprintf("Unexpected date time for struct property 'nodatetimeinfo' for array element %d.", actualArrayElementCount);
         AssertDateTime(expected, actual, true, assertMessage.c_str());
 
         expectedStructInstance->GetValue(v, "utc");
         expected = v.GetDateTime();
-        actual = structArrayElement.GetValue(1).GetDateTime();
+        actual = arrayElement["utc"].GetDateTime();
 
         assertMessage.Sprintf("Unexpected date time for struct property 'utc' for array element %d.", actualArrayElementCount);
         AssertDateTime(expected, actual, false, assertMessage.c_str());
 
         expectedStructInstance->GetValue(v, "dateonly");
         expected = v.GetDateTime();
-        actual = structArrayElement.GetValue(2).GetDateTime();
+        actual = arrayElement["dateonly"].GetDateTime();
         assertMessage.Sprintf("Unexpected date time for struct property 'dateonly' for array element %d.", actualArrayElementCount);
         AssertDateTime(expected, actual, false, assertMessage.c_str());
 

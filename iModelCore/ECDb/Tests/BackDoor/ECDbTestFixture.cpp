@@ -40,6 +40,18 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     return GetECDb();
     }
 
+ECDb& ECDbTestFixture::Reopen()
+    {
+    
+    if (m_ecdb.IsDbOpen()) 
+        {
+        BeFileName ecdbFileName = BeFileName(m_ecdb.GetDbFileName());
+        m_ecdb.CloseDb();
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        }
+
+    return GetECDb();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------

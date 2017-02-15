@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct PointECSqlBinder : public ECSqlBinder
+struct PointECSqlBinder final : public ECSqlBinder
     {
     private:
         bool m_isPoint3d;

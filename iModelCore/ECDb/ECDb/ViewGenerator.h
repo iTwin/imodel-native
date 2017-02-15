@@ -123,7 +123,6 @@ struct ViewGenerator
                 bool m_usePropertyNameAsAliasForSystemPropertyMaps;
                 mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-                bool m_forECClassView;
 
                 BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
                 BentleyStatus _Visit(SystemPropertyMap const&) const override;

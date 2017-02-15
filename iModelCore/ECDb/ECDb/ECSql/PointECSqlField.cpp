@@ -145,26 +145,39 @@ IGeometryPtr PointECSqlField::_GetGeometry() const
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                       03/2014
+// @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlPrimitiveValue const& PointECSqlField::_GetPrimitive() const { return *this; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-IECSqlArrayValue const& PointECSqlField::_GetArray() const
+IECSqlValue const& PointECSqlField::_GetStructMemberValue(Utf8CP memberName) const
     {
-    LOG.error("GetArray cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
-    return NoopECSqlValue::GetSingleton().GetArray();
+    LOG.error("GetStructMemberValue cannot be called for Point2d or Point3d columns.");
+    return NoopECSqlValue::GetSingleton()[memberName];
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-IECSqlStructValue const& PointECSqlField::_GetStruct() const
+// @bsimethod                                    Krischan.Eberle                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+IECSqlValueIterable const& PointECSqlField::_GetStructIterable() const
     {
-    LOG.error("GetStruct cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
-    return NoopECSqlValue::GetSingleton().GetStruct();
+    LOG.error("GetStructIterable cannot be called for Point2d or Point3d columns.");
+    return NoopECSqlValue::GetSingleton().GetStructIterable();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int PointECSqlField::_GetArrayLength() const
+    {
+    LOG.error("GetArrayLength cannot be called for Point2d or Point3d columns.");
+    return NoopECSqlValue::GetSingleton().GetArrayLength();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+IECSqlValueIterable const& PointECSqlField::_GetArrayIterable() const
+    {
+    LOG.error("GetArrayIterable cannot be called for Point2d or Point3d columns.");
+    return NoopECSqlValue::GetSingleton().GetArrayIterable();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

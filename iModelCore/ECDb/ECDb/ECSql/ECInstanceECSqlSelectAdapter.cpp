@@ -180,11 +180,9 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 
     if (prop->GetIsStruct())
         {
-        IECSqlStructValue const& structValue = value.GetStruct();
-        int memberCount = structValue.GetMemberCount();
-        for (int i = 0; i < memberCount; i++)
+        for (IECSqlValue const& memberVal : value.GetStructIterable())
             {
-            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), structValue.GetValue(i)))
+            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal))
                 return ERROR;
             }
 
@@ -193,23 +191,22 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 
     if (prop->GetIsArray())
         {
-        IECSqlArrayValue const& arrayValue = value.GetArray();
-        int arrayLength = arrayValue.GetArrayLength();
+        const int arrayLength = value.GetArrayLength();
         if (arrayLength <= 0)
             return SUCCESS;
 
         instance.AddArrayElements(accessString.c_str(), arrayLength);
         int arrayIndex = 0;
-        for (IECSqlValue const* arrayElementValue : arrayValue)
+        for (IECSqlValue const& arrayElementValue : value.GetArrayIterable())
             {
             if (prop->GetIsStructArray())
                 {
-                if (SUCCESS != SetStructArrayElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), *arrayElementValue))
+                if (SUCCESS != SetStructArrayElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), arrayElementValue))
                     return ERROR;
                 }
             else if (prop->GetIsPrimitiveArray())
                 {
-                if (SUCCESS != SetPrimitiveValue(ecVal, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType(), *arrayElementValue))
+                if (SUCCESS != SetPrimitiveValue(ecVal, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType(), arrayElementValue))
                     return ERROR;
                 }
 
@@ -317,12 +314,9 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement(ECValueR val, 
     {
     val.Clear();
     IECInstancePtr structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance();
-
-    IECSqlStructValue const& structValue = value.GetStruct();
-    int memberCount = structValue.GetMemberCount();
-    for (int i = 0; i < memberCount; i++)
+    for (IECSqlValue const& memberVal : value.GetStructIterable())
         {
-        if (SUCCESS != SetPropertyData(*structInstance, structValue.GetValue(i)))
+        if (SUCCESS != SetPropertyData(*structInstance, memberVal))
             return ERROR;
         }
 

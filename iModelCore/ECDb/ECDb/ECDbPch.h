@@ -82,8 +82,6 @@
 #include "ECSql/ECSqlStatementBase.h"
 #include "ECSql/ECSqlStatementImpl.h"
 
-#include "ECSql/IECSqlPrimitiveValue.h"
-
 #include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"
 #include "ECSql/PrimitiveECSqlField.h"

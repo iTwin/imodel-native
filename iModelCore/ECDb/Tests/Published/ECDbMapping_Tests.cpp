@@ -11,7 +11,88 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
+#if 0
+enum class ClassType
+    {
+    Base,
+    Derived,
+    };
+struct Derived;
+struct Base
+    {
+    private:
+        ClassType m_type;
+        virtual Derived const* _GetDerivedCP() const { return nullptr; }
+    protected:
+        Base(ClassType type) :m_type(type)
+            {}
+    public:
+        Base() :m_type(ClassType::Base)
+            {}
+        ClassType GetType() const { return m_type; }
+        Derived const* GetDerivedCP_UsingVirtualMethod() const { return _GetDerivedCP(); }
+        Derived const* GetDerivedCP_DynamicCast() const;
+        Derived const* GetDerivedCP_StaticCastByType() const;
+    };
 
+struct Derived : Base
+    {
+    private:
+        virtual Derived const* _GetDerivedCP() const override { return this; }
+    protected:
+        Derived(ClassType type) :Base(type)
+            {}
+    public:
+        Derived() :Base(ClassType::Derived)
+            {}
+    };
+
+
+
+
+Derived const* Base::GetDerivedCP_DynamicCast() const { return dynamic_cast<Derived const*>(this); }
+Derived const* Base::GetDerivedCP_StaticCastByType() const { if (GetType() == ClassType::Derived) return static_cast<Derived const*>(this); return nullptr; }
+
+TEST_F(ECDbMappingTestFixture, PerfCast)
+    {
+
+
+    Base const* base;
+    //Derived const* derived;
+    Derived instanceDerived;
+    base = &instanceDerived;
+    const int max = 1000000000;
+    StopWatch timer;
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_DynamicCast();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_DynamicCast() %.4f sec\r\n", timer.GetElapsedSeconds());
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_UsingVirtualMethod();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_UsingVirtualMethod() %.4f sec\r\n", timer.GetElapsedSeconds());
+    timer.Start();
+    for (int i = 0; i < max; i++)
+        {
+        Derived const* c = base->GetDerivedCP_StaticCastByType();
+        if (c == nullptr) { ASSERT_TRUE(false); }
+        }
+
+    timer.Stop();
+    printf("base->GetDerivedCP_StaticCastByType() %.4f sec\r\n", timer.GetElapsedSeconds());
+
+    }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2321,9 +2402,9 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertWithNoParameters)
     ASSERT_EQ(23.55, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.X
     ASSERT_EQ(64.34, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(34.45, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Z
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());//==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfP3d
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());// ==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //BIN is null
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //Geom is null
@@ -2405,9 +2486,9 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.X
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());//==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());// ==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     }
@@ -2636,9 +2717,9 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.X
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());//==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
-    ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
+    ASSERT_EQ(0, stmt.GetValue(idx).GetArrayLength());// ==[]
     ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     
@@ -2787,30 +2868,30 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersA
     ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
     ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
 
-    IECSqlStructValue const& st1pv = stmt.GetValueStruct(idx++);    //ST1P
-    ASSERT_EQ(pST1P_D1, st1pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_P2D, st1pv.GetValue(1).GetPoint2d());
+    IECSqlValue const& st1pv = stmt.GetValue(idx++);    //ST1P
+    ASSERT_EQ(pST1P_D1, st1pv["D1"].GetDouble());
+    ASSERT_EQ(pST1P_P2D, st1pv["P2D"].GetPoint2d());
 
-    IECSqlStructValue const& st2pv = st1pv.GetValue(2).GetStruct();  //ST1P.STP2
-    ASSERT_EQ(pST1P_ST2P_D2, st2pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_ST2P_P3D, st2pv.GetValue(1).GetPoint3d());
-    IECSqlArrayValue const& arrayOfP3dv = stmt.GetValueArray(idx++); // //arrayOfP3d
+    IECSqlValue const& st2pv = st1pv["ST2P"];  //ST1P.ST2P
+    ASSERT_EQ(pST1P_ST2P_D2, st2pv["D2"].GetDouble());
+    ASSERT_EQ(pST1P_ST2P_P3D, st2pv["P3D"].GetPoint3d());
+    IECSqlValue const& arrayOfP3dv = stmt.GetValue(idx++); // //arrayOfP3d
     int i = 0;
-    for (auto itor : arrayOfP3dv)
+    for (IECSqlValue const& arrayElement : arrayOfP3dv.GetArrayIterable())
         {
-        ASSERT_TRUE(pArrayOfP3d[i].AlmostEqual(itor->GetPoint3d())) << i;
+        ASSERT_TRUE(pArrayOfP3d[i].AlmostEqual(arrayElement.GetPoint3d())) << i;
         i++;
         }
     ASSERT_EQ(3, i);
 
-    IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(idx++);  //arrayOfST1
+    IECSqlValue const& arrayOfST1v = stmt.GetValue(idx++);  //arrayOfST1
     i = 0;
-    for (auto itor : arrayOfST1v)
+    for (IECSqlValue const& arrayElement : arrayOfST1v.GetArrayIterable())
         {
-        ASSERT_EQ(pArrayOfST1_D1[i], itor->GetStruct().GetValue(0).GetDouble());//ST1P.D1
-        ASSERT_TRUE(pArrayOfST1_P2D[i].AlmostEqual(itor->GetStruct().GetValue(1).GetPoint2d()));//ST1P.P2D
-        ASSERT_EQ(pArrayOfST1_D2[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(0).GetDouble());//ST1P.STP2.D2
-        ASSERT_TRUE(pArrayOfST1_P3D[i].AlmostEqual(itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d()));//ST1P.STP2.P3D
+        ASSERT_EQ(pArrayOfST1_D1[i], arrayElement["D1"].GetDouble());//ST1P.D1
+        ASSERT_TRUE(pArrayOfST1_P2D[i].AlmostEqual(arrayElement["P2D"].GetPoint2d()));//ST1P.P2D
+        ASSERT_EQ(pArrayOfST1_D2[i], arrayElement["ST2P"]["D2"].GetDouble());//ST1P.STP2.D2
+        ASSERT_TRUE(pArrayOfST1_P3D[i].AlmostEqual(arrayElement["ST2P"]["P3D"].GetPoint3d()));//ST1P.STP2.P3D
         i++;
         }
     ASSERT_EQ(3, i);
@@ -2943,29 +3024,29 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypes)
     ASSERT_EQ(pP2D, stmt.GetValuePoint2d(7)) << stmt.GetECSql();
     ASSERT_EQ(pP3D, stmt.GetValuePoint3d(8)) << stmt.GetECSql();
 
-    IECSqlStructValue const& st1pv = stmt.GetValueStruct(9);
-    ASSERT_EQ(pST1P_D1, st1pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_P2D, st1pv.GetValue(1).GetPoint2d());
+    IECSqlValue const& st1pv = stmt.GetValue(9);
+    ASSERT_EQ(pST1P_D1, st1pv["D1"].GetDouble());
+    ASSERT_EQ(pST1P_P2D, st1pv["P2D"].GetPoint2d());
 
-    IECSqlStructValue const& st2pv = st1pv.GetValue(2).GetStruct();  //ST1P.STP2
-    ASSERT_EQ(pST1P_ST2P_D2, st2pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_ST2P_P3D, st2pv.GetValue(1).GetPoint3d());
-    IECSqlArrayValue const& arrayOfP3dv = stmt.GetValueArray(10); // //arrayOfP3d
+    IECSqlValue const& st2pv = st1pv["ST2P"];  //ST1P.ST2P
+    ASSERT_EQ(pST1P_ST2P_D2, st2pv["D2"].GetDouble());
+    ASSERT_EQ(pST1P_ST2P_P3D, st2pv["P3D"].GetPoint3d());
+    IECSqlValue const& arrayOfP3dv = stmt.GetValue(10); // //arrayOfP3d
     int i = 0;
-    for (auto itor : arrayOfP3dv)
+    for (IECSqlValue const& element : arrayOfP3dv.GetArrayIterable())
         {
-        ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
+        ASSERT_EQ(pArrayOfP3d[i++], element.GetPoint3d());
         }
     ASSERT_EQ(3, i);
 
-    IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(11);  //arrayOfST1
+    IECSqlValue const& arrayOfST1v = stmt.GetValue(11);  //arrayOfST1
     i = 0;
-    for (auto itor : arrayOfST1v)
+    for (IECSqlValue const& arrayElement : arrayOfST1v.GetArrayIterable())
         {
-        ASSERT_EQ(pArrayOfST1_D1[i], itor->GetStruct().GetValue(0).GetDouble());//ST1P.D1
-        ASSERT_EQ(pArrayOfST1_P2D[i], itor->GetStruct().GetValue(1).GetPoint2d());//ST1P.P2D
-        ASSERT_EQ(pArrayOfST1_D2[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(0).GetDouble());//ST1P.STP2.D2
-        ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
+        ASSERT_EQ(pArrayOfST1_D1[i], arrayElement["D1"].GetDouble());//ST1P.D1
+        ASSERT_EQ(pArrayOfST1_P2D[i], arrayElement["P2D"].GetPoint2d());//ST1P.P2D
+        ASSERT_EQ(pArrayOfST1_D2[i], arrayElement["ST2P"]["D2"].GetDouble());//ST1P.ST2P.D2
+        ASSERT_EQ(pArrayOfST1_P3D[i], arrayElement["ST2P"]["P3D"].GetPoint3d());//ST1P.ST2P.P3D
         i++;
         }
     ASSERT_EQ(3, i);
@@ -3101,33 +3182,104 @@ TEST_F(ECDbMappingTestFixture, Overflow_UpdateComplexTypes)
     ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
     ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
 
-    IECSqlStructValue const& st1pv = stmt.GetValueStruct(idx++);    //ST1P
-    ASSERT_EQ(pST1P_D1, st1pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_P2D, st1pv.GetValue(1).GetPoint2d());
+    IECSqlValue const& st1pv = stmt.GetValue(idx++);    //ST1P
+    ASSERT_EQ(pST1P_D1, st1pv["D1"].GetDouble());
+    ASSERT_EQ(pST1P_P2D, st1pv["P2D"].GetPoint2d());
 
-    IECSqlStructValue const& st2pv = st1pv.GetValue(2).GetStruct();  //ST1P.STP2
-    ASSERT_EQ(pST1P_ST2P_D2, st2pv.GetValue(0).GetDouble());
-    ASSERT_EQ(pST1P_ST2P_P3D, st2pv.GetValue(1).GetPoint3d());
-    IECSqlArrayValue const& arrayOfP3dv = stmt.GetValueArray(idx++); // //arrayOfP3d
+    IECSqlValue const& st2pv = st1pv["ST2P"];  //ST1P.ST2P
+    ASSERT_EQ(pST1P_ST2P_D2, st2pv["D2"].GetDouble());
+    ASSERT_EQ(pST1P_ST2P_P3D, st2pv["P3D"].GetPoint3d());
+    IECSqlValue const& arrayOfP3dv = stmt.GetValue(idx++); // //arrayOfP3d
     int i = 0;
-    for (auto itor : arrayOfP3dv)
+    for (IECSqlValue const& element : arrayOfP3dv.GetArrayIterable())
         {
-        ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
+        ASSERT_EQ(pArrayOfP3d[i++], element.GetPoint3d());
         }
     ASSERT_EQ(3, i);
-    IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(idx++);  //arrayOfST1
+    IECSqlValue const& arrayOfST1v = stmt.GetValue(idx++);  //arrayOfST1
     i = 0;
-    for (auto itor : arrayOfST1v)
+    for (IECSqlValue const& arrayElement : arrayOfST1v.GetArrayIterable())
         {
-        ASSERT_EQ(pArrayOfST1_D1[i], itor->GetStruct().GetValue(0).GetDouble());//ST1P.D1
-        ASSERT_EQ(pArrayOfST1_P2D[i], itor->GetStruct().GetValue(1).GetPoint2d());//ST1P.P2D
-        ASSERT_EQ(pArrayOfST1_D2[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(0).GetDouble());//ST1P.STP2.D2
-        ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
+        ASSERT_EQ(pArrayOfST1_D1[i], arrayElement["D1"].GetDouble());//ST1P.D1
+        ASSERT_EQ(pArrayOfST1_P2D[i], arrayElement["P2D"].GetPoint2d());//ST1P.P2D
+        ASSERT_EQ(pArrayOfST1_D2[i], arrayElement["ST2P"]["D2"].GetDouble());//ST1P.STP2.D2
+        ASSERT_EQ(pArrayOfST1_P3D[i], arrayElement["ST2P"]["P3D"].GetPoint3d());//ST1P.STP2.P3D
         i++;
         }
     ASSERT_EQ(3, i);
 
     ASSERT_EQ(0, memcmp(bin, stmt.GetValueBlob(idx++), binSize));  //Bin
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
+    {
+    std::vector<SchemaItem> testItems;
+
+    testItems.push_back(SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' >"
+        "    <BaseClass>Model</BaseClass>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+        "    </ECCustomAttributes>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..N)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", false, "ForeignKey End of a relationship mapped to a Joined Table, doesn't allow the strength to be 'embedding'."));
+
+    testItems.push_back(SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' >"
+        "    <BaseClass>Model</BaseClass>"
+        "    <ECProperty propertyName='Prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='referencing' direction='Forward'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+        "         <OnDeleteAction>Cascade</OnDeleteAction>"
+        "        </ForeignKeyConstraint>"
+        "    </ECCustomAttributes>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..N)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", false, "The ForeignKeyConstraintCA can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'."));
+
+    AssertSchemaImport(testItems, "ForeignKeyOnJoinedTable.ecdb");
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -6710,6 +6862,130 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                  02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Backward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "For a FKRelationship class with strength 'embedding', the cardinality 1-N requires the direction to be 'forward'.")); //Fails because the direction is Forward despite setting it to Backward.
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'forward' for a 1-N cardinality, is expected to succeed."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding'  direction='Backward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'Backward' for a N-1 cardinality, is expected to succeed.")); //Fails because the direction is Forward despite setting it to Backward.
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "For a FKRelationship class with strength 'embedding', the cardinality N-1 requires the direction to be 'Backward'."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "Mapping of FKRelationshipClass with strength 'embedding' and direction 'Backward' for a 1-1 cardinality, is expected to succeed."));
+
+    AssertSchemaImport(testSchemas, "StrengthDirectionValidityTest.ecdb");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
@@ -11863,11 +12139,25 @@ TEST_F(ECDbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
-    IECSqlStructValue const& mtx = stmt.GetValueStruct(0);
+    IECSqlValue const& mtx = stmt.GetValue(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
+    for (IECSqlValue const& memberVal : mtx.GetStructIterable())
         {
-        ASSERT_DOUBLE_EQ(mtx4x4ValuesA[i], mtx.GetValue((int) i).GetDouble());
+        size_t memberIndex = 0;
+        bool found = false;
+        for (Utf8CP memberName : mtx4x4Properties)
+            {
+            if (memberVal.GetColumnInfo().GetProperty()->GetName().EqualsIAscii(memberName))
+                {
+                found = true;
+                break;
+                }
+
+            memberIndex++;
+            }
+
+        ASSERT_TRUE(found);
+        ASSERT_DOUBLE_EQ(mtx4x4ValuesA[memberIndex], memberVal.GetDouble());
         }
     }//===================================================================
 
@@ -11876,11 +12166,25 @@ TEST_F(ECDbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
-    IECSqlStructValue const& mtx = stmt.GetValueStruct(0);
+    IECSqlValue const& mtx = stmt.GetValue(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
+    for (IECSqlValue const& memberVal : mtx.GetStructIterable())
         {
-        ASSERT_DOUBLE_EQ(mtx4x4ValuesB[i], mtx.GetValue((int) i).GetDouble());
+        size_t memberIndex = 0;
+        bool found = false;
+        for (Utf8CP memberName : mtx4x4Properties)
+            {
+            if (memberVal.GetColumnInfo().GetProperty()->GetName().EqualsIAscii(memberName))
+                {
+                found = true;
+                break;
+                }
+
+            memberIndex++;
+            }
+
+        ASSERT_TRUE(found);
+        ASSERT_DOUBLE_EQ(mtx4x4ValuesB[memberIndex], memberVal.GetDouble());
         }
     }//===================================================================
 
@@ -11972,6 +12276,10 @@ struct ECSqlHelper
             return stmt.Step();
             }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     {
     SetupECDb("diamond_problem.ecdb",
@@ -12013,7 +12321,7 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
             "      </Target>"
             "   </ECRelationshipClass>"
             "   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassB' strength='Referencing' modifier='Sealed'>"
-            "       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "		
+            "       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "
             "      <Source cardinality='(0,1)' polymorphic='False'>"
             "          <Class class ='PrimaryClassA' />"
             "      </Source>"
@@ -12043,6 +12351,10 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     //This does not work with overflow property
     //ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
     {
 
@@ -12164,16 +12476,16 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
         SubObject22(P0, IB1, P21, IB2, P22)
         SubObject23(P0, IB1, P21, IB2, P22, IB3, P23)
 */
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject1	(P0, IB1, P1)						VALUES ('P0-1', 'IB1-1', 'P1-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject2	(P0, IB2, P2)						VALUES ('P0-2', 'IB2-1', 'P2-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject3	(P0, IB3, P3)						VALUES ('P0-3', 'IB3-1', 'P3-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject123(P0, IB1, IB2, IB3, P123)			VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject11	(P0, IB1, P11)						VALUES ('P0-5', 'IB1-3', 'P11-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject12	(P0, IB1, P11, IB2, P12)			VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject13	(P0, IB1, P11, IB2, P12, IB3, P13)	VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject21	(P0, IB1, P21)						VALUES ('P0-8', 'IB1-6', 'P21-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject22	(P0, IB1, P21, IB2, P22)			VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject23	(P0, IB1, P21, IB2, P22, IB3, P23)	VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject1    (P0, IB1, P1)                       VALUES ('P0-1', 'IB1-1', 'P1-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject2    (P0, IB2, P2)                       VALUES ('P0-2', 'IB2-1', 'P2-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject3    (P0, IB3, P3)                       VALUES ('P0-3', 'IB3-1', 'P3-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject123  (P0, IB1, IB2, IB3, P123)           VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject11   (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject12   (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject13   (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject21   (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject22   (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO Foo.SubObject23   (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')");
     GetECDb().SaveChanges();
 
     //====[Foo.Object]====================================================
@@ -12392,7 +12704,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/16
+// @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     {
@@ -12513,4 +12825,408 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(34, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
+    {
+    SetupECDb("diamond_problem3.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECEntityClass typeName='Base'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>10</SharedColumnCount>"
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='P1' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='ClassA'>"
+            "      <BaseClass>Base</BaseClass>"
+            "      <ECProperty propertyName='S1' typeName='string' />"
+            "      <ECProperty propertyName='Z1' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='ClassB'>"
+            "      <BaseClass>Base</BaseClass>"
+            "      <ECProperty propertyName='P3' typeName='string' />"
+            "      <ECProperty propertyName='S1' typeName='string' />"
+            "      <ECProperty propertyName='Z1' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='ClassC'>"
+            "      <BaseClass>ClassA</BaseClass>"
+            "      <BaseClass>ClassB</BaseClass>"
+            "      <ECProperty propertyName='P4' typeName='string' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().SaveChanges();
+
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassB (P1, P3, S1, Z1    ) VALUES ('P1-ClassB', 'P3-ClassB', 'S1-ClassB', 'Z1-ClassB')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')");
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.ClassA"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("P1-ClassA", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    //Following should be S2-ClassC but its not P3-ClassA due to column allocation problem
+    ASSERT_STRNE("P2-ClassC", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1,Z1 FROM ts.ClassB"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("S1-ClassB", stmt.GetValueText(0));
+    ASSERT_STREQ("Z1-ClassB", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    //Follow should STREQ to but it already fails
+    ASSERT_STRNE("S1-ClassC", stmt.GetValueText(0));
+    ASSERT_STRNE("Z1-ClassC", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT  S1 FROM ts.ClassC"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STRNE("S1-ClassC", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd)
+    {
+    SetupECDb("diamond_problem3.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>10</SharedColumnCount>"
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='www' typeName='long' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+            "        <ECCustomAttributes>"
+            "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "        </ECCustomAttributes>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
+            "  </ECRelationshipClass>"
+            "  <ECEntityClass typeName='Car'>"
+            "      <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Engine'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Volumn' typeName='double' />"
+            "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Sterring'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Type' typeName='string' />"
+            "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Tire'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <ECProperty propertyName='Diameter' typeName='double' />"
+            "  </ECEntityClass>"
+
+            "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().SaveChanges();
+
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name                ) VALUES ('BMW-S')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id        ) VALUES ('CODE-1','www1', 2000.0,1 )");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type,Car.Id          ) VALUES ('CODE-2','www2', 'S-Type',1)");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter      ) VALUES ('CODE-3', 15.0)");
+
+
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT  SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt64(0));
+    ASSERT_EQ(50, stmt.GetValueInt64(1));
+    ASSERT_EQ(2, stmt.GetValueInt64(2));
+    ASSERT_EQ(53, stmt.GetValueInt64(3));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_EQ(1, stmt.GetValueInt64(0));
+    ASSERT_EQ(50, stmt.GetValueInt64(1));
+    ASSERT_EQ(3, stmt.GetValueInt64(2));
+    ASSERT_EQ(55, stmt.GetValueInt64(3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Finalize();
+    //S1,Z1 is wrong for ClassB
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
+    {
+    SetupECDb("diamond_problem3.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>10</SharedColumnCount>"
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='www' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Abstract'>"
+            "      <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+//            "           <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+            "      </LinkTableRelationshipMap>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
+            "      <ECProperty propertyName='Tag' typeName='string' />"
+            "  </ECRelationshipClass>"
+            "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+            "      <BaseClass>CarHasEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Rule' typeName='string' />"
+            "  </ECRelationshipClass>"
+            "  <ECEntityClass typeName='Car'>"
+            "      <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Engine'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Volumn' typeName='double' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Sterring'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Type' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Tire'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <ECProperty propertyName='Diameter' typeName='double' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().SaveChanges();
+
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
+    GetECDb().SaveChanges();
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
+
+
+
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    //S1,Z1 is wrong for ClassB
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
+    {
+    SetupECDb("diamond_problem3.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>10</SharedColumnCount>"
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='www' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Abstract'>"
+            "      <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+            //            "           <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+            "      </LinkTableRelationshipMap>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
+            "      <ECProperty propertyName='Tag' typeName='string' />"
+            "  </ECRelationshipClass>"
+            "  <ECEntityClass typeName='Car'>"
+            "      <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Engine'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Volumn' typeName='double' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Sterring'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Type' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Tire'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <ECProperty propertyName='Diameter' typeName='double' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    
+    Reopen();
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)");
+
+    SchemaItem item = SchemaItem("Diamond Problem2",
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+        "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.02.00'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "          <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>10</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "          </ShareColumns>"
+        "      </ECCustomAttributes>"
+        "      <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "      <ECProperty propertyName='www' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Abstract'>"
+        "      <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+        //            "           <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+        "      </LinkTableRelationshipMap>"
+        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+        "         <Class class='Car' />"
+        "     </Source>"
+        "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+        "        <Class class='IEndPoint' />"
+        "     </Target>"
+        "      <ECProperty propertyName='Tag' typeName='string' />"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+        "      <BaseClass>CarHasEndPoint</BaseClass>"
+        "      <ECProperty propertyName='Rule' typeName='string' />"
+        "  </ECRelationshipClass>"
+        "  <ECEntityClass typeName='Car'>"
+        "      <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Engine'>"
+        "      <BaseClass>Equipment</BaseClass>"
+        "      <BaseClass>IEndPoint</BaseClass>"
+        "      <ECProperty propertyName='Volumn' typeName='double' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Sterring'>"
+        "      <BaseClass>Equipment</BaseClass>"
+        "      <BaseClass>IEndPoint</BaseClass>"
+        "      <ECProperty propertyName='Type' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Tire'>"
+        "      <BaseClass>Equipment</BaseClass>"
+        "      <ECProperty propertyName='Diameter' typeName='double' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), item);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
+    GetECDb().SaveChanges();
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
+
+
+    }
 END_ECDBUNITTESTS_NAMESPACE
+ 

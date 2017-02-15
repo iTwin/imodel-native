@@ -112,21 +112,39 @@ DPoint3d PrimitiveECSqlField::_GetPoint3d() const
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
+// @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue const& PrimitiveECSqlField::_GetArray() const
+IECSqlValue const& PrimitiveECSqlField::_GetStructMemberValue(Utf8CP memberName) const
     {
-    LOG.error("GetArray cannot be called for primitive columns.");
-    return NoopECSqlValue::GetSingleton().GetArray();
+    LOG.error("GetStructMemberValue cannot be called for primitive columns.");
+    return NoopECSqlValue::GetSingleton()[memberName];
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
+// @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructValue const& PrimitiveECSqlField::_GetStruct() const
+IECSqlValueIterable const& PrimitiveECSqlField::_GetStructIterable() const
     {
-    LOG.error("GetStruct cannot be called for primitive columns.");
-    return NoopECSqlValue::GetSingleton().GetStruct();
+    LOG.error("GetStructIterable cannot be called for primitive columns.");
+    return NoopECSqlValue::GetSingleton().GetStructIterable();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int PrimitiveECSqlField::_GetArrayLength() const
+    {
+    LOG.error("GetArrayLength cannot be called for primitive columns.");
+    return NoopECSqlValue::GetSingleton().GetArrayLength();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+IECSqlValueIterable const& PrimitiveECSqlField::_GetArrayIterable() const
+    {
+    LOG.error("GetArrayIterable cannot be called for primitive columns.");
+    return NoopECSqlValue::GetSingleton().GetArrayIterable();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

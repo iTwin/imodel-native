@@ -1511,15 +1511,15 @@ DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
     {
     BeAssert(IsValid());
 
-	if (IsValid())
-	   {
+    if (IsValid())
+       {
        SetupValuesTableSelectStatement(accessString);
        DbResult result = m_valuesTableSelect->Step();
        if (result == BE_SQLITE_ROW)
            return m_valuesTableSelect->GetDbValue(0);
        BeAssert(result == BE_SQLITE_DONE);
-	   }
-	
+       }
+    
     DbDupValue invalidValue(nullptr);
     return invalidValue;
     }

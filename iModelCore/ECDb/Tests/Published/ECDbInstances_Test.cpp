@@ -398,25 +398,24 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
-        IECSqlArrayValue const& arrayValue = ecStatement.GetValueArray(0);
+        IECSqlValue const& arrayValue = ecStatement.GetValue(0);
         int arrayLength = arrayValue.GetArrayLength();
         ASSERT_EQ(3, arrayLength);
         int arrayIndex = 0;
-        for (IECSqlValue const* arrayElementValue : arrayValue)
+        for (IECSqlValue const& arrayElementValue : arrayValue.GetArrayIterable())
             {
-            IECSqlStructValue const& structValue = arrayElementValue->GetStruct();
-            auto doubleValue = structValue.GetValue(1).GetDouble();
+            auto doubleValue = arrayElementValue["Struct2DoubleMember"].GetDouble();
             if (arrayIndex == 0)
                 ASSERT_EQ(1.001, doubleValue);
             else if (arrayIndex == 1)
                 ASSERT_EQ(10.002, doubleValue);
             else
                 ASSERT_EQ(15.003, doubleValue);
-            IECSqlArrayValue const& nestedArrayValue = structValue.GetValue(2).GetArray();
+            IECSqlValue const& nestedArrayValue = arrayElementValue["NestedArray"];
             int nestedArrayIndex = 0;
-            for (IECSqlValue const* nestedArrayElement : nestedArrayValue)
+            for (IECSqlValue const& nestedArrayElement : nestedArrayValue.GetArrayIterable())
                 {
-                auto intValue = nestedArrayElement->GetStruct().GetValue(1).GetInt();
+                int intValue = nestedArrayElement["Struct1IntMember"].GetInt();
                 ASSERT_EQ((arrayIndex * 3) + nestedArrayIndex, intValue);
                 //printf("Outer array: %d\nInner Array: %d\nIntValue: %d\n\n", arrayIndex, nestedArrayIndex, intValue);
                 nestedArrayIndex++;
@@ -625,12 +624,12 @@ TEST_F(ECDbInstances, SelectClause)
     EXPECT_TRUE(ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("FullName"));
     EXPECT_TRUE(ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Certifications"));
     EXPECT_TRUE(ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("Location"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(14).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(14).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetValue(14)["Coordinate"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValue(14)["Street"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
     EXPECT_TRUE(ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("EmployeeType"));
     EXPECT_TRUE(ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("Address"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(16).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(16).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetValue(16)["Coordinate"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValue(16)["Street"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
     EXPECT_TRUE(ecStatement.GetColumnInfo(17).GetProperty()->GetName().Equals("EmployeeRecordKey"));
 
     }
