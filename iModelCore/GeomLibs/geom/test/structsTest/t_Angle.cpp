@@ -1311,8 +1311,8 @@ double FastIntegerPower (double a, uint32_t n)
 
 TEST(FastIntegerPower,Test0)
     {
-    char message[2048];
     for (double f : bvector<double>{1.0, 2.0, 23492.2423423, 0.007687612, 1000.0, 10.0, 1000000.0})
+             //LOG.infov("\n value of f :  %f \n", f);
         {
         UsageSums sums;
         for (double a0 : bvector<double> {1.0, 2.0, 5.0, 3.2, 0.2342878, 187.345, 1.0/3.0, 1.0/12.0, Angle::Pi ()})
@@ -1320,17 +1320,18 @@ TEST(FastIntegerPower,Test0)
             double a = f * a0;
             for (uint32_t i = 0; i < 15; i++)
                 {
-                double p = pow (a,i);
-                double q = FastIntegerPower (a, i);
-                double e = fabs ((p-q)/p);
-                sums.Accumulate (e);
-                sprintf (message, "FastIntegerPower (a0 %.17lg) (power %d) (p q e %.17lg %.17lg %.17lg)",
-                            a0, i, p, q, e);
-                Check::Near (p, q, message);
+                double p = pow(a, i);
+                double q = FastIntegerPower(a, i);
+                double e = fabs((p - q) / p);
+                sums.Accumulate(e);
+                if (e > 1.0e-15)
+                     {
+                     LOG.infov("(a %.17g) (i %d) (p %.17g) (q %.17g) (e %.2g)\n", a, i, p, q, e);
+                     }
                 }
-            }
-        sprintf (message, "(f %.17lg) FastIntegerPowerMaxError %lg", f, sums.Max ());
-        Check::LessThanOrEqual (sums.Max (), 9.0e-16, message);
+              }
+             LOG.infov(" Factor %f Max power Error %.17g\n", f, sums.Max());
+        Check::LessThanOrEqual (sums.Max (), 1.0e-14);
         }
     }
 
