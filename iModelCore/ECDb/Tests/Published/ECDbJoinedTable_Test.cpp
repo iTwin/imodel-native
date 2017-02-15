@@ -739,105 +739,105 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
 // @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
-	{
-	SchemaItem testSchema(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='JoinedTableTest' alias='dgn' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-		"    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-		"    <ECEntityClass typeName='Foo' >"
-		"        <ECCustomAttributes>"
-		"            <ClassMap xmlns='ECDbMap.02.00'>"
-		"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-		"            </ClassMap>"
-		"            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-		"        </ECCustomAttributes>"
-		"        <ECProperty propertyName='A' typeName='long'/>"
-		"        <ECProperty propertyName='B' typeName='string'/>"
-		"    </ECEntityClass>"
-		"   <ECEntityClass typeName='Goo' >"
-		"        <BaseClass>Foo</BaseClass>"
-		"        <ECProperty propertyName='C' typeName='long'/>"
-		"        <ECProperty propertyName='D' typeName='string'/>"
-		"    </ECEntityClass>"
-		"   <ECEntityClass typeName='Boo' >"
-		"        <BaseClass>Foo</BaseClass>"
-		"        <ECProperty propertyName='E' typeName='long'/>"
-		"        <ECProperty propertyName='F' typeName='string'/>"
-		"    </ECEntityClass>"
-		"   <ECEntityClass typeName='Roo' >"
-		"        <BaseClass>Boo</BaseClass>"
-		"        <ECProperty propertyName='G' typeName='long'/>"
-		"        <ECProperty propertyName='H' typeName='string'/>"
-		"    </ECEntityClass>"
-		"</ECSchema>");
+    {
+    SchemaItem testSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' alias='dgn' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' >"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' >"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' >"
+        "        <BaseClass>Boo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
 
 	ECDbCR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-	ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_TRUE(db.IsDbOpen());
 
     ECClassId gooClassId = db.Schemas().GetECClassId("JoinedTableTest", "Goo");
     ASSERT_TRUE(gooClassId.IsValid());
-	//Only properties in joined table accessed should not uncessary add join to base table.
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-	ASSERT_STREQ(stmt.GetNativeSql(),"UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] = :id_0");
-	}		
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] = :id_0");
-	}
+    //Only properties in joined table accessed should not uncessary add join to base table.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_STREQ(stmt.GetNativeSql(),"UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] = :id_0");
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] = :id_0");
+    }
 
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     Utf8String expectedSql;
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] = :id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
 	ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
-	}
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id"), ECSqlStatus::Success);
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
     expectedSql.Sprintf("DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] = :id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
-	}
+    }
 
-	//accessing property of parent should add join to base
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-	ASSERT_STREQ(stmt.GetNativeSql(), "UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
-	}
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-	ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
-	}
+    //accessing property of parent should add join to base
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_STREQ(stmt.GetNativeSql(), "UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_STREQ(stmt.GetNativeSql(), "DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0) ");
+    }
 
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0)  AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
-	}
-	{
-	ECSqlStatement stmt;
-	ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
     expectedSql.Sprintf("DELETE FROM [dgn_Foo]  WHERE [ECInstanceId] IN (SELECT [dgn_Foo].[ECInstanceId] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooECInstanceId] = [dgn_Foo].[ECInstanceId]  WHERE [FooECInstanceId] = :id_0 AND [A] = :a_0)  AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
-	}
+    }
 
-	}
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------

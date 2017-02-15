@@ -24,7 +24,7 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ClassMapColumnFactory::Initialize()
+void ClassMapColumnFactory::Initialize()const
     {
     UsedColumnFinder::ColumnMap columnMap;
     if (UsedColumnFinder::Find(columnMap, m_classMap) == SUCCESS)
@@ -559,6 +559,19 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
 
     m_primaryHierarchy.insert(&currentClass);
     ClassMap const* currentClassMap = GetClassMap(currentClass);
+    if (currentClass.GetId() == m_classMap.GetClass().GetId())
+        {
+        for (ECClassCP baseClass : currentClass.GetBaseClasses())
+            {
+            ECEntityClassCP entityClass = baseClass->GetEntityClassCP();
+            if (entityClass && !entityClass->IsMixin())
+                {
+                if (ClassMap const* baseClassMap = GetClassMap(*baseClass))
+                    m_deepestClassMapped.insert(baseClassMap);
+                }
+            }
+        }
+
     if (currentClassMap == nullptr || currentClassMap->GetTables().empty())
         {
         if (parentClassMap != nullptr)
@@ -570,10 +583,17 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
     if (currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
         parentClassMap = currentClassMap;
 
-    for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass))
+    ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
+    if (derivedClasses.empty())
         {
-        if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
-            return ERROR;
+        if (parentClassMap != nullptr)
+            m_deepestClassMapped.insert(parentClassMap);
+        }
+    else
+        {
+        for (ECClassCP derivedClass : derivedClasses)
+            if (TraverseClassHierarchy(*derivedClass, parentClassMap) != SUCCESS)
+                return ERROR;
         }
 
     return SUCCESS;
@@ -586,7 +606,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
     {
     for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(m_classMap.GetClass().GetId()))
         {
-        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()		
+        //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()
         ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetECClass(relKey.first);
         BeAssert(relClass != nullptr);
         ClassMap const* relMap = m_classMap.GetDbMap().GetClassMap(*relClass);
@@ -618,7 +638,7 @@ ClassMapColumnFactory::UsedColumnFinder::UsedColumnFinder(ClassMap const& classM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryMixins()
+BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
     {
     ECDbCR ecdb = m_classMap.GetDbMap().GetECDb();
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
@@ -659,7 +679,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
     if (TraverseClassHierarchy(m_classMap.GetClass(), nullptr) != SUCCESS)
         return ERROR;
 
-    if (QueryMixins() != SUCCESS)
+    if (QueryRelevantMixIns() != SUCCESS)
         return ERROR;
 
     //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
@@ -739,7 +759,8 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
             }
         }
-        
+    //    {
+
     return SUCCESS;
     }
 

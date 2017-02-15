@@ -73,7 +73,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         PropertyMap const* Find(Utf8CP accessString) const;
         const_iterator begin() const { return m_directDecendentList.begin(); }
         const_iterator end() const { return m_directDecendentList.end(); }
-		bool empty() const { return m_directDecendentList.empty(); }
+        bool empty() const { return m_directDecendentList.empty(); }
     };
 
 //=======================================================================================

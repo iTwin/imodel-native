@@ -36,17 +36,16 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 std::set<DbTable const*> m_contextMapTableSet; //fast cache for context class tables
                 ClassMap const& m_classMap; //Context Class for which to find used columns
 
-                UsedColumnFinder(ClassMap const& classMap);				
+                UsedColumnFinder(ClassMap const& classMap);
                 ClassMap const* GetClassMap(ECN::ECClassCR) const;
                 bool IsMappedIntoContextClassMapTables(ClassMap const&) const;
                 bool IsMappedIntoContextClassMapTables(PropertyMap const&) const;
-                BentleyStatus QueryMixins();
                 BentleyStatus ResolveMixins();
                 BentleyStatus ResolveMixins(ECN::ECClassCR);
                 BentleyStatus TraverseClassHierarchy(ECN::ECClassCR, ClassMap const*);
                 BentleyStatus FindRelationshipEndTableMaps();
                 BentleyStatus Execute(ColumnMap&);
-
+                BentleyStatus QueryRelevantMixIns();
             public:
                 static BentleyStatus Find(ColumnMap&, ClassMap const&);
             };
@@ -58,7 +57,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         bool m_usesSharedColumnStrategy;
         mutable std::vector<ClassMap const*> m_compoundFilter;
                 
-        void Initialize();
+        void Initialize() const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
@@ -80,9 +79,9 @@ struct ClassMapColumnFactory final : NonCopyableClass
 
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
-        void Refresh() { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         //This function either creates a column or grabs an existing column
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
+        void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         void Debug() const;
     };
 

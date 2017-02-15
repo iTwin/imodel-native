@@ -1339,11 +1339,11 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
     Result& result = Record(*vmap);
     result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
-	if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-		{
-		if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-			result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-		}
+    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+        {
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
+            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+        }
     return SUCCESS;
     }
 
@@ -1393,8 +1393,8 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
     Result& result = Record(*vmap);
     if (isVirtual)
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-	else
-		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+    else
+        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {

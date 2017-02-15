@@ -429,6 +429,10 @@ BentleyStatus ECDbMap::DoMapSchemas() const
              return status;
 
          }
+     else
+         {
+         existingClassMap->Update();
+         }
 
      bool isCurrentIsMixIn = false;
      if (ecClass.IsEntityClass())

@@ -982,7 +982,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
 
     //ECSQL_LIMITATION: 
     //https://www.sqlite.org/omitted.html
-    //RIGHT and FULL OUTER JOIN	 	 LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
+    //RIGHT and FULL OUTER JOIN  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
     //
     switch (exp.GetJoinType())
         {
@@ -1616,14 +1616,14 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings(ECSqlPrepareContext& cont
     //       {2, 1}, // Third entry: SQLite index 3 -> Maps to second ECSQL parameter's second component (Y column)
     //       {2, 2} } // Fourth entry: SQLite index 4 -> Maps to second ECSQL parameter's third component (Z column)
 
-	std::vector<NativeSqlBuilder::ECSqlParameterIndex> const& parameterIndexMappings = context.GetSqlBuilder().GetParameterIndexMappings();	
-	////!Subquery added it parameter before primary making the above list incorrect. We sort it base on global index before generating sql indexes.
-	//std::sort(parameterIndexMappings.begin(), parameterIndexMappings.end(), 
-	//	[](NativeSqlBuilder::ECSqlParameterIndex const& lhs, NativeSqlBuilder::ECSqlParameterIndex const& rhs)
-	//	{
-	//	return lhs.GetGlobalIndex() < rhs.GetGlobalIndex();
-	//	});
-	
+    std::vector<NativeSqlBuilder::ECSqlParameterIndex> const& parameterIndexMappings = context.GetSqlBuilder().GetParameterIndexMappings();
+    ////!Subquery added it parameter before primary making the above list incorrect. We sort it base on global index before generating sql indexes.
+    //std::sort(parameterIndexMappings.begin(), parameterIndexMappings.end(), 
+    // [](NativeSqlBuilder::ECSqlParameterIndex const& lhs, NativeSqlBuilder::ECSqlParameterIndex const& rhs)
+    // {
+    // return lhs.GetGlobalIndex() < rhs.GetGlobalIndex();
+    // });
+    
     auto& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     const size_t nativeSqlParameterCount = parameterIndexMappings.size();
     if (nativeSqlParameterCount == 0)

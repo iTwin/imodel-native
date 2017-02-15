@@ -308,10 +308,10 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
 
-	ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
+    ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
     ForeignKeyDbConstraint::ActionType onUpdate = ForeignKeyDbConstraint::ActionType::NotSpecified;
-	ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnDeleteAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
-	ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnUpdateAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
+    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnDeleteAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
+    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnUpdateAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
     if (userRequestedDeleteAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
         onDelete = userRequestedDeleteAction;
     else
@@ -525,7 +525,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
             return ERROR;
 
         const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Physical ? PersistenceType::Physical : PersistenceType::Virtual;
-		DbColumn* newFkCol = columns.GetColumnFactory().AllocateForeignKeyECInstanceId(*const_cast<DbTable*>(foreignEndTable), fkColName, columnPersistenceType, fkColPosition);
+        DbColumn* newFkCol = columns.GetColumnFactory().AllocateForeignKeyECInstanceId(*const_cast<DbTable*>(foreignEndTable), fkColName, columnPersistenceType, fkColPosition);
         if (newFkCol == nullptr)
             {
             Issues().Report("Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
@@ -1717,112 +1717,112 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     }
 //************************RelationshipClassEndTableMap::ColumnFactory********************
 RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
-	:m_relMap(relMap), m_relInfo(relInfo) 
-	{
-		Initialize();
-	}
+    :m_relMap(relMap), m_relInfo(relInfo) 
+    {
+        Initialize();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
-	{
-	const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;		
-	const DbColumn::Type colType = DbColumn::Type::Integer;
-	
-	if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
-		return table.CreateColumn(colName, colType, position, colKind, persType);
+    {
+    const DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
+    const DbColumn::Type colType = DbColumn::Type::Integer;
+    
+    if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
+        return table.CreateColumn(colName, colType, position, colKind, persType);
 
-	auto itor = m_constraintClassMaps.find(&table);
-	if (itor == m_constraintClassMaps.end())
-		{
-		BeAssert(false);
-		return nullptr;
-		}
+    auto itor = m_constraintClassMaps.find(&table);
+    if (itor == m_constraintClassMaps.end())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
 
-	ClassMapCP rootClassMap = itor->second;
-	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-	if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
-		rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
-		{
-		return table.CreateColumn(colName, colType, position, colKind, persType);
-		}
-	//ECDB_RULE: Create shared column
-		
-	ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
-	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
-	ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
-	return rootClassMap->GetColumnFactory().AllocateDataColumn(
-		*constraintECInstanceIdProp,
-		colType,
-		DbColumn::CreateParams(colName.c_str()),
-		m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()),
-		nullptr);
-	}
+    ClassMapCP rootClassMap = itor->second;
+    //ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
+    if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+        rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+        {
+        return table.CreateColumn(colName, colType, position, colKind, persType);
+        }
+    //ECDB_RULE: Create shared column
+        
+    ECSqlSystemPropertyInfo const& constraintECInstanceIdType = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+    ECPropertyCP  constraintECInstanceIdProp = systemSchemaHelper.GetSystemProperty(constraintECInstanceIdType);
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(
+        *constraintECInstanceIdProp,
+        colType,
+        DbColumn::CreateParams(colName.c_str()),
+        m_relMap.BuildQualifiedAccessString(constraintECInstanceIdProp->GetName()),
+        nullptr);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType)
-	{
-	const DbColumn::Type colType = DbColumn::Type::Integer;
-	const DbColumn::Kind colKind = DbColumn::Kind::RelECClassId;
-	if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
-		return table.CreateColumn(colName, colType, colKind, persType);
+    {
+    const DbColumn::Type colType = DbColumn::Type::Integer;
+    const DbColumn::Kind colKind = DbColumn::Kind::RelECClassId;
+    if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
+        return table.CreateColumn(colName, colType, colKind, persType);
 
-	auto itor = m_constraintClassMaps.find(&table);
-	if (itor == m_constraintClassMaps.end())
-		{
-		BeAssert(false);
-		return nullptr;
-		}
+    auto itor = m_constraintClassMaps.find(&table);
+    if (itor == m_constraintClassMaps.end())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
 
-	ClassMapCP rootClassMap = itor->second;
-	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-	if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
-		rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
-		{
-		return table.CreateColumn(colName, colType, colKind, persType);
-		}
+    ClassMapCP rootClassMap = itor->second;
+    //ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
+    if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+        rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
+        {
+        return table.CreateColumn(colName, colType, colKind, persType);
+        }
 
-	ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
-	//ECDB_RULE: Note we are using ECClassId here its not a mistake.
-	ECPropertyCP  relECClassIdProp = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
-	return rootClassMap->GetColumnFactory().AllocateDataColumn(
-		*relECClassIdProp,
-		colType,
-		DbColumn::CreateParams(colName.c_str()),
-		m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
-	}
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+    //ECDB_RULE: Note we are using ECClassId here its not a mistake.
+    ECPropertyCP  relECClassIdProp = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
+    return rootClassMap->GetColumnFactory().AllocateDataColumn(
+        *relECClassIdProp,
+        colType,
+        DbColumn::CreateParams(colName.c_str()),
+        m_relMap.BuildQualifiedAccessString(relECClassIdProp->GetName()), nullptr);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
 void RelationshipClassEndTableMap::ColumnFactory::Initialize()
-	{
-	ECDbMap const& ecdbMap = m_relMap.GetDbMap();
-	ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
+    {
+    ECDbMap const& ecdbMap = m_relMap.GetDbMap();
+    ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
 
-	std::function<void(ECClassCR)> traverseConstraintClass =
-		[&](ECClassCR constraintClass)
-		{
-		if (ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass))
-			{
-			m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
-			if (classMap->GetMapStrategy().IsTablePerHierarchy())
-				return;
-			}
+    std::function<void(ECClassCR)> traverseConstraintClass =
+        [&](ECClassCR constraintClass)
+        {
+        if (ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass))
+            {
+            m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
+            if (classMap->GetMapStrategy().IsTablePerHierarchy())
+                return;
+            }
 
-		if (constraint.GetIsPolymorphic())
-			for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
-				traverseConstraintClass(*derivedClass);
-		};
+        if (constraint.GetIsPolymorphic())
+            for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
+                traverseConstraintClass(*derivedClass);
+        };
 
-		for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
-			{
-			traverseConstraintClass(*constraintClass);
-			}
-	}
+        for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
+            {
+            traverseConstraintClass(*constraintClass);
+            }
+    }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
