@@ -423,3 +423,13 @@ TEST(MSBsplineSurface,TightPrincipalExtents)
     testTightSurfaceExtents (surface);
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtents");
     }
+
+TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
+    {
+    auto surface = SurfaceBubbleWithMidsideWeights ();
+    testTightSurfaceExtents (surface);
+    Transform rotate = YawPitchRollAngles::FromDegrees (12.0, 40.0, -20.0).ToTransform (DPoint3d::From (1,1,0));
+    surface->TransformSurface (rotate);
+    testTightSurfaceExtents (surface);
+    Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtentsWeighted");
+    }

@@ -65,3 +65,27 @@ TEST(Polyface,DecimateByEdgeCollapseWithBoundaryControl)
 
     Check::ClearGeometry ("Polyface.DecimateByEdgeCollapseWithBuondaryControl");
     }
+#ifdef TestCPPCtorDtorScopes
+struct ScopeTester
+{
+int m_id;
+ScopeTester (int id) : m_id (id){printf ("( %d", id);}
+~ScopeTester (){printf ("  %d)", m_id);}
+};
+void testScopes ()
+    {
+    ScopeTester a(0);
+    ScopeTester b(1);
+    {
+    ScopeTester c0(100);
+    ScopeTester c1(101);
+    }
+    ScopeTester d(2);
+    }
+TEST(CPP,ScopeTester)
+    {
+    printf ("BEGINSCOPES\n");
+    testScopes ();
+    printf ("ENDSCOPES\n");
+    }
+#endif

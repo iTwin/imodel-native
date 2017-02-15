@@ -1129,7 +1129,7 @@ bool evaluateDerivatives = false
 // virtual method for a patch processor
 struct IGridPatchProcessor
 {
-virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+virtual void Process (MSBsplineSurfaceCR surface, BSurfPatch &patch, size_t uIndex, size_t vIndex,
     GridArrays &grid, size_t numU, size_t numV) = 0;
 };
 void Process (IGridPatchProcessor &patchProcessor)
@@ -1147,7 +1147,7 @@ void Process (IGridPatchProcessor &patchProcessor)
             if (m_surface.GetPatch (patch, uIndex, vIndex) && !patch.isNullU && !patch.isNullV)
                 {
                 grid.EvaluateBezier (0.0, 1.0, numUGrid, 0.0, 1.0, numVGrid, patch, m_reverseU, m_evaluateDerivatives);
-                patchProcessor.Process (patch, uIndex, vIndex, grid, numUGrid, numVGrid);
+                patchProcessor.Process (m_surface, patch, uIndex, vIndex, grid, numUGrid, numVGrid);
                 }
             }
         }
@@ -1164,9 +1164,10 @@ public:
 PatchMomentSums (DPoint3dCR origin) {Clear (); m_origin = origin;}
 void Clear (){ m_sums = DMatrix4d::FromZero ();}
 
-virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+virtual void Process (MSBsplineSurfaceCR surface, BSurfPatch &patch, size_t uIndex, size_t vIndex,
     GridArrays &grid, size_t numU, size_t numV) override
     {
+    grid.ResolveCoordinatesAndNormals (&surface, false);
     for (auto &xyz : grid.xyz)
         DPoint3dOps::AccumulateToMomentSumUpperTriangle (m_sums, m_origin, xyz);
     }
@@ -1187,9 +1188,10 @@ public:
 PatchRangeAccumulator (TransformCR transform) : m_transform (transform) {Clear ();}
 void Clear (){ m_range.Init ();}
 
-virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+virtual void Process (MSBsplineSurfaceCR surface, BSurfPatch &patch, size_t uIndex, size_t vIndex,
     GridArrays &grid, size_t numU, size_t numV) override
     {
+    grid.ResolveCoordinatesAndNormals (&surface, false);
     m_range.Extend (m_transform, grid.xyz);
     }
 DRange3d GetRange () {return m_range;}
@@ -1235,9 +1237,10 @@ double m_patchCount;
 public:
 PatchPointAccumulator (DPoint3dDoubleUVArrays &data) : m_data(data), m_patchCount (0) {}
 
-virtual void Process (BSurfPatch &patch, size_t uIndex, size_t vIndex,
+virtual void Process (MSBsplineSurfaceCR surface, BSurfPatch &patch, size_t uIndex, size_t vIndex,
     GridArrays &grid, size_t numU, size_t numV) override
     {
+    grid.ResolveCoordinatesAndNormals (&surface, false);
     for (size_t i = 0; i < grid.xyz.size(); i++)
         {
         m_data.m_xyz.push_back (grid.xyz[i]);

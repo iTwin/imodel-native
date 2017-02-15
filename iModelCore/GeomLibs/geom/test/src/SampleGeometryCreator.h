@@ -2,7 +2,7 @@
 |
 |     $Source: geom/test/src/SampleGeometryCreator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -601,6 +601,14 @@ double x11, double y11, double z11, double u1, double v1);
 
 // Return a 2x2 linear bspline surface with control points (000)(100)(010)(u1 v1 w1)
 MSBsplineSurfacePtr SimpleBilinearPatch (double u1, double v1, double w1);
+
+// Return a 3x3 quadratic spline with weights
+MSBsplineSurfacePtr SurfaceBubbleWithMidsideWeights
+(
+double wMidSide = 0.72,
+double wInterior = 0.5
+);
+
 
 PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated = false);
 
