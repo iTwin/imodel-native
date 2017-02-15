@@ -402,154 +402,6 @@ enum IndexAction
     };
 };
 
-/*__PUBLISH_SECTION_END__*/
-//! Structure to record neighbors of a place in facets.
-//!<ul>
-//!<li>The explicitly stored data is;
-//!<ul>
-//!<li> FSucc = face successor (logically counterclockwise)
-//!<li> EdgeMate = mate "across edge"
-//!<li> mask = single bits for search markup
-//!</ul>
-//!<li>Additional queries are:
-//!<ul>
-//!<li>VPred () = FSucc (EdgeMate), i.e. Clockwise neighbor around vertex.
-//!<li>HasMask (mask) = true if nonzero bits are present for the mask
-//!<li>SetMask (mask) sets the mask bits
-//!<li>IsActive () = true if both neighbors are other than the InvalidIndex value.
-//!<li>IsActive (n) true if both neighbors are less than n. 
-//!</ul>
-struct GEOMDLLIMPEXP Neighbor
-{
-typedef uint32_t MaskType;
-static const size_t InvalidIndex = SIZE_MAX;
-size_t m_fsucc;
-size_t m_fpred;
-size_t m_edgeMate;
-MaskType m_mask;
-int     m_pointIndex;
-Neighbor ()
-    {
-    m_fsucc = m_edgeMate = m_fpred = InvalidIndex;
-    m_mask = 0;
-    }
-
-Neighbor (size_t fsucc, size_t fpred, size_t mate, MaskType masks = 0)
-    :   m_fsucc (fsucc), m_edgeMate (mate), m_fpred (fpred), m_mask (masks)
-    {
-    }
-
-//! Return true if both neighbors are not InvalidIndex
-bool IsActive () const {return m_fsucc != InvalidIndex && m_edgeMate != InvalidIndex;}
-
-//! Return true if both neighbors are less than caller-supplied limit
-bool IsActive (size_t n) const {return m_fsucc < n && m_edgeMate < n;}
-
-
-void ClearMask (MaskType mask)
-    {
-    if (IsActive ())
-        m_mask &= ~mask;
-    }
-bool HasMask (MaskType mask) const
-    {
-    return IsActive () && 0 != (mask & m_mask);
-    }
-void SetMask (MaskType mask)
-    {
-    m_mask |= mask;
-    }
-};
-//! Vector of neighbor data.
-//!<ul>
-//!<li>This array is used to index within an indexed polyface.
-//!<li>The index into this vector is a readIndex in the polyface.
-//!<li>Hence the caller can get coordinate data from the polyface and neighbor data from the NeighborVector.
-//!</ul>
-struct  NeighborVector : bvector<Neighbor>
-{
-// Structure to record a vector of indices with one singleton.
-struct IndexVectorAndSingleton
-    {
-    size_t index0;
-    bvector<size_t> indices;
-    void Clear ()
-        {
-        index0 = Neighbor::InvalidIndex;
-        indices.clear ();
-        }
-    };
-// Masks for use by self-contained internal code that knows there can be no conflict:
-static  const Neighbor::MaskType s_maskNonManifold   = 0x0010;  // Set on any half edge that does not have exactly one mate.
-static  const Neighbor::MaskType s_maskInternalA = 0x0020;
-static  const Neighbor::MaskType s_maskInternalB = 0x0040;
-
-GEOMDLLIMPEXP bool HasMask (size_t index, Neighbor::MaskType ) const;
-
-GEOMDLLIMPEXP bool  IsValidReadIndex (size_t index) const;
-// return the successor around the face
-GEOMDLLIMPEXP size_t  FSucc (size_t index) const;
-// return the successor around vertex -- i.e. step to edge mate and thence to FSucc
-GEOMDLLIMPEXP size_t VPred (size_t index) const;
-//! return the (next) index "around edge"
-
-// return the predecessor around the face
-GEOMDLLIMPEXP size_t  FPred (size_t index) const;
-// return the predecesor around vertex -- i.e. step to FPred and then EdgeMate
-GEOMDLLIMPEXP size_t VSucc (size_t index) const;
-// return the point index at this readIndex. Returns InvalidIndex if readIndex is invalid.
-GEOMDLLIMPEXP size_t PointIndex (size_t index) const;
-// set the point index at single half edge
-GEOMDLLIMPEXP void SetPointIndex (size_t index, int value);
-// set the point index at single half edge
-GEOMDLLIMPEXP void SetPointIndex (size_t index, size_t value)
-    {
-    SetPointIndex (index, (int)value);
-    }
-
-GEOMDLLIMPEXP size_t  EdgeMate (size_t index) const;
-// step to edge mate -- but return invalid index if the mate is not a manifold partner
-GEOMDLLIMPEXP size_t ManifoldMate (size_t index) const;
-//! return true if this is a simple boundary edge (one facet -- EdgeMate loop is a singleton)
-GEOMDLLIMPEXP bool  IsBoundary (size_t index) const;
-//! return true if this is a simple interior edge -- edge mate loop has two valid and distinct indices.
-GEOMDLLIMPEXP bool  IsManifoldEdge (size_t index) const;
-
-// Clear a mask at all indices
-GEOMDLLIMPEXP void ClearMask (Neighbor::MaskType mask);
-// Set a mask at all indices
-GEOMDLLIMPEXP void SetMask   (Neighbor::MaskType mask);
-// Set a mask at a single index
-GEOMDLLIMPEXP void SetMask   (size_t index, Neighbor::MaskType mask);
-// Set a mask at indices
-GEOMDLLIMPEXP void SetMask (IndexVectorAndSingleton const &data, Neighbor::MaskType mask, bool setInVector = true, bool setAtSingleton = true);
-// Set point index at multiple indices
-GEOMDLLIMPEXP void SetPointIndex (IndexVectorAndSingleton const &data, int value, bool setInVector, bool setAtSingleton);
-
-// Set a mask at all indices along the maximal VPred path starting at this seed.
-GEOMDLLIMPEXP void SetMaskAroundManifoldVPredPath (size_t seed, Neighbor::MaskType mask);
-// Set mask at all places around the facet.
-GEOMDLLIMPEXP void SetMaskAroundFacet (size_t seed, Neighbor::MaskType mask);
-GEOMDLLIMPEXP void  GetAroundFacet (size_t seedIndex, bvector<size_t> readIndices) const;
-
-//! Return summary of the readIndices around the vertex.  This has subtle differences between interior versus boundary vertex.
-//!<ul>
-//!<li>If this is an interior vertex, return the complete loop in the VPred direction, with seedIndex appearing first.
-//!<li>If this is on the boundary, the inbound boundary edge at where VSucc fails does not have a representative "at this vertex". 
-//!    <ul>
-//!    <li>Walking VPred and VSucc each reach a boundary
-//!     <li>the far vertex at the VSucc boundary is returned as inboundBoundary
-//!     <li>the entries in outbound appear starting at the final index reached by VSucc and continuing to in the VPred order, going with seedIndex appearing somewhere along the way.
-//!    </ul>
-//!</ul>
-GEOMDLLIMPEXP void  GetAroundVertex (size_t seedIndex, IndexVectorAndSingleton &data) const;
-
-
-GEOMDLLIMPEXP size_t  CountAroundFacet (size_t seedIndex) const;
-
-GEOMDLLIMPEXP void CollectVertexLoops (bvector<size_t> *interiorSeeds, bvector<size_t> *boundarySeeds);
-};
-/*__PUBLISH_SECTION_START__*/
 
 typedef BlockedVector<DPoint3d>&            BlockedVectorDPoint3dR;
 typedef BlockedVector<DPoint3d> const &     BlockedVectorDPoint3dCR;
@@ -2117,19 +1969,6 @@ GEOMDLLIMPEXP bool OrientAndCollectManifoldComponents
 bvector<bvector<size_t>> &componentReadIndices, //!< [out] arrays of read indices gathered per component
 MeshAnnotationVector &messages  //!< [out] array of status messages
 );
-/*__PUBLISH_SECTION_END__*/
-
-GEOMDLLIMPEXP bool BuildNeighborVector (NeighborVector &neighbors);
-
-GEOMDLLIMPEXP bool BuildNeighborVector
-(
-NeighborVector &neighbors,      //!< [out] vector with all adjacency data.
-size_t &numSimpleBoundaryEdges,   //!< [out] number of simple exterior edges (with no mate)
-size_t &numSimpleInteriorEdges,   //!< [out] number of edges with oppositely oriented mate
-size_t &numOther                 //!< [out] number of edges with mismatched mates or more than one mate.
-);
-
-/*__PUBLISH_SECTION_START__*/
 
 //! Add Edge Chains
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);
@@ -2220,12 +2059,14 @@ double rangeFractionTol //!< [in] tolerance as fraction of range of the mesh poi
 //! If consecutive indices are identical, that is a short edge.
 //! if
 size_t RemoveCollapsedFacetsByPointIndexComparison ();
+#ifdef CompileDecimateByEdgeCollapseWithBoundaryControl
 //! Decimate (in place) by edge collapse, protecting boundary points when possible.//! @return number of collapses.
 GEOMDLLIMPEXP size_t DecimateByEdgeCollapseWithBoundaryControl
 (
 double abstol,  //!< [in] absolute tolerance for collapsing vertices
 double rangeFractionTol //!< [in] tolerance as fraction of range of the mesh points
 );
+#endif
 //! Search the mesh for facets that have identical sets of point indices.
 //! Return read indices separated by counts.
 //! Suppose

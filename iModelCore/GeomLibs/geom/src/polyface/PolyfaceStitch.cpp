@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceStitch.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -519,28 +519,6 @@ bool Go ()
     }
 };
 
-bool PolyfaceHeader::BuildNeighborVector (NeighborVector &neighbors)
-    {
-    size_t numSimpleBoundaryEdges;
-    size_t numSimpleInteriorEdges;
-    size_t numOther;
-    return BuildNeighborVector (neighbors, numSimpleBoundaryEdges, numSimpleInteriorEdges, numOther);
-    }
-
-bool PolyfaceHeader::BuildNeighborVector
-(
-NeighborVector &neighbors,      //!< [out] vector with all adjacency data.
-size_t &numSimpleBoundaryEdges,   //!< [out] number of simple exterior edges (with no mate)
-size_t &numSimpleInteriorEdges,   //!< [out] number of edges with oppositely oriented mate
-size_t &numOther                 //!< [out] number of edges with mismatched mates or more than one mate.
-)
-    {
-    HalfEdgeArray halfEdges (this);
-    halfEdges.BuildArray (*this, false, true);
-    halfEdges.SortForEdgeMatching ();
-    halfEdges.BuildNeighborVector (*this, neighbors, numSimpleBoundaryEdges, numSimpleInteriorEdges, numOther);
-    return numOther == 0;
-    }
 bool PolyfaceHeader::OrientAndCollectManifoldComponents
 (
 bvector<bvector<size_t>> &componentReadIndices,
