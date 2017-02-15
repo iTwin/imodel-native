@@ -11,7 +11,7 @@
 void testDecimate (int select, bvector<DPoint3d> &points, double shortEdge, size_t numCollapse, bool print = false)
     {
     if (select != 0)
-        return
+        return;
     Check::StartScope ("Decimate ShortEdge", shortEdge);
     DRange3d range = DRange3d::From (points);
     SaveAndRestoreCheckTransform shifter (1.5 * range.XLength (), 0, 0);
