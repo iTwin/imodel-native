@@ -1253,7 +1253,7 @@ bool ViewGenerator::SelectFromViewContext::IsInSelectClause(Utf8StringCR exp) co
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 ViewGenerator::ToSqlVisitor::ToSqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassView)
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)/* unused - , m_forECClassView(forECClassView)*/
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;

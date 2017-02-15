@@ -20,11 +20,10 @@ struct IssueReporter : NonCopyableClass
     {
 private:
     mutable BeMutex m_mutex;
-    // unused - ECDbCR m_ecdb;
-    ECDb::IIssueListener const* m_issueListener;
+    ECDb::IIssueListener const* m_issueListener = nullptr;
 
 public:
-    explicit IssueReporter(ECDbCR ecdb) : /* unused - m_ecdb(ecdb), */m_issueListener(nullptr) {}
+    IssueReporter() {}
     ~IssueReporter() {}
 
     BentleyStatus AddListener(ECDb::IIssueListener const&);
