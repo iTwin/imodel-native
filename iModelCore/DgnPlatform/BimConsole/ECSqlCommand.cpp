@@ -342,16 +342,15 @@ Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value, ECN::ECProperty
     {
     Utf8String out = "[";
     bool isFirstRow = true;
-    IECSqlArrayValue const& arrayValue = value.GetArray();
-    for (IECSqlValue const* arrayElementValue : arrayValue)
+    for (IECSqlValue const& arrayElementValue : value.GetArrayIterable())
         {
         if (!isFirstRow)
             out.append(", ");
 
         if (property->GetIsPrimitiveArray())
-            out.append(PrimitiveToString(*arrayElementValue, property->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()));
+            out.append(PrimitiveToString(arrayElementValue, property->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()));
         else
-            out.append(StructToString(*arrayElementValue));
+            out.append(StructToString(arrayElementValue));
 
         isFirstRow = false;
         }
@@ -366,16 +365,14 @@ Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value, ECN::ECProperty
 //static
 Utf8String ECSqlCommand::StructToString(IECSqlValue const& value)
     {
-    IECSqlStructValue const& structValue = value.GetStruct();
     Utf8String out;
     out.append("{");
     bool isFirst = true;
-    for (int i = 0; i < structValue.GetMemberCount(); i++)
+    for (IECSqlValue const& structMemberValue : value.GetStructIterable())
         {
         if (!isFirst)
             out.append(", ");
 
-        IECSqlValue const& structMemberValue = structValue.GetValue(i);
         auto property = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can be null.");
         if (property->GetIsPrimitive())
