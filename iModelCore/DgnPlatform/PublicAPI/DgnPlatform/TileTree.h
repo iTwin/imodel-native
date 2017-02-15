@@ -96,6 +96,9 @@ struct StreamBuffer : ByteStream
     ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
     ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
+    uint32_t GetPos() const {return m_currPos;}
+    DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
+
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
     };
@@ -285,8 +288,9 @@ public:
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param maxSize The cache maximum size in bytes.
-    //! @note If this is not an HTTP root, this does nothing.
-    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize);
+    //! @param httpOnly If true create cache only if HTTP root.
+    //! @note If httpOnly && this is not an HTTP root, this does nothing.
+    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly = true);
 
     //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
     //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.

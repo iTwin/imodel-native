@@ -33,7 +33,7 @@ DEFINE_REF_COUNTED_PTR(TileCache)
 END_UNNAMED_NAMESPACE
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.Marchand  11/2016                                        
 //----------------------------------------------------------------------------------------
 BentleyStatus TileLoader::LoadTile()
     {
@@ -448,9 +448,9 @@ BentleyStatus Root::DeleteCacheFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
+void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     {
-    if (!IsHttp()) 
+    if (httpOnly && !IsHttp()) 
         return;
         
     m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
@@ -1275,3 +1275,20 @@ double DrawArgs::GetTileSizeModifier() const
     return nullptr != target ? target->GetTileSizeModifier() : 1.0;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
+    {
+    ByteCP start = GetCurrent();
+
+    if (nullptr == Advance(size)) 
+        {
+        BeAssert(false); 
+        return false;
+        }
+
+    memcpy(buf, start, size);
+    return true;
+    }
