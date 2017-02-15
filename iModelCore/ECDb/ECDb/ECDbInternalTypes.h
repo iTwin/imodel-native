@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbInternalTypes.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 enum class ECSqlType
     {
+    UnKnown, //In cases where we are not interested one of the following value
     Select, //!< ECSQL SELECT
     Insert, //!< ECSQL INSERT
     Update, //!< ECSQL UPDATE

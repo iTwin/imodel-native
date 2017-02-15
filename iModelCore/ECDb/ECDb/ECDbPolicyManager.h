@@ -95,7 +95,9 @@ struct ClassIsValidInECSqlPolicyAssertion final : ECDbPolicyAssertion
         ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
             : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
             {}
-
+        ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter)
+            : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(false)
+            {}
         explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) 
                 : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
             {}

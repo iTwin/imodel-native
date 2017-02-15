@@ -27,7 +27,8 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
             return FinalizeParseStatus::Error;
             }
 
-        ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(m_info->GetMap()));
+        const ECSqlType currentScopeECSqlType = FindParent(Exp::Type::SingleSelect) != nullptr ? ECSqlType::Select : ECSqlType::UnKnown;
+        ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(m_info->GetMap(), currentScopeECSqlType));
         if (!policy.IsSupported())
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
