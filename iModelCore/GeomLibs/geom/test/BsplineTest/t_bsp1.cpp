@@ -378,12 +378,14 @@ void SavePointsFromPatches (DPoint3dDoubleUVArrays const &data)
             }
         }
     }
-TEST(MSBsplineSurface,TightPrincipalExtents)
+
+void testTightSurfaceExtents (MSBsplineSurfacePtr &surface)
     {
-    double q0I = 0.3;
-    double q0J = 0.5;
-    int order = 4;
-    auto surface = SurfaceWithSinusoidalControlPolygon (order, order, 5, 7, q0I, 0.822, q0J, 0.98);
+    DRange3d globalRange;
+    surface->GetPoleRange (globalRange);
+    double dX = globalRange.XLength () * 1.2;
+    double dY = globalRange.YLength () * 1.2;
+    SaveAndRestoreCheckTransform shifter (dX, 0, 0);
     Transform cornerBox, localToWorld, worldToLocal;
     DRange3d localRange;
     DRange3d unitRange;
@@ -397,13 +399,27 @@ TEST(MSBsplineSurface,TightPrincipalExtents)
     if (surface->GetPrincipalExtents (cornerBoxA))
         SaveBox (cornerBoxA, unitRange);
 
-    Check::Shift (0,10,0);
+    Check::Shift (0, dY ,0);
     SavePointsFromPatches (cloud);
     SaveBox (cornerBox, unitRange);
 
 
-    Check::Shift (0, 10, 0);
+    Check::Shift (0, dY ,0);
     SavePointsFromPatches (cloud);
     SaveBox (localToWorld, localRange);
+    }
+
+TEST(MSBsplineSurface,TightPrincipalExtents)
+    {
+    double q0I = -0.3;
+    double q0J = 0.5;
+    int order = 4;
+    int numX = 11;
+    int numY = 12;
+    auto surface = SurfaceWithSinusoidalControlPolygon (order, order, numX, numY, q0I, 0.522, q0J, 0.98);
+    testTightSurfaceExtents (surface);
+    Transform rotate = YawPitchRollAngles::FromDegrees (12.0, 40.0, -20.0).ToTransform (DPoint3d::From (3,4,0));
+    surface->TransformSurface (rotate);
+    testTightSurfaceExtents (surface);
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtents");
     }
