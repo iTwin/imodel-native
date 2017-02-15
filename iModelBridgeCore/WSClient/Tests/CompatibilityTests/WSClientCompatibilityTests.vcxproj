@@ -7,15 +7,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
-    <ClCompile Include="TestUtils\TestMain.cpp" />
-    <ClCompile Include="TestUtils\TestsHelper.cpp" />
-    <ClCompile Include="TestUtils\TestsHost.cpp" />
+    <ClCompile Include="Parser\ArgumentParser.cpp" />
+    <ClCompile Include="Parser\ArgumentParserTests.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClient.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="Logging\GenericLogProvider.cpp" />
+    <ClCompile Include="RepositoryCompatibilityTests.cpp" />
+    <ClCompile Include="Parser\TestData.cpp" />
+    <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="TestsHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
-    <ClInclude Include="TestUtils\TestsHelper.h" />
-    <ClInclude Include="TestUtils\TestsHost.h" />
+    <ClInclude Include="Parser\ArgumentParser.h" />
+    <ClInclude Include="Disk\DiskRepositoryClient.h" />
+    <ClInclude Include="Logging\GenericLogProvider.h" />
+    <ClInclude Include="Logging\Logging.h" />
+    <ClInclude Include="RepositoryCompatibilityTests.h" />
+    <ClInclude Include="Parser\TestData.h" />
+    <ClInclude Include="Logging\GenericLogProviderActivator.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="TestsHost.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />
@@ -44,7 +56,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\build\WSClientCompatibilityTests\WSClientCompatibilityTests.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32;DEBUG</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests re  WSClientCompatibilityTests WebServices*</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests re  WSClientCompatibilityTests WebServices* -c</NMakeCleanCommandLine>

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.cpp $
+|     $Source: Tests/CompatibilityTests/TestsHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,10 @@
 #include <MobileDgn/MobileDgnCommon.h>
 #include <MobileDgn/MobileDgnL10N.h>
 
-#include "../../UnitTests/Published/Utils/TestAppPathProvider.h"
+#include "../UnitTests/Published/Utils/TestAppPathProvider.h"
+
+#include "Logging/GenericLogProviderActivator.h"
+#include "Logging/Logging.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
@@ -22,23 +25,28 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
 #define LOGGING_CONFIG_FILE_NAME L"logging.config.xml"
 
 std::shared_ptr<TestAppPathProvider> s_pathProvider;
+Utf8String s_errorLog;
 
-TestsHost::TestsHost(const char* programPath)
+TestsHost::TestsHost(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel)
     {
-    m_programDir = BeFileName(BeFileName::DevAndDir, BeFileName(programPath));
-    m_programDir.BeGetFullPathName();
+    m_programDir = programPath.GetDirectoryName();
 
-    m_outputDir = m_programDir;
-    m_outputDir.AppendToPath(L"TestsOutput").AppendSeparator();
+    m_outputDir = workDir;
+    if (workDir.empty())
+        m_outputDir = m_programDir;
+
+    m_outputDir.AppendToPath(L"WSCTWorkDir").AppendSeparator();
 
     s_pathProvider = std::make_shared<TestAppPathProvider>(m_programDir, m_outputDir);
 
     SetupTestEnvironment();
+    InitLibraries();
+    InitLogging(logLevel);
     }
 
-RefCountedPtr<TestsHost> TestsHost::Create(const char* programPath)
+RefCountedPtr<TestsHost> TestsHost::Create(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel)
     {
-    return new TestsHost(programPath);
+    return new TestsHost(programPath, workDir, logLevel);
     }
 
 void TestsHost::SetupTestEnvironment()
@@ -49,9 +57,6 @@ void TestsHost::SetupTestEnvironment()
     BeFileName tempDir = s_pathProvider->GetTemporaryDirectory();
     BeFileName::EmptyAndRemoveDirectory(tempDir);
     BeFileName::CreateNewDirectory(tempDir);
-
-    InitLibraries();
-    InitLogging();
     }
 
 void TestsHost::InitLibraries()
@@ -65,22 +70,22 @@ void TestsHost::InitLibraries()
     MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 
-void TestsHost::InitLogging()
+void TestsHost::InitLogging(int logLevel)
     {
     if (NativeLogging::LoggingConfig::IsProviderActive())
         NativeLogging::LoggingConfig::DeactivateProvider();
 
-    BeFileName configFile = m_programDir;
-    configFile.AppendToPath(LOGGING_CONFIG_FILE_NAME);
-    if (configFile.DoesPathExist())
-        {
-        NativeLogging::LoggingConfig::SetOption(LOGGING_OPTION_CONFIG_FILE, configFile);
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-        return;
-        }
+    bool silent = logLevel == 0;
 
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetMaxMessageSize(100000);
+    // Log LOG_ERROR as test failures. We should consider LOG_WARNING as failures in future as well.
+    GenericLogProviderActivator::Activate([=] (Bentley::NativeLogging::SEVERITY sev, WCharCP msg)
+        {
+        if (sev >= Bentley::NativeLogging::LOG_ERROR)
+            s_errorLog += Utf8String(msg);
+
+        if (!silent)
+            fwprintf(stdout, msg);
+        });
 
     NativeLogging::LoggingConfig::SetSeverity("BeAssert", Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity("BeSQLite", Bentley::NativeLogging::LOG_WARNING);
@@ -93,6 +98,13 @@ void TestsHost::InitLogging()
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCCTESTS, Bentley::NativeLogging::LOG_INFO);
+    }
+
+Utf8String& TestsHost::GetErrorLog()
+    {
+    return s_errorLog;
     }
 
 void* TestsHost::_InvokeP(char const* function_and_args)

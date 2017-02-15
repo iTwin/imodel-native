@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IDataSourceCache.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -139,7 +139,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! cached instances and marking reponse as partial or not. Null results in all instances treated as full.
         //! @param[in] page - page index being cache. Always 0 if no paging is used.
         //! @param[in] ct - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
-        virtual BentleyStatus CacheResponse
+        virtual CacheStatus CacheResponse
             (
             CachedResponseKeyCR responseKey,
             WSObjectsResponseCR response,

@@ -78,6 +78,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
+    "Mobile.ConnectWsgProjectShare",
+    "https://dev-projectsharestorage-eus.cloudapp.net",
+    "https://qa-projectsharestorage-eus.cloudapp.net",
+    "https://connect-projectsharestorage.bentley.com",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
     "https://dev-punchlist-eus.cloudapp.net",
@@ -99,6 +107,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
+    "Mobile.ConnectForms",
+    "https://dev-formswsg-eus.cloudapp.net",
+    "https://qa-formswsg-eus.cloudapp.net",
+    "https://connect-formswsg.bentley.com",
     &s_urlRegistry
     );
 

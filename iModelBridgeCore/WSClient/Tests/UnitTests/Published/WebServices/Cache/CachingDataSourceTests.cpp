@@ -225,6 +225,22 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMe
     CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
     }
 
+TEST_F(CachingDataSourceTests, FailedObjects_AppendFailures_ItemsAddedAtTheEnd)
+    {
+    ICachingDataSource::FailedObjects failedObjects;
+    failedObjects.push_back({{"Schema.Class", "A"}, "ItemA", ICachingDataSource::Error()});
+    EXPECT_THAT(failedObjects, SizeIs(1));
+
+    ICachingDataSource::FailedObjects moreFailedObjects;
+    moreFailedObjects.push_back({{"Schema.Class", "B"}, "ItemB", ICachingDataSource::Error()});
+    moreFailedObjects.push_back({{"Schema.Class", "C"}, "ItemC", ICachingDataSource::Error()});
+    EXPECT_THAT(moreFailedObjects, SizeIs(2));
+
+    failedObjects.AppendFailures(moreFailedObjects);
+    EXPECT_THAT(failedObjects, SizeIs(3));
+    EXPECT_EQ(failedObjects.at(2).GetObjectLabel(), "ItemC");
+    }
+
 TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesETagsForRequests)
     {
     auto client = MockWSRepositoryClient::Create();
@@ -454,7 +470,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsE
     BeTest::SetFailOnAssert(true);
 
     ASSERT_FALSE(result.IsSuccess());
-    ASSERT_EQ(ICachingDataSource::Status::RepositorySchemaError, result.GetError().GetStatus());
+    ASSERT_EQ(ICachingDataSource::Status::SchemaError, result.GetError().GetStatus());
     ASSERT_FALSE(result.GetError().GetMessage().empty());
     }
 
@@ -1538,7 +1554,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     auto result = ds->GetObjects(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
@@ -1576,7 +1592,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -1601,7 +1617,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "A"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     StubInstances newInstances;
@@ -1627,7 +1643,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCached_Sen
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, Utf8String("TestEtag"), _, _))
@@ -1644,7 +1660,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCachedAndN
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
@@ -1666,7 +1682,7 @@ TEST_F(CachingDataSourceTests, GetObjects_ResponseDoesNotContainPreviouslyCached
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     // Act & Assert
@@ -1891,7 +1907,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr)->GetResult();
@@ -1931,7 +1947,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -1958,7 +1974,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "A"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     StubInstances newInstances;
@@ -1985,7 +2001,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, Utf8String("TestEtag"), _, _))
@@ -2002,7 +2018,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
@@ -2024,7 +2040,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ResponseDoesNotContainPreviouslyCa
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     // Act & Assert
@@ -2056,7 +2072,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_R
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse("TestTag")));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse("TestTag")));
     txn.Commit();
 
     ECInstanceKeyMultiMap expectedInstances;
@@ -2663,7 +2679,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndDelete
     instances.Add({"TestSchema.TestClassA", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClassB", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
     auto relClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto relationship = txn.GetCache().FindRelationship(*relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteRelationship(relationship));
@@ -3027,7 +3043,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRe
     instances.Add({"TestSchema.TestClassA", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClassB", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
     auto relClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto relationship = txn.GetCache().FindRelationship(*relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteRelationship(relationship));
@@ -3882,7 +3898,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
-        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -3908,12 +3924,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(cachedFilePath, filePath);
-        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Success({nullptr, "NewTag"}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_EQ("NewTag", ds->StartCacheTransaction().GetCache().ReadFileCacheTag({"TestSchema.TestClass", "Foo"}));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdateFileRequestWithCorrectParametersAndCommits)
@@ -3933,7 +3950,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
         .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(cachedFilePath, filePath);
-        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}, "NewTag"));
         }));
 
     ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
@@ -3943,6 +3960,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_EQ("NewTag", ds->StartCacheTransaction().GetCache().ReadFileCacheTag({"TestSchema.TestClass", "Foo"}));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile_ChecksIfRepositorySupportsFileAccessUrl)
@@ -4032,7 +4050,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
 
         EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "NewRemoteId"), _, _))
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
-        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
         }));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -4173,7 +4191,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedRelationship_SendsDeleteO
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(StubCachedResponseKey(txn.GetCache()), instances.ToWSObjectsResponse()));
     auto relClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto relationship = txn.GetCache().FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"});
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteRelationship(relationship));
@@ -4299,7 +4317,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
 
     EXPECT_CALL(GetMockClient(), SendDeleteObjectRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSDeleteObjectResult::Success())));
@@ -4328,7 +4346,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
 
     int onProgressCount = 0;
     double expectedSyncedValues[2] = {0, 1};
@@ -4442,13 +4460,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
         {
         progress(0, 2);
         progress(2, 2);
-        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
         }))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
-            return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+            return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
             }));
 
         int onProgressCount = 0;
@@ -4560,7 +4578,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_CachesIniti
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -4587,7 +4605,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesWithSyncRecursivelyF
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -4797,7 +4815,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_AlreadyCachedInstanceReturnedFromQ
     // Second query
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return(""));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
 
     auto responseKeys = StubECInstanceKeyMultiMap({instanceKey});
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
@@ -4826,7 +4844,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_CachePartialInstancesRejectsInstan
     EXPECT_CALL(*client, SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
     EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _))
-        .WillOnce(DoAll(SetArgPointee<2>(StubBSet({objectId})), Return(SUCCESS)));
+        .WillOnce(DoAll(SetArgPointee<2>(StubBSet({objectId})), Return(CacheStatus::OK)));
 
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(Return(CacheStatus::OK));
 
@@ -4840,6 +4858,100 @@ TEST_F(CachingDataSourceTests, SyncCachedData_CachePartialInstancesRejectsInstan
     auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), bvector<IQueryProviderPtr>(), nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesPathToChild_ChildInstanceIsRemovedAndNotCached)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    ObjectId objectIdParent("TestSchema.TestClass", "Parent");
+    ObjectId objectIdA("TestSchema.TestClass", "A");
+    ObjectId objectIdB("TestSchema.TestClass", "B");
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instances;
+    instances.Add(objectIdParent);
+    CachedResponseKey responseKeyParent(txn.GetCache().FindOrCreateRoot(nullptr), nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyParent, instances.ToWSObjectsResponse()));
+    auto instanceKeyParent = txn.GetCache().FindInstance(objectIdParent);
+    ASSERT_TRUE(instanceKeyParent.IsValid());
+
+    instances.Clear();
+    instances.Add(objectIdA);
+    CachedResponseKey responseKeyA(instanceKeyParent, nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyA, instances.ToWSObjectsResponse()));
+    auto instanceKeyA = txn.GetCache().FindInstance(objectIdA);
+    ASSERT_TRUE(instanceKeyA.IsValid());
+
+    CachedResponseKey responseKeyB(instanceKeyA, nullptr);
+    instances.Clear();
+    instances.Add(objectIdB);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyB, instances.ToWSObjectsResponse()));
+    auto instanceKeyB = txn.GetCache().FindInstance(objectIdB);
+    ASSERT_TRUE(instanceKeyB.IsValid());
+    txn.Commit();
+
+    IQueryProvider::Query queryParent(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
+    IQueryProvider::Query queryB(CachedResponseKey(instanceKeyB, nullptr), std::make_shared<WSQuery>("SchemaB", "ClassB"));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyParent, _)).WillOnce(Return(StubBVector({queryParent})));
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(StubBVector({queryB})));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyParent, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+
+    StubInstances remoteInstances;
+    remoteInstances.Add(objectIdB);
+    remoteInstances.Add(objectIdParent);
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(remoteInstances.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryParent.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    auto result = ds->SyncCachedData(StubBVector({ instanceKeyB, instanceKeyParent }), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), SizeIs(1));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesChildAndPathToIt_ChildInstanceIsRemovedAndNotCached)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    ObjectId objectIdA("TestSchema.TestClass", "A");
+    ObjectId objectIdB("TestSchema.TestClass", "B");
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instances;
+    instances.Add(objectIdA);
+    CachedResponseKey responseKeyA(txn.GetCache().FindOrCreateRoot(nullptr), nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyA, instances.ToWSObjectsResponse()));
+    auto instanceKeyA = txn.GetCache().FindInstance(objectIdA);
+    ASSERT_TRUE(instanceKeyA.IsValid());
+
+    instances.Clear();
+    instances.Add(objectIdB);
+    CachedResponseKey responseKeyB(instanceKeyA, nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyB, instances.ToWSObjectsResponse()));
+    auto instanceKeyB = txn.GetCache().FindInstance(objectIdB);
+    ASSERT_TRUE(instanceKeyB.IsValid());
+    txn.Commit();
+
+    IQueryProvider::Query query(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).Times(2)
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(objectIdB, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::Id::InstanceNotFound))));
+
+    auto result = ds->SyncCachedData(StubBVector({instanceKeyB}), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), SizeIs(1));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
     }
 
 TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_DownloadsAndCachesFileToSetupAutoLocation)
@@ -4889,7 +5001,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InstanceCachedAsPersistent_GetQuer
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -4936,8 +5048,8 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerErr
     EXPECT_CALL(*client, SendQueryRequest(*a.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     EXPECT_CALL(*client, SendQueryRequest(*b.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::Id::ServerError))));
     EXPECT_CALL(*client, SendQueryRequest(*c.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CacheResponse(a.key, _, _, Pointee(*a.query), _, _)).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*cache, CacheResponse(c.key, _, _, Pointee(*c.query), _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(a.key, _, _, Pointee(*a.query), _, _)).WillOnce(Return(CacheStatus::OK));
+    EXPECT_CALL(*cache, CacheResponse(c.key, _, _, Pointee(*c.query), _, _)).WillOnce(Return(CacheStatus::OK));
 
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(a.key, _)).WillOnce(Return(CacheStatus::OK));
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(c.key, _)).WillOnce(Return(CacheStatus::OK));
@@ -4979,7 +5091,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerRes
     IQueryProvider::Query query(CachedResponseKey(StubECInstanceKey(11, 22), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
 
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(""));
-    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
     ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
 
     InSequence callsInSeq;
@@ -5078,7 +5190,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
     IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
     IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
 
-    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
     ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
     ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
@@ -5120,7 +5232,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
     IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
     IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
 
-    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
     ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
     ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));

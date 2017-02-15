@@ -79,14 +79,6 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> ClientConnection::InvalidateInfo() const
-    {
-    return m_infoProvider->InvalidateInfo();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WebApiResult> ClientConnection::GetWebApi
 (
 ICancellationTokenPtr ct

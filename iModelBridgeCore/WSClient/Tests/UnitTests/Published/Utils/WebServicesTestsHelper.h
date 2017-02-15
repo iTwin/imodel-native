@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -164,7 +164,7 @@ BeFileName GetTestsOutputDir();
 
 BeFileName StubFilePath(Utf8StringCR customFileName = "");
 BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
-BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
+BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName = "");
 Utf8String SimpleReadFile(BeFileNameCR filePath);
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
 

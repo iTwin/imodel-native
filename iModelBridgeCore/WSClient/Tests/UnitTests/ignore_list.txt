@@ -9,9 +9,6 @@ DataSourceCacheUpgradeTests.Open_V1*
 # DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
 DataSourceCacheUpgradeTests.Open_V20*
 
-# Pending fix on UniqueTaskHolder
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
-
 CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
 CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # bim0200, NDEBUG, x64 and x86

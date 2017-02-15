@@ -89,20 +89,28 @@ void DelegationTokenProvider::ValidateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool updateBaseTokenIfFailed)
     {
-    LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
-    SamlTokenPtr parentToken = m_parentTokenProvider->GetToken();
-    if (nullptr == parentToken)
-        {
-        LOG.errorv("Base token not found for '%s' delegation token", m_rpUri.c_str());
-        return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
-        }
-
     auto finalResult = std::make_shared<SamlTokenResult>();
-    return m_client->RequestToken(*parentToken, m_rpUri, m_tokenRequestLifetime)
-        ->Then([=] (SamlTokenResult result)
+    return m_tokenRetrieveTask.GetTask([=]()->AsyncTaskPtr<SamlTokenResult>
+        {
+        LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
+        SamlTokenPtr parentToken = m_parentTokenProvider->GetToken();
+        if (nullptr == parentToken)
+            {
+            LOG.errorv("Base token not found for '%s' delegation token", m_rpUri.c_str());
+            return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
+            }
+
+        return m_client->RequestToken(*parentToken, m_rpUri, m_tokenRequestLifetime)
+            ->Then<SamlTokenResult>([=] (SamlTokenResult result)
+            {
+            if (result.IsSuccess())
+                LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
+            return result;
+            });
+        })
+    ->Then([=] (SamlTokenResult result)
         {
         *finalResult = result;
-
         if (result.IsSuccess())
             return;
 
@@ -123,10 +131,8 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
                 });
             });
         })
-            ->Then<SamlTokenResult>([=]
-            {
-            if (finalResult->IsSuccess())
-                LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), finalResult->GetValue()->GetLifetime());
-            return *finalResult;
-            });
+    ->Then<SamlTokenResult>([=]
+        {
+        return *finalResult;
+        });
     }

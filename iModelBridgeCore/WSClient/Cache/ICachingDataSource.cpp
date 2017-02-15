@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/ICachingDataSource.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -117,6 +117,10 @@ m_status(status)
         {
         m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_FunctionalityNotSupported);
         }
+    else if (status == ICachingDataSource::Status::SchemaError)
+        {
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_SchemaError);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -124,6 +128,16 @@ m_status(status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICachingDataSource::Error::Error(CacheStatus status) : Error(ConvertCacheStatus(status))
     {}
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::Error::Error(CacheStatus status, ICancellationTokenPtr ct) :
+Error(status)
+    {
+    HandleStatusCanceled(ct);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
@@ -168,12 +182,7 @@ m_status(Status::InternalCacheError)
 ICachingDataSource::Error::Error(ICachingDataSource::Status status, ICancellationTokenPtr ct) :
 Error(status)
     {
-    if (ct && ct->IsCanceled())
-        {
-        m_message.clear();
-        m_description.clear();
-        m_status = Status::Canceled;
-        }
+    HandleStatusCanceled(ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -202,6 +211,19 @@ ICachingDataSource::Status ICachingDataSource::Error::ConvertCacheStatus(CacheSt
 
     BeAssert(false);
     return ICachingDataSource::Status::InternalCacheError;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ICachingDataSource::Error::HandleStatusCanceled(ICancellationTokenPtr ct)
+    {
+    if (ct && ct->IsCanceled())
+        {
+        m_message.clear();
+        m_description.clear();
+        m_status = Status::Canceled;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+

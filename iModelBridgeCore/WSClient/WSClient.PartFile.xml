@@ -410,7 +410,8 @@
 
         <!-- Ensure that builds, run manually if needed -->
       <!-- 
-        <SubPart PartName="WSClientIntegrationTests"/>
+        <SubPart PartName="WSClientIntegrationTests" />
+        <SubPart PartName="WSClientCompatibilityTestTool" />
       -->
       </Part>
 
@@ -578,11 +579,75 @@
     <!-- // Compatibility Tests - tool for WSG server developers                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x86,x64">
+    <Part Name="WSClientCompatibilityTestTool" OnlyPlatforms="x64" >
+        <SubProduct ProductName="WSClientCompatibilityTestTool" />
+    </Part>
+    
+    <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
+
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
+
+        <ProductDirectory Name="BeCurlAssemblies"                   Path=""/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Path=""/>
+        <ProductDirectory Name="http"                               Path="http"/>
+
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
+
+        <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
+        <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
+
+        <ProductDirectory Name="sqlang"                             Path="sqlang/platform"/>
+
+        <!-- TODO: Remove dependency on SDK -->
+        <ProductDirectory Name="CordovaLibs"                        Path=""/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
+        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false"/>
+        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false"/>
+        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false"/>
+        <ProductDirectory Name="StdThemes"                          Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <Bindings>
+            <Files ProductDirectoryName="WSClientCompatibilityTests">
+                Delivery/WSClientCompatibilityTests$(exeext)
+            </Files>
+        </Bindings>
     </Part>
 
 </BuildContext>

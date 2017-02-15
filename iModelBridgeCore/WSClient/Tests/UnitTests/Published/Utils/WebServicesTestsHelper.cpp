@@ -382,14 +382,14 @@ BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
     return filePath;
     }
 
-BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName)
+BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName)
     {
     BeFileName filePath = StubFilePath();
 
     BeFile file;
     EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));
 
-    uint32_t kbCount = bytesCount / 1024;
+    uint64_t kbCount = bytesCount / 1024;
     char kbBuffer[1024];
     memset(kbBuffer, 'X', 1024);
 
