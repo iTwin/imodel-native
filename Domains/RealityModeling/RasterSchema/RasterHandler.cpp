@@ -292,10 +292,7 @@ AxisAlignedBox3d RasterModel::_QueryModelRange() const
     {
     _Load(nullptr);
     if (!m_root.IsValid())
-        {
-        BeAssert(false);
         return AxisAlignedBox3d();
-        }
 
     ElementAlignedBox3d range = m_root->ComputeRange();
     if (!range.IsValid())
