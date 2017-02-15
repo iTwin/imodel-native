@@ -52,21 +52,10 @@ struct NoopECSqlBinder final : public IECSqlBinder
 //! No-op implementation for IECSqlValue
 // @bsiclass                                                 Krischan.Eberle    03/2014
 //+===============+===============+===============+===============+===============+======
-struct NoopECSqlValue final : public IECSqlValue
+struct NoopECSqlValue final : public IECSqlValue, IECSqlValueIterable
     {
     private:
-        struct Iterable final : IIterable
-            {
-            private:
-                const_iterator _CreateIterator() const override { return end(); }
-
-            public:
-                Iterable() : IIterable() {}
-            };
-
-
         ECSqlColumnInfo m_dummyColumnInfo;
-        Iterable m_iterable;
 
         static NoopECSqlValue const* s_singleton;
 
@@ -91,10 +80,12 @@ struct NoopECSqlValue final : public IECSqlValue
 
         //struct
         IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override { return *this; }
-        IIterable const& _GetStructIterable() const override { return m_iterable; }
+        IECSqlValueIterable const& _GetStructIterable() const override { return *this; }
         //array
         int _GetArrayLength() const override { return -1; }
-        IIterable const& _GetArrayIterable() const override { return m_iterable; }
+        IECSqlValueIterable const& _GetArrayIterable() const override { return *this; }
+
+        const_iterator _CreateIterator() const override { return end(); }
 
     public:
         static NoopECSqlValue const& GetSingleton();

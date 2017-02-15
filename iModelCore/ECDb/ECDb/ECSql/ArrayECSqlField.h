@@ -22,48 +22,47 @@ public:
     //=======================================================================================
     //! @bsiclass                                                Krischan.Eberle      03/2016
     //+===============+===============+===============+===============+===============+======
-    struct JsonECSqlValue final : public IECSqlValue, IECSqlValue::IIterable
+    struct JsonECSqlValue final : public IECSqlValue, IECSqlValueIterable
         {
         private:
-            struct ArrayIteratorState final : IECSqlValue::IIteratorState
+            struct ArrayIteratorState final : IECSqlValueIterable::IIteratorState
                 {
             private:
                 JsonECSqlValue const& m_value;
                 mutable rapidjson::Value::ConstValueIterator m_jsonIterator;
                 mutable int m_jsonIteratorIndex = -1;
-                mutable std::unique_ptr<JsonECSqlValue> m_currentArrayElement = nullptr;
 
-                ArrayIteratorState(ArrayIteratorState const& rhs) : m_value(rhs.m_value), m_jsonIterator(rhs.m_jsonIterator), m_jsonIteratorIndex(rhs.m_jsonIteratorIndex), m_currentArrayElement(std::move(rhs.m_currentArrayElement)) {}
+                ArrayIteratorState(ArrayIteratorState const& rhs) : m_value(rhs.m_value), m_jsonIterator(rhs.m_jsonIterator), m_jsonIteratorIndex(rhs.m_jsonIteratorIndex) {}
                 
                 std::unique_ptr<IIteratorState> _Copy() const override {return std::unique_ptr<IIteratorState>(new ArrayIteratorState(*this)); }
                 void _MoveToNext(bool onInitializingIterator) const override;
-                bool _IsAtEnd() const override { return m_jsonIterator == GetJson().End(); }
-                IECSqlValue const& _GetCurrent() const override { BeAssert(m_currentArrayElement != nullptr); return *m_currentArrayElement; }
+                bool _IsAtEnd() const override { return GetJson().IsNull() || m_jsonIterator == GetJson().End(); }
+                IECSqlValue const& _GetCurrent() const override;
 
                 rapidjson::Value const& GetJson() const { return m_value.m_json; }
 
-                public:
-                   explicit ArrayIteratorState(JsonECSqlValue const& val) : IIteratorState(), m_value(val) {}
-
+            public:
+                explicit ArrayIteratorState(JsonECSqlValue const& val) : IIteratorState(), m_value(val) {}
                 };
 
-            struct StructIteratorState final : IECSqlValue::IIteratorState
+            struct StructIteratorState final : IECSqlValueIterable::IIteratorState
                 {
-                private:
-                    JsonECSqlValue const& m_value;
-                    mutable rapidjson::Value::ConstMemberIterator m_jsonIterator;
+            private:
+                JsonECSqlValue const& m_value;
+                mutable ECN::ECPropertyIterable::const_iterator m_memberPropIterator;
+                ECN::ECPropertyIterable::const_iterator m_memberPropEndIterator;
 
-                    StructIteratorState(StructIteratorState const& rhs) : m_value(rhs.m_value), m_jsonIterator(rhs.m_jsonIterator) {}
+                StructIteratorState(StructIteratorState const& rhs) : m_value(rhs.m_value), m_memberPropIterator(rhs.m_memberPropIterator), m_memberPropEndIterator(rhs.m_memberPropEndIterator) {}
 
-                    std::unique_ptr<IIteratorState> _Copy() const override { return std::unique_ptr<IIteratorState>(new StructIteratorState(*this)); }
-                    void _MoveToNext(bool onInitializingIterator) const override;
-                    bool _IsAtEnd() const override { return m_jsonIterator == GetJson().MemberEnd(); }
-                    IECSqlValue const& _GetCurrent() const override;
+                std::unique_ptr<IIteratorState> _Copy() const override { return std::unique_ptr<IIteratorState>(new StructIteratorState(*this)); }
+                void _MoveToNext(bool onInitializingIterator) const override;
+                bool _IsAtEnd() const override { return m_memberPropIterator == m_memberPropEndIterator; }
+                IECSqlValue const& _GetCurrent() const override;
 
-                    rapidjson::Value const& GetJson() const { return m_value.m_json; }
+                rapidjson::Value const& GetJson() const { return m_value.m_json; }
 
-                public:
-                    explicit StructIteratorState(JsonECSqlValue const& val) : IIteratorState(), m_value(val) {}
+            public:
+                StructIteratorState(JsonECSqlValue const& val, ECN::ECPropertyIterableCR structMemberPropertyIterable);
                 };
 
             static rapidjson::Value const* s_nullJson;
@@ -73,6 +72,7 @@ public:
             ECSqlColumnInfo m_columnInfo;
             //for prims
             mutable ByteStream m_blobCache;
+            mutable std::vector<std::unique_ptr<JsonECSqlValue>> m_arrayElementCache;
             mutable std::map<Utf8CP, std::unique_ptr<JsonECSqlValue>, CompareIUtf8Ascii> m_structMemberCache;
 
             ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
@@ -91,15 +91,15 @@ public:
             IGeometryPtr _GetGeometry() const override;
 
             IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
-            IIterable const& _GetStructIterable() const override;
+            IECSqlValueIterable const& _GetStructIterable() const override;
 
             int _GetArrayLength() const override;
-            IIterable const& _GetArrayIterable() const override;
+            IECSqlValueIterable const& _GetArrayIterable() const override;
 
             const_iterator _CreateIterator() const override;
 
 
-            IECSqlValue const& CreateStructMemberValue(ECN::ECPropertyCR memberProp, rapidjson::Value const& memberJsonValue) const;
+            IECSqlValue const& CreateStructMemberValue(ECN::ECPropertyCR memberProp) const;
 
             bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 
@@ -131,10 +131,10 @@ private:
     IGeometryPtr _GetGeometry() const override { return GetValue().GetGeometry(); }
 
     IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override { return GetValue()[memberName]; }
-    IIterable const& _GetStructIterable() const override { return GetValue().GetStructIterable(); }
+    IECSqlValueIterable const& _GetStructIterable() const override { return GetValue().GetStructIterable(); }
 
     int _GetArrayLength() const override { return GetValue().GetArrayLength(); }
-    IIterable const& _GetArrayIterable() const override { return GetValue().GetArrayIterable(); }
+    IECSqlValueIterable const& _GetArrayIterable() const override { return GetValue().GetArrayIterable(); }
 
     //ECSqlField
     ECSqlStatus _OnAfterReset() override;

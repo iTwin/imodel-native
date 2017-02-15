@@ -123,7 +123,7 @@ IECSqlValue const& PrimitiveECSqlField::_GetStructMemberValue(Utf8CP memberName)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& PrimitiveECSqlField::_GetStructIterable() const
+IECSqlValueIterable const& PrimitiveECSqlField::_GetStructIterable() const
     {
     LOG.error("GetStructIterable cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton().GetStructIterable();
@@ -141,7 +141,7 @@ int PrimitiveECSqlField::_GetArrayLength() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& PrimitiveECSqlField::_GetArrayIterable() const
+IECSqlValueIterable const& PrimitiveECSqlField::_GetArrayIterable() const
     {
     LOG.error("GetArrayIterable cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton().GetArrayIterable();

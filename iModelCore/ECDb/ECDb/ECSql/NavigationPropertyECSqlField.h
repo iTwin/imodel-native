@@ -13,12 +13,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValue::IIterable
+struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterable
     {
     friend struct ECSqlFieldFactory;
 
     private:
-        struct IteratorState final : IECSqlValue::IIteratorState
+        struct IteratorState final : IECSqlValueIterable::IIteratorState
             {
             private:
                 enum class State : uint8_t
@@ -53,7 +53,7 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValue::IIte
         bool _IsNull() const override { BeAssert(m_idField != nullptr); return m_idField->IsNull(); }
 
         IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
-        IIterable const& _GetStructIterable() const override { return *this; }
+        IECSqlValueIterable const& _GetStructIterable() const override { return *this; }
         const_iterator _CreateIterator() const override { return const_iterator(std::make_unique<IteratorState>(*this));}
 
         void const* _GetBlob(int* blobSize) const override;
@@ -69,7 +69,7 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValue::IIte
         IGeometryPtr _GetGeometry() const override;
 
         int _GetArrayLength() const override;
-        IIterable const& _GetArrayIterable() const override;
+        IECSqlValueIterable const& _GetArrayIterable() const override;
 
         //ECSqlField
         ECSqlStatus _OnAfterReset() override;

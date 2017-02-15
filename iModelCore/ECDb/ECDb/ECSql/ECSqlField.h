@@ -20,8 +20,8 @@ struct ECSqlField : public IECSqlValue
     {
 protected:
     ECSqlColumnInfo m_ecsqlColumnInfo;
-    bool m_requiresOnAfterStep;
-    bool m_requiresOnAfterReset;
+    bool m_requiresOnAfterStep = false;
+    bool m_requiresOnAfterReset = false;
 
 private:
     ECSqlStatementBase& m_ecsqlStatement;
@@ -32,7 +32,6 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
 
 protected:
-
     ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
         : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}

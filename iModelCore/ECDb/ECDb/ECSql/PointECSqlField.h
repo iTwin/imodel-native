@@ -36,10 +36,10 @@ private:
     IGeometryPtr _GetGeometry() const override;
 
     IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
-    IIterable const& _GetStructIterable() const override;
+    IECSqlValueIterable const& _GetStructIterable() const override;
 
     int _GetArrayLength() const override;
-    IIterable const& _GetArrayIterable() const override;
+    IECSqlValueIterable const& _GetArrayIterable() const override;
 
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 

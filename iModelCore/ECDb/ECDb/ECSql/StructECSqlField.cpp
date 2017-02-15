@@ -171,7 +171,7 @@ int StructECSqlField::_GetArrayLength() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& StructECSqlField::_GetArrayIterable() const
+IECSqlValueIterable const& StructECSqlField::_GetArrayIterable() const
     {
     LOG.error("GetArrayIterable cannot be called for a struct column.");
     return NoopECSqlValue::GetSingleton().GetArrayIterable();

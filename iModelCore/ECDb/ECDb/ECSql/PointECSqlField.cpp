@@ -156,7 +156,7 @@ IECSqlValue const& PointECSqlField::_GetStructMemberValue(Utf8CP memberName) con
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& PointECSqlField::_GetStructIterable() const
+IECSqlValueIterable const& PointECSqlField::_GetStructIterable() const
     {
     LOG.error("GetStructIterable cannot be called for Point2d or Point3d columns.");
     return NoopECSqlValue::GetSingleton().GetStructIterable();
@@ -174,7 +174,7 @@ int PointECSqlField::_GetArrayLength() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& PointECSqlField::_GetArrayIterable() const
+IECSqlValueIterable const& PointECSqlField::_GetArrayIterable() const
     {
     LOG.error("GetArrayIterable cannot be called for Point2d or Point3d columns.");
     return NoopECSqlValue::GetSingleton().GetArrayIterable();

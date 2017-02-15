@@ -743,7 +743,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     //alternative API via struct value
     IECSqlValue const& navValue = stmt.GetValue(0);
     ASSERT_STREQ("Model.Id", navValue["Id"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue[0].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue["Id"].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_STREQ("Model.RelECClassId", navValue["RelECClassId"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), navValue["RelECClassId"].GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
     stmt.Finalize();
@@ -860,7 +860,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     //alternative API via struct value
     IECSqlValue const& navValue = stmt.GetValue(0);
     ASSERT_STREQ("Parent.Id", navValue["Id"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
-    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), navValue[0].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), navValue["Id"].GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_STREQ("Parent.RelECClassId", navValue["RelECClassId"].GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
     ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), navValue["RelECClassId"].GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
 
@@ -1268,7 +1268,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
             }
         }
     ASSERT_TRUE(navPropIx >= 0);
-    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValue(navPropIx)[0].GetId<ECInstanceId>().GetValue());
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValue(navPropIx)["Id"].GetId<ECInstanceId>().GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 

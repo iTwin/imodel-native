@@ -55,6 +55,12 @@ private:
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
 
+protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+    //not inlined to prevent being called outside ECDb
+    IECSqlBinder();
+#endif
+
 public:
     virtual ~IECSqlBinder() {}
 

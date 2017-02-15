@@ -172,7 +172,7 @@ int NavigationPropertyECSqlField::_GetArrayLength() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue::IIterable const& NavigationPropertyECSqlField::_GetArrayIterable() const
+IECSqlValueIterable const& NavigationPropertyECSqlField::_GetArrayIterable() const
     {
     LOG.error("GetArrayIterable cannot be called for a navigation property column.");
     return NoopECSqlValue::GetSingleton().GetArrayIterable();

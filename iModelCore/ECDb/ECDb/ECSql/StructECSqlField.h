@@ -13,12 +13,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
-struct StructECSqlField final : public ECSqlField, IECSqlValue::IIterable
+struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
     {
     friend struct ECSqlFieldFactory;
 
     private:
-        struct IteratorState final : IIteratorState
+        struct IteratorState final : IECSqlValueIterable::IIteratorState
             {
         private:
             mutable std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii>::const_iterator m_it;
@@ -50,8 +50,8 @@ struct StructECSqlField final : public ECSqlField, IECSqlValue::IIterable
         bool _IsNull() const override;
 
         IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
-        IIterable const& _GetStructIterable() const override { return *this; }
-        const_iterator _CreateIterator() const override { return const_iterator(std::make_unique<IteratorState>(m_structMemberFields)); }
+        IECSqlValueIterable const& _GetStructIterable() const override { return *this; }
+        const_iterator _CreateIterator() const override { return IECSqlValueIterable::const_iterator(std::make_unique<IteratorState>(m_structMemberFields)); }
 
         void const* _GetBlob(int* blobSize) const override;
         bool _GetBoolean() const override;
@@ -66,7 +66,7 @@ struct StructECSqlField final : public ECSqlField, IECSqlValue::IIterable
         IGeometryPtr _GetGeometry() const override;
 
         int _GetArrayLength() const override;
-        IIterable const& _GetArrayIterable() const override;
+        IECSqlValueIterable const& _GetArrayIterable() const override;
 
         //ECSqlField
         ECSqlStatus _OnAfterReset() override;

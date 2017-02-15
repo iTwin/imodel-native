@@ -73,12 +73,12 @@ ECSqlColumnInfo ECSqlColumnInfo::CreateForArrayElement(ECSqlColumnInfo const& pa
     if (parent.GetDataType().IsPrimitiveArray())
         {
         arrayElementDataType = ECTypeDescriptor::CreatePrimitiveTypeDescriptor(parent.GetDataType().GetPrimitiveType());
-        dateTimeInfo = parent.GetDateTimeInfo();
+        dateTimeInfo = parent.m_dateTimeInfo;
         }
     else
         {
         BeAssert(parent.GetDataType().IsStructArray());
-        structType = parent.GetStructType();
+        structType = parent.m_structType;
         arrayElementDataType = ECTypeDescriptor::CreateStructTypeDescriptor();
         }
 

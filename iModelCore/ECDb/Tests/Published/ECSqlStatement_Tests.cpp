@@ -477,18 +477,17 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
         ASSERT_FALSE(stmt.IsValueNull(0));
-        IECSqlValue const& arrayVal = stmt.GetValue(0);
-        ASSERT_EQ(1, arrayVal.GetArrayLength());
-        IECSqlValue const& elementVal = *arrayVal.GetArrayIterable().begin();
-        ASSERT_TRUE(elementVal.IsNull()) << stmt.GetECSql();
-
+        IECSqlValue const& outerArrayVal = stmt.GetValue(0);
+        ASSERT_EQ(1, outerArrayVal.GetArrayLength());
+        IECSqlValue const& outerArrayElementVal = *outerArrayVal.GetArrayIterable().begin();
+        ASSERT_TRUE(outerArrayElementVal.IsNull()) << stmt.GetECSql();
         int memberCount = 0;
-        for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
+        for (IECSqlValue const& memberVal : outerArrayElementVal.GetStructIterable())
             {
             memberCount++;
             ASSERT_TRUE(memberVal.IsNull());
             }
-        ASSERT_EQ((int) arrayVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), memberCount);
+        ASSERT_EQ((int) outerArrayElementVal.GetColumnInfo().GetStructType()->GetPropertyCount(), memberCount) << "Test class: " << testClassName << " struct: " << outerArrayElementVal.GetColumnInfo().GetStructType()->GetName().c_str();
         }
 
     //*** nested struct being partially set
@@ -3265,20 +3264,14 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
     }
 
     //SAStructProp.PStructProp level
-    auto const& topLevelStructValue = stmt.GetValue(0);
-    auto const& nestedStructPropColumnInfo = topLevelStructValue["PStructProp"].GetColumnInfo();
-    AssertColumnInfo("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, nestedStructPropColumnInfo);
-    auto const& nestedStructValue = topLevelStructValue[0];
+    IECSqlValue const& topLevelStructValue = stmt.GetValue(0);
+    AssertColumnInfo("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, topLevelStructValue["PStructProp"].GetColumnInfo());
 
     //SAStructProp.PStructProp.XXX level
-    auto const& firstStructMemberColumnInfo = nestedStructValue["b"].GetColumnInfo();
-    AssertColumnInfo("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, firstStructMemberColumnInfo);
-
-    auto const& secondStructMemberColumnInfo = nestedStructValue["bi"].GetColumnInfo();
-    AssertColumnInfo("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, secondStructMemberColumnInfo);
-
-    auto const& eighthStructMemberColumnInfo = nestedStructValue["p2d"].GetColumnInfo();
-    AssertColumnInfo("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, eighthStructMemberColumnInfo);
+    IECSqlValue const& nestedStructValue = topLevelStructValue["PStructProp"];
+    AssertColumnInfo("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, nestedStructValue["b"].GetColumnInfo());
+    AssertColumnInfo("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, nestedStructValue["bi"].GetColumnInfo());
+    AssertColumnInfo("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, nestedStructValue["p2d"].GetColumnInfo());
 
     //invalid struct members
     ASSERT_FALSE(nestedStructValue[""].GetColumnInfo().IsValid());
