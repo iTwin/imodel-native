@@ -336,8 +336,8 @@ typedef JsECSqlValue* JsECSqlValueP;
 //=======================================================================================
 struct JsECSqlArrayValueIterator : RefCountedBaseWithCreate
     {
-    BeSQLite::EC::IECSqlValue::IIterable::const_iterator m_iter;
-    JsECSqlArrayValueIterator(BeSQLite::EC::IECSqlValue::IIterable::const_iterator it) : m_iter(it) { ; }
+    BeSQLite::EC::IECSqlValueIterable::const_iterator m_iter;
+    JsECSqlArrayValueIterator(BeSQLite::EC::IECSqlValueIterable::const_iterator it) : m_iter(it) { ; }
     };
 
 typedef JsECSqlArrayValueIterator* JsECSqlArrayValueIteratorP;
