@@ -1499,7 +1499,9 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     TerrainModel::BcDTMPtr dtm;
     DTMStatusInt val = meshP->GetAsBcDTM(dtm);
     if (val == DTM_ERROR) return val;
-    val = dtm->ExportToGeopakTinFile(fileNameP, transformation);
+
+    Transform totalTrans = Transform::FromProduct(m_transformToUors, *transformation);
+    val = dtm->ExportToGeopakTinFile(fileNameP, &totalTrans);
     return val;
     }
 
