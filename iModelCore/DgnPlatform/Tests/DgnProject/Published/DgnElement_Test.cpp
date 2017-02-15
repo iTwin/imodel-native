@@ -16,7 +16,6 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct DgnElementTests : public DgnDbTestFixture
     {
     TestElementCPtr AddChild(DgnElementCR parent);
-    void TestAutoHandledPropertiesCA();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,9 +722,10 @@ TEST_F(DgnElementTests, HandlerlessClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementTests::TestAutoHandledPropertiesCA()
+TEST_F(DgnElementTests, TestAutoHandledPropertiesCA)
     {
-#ifdef WIP_AUTO_HANDLED_PROPERTIES // *** test Custom Attributes when we get them
+    SetupSeedProject();
+    // *** test Custom Attributes when we get them
     DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
@@ -745,28 +745,18 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
         ,"PointProperty4"
         ,"StringProperty"
         ,"IntProperty"
-        };
+    };
 
-    for (int i=0; i<_countof(s_autoHandledPropNames); ++i)
-        {
+    for (int i = 0; i<_countof(s_autoHandledPropNames); ++i)
+    {
         ECN::ECValue checkValue;
         EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, s_autoHandledPropNames[i]));
         EXPECT_TRUE(checkValue.IsNull());
-        }
+    }
 
     // Check a few non-auto-handled props
     ECN::ECValue checkValue;
     EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "TestIntegerProperty1"));
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, TestAutoHandledProperties)
-    {
-    SetupSeedProject();
-    TestAutoHandledPropertiesCA();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik      11/16
