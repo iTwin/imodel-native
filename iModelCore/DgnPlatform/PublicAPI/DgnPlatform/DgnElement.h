@@ -2788,7 +2788,7 @@ public:
     PhysicalRecipeCP ToPhysicalRecipe() const {return _ToPhysicalRecipe();}             //!< more efficient substitute for dynamic_cast<PhysicalRecipeCP>(el)
     GraphicalRecipe2dCP ToGraphicalRecipe2d() const {return _ToGraphicalRecipe2d();}    //!< more efficient substitute for dynamic_cast<GraphicalRecipe2dCP>(el)
 
-    DgnDbStatus SetOutputCategory(DgnCategoryId categoryId) {return SetPropertyValue("OutputCategory", static_cast<int64_t>(categoryId.GetValue()));}
+    DgnDbStatus SetOutputCategory(DgnCategoryId categoryId) {return SetPropertyValue("OutputCategory", static_cast<int64_t>(categoryId.GetValueUnchecked()));}
     DgnCategoryId GetOutputCategoryId() const {return DgnCategoryId(GetPropertyValueUInt64("OutputCategory"));}
 };
 
