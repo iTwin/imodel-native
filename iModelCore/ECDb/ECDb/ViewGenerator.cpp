@@ -1253,7 +1253,7 @@ bool ViewGenerator::SelectFromViewContext::IsInSelectClause(Utf8StringCR exp) co
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 ViewGenerator::ToSqlVisitor::ToSqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassView)
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)/* unused - , m_forECClassView(forECClassView)*/
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
@@ -1339,11 +1339,11 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
     Result& result = Record(*vmap);
     result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
-	if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-		{
-		if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-			result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-		}
+    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+        {
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
+            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+        }
     return SUCCESS;
     }
 
@@ -1393,8 +1393,8 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
     Result& result = Record(*vmap);
     if (isVirtual)
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-	else
-		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+    else
+        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {

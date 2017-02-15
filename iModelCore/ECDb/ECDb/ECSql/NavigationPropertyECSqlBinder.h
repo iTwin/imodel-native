@@ -15,7 +15,7 @@ struct IdECSqlBinder;
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct NavigationPropertyECSqlBinder : public ECSqlBinder
+struct NavigationPropertyECSqlBinder final : public ECSqlBinder
     {
     friend struct ECSqlBinderFactory;
 

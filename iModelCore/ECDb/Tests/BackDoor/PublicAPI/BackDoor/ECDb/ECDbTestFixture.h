@@ -52,8 +52,8 @@ protected:
     ECDb& SetupECDb(Utf8CP ecdbFileName);
     ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     ECDb& SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) const;
-
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    ECDb& Reopen();
 
     ECDb& GetECDb() const { return m_ecdb; }
     BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);

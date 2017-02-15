@@ -85,7 +85,7 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
     {
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
-        ECSqlField::Collection m_fields;
+        std::vector<std::unique_ptr<ECSqlField>> m_fields;
         //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
         std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
         std::vector<ECSqlField*> m_fieldsRequiringReset;
@@ -104,8 +104,8 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
         int GetColumnCount() const;
         IECSqlValue const& GetValue(int columnIndex) const;
 
-        ECSqlField::Collection const& GetFields() const { return m_fields; }
-        void AddField(std::unique_ptr<ECSqlField> field);
+        std::vector<std::unique_ptr<ECSqlField>> const& GetFields() const { return m_fields; }
+        void AddField(std::unique_ptr<ECSqlField>);
 
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };

@@ -89,63 +89,63 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
     private:
-		//======================================================================================
-		// @bsiclass                                                     Affan.Khan      01/2015
-		//===============+===============+===============+===============+===============+======
-		struct ColumnFactory final : NonCopyableClass
-			{
-			private:
-				RelationshipClassEndTableMap const& m_relMap;
-				RelationshipMappingInfo const& m_relInfo;
-				bmap<DbTable const*, ClassMapCP> m_constraintClassMaps;
-				void Initialize();
+        //======================================================================================
+        // @bsiclass                                                     Affan.Khan      01/2015
+        //===============+===============+===============+===============+===============+======
+        struct ColumnFactory final : NonCopyableClass
+            {
+            private:
+                RelationshipClassEndTableMap const& m_relMap;
+                RelationshipMappingInfo const& m_relInfo;
+                bmap<DbTable const*, ClassMapCP> m_constraintClassMaps;
+                void Initialize();
 
-			public:
-				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);				
-				~ColumnFactory(){}
-				DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
-				DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
-		
-			};
+            public:
+                explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);
+                ~ColumnFactory(){}
+                DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
+                DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
+        
+            };
 
-		struct ColumnLists final : NonCopyableClass
-			{
-			private:
+        struct ColumnLists final : NonCopyableClass
+            {
+            private:
                 ColumnFactory m_columnFactory;
 
-				//Following is not created
-				std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
-				std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
+                //Following is not created
+                std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
+                std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
 
-				//Following are actaully create for each secondary table.
-				std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
-				std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
+                //Following are actaully create for each secondary table.
+                std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
+                std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
 
-				//Following is not really created but just referenced 
-				std::vector<DbColumn const*> m_primaryTableFkECClassIdColumns;     //Point to primary table ECClassId and we just store reference to it to act as FkECClassId.
-				
+                //Following is not really created but just referenced 
+                std::vector<DbColumn const*> m_primaryTableFkECClassIdColumns;     //Point to primary table ECClassId and we just store reference to it to act as FkECClassId.
+                
                 static void Add(std::vector<DbColumn const*>& list, DbColumn const* column)
-					{
-					BeAssert(column != nullptr);
-					if (std::find(list.begin(), list.end(), column) == list.end())
-						list.push_back(column);
-					}
+                    {
+                    BeAssert(column != nullptr);
+                    if (std::find(list.begin(), list.end(), column) == list.end())
+                        list.push_back(column);
+                    }
 
-			public:
+            public:
                 explicit ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo) : m_columnFactory(relMap, relInfo) {}
 
-				void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
-				void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
-				void AddFkECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableFkECInstanceIdColumns, &column); }
-				void AddFkRelECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableFkRelECClassIdColumns, &column); }
-				void AddFkECClassIdColumn(DbColumn const& column) { Add(m_primaryTableFkECClassIdColumns, &column); }
-				std::vector<DbColumn const*> const& GetECInstanceIdColumns() const { return m_secondaryTableECInstanceIdColumns; }
-				std::vector<DbColumn const*> const& GetECClassIdColumns() const { return m_secondaryTableECClassIdColumns; }
-				std::vector<DbColumn const*> const& GetFkECInstanceIdColumns() const { return m_secondaryTableFkECInstanceIdColumns; }
-				std::vector<DbColumn const*> const& GetFkRelECClassIdColumns() const { return m_secondaryTableFkRelECClassIdColumns; }
-				std::vector<DbColumn const*> const& GetFkECClassIdColumns() const { return m_primaryTableFkECClassIdColumns; }
-				ColumnFactory& GetColumnFactory() { return m_columnFactory; }		
-			};
+                void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
+                void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
+                void AddFkECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableFkECInstanceIdColumns, &column); }
+                void AddFkRelECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableFkRelECClassIdColumns, &column); }
+                void AddFkECClassIdColumn(DbColumn const& column) { Add(m_primaryTableFkECClassIdColumns, &column); }
+                std::vector<DbColumn const*> const& GetECInstanceIdColumns() const { return m_secondaryTableECInstanceIdColumns; }
+                std::vector<DbColumn const*> const& GetECClassIdColumns() const { return m_secondaryTableECClassIdColumns; }
+                std::vector<DbColumn const*> const& GetFkECInstanceIdColumns() const { return m_secondaryTableFkECInstanceIdColumns; }
+                std::vector<DbColumn const*> const& GetFkRelECClassIdColumns() const { return m_secondaryTableFkRelECClassIdColumns; }
+                std::vector<DbColumn const*> const& GetFkECClassIdColumns() const { return m_primaryTableFkECClassIdColumns; }
+                ColumnFactory& GetColumnFactory() { return m_columnFactory; }
+            };
 
         struct ForeignKeyColumnInfo : NonCopyableClass
             {
@@ -218,12 +218,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
         ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
-		Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
-			{
-			Utf8String temp = GetRelationshipClass().GetFullName();
-			temp.append(".").append(accessString);
-			return temp;
-			}
+        Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
+            {
+            Utf8String temp = GetRelationshipClass().GetFullName();
+            temp.append(".").append(accessString);
+            return temp;
+            }
     };
 
 /*==========================================================================

@@ -140,7 +140,7 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_issueReporter(ecdb), m_idSequences(ecdb)
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_idSequences(ecdb)
         {
         m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, m_mutex));
         }

@@ -380,17 +380,14 @@ TEST_F(PerformanceQueryTests, SelectFromComplexClass_WithoutAdapter)
             }
         else if (dataType.IsStruct())
             {
-            auto const& structValue = ecsqlValue.GetStruct();
-            const int memberCount = structValue.GetMemberCount();
-            for (int j = 0; j < memberCount; j++)
-                processECSqlValue(structValue.GetValue(j));
+            for (IECSqlValue const& memberVal : ecsqlValue.GetStructIterable())
+                processECSqlValue(memberVal);
             }
         else
             {
-            auto const& arrayValue = ecsqlValue.GetArray();
-            for (auto arrayElementVal : arrayValue)
+            for (IECSqlValue const& arrayElementVal : ecsqlValue.GetArrayIterable())
                 {
-                processECSqlValue(*arrayElementVal);
+                processECSqlValue(arrayElementVal);
                 }
             }
         };

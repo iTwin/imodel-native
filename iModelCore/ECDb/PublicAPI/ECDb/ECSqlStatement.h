@@ -396,21 +396,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         template <class TBeInt64Id>
         TBeInt64Id GetValueNavigation(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigation<TBeInt64Id>(relationshipECClassId); }
 
-        //! Gets the array value of the specified column.
-        //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
-        //! @return Array reader for the column
-        //! @note Possible errors:
-        //! - column data type is not an array
-        //! - @p columnIndex is out of bounds
-        IECSqlArrayValue const& GetValueArray(int columnIndex) const { return GetValue(columnIndex).GetArray(); }
-
-        //! Gets the struct value of the specified column.
-        //! @return Struct value for the column
-        //! @note Possible errors:
-        //! - column data type is not an ECStruct
-        //! - @p columnIndex is out of bounds
-        IECSqlStructValue const& GetValueStruct(int columnIndex) const { return GetValue(columnIndex).GetStruct(); }
-
         //! Gets the value of the specified column.
         //! @remarks This is the generic way of getting the value of a specified column in the result set. 
         //! All other GetValueXXX methods are convenience methods around GetValue.

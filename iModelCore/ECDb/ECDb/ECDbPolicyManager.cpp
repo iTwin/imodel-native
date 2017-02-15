@@ -95,7 +95,8 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
-    if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && !assertion.GetClassMap().IsMappedToSingleTable())
+    if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && !assertion.GetClassMap().IsMappedToSingleTable()
+        && assertion.GetECSqlType() != ECSqlType::Select)
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",

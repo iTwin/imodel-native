@@ -34,17 +34,17 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
     auto expList = Find(Type::PropertyName, true);
     for (auto exp : expList)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);		
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-			PropertyMap const* propertyMap = propertyNameExp->GetTypeInfo().GetPropertyMap();
-			if (propertyMap->IsSystem())
-				tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
-			else
-				{
-				DataPropertyMap const * dataPropertyMap = static_cast<DataPropertyMap const*>(propertyMap);
-				tmp.insert(&dataPropertyMap->GetTable());
-				}
+            PropertyMap const* propertyMap = propertyNameExp->GetTypeInfo().GetPropertyMap();
+            if (propertyMap->IsSystem())
+                tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
+            else
+                {
+                DataPropertyMap const * dataPropertyMap = static_cast<DataPropertyMap const*>(propertyMap);
+                tmp.insert(&dataPropertyMap->GetTable());
+                }
             }
         }
 
