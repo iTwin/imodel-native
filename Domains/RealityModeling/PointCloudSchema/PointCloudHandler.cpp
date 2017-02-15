@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 #include <PointCloud/PointCloudHandler.h>
-#include <PointCloud/PointCloudTileTree.h>
+#include "PointCloudTileTree.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUD

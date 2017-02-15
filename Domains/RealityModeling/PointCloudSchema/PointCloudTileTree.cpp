@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 #include <PointCloud/PointCloudHandler.h>
-#include <PointCloud/PointCloudTileTree.h>
+#include "PointCloudTileTree.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUD
@@ -113,7 +113,7 @@ BentleyStatus DoGetFromSource()
 
     // TODO - Add technique for monochrome point clouds...
     if (!colorsPresent)
-        colors = bvector<PointCloudColorDef> (points.size(), PointCloudColorDef(255, 255, 255));
+        colors = bvector<PointCloudColorDef> (points.size(), PointCloudColorDef(0, 0xff, 0));
 
     Json::Value     featureTable;
     bool            rgbPresent = colors.size() == points.size();
@@ -261,7 +261,8 @@ void Root::LoadRootTile(DRange3dCR tileRange)
     {
     m_rootTile = Tile::Create(*this, tileRange);
 
-#ifdef ASYNCH_ROOT
+#define LOAD_ASYNCH_ROOT
+#ifdef LOAD_ASYNCH_ROOT
     // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
     auto result = _RequestTile(*m_rootTile, nullptr);
     result.wait();
