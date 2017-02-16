@@ -328,6 +328,16 @@
             </Files>
         </Bindings>
     </Part>
+
+    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaValidatorExe">
+                Delivery/SchemaValidator.exe
+                Delivery/SchemaValidator.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
     
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
@@ -353,13 +363,20 @@
     <ProductDirectoryList ListName="SchemaResourceGenerator">
         <ProductDirectory Name="SchemaResourceGeneratorExe"     Path=""/>
     </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaValidator">
+        <ProductDirectory Name="SchemaValidatorExe" Path=""/>
+    </ProductDirectoryList>    
+
     <Product Name="ECObjectsTools">
-        <SubPart    PartName="SchemaConverter" />
-        <SubPart    PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaConverter" />
+        <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaValidator"/>
         <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="ECObjects" />
         <Directories DirectoryListName="SchemaConverter" />
         <Directories DirectoryListName="SchemaResourceGenerator" />
-        <Directories DirectoryListName="ECObjects" />
+        <Directories DirectoryListName="SchemaValidator" />
     </Product>
     
     <ProductDirectoryList ListName="ECObjectsTested">
