@@ -2,13 +2,25 @@
 |
 |     $Source: geom/src/polyface/pf_vertexCollapse.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <bsibasegeomPCH.h>
 #include <Geom/cluster.h>
 #include "pf_halfEdgeArray.h"
+
+// Structure to record a vector of indices with one singleton.
+struct IndexVectorAndSingleton
+    {
+    MTGNodeId index0;
+    bvector<MTGNodeId> indices;
+    void Clear ()
+        {
+        index0 = MTGGraph::NullNodeId;
+        indices.clear ();
+        }
+    };
 
 static double ConstructTolerance (DRange3dCR range, double abstol, double rangeFractionTol)
     {
@@ -52,15 +64,21 @@ size_t PolyfaceHeader::DecimateByEdgeCollapse (double abstol, double rangeFracti
     m_point.ClearAndAppend (newXYZ);
     return num0 - num1;
     }
-
+#ifdef CompileDecimateByEdgeCollapseWithBoundaryControl
+// EDL Feb 15 2017
+// this method was implemented in a "half edge" data structure where half edges directly corresponded to readIndex.
+// It was tested minimally in that form.
+// Feb 2017 recoded with MTGFacets, but not debugged.  I think the cluster logic is decent, but the coordinate updates
+// in the polyface versus the MTGFacets are murky.
+// Abandoning in that state -- ifdefs in this source and in polyface.h
 struct EdgeCandidate
 {
-size_t m_readIndex;     // Read index for the half edge.
+MTGNodeId m_nodeId;     // Read index for the half edge.
 bool   m_isReversed:1;  // True if using this edge in the reverse sense.
-EdgeCandidate (size_t readIndex, bool isReversed)
-    : m_readIndex (readIndex), m_isReversed (isReversed)
+EdgeCandidate (MTGNodeId nodeId, bool isReversed)
+    : m_nodeId (nodeId), m_isReversed (isReversed)
     {}
-EdgeCandidate():m_readIndex(SIZE_MAX), m_isReversed (false){}
+EdgeCandidate():m_nodeId(MTGGraph::NullNodeId), m_isReversed (false){}
 };
 
 // coordinates, parents and strength of a vertex
@@ -68,33 +86,33 @@ struct ClusterData
 {
 DPoint3d m_xyz;
 size_t  m_parentClusterIndex;
-size_t  m_halfEdgeIndex;
+MTGNodeId  m_nodeId;
 double  m_a;
-Neighbor::MaskType m_masks;
+VuMask m_masks;
 size_t  m_newPointIndex;
-static const Neighbor::MaskType BoundaryVertexMask = 0x01;
-static const Neighbor::MaskType FixedVertexMask = 0x02;
-static const Neighbor::MaskType CollapsedVertexMask = 0x04;
+static const VuMask BoundaryVertexMask = 0x01;
+static const VuMask FixedVertexMask = 0x02;
+static const VuMask CollapsedVertexMask = 0x04;
 
-void SetMask (Neighbor::MaskType mask)
+void SetMask (VuMask mask)
     { m_masks |= mask;}
-bool HasMask (Neighbor::MaskType mask)
+bool HasMask (VuMask mask)
     { return 0 != (m_masks & mask);}
-uint32_t HasMask01 (Neighbor::MaskType mask)
+uint32_t HasMask01 (VuMask mask)
     { return (0 == (m_masks & mask)) ? 0 : 1;}
-void ClearMask (Neighbor::MaskType mask)
+void ClearMask (VuMask mask)
     { m_masks &= ~mask;}
 
-ClusterData (DPoint3dCR xyz, size_t halfEdgeIndex, size_t parent, double a)
+ClusterData (DPoint3dCR xyz, MTGNodeId nodeId, size_t parentClusterIndex, double a)
     : m_xyz(xyz),
-    m_halfEdgeIndex (halfEdgeIndex),
-    m_parentClusterIndex (parent),
+    m_nodeId (nodeId),
+    m_parentClusterIndex (parentClusterIndex),
     m_a (a),
     m_masks(0)
     {
     }
 
-ClusterData () : m_parentClusterIndex (0), m_halfEdgeIndex(SIZE_MAX), m_a (0.0) {}
+ClusterData () : m_parentClusterIndex (0), m_nodeId(MTGGraph::NullNodeId), m_a (0.0) {}
 
 };
 
@@ -141,42 +159,68 @@ void PackPoints (bvector<DPoint3d> &points)
 
 typedef ValidatedValue<ClusterData> ValidatedClusterData;
 
+// In the graph (which is in an MTGFacets)
+//<ul>
+//<li>Every node has readIndex as a label (part of the normal MTGFacets)
+//<li>Every node has a clusterIndex as a label.(access through m_clusterIndexLabel
+//</ul>
+//
+// As clusters are merged . . .
+// Child clusters point to parent (which has final coordinates)
 struct VertexClusterContext
 {
 PolyfaceHeaderR m_mesh;
-NeighborVector m_neighbors;
+MTGFacets m_facets;
+MTGGraphP m_graph;  // from m_facets.
+int m_clusterIndexLabel;
+int m_readIndexLabel;
+
 ClusterVector m_cluster;
 
 VertexClusterContext (PolyfaceHeaderR mesh)
     : m_mesh (mesh)
     {
+    m_graph = m_facets.GetGraphP ();
+    m_clusterIndexLabel = m_graph->DefineLabel (1001, MTG_LabelMask_VertexProperty,-1);
     }
 
-ValidatedDPoint3d ReadIndexToClusterXYZ (size_t readIndex)
+ValidatedDPoint3d NodeToClusterXYZ (MTGNodeId nodeId)
     {
-    size_t pointIndex = m_neighbors.PointIndex (readIndex);
-    if (pointIndex < m_cluster.size ())
-        return ValidatedDPoint3d (m_cluster[pointIndex].m_xyz, true);
+    int clusterId;
+    if (    m_graph->TryGetLabel (nodeId, m_clusterIndexLabel, clusterId))
+        return ClusterIndexToXYZ (clusterId);
     return ValidatedDPoint3d ();
     }
 
-ValidatedDPoint3d ClusterIndexToXYZ (size_t pointIndex)
+ValidatedDPoint3d ClusterIndexToXYZ (size_t clusterIndex)
     {
-    if (pointIndex < m_cluster.size ())
-        return ValidatedDPoint3d (m_cluster[pointIndex].m_xyz, true);
+    if (clusterIndex < m_cluster.size ())
+        return ValidatedDPoint3d (m_cluster[(size_t)clusterIndex].m_xyz, true);
     return ValidatedDPoint3d ();
     }
 
-
-ValidatedClusterData OriginalVertexData (size_t readIndex)
+size_t NodeToClusterIndex (MTGNodeId nodeId)
     {
-    auto originalIndex = OriginalVertexIndex (readIndex);
-    if (originalIndex.IsValid ())
+    int clusterId;
+    m_graph->TryGetLabel (nodeId, m_clusterIndexLabel, clusterId);
+    return clusterId >= 0 ? (size_t) clusterId : SIZE_MAX;
+    }
+
+size_t NodeToReadIndex (MTGNodeId nodeId)
+    {
+    int index;
+    m_graph->TryGetLabel (nodeId, m_readIndexLabel, index);
+    return index < SIZE_MAX ? (size_t) index : SIZE_MAX;
+    }
+
+bool IsValidClusterId (size_t clusterId) {return clusterId < m_cluster.size ();}
+
+ValidatedClusterData OriginalVertexData (MTGNodeId nodeId)
+    {
+    DPoint3d xyz;
+    if (m_facets.NodeToVertexCoordinates (nodeId, xyz))
         {
-        return ValidatedClusterData (
-                ClusterData (
-                        m_mesh.Point()[originalIndex],
-                        readIndex, 0, 0.0),
+        return ValidatedClusterData (ClusterData (xyz, nodeId, SIZE_MAX, 0.0),
                 true);
         }        
     return ValidatedClusterData ();
@@ -196,40 +240,29 @@ void CollapseCluster (size_t parentClusterIndex, size_t childClusterIndex, bool 
         }
     }
 
-size_t VertexIndex (size_t readIndex)
-    {
-    return m_neighbors.PointIndex (readIndex);
-    }
 
-ValidatedSize OriginalVertexIndex (size_t readIndex)
+void GetClusterIndices (EdgeCandidate const &edge, size_t &clusterIndex0, size_t &clusterIndex1)
     {
-    if (m_neighbors.IsValidReadIndex (readIndex))
-        return ValidatedSize (abs (m_mesh.PointIndex()[readIndex]) - 1, true);
-    return ValidatedSize (0, false);
-    }
-
-void GetVertexIndices (EdgeCandidate const &edge, size_t &pointIndex0, size_t &pointIndex1)
-    {
-    size_t edgeBase0, edgeBase1;
+    MTGNodeId edgeBase0, edgeBase1;
     if (edge.m_isReversed)
         {
-        edgeBase0 = m_neighbors.FSucc (edge.m_readIndex);
-        edgeBase1 = edge.m_readIndex;
+        edgeBase0 = m_graph->FSucc (edge.m_nodeId);
+        edgeBase1 = edge.m_nodeId;
         }
     else
         {
-        edgeBase0 = edge.m_readIndex;
-        edgeBase1 = m_neighbors.FSucc (edge.m_readIndex);
+        edgeBase0 = edge.m_nodeId;
+        edgeBase1 = m_graph->FSucc (edge.m_nodeId);
         }
     
-    pointIndex0 = m_neighbors.PointIndex (edgeBase0);    
-    pointIndex1 = m_neighbors.PointIndex (edgeBase1);
+    clusterIndex0 = NodeToClusterIndex (edgeBase0);    
+    clusterIndex1 = NodeToClusterIndex (edgeBase1);
     }
 
-ValidatedDSegment3d NewEdgeCoordinates (size_t index)
+ValidatedDSegment3d NewEdgeCoordinates (MTGNodeId nodeId)
     {
-    auto tail = ReadIndexToClusterXYZ (index);
-    auto head = ReadIndexToClusterXYZ (m_neighbors.FSucc (index));
+    auto tail = NodeToClusterXYZ (nodeId);
+    auto head = NodeToClusterXYZ (m_graph->FSucc (nodeId));
     if (tail.IsValid () && head.IsValid ())
         {
         return ValidatedDSegment3d (
@@ -240,10 +273,10 @@ ValidatedDSegment3d NewEdgeCoordinates (size_t index)
         return ValidatedDSegment3d ();
     }
 
-ValidatedDVec3d NewEdgeVector (size_t index)
+ValidatedDVec3d NewEdgeVector (MTGNodeId nodeId)
     {
-    auto tail = ReadIndexToClusterXYZ (index);
-    auto head = ReadIndexToClusterXYZ (m_neighbors.FSucc (index));
+    auto tail = NodeToClusterXYZ (nodeId);
+    auto head = NodeToClusterXYZ (m_graph->FSucc (nodeId));
     if (tail.IsValid () && head.IsValid ())
         {
         return ValidatedDVec3d (
@@ -254,7 +287,7 @@ ValidatedDVec3d NewEdgeVector (size_t index)
     }
 
 
-double SumInteriorDihedralAngles (NeighborVector::IndexVectorAndSingleton &edges)
+double SumInteriorDihedralAngles (IndexVectorAndSingleton &edges)
     {
 // The neighbord data seeded at iC has these half edges:
 // 
@@ -262,13 +295,13 @@ double SumInteriorDihedralAngles (NeighborVector::IndexVectorAndSingleton &edges
 //     iD       |       iA
 //--------------+-----------------
     double sum = 0.0;
-    for (size_t iC : edges.indices)
+    for (MTGNodeId iC : edges.indices)
         {
-        size_t iB  = m_neighbors.ManifoldMate (iC);
-        if (m_neighbors.IsValidReadIndex (iB))
+        if (!m_graph->HasMaskAt (iC, MTG_BOUNDARY_MASK))
             {
-            size_t iA = m_neighbors.FSucc (iB);
-            size_t iD = m_neighbors.FPred (iC);
+            MTGNodeId iB  = m_graph->EdgeMate (iC);
+            MTGNodeId iA = m_graph->FSucc (iB);
+            MTGNodeId iD = m_graph->FPred (iC);
             auto vectorD = NewEdgeVector (iD); // inbound
             auto vectorC = NewEdgeVector (iC); // outbound
             auto vectorA = NewEdgeVector (iA); // outbound
@@ -282,17 +315,44 @@ double SumInteriorDihedralAngles (NeighborVector::IndexVectorAndSingleton &edges
 
 MinimumValuePriorityQueue<size_t> m_clusterCandidates;
 MinimumValuePriorityQueue<EdgeCandidate> m_edgeCandidates;
-
-
-NeighborVector::IndexVectorAndSingleton m_vertexNeighborhoodA;  // for temporary use at non-recursive sites
-
-void AnnounceEdgeCandidate (size_t index, bool reversed)
+// Visit sectors at a node id.
+// report outbound edges in data vector.
+// report the (at most one) inbound as the singleton
+void GetNodesAroundVertex (MTGNodeId nodeId, IndexVectorAndSingleton &data)
     {
-    if (m_neighbors.IsValidReadIndex (index))
+    data.Clear ();
+    if (!m_graph->IsValidNodeId (nodeId))
+        return;
+    MTGNodeId nodeIdA = m_graph->FindMaskAroundVertex (nodeId, MTG_BOUNDARY_MASK);
+    if (m_graph->IsValidNodeId (nodeIdA))
+        {
+        data.index0 = m_graph->EdgeMate (nodeIdA);
+        MTGNodeId nodeIdB = nodeIdA;
+        do
+            {
+            nodeIdB = m_graph->VPred (nodeIdB); 
+            data.indices.push_back (nodeIdB);
+            } while (nodeIdB != nodeIdA && !m_graph->HasMaskAt (nodeIdB, MTG_BOUNDARY_MASK));
+        }
+    else
+        {
+        MTGARRAY_VERTEX_LOOP (nodeIdB, m_graph, nodeIdA)
+            {
+            data.indices.push_back (nodeIdB);
+            }
+        MTGARRAY_END_VERTEX_LOOP (nodeIdB, m_graph, nodeIdA)
+        }
+    }
+
+IndexVectorAndSingleton m_vertexNeighborhoodA;  // for temporary use at non-recursive sites
+
+void AnnounceEdgeCandidate (MTGNodeId index, bool reversed)
+    {
+    if (m_graph->IsValidNodeId (index))
         {
         EdgeCandidate candidate(index, reversed);
         size_t pointIndex0, pointIndex1;
-        GetVertexIndices (candidate, pointIndex0, pointIndex1);
+        GetClusterIndices (candidate, pointIndex0, pointIndex1);
         bool fixed0 = m_cluster[pointIndex0].HasMask (ClusterData::FixedVertexMask);
         bool fixed1 = m_cluster[pointIndex1].HasMask (ClusterData::FixedVertexMask);
         if (fixed0 && fixed1)
@@ -317,7 +377,7 @@ void FreezeCluster (size_t clusterIndex, bool addEdgeCandidates)
     m_cluster[clusterIndex].SetMask (ClusterData::FixedVertexMask);
     if (addEdgeCandidates)
         {
-        m_neighbors.GetAroundVertex (m_cluster[clusterIndex].m_halfEdgeIndex, m_vertexNeighborhoodA);
+        GetNodesAroundVertex (m_cluster[clusterIndex].m_nodeId, m_vertexNeighborhoodA);
         AnnounceEdgeCandidate (m_vertexNeighborhoodA.index0, true);
         for (auto index : m_vertexNeighborhoodA.indices)
             AnnounceEdgeCandidate (index, false);
@@ -351,25 +411,24 @@ size_t FreezeVerticesFromHeap (double value, bool addEdgeCandidates)
 void FixupPointAndPointIndexArrays ()
     {
     m_cluster.FixupAllParents ();  // Now all clusters know their real parent directly.
-    for (size_t i = 0; i < m_neighbors.size (); i++)
+    MTGARRAY_SET_LOOP (nodeId, m_graph)
         {
-        if (m_neighbors.IsValidReadIndex (i))
-            {
-            auto finalCluster = m_cluster.FixupParent (m_neighbors.PointIndex (i));
-            m_neighbors.SetPointIndex (i, finalCluster);
-            }
+        auto finalCluster = m_cluster.FixupParent (NodeToClusterIndex (nodeId));
+        m_facets.SetPointIndex (nodeId, finalCluster);
         }
+    MTGARRAY_END_SET_LOOP (nodeId, m_graph)
+
     m_cluster.PackPoints (m_mesh.Point ());
     // make the polyface PointIndex () entries go to the new array also ..
     bvector<int> &pointIndex = m_mesh.PointIndex ();
-    for (size_t i = 0; i < m_neighbors.size (); i++)
+    MTGARRAY_SET_LOOP_TESTED (nodeId, m_graph, !m_graph->HasMaskAt (nodeId, MTG_EXTERIOR_MASK))
         {
-        if (m_neighbors.IsValidReadIndex (i))
-            {
-            auto k = m_cluster.FixupParent (m_neighbors.PointIndex(i));
-            pointIndex[i] = 1 + (int)m_cluster[k].m_newPointIndex;  // one based !!!
-            }
+        auto k = m_cluster.FixupParent (NodeToClusterIndex (nodeId));
+        size_t readIndex = NodeToReadIndex (nodeId);
+        if (readIndex < pointIndex.size ())
+            pointIndex[readIndex] = 1 + (int)m_cluster[k].m_newPointIndex;  // one based !!!
         }
+    MTGARRAY_END_SET_LOOP_TESTED (nodeId, m_graph)
 
     }
 
@@ -381,7 +440,7 @@ size_t CollapseEdgesFromHeap (double collapseDistance, bool addEdgeCandidates)
     while (m_edgeCandidates.RemoveMin (candidate, originalDistance)) // hmm.. we'll continue evaluating.  Can we exit early when distances are large?
         {
         size_t pointIndex0, pointIndex1;
-        GetVertexIndices (candidate, pointIndex0, pointIndex1);
+        GetClusterIndices (candidate, pointIndex0, pointIndex1);
         bool fixed0 = m_cluster[pointIndex0].HasMask (ClusterData::FixedVertexMask);
         BeAssert (fixed0);
         bool fixed1 = m_cluster[pointIndex1].HasMask (ClusterData::FixedVertexMask);
@@ -412,7 +471,7 @@ size_t CollapseEdgesFromHeap (double collapseDistance, bool addEdgeCandidates)
     m_edgeCandidates.Clear ();
     return numCollapse;
     }
-double EvaluateVertexNeighborhood (NeighborVector::IndexVectorAndSingleton &nbd)
+double EvaluateVertexNeighborhood (IndexVectorAndSingleton &nbd)
     {
     static double boundaryVertexBaseValue = -10.0;
     static double interiorVertexBaseValue = -5.0;
@@ -422,12 +481,12 @@ double EvaluateVertexNeighborhood (NeighborVector::IndexVectorAndSingleton &nbd)
         return 0.0;
     double interiorSum = SumInteriorDihedralAngles (nbd);
 
-    if (m_neighbors.IsValidReadIndex (nbd.index0))
+    if (m_graph->IsValidNodeId (nbd.index0))
         {
         // this is a bounday vertex.
         // Its two indcident boundary half edges are:
-        size_t leftHalfEdge = nbd.index0;
-        size_t rightHalfEdge = nbd.indices.back ();
+        MTGNodeId leftHalfEdge = nbd.index0;
+        MTGNodeId rightHalfEdge = nbd.indices.back ();
         auto leftVector = NewEdgeVector (leftHalfEdge);
         auto rightVector = NewEdgeVector (rightHalfEdge);
         double exteriorAngle = 0.0;
@@ -440,67 +499,74 @@ double EvaluateVertexNeighborhood (NeighborVector::IndexVectorAndSingleton &nbd)
     return interiorVertexBaseValue + interiorSum * dihedralAngleScale;
     }
 
+void SetNeighborHoodMask (IndexVectorAndSingleton &nbd, MTGMask mask, bool setVector, bool setSingleton)
+    {
+    if (setVector)
+        for (auto nodeId : nbd.indices)
+            m_graph->SetMaskAt (nodeId, mask);
+    if (setSingleton)
+        m_graph->SetMaskAt (nbd.index0, mask);
+    }
+
 bool BuildMeshAndClusterHeap ()
     {
-    size_t num1, num2, numX;
-    if (!m_mesh.BuildNeighborVector (m_neighbors, num1, num2, numX)
-         || numX > 0
-         )
-         return false;
+    if (!PolyfaceToMTG_FromPolyfaceConnectivity (&m_facets, m_mesh))
+        return NULL;
+    if (!m_graph->TrySearchLabelTag (MTG_LABEL_TAG_POLYFACE_READINDEX, m_readIndexLabel))
+        return NULL;
 
-    NeighborVector::IndexVectorAndSingleton vertexNeighborhood;
-    auto visitMask = NeighborVector::s_maskInternalA;
-    m_neighbors.ClearMask (visitMask);
+    IndexVectorAndSingleton vertexNeighborhood;
+    auto visitMask = m_graph->GrabMask ();
+    m_graph->ClearMask (visitMask);
     size_t errors = 0;
     m_cluster.clear ();
     // At each distinct vertex of the mesh .... 
-    for (size_t i = 0; i < m_neighbors.size (); i++)
+    MTGMask excludeMask = visitMask | MTG_EXTERIOR_MASK;
+    MTGARRAY_SET_LOOP_TESTED (nodeId, m_graph, !m_graph->HasMaskAt (nodeId, excludeMask))
         {
-        if (m_neighbors.IsValidReadIndex (i) && !m_neighbors.HasMask (i, visitMask))
+        GetNodesAroundVertex (nodeId, vertexNeighborhood);
+        SetNeighborHoodMask (vertexNeighborhood, visitMask, true, false);
+        auto seedData = OriginalVertexData(nodeId);
+        if (!seedData.IsValid ())
+            errors++;
+        else
             {
-            m_neighbors.GetAroundVertex (i, vertexNeighborhood);
-            m_neighbors.SetMask (vertexNeighborhood, visitMask, true, false);
-            auto seedData = OriginalVertexData(i);
-            if (!seedData.IsValid ())
-                errors++;
-            else
+            // Create a newPoint[] for these coordinates.
+            // Index the vertex neighborhood back to this newPoint[]
+            size_t newClusterIndex = m_cluster.size ();
+            auto seedData1 = seedData.Value ();
+            seedData1.m_parentClusterIndex = newClusterIndex;
+            m_cluster.push_back (seedData1);
+            for (MTGNodeId edgeNode : vertexNeighborhood.indices)
                 {
-                // Create a newPoint[] for these coordinates.
-                // Index the vertex neighborhood back to this newPoint[]
-                size_t newClusterIndex = m_cluster.size ();
-                auto seedData1 = seedData.Value ();
-                seedData1.m_parentClusterIndex = newClusterIndex;
-                m_cluster.push_back (seedData1);
-                for (size_t k : vertexNeighborhood.indices)
+                auto data = OriginalVertexData (edgeNode);
+                if (!data.IsValid () || data.Value ().m_parentClusterIndex != data.Value ().m_parentClusterIndex)
+                    errors++;
+                else
                     {
-                    auto data = OriginalVertexData (k);
-                    if (!data.IsValid () || data.Value ().m_parentClusterIndex != data.Value ().m_parentClusterIndex)
-                        errors++;
-                    else
-                        {
-                        m_neighbors.SetPointIndex (k, newClusterIndex);
-                        }
+                    m_facets.SetPointIndex (edgeNode, newClusterIndex);
                     }
                 }
             }
         }
+    MTGARRAY_END_SET_LOOP_TESTED (nodeId, m_graph)
 
-    if (errors > 0)
-        return false;
-
-    m_clusterCandidates.Clear ();
-    m_neighbors.ClearMask (visitMask);
-    for (size_t i = 0; i < m_neighbors.size (); i++)
+    if (errors == 0)
         {
-        if (m_neighbors.IsValidReadIndex (i) && !m_neighbors.HasMask (i, visitMask))
+        m_clusterCandidates.Clear ();
+        m_graph->ClearMask (visitMask);
+
+        MTGARRAY_SET_LOOP_TESTED (nodeId, m_graph, !m_graph->HasMaskAt (nodeId, excludeMask))
             {
-            m_neighbors.SetMask (vertexNeighborhood, visitMask, true, false);
-            m_neighbors.GetAroundVertex (i, vertexNeighborhood);
+            GetNodesAroundVertex (nodeId, vertexNeighborhood);
+            SetNeighborHoodMask (vertexNeighborhood, visitMask, true, false);
             if (vertexNeighborhood.indices.size () == 0)
                 continue;
-            m_clusterCandidates.Insert (m_neighbors.PointIndex (i), EvaluateVertexNeighborhood (vertexNeighborhood));
+            m_clusterCandidates.Insert (nodeId, EvaluateVertexNeighborhood (vertexNeighborhood));
             }
+        MTGARRAY_END_SET_LOOP_TESTED (nodeId, m_graph)
         }
+    m_graph->DropMask (visitMask);
     // FINALLY READY TO FLY ....
     return errors == 0;
     }
@@ -537,6 +603,7 @@ size_t PolyfaceHeader::DecimateByEdgeCollapseWithBoundaryControl (double abstol,
         }
     return numCollapse;
     }
+#endif
 // copy data[i0] through data[i0+numCopy-1] to data[j0] onward.
 static void CopyIndices (bvector<int>&data, size_t i0, size_t i1, size_t j0)
     {

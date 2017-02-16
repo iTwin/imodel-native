@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_visitorSearch.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -22,22 +22,6 @@ size_t numExpected
 
     }
 
-
-TEST(Polyface,Manifold1)
-    {
-    int numEdge = 2;
-    double scale = 1.0;
-    // space mesh has edges with length (scale) ..
-    auto mesh = Mesh_XYGrid (numEdge, numEdge, scale * (double)numEdge, scale * (double)numEdge, false);
-    NeighborVector neighbors;
-    size_t num1, num2, num3;
-    if (Check::True (mesh->BuildNeighborVector (neighbors, num1, num2, num3)))
-        {
-        Check::Size (num1, (size_t)(4 * numEdge), "Boundary edges");
-        Check::Size (num2, (size_t)(2 * (numEdge-1) * numEdge), "Interior Edges");
-        Check::Size (0, num3, "NonManifoldEdges");
-        }
-    }
 
 // a write-once, read-many-time array of uv parameter values for use when searching for interior points
 bvector<DPoint2d> s_classifiedRay_testParameters

@@ -23,6 +23,47 @@ MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon (int uOrder, int vOrder,
     }
 
 
+
+MSBsplineSurfacePtr SurfaceBubbleWithMidsideWeights
+(
+double wMidSide,
+double wInterior
+)
+    {
+    bvector<DPoint3d>poles
+        {
+        DPoint3d::From (0,0,1),
+        DPoint3d::From (1,0,1.1),
+        DPoint3d::From (2,0,1),
+
+        DPoint3d::From (0,1,1.2),
+        DPoint3d::From (1,1,1.3),
+        DPoint3d::From (2,1,1.5),
+
+        DPoint3d::From (0,2,2),
+        DPoint3d::From (1,2,2.5),
+        DPoint3d::From (2,2,2)
+        };
+
+    bvector<double> weights
+        {
+        1, wMidSide, 1,
+        wMidSide, wInterior, wMidSide,
+        1, wMidSide, 1
+        };
+
+    return MSBsplineSurface::CreateFromPolesAndOrder
+        (
+        poles, &weights,
+        NULL, 3, 3, false,
+        NULL, 3, 3, false,
+        true                
+        );
+
+
+    }
+
+
 PolyfaceHeaderPtr PolyfaceWithSinusoidalGrid (size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, bool triangulated)
     {
     PolyfaceHeaderPtr mesh = triangulated ?

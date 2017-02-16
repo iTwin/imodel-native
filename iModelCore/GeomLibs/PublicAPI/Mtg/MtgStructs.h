@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Mtg/MtgStructs.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -794,6 +794,14 @@ typedef struct  rollingBallContext RollingBallContext;
             {if ((pGraph)->IsValidNodeId (index)){
 
 #define MTGARRAY_END_SET_LOOP(index,pGraph) }}}
+
+#define MTGARRAY_SET_LOOP_TESTED(index,pGraph,predicate) \
+        {MTGNodeId index = (MTGNodeId)((pGraph)->GetNodeIdCount ()); \
+        while (--index > -1)                \
+            {if ((pGraph)->IsValidNodeId (index) && predicate){
+
+#define MTGARRAY_END_SET_LOOP_TESTED(index,pGraph) }}}
+
 
 #define MTGARRAY_VERTEX_LOOP(index,pGraph,start) \
         {MTGNodeId index = start; if (index != MTG_NULL_NODEID) { do {

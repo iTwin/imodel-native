@@ -640,8 +640,6 @@ $(OUT_DIR)BlockedVector$(OUT_EXT)       : $(geomSrcPolyface)BlockedVector.cpp   
 
 $(OUT_DIR)pf_purgeDuplicates$(OUT_EXT)      : $(geomSrcPolyface)pf_purgeDuplicates.cpp         $(geomSrcPolyface)pf_halfEdgeArray.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)pf_neighbors$(OUT_EXT)      : $(geomSrcPolyface)pf_neighbors.cpp         $(geomSrcPolyface)pf_halfEdgeArray.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
 $(OUT_DIR)PolyfaceStitch$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceStitch.cpp         $(geomSrcPolyface)pf_halfEdgeArray.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)pf_vertexCollapse$(OUT_EXT)      : $(geomSrcPolyface)pf_vertexCollapse.cpp         $(geomSrcPolyface)pf_halfEdgeArray.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

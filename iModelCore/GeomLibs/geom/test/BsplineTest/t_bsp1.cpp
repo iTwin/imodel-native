@@ -338,3 +338,98 @@ TEST(bsiBezierDPoint4d,saturateKnotsInInterval)
     bool isNull;
     bsiBezierDPoint4d_saturateKnotsInInterval (points, knots, 4, isNull);
     }
+
+void SaveRectangle (DPoint3dCP xyz, int i0, int i1, int i2, int i3)
+    {
+    Check::SaveTransformed (bvector<DPoint3d>{xyz[i0], xyz[i1], xyz[i2], xyz[i3], xyz[i0]});
+    }
+
+void SaveBox (TransformCR transform, DRange3dCR localRange)
+    {
+    DPoint3d corners[8];
+    localRange.Get8Corners (corners);
+    transform.Multiply (corners, corners, 8);
+    SaveRectangle (corners, 0,1,3,2);
+    SaveRectangle (corners, 4,5,7,6);
+    SaveRectangle (corners, 0,2,6,4);
+    SaveRectangle (corners, 1,5,7,3);
+    }
+bool IsFinalPointOfStringer (DPoint3dDoubleUVArrays const &data, size_t i)
+    {
+    if (i + 1 >=data.m_f.size ())
+        return true;
+    if (data.m_f[i] != data.m_f[i + 1])   // patch break 
+        return true;
+    if (data.m_uv[i].x > data.m_uv[i + 1].x)   // u jumps back down to next stringer.
+        return true;
+    return false;
+    }
+
+void SavePointsFromPatches (DPoint3dDoubleUVArrays const &data)
+    {
+    bvector <DPoint3d> points;
+    for (size_t i = 0; i < data.m_xyz.size (); i++)
+        {
+        points.push_back (data.m_xyz[i]);
+        if (IsFinalPointOfStringer (data, i))
+            {
+            Check::SaveTransformed (points);
+            points.clear ();
+            }
+        }
+    }
+
+void testTightSurfaceExtents (MSBsplineSurfacePtr &surface)
+    {
+    DRange3d globalRange;
+    surface->GetPoleRange (globalRange);
+    double dX = globalRange.XLength () * 1.2;
+    double dY = globalRange.YLength () * 1.2;
+    SaveAndRestoreCheckTransform shifter (dX, 0, 0);
+    Transform cornerBox, localToWorld, worldToLocal;
+    DRange3d localRange;
+    DRange3d unitRange;
+    unitRange.low = DPoint3d::From (0,0,0);
+    unitRange.high = DPoint3d::From (1,1,1);
+    surface->TightPrincipalExtents (cornerBox, localToWorld, worldToLocal, localRange);
+    DPoint3dDoubleUVArrays cloud;
+    surface->EvaluatePoints (cloud);
+    Transform cornerBoxA;
+    Check::SaveTransformed (surface);
+    if (surface->GetPrincipalExtents (cornerBoxA))
+        SaveBox (cornerBoxA, unitRange);
+
+    Check::Shift (0, dY ,0);
+    SavePointsFromPatches (cloud);
+    SaveBox (cornerBox, unitRange);
+
+
+    Check::Shift (0, dY ,0);
+    SavePointsFromPatches (cloud);
+    SaveBox (localToWorld, localRange);
+    }
+
+TEST(MSBsplineSurface,TightPrincipalExtents)
+    {
+    double q0I = -0.3;
+    double q0J = 0.5;
+    int order = 4;
+    int numX = 11;
+    int numY = 12;
+    auto surface = SurfaceWithSinusoidalControlPolygon (order, order, numX, numY, q0I, 0.522, q0J, 0.98);
+    testTightSurfaceExtents (surface);
+    Transform rotate = YawPitchRollAngles::FromDegrees (12.0, 40.0, -20.0).ToTransform (DPoint3d::From (3,4,0));
+    surface->TransformSurface (rotate);
+    testTightSurfaceExtents (surface);
+    Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtents");
+    }
+
+TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
+    {
+    auto surface = SurfaceBubbleWithMidsideWeights ();
+    testTightSurfaceExtents (surface);
+    Transform rotate = YawPitchRollAngles::FromDegrees (12.0, 40.0, -20.0).ToTransform (DPoint3d::From (1,1,0));
+    surface->TransformSurface (rotate);
+    testTightSurfaceExtents (surface);
+    Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtentsWeighted");
+    }

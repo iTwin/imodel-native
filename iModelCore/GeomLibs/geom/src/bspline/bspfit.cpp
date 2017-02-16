@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspfit.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -737,7 +737,7 @@ Transform const         *transformP         /* => transform */
         mdlTMatrix_transformPointArray (outCurveP->fitPoints, transformP, outCurveP->params.numPoints);
 
         // we can handle tangents explicitly
-        if (!outCurveP->params.isPeriodic && !bsiRotMatrix_isUniformScale (&matrix, NULL))
+        if (!outCurveP->params.isPeriodic)
             {
             mdlRMatrix_multiplyPoint (&outCurveP->startTangent, &matrix);
             mdlRMatrix_multiplyPoint (&outCurveP->endTangent, &matrix);

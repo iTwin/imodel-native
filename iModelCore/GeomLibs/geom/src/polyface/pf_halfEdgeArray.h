@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_halfEdgeArray.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This .h file is to be included in polyface files  . . . not independently.
@@ -478,100 +478,6 @@ bool MarkTopologicalBoundariesVisible (PolyfaceHeaderR mesh, bool preservePriorV
             }            
         }
     return numChanged > 0;
-    }
-
-//! Assume array is sorted.
-void BuildNeighborVector
-(
-PolyfaceHeaderR mesh,
-NeighborVector &neighbors,
-size_t &numSimpleBoundary,
-size_t &numSimpleInterior,
-size_t &numOther
-)
-    {
-    numSimpleBoundary = 0;
-    numSimpleInterior = 0;
-    numOther = 0;
-    neighbors.clear ();
-    size_t numHalfEdge = size ();
-    bvector<int> &pointIndex = mesh.PointIndex ();
-    size_t numIndex = pointIndex.size ();
-
-    for (size_t i = 0; i < numIndex; i++)
-        neighbors.push_back (Neighbor());
-
-    uint32_t numPerFace = mesh.GetNumPerFace ();
-    // build face successor array by simple forward walk ...
-    if (numPerFace < 2)
-        {
-        // 0-terminated blocks ..
-        for (size_t i0 = 0; i0 < numIndex; )
-            {
-            size_t i1 = i0 + 1;
-            // Delimit facet from (i0..i1)
-            for (;i1 < numIndex && pointIndex[i1] != 0;)
-                i1++;
-            if (i1 > i0)
-                {
-                for (size_t i = i0; i + 1 < i1; i++)
-                    {
-                    neighbors[i].m_fsucc = i + 1;
-                    neighbors[i+1].m_fpred = i;
-                    }
-                neighbors[i1-1].m_fsucc = i0;
-                neighbors[i0].m_fpred = i1 - 1;
-                }
-            i0 = i1 + 1;
-            }
-        }
-    else
-        {
-        for (size_t i0 = 0; i0 < numIndex; i0 += numPerFace)
-            {
-            size_t i1 = i0 + 1;
-            // Delimit facet from (i0..i1)  (Although it is fixed blocking, trailing 0 is still possible);
-            for (;i1 < i0 + numPerFace && i1 < numIndex && pointIndex[i1] != 0;)
-                i1++;
-            if (i1 > i0)
-                {
-                for (size_t i = i0; i + 1 < i1; i++)
-                    {
-                    neighbors[i].m_fsucc = i + 1;
-                    neighbors[i+1].m_fpred = i;
-                    }
-                neighbors[i1-1].m_fsucc = i0;
-                neighbors[i0].m_fpred = i1-1;
-                }
-            }
-        }
-    // string together all facets around edge.  Note that this does NOT do physical radial sorting for the excess-2 case.
-    for (size_t i0 = 0, numMatch = 0; i0 < numHalfEdge; i0 += numMatch)
-        {
-        numMatch = 1;
-        size_t i1 = i0 + 1;
-        for (; i1 < numHalfEdge && !cb_LessThan_LowVertexHighVertex (at(i0), at(i1)); i1++)
-            {
-            numMatch++;
-            }
-        if (i1 == i0 + 2 && at(i0).IsReversedMateOf (at(i0 + 1)))
-            {
-            numSimpleInterior++;
-            }
-        else if (i1 = i0 + 1)
-            numSimpleBoundary++;
-        else
-            numOther++;
-
-        neighbors[at(i1-1).m_readIndex].m_edgeMate = at(i0).m_readIndex;
-        for (size_t i = i0; i + 1 < i1; i++)
-            neighbors[at(i).m_readIndex].m_edgeMate = at(i+1).m_readIndex;
-
-        if (numMatch != 2)
-            for (size_t i = i0; i < i1; i++)
-                neighbors[at(i).m_readIndex].SetMask (NeighborVector::s_maskNonManifold);
-        }
-    return;
     }
 
 

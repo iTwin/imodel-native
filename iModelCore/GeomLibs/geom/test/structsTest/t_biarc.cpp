@@ -46,3 +46,50 @@ TEST(Biarc,TEST0)
     testBiarc (DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), Angle::FromDegrees (-45.0), Angle::FromDegrees (45.0));
     Check::ClearGeometry ("Biarc.TEST0");
     }
+
+void testBiarcFamily (DPoint3dCR pointA0, Angle bearingA, DVec3dCR deltaA, size_t numA, DPoint3dCR pointB, Angle bearingB)
+    {
+    SaveAndRestoreCheckTransform shifter (5,0,0);
+    double a = 0.05 * pointA0.Distance (pointB);
+    auto unitB = DVec3d::From (bearingB.Cos (), bearingB.Sin ());
+    Check::SaveTransformed (bvector<DPoint3d> {pointB, pointB + a * unitB});
+    bvector<DPoint3d> breakpoints;
+    for (size_t i = 0; i < numA; i++)
+        {
+        auto pointA = pointA0 + (double)i * deltaA;
+        auto unitA = DVec3d::From (bearingA.Cos (), bearingA.Sin ());
+        Check::SaveTransformed (bvector<DPoint3d> {pointA, pointA - a * unitA});
+        DEllipse3d ellipseA, ellipseB;
+        if (DEllipse3d::Construct_Biarcs (ellipseA, ellipseB, pointA, unitA, pointB, unitB))
+            {
+            breakpoints.push_back (ellipseA.FractionToPoint (1.0));
+            auto cpA = ICurvePrimitive::CreateArc (ellipseA);
+            auto cpB = ICurvePrimitive::CreateArc (ellipseB);
+            Check::SaveTransformed (*cpA);
+            Check::SaveTransformed (*cpB);
+            }
+        }
+    Check::SaveTransformed (breakpoints);
+    }
+
+TEST(Biarc,TEST1)
+    {
+    testBiarcFamily
+            (
+            DPoint3d::From (0,0,0), Angle::FromDegrees (90), DVec3d::From (0,1,0), 10,
+            DPoint3d::From (2,10,0), Angle::FromDegrees (0)
+            );
+    testBiarcFamily
+            (
+            DPoint3d::From (0,0,0), Angle::FromDegrees (85), DVec3d::From (0,1,0), 10,
+            DPoint3d::From (2,10,0), Angle::FromDegrees (0)
+            );
+
+    testBiarcFamily
+            (
+            DPoint3d::From (0,0,0), Angle::FromDegrees (60), DVec3d::From (0,1,0), 10,
+            DPoint3d::From (5,5,0), Angle::FromDegrees (0)
+            );
+
+    Check::ClearGeometry ("Biarc.TEST1");
+    }
