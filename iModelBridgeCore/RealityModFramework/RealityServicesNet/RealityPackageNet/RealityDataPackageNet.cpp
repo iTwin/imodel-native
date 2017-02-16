@@ -44,69 +44,80 @@ UriPtr ManagedToNativeUri2(UriNet^ managedUri)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ managedSource)
+//RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ managedSource)
+//    {
+//    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
+//
+//    Utf8String nativeType;
+//    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
+//
+//    // Create source with required parameters.
+//    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
+//
+//    // Id.
+//    Utf8String nativeId;
+//    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
+//    nativeSource->SetId(nativeId.c_str());
+//
+//    // Copyright.
+//    Utf8String nativeCopyright;
+//    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
+//    nativeSource->SetCopyright(nativeCopyright.c_str());
+//
+//    // Term of use.
+//    Utf8String nativeTermOfUse;
+//    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
+//    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+//
+//    // Provider.
+//    Utf8String nativeProvider;
+//    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
+//    nativeSource->SetProvider(nativeProvider.c_str());
+//
+//    // Size.
+//    nativeSource->SetSize(managedSource->GetSize());
+//
+//    // Metadata.
+//    Utf8String nativeMetadata;
+//    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
+//    nativeSource->SetMetadata(nativeMetadata.c_str());
+//
+//    // Metadata type.
+//    Utf8String nativeMetadataType;
+//    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
+//    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+//
+//    // GeoCS.
+//    Utf8String nativeGeoCS;
+//    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
+//    nativeSource->SetGeoCS(nativeGeoCS.c_str());
+//
+//    // No data value.
+//    Utf8String nativeNoDataValue;
+//    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
+//    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
+//
+//    // Streamed
+//    nativeSource->SetStreamed(managedSource->IsStreamed());
+//
+//    // Sister files.
+//    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
+//    bvector<UriPtr> nativeSisterFiles;
+//    for each (UriNet^ managedSisterFile in managedSisterFiles)
+//    {
+//        nativeSisterFiles.push_back(ManagedToNativeUri2(managedSisterFile));
+//    }
+//    nativeSource->SetSisterFiles(nativeSisterFiles);
+//
+//    return nativeSource;
+//    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Christian.Tye-gingras         	02/2017
+//-------------------------------------------------------------------------------------
+RealityDataSourcePtr ManagedToNativeRealityDataSource3(RealityDataSourceNet^ managedSource)
     {
-    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
-
-    Utf8String nativeType;
-    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
-
-    // Create source with required parameters.
-    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
-
-    // Id.
-    Utf8String nativeId;
-    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
-    nativeSource->SetId(nativeId.c_str());
-
-    // Copyright.
-    Utf8String nativeCopyright;
-    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
-    nativeSource->SetCopyright(nativeCopyright.c_str());
-
-    // Term of use.
-    Utf8String nativeTermOfUse;
-    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
-    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
-
-    // Provider.
-    Utf8String nativeProvider;
-    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
-    nativeSource->SetProvider(nativeProvider.c_str());
-
-    // Size.
-    nativeSource->SetSize(managedSource->GetSize());
-
-    // Metadata.
-    Utf8String nativeMetadata;
-    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
-    nativeSource->SetMetadata(nativeMetadata.c_str());
-
-    // Metadata type.
-    Utf8String nativeMetadataType;
-    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
-    nativeSource->SetMetadataType(nativeMetadataType.c_str());
-
-    // GeoCS.
-    Utf8String nativeGeoCS;
-    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
-    nativeSource->SetGeoCS(nativeGeoCS.c_str());
-
-    // No data value.
-    Utf8String nativeNoDataValue;
-    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
-    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
-
-    // Sister files.
-    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
-    bvector<UriPtr> nativeSisterFiles;
-    for each (UriNet^ managedSisterFile in managedSisterFiles)
-    {
-        nativeSisterFiles.push_back(ManagedToNativeUri2(managedSisterFile));
-    }
-    nativeSource->SetSisterFiles(nativeSisterFiles);
-
-    return nativeSource;
+    return *(RealityDataSourcePtr*) managedSource->GetPeer().ToPointer();
     }
 
 //-------------------------------------------------------------------------------------
@@ -175,10 +186,10 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
     nativeSource->SetSisterFiles(nativeSisterFiles);
 
     // Multiband source specific info.
-    nativeSource->SetRedBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
-    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource2(managedSource->GetGreenBand()));
-    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource2(managedSource->GetBlueBand()));
-    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource2(managedSource->GetPanchromaticBand()));
+    nativeSource->SetRedBand(*ManagedToNativeRealityDataSource3(managedSource->GetRedBand()));
+    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource3(managedSource->GetGreenBand()));
+    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource3(managedSource->GetBlueBand()));
+    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource3(managedSource->GetPanchromaticBand()));
 
     return nativeSource;
     }
@@ -198,7 +209,7 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
         }
     else
         {
-        pData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
+        pData = ImageryData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), NULL);
         }
 
     // Set basic members.
@@ -240,7 +251,7 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
             }        
         }    
 
@@ -262,7 +273,7 @@ ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
         }
     else
         {
-        pData = ModelData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+        pData = ModelData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
@@ -288,7 +299,7 @@ ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -310,7 +321,7 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
         }
     else
         {
-        pData = PinnedData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), 0, 0);
+        pData = PinnedData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), 0, 0);
         }
 
     // Set basic members.
@@ -354,7 +365,7 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -376,7 +387,7 @@ TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
         }
     else
         {
-        pData = TerrainData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+        pData = TerrainData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
@@ -402,7 +413,7 @@ TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
             }
         }
 

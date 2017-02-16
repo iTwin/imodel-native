@@ -97,10 +97,26 @@ void WSGRequest::RefreshToken()
     m_token.append(charToken);
     }
 
-Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file) const
+Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
     {
-    //CURLcode result = performCurl(wsgRequest, returnJsonString);
+    result = 0;
+    return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
+    }
 
+Utf8String WSGRequest::PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+    {
+    result = 1;
+    return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
+    }
+
+Utf8String WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+    {
+    result = 2;
+    return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
+    }
+
+Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+    {
     auto curl = curl_easy_init();
     if (nullptr == curl)
         {
@@ -119,7 +135,8 @@ Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int
     bvector<Utf8String> wsgHeaders = wsgRequest.GetRequestHeader();
     for (Utf8String header : wsgHeaders)
         headers = curl_slist_append(headers, header.c_str());
-    headers = curl_slist_append(headers, m_token.c_str());
+    if(result != 2)
+        headers = curl_slist_append(headers, m_token.c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 
@@ -130,7 +147,6 @@ Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
 
     Utf8StringP curlString = new Utf8String();
-    bool isData = false;
     if (file != nullptr)
         {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
@@ -138,11 +154,10 @@ Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int
         }
     else if (result == 0)
         {
-        isData = true;
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, curlString);
         }
-    else
+    else if (result == 1)
         {
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, curlString);
@@ -154,15 +169,17 @@ Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int
     result = (int)curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
-    if (CURLE_OK != result)
+    Utf8String returnString = *curlString;
+    if (returnString.Contains("Token is not valid") && retry)
         {
-        return *curlString;
+        WSGRequest::GetInstance().RefreshToken();
+        return WSGRequest::GetInstance().PerformRequest(wsgRequest, result, verifyPeer, file, false);
         }
 
-    return *curlString;
+    return returnString;
     }
 
-WSGURL::WSGURL(Utf8String url)
+WSGURL::WSGURL(Utf8String url) : m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
     {}
 
 WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
@@ -220,13 +237,13 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         m_navString = jsonObject["instanceId"].asCString();
     if(jsonObject.isMember("properties"))
         {
-        if (jsonObject["properties"].isMember("Key_TypeSystem"))
+        if (jsonObject["properties"].isMember("Key_TypeSystem") && !jsonObject["properties"]["Key_TypeSystem"].isNull())
             m_typeSystem = jsonObject["properties"]["Key_TypeSystem"].asCString();
-        if (jsonObject["properties"].isMember("Key_SchemaName"))
+        if (jsonObject["properties"].isMember("Key_SchemaName") && !jsonObject["properties"]["Key_SchemaName"].isNull())
             m_schemaName = jsonObject["properties"]["Key_SchemaName"].asCString();
-        if (jsonObject["properties"].isMember("Key_ClassName"))
+        if (jsonObject["properties"].isMember("Key_ClassName") && !jsonObject["properties"]["Key_ClassName"].isNull())
             m_className = jsonObject["properties"]["Key_ClassName"].asCString();
-        if (jsonObject["properties"].isMember("Key_InstanceId"))
+        if (jsonObject["properties"].isMember("Key_InstanceId") && !jsonObject["properties"]["Key_InstanceId"].isNull())
             m_instanceId = jsonObject["properties"]["Key_InstanceId"].asCString();
         }
     if(m_rootNode.length() == 0)
@@ -471,7 +488,7 @@ Utf8String WSGServer::GetVersion() const
 
     int status = 1;
 
-    Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
+    Utf8String returnString = WSGRequest::GetInstance().PerformHeaderRequest(wsgurl, status, m_verifyPeer);
 
     if (status != CURLE_OK)
         return "";

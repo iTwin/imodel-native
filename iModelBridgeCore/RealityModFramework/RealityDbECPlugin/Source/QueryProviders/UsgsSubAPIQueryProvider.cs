@@ -48,7 +48,7 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
         /// <param name="schema">The schema of the ECPlugin</param>
         public UsgsSubAPIQueryProvider(ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema)
-            : base(query, querySettings, connectionString, schema, DataSource.USGS)
+            : base(query, querySettings, connectionString, schema, DataSource.USGS, true)
             {
             m_usgsDataFetcher = new USGSDataFetcher(query);
             }

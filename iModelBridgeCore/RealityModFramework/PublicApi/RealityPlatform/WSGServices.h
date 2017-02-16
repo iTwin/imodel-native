@@ -376,14 +376,20 @@ private:
     Utf8String m_token;
     BeFileName m_certificatePath;
 
+    Utf8String _PerformRequest(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();
     REALITYDATAPLATFORM_EXPORT void RefreshToken();
     WSGRequest();
 
+    REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
+    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
+
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string. If a FILE is provided, the result will be written to a file
-    REALITYDATAPLATFORM_EXPORT  Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
     };
 
 

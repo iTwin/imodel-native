@@ -42,7 +42,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_id);
     }
 
-void RealityDataProjectRelationshipByIdRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServer();
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -101,9 +101,9 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     url.append(RealityDataService::GetWSGProtocol());
     url.append("/Repositories/");
     url.append(RealityDataService::GetRepoName());
-    m_httpRequestString.append("/");
-    m_httpRequestString.append(RealityDataService::GetSchemaName());
-    m_httpRequestString.append("/Document/");
+    url.append("/");
+    url.append(RealityDataService::GetSchemaName());
+    url.append("/Document/");
     url.append(m_id);
     url.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true ");
     m_allowAzureRedirection = false;
@@ -111,7 +111,8 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     WSGURL wsgurl = WSGURL(url);
 
     int status = 0;
-    Utf8String jsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status);
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    Utf8String jsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, RealityDataService::GetVerifyPeer());
 
     Utf8String AzureUrl = "";
 
@@ -120,10 +121,10 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
         return AzureUrl;
 
     for (auto instance : instances["instances"])
-    {
-        if (instance.isMember("properties") && instance["properties"].isMember("Url"))
+        {
+        if (instance.isMember("properties") && instance["properties"].isMember("Url") && !instance["properties"]["Url"].isNull())
             AzureUrl = instance["properties"]["Url"].asCString();
-    }
+        }
 
     if(AzureUrl.length() > 0)
         m_allowAzureRedirection = true;
@@ -223,8 +224,9 @@ Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uin
 
 Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     {
-    Utf8String filter = "DocumentOwners-forward-User.*";
+    Utf8String filter = "OwnedBy+eq+'";
     filter.append(owner);
+    filter.append("'");
     return filter;
     }
 
@@ -232,7 +234,7 @@ Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, Date
     {
     Utf8String filter = "CreatedTimestamp+ge+'";
     filter.append(minDate.ToString());
-    filter.append("'&CreatedTimestamp+le+'");
+    filter.append("'+and+CreatedTimestamp+le+'");
     filter.append(maxDate.ToString());
     filter.append("'");
 
@@ -243,7 +245,7 @@ Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, 
     {
     Utf8String filter = "ModifiedTimestamp+ge+'";
     filter.append(minDate.ToString());
-    filter.append("'&ModifiedTimestamp+le+'");
+    filter.append("'+and+ModifiedTimestamp+le+'");
     filter.append(maxDate.ToString());
     filter.append("'");
 
@@ -266,7 +268,7 @@ Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double re
     char buf[32];
     sprintf(buf, "%f", resMin);
     filter.append(buf);
-    filter.append("'&ResolutionInMeters+le+'");
+    filter.append("'+and+ResolutionInMeters+le+'");
     sprintf(buf, "%f", resMax);
     filter.append(buf);
     filter.append("'");
@@ -280,7 +282,7 @@ Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double
     char buf[32];
     sprintf(buf, "%f", accuracyMin);
     filter.append(buf);
-    filter.append("'&AccuracyInMeters+le+'");
+    filter.append("'+and+AccuracyInMeters+le+'");
     sprintf(buf, "%f", accuracyMax);
     filter.append(buf);
     filter.append("'");
@@ -290,9 +292,9 @@ Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double
 
 Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
     {
-    Utf8String filter = "Type+in+{";
+    Utf8String filter = "Type+eq+'";
     filter.append(types);
-    filter.append("}");
+    filter.append("'");
     return filter;
     }
 
@@ -306,33 +308,33 @@ Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     }
 
 
-Utf8String RealityDataFilterCreator::GroupFilters(bvector<Utf8String> filters)
+Utf8String RealityDataFilterCreator::GroupFiltersAND(bvector<Utf8String> filters)
     {
-    Utf8String filter = "(";
+    Utf8String filter = "";//"(";
     filter.append(filters[0]);
     for(int i = 1; i < filters.size(); i++)
         {
-        filter.append("&");
+        filter.append("+and+");
         filter.append(filters[i]);
         }
 
-    filter.append(")");
+    //filter.append(")");
     return filter;
     }
 
-Utf8String RealityDataFilterCreator::GroupAlternativeFilters(bvector<Utf8String> filters)
-{
-    Utf8String filter = "(";
+Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
+    {
+    Utf8String filter = "";//"(";
     filter.append(filters[0]);
     for (int i = 1; i < filters.size(); i++)
-    {
-        filter.append("|");
+        {
+        filter.append("+or+");
         filter.append(filters[i]);
-    }
+        }
 
-    filter.append(")");
+    //filter.append(")");
     return filter;
-}
+    }
 
 
 Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityDataService::GetServer(); }
@@ -344,6 +346,9 @@ Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataServ
 
 void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
+    bool hasFilter = m_filter.length() > 0;
+    bool hasOrder = m_order.length() > 0;
+
     m_serverName = RealityDataService::GetServer();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
@@ -352,10 +357,19 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(RealityDataService::GetRepoName());
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetSchemaName());
-    m_httpRequestString.append("/RealityData?");
-    m_httpRequestString.append(m_filter);
-    m_httpRequestString.append(m_order);
-    m_httpRequestString.append("'&$skip=");
+    m_httpRequestString.append("/RealityData");
+    if(hasFilter || hasOrder)
+        m_httpRequestString.append("?");
+    if (hasFilter)
+        {
+        m_httpRequestString.append("$filter=");
+        m_httpRequestString.append(m_filter);
+        }
+    if(hasFilter && hasOrder)
+        m_httpRequestString.append("&");
+    if(hasOrder)
+        m_httpRequestString.append(m_order);
+    m_httpRequestString.append("&$skip=");
     Utf8P buf = new Utf8Char();
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
@@ -432,9 +446,9 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
         }
 
     if(ascending)
-        order.append(" asc");
+        order.append("+asc");
     else
-        order.append(" desc");
+        order.append("+desc");
 
     m_order = order;
     }
@@ -462,7 +476,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append(buf);
     }
 
-void RealityDataProjectRelationByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServer();
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -495,8 +509,11 @@ void RealityDataServiceUpload::SetRealityDataId(Utf8String realityDataId) { m_id
 
 Utf8String RealityDataService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
 Utf8String RealityDataService::s_realityDataWSGProtocol = "2.4";
-Utf8String RealityDataService::s_realityDataName = "IndexECPlugin-Server";
+Utf8String RealityDataService::s_realityDataRepoName = "IndexECPlugin-Server";
 Utf8String RealityDataService::s_realityDataSchemaName = "RealityModeling";
+
+int RealityDataService::s_verifyPeer = 0;
+Utf8String RealityDataService::s_realityDataCertificatePath = "";
 
 const Utf8String RealityDataService::s_ImageryKey = "Imagery";
 const Utf8String RealityDataService::s_TerrainKey = "Terrain";
@@ -505,8 +522,10 @@ const Utf8String RealityDataService::s_PinnedKey = "Pinned";
 
 Utf8StringCR RealityDataService::GetServer() { return s_realityDataServer; }
 Utf8StringCR RealityDataService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
-Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataName; }
+Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataRepoName; }
 Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaName; }
+const int RealityDataService::GetVerifyPeer() { return s_verifyPeer; }
+Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 
 bvector<SpatialEntityPtr> RealityDataService::Request(RealityDataPagedRequestCR request)
     {
@@ -547,9 +566,18 @@ RealityDataDocumentPtr RealityDataService::Request(RealityDataDocumentByIdReques
     return RealityDataDocument::Create(instances["instances"][0]);
     }
 
-bvector<Byte> RealityDataService::Request(RealityDataDocumentContentByIdRequestCR request)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequestR request, FILE* file)
     {
-    return bvector<Byte>();//TODO
+    int status = 0; 
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    Utf8String azureUrl = request.GetAzureRedirectionRequestUrl();
+    if (request.IsAzureRedirectionPossible())
+        {
+        request.SetAzureRedirectionUrlToContainer(azureUrl);
+        WSGRequest::GetInstance().PerformAzureRequest(request, status, RealityDataService::GetVerifyPeer(), file);
+        }
+    else
+        WSGRequest::GetInstance().PerformRequest(request, status, RealityDataService::GetVerifyPeer(), file);
     }
 
 RealityDataFolderPtr RealityDataService::Request(RealityDataFolderByIdRequestCR request)
@@ -578,10 +606,28 @@ bvector<SpatialEntityPtr> RealityDataService::Request(RealityDataListByEnterpris
     return entities;
     }
 
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(RealityDataProjectRelationByProjectIdPagedRequestCR request)
-    {   
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(RealityDataProjectRelationshipByProjectIdRequestCR request)
+{
     Utf8String jsonString;
     BentleyStatus status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+
+    BeAssert(status == BentleyStatus::SUCCESS);
+
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(jsonString, instances);
+
+    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+
+    for (auto instance : instances["instances"])
+        relations.push_back(RealityDataProjectRelationship::Create(instance));
+
+    return relations;
+}
+
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(RealityDataProjectRelationshipByProjectIdPagedRequestCR request)
+    {   
+    Utf8String jsonString;
+    BentleyStatus status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
     BeAssert(status == BentleyStatus::SUCCESS);
 
@@ -599,7 +645,8 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(RealityDa
 BentleyStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequestPtr request, Utf8StringR jsonResponse)
     {
     int status = 0;
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status);
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
     if((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
@@ -613,7 +660,8 @@ BentleyStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequestPtr 
 BentleyStatus RealityDataService::RequestToJSON(RealityDataUrlPtr request, Utf8StringR jsonResponse)
     {
     int status = 0;
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status);
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))

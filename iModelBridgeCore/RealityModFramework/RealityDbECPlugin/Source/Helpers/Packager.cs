@@ -154,7 +154,7 @@ namespace IndexECPlugin.Source.Helpers
 
             List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, m_coordinateSystem, major);
 
-            realityDataNetList.AddRange(SubAPIPackager(sender, connection, queryModule, subAPIRequestedEntities));
+            realityDataNetList.AddRange(SubAPIPackager(sender, connection, queryModule, subAPIRequestedEntities, major));
 
             //List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
             if ( m_osm )
@@ -249,6 +249,10 @@ namespace IndexECPlugin.Source.Helpers
             RelatedInstanceSelectCriteria multibandSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, multibandSourceClass), false);
 
             IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
+            
+            IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+            RelatedInstanceSelectCriteria serverRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, serverClass), false);
+            
             IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
             RelatedInstanceSelectCriteria wmsServerRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, wmsServerClass), false);
 
@@ -266,6 +270,7 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectedRelatedInstances.Add(wmsSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(multibandSourceRelCrit);
             wmsSourceRelCrit.SelectedRelatedInstances.Add(wmsServerRelCrit);
+            dataSourceRelCrit.SelectedRelatedInstances.Add(serverRelCrit);
 
             metadataRelCrit.SelectAllProperties = false;
             metadataRelCrit.SelectedProperties = new List<IECProperty>();
@@ -283,6 +288,7 @@ namespace IndexECPlugin.Source.Helpers
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "CoordinateSystem"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "LocationInCompound"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "SisterFiles"));
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Streamed"));
 
             multibandSourceRelCrit.SelectAllProperties = false;
             multibandSourceRelCrit.SelectedProperties = new List<IECProperty>();
@@ -309,6 +315,13 @@ namespace IndexECPlugin.Source.Helpers
             wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURLQuery"));
             wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Version"));
 
+            serverRelCrit.SelectAllProperties = false;
+            serverRelCrit.SelectedProperties = new List<IECProperty>();
+            serverRelCrit.SelectedProperties.Add(serverClass.First(prop => prop.Name == "LoginKey"));
+            serverRelCrit.SelectedProperties.Add(serverClass.First(prop => prop.Name == "LoginMethod"));
+            serverRelCrit.SelectedProperties.Add(serverClass.First(prop => prop.Name == "RegistrationPage"));
+            serverRelCrit.SelectedProperties.Add(serverClass.First(prop => prop.Name == "OrganisationPage"));
+
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
@@ -322,6 +335,15 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     throw new UserFriendlyException("At least one of the requested entities has an invalid identifier (Id).");
                     }
+
+                GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
+
+                if((major == 1) && (genericInfo.Streamed == true))
+                    {
+                    //We don't put streamed data in a v1 package
+                    continue;
+                    }
+
                 //IECRelationshipInstance firstWMSSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource");
                 if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
                     {
@@ -332,7 +354,7 @@ namespace IndexECPlugin.Source.Helpers
                         {
                         string dataset = (spatialEntity.GetPropertyValue("Dataset") == null || spatialEntity.GetPropertyValue("Dataset").IsNull) ? null : spatialEntity.GetPropertyValue("Dataset").StringValue;
 
-                        ImageryDataNet idn = ImageryDataNet.Create(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity), corners);
+                        ImageryDataNet idn = ImageryDataNet.Create(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity, genericInfo), corners);
                         idn.SetDataId(spatialEntity.InstanceId);
                         idn.SetDataName(spatialEntity["Name"].StringValue);
                         idn.SetDataset(dataset);
@@ -340,14 +362,12 @@ namespace IndexECPlugin.Source.Helpers
                         }
                     else
                         {
-                        RDNList.First(rdn => rdn.GetDataId() == spatialEntity.InstanceId).AddSource(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity));
+                        RDNList.First(rdn => rdn.GetDataId() == spatialEntity.InstanceId).AddSource(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity, genericInfo));
                         }
                     }
                 else if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "MultibandSource") )
                     {
                     //This is a multiband source
-
-                    GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
                     IECRelationshipInstance multibandSourceRel;
                     if ( requestedEntity.SpatialDataSourceID == null )
@@ -457,7 +477,6 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     //This is a generic source, not needing any special treatment.
 
-                    GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
                     if(genericInfo.ParameterizedURI)
                         {
                         SetParameterizedURL(genericInfo, m_selectedBBox, m_email, m_coordinateSystem);
@@ -531,6 +550,23 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 rdsn.SetSisterFiles(genericInfo.SisterFiles);
                 }
+            if(genericInfo.ServerLoginKey != null)
+                {
+                rdsn.SetServerLoginKey(genericInfo.ServerLoginKey);
+                }
+            if ( genericInfo.ServerLoginMethod != null )
+                {
+                rdsn.SetServerLoginMethod(genericInfo.ServerLoginMethod);
+                }
+            if ( genericInfo.ServerOrganisationPage != null )
+                {
+                rdsn.SetServerOrganisationPage(genericInfo.ServerOrganisationPage);
+                }
+            if ( genericInfo.ServerRegistrationPage != null )
+                {
+                rdsn.SetServerRegistrationPage(genericInfo.ServerRegistrationPage);
+                }
+            rdsn.SetStreamed(genericInfo.Streamed);
             }
 
         private static GenericInfo ExtractGenericInfo(IECInstance spatialEntity, RequestedEntity requestedEntity)
@@ -563,11 +599,16 @@ namespace IndexECPlugin.Source.Helpers
 
         IECInstance firstSpatialDataSource = dataSourceRel.Target;
 
+        IECRelationshipInstance serverRel = firstSpatialDataSource.GetRelationshipInstances().First(relServ => relServ.ClassDefinition.Name == "ServerToSpatialDataSource" &&
+                                                                                                               relServ.Source.ClassDefinition.Name == "Server");
+        IECInstance server = serverRel.Source;
+
         long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
         genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
         genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
         genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
         genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
+        genericInfo.Streamed = (firstSpatialDataSource.GetPropertyValue("Streamed") == null || firstSpatialDataSource.GetPropertyValue("Streamed").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("Streamed").NativeValue;
         genericInfo.Copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
         genericInfo.TermsOfUse = (firstMetadata.GetPropertyValue("TermsOfUse") == null || firstMetadata.GetPropertyValue("TermsOfUse").IsNull) ? null : firstMetadata.GetPropertyValue("TermsOfUse").StringValue;
         genericInfo.Provider = (spatialEntity.GetPropertyValue("DataProvider") == null || spatialEntity.GetPropertyValue("DataProvider").IsNull) ? null : spatialEntity.GetPropertyValue("DataProvider").StringValue;
@@ -581,6 +622,14 @@ namespace IndexECPlugin.Source.Helpers
         genericInfo.Classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
         genericInfo.Metadata = (firstMetadata.GetPropertyValue("MetadataURL") == null || firstMetadata.GetPropertyValue("MetadataURL").IsNull) ? null : firstMetadata.GetPropertyValue("MetadataURL").StringValue;
         genericInfo.Dataset = (spatialEntity.GetPropertyValue("Dataset") == null || spatialEntity.GetPropertyValue("Dataset").IsNull) ? null : spatialEntity.GetPropertyValue("Dataset").StringValue;
+        if(server != null)
+            {
+            genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginKey") == null || server.GetPropertyValue("LoginKey").IsNull) ? null : server.GetPropertyValue("LoginKey").StringValue;
+            genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginMethod") == null || server.GetPropertyValue("LoginMethod").IsNull) ? null : server.GetPropertyValue("LoginMethod").StringValue;
+            genericInfo.ServerLoginKey = (server.GetPropertyValue("RegistrationPage") == null || server.GetPropertyValue("RegistrationPage").IsNull) ? null : server.GetPropertyValue("RegistrationPage").StringValue;
+            genericInfo.ServerLoginKey = (server.GetPropertyValue("OrganisationPage") == null || server.GetPropertyValue("OrganisationPage").IsNull) ? null : server.GetPropertyValue("OrganisationPage").StringValue;
+            }
+
 
         string sisterFilesString = (firstSpatialDataSource.GetPropertyValue("SisterFiles") == null || firstSpatialDataSource.GetPropertyValue("SisterFiles").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("SisterFiles").StringValue;
         if ( sisterFilesString != null )
@@ -623,7 +672,7 @@ namespace IndexECPlugin.Source.Helpers
         //    throw new NotImplementedException();
         //    }
 
-        private static WmsDataSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, RequestedEntity requestedEntity)
+        private static WmsDataSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, RequestedEntity requestedEntity, GenericInfo genericInfo)
             {
             IECRelationshipInstance wmsSourceRel;
 
@@ -719,8 +768,6 @@ namespace IndexECPlugin.Source.Helpers
             wmsMapSettings.SetFormat(mapInfo.SelectedFormat);
             wmsMapSettings.SetVendorSpecific(vendorSpecific);
             wmsMapSettings.SetTransparency(true);
-
-            GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
             WmsDataSourceNet wdsn = WmsDataSourceNet.Create(genericInfo.URI);
 
@@ -824,7 +871,7 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private List<RealityDataNet> SubAPIPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities)
+        private List<RealityDataNet> SubAPIPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities, int major)
             {
             List<RealityDataNet> usgsSourceNetList = new List<RealityDataNet>();
 
@@ -843,10 +890,20 @@ namespace IndexECPlugin.Source.Helpers
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
+            IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
+            IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+            RelatedInstanceSelectCriteria serverRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, serverClass), true);
+
+
             ECQuery query = new ECQuery(spatialentityClass);
             query.SelectClause.SelectAllProperties = true;
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
+            dataSourceRelCrit.SelectedRelatedInstances.Add(serverRelCrit);
+
+            dataSourceRelCrit.SelectAllProperties = true;
+            metadataRelCrit.SelectAllProperties = true;
+            serverRelCrit.SelectAllProperties = true;
 
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
@@ -860,6 +917,12 @@ namespace IndexECPlugin.Source.Helpers
                 //IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
                 GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
+
+                if((major == 1) && (genericInfo.Streamed == true))
+                    {
+                    //We don't put streamed data in a v1 package
+                    continue;
+                    }
 
                 RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 

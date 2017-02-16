@@ -128,6 +128,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDataServiceExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -161,6 +171,7 @@
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="WSGServicesExample"/>
+        <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
@@ -186,8 +197,8 @@
         </Bindings>
     </Part>
     
-    <!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64"> -->
-	<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
+    <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64">
+	<!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">-->
 	    <SubPart PartName="FeatureTrackingNuGetPackages"/>
     	<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />

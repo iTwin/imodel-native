@@ -704,9 +704,9 @@ namespace IndexECPlugin.Source
 
             try
                 {
-                string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+                //string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
 
-                using ( var reader = XmlReader.Create(new StringReader(serializedToken)) )
+                using ( var reader = XmlReader.Create(new StringReader(token)) )
                     {
                     var bootstrapToken = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers.ReadToken(reader);
                     SecurityTokenHandler handler = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers[bootstrapToken];
@@ -828,9 +828,9 @@ namespace IndexECPlugin.Source
                 {
                 //if on connect environment use this
                 string token = connection.ConnectionInfo.GetField("Token").Value;
-                string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+                //string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
                 var xml = new XmlDocument();
-                xml.LoadXml(serializedToken);
+                xml.LoadXml(token);
                 var nsmgr = new XmlNamespaceManager(xml.NameTable);
                 nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
 

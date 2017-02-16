@@ -17,9 +17,9 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
     {
     if (jsonInstance.isMember("properties"))
         {
-        if (jsonInstance["properties"].isMember("RealityDataId"))
+        if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
             m_realityDataId = jsonInstance["properties"]["RealityDataId"].asCString();
-        if (jsonInstance["properties"].isMember("ProjectId"))
+        if (jsonInstance["properties"].isMember("ProjectId") && !jsonInstance["properties"]["ProjectId"].isNull())
             m_projectId = jsonInstance["properties"]["ProjectId"].asCString();
         }
     }
@@ -33,21 +33,21 @@ RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
         {
-        if (jsonInstance["properties"].isMember("ContainerName"))
+        if (jsonInstance["properties"].isMember("ContainerName") && !jsonInstance["properties"]["ContainerName"].isNull())
             m_containerName = jsonInstance["properties"]["ContainerName"].asCString();
-        if (jsonInstance["properties"].isMember("Name"))
+        if (jsonInstance["properties"].isMember("Name") && !jsonInstance["properties"]["Name"].isNull())
             m_name = jsonInstance["properties"]["Name"].asCString(); 
-        if (jsonInstance["properties"].isMember("Id"))
+        if (jsonInstance["properties"].isMember("Id") && !jsonInstance["properties"]["Id"].isNull())
             m_id = jsonInstance["properties"]["Id"].asCString(); 
-        if (jsonInstance["properties"].isMember("FolderId"))
+        if (jsonInstance["properties"].isMember("FolderId") && !jsonInstance["properties"]["FolderId"].isNull())
             m_folderId = jsonInstance["properties"]["FolderId"].asCString(); 
-        if (jsonInstance["properties"].isMember("AccessUrl"))
+        if (jsonInstance["properties"].isMember("AccessUrl") && !jsonInstance["properties"]["AccessUrl"].isNull())
             m_accessUrl = jsonInstance["properties"]["AccessUrl"].asCString(); 
-        if (jsonInstance["properties"].isMember("RealityDataId"))
+        if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
             m_realityDataId = jsonInstance["properties"]["RealityDataId"].asCString(); 
-        if (jsonInstance["properties"].isMember("ContentType"))
+        if (jsonInstance["properties"].isMember("ContentType") && !jsonInstance["properties"]["ContentType"].isNull())
             m_contentType = jsonInstance["properties"]["ContentType"].asCString(); 
-        if (jsonInstance["properties"].isMember("Size"))
+        if (jsonInstance["properties"].isMember("Size") && !jsonInstance["properties"]["Size"].isNull())
             m_size = jsonInstance["properties"]["Size"].asCString(); 
         }
     }
@@ -72,11 +72,11 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
         {
-        if (jsonInstance["properties"].isMember("Name"))
+        if (jsonInstance["properties"].isMember("Name") && !jsonInstance["properties"]["Name"].isNull())
             m_name = jsonInstance["properties"]["Name"].asCString();
-        if (jsonInstance["properties"].isMember("RealityDataId"))
+        if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
             m_realityDataId = jsonInstance["properties"]["RealityDataId"].asCString();
-        if (jsonInstance["properties"].isMember("ParentFolderId"))
+        if (jsonInstance["properties"].isMember("ParentFolderId") && !jsonInstance["properties"]["ParentFolderId"].isNull())
             m_parentId = jsonInstance["properties"]["ParentFolderId"].asCString();
         }
     }

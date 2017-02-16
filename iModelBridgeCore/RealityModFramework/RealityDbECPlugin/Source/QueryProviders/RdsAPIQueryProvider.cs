@@ -43,7 +43,7 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="schema">The schema of the ECPlugin</param>
         /// <param name="token">The token used to communicate with rds.</param>
         public RdsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schema, string token)
-            : base(query, querySettings, connectionString, schema, DataSource.RDS)
+            : base(query, querySettings, connectionString, schema, DataSource.RDS, false)
             {
             m_rdsDataFetcher = new RDSDataFetcher(token);
             }
@@ -160,7 +160,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["ThumbnailURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + thumbnailDocument.Replace("/", "~2f");
                 }
-            //ThumbnailLoginKey
+            instance["ThumbnailLoginKey"].StringValue = "IMS";
             //DataProvider
             //DataProviderName
 
@@ -264,6 +264,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["FileSize"].NativeValue = filesize;
                 }
 
+            instance["Streamed"].NativeValue = true;
+
             //Metadata
 
             return instance;
@@ -278,7 +280,7 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             JObject json = GetJsonWithCache(sourceID);
 
-            IECClass ecClass = Schema.GetClass("SpatialDataSource");
+            IECClass ecClass = Schema.GetClass("Server");
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InitializePropertiesToNull();
@@ -293,8 +295,8 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Id"].StringValue = sourceID;
 
             instance["CommunicationProtocol"].StringValue = m_rdsDataFetcher.RdsUrlBase.Split(':')[0];
-            instance["Streamed"].NativeValue = false; 
-            //loginKey
+            instance["Streamed"].NativeValue = true;
+            //LoginKey
             instance["LoginMethod"].StringValue = "IMS";
             //RegistrationPage
             //OrganisationPage
