@@ -889,7 +889,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             return false;
             }
         
-        nodeExtent = node->GetContentExtent();                     
+        nodeExtent = node->GetContentExtent();  
+
+        if (m_invertClips && dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr()) != nullptr && dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr())->m_nbClips == 0)
+            return false;
                      
         if (s_useClipVectorForVisibility)
             {            

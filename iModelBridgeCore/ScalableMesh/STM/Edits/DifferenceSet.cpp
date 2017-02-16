@@ -550,6 +550,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     }
 
 
+
     PolyfaceHeaderPtr DifferenceSet::ToPolyfaceMesh(const DPoint3d* points, size_t nOfPoints)
         {
         bvector<int32_t> indices;

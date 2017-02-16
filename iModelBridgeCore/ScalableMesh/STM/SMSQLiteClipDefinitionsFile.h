@@ -18,6 +18,8 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
     virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
 
+    virtual void DeleteClipPolygon(int64_t clipID);
+
     virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
     virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
 
@@ -27,6 +29,7 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize);
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize);
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID);
+    virtual void DeleteCoveragePolygon(int64_t coverageID);
 
     virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes);
 

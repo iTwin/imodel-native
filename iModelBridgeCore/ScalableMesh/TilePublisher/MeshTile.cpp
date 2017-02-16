@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -488,7 +488,16 @@ void    DoResize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image::Image(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp)
+Image::Image(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp, bool headerOnly)
+    : m_headerOnly(headerOnly)
+    {
+    ReadImageData(source, targetFormat, bottomUp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Image::ReadImageData(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp)
     {
     ByteStream const& input = source.GetByteStream();
     if (ImageSource::Format::Jpeg == source.GetFormat())
@@ -496,6 +505,7 @@ Image::Image(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp
     else
         ReadPng(input.GetData(), input.GetSize(), targetFormat);
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
@@ -510,6 +520,8 @@ void Image::ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetForma
         Invalidate();
         return;
         }
+
+    if (m_headerOnly) return;
 
     m_image.Resize(m_width * m_height * 4);
 

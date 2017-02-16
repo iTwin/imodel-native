@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -35,6 +35,8 @@ struct IScalableMeshTextureGenerator abstract: virtual public RefCountedBase
         virtual StatusInt _SetPixelSize(double pixelSize) = 0;
 
         virtual StatusInt _SetTextureTempDir(const BeFileName& textureDir) = 0;
+
+        virtual StatusInt _SetTransform(const Transform& transToUOR) = 0;
               
         virtual StatusInt _GenerateTexture(const bvector<DPoint3d>& area) = 0; 
           
@@ -43,6 +45,8 @@ struct IScalableMeshTextureGenerator abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT StatusInt SetPixelSize(double pixelSize);
 
         BENTLEY_SM_EXPORT StatusInt SetTextureTempDir(const BeFileName& textureDir);
+
+        BENTLEY_SM_EXPORT StatusInt SetTransform(const Transform& transToUOR);
               
         BENTLEY_SM_EXPORT StatusInt GenerateTexture(const bvector<DPoint3d>& area);                        
     };

@@ -86,22 +86,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         this->SetDataSourceAccount(accountLocalFile);
         }
-    else if (s_stream_from_disk && s_stream_using_cesium_3d_tiles_format)
-        {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        this->SetDataSourceAccount(accountLocalFile);
-        }
     else if (s_stream_from_disk)
         {
         DataSourceAccount                       *   accountLocalFile;
@@ -168,12 +152,50 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         this->SetDataSourceAccount(accountWSG);
         }
-    else
+    else if (s_stream_from_azure && s_stream_using_curl)
         {
         wstring azureAccount, azureKey;
         if (s_use_azure_sandbox)
             {
             azureAccount = L"s3mxstorageblob";
+            }
+        else if (s_use_public_rds)
+            {
+            azureAccount = L"realityblobdeveussa01";
+            }
+        else
+            {
+            azureAccount = L"pcdsustest";
+            azureKey = L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==";
+            }
+
+        // NEEDS_WORK_STREAMING: the Azure account identifier should be saved in the stub file?
+        DataSourceAccount::AccountIdentifier        accountIdentifier(azureAccount);
+        DataSourceAccount::AccountKey               accountKey(azureKey);
+        DataSourceAccount                       *   accountCURL;
+        DataSourceService                       *   serviceCURL;
+
+        if ((serviceCURL = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the CURL service streaming
+        if ((accountCURL = serviceCURL->createAccount(DataSourceAccount::AccountName(L"AzureCURLAccount"), accountIdentifier, accountKey)) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountCURL->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountCURL);
+        }
+    else if (s_stream_from_azure)
+        {
+        wstring azureAccount, azureKey;
+        if (s_use_azure_sandbox)
+            {
+            azureAccount = L"s3mxstorageblob";
+            }
+        else if (s_use_public_rds)
+            {
+            azureAccount = L"realityblobdeveussa01";
             }
         else
             {
@@ -189,10 +211,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         DataSourceAccount                       *   accountAzure;
         DataSourceAccount                       *   accountCaching;
         DataSourceService                       *   serviceFile;
-        //  DataSourceAccount                       *   accountCaching;
 
         // Setup Azure account
-        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName((s_stream_from_azure_using_curl ? L"DataSourceServiceAzureCURL" : L"DataSourceServiceAzure")));
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
         if (serviceAzure == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
@@ -217,6 +238,10 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         // Set up default container
         accountAzure->setPrefixPath(DataSourceURL(directory.c_str()));
+        }
+    else
+        {
+        assert(!"Unknown server type for streaming");
         }
 
     return DataSourceStatus();

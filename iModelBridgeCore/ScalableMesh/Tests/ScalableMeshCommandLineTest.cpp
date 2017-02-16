@@ -292,15 +292,17 @@ void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, in
 
 void RunDTMClipTest()
     {
-    WString pathMeshes = L"E:\\makeTM\\meshes\\";
-    WString pathPolys = L"E:\\makeTM\\polys\\";
+    WString pathMeshes = L"E:\\makeTM\\85\\meshes\\";
+    WString pathPolys = L"E:\\makeTM\\85\\polys\\";
     bvector<int> meshes(1);
     meshes[0] = 0;
-    bvector<int> polys(2);
+    bvector<int> polys(4);
    // for (size_t polyn = 0; polyn < 11; polyn++)
    //     polys[polyn] = (int)polyn;
-    polys[0] = 7;
-    polys[1] = 9;
+    polys[0] = 1;
+    polys[1] = 2;
+    polys[2] = 3;
+    polys[3] = 4;
    // polys[2] = 2;
 
     bvector<bvector<DPoint3d>> polyDefs(polys.size());
@@ -429,7 +431,7 @@ void RunDTMClipTest()
                 newIndices.push_back(idx[2]);
                 }
             }
-        WString name = L"E:\\makeTM\\testClip.m";
+        WString name = L"E:\\makeTM\\testClipOut.m";
         LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
         for (size_t j = 0; j < polys.size(); ++j)
             {
@@ -439,6 +441,36 @@ void RunDTMClipTest()
                 {
                 PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
                 vec->CopyFrom(*pf);
+                newVertices.clear();
+                newIndices.clear();
+                mapOfPoints2.clear();
+                for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                    {
+                    DPoint3d face[3];
+                    int32_t idx[3] = { -1, -1, -1 };
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        face[i] = addedFacets->GetPointCP()[i];
+                        idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                        }
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        if (idx[i] == -1)
+                            {
+                            newVertices.push_back(face[i]);
+                            idx[i] = (int)newVertices.size();
+                            mapOfPoints2[face[i]] = idx[i] - 1;
+                            }
+                        else idx[i]++;
+                        }
+                    newIndices.push_back(idx[0]);
+                    newIndices.push_back(idx[1]);
+                    newIndices.push_back(idx[2]);
+                    }
+            WString name = L"E:\\makeTM\\testClipOut";
+            name.append(std::to_wstring(j).c_str());
+            name.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
                 //PolyfaceTag(vec, mesh);
                 for (size_t idx = 0; idx < vec->GetPointIndexCount(); idx += 3)
                     {
@@ -1340,8 +1372,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
    /* WString stmFileName(argv[1]);
     RunPrecisionTest(stmFileName);*/
 
-    DarylsTestFunction();
-    //RunDTMClipTest();
+    //DarylsTestFunction();
+    RunDTMClipTest();
     //RunDTMTriangulateTest();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
