@@ -1779,6 +1779,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
+    //! @param[in] propertyName The name of the navigation property
     //! @param[in] elementId The DgnElementId that identifies the target element
     //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
     //! @note Passing an invalid ID will cause a null value to be set.
