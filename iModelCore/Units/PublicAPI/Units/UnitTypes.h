@@ -59,10 +59,9 @@ private:
     virtual uint32_t GetPhenomenonId() const = 0;
 
 protected:
-    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);
-    
+    UNITS_EXPORT UnitsSymbol();
+    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);   
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
-protected:
     virtual ~UnitsSymbol();
       
 public:
@@ -71,6 +70,7 @@ public:
     double  GetFactor() const { return m_factor; }
     bool    HasOffset() const { return 0.0 != m_offset; }
     double  GetOffset() const { return m_offset; }
+    void SetName(Utf8CP name) { m_name = name; }
     };
 
 
@@ -97,9 +97,9 @@ private:
 
     Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id);
-
+    Unit() :UnitsSymbol(), m_system(""), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
-    Unit() = delete;
+
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 

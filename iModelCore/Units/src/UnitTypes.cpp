@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitTypes.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,18 @@ UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, ui
     m_symbolExpression(new Expression())
     {
     m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
+    }
+
+UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
+    {
+    m_name = nullptr;
+    m_definition = nullptr;
+    m_id = 0;
+    m_baseSymbol = '\0';
+    m_factor = 0.0;
+    m_offset = 0.0;
+    m_dimensionless = true;
+    m_evaluated = false;
     }
 
 UnitsSymbol::~UnitsSymbol()
@@ -38,17 +50,20 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
 // TODO: Is the definition correct here?
 // TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different signature.
 Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
-    Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetBaseSymbol(), 0, 0, false)
+    Unit(parent.GetUnitSystem(), *(parent.GetPhenomenon()), unitName, id, parent.GetDefinition(), parent.GetBaseSymbol(), 0, 0, false)
     {
+    m_system = parent.GetUnitSystem();
+    m_phenomenon = parent.GetPhenomenon();
+    SetName(unitName);
     m_parent = &parent;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
-    UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
-    m_system(system), m_parent(nullptr), m_isConstant(isConstant)
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, 
+           double factor, double offset, bool isConstant) : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
+           m_system(system), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_phenomenon = &phenomenon;
     }
@@ -211,7 +226,6 @@ double Unit::DoNumericConversion(double value, UnitCR toUnit) const
         return 0.0;
         }
 
-
     LOG.infov("Conversion factor: %.17g, offset: %.17g", conversion.Factor, conversion.Offset);
     value *= conversion.Factor;
 
@@ -258,10 +272,9 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
         return nullptr;
 
     UnitCP output = nullptr;
-    for (const auto u : matchingPhenom->GetUnits())
+    for (UnitCP const u : matchingPhenom->GetUnits())
         {
         temp = u->Evaluate();
-
         Expression unitExpr;
         Expression::Copy(temp, unitExpr);
         Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);

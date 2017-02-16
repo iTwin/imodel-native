@@ -561,7 +561,7 @@ public:
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatComboValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
+    //UNITS_EXPORT static Utf8String StdFormatComboValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
     //FormatDoubleStd
 
@@ -757,8 +757,13 @@ public:
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract=false, bool includeZero = false);
     Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
-    Utf8CP GetMidUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
-    Utf8CP GetLowUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
+    Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
+    Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
+    UnitCP GetTopUnit() { return m_topUnit; }
+    UnitCP GetMidUnit() { return m_midUnit; }
+    UnitCP GetLowUnit() { return m_lowUnit; }
+
+
     };
 
 struct StdFormatSet

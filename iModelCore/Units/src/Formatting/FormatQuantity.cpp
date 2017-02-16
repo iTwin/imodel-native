@@ -580,8 +580,8 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
             if (!IsProblem())
                 {
                 m_topUnit = topUnit;
-                QuantityPtr temp = qty.ConvertTo(GetTopUOM());
-                SetValue(temp->GetMagnitude());
+                Quantity temp = qty.ConvertTo(GetTopUnit());
+                SetValue(temp.GetMagnitude());
                 }
             break;
         case 0x7:
@@ -595,8 +595,8 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
                     SetTopToMid(topToMid);
                     m_topUnit = topUnit;
                     m_midUnit = midUnit;
-                    QuantityPtr temp = qty.ConvertTo(GetMidUOM());
-                    SetValue(temp->GetMagnitude());
+                    Quantity temp = qty.ConvertTo(GetMidUnit());
+                    SetValue(temp.GetMagnitude());
                     }
                 else
                     UpdateProblemCode(FormatProblemCode::QT_InvalidTopMidUnits);
@@ -623,8 +623,8 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
                 m_topUnit = topUnit;
                 m_midUnit = midUnit;
                 m_lowUnit = lowUnit;
-                QuantityPtr temp = qty.ConvertTo(GetLowUOM());
-                SetValue(temp->GetMagnitude());
+                Quantity temp = qty.ConvertTo(GetLowUnit());
+                SetValue(temp.GetMagnitude());
                 }
             break;
         default:

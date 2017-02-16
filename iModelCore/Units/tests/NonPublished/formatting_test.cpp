@@ -41,26 +41,25 @@ TEST(FormattingTest, PhysValues)
     UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
     UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
     UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
-
+    UnitCP metrUOM = UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
-    QuantityPtr len = Quantity::Create(22.7, "M");
-    QuantityPtr lenU = Quantity::Create(22.7, UnitRegistry::Instance().LookupUnit("M"));
-    QuantityPtr ang = Quantity::Create(135.0 + 23.0 / 120.0, "ARC_DEG");
-    QuantityPtr angU = Quantity::Create(135.0 + 23.0 / 120.0, degUOM);
+    Quantity const len = Quantity(22.7, *metrUOM);
+    Quantity ang = Quantity(135.0 + 23.0 / 120.0, *degUOM);
 
-    QuantityTriadSpec qtr = QuantityTriadSpec(*len, yrdUOM, ftUOM, inUOM);
+    QuantityTriadSpec qtr = QuantityTriadSpec(len, yrdUOM, ftUOM, inUOM);
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract", *len, ftUOM).c_str());
-    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity("fract16", *len, ftUOM).c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract32", *len, ftUOM).c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yardUOM).c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", *len, yrdsdUOM).c_str());
+    //StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract", len, ftUOM).c_str());
+    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity("fract16", len, ftUOM).c_str());
+    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract32", len, ftUOM).c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", len, yardUOM).c_str());
+    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", len, yrdsdUOM).c_str());
 
-    QuantityTriadSpec atr = QuantityTriadSpec(*ang, degUOM, minUOM, secUOM);
-    QuantityTriadSpec atrU = QuantityTriadSpec(*angU, degUOM, minUOM, secUOM);
+    QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
+    QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     atr.SetTopUnitLabel("\xC2\xB0");
     atr.SetMidUnitLabel(u8"'");
     atr.SetLowUnitLabel(u8"\"");

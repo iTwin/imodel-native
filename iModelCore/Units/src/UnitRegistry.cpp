@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitRegistry.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,6 +30,7 @@ UnitRegistry& UnitRegistry::Instance()
 
     return *s_instance;
     }
+
 
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Chris.Tartamella     02/16
