@@ -5228,12 +5228,13 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MultiInheritence_TablePerHierarchyPlusVirtualTable)
+TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTable)
     {
     ECDbCR ecdb = SetupECDb("multiinheritance.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
         "    <ECEntityClass typeName='Base1' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "          <ClassMap xmlns='ECDbMap.02.00'>"
@@ -5243,6 +5244,11 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_TablePerHierarchyPlusVirtualTabl
         "        <ECProperty propertyName='Base1_Prop1' typeName='string' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Base2' modifier='Abstract'>" // Mapped to virtual table
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Base1</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Base2_Prop1' typeName='string' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='Abstract' >"
@@ -5285,12 +5291,13 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_TablePerHierarchyPlusVirtualTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan Eberle                     09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
+TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
     {
     bvector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem("TPH, no joined table, no shared columns",
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                     "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
                                      "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                      "  <ECEntityClass typeName='Base' modifier='Abstract' >"
                                      "    <ECCustomAttributes>"
@@ -5304,9 +5311,13 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "    <BaseClass>Base</BaseClass>"
                                      "    <ECProperty propertyName='Sub1_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='Sub11' modifier='Abstract'>"
-                                     "    <BaseClass>Sub1</BaseClass>"
-                                     "    <ECProperty propertyName='Sub11_Prop1' typeName='string' />"
+                                     "  <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+                                     "        <ECCustomAttributes>"
+                                     "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                                     "            <AppliesToEntityClass>Sub1</AppliesToEntityClass>"
+                                     "          </IsMixin>"
+                                     "        </ECCustomAttributes>"
+                                     "    <ECProperty propertyName='IMixin_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='Sub12' modifier='Abstract'>"
                                      "    <BaseClass>Sub1</BaseClass>"
@@ -5314,7 +5325,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='MyClass' >"
                                      "    <BaseClass>Sub12</BaseClass>"
-                                     "    <BaseClass>Sub11</BaseClass>"
+                                     "    <BaseClass>IMixin</BaseClass>"
                                      "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "</ECSchema>"));
@@ -5322,6 +5333,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
     testSchemas.push_back(SchemaItem("TPH, joined table, no shared columns",
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                     "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
                                      "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                      "  <ECEntityClass typeName='Base' modifier='Abstract' >"
                                      "    <ECCustomAttributes>"
@@ -5336,9 +5348,13 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "    <BaseClass>Base</BaseClass>"
                                      "    <ECProperty propertyName='Sub1_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='Sub11' modifier='Abstract'>"
-                                     "    <BaseClass>Sub1</BaseClass>"
-                                     "    <ECProperty propertyName='Sub11_Prop1' typeName='string' />"
+                                     "  <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+                                     "        <ECCustomAttributes>"
+                                     "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                                     "            <AppliesToEntityClass>Sub1</AppliesToEntityClass>"
+                                     "          </IsMixin>"
+                                     "        </ECCustomAttributes>"
+                                     "    <ECProperty propertyName='IMixin_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='Sub12' modifier='Abstract'>"
                                      "    <BaseClass>Sub1</BaseClass>"
@@ -5346,7 +5362,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='MyClass' >"
                                      "    <BaseClass>Sub12</BaseClass>"
-                                     "    <BaseClass>Sub11</BaseClass>"
+                                     "    <BaseClass>IMixin</BaseClass>"
                                      "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "</ECSchema>"));
@@ -5354,6 +5370,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
     testSchemas.push_back(SchemaItem("TPH, joined table, shared columns",
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                     "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
                                      "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                      "  <ECEntityClass typeName='Base' modifier='Abstract' >"
                                      "    <ECCustomAttributes>"
@@ -5369,9 +5386,13 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "    <BaseClass>Base</BaseClass>"
                                      "    <ECProperty propertyName='Sub1_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='Sub11' modifier='Abstract'>"
-                                     "    <BaseClass>Sub1</BaseClass>"
-                                     "    <ECProperty propertyName='Sub11_Prop1' typeName='string' />"
+                                     "  <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+                                     "        <ECCustomAttributes>"
+                                     "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                                     "            <AppliesToEntityClass>Sub1</AppliesToEntityClass>"
+                                     "          </IsMixin>"
+                                     "        </ECCustomAttributes>"
+                                     "    <ECProperty propertyName='IMixin_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='Sub12' modifier='Abstract'>"
                                      "    <BaseClass>Sub1</BaseClass>"
@@ -5379,7 +5400,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
                                      "  </ECEntityClass>"
                                      "  <ECEntityClass typeName='MyClass' >"
                                      "    <BaseClass>Sub12</BaseClass>"
-                                     "    <BaseClass>Sub11</BaseClass>"
+                                     "    <BaseClass>IMixin</BaseClass>"
                                      "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
                                      "</ECSchema>"));
@@ -5394,25 +5415,25 @@ TEST_F(ECDbMappingTestFixture, MultiInheritance_Diamond)
         ASSERT_FALSE(asserted) << scenarioName;
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Base_Prop1,Sub1_Prop1,Sub11_Prop1,Sub12_Prop1,MyClass_Prop1) "
-                                                     "VALUES('base','sub1', 'sub11', 'sub12', 'myclass')")) << scenarioName;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Base_Prop1,Sub1_Prop1,IMixin_Prop1,Sub12_Prop1,MyClass_Prop1) "
+                                                     "VALUES('base','sub1', 'imixin', 'sub12', 'myclass')")) << scenarioName;
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << scenarioName << " " << stmt.GetECSql();
 
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Sub11_Prop1 FROM ts.MyClass WHERE ECInstanceId=?")) << scenarioName;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.MyClass WHERE ECInstanceId=?")) << scenarioName;
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId())) << scenarioName << " " << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
         ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
-        ASSERT_STREQ("sub11", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
+        ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
 
         stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Sub11_Prop1 FROM ts.Sub11 WHERE ECInstanceId=?")) << scenarioName;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?")) << scenarioName;
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId())) << scenarioName << " " << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
         ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
-        ASSERT_STREQ("sub11", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
+        ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
         }
     }
 
@@ -6531,6 +6552,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 SchemaItem testItem("Index on abstract classes - Schema 1",
                                     "<?xml version='1.0' encoding='utf-8'?>"
                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                    "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
                                     "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                     "    <ECEntityClass typeName='Root' modifier='Abstract'>"
                                     "        <ECCustomAttributes>"
@@ -6554,6 +6576,9 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                                     "    </ECEntityClass>"
                                     "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
                                     "        <ECCustomAttributes>"
+                                    "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                                    "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
+                                    "            </IsMixin>"
                                     "            <DbIndexList xmlns='ECDbMap.02.00'>"
                                     "                 <Indexes>"
                                     "                   <DbIndex>"
@@ -12772,54 +12797,57 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
             "      <ECProperty propertyName='S1' typeName='string' />"
             "      <ECProperty propertyName='Z1' typeName='string' />"
             "  </ECEntityClass>"
-            "  <ECEntityClass typeName='ClassB'>"
-            "      <BaseClass>Base</BaseClass>"
+            "  <ECEntityClass typeName='IClassB' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>Base</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
             "      <ECProperty propertyName='P3' typeName='string' />"
             "      <ECProperty propertyName='S1' typeName='string' />"
             "      <ECProperty propertyName='Z1' typeName='string' />"
             "  </ECEntityClass>"
             "  <ECEntityClass typeName='ClassC'>"
             "      <BaseClass>ClassA</BaseClass>"
-            "      <BaseClass>ClassB</BaseClass>"
+            "      <BaseClass>IClassB</BaseClass>"
             "      <ECProperty propertyName='P4' typeName='string' />"
             "  </ECEntityClass>"
             "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
 
 #define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
 
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassB (P1, P3, S1, Z1    ) VALUES ('P1-ClassB', 'P3-ClassB', 'S1-ClassB', 'Z1-ClassB')");
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')");
-    GetECDb().Schemas().CreateECClassViewsInDb();
+
+
     GetECDb().SaveChanges();
+    {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.ClassA"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "INSERT INTO ts.IClassB(P3,S1,Z1) VALUES ('P3-IClassB', 'S1-IClassB', 'Z1-IClassB')"));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.ClassA ORDER BY P1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P1-ClassA", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    //Following should be S2-ClassC but its not P3-ClassA due to column allocation problem
-    ASSERT_STRNE("P2-ClassC", stmt.GetValueText(0));
+    ASSERT_STREQ("P1-ClassC", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1,Z1 FROM ts.ClassB"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1,Z1 FROM ts.IClassB"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_STREQ("S1-ClassB", stmt.GetValueText(0));
-    ASSERT_STREQ("Z1-ClassB", stmt.GetValueText(1));
-
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    //Follow should STREQ to but it already fails
-    ASSERT_STRNE("S1-ClassC", stmt.GetValueText(0));
-    ASSERT_STRNE("Z1-ClassC", stmt.GetValueText(1));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("S1-ClassC", stmt.GetValueText(0));
+    ASSERT_STREQ("Z1-ClassC", stmt.GetValueText(1));    
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT  S1 FROM ts.ClassC"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1 FROM ts.ClassC"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_STRNE("S1-ClassC", stmt.GetValueText(1));
+    ASSERT_STREQ("S1-ClassC", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }

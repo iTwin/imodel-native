@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -36,12 +36,13 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule()));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoMultiInheritanceRule(schema)));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule(schema)));
 
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (auto& task : validationTasks)
+        for (std::unique_ptr<ECSchemaValidationRule> const& task : validationTasks)
             {
             bool succeeded = task->ValidateSchema(schema, *ecClass);
             if (!succeeded)
@@ -53,7 +54,7 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
             valid = false;
         }
 
-    for (auto& task : validationTasks)
+    for (std::unique_ptr<ECSchemaValidationRule> const& task : validationTasks)
         {
         task->AddErrorToResult(result);
         }
@@ -152,16 +153,84 @@ void ECSchemaValidationRule::AddErrorToResult(ECSchemaValidationResult& result) 
         result.AddError(std::move(error));
     }
 
+
 //**********************************************************************
-// ECSchemaValidationRule::Error
+// NoMultiInheritanceRule
 //**********************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
+// @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-Utf8String ECSchemaValidationRule::Error::ToString() const
+NoMultiInheritanceRule::NoMultiInheritanceRule(ECN::ECSchemaCR schema)
+    : ECSchemaValidationRule(Type::NoMultiInheritance), m_error(nullptr)
     {
-    return _ToString();
+    m_error = std::unique_ptr<Error>(new Error(GetType(), schema));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+bool NoMultiInheritanceRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+    {
+    ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
+    if (baseClasses.size() <= 1)
+        return true;
+
+    bool isFirstBaseClass = true;
+    for (ECClassCP baseClass : baseClasses)
+        {
+        if (isFirstBaseClass)
+            {
+            isFirstBaseClass = false;
+            continue;
+            }
+
+        ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
+        if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
+            {
+            m_error->AddViolatingClass(ecClass);
+            return false;
+            }
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    02/2017
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSchemaValidationRule::Error> NoMultiInheritanceRule::_GetError() const
+    {
+    if (!m_error->HasErrors())
+        return nullptr;
+
+    return std::move(m_error);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    02/2017
+//---------------------------------------------------------------------------------------
+Utf8String NoMultiInheritanceRule::Error::_ToString() const
+    {
+    if (!HasErrors())
+        return "";
+
+    Utf8String violatingClassesStr;
+    bool isFirstItem = true;
+    for (ECClassCP violatingClass : m_violatingClasses)
+        {
+        if (!isFirstItem)
+            violatingClassesStr.append(", ");
+
+        violatingClassesStr.append(violatingClass->GetName());
+        isFirstItem = false;
+        }
+
+    Utf8String str;
+    str.Sprintf("ECSchema '%s' contains ECClasses with multiple base classes. Multi-inheritance is not supported. Use mixins instead. Violating ECClasses: %s",
+            m_ecSchema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
+
+    return str;
     }
 
 //**********************************************************************
@@ -198,7 +267,7 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, E
 
     bool isValid = !structType->Is(&ecClass);
     if (!isValid)
-        m_error->GetInvalidPropertiesR().push_back(&ecProperty);
+        m_error->AddInvalidProperty(ecProperty);
 
     return isValid;
     }
@@ -208,7 +277,7 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, E
 //---------------------------------------------------------------------------------------
 std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule::_GetError() const
     {
-    if (m_error->GetInvalidProperties().empty())
+    if (!m_error->HasErrors())
         return nullptr;
 
     return std::move(m_error);
@@ -222,13 +291,13 @@ std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule
 //---------------------------------------------------------------------------------------
 Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
     {
-    if (GetInvalidProperties().empty())
+    if (!HasErrors())
         return "";
 
     Utf8String violatingPropsStr;
 
     bool isFirstProp = true;
-    for (auto violatingProp : GetInvalidProperties())
+    for (ECPropertyCP violatingProp : m_invalidProperties)
         {
         if (!isFirstProp)
             violatingPropsStr.append(", ");
@@ -237,10 +306,9 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
         isFirstProp = false;
         }
 
-    Utf8CP strTemplate = "ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.";
-
     Utf8String str;
-    str.Sprintf(strTemplate, m_ecClass.GetFullName(), violatingPropsStr.c_str());
+    str.Sprintf("ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.",
+                m_ecClass.GetFullName(), violatingPropsStr.c_str());
 
     return str;
     }
@@ -251,10 +319,10 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-ValidRelationshipRule::ValidRelationshipRule()
+ValidRelationshipRule::ValidRelationshipRule(ECN::ECSchemaCR schema)
     : ECSchemaValidationRule(Type::ValidRelationshipClass), m_error(nullptr)
     {
-    m_error = std::unique_ptr<Error>(new Error(GetType()));
+    m_error = std::unique_ptr<Error>(new Error(GetType(), schema));
     }
 
 //---------------------------------------------------------------------------------------
@@ -345,7 +413,8 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
     if (!HasInconsistencies())
         return "";
 
-    Utf8String str("Found invalid ECRelationshipClasses: ");
+    Utf8String str("ECSchema '");
+    str.append(m_ecSchema.GetFullSchemaName()).append("' contains invalid ECRelationshipClasses : ");
     bool isFirstItem = true;
     for (Inconsistency const& inconsistency : m_inconsistencies)
         {

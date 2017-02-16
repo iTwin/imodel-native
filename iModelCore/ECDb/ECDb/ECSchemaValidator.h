@@ -41,6 +41,7 @@ struct ECSchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         enum Type
             {
+            NoMultiInheritance,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipClass,
             ValidNavigationProperty
@@ -64,7 +65,7 @@ struct ECSchemaValidationRule
             public:
                 virtual ~Error() {}
 
-                Utf8String ToString() const;
+                Utf8String ToString() const { return _ToString(); }
                 Type GetRuleType() const { return m_ruleType; }
             };
     private:
@@ -111,6 +112,41 @@ struct ECSchemaValidationResult : NonCopyableClass
 
 
 //**************************** Subclasses *********************************************
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      02/2017
+//+===============+===============+===============+===============+===============+======
+struct NoMultiInheritanceRule : ECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      02/2017
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            private:
+                ECN::ECSchemaCR m_ecSchema;
+                bvector<ECN::ECClassCP> m_violatingClasses;
+                Utf8String _ToString() const override;
+
+            public:
+                Error(Type ruleType, ECN::ECSchemaCR schema) : ECSchemaValidationRule::Error(ruleType), m_ecSchema(schema) {}
+                ~Error() {}
+
+                void AddViolatingClass(ECN::ECClassCR ecClass) { m_violatingClasses.push_back(&ecClass); }
+                bool HasErrors() const { return !m_violatingClasses.empty(); }
+            };
+
+        mutable std::unique_ptr<Error> m_error;
+
+        bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
+        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+    public:
+        explicit NoMultiInheritanceRule(ECN::ECSchemaCR);
+        ~NoMultiInheritanceRule() {}
+    };
+
+
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
@@ -130,14 +166,11 @@ struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
                 Utf8String _ToString() const override;
 
             public:
-                Error(Type ruleType, ECN::ECClassCR ecClass)
-                    : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass)
-                    {}
-
+                Error(Type ruleType, ECN::ECClassCR ecClass) : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass) {}
                 ~Error() {}
 
-                std::vector<ECN::ECPropertyCP> const& GetInvalidProperties() const { return m_invalidProperties; }
-                std::vector<ECN::ECPropertyCP>& GetInvalidPropertiesR() { return m_invalidProperties; }
+                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties.push_back(&prop); }
+                bool HasErrors() const { return !m_invalidProperties.empty(); }
             };
 
         mutable std::unique_ptr<Error> m_error;
@@ -186,13 +219,14 @@ struct ValidRelationshipRule : ECSchemaValidationRule
                         }
                     };
 
-                std::vector<Inconsistency> m_inconsistencies;
+            ECN:: ECSchemaCR m_ecSchema;
+            std::vector<Inconsistency> m_inconsistencies;
 
-                Utf8String _ToString() const override;
+            Utf8String _ToString() const override;
 
 
             public:
-                explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
+                Error(Type ruleType, ECN::ECSchemaCR ecSchema) : ECSchemaValidationRule::Error(ruleType), m_ecSchema(ecSchema) {}
                 ~Error() {}
 
                 void AddInconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies.push_back(Inconsistency(relClass, kind, relClassAsConstraint)); }
@@ -207,7 +241,7 @@ struct ValidRelationshipRule : ECSchemaValidationRule
         bool ValidateConstraint(ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
     public:
-        ValidRelationshipRule();
+        explicit ValidRelationshipRule(ECN::ECSchemaCR);
         ~ValidRelationshipRule() {}
     };
 
