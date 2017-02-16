@@ -147,7 +147,6 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
-        ChangeDecorations,
         ChangeDynamics,
         ChangeRenderPlan,
         ChangeScene,
@@ -157,6 +156,7 @@ struct Task : RefCounted<NonCopyableClass>
         Initialize,
         ReadImage,
         Redraw,
+        RenderFrame,
         RenderTile,
         ResetTarget,
     };
