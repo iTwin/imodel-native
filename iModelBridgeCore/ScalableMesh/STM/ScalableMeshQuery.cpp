@@ -2444,6 +2444,11 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
     return _GetChildrenNodes();
     }
 
+bvector<IScalableMeshNodeEditPtr> IScalableMeshNode::EditChildrenNodes()
+    {
+    return _EditChildrenNodes();
+    }
+
 DRange3d  IScalableMeshNode::GetNodeExtent() const
     {
     return _GetNodeExtent();
