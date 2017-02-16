@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ViewGenerator.h $
+|     $Source: ECDb/ViewGenerator.h $ 
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -123,7 +123,7 @@ struct ViewGenerator
                 bool m_usePropertyNameAsAliasForSystemPropertyMaps;
                 mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-
+                Context const& m_context;
                 BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
                 BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
@@ -136,7 +136,7 @@ struct ViewGenerator
                 Result& Record(SingleColumnDataPropertyMap const&) const;
 
             public:
-                ToSqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassViews);
+                ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassViews);
                 ~ToSqlVisitor() {}
                 std::vector<Result> const& GetResultSet() const { return m_resultSet; }
                 void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
