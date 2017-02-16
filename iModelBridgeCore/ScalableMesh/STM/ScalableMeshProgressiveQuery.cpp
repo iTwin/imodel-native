@@ -476,7 +476,7 @@ private:
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips();
                 meshNode->RemoveDisplayDataFromCache();                    
-                meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture);
+                meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
                 assert(meshNode->HasCorrectClipping(clipVisibilities));                 
                 }
 
@@ -697,6 +697,11 @@ public:
             fflush(logger.GetFile());                                                    
 #endif
 
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
+
+        size_t currentNbProcessingQueries;
+
+        m_processingQueriesMutex.lock();
 
 #ifndef NDEBUG
         for (auto& query : m_processingQueries)
@@ -705,11 +710,7 @@ public:
                 assert(!"Query already processing");
             }
 #endif
-        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
 
-        size_t currentNbProcessingQueries;
-
-        m_processingQueriesMutex.lock();
         currentNbProcessingQueries = m_processingQueries.size();
         m_processingQueries.push_back(processingQueryPtr);
         m_processingQueriesMutex.unlock();
@@ -935,7 +936,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
             {
             node->ApplyAllExistingClips();
             node->RemoveDisplayDataFromCache();                    
-            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);
+            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
             }
         }        
@@ -953,7 +954,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
 
     meshNode->ApplyAllExistingClips();
     meshNode->RemoveDisplayDataFromCache();                    
-    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
+    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, sMesh->ShouldInvertClips());                               
     assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
@@ -1086,6 +1087,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
         queryParam->GetViewBox(),
         false,
         queryParam->GetViewClipVector(),
+        smP->ShouldInvertClips(),
         100000000);
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
@@ -1124,7 +1126,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     
     if (parentNodePtr == nullptr)
         {        
-        assert(!"Should not occurs");               
+        //assert(!"Should not occurs");               
         return;
         }
     
@@ -1204,7 +1206,8 @@ class NewQueryStartingNodeProcessor
         NewQueryStartingNodeProcessor()
             {
 #ifndef DEACTIVATE_THREADING
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;            
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;       
+            m_numWorkingThreads = max(1, m_numWorkingThreads);
 #else
             m_numWorkingThreads = 1;            
 #endif
@@ -1441,6 +1444,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     //assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd - 1) == 0);
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
+
+
 
     if (s_sortOverviewBySize == true)
         {

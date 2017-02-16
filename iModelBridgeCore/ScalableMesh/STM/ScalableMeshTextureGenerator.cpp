@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -34,6 +34,11 @@ StatusInt IScalableMeshTextureGenerator::SetTextureTempDir(const BeFileName& tex
 StatusInt IScalableMeshTextureGenerator::GenerateTexture(const bvector<DPoint3d>& area)
     {
     return _GenerateTexture(area);
+    }
+
+StatusInt IScalableMeshTextureGenerator::SetTransform(const Transform& transToUOR)
+    {
+    return _SetTransform(transToUOR);
     }
  
 /*----------------------------------------------------------------------------+

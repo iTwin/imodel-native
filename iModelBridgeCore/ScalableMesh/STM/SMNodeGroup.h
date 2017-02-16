@@ -20,6 +20,7 @@
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
 #include <queue>
+#include <iomanip>
 
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
@@ -31,11 +32,11 @@
 
 #define OPEN_OR_CREATE_FILE(beFile, pathStr, accessMode) BeFileStatus::Success == OPEN_FILE(beFile, pathStr, accessMode) || BeFileStatus::Success == beFile.Create(pathStr)
 
-#ifndef NDEBUG
-#define DEBUG_GROUPS
-#define DEBUG_AZURE
+//#ifndef NDEBUG
+//#define DEBUG_GROUPS
+//#define DEBUG_AZURE
 extern std::mutex s_consoleMutex;
-#endif
+//#endif
 
 #ifdef DEBUG_AZURE
 #include <Bentley\BeConsole.h>
@@ -122,6 +123,24 @@ public:
     ~SMNodeDistributor()
         {
         this->CancelAll();
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        while (!wait_for(lock, 1000ms, [this]
+            {
+            return Queue::empty();
+            }))
+            {
+                    {
+                    std::lock_guard<mutex> clk(s_consoleMutex);
+                    std::cout << std::setw(100) << "\r  Queue size (" << Queue::size() << ")                          ";
+                    }
+
+            }
+            {
+            std::lock_guard<mutex> clk(s_consoleMutex);
+            std::cout << std::setw(100) << "\r  Queue size (" << Queue::size() << ")                          \n";
+            }
+        }
         for (auto &&thread : m_threads) if (thread.joinable()) thread.join();
         }
 
@@ -142,12 +161,12 @@ public:
                 return Queue::size() < capacity / 2;
                 }))
                 {
-#ifdef DEBUG_GROUPS
+//#ifdef DEBUG_GROUPS
                         {
                         std::lock_guard<mutex> clk(s_consoleMutex);
-                        std::cout << "\r  Queue size (" << Queue::size() << ")";
+                        std::cout << "\r  Queue size (" << Queue::size() << ")                          ";
                         }
-#endif
+//#endif
 
                 }
             }

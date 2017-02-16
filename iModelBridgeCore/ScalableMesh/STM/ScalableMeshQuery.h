@@ -1262,7 +1262,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
-        bool ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
+        bool ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, bool shouldInvertClips =false) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1484,7 +1484,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
             void AddClipVector(ClipVectorPtr& clipVector);
                 
-            void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
+            void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool invertClips = false);
 
             bool IsLoaded() const;
             bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;

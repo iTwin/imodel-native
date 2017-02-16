@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/TilePublisher.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -516,7 +516,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
 
     DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
-    Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
+    Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb, Image::BottomUp::No, true);
 
     // This calculation should actually be made for each triangle and maximum used. 
     static      double      s_requiredSizeRatio = 2.0;
@@ -570,6 +570,8 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         }
     else
         {
+        image.SetHeaderOnly(false);
+        image.ReadImageData(textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
         static int      s_imageQuality = 50;
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
         ByteStream      targetImageData;
