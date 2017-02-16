@@ -11,88 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-#if 0
-enum class ClassType
-    {
-    Base,
-    Derived,
-    };
-struct Derived;
-struct Base
-    {
-    private:
-        ClassType m_type;
-        virtual Derived const* _GetDerivedCP() const { return nullptr; }
-    protected:
-        Base(ClassType type) :m_type(type)
-            {}
-    public:
-        Base() :m_type(ClassType::Base)
-            {}
-        ClassType GetType() const { return m_type; }
-        Derived const* GetDerivedCP_UsingVirtualMethod() const { return _GetDerivedCP(); }
-        Derived const* GetDerivedCP_DynamicCast() const;
-        Derived const* GetDerivedCP_StaticCastByType() const;
-    };
 
-struct Derived : Base
-    {
-    private:
-        virtual Derived const* _GetDerivedCP() const override { return this; }
-    protected:
-        Derived(ClassType type) :Base(type)
-            {}
-    public:
-        Derived() :Base(ClassType::Derived)
-            {}
-    };
-
-
-
-
-Derived const* Base::GetDerivedCP_DynamicCast() const { return dynamic_cast<Derived const*>(this); }
-Derived const* Base::GetDerivedCP_StaticCastByType() const { if (GetType() == ClassType::Derived) return static_cast<Derived const*>(this); return nullptr; }
-
-TEST_F(ECDbMappingTestFixture, PerfCast)
-    {
-
-
-    Base const* base;
-    //Derived const* derived;
-    Derived instanceDerived;
-    base = &instanceDerived;
-    const int max = 1000000000;
-    StopWatch timer;
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_DynamicCast();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_DynamicCast() %.4f sec\r\n", timer.GetElapsedSeconds());
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_UsingVirtualMethod();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_UsingVirtualMethod() %.4f sec\r\n", timer.GetElapsedSeconds());
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_StaticCastByType();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_StaticCastByType() %.4f sec\r\n", timer.GetElapsedSeconds());
-
-    }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -12908,7 +12827,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -12995,15 +12914,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd)
     ASSERT_EQ(3, stmt.GetValueInt64(2));
     ASSERT_EQ(55, stmt.GetValueInt64(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-
-    stmt.Finalize();
-    //S1,Z1 is wrong for ClassB
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -13045,6 +12961,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
             "  </ECRelationshipClass>"
             "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
             "      <BaseClass>CarHasEndPoint</BaseClass>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
             "      <ECProperty propertyName='Rule' typeName='string' />"
             "  </ECRelationshipClass>"
             "  <ECEntityClass typeName='Car'>"
@@ -13068,27 +12990,34 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     GetECDb().SaveChanges();
 
-#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
-
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
     GetECDb().SaveChanges();
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
-
-
-
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    //S1,Z1 is wrong for ClassB
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -13197,6 +13126,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
         "  </ECRelationshipClass>"
         "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
         "      <BaseClass>CarHasEndPoint</BaseClass>"
+        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+        "         <Class class='Car' />"
+        "     </Source>"
+        "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+        "        <Class class='IEndPoint' />"
+        "     </Target>"
         "      <ECProperty propertyName='Rule' typeName='string' />"
         "  </ECRelationshipClass>"
         "  <ECEntityClass typeName='Car'>"

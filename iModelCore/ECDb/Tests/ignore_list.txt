@@ -28,6 +28,3 @@ ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
 #TFS 657660
 ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
-
-ECDbMappingTestFixture.MixInAsRelationshipEnd2
-ECDbMappingTestFixture.MixInAsRelationshipEnd3
