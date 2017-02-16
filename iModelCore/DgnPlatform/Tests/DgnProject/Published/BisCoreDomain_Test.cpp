@@ -280,6 +280,4 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_InformationPartitionElement)->IsParentElementScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SubCategory)->IsParentElementScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Subject)->IsParentElementScope());
-
-    ASSERT_EQ(24, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_CLASS_CodeSpec)));
     }
