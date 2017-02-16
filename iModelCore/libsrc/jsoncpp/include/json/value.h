@@ -14,6 +14,7 @@
 #include <Bentley/WString.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
+#include <cmath>
 
 BEGIN_BENTLEY_NAMESPACE
 
