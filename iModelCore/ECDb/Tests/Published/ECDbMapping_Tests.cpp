@@ -13193,7 +13193,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipMappedToSharedColumn)
+TEST_F(ECDbMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
