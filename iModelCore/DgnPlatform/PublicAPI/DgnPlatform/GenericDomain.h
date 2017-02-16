@@ -45,6 +45,9 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_REL_ViewAttachmentLabelAnnotatesViewAttachment "ViewAttachmentLabelAnnotatesViewAttachment"
 #define GENERIC_REL_CalloutRefersToDrawingModel  "CalloutRefersToDrawingModel"
 
+#define GENERIC_CODESPEC(name)                                  GENERIC_DOMAIN_NAME ":" name
+#define GENERIC_CODESPEC_ViewAttachmentLabel GENERIC_CODESPEC(GENERIC_CLASS_ViewAttachmentLabel)
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace generic_ModelHandler {struct GenericGroupModelHandler;};
@@ -58,6 +61,9 @@ namespace generic_ElementHandler {struct GenericGroupHandler; struct GenericSpat
 struct GenericDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(GenericDomain, DGNPLATFORM_EXPORT)
+
+protected:
+    void _OnSchemaImported(DgnDbR) const override;
 
 public:
     GenericDomain();
