@@ -733,12 +733,12 @@ public:
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return isOriginal? DropMe::Yes: DropMe::No;}
 
-        //! Called after an update to the element was reversed by undo.
-        //! @param[in] original the original DgnElement (after undo)
-        //! @param[in] modified the modified DgnElement (before undo)
+        //! Called after a change set representing an update to the element was applied to the database
+        //! @param[in] original the original DgnElement (after applying the change)
+        //! @param[in] modified the modified DgnElement (before applying the change)
         //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+        virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
@@ -1189,9 +1189,9 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnImported.
     virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
-    //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
-    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
+    //! Called after a change representing addition of a DgnElement was applied to the database
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedAdd.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedAdd() const;
 
     //! Called when this element is about to be replace its original element in the DgnDb.
     //! @param [in] original the original state of this element.
@@ -1214,13 +1214,13 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
     DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
 
-    //! Called after a DgnElement was successfully updated from a replacment element and it now holds the data from the replacement.
+    //! Called after a DgnElement was successfully updated from a replacement element and it now holds the data from the replacement.
     //! @note If you override this method, you @em must call T_Super::_OnUpdateFinished.
     virtual void _OnUpdateFinished() const {}
 
-    //! Called after an update to this DgnElement was reversed by undo. The element will be in its original (pre-change, post-undo) state.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedUpdate.
-    DGNPLATFORM_EXPORT virtual void _OnReversedUpdate(DgnElementCR changed) const;
+    //! Called after a change set representing an update to this DgnElement was applied to the database. In the case of an undo, the element will be in its original (pre-change, post-undo) state.
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedUpdate.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedUpdate(DgnElementCR changed) const;
 
     //! Called when an element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to control when/if their instances are deleted.
@@ -1236,9 +1236,9 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
-    //! Called after a DgnElement that was previously added has been removed by undo.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedAdd.
-    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
+    //! Called after a change representing delete of a DgnElement was applied to the database
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedDelete.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedDelete() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.
@@ -2159,8 +2159,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _OnDeleted() const override;
-    DGNPLATFORM_EXPORT void _OnReversedAdd() const override;
-    DGNPLATFORM_EXPORT void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnAppliedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnAppliedAdd() const override;
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}

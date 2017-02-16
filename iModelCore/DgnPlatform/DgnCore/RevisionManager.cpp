@@ -926,7 +926,7 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
     if (txnMgr.HasChanges())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return RevisionStatus::TransactionHasUnsavedChanges;
+        return RevisionStatus::HasUncommittedChanges;
         }
 
     if (txnMgr.InDynamicTxn())
@@ -1062,7 +1062,7 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
     if (txnMgr.HasChanges())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        status = RevisionStatus::TransactionHasUnsavedChanges;
+        status = RevisionStatus::HasUncommittedChanges;
         return nullptr;
         }
 
@@ -1149,7 +1149,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
         {
         BeAssert(false && "Cannot reverse revisions if there are local changes.");
-        return RevisionStatus::TransactionHasUnsavedChanges;
+        return RevisionStatus::HasLocalChanges;
         }
 
     if (IsCreatingRevision())
@@ -1185,7 +1185,7 @@ RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
     if (txnMgr.HasChanges())
         {
         BeAssert(false && "Cannot reinstate revisions if there are local changes. Abandon them first.");
-        return RevisionStatus::TransactionHasUnsavedChanges;
+        return RevisionStatus::HasLocalChanges;
         }
 
     RevisionStatus status = revision.Validate(m_dgndb);

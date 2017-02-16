@@ -4032,10 +4032,10 @@ public:
 StatusInt           FormatGeoCoordType66
 (
 short*              type66AppData,          // <= filled in with data. Must be at least 768 words.
-uint32_t&             type66AppDataBytes,     // <= set to sizeof of type66AppData in bytes
+uint32_t&           type66AppDataBytes,     // <= set to sizeof of type66AppData in bytes
 CSParameters        &csParams,
 int32_t             coordSysId,
-DgnDbR         project,
+DgnDbR              project,
 bool                primary,
 double              paperScaleFromType66,
 bool                datumOrEllipsoidFromUserLib,
@@ -4964,7 +4964,17 @@ StatusInt       DgnGCS::Store(DgnDbR project)
     if (SUCCESS != status)
         return status;
 
-    return project.SaveProperty(DgnProjectProperty::DgnGCS(), type66AppData, type66AppDataBytes) == BeSQLite::BE_SQLITE_OK? SUCCESS: ERROR;
+    status = project.SaveProperty(DgnProjectProperty::DgnGCS(), type66AppData, type66AppDataBytes) == BeSQLite::BE_SQLITE_OK? SUCCESS: ERROR;
+
+    // we have stored a new GCS to the BIM file. Make sure the next time we try to read it, we don't get the GCS that is stored in the DgnAppData.
+    if (SUCCESS == status)
+        {
+        project.DropAppData (DgnGCSAppData::GetKey());
+        project.DropAppData (NotFoundAppData::GetKey());
+        project.GeoLocation().NewGCSStored ();
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1034,11 +1034,29 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_stmts(20), m_snapp
     }
 
 /*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnApply()
+    {
+    if (!m_txnMgr.IsInAbandon())
+        _OnValidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnApplied()
+    {
+    if (!m_txnMgr.IsInAbandon())
+        _OnValidated();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
+void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& change)
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Insert);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
@@ -1046,15 +1064,15 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
     // We need to load this element, since filled models need to register it 
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert(el.IsValid());
-    el->_OnReversedDelete();
+    el->_OnAppliedAdd();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& change)
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Delete);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
@@ -1062,15 +1080,15 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
     // see if we have this element in memory, if so call its _OnDelete method.
     DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid()) 
-        el->_OnReversedAdd(); // Note: this MUST be a DgnElementPtr, since we can't call _OnReversedAdd with an element with a zero ref count
+        el->_OnAppliedDelete(); // Note: this MUST be a DgnElementPtr, since we can't call _OnAppliedDelete with an element with a zero ref count
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change) 
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Update);
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
@@ -1080,7 +1098,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
         BeAssert(postModified.IsValid());
-        postModified->_OnReversedUpdate(*el);
+        postModified->_OnAppliedUpdate(*el);
 
         elements.FinishUpdate(*postModified.get(), *el);
         }
