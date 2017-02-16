@@ -997,6 +997,16 @@ void DgnElement::_OnReversedAdd() const
         model->_OnReversedAddElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::ToJsonPropString() const
+    {
+    auto& ncThis = const_cast<DgnElement&>(*this);
+    ncThis._OnSaveJsonProperties();
+    return m_jsonProperties.isNull() ? Utf8String() :  Json::FastWriter::ToString(m_jsonProperties);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1027,6 +1037,10 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         statement.BindBlob(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid));
+
+    Utf8String jsonProps = ToJsonPropString();
+    if (!jsonProps.empty())
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_JsonProperties), jsonProps.c_str(), IECSqlBinder::MakeCopy::Yes);
 
     if (forInsert != ForInsert::Yes)
         return;
@@ -1065,7 +1079,7 @@ DgnDbStatus DgnElement::_InsertInDb()
             }
         }
 
-    return m_userProperties ? SaveUserProperties() : DgnDbStatus::Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1101,7 +1115,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
             }
         }
 
-    return m_userProperties ? SaveUserProperties() : DgnDbStatus::Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1278,9 +1292,6 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
-    if (!src.m_userProperties)
-        src.LoadUserProperties();
-
     DgnCode code = GetCode();
     _CopyFrom(src);
     m_code = code;
@@ -1365,6 +1376,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_userLabel = other.m_userLabel;
     m_parentId = other.m_parentId;
     m_parentRelClassId = other.m_parentRelClassId;
+    m_jsonProperties = other.m_jsonProperties;
     // don't copy FederationGuid
 
     // Copy the auto-handled EC properties
@@ -1390,8 +1402,6 @@ void DgnElement::_CopyFrom(DgnElementCR other)
                 m_flags.m_propState = DgnElement::PropState::Dirty;
             }
         }
-
-    CopyUserProperties(other);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1439,154 +1449,6 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
         parms.RelocateToDestinationDb(importer);
 
     return parms;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::LoadUserProperties() const
-    {
-    BeAssert(!m_userProperties);
-    
-    m_userProperties = new AdHocJsonContainer();
-
-    if (!IsPersistent())
-       return;
-    BeAssert(GetElementId().IsValid());
-
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT UserProperties FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
-    BeAssert(stmt.IsValid());
-
-    stmt->BindId(1, GetElementId());
-
-    DbResult result = stmt->Step();
-    BeAssert(result == BE_SQLITE_ROW && "Expected user properties for element");
-    UNUSED_VARIABLE(result);
-
-    Utf8CP userPropertiesStr = stmt->GetValueText(0);
-    if (!Utf8String::IsNullOrEmpty(userPropertiesStr))
-       m_userProperties->FromString(userPropertiesStr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SaveUserProperties() const
-    {
-    BeAssert(m_userProperties);
-
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?", GetDgnDb().GetECCrudWriteToken());
-    BeAssert(stmt.IsValid());
-
-    Utf8String str;
-    if (m_userProperties->IsEmpty())
-        {
-        stmt->BindNull(1);
-        }
-    else
-        {
-        str = m_userProperties->ToString();
-        stmt->BindText(1, str.c_str(), IECSqlBinder::MakeCopy::No);
-        }
- 
-    BeAssert(GetElementId().IsValid());
-    stmt->BindId(2, GetElementId());
-
-    DbResult result = stmt->Step();
-    if (result != BE_SQLITE_DONE)
-        {
-        BeAssert(false && "Could not save user properties");
-        return DgnDbStatus::WriteError;
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UnloadUserProperties() const
-    {
-    BeAssert(m_userProperties);
-    delete m_userProperties;
-    m_userProperties = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::CopyUserProperties(DgnElementCR other)
-    {
-    /* We do not want to incur the expense of loading/saving the user properties unless 
-     * necessary - these properties may be quite large, and in the majority of use-cases 
-     * DgnElement-s don't need to access these properties (even if they contain them). 
-     * 
-     * We dynamically load these properties only in these scenarios - 
-     * ... when access is required - see GetUserProperties(). 
-     * ... when copies are made for cloning - see CopyForCloneFrom(). 
-     * 
-     * Note that we do NOT dynamically load these properties when copies are made for
-     * edits (CopyForEdit()) and updates (UpdateElement()). Whereas clone-s can be done between 
-     * different elements, edits/updates are done only for the same element. 
-     *
-     * We then save these properties only if they have been loaded (see SaveUserProperties()).
-     *
-     * Therefore, in this routine (which is called from _CopyFrom(), i.e., called in all scenarios 
-     * where an in-memory copy is made), we can  reliably infer that we need to make a copy of the 
-     * user properties only when they have been loaded in the source/other element.  
-     */
-
-    if (other.m_userProperties)
-        {
-        if (!m_userProperties)
-            LoadUserProperties();
-        *m_userProperties = *other.m_userProperties;
-        }
-    else
-        {
-        if (m_userProperties)
-            UnloadUserProperties();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::AdHocJsonPropertyValue DgnElement::GetUserProperty(Utf8CP name) const
-    {
-    if (!m_userProperties)
-        LoadUserProperties();
-    return m_userProperties->Get(name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElement::ContainsUserProperty(Utf8CP name) const
-    {
-    if (!m_userProperties)
-        LoadUserProperties();
-    return m_userProperties->Contains(name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::RemoveUserProperty(Utf8CP name)
-    {
-    if (!m_userProperties)
-        LoadUserProperties();
-    return m_userProperties->Remove(name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ClearUserProperties()
-    {
-    if (!m_userProperties)
-        LoadUserProperties();
-    return m_userProperties->Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2549,6 +2411,23 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             el.SetUserLabel(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            });
+        
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_JsonProperties, 
+        [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.ToJsonPropString().c_str());
+            return DgnDbStatus::Success;
+            },
+        
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsUtf8())
+                return DgnDbStatus::BadArg;
+
+            Json::Reader::Parse(value.GetUtf8CP(), el.m_jsonProperties);
+            el._OnLoadedJsonProperties();
             return DgnDbStatus::Success;
             });
         

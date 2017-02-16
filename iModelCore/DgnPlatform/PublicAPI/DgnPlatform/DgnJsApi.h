@@ -456,9 +456,11 @@ public:
     JsECValueP GetPropertyValue(Utf8StringCR);
     int32_t SetPropertyValue(Utf8StringCR, JsECValueP);
 
+#if defined (BENTLEY_CHANGE)
     bool ContainsUserProperty(Utf8StringCR name) const;
     JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
     void RemoveUserProperty(Utf8StringCR name) const;
+#endif
 
     virtual JsGeometrySourceP ToGeometrySource();
     virtual JsGeometrySource3dP ToGeometrySource3d();
@@ -1232,13 +1234,14 @@ struct JsECValue : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Double,double)
 };
 
+#if defined (BENTLEY_CHANGE)
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct JsAdHocJsonPropertyValue : RefCountedBaseWithCreate
 {
     RefCountedPtr<JsDgnElement> m_jsel;   // keep the native and JS element objects alive while I hold a reference to the native element's data
-    ECN::AdHocJsonPropertyValue m_prop;
+    ECN::AdHocJsonValue m_prop;
 
     JsAdHocJsonPropertyValue(JsDgnElement* jsel, ECN::AdHocJsonPropertyValueCR p) : m_jsel(jsel), m_prop(p) {;}
 
@@ -1265,8 +1268,8 @@ struct JsAdHocJsonPropertyValue : RefCountedBaseWithCreate
     
     ECPropertyPrimitiveType GetType() const {ECN::PrimitiveType t; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetType(t))? (ECPropertyPrimitiveType)t: ECPropertyPrimitiveType::Unknown;}
     STUB_OUT_SET_METHOD(Type,ECPropertyPrimitiveType)
-
 };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

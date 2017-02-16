@@ -373,9 +373,9 @@ void DisplayStyle3d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_Load()
+void DisplayStyle3d::_OnLoadedJsonProperties()
     {
-    T_Super::_Load();
+    T_Super::_OnLoadedJsonProperties();
 
     JsonValueCR env = GetStyle(str_Environment());
     
@@ -402,9 +402,9 @@ void DisplayStyle3d::_Load()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_Save() 
+void DisplayStyle3d::_OnSaveJsonProperties() 
     {
-    T_Super::_Save();
+    T_Super::_OnSaveJsonProperties();
 
     Json::Value env;
     Json::Value ground;

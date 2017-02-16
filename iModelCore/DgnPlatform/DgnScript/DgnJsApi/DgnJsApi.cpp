@@ -227,6 +227,7 @@ int32_t JsDgnElement::SetPropertyValue(Utf8StringCR name, JsECValueP v)
     return (int32_t) m_el->SetPropertyValue(name.c_str(), v->m_value);
     }
 
+#if defined (BENTLEY_CHANGE)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
@@ -253,6 +254,7 @@ void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
     DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
     m_el->RemoveUserProperty(name.c_str());
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
