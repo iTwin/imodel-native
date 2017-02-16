@@ -31,10 +31,7 @@ StatusInt ViewContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     DgnElements& pool = m_dgndb->Elements();
     DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindLoadedElement(elementId);
     if (!el.IsValid())
-        {
-        BeAssert(!allowLoad);
         return ERROR;
-        }
 
     GeometrySourceCP geomElem = el->ToGeometrySource();
     if (nullptr == geomElem)
@@ -924,46 +921,102 @@ void GeometryParams::ResetAppearance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryParams::operator==(GeometryParamsCR rhs) const
+bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     {
-    if (this == &rhs)
+    if (this == &other)
         return true;
 
-    if (rhs.m_resolved != m_resolved)
+    if (m_categoryId != other.m_categoryId)
         return false;
 
-    if (rhs.m_categoryId    != m_categoryId ||
-        rhs.m_subCategoryId != m_subCategoryId ||
-        rhs.m_elmPriority   != m_elmPriority ||
-        rhs.m_netPriority   != m_netPriority)
+    if (m_subCategoryId != other.m_subCategoryId)
         return false;
 
-    if (rhs.m_lineColor     != m_lineColor ||
-        rhs.m_weight        != m_weight ||
-        rhs.m_geometryClass != m_geometryClass)
+    if (m_geometryClass != other.m_geometryClass)
         return false;
 
-    if (rhs.m_fillColor             != m_fillColor ||
-        rhs.m_fillDisplay           != m_fillDisplay ||
-        rhs.m_elmTransparency       != m_elmTransparency ||
-        rhs.m_netElmTransparency    != m_netElmTransparency ||
-        rhs.m_fillTransparency      != m_fillTransparency ||
-        rhs.m_netFillTransparency   != m_netFillTransparency)
+    // Don't compare m_netPriority, compare the inputs: m_elmPriority + m_subCateogoryId.
+    if (m_elmPriority != other.m_elmPriority)
         return false;
 
-    if (0 != memcmp(&rhs.m_appearanceOverrides, &m_appearanceOverrides, sizeof(m_appearanceOverrides)))
+    // Don't compare m_netElmTransparency, compare the inputs: m_elmTransparency + m_subCateogoryId.
+    if (m_elmTransparency != other.m_elmTransparency)
         return false;
 
-    if (!(m_materialId == rhs.m_materialId))
+    // Don't compare m_netFillTransparency, compare the inputs: m_fillTransparency + m_subCateogoryId.
+    if (m_fillTransparency != other.m_fillTransparency)
         return false;
 
-    if (!(m_gradient == rhs.m_gradient))
+    // Don't compare m_lineColor unless sub-category appearance override is set...
+    if (m_appearanceOverrides.m_color != other.m_appearanceOverrides.m_color)
+        return false;
+    else if (m_appearanceOverrides.m_color && (m_lineColor != other.m_lineColor))
         return false;
 
-    if (!(m_pattern == rhs.m_pattern))
+    // Don't compare m_weight unless sub-category appearance override is set...
+    if (m_appearanceOverrides.m_weight != other.m_appearanceOverrides.m_weight)
+        return false;
+    else if (m_appearanceOverrides.m_weight && (m_weight != other.m_weight))
         return false;
 
-    if (!(m_styleInfo == rhs.m_styleInfo))
+    // Don't compare m_materialId unless sub-category appearance override is set...
+    if (m_appearanceOverrides.m_material != other.m_appearanceOverrides.m_material)
+        return false;
+    else if (m_appearanceOverrides.m_material && (m_materialId != other.m_materialId))
+        return false;
+
+    // Don't compare m_styleInfo unless sub-category appearance override is set...
+    if (m_appearanceOverrides.m_style != other.m_appearanceOverrides.m_style)
+        {
+        return false;
+        }
+    else if (m_appearanceOverrides.m_style)
+        {
+        if (m_styleInfo.IsValid() != other.m_styleInfo.IsValid())
+            {
+            return false;
+            }
+        else if (m_styleInfo.IsValid())
+            {
+            // NOTE: Don't use == operator on LineStyleInfo, don't want to compare LineStyleSymb since if will differ between resolved/un-resolved params...
+            if (m_styleInfo->GetStyleId() != other.m_styleInfo->GetStyleId())
+                return false;
+
+            if (!(m_styleInfo->GetLineStyleSymb() == other.m_styleInfo->GetLineStyleSymb()))
+                return false;
+            }
+        }
+
+    if (m_fillDisplay != other.m_fillDisplay)
+        {
+        return false;
+        }
+    else if (FillDisplay::Never != m_fillDisplay)
+        {
+        // Don't compare m_fillColor/m_gradient unless sub-category appearance override is set...
+        if (m_appearanceOverrides.m_bgFill != other.m_appearanceOverrides.m_bgFill)
+            {
+            return false;
+            }
+        else if (m_appearanceOverrides.m_fill != other.m_appearanceOverrides.m_fill)
+            {
+            return false;
+            }
+        else if (m_appearanceOverrides.m_fill)
+            {
+            if (m_gradient.IsValid() != other.m_gradient.IsValid())
+                return false;
+            else if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
+                return false;
+
+            if (m_fillColor != other.m_fillColor)
+                return false;
+            }
+        }
+
+    if (m_pattern.IsValid() != other.m_pattern.IsValid())
+        return false;
+    else if (m_pattern.IsValid() && !(*m_pattern == *other.m_pattern))
         return false;
 
     return true;

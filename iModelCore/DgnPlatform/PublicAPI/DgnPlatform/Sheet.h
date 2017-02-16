@@ -241,6 +241,19 @@ namespace Attachment
         DgnElementId GetAttachmentId() const {return m_attachmentId;}
     };
 
+    struct Tile2dModel : TileTree::QuadTree::Tile
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
+        using T_Super::Tile;
+
+        bool _HasChildren() const override {return false;}
+        ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return nullptr;}
+        void _DrawGraphics(TileTree::DrawArgsR args, int depth) const override;
+        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
+        Tree& GetTree() const {return (Tree&) m_root;}
+    };
+
     struct Tile : TileTree::QuadTree::Tile
     {
         DEFINE_T_SUPER(TileTree::QuadTree::Tile)

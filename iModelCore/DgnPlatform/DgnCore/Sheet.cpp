@@ -340,7 +340,47 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
         return;
 
     m_renderSystem = renderSys;
-    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    BeAssert(m_viewport.IsValid());
+
+    static bool s_useTiles = false; // debugging - to be removed.
+    if (s_useTiles)
+        {
+        m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
+    else
+        {
+        m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
+            (QuadTree::Tile*) new Tile(*this, QuadTree::TileId(0,0,0), nullptr) : new Tile2dModel(*this, QuadTree::TileId(0,0,0), nullptr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth) const 
+    {
+    if (!m_graphic.IsValid())
+        {
+        auto vp = GetTree().m_viewport;
+        auto scene = vp->GetViewControllerR().GetScene();
+        if (!scene.IsValid())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        GraphicBranch branch;
+        branch.SetViewFlags(vp->GetViewFlags());
+
+        for (auto& graphic : scene->m_graphics->m_list)
+            branch.Add(*graphic.m_ptr);
+        
+        Transform toNpc;
+        toNpc.InitFrom(*vp->GetWorldToNpcMap(), false);
+        m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
+        }
+
+    args.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -444,16 +484,12 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     // now expand the frustum in one direction so that the view is square (so we can use square tiles)
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
-    m_viewport->SetupFromViewController();
 
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
-    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
-    m_viewport->SetupFromFrustum(frust);
-
-    auto& def=view->GetViewDefinition();
+    auto& def = view->GetViewDefinition();
+    auto& style = def.GetDisplayStyle();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    def.GetDisplayStyle().SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+    style.SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
 
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
@@ -463,18 +499,25 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         env.m_skybox.m_enabled = false;
         }
 
+    m_viewport->SetupFromViewController();
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
+    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    m_viewport->SetupFromFrustum(frust);
+
     // max pixel size is half the length of the diagonal.
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
-    range.low.z = 0;
-    Transform trans = Transform::From(range.low);
+    DPoint3d org = range.low;
+    org.z = 0.0;
+    Transform trans = Transform::From(org);
     trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
     SetLocation(trans);
 
-    m_viewport->m_toParent = trans;
+    bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
+    m_viewport->m_toParent.ScaleMatrixColumns(m_scale.x, m_scale.y, 1.0);
 
     // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
     m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(1.0/m_scale.x, 1.0/m_scale.y), 5, false, nullptr, nullptr, nullptr).get());
@@ -489,6 +532,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         }
 
     m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
+
     SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
     }

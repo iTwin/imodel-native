@@ -509,9 +509,9 @@ void GraphicBuilder::IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) const
+GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    return m_builder->_CreateSubGraphic(subToGraphic);
+    return m_builder->_CreateSubGraphic(subToGraphic, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**

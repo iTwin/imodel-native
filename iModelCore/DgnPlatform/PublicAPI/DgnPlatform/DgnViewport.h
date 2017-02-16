@@ -96,6 +96,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 
     struct SyncFlags
     {
+        friend struct DgnViewport;
     private:
         bool m_decorations = false;
         bool m_scene = false;

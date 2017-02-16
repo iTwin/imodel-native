@@ -297,7 +297,7 @@ public:
     void DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook = true) {_DrawStyledCurveVector(graphic, curve, params, doCook);}
 /** @} */
 
-    StatusInt VisitElement(DgnElementId elementId, bool allowLoad) {return _VisitElement(elementId, allowLoad);}
+    StatusInt VisitElement(DgnElementId elementId, bool allowLoad=true) {return _VisitElement(elementId, allowLoad);}
 
     bool CheckStop() {return _CheckStop();}
 }; // ViewContext

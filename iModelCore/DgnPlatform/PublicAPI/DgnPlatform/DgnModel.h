@@ -310,25 +310,25 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnInsertedElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
-    //! @param[in] element The element that was just reinstatted.
+    //! Called after a change representing addition of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
+    //! @param[in] element The element that was just added.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedDeleteElement(DgnElementCR element) {}
+    virtual void _OnAppliedAddElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
+    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {}
 
-    //! Called after an DgnElement that was previously updated has been reversed by undo.
+    //! Called after a change representing DgnElement in this model was updated by applying a change set.
     //! @param[in] original The element in its original state. This is the state before the original change (the current state)
-    //! @param[in] modified The element in its post-changed (now reversed) state.
+    //! @param[in] modified The element in its post-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
+    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
@@ -336,11 +336,11 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnDeletedElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement in this DgnModel has been removed by undo
-    //! @param[in] element The element that was just deleted by undo.
+    //! Called after a change representing deletion of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
+    //! @param[in] element The element that was just deleted by applying a change set.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedAddElement(DgnElementCR element) {}
+    virtual void _OnAppliedDeleteElement(DgnElementCR element) {}
 
     /** @} */
 
@@ -814,11 +814,11 @@ protected:
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
-    void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
+    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
-    void _OnReversedAddElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnReversedAddElement(element);}
+    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
     void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
-    void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnReversedUpdateElement(modified, original);}
+    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}

@@ -618,9 +618,13 @@ private:
     mutable IGeoCoordinateServicesP m_geoServices = nullptr;
 
     DgnGeoLocation(DgnDbR db);
-    void LoadProjectExtents() const;
+    void    LoadProjectExtents() const;
 
 public:
+    //! @private
+    //! Called only internally, on the rare occasions when a new GCS has been stored to the DgnDb.
+    void    NewGCSStored () {m_hasCheckedForGCS = false;}
+
     //! @private
     //! Return a reasonable value that can be used if the project extents have never been established for this BIM.
     //! This is an arbitrary volume intended to represent a cube of a reasonable size, if we have no idea what is being modeled by
@@ -677,11 +681,11 @@ public:
 //=======================================================================================
 struct DgnUnits
 {
-    static double const OneMeter() {return 1.0;}
-    static double const OneKilometer() {return 1000.0 * OneMeter();}
-    static double const OneMillimeter() {return OneMeter() / 1000.0;}
-    static double const OneCentimeter() {return OneMeter() / 100.0;}
-    static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double constexpr OneMeter() {return 1.0;}
+    static double constexpr OneKilometer() {return 1000.0 * OneMeter();}
+    static double constexpr OneMillimeter() {return OneMeter() / 1000.0;}
+    static double constexpr OneCentimeter() {return OneMeter() / 100.0;}
+    static double constexpr DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
 };
 
 //=======================================================================================

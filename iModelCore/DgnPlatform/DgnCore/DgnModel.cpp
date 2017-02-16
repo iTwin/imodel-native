@@ -1430,8 +1430,8 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
                     "DGN_point(g.Origin_X,g.Origin_Y,0),"
                     "DGN_angles(g.Rotation,0,0),"
                     "DGN_bbox("
-                        "g.BBoxLow_X,g.BBoxLow_Y,0,"
-                        "g.BBoxHigh_X,g.BBoxHigh_Y,0))))"
+                        "g.BBoxLow_X,g.BBoxLow_Y,-1,"
+                        "g.BBoxHigh_X,g.BBoxHigh_Y,1))))"
         " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement2d) " As g"
         " WHERE e.ModelId=? AND e.Id=g.ElementId");
 

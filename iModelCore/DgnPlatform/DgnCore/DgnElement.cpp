@@ -817,9 +817,9 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_OnReversedDelete() const
+void DgnElement::_OnAppliedAdd() const
     {
-    GetModel()->_OnReversedDeleteElement(*this);
+    GetModel()->_OnAppliedAddElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -930,23 +930,23 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     GetModel()->_OnUpdatedElement(*this, original);
     }
 
-struct OnUpdateReversedCaller
+struct OnUpdateAppliedCaller
     {
     DgnElementCR m_updated, m_original;
-    OnUpdateReversedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
-    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnReversedUpdate(m_updated, m_original);}
+    OnUpdateAppliedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnAppliedUpdate(m_updated, m_original);}
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_OnReversedUpdate(DgnElementCR original) const
+void DgnElement::_OnAppliedUpdate(DgnElementCR original) const
     {
     // we need to call the events on BOTH sets of appdata
-    original.CallAppData(OnUpdateReversedCaller(*this, original));
-    CallAppData(OnUpdateReversedCaller(*this, original));
+    original.CallAppData(OnUpdateAppliedCaller(*this, original));
+    CallAppData(OnUpdateAppliedCaller(*this, original));
 
-    GetModel()->_OnReversedUpdateElement(*this, original);
+    GetModel()->_OnAppliedUpdateElement(*this, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -988,13 +988,13 @@ void DgnElement::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_OnReversedAdd() const
+void DgnElement::_OnAppliedDelete() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
     DgnModelPtr model = GetModel();
     if (model.IsValid())
-        model->_OnReversedAddElement(*this);
+        model->_OnAppliedDeleteElement(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1832,8 +1832,9 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -halfMillimeter();
-    range.high.z = halfMillimeter();
+
+    range.low.z = -Render::Target::Get2dFrustumDepth(); // this makes range span all possible display priority values
+    range.high.z = Render::Target::Get2dFrustumDepth();
 
     return range;
     }
@@ -3619,9 +3620,9 @@ void  GeometricElement::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnReversedAdd() const 
+void GeometricElement::_OnAppliedDelete() const 
     {
-    T_Super::_OnReversedAdd();
+    T_Super::_OnAppliedDelete();
     if (m_graphics.IsEmpty())
         return;
         
@@ -3632,9 +3633,9 @@ void GeometricElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnReversedDelete() const 
+void GeometricElement::_OnAppliedAdd() const 
     {
-    T_Super::_OnReversedDelete();
+    T_Super::_OnAppliedAdd();
     T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
     }
 

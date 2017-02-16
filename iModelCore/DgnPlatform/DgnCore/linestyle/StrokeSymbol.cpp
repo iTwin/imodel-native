@@ -80,25 +80,25 @@ static void addClipPlane (ConvexClipPlaneSetR clipPlanes, DPoint3dCP pt, DPoint3
 * Output this symbol ref at a specific location and direction, optionally clipping the origin and/or end.
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineStyleSymbCP modifiers, DPoint3dCP org, DPoint3dCP dir, double const* xScale, DPoint3dCP clipOrg, DPoint3dCP clipEnd) const
+StatusInt LsSymbolReference::Output(LineStyleContextR lineStyleContext, LineStyleSymbCP modifiers, DPoint3dCP org, DPoint3dCP dir, double const* xScale, DPoint3dCP clipOrg, DPoint3dCP clipEnd) const
     {
-    if (NULL == m_symbol.get ())
+    if (NULL == m_symbol.get())
         return ERROR;
 
     Transform transform;
     RotMatrix planeByRows;
-    modifiers->GetPlaneAsMatrixRows (planeByRows);
+    modifiers->GetPlaneAsMatrixRows(planeByRows);
     DVec3d xVector, yVector, zVector;
     planeByRows.GetRows(xVector, yVector, zVector);
 
     DVec3d uVector, vVector, wVector;
     uVector = *(DVec3d*)dir;
     wVector = zVector;
-    vVector.NormalizedCrossProduct (wVector, uVector);
-    transform.InitFromOriginAndVectors (*org, uVector, vVector, wVector);
+    vVector.NormalizedCrossProduct(wVector, uVector);
+    transform.InitFromOriginAndVectors(*org, uVector, vVector, wVector);
 
     double      scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale());
-    transform.TranslateInLocalCoordinates (transform, m_offset.x * scale, m_offset.y * scale, 0.0);
+    transform.TranslateInLocalCoordinates(transform, m_offset.x * scale, m_offset.y * scale, 0.0);
 
     // Add rotation modifiers. Rotation is about the Z axis of the transform.
     switch (GetRotationMode())
@@ -107,19 +107,19 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
             {
             // Can't call initFromPrincipleAxisRotations directly since it will multiply matrices in wrong order.
             RotMatrix rotation, product, baseMatrix;
-            rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
-            transform.GetMatrix (baseMatrix);
-            product.InitProduct (baseMatrix, rotation);
-            transform.SetMatrix (product);
+            rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity(), 0.0, 0.0, m_angle);
+            transform.GetMatrix(baseMatrix);
+            product.InitProduct(baseMatrix, rotation);
+            transform.SetMatrix(product);
             break;
             }
 
         case ROTATE_Absolute:
             {
             RotMatrix planeByColumns, rotatedMatrix;
-            planeByColumns.InitFromColumnVectors (xVector, yVector, zVector);
-            rotatedMatrix.InitFromPrincipleAxisRotations (planeByColumns, 0.0, 0.0, m_angle);
-            transform.SetMatrix (rotatedMatrix);
+            planeByColumns.InitFromColumnVectors(xVector, yVector, zVector);
+            rotatedMatrix.InitFromPrincipleAxisRotations(planeByColumns, 0.0, 0.0, m_angle);
+            transform.SetMatrix(rotatedMatrix);
             break;
             }
 
@@ -128,75 +128,99 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
             // Adjust so that the X direction is left to right with vertical adjusted to read "up hill" (-y to +y)
             DVec3d xDir, yDir, zDir;
             DPoint3d org;
-            transform.GetOriginAndVectors (org, xDir, yDir, zDir);
+            transform.GetOriginAndVectors(org, xDir, yDir, zDir);
             DVec3d xDirTemp = xDir;
             planeByRows.Multiply(xDirTemp);
 
-            if (xDirTemp.x < 0.0 || fabs (xDirTemp.y + 1.0) < .0001)
+            if (xDirTemp.x < 0.0 || fabs(xDirTemp.y + 1.0) < .0001)
                 {
                 xDir.Negate ();
                 yDir.Negate ();
                 }
 
-            transform.InitFromOriginAndVectors (org, xDir, yDir, zDir);
+            transform.InitFromOriginAndVectors(org, xDir, yDir, zDir);
             RotMatrix rotation, product, baseMatrix;
-            rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
-            transform.GetMatrix (baseMatrix);
-            product.InitProduct (baseMatrix, rotation);
-            transform.SetMatrix (product);
+            rotation.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
+            transform.GetMatrix(baseMatrix);
+            product.InitProduct(baseMatrix, rotation);
+            transform.SetMatrix(product);
             break;
             }
         }
 
     scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale() / m_symbol->GetMuDef());
-    DPoint3d    scaleVec;
-    scaleVec.Init (scale, scale, scale);
+    DPoint3d scaleVec;
+    scaleVec.Init(scale, scale, scale);
     if (xScale)
         scaleVec.x *= *xScale;
 
-    transform.ScaleMatrixColumns (transform, scaleVec.x, scaleVec.y, scaleVec.z);
+    transform.ScaleMatrixColumns(transform, scaleVec.x, scaleVec.y, scaleVec.z);
 
-    ConvexClipPlaneSet  convexClip;
     // if there is clip at either the beginning or the end of the symbol, set up the clip planes
     if (clipOrg || clipEnd)
         {
+        ConvexClipPlaneSet convexPlanes;
+
         if (clipOrg)
             {
             DPoint3d revDir = *dir;
-            revDir.Scale (-1.0);
-            addClipPlane (convexClip, clipOrg, &revDir);
+
+            revDir.Scale(-1.0);
+            addClipPlane(convexPlanes, clipOrg, &revDir);
             }
 
         if (clipEnd)
-            addClipPlane (convexClip, clipEnd, dir);
+            {
+            addClipPlane(convexPlanes, clipEnd, dir);
+            }
+
+        ClipPlaneSet  planes(convexPlanes);
+        ClipVectorPtr clip = ClipVector::Create();
+
+        if (SUCCESS == ClipVector::AppendPlanes(clip, planes))
+            {
+            m_symbol->Draw(lineStyleContext, transform, clip.get(), GetUseElementColor(), GetUseElementWeight());
+
+            return SUCCESS;
+            }
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ClipPlaneSet clips (convexClip);
-    context->DrawSymbol (m_symbol.get (), &transform, &clips);
-#else
-    m_symbol->Draw(lineStyleContext, transform, GetUseElementColor(), GetUseElementWeight());
-#endif
+    m_symbol->Draw(lineStyleContext, transform, nullptr, GetUseElementColor(), GetUseElementWeight());
 
-    return  SUCCESS;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, bool ignoreColor, bool ignoreWeight)
+void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, ClipVectorCP clip, bool ignoreColor, bool ignoreWeight)
     {
+    // NOTE: Unfortunately we can't just call ViewContext::AddSubGraphic for symbols since it won't support things like ignoreColor, ignoreWeight...
     DgnGeometryPartCPtr geomPart = GetGeometryPart();
 
     if (!geomPart.IsValid())
         return;
 
-    Render::GraphicBuilderR graphic = context.GetGraphicR();
+    Render::GraphicBuilderR mainGraphic = context.GetGraphicR();
+    ViewContextR viewContext = context.GetViewContext();
+
+    if (mainGraphic.IsSimplifyGraphic() && nullptr != viewContext.GetViewport())
+        {
+        Transform partToWorld = Transform::FromProduct(mainGraphic.GetLocalToWorldTransform(), transform);
+        ElementAlignedBox3d range = geomPart->GetBoundingBox();
+
+        partToWorld.Multiply(range, range);
+
+        if (!viewContext.IsRangeVisible(range))
+            return; // Part range doesn't overlap pick/fence...
+        }
+
     Render::GeometryParamsCR baseParams = context.GetGeometryParams();
     bool cookParams = baseParams.GetCategoryId().IsValid(); // NOTE: LineStyleRangeCollector doesn't care about base symbology...
     bool creatingTexture = context.GetCreatingTexture();
+    Render::GraphicBuilderPtr symbolGraphic = mainGraphic.CreateSubGraphic(transform, clip);
 
-    GeometryCollection collection(geomPart->GetGeometryStream(), *GetDgnDbP(), &baseParams, &transform);
+    GeometryCollection collection(geomPart->GetGeometryStream(), *GetDgnDbP(), &baseParams);
 
     for (auto iter : collection)
         {
@@ -226,18 +250,22 @@ void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform, 
             if (nullptr != symbParams.GetLineStyle() && !symbParams.GetLineStyle()->GetLineStyleSymb().UseLinePixels())
                 symbParams.SetLineStyle(nullptr);
 
-            context.GetViewContext().CookGeometryParams(symbParams, graphic);
+            viewContext.CookGeometryParams(symbParams, *symbolGraphic);
             }
 
-        geometry->TransformInPlace(iter.GetSourceToWorld());
-        geometry->AddToGraphic(graphic);
+        geometry->AddToGraphic(*symbolGraphic);
         }
+
+    Render::GraphicParams graphicParams;
 
     if (cookParams)
         {
-        Render::GeometryParams params(baseParams);
-        context.GetViewContext().CookGeometryParams(params, graphic); // Restore base symbology...
+        Render::GeometryParams tmpGeomParams(baseParams);
+        viewContext.CookGeometryParams(tmpGeomParams, graphicParams);
         }
+
+    symbolGraphic->Close();
+    mainGraphic.AddSubGraphic(*symbolGraphic, transform, graphicParams, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**

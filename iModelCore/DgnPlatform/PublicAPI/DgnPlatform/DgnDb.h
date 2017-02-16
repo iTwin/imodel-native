@@ -337,16 +337,17 @@ public:
     static void VerifyCpuPoolThread() {VerifyThread(ThreadId::CpuPool);}   //!< assert that this is one of the CpuPool threads
 /** @} */
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    //!Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
-    //!or other non-read EC CRUD operations.
-    //!Otherwise the preparation of the ECSQL or the write operation will fail.
-    //!@return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    //! Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
+    //! or other non-read EC CRUD operations.
+    //! Otherwise the preparation of the ECSQL or the write operation will fail.
+    //! @return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    //! @private
     BeSQLite::EC::ECCrudWriteToken const* GetECCrudWriteToken() const; //not inlined as it must not be called externally
-    //!Gets the permission token to perform a ECSchema import/update
-    //!@return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
+
+    //! Gets the permission token to perform a ECSchema import/update
+    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
+    //! @private
     BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
-#endif
 };
 
 END_BENTLEY_DGN_NAMESPACE

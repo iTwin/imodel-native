@@ -480,7 +480,7 @@ public:
 
     void                _PostProcessLoad    () override;
     void                _ClearPostProcess   () override;
-    void                Draw                (LineStyleContextR, TransformCR, bool ignoreColor, bool ignoreWeight);
+    void                Draw                (LineStyleContextR, TransformCR, ClipVectorCP clip, bool ignoreColor, bool ignoreWeight);
     void                SetGeometryPartId   (DgnGeometryPartId id) {m_geomPartId = id;}
     DgnGeometryPartId   GetGeometryPartId   () const {return m_geomPartId;}
     DgnGeometryPartCPtr GetGeometryPart     () const;

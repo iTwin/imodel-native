@@ -387,7 +387,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
         for (auto& thisScore : results.m_scores)
             {
             if (rangeQuery.TestElement(thisScore.second))
-                context.VisitElement(thisScore.second, true);
+                context.VisitElement(thisScore.second);
 
             if (context.CheckStop())
                 return;
@@ -401,7 +401,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     while ((thisId = rangeQuery.StepRtree()).IsValid())
         {
         if (rangeQuery.TestElement(thisId))
-            context.VisitElement(thisId, true);
+            context.VisitElement(thisId);
 
         if (context.CheckStop())
             return;

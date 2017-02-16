@@ -428,13 +428,11 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
-#if defined (BENTLEY_CHANGE)
     if (compression >= (1.0 - s_flatViewFractionTolerance))
         {
         SetCameraOn(false);
         return ViewportStatus::Success;
         }
-#endif
 
     DPoint3d viewOrg     = frustPts[NPC_000];
     DVec3d viewDelta     = GetExtents();
@@ -457,6 +455,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     SetFocusDistance(focusDistance);
     SetOrigin(viewOrg);
     SetExtents(viewDelta);
+    SetCameraOn(true);
     SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
@@ -500,9 +499,10 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     auto cameraView = ToCameraViewP();
     DPoint3d origNewDelta = newDelta;
 
-    if (nullptr != cameraView)
+    bool isCameraOn = cameraView && cameraView->IsCameraOn();
+    if (isCameraOn)
         {
-        // In a camera view, the only way to guarantee we can see the entire volume is to set delta at the front plane, not focus plane.
+        // If the camera is on, the only way to guarantee we can see the entire volume is to set delta at the front plane, not focus plane.
         // That generally causes the view to be too large (objects in it are too small), since we can't tell whether the objects are at
         // the front or back of the view. For this reason, don't attempt to add any "margin" to camera views.
         }
@@ -533,7 +533,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.Scale(1.04); // default "dilation"
         }
 
-    if (physView /* && Allow3dManipulations() */ && (nullptr == cameraView))
+    if (physView /* && Allow3dManipulations() */ && isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
         double diag = newDelta.MagnitudeXY ();
@@ -932,6 +932,9 @@ bool OrthographicViewController::_OnOrientationEvent(RotMatrixCR orientation, Or
 //---------------------------------------------------------------------------------------
 bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
+    if (!IsCameraOn())
+        return T_Super::_OnOrientationEvent(orientation, mode, ui);
+
     DVec3d forward, up;
     if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
         return false;
@@ -972,6 +975,9 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewDefinition::VerifyFocusPlane()
     {
+    if (!m_isCameraOn)
+        return;
+
     DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
     m_rotation.Multiply(eyeOrg);
 
@@ -1059,6 +1065,7 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     DPoint3d origin;
     origin.SumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
 
+    SetCameraOn(true);
     SetEyePoint(eyePoint);
     SetRotation(rotation);
     SetFocusDistance(focusDist);
@@ -1173,6 +1180,9 @@ DPoint3d ViewDefinition::GetCenter() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d CameraViewDefinition::_GetTargetPoint() const
     {
+    if (!IsCameraOn())
+        return T_Super::_GetTargetPoint();
+
     DVec3d viewZ;
     GetRotation().GetRow(viewZ, 2);
     DPoint3d target;

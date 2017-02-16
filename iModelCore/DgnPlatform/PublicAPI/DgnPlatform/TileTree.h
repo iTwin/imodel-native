@@ -238,6 +238,7 @@ protected:
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
+    DGNPLATFORM_EXPORT virtual Render::ViewFlags _GetDrawViewFlags(RenderContextCR) const;
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
@@ -270,7 +271,7 @@ public:
     DGNPLATFORM_EXPORT virtual void _AdjustViewFlags(Render::ViewFlags& viewFlags) const;
 
     //! Ctor for Root.
-    //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()
+    //! @param db The DgnDb from which this Root was created. This is needed to call GeoLocation().GetDgnGCS()
     //! @param location The transform from tile coordinates to BIM world coordinates.
     //! @param rootUrl The root url for loading tiles. This name will be prepended to tile names.
     //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.
@@ -298,7 +299,8 @@ public:
     //! @note This method must be called from the client thread
     void DrawInView(RenderContextR context);
 
-    DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP clips);
+    //! Perform a pick operation on the contents of this tree
+    DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);
 };
 
 //=======================================================================================
@@ -337,7 +339,7 @@ protected:
     BentleyStatus DoSaveToDb();
 
 public:
-    bool IsCanceledOrAbandoned() const { return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned(); }
+    bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -492,8 +494,9 @@ struct DrawArgs : TileArgs
 
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch);
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
+    void Clear() {m_graphics.Clear(); m_missing.Clear(); }
+    DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
 
-    DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
     DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
 
@@ -562,7 +565,7 @@ struct Tile : TileTree::Tile
     bool m_isLeaf;
     TileId m_id; 
     Render::IGraphicBuilder::TileCorners m_corners; 
-    Render::GraphicPtr m_graphic;                   
+    mutable Render::GraphicPtr m_graphic;                   
 
     Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
 

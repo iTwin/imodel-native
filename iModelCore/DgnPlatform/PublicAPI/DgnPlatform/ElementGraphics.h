@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGraphics.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,6 +26,9 @@ struct WireframeGeomUtil
 
     DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicBuilderR);
     DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicBuilderR, double zDepth);
+
+    DGNPLATFORM_EXPORT static void DrawControlPolygon(MSBsplineSurfaceCR, Render::GraphicBuilderR, Render::GraphicParamsCR);
+    DGNPLATFORM_EXPORT static void DrawControlPolygon(ICurvePrimitiveCR, Render::GraphicBuilderR, Render::GraphicParamsCR, bool is3d = true, double zDepth = 0.0);
 };
 
 END_BENTLEY_DGN_NAMESPACE

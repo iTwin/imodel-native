@@ -196,7 +196,6 @@ BentleyStatus TileLoader::DoReadFromDb()
     return SUCCESS;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
@@ -803,7 +802,9 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
-    double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+    
+    constexpr double s_minPixelSizeAtPoint = 1.0E-3;
+    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
     if (pixelSize > _GetMaximumSize() * args.GetTileSizeModifier())
         return Visibility::TooCoarse;
     else
@@ -986,10 +987,10 @@ void Root::_AdjustViewFlags(ViewFlags& flags) const
 * Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(ViewContextR context)
+void DrawArgs::DrawGraphics()
     {
     // Allow the tile tree to specify how view flags should be overridden
-    ViewFlags flags = context.GetViewFlags();
+    ViewFlags flags = m_context.GetViewFlags();
     m_root._AdjustViewFlags(flags);
 
     DrawBranch(flags, m_graphics);

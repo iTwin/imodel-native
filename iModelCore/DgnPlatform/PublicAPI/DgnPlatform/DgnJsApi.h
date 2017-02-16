@@ -336,8 +336,8 @@ typedef JsECSqlValue* JsECSqlValueP;
 //=======================================================================================
 struct JsECSqlArrayValueIterator : RefCountedBaseWithCreate
     {
-    BeSQLite::EC::IECSqlArrayValue::const_iterator m_iter;
-    JsECSqlArrayValueIterator(BeSQLite::EC::IECSqlArrayValue::const_iterator it) : m_iter(it) { ; }
+    BeSQLite::EC::IECSqlValueIterable::const_iterator m_iter;
+    JsECSqlArrayValueIterator(BeSQLite::EC::IECSqlValueIterable::const_iterator it) : m_iter(it) { ; }
     };
 
 typedef JsECSqlArrayValueIterator* JsECSqlArrayValueIteratorP;
@@ -347,15 +347,15 @@ typedef JsECSqlArrayValueIterator* JsECSqlArrayValueIteratorP;
 //=======================================================================================
 struct JsECSqlArrayValue : RefCountedBaseWithCreate
     {
-    BeSQLite::EC::IECSqlArrayValue const& m_arrayValue;
+    BeSQLite::EC::IECSqlValue const& m_arrayValue;
 
-    JsECSqlArrayValue(BeSQLite::EC::IECSqlArrayValue const& arrayValue) : m_arrayValue(arrayValue) { ; }
+    JsECSqlArrayValue(BeSQLite::EC::IECSqlValue const& arrayValue) : m_arrayValue(arrayValue) { ; }
 
-    JsECSqlArrayValueIteratorP Begin() { return new JsECSqlArrayValueIterator(m_arrayValue.begin()); }
-    bool IsValid(JsECSqlArrayValueIteratorP iter) { return iter && iter->m_iter != m_arrayValue.end(); }
+    JsECSqlArrayValueIteratorP Begin() { return new JsECSqlArrayValueIterator(m_arrayValue.GetArrayIterable().begin()); }
+    bool IsValid(JsECSqlArrayValueIteratorP iter) { return iter && iter->m_iter != m_arrayValue.GetArrayIterable().end(); }
     bool ToNext(JsECSqlArrayValueIteratorP iter) { if (nullptr == iter) return false; ++(iter->m_iter); return IsValid(iter); }
 
-    JsECSqlValueP GetValue(JsECSqlArrayValueIteratorP iter) { return IsValid(iter) ? new JsECSqlValue(*iter->m_iter) : nullptr; }
+    JsECSqlValueP GetValue(JsECSqlArrayValueIteratorP iter) { return IsValid(iter) ? new JsECSqlValue(&*iter->m_iter) : nullptr; }
     };
 
 typedef JsECSqlArrayValue* JsECSqlArrayValueP;
