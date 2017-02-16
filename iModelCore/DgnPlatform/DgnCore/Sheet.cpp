@@ -357,7 +357,7 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth) const 
+void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const 
     {
     if (!m_graphic.IsValid())
         {
@@ -372,7 +372,7 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth)
         GraphicBranch branch;
         branch.SetViewFlags(vp->GetViewFlags());
 
-        for (auto& graphic : scene->m_graphics->m_list)
+        for (auto& graphic : scene->m_list)
             branch.Add(*graphic.m_ptr);
         
         Transform toNpc;

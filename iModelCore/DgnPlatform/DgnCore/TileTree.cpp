@@ -857,7 +857,7 @@ void Root::DrawInView(RenderContextR context)
 
     //DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
-    args.DrawGraphics(context);
+    args.DrawGraphics();
 
     // Do we still have missing tiles?
     if (!args.m_missing.empty())

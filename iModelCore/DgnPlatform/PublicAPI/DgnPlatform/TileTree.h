@@ -238,7 +238,6 @@ protected:
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
-    DGNPLATFORM_EXPORT virtual Render::ViewFlags _GetDrawViewFlags(RenderContextCR) const;
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
@@ -494,7 +493,7 @@ struct DrawArgs : TileArgs
 
     void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch);
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    void Clear() {m_graphics.Clear(); m_missing.Clear(); }
+    void Clear() {m_graphics.Clear(); m_missing.clear(); }
     DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
 
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
