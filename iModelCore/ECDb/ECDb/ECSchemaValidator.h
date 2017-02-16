@@ -41,7 +41,7 @@ struct ECSchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         enum Type
             {
-            NoMultiInheritance,
+            ValidBaseClasses,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipClass,
             ValidNavigationProperty
@@ -58,9 +58,7 @@ struct ECSchemaValidationRule
                 virtual Utf8String _ToString() const = 0;
 
             protected:
-                explicit Error(Type ruleType)
-                    : m_ruleType(ruleType)
-                    {}
+                explicit Error(Type ruleType) : m_ruleType(ruleType) {}
 
             public:
                 virtual ~Error() {}
@@ -79,21 +77,21 @@ struct ECSchemaValidationRule
     protected:
         explicit ECSchemaValidationRule(Type type) : m_type(type) {}
 
+        Type GetType() const { return m_type; }
     public:
         virtual ~ECSchemaValidationRule() {}
 
-        bool ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema);
-        bool ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass);
-        bool ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty);
+        bool ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema) { return _ValidateSchemas(schemas, schema); }
+        bool ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) { return _ValidateSchema(schema, ecClass); }
+        bool ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) { return _ValidateClass(ecClass, ecProperty); }
 
         void AddErrorToResult(ECSchemaValidationResult& result) const;
-        Type GetType() const { return m_type; }
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaValidationResult : NonCopyableClass
+struct ECSchemaValidationResult final : NonCopyableClass
     {
     private:
         std::vector<std::unique_ptr<ECSchemaValidationRule::Error>> m_errors;
@@ -115,24 +113,31 @@ struct ECSchemaValidationResult : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2017
 //+===============+===============+===============+===============+===============+======
-struct NoMultiInheritanceRule : ECSchemaValidationRule
+struct ValidBaseClassesRule final : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      02/2017
         //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
+        struct Error final : ECSchemaValidationRule::Error
             {
+            enum class Kind
+                {
+                None = 0,
+                MultiInheritance = 1,
+                AbstractClassHasNonAbstractBaseClass = 2
+                };
+
             private:
                 ECN::ECSchemaCR m_ecSchema;
-                bvector<ECN::ECClassCP> m_violatingClasses;
+                std::vector<std::pair<ECN::ECClassCP, Kind>> m_violatingClasses;
                 Utf8String _ToString() const override;
 
             public:
                 Error(Type ruleType, ECN::ECSchemaCR schema) : ECSchemaValidationRule::Error(ruleType), m_ecSchema(schema) {}
                 ~Error() {}
 
-                void AddViolatingClass(ECN::ECClassCR ecClass) { m_violatingClasses.push_back(&ecClass); }
+                void AddViolatingClass(ECN::ECClassCR ecClass, Kind kind) { m_violatingClasses.push_back(std::make_pair(&ecClass, kind)); }
                 bool HasErrors() const { return !m_violatingClasses.empty(); }
             };
 
@@ -142,8 +147,8 @@ struct NoMultiInheritanceRule : ECSchemaValidationRule
         std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
     public:
-        explicit NoMultiInheritanceRule(ECN::ECSchemaCR);
-        ~NoMultiInheritanceRule() {}
+        explicit ValidBaseClassesRule(ECN::ECSchemaCR);
+        ~ValidBaseClassesRule() {}
     };
 
 
@@ -151,13 +156,13 @@ struct NoMultiInheritanceRule : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
-struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
+struct NoPropertiesOfSameTypeAsClassRule final : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      06/2014
         //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
+        struct Error final : ECSchemaValidationRule::Error
             {
             private:
                 ECN::ECClassCR m_ecClass;
@@ -187,22 +192,21 @@ struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct ValidRelationshipRule : ECSchemaValidationRule
+struct ValidRelationshipRule final : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      07/2015
         //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
+        struct Error final : ECSchemaValidationRule::Error
             {
             enum class Kind
                 {
                 None = 0,
-                MultiInheritance = 1,
-                HasAnyClassConstraint = 2,
-                HasRelationshipClassAsConstraint = 4,
-                HasIncompleteConstraintDefinition = 8,
-                HasAdditionalProperties = 32
+                HasAnyClassConstraint = 1,
+                HasRelationshipClassAsConstraint = 2,
+                HasIncompleteConstraintDefinition = 4,
+                HasAdditionalProperties = 8
                 };
 
             private:
@@ -248,13 +252,13 @@ struct ValidRelationshipRule : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      10/2016
 //+===============+===============+===============+===============+===============+======
-struct ValidNavigationPropertyRule : ECSchemaValidationRule
+struct ValidNavigationPropertyRule final : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      10/2016
         //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
+        struct Error final : ECSchemaValidationRule::Error
             {
             enum class Kind
                 {

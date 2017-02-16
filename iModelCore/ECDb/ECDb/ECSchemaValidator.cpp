@@ -36,7 +36,7 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoMultiInheritanceRule(schema)));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidBaseClassesRule(schema)));
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule(schema)));
 
     bool valid = true;
@@ -119,29 +119,6 @@ void ECSchemaValidationResult::ToString(std::vector<Utf8String>& errorMessages) 
 //**********************************************************************
 // ECSchemaValidationRule
 //**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    09/2015
-//---------------------------------------------------------------------------------------
-bool ECSchemaValidationRule::ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
-    {
-    return _ValidateSchemas(schemas, schema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool ECSchemaValidationRule::ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
-    {
-    return _ValidateSchema(schema, ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool ECSchemaValidationRule::ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
-    {
-    return _ValidateClass(ecClass, ecProperty);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
@@ -161,8 +138,8 @@ void ECSchemaValidationRule::AddErrorToResult(ECSchemaValidationResult& result) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-NoMultiInheritanceRule::NoMultiInheritanceRule(ECN::ECSchemaCR schema)
-    : ECSchemaValidationRule(Type::NoMultiInheritance), m_error(nullptr)
+ValidBaseClassesRule::ValidBaseClassesRule(ECN::ECSchemaCR schema)
+    : ECSchemaValidationRule(Type::ValidBaseClasses), m_error(nullptr)
     {
     m_error = std::unique_ptr<Error>(new Error(GetType(), schema));
     }
@@ -170,15 +147,23 @@ NoMultiInheritanceRule::NoMultiInheritanceRule(ECN::ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool NoMultiInheritanceRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ValidBaseClassesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
-    if (baseClasses.size() <= 1)
+    if (baseClasses.empty())
         return true;
 
+    const bool isAbstract = ecClass.GetClassModifier() == ECClassModifier::Abstract;
     bool isFirstBaseClass = true;
     for (ECClassCP baseClass : baseClasses)
         {
+        if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
+            {
+            m_error->AddViolatingClass(ecClass, Error::Kind::AbstractClassHasNonAbstractBaseClass);
+            return false;
+            }
+
+
         if (isFirstBaseClass)
             {
             isFirstBaseClass = false;
@@ -188,7 +173,7 @@ bool NoMultiInheritanceRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClas
         ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
         if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
             {
-            m_error->AddViolatingClass(ecClass);
+            m_error->AddViolatingClass(ecClass, Error::Kind::MultiInheritance);
             return false;
             }
         }
@@ -199,7 +184,7 @@ bool NoMultiInheritanceRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> NoMultiInheritanceRule::_GetError() const
+std::unique_ptr<ECSchemaValidationRule::Error> ValidBaseClassesRule::_GetError() const
     {
     if (!m_error->HasErrors())
         return nullptr;
@@ -210,24 +195,33 @@ std::unique_ptr<ECSchemaValidationRule::Error> NoMultiInheritanceRule::_GetError
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-Utf8String NoMultiInheritanceRule::Error::_ToString() const
+Utf8String ValidBaseClassesRule::Error::_ToString() const
     {
     if (!HasErrors())
         return "";
 
     Utf8String violatingClassesStr;
-    bool isFirstItem = true;
-    for (ECClassCP violatingClass : m_violatingClasses)
+    for (std::pair<ECClassCP, Kind> const& violatingClass : m_violatingClasses)
         {
-        if (!isFirstItem)
-            violatingClassesStr.append(", ");
+        violatingClassesStr.append(violatingClass.first->GetName()).append(": ");
+        
+        switch (violatingClass.second)
+            {
+                case Kind::AbstractClassHasNonAbstractBaseClass:
+                    violatingClassesStr.append("An abstract class must not have a non-abstract base class.");
+                    break;
 
-        violatingClassesStr.append(violatingClass->GetName());
-        isFirstItem = false;
+                case Kind::MultiInheritance:
+                    violatingClassesStr.append("Multi-inheritance is not supported. Use mixins instead.");
+                    break;
+
+                default:
+                    BeAssert(false);
+            }
         }
 
     Utf8String str;
-    str.Sprintf("ECSchema '%s' contains ECClasses with multiple base classes. Multi-inheritance is not supported. Use mixins instead. Violating ECClasses: %s",
+    str.Sprintf("ECSchema '%s' contains ECClasses with invalid base classes. Violating ECClasses: %s",
             m_ecSchema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
 
     return str;
@@ -334,23 +328,6 @@ bool ValidRelationshipRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClass
     if (relClass == nullptr)
         return true;
 
-    if (relClass->HasBaseClasses())
-        {
-        if (relClass->GetBaseClasses().size() > 1)
-            {
-            m_error->AddInconsistency(*relClass, Error::Kind::MultiInheritance);
-            return false;
-            }
-
-        /*Need to verify whether we can enforce this rule.
-        if (relClass->GetPropertyCount(false) != 0)
-            {
-            m_error->AddInconsistency(*relClass, Error::Kind::HasAdditionalProperties);
-            return false;
-            }
-            */
-        }
-
     return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
     }
 
@@ -424,9 +401,6 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
         str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
 
         const Kind kind = inconsistency.m_kind;
-        if (Enum::Contains(kind, Kind::MultiInheritance))
-            str.append(" It has more than one base class which is not supported for ECRelationshipClasses.");
-
         if (Enum::Contains(kind, Kind::HasAdditionalProperties))
             str.append(" It has a base class, and it defines ECProperties. This is only allowed for ECRelationshipClasses which don't have any base classes.");
 

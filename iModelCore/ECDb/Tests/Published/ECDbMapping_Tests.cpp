@@ -455,7 +455,7 @@ TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TeststructClassInPolymorphicSharedTable' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                   "    <ECEntityClass typeName='BaseClass' modifier='None'>"
+                                   "    <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
                                    "        <ECCustomAttributes>"
                                    "            <ClassMap xmlns='ECDbMap.02.00'>"
                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -467,7 +467,7 @@ TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p2' typeName='string' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Abstract Class in a Hierarchy with TablePerHierarchy CA is expected to be not supported."));
+                                   "</ECSchema>", true, "Abstract Class in a Hierarchy with TablePerHierarchy CA is expected to be supported."));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -8536,7 +8536,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    <ECEntityClass typeName='A'>"
                         "        <ECProperty propertyName='AName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='Base' modifier='None'>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
                         "      <ECCustomAttributes>"
                         "            <ClassMap xmlns='ECDbMap.02.00'>"
                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
