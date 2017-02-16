@@ -349,25 +349,15 @@ bool DgnElement::_Equals(DgnElementCR other, DgnElement::ComparePropertyFilter c
             return false;
         }
 
+    if (ToJsonPropString() != other.ToJsonPropString())
+        return false;
+
     ElementECInstanceAdapter ecOther(other);
     ECValuesCollection otherProperties(ecOther);
     for (auto const& otherProp : otherProperties)
         {
         if (filter._ExcludeProperty(otherProp))
             continue;
-
-        auto const& propName = otherProp.GetValueAccessor().GetECProperty()->GetName();
-
-        if (propName.Equals("UserProperties")) // _GetPropertyValue does not work for user props
-            {
-            if (nullptr == m_userProperties)
-                LoadUserProperties();
-            if (nullptr == other.m_userProperties)
-                other.LoadUserProperties();
-            if (!m_userProperties->ToString().Equals(other.m_userProperties->ToString()))
-                return false;
-            continue;
-            }
 
         if (!_EqualProperty(otherProp, other))
             return false;
