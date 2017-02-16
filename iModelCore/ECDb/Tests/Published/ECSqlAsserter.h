@@ -81,7 +81,7 @@ struct ECSqlSelectAsserter : public ECSqlAsserter
         void AssertCurrentRow(ECSqlTestItem const& testItem, ECSqlStatement const& statement) const;
         void AssertCurrentCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType, bool isInStructArray) const;
         void AssertCurrentCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const& columnDataType, bool isInStructArray, std::function<bool(ECN::ECTypeDescriptor const&)> isExpectedToSucceedDelegate) const;
-        void AssertArrayCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& ecsqlArrayValue, ECN::ECTypeDescriptor const& arrayType, bool isInStructArray) const;
+        void AssertArrayCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlArrayValue, ECN::ECTypeDescriptor const& arrayType, bool isInStructArray) const;
 
         void AssertColumnInfo(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType) const;
 

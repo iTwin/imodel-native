@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlColumnInfo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECDbTypes.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -192,15 +193,17 @@ struct ECSqlColumnInfo
     {
     private:
         ECN::ECTypeDescriptor m_dataType;
-        ECN::ECPropertyCP m_property;
-        bool m_isGeneratedProperty;
+        DateTime::Info m_dateTimeInfo;
+        ECN::ECStructClassCP m_structType = nullptr;
+        ECN::ECPropertyCP m_property = nullptr;
+        bool m_isGeneratedProperty = false;
         ECSqlPropertyPath m_propertyPath;
-        ECN::ECClassCP m_rootClass;
+        ECN::ECClassCP m_rootClass = nullptr;
         Utf8String m_rootClassAlias;
 
-        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, ECN::ECPropertyCP, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
+        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
 
-        static ECN::ECTypeDescriptor DetermineDataType(ECN::ECPropertyCR);
+        static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, ECN::ECPropertyCR);
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -222,10 +225,17 @@ struct ECSqlColumnInfo
         //! Gets the data type of the column represented by this info object.
         //! @return Column data type
         ECN::ECTypeDescriptor const& GetDataType() const { return m_dataType; }
+        
+        //! Gets datetime metadata if the column's data type is DateTime or DateTime array.
+        //! @return Datetime metadata for DateTime or DateTime array columns
+        DateTime::Info const& GetDateTimeInfo() const { BeAssert((m_dataType.IsPrimitive() || m_dataType.IsPrimitiveArray()) && m_dataType.GetPrimitiveType() == ECN::PRIMITIVETYPE_DateTime); return m_dateTimeInfo; }
+
+        //! Gets the struct type if the column's data type is struct or struct array.
+        //! @return Struct type for struct or struct array columns
+        ECN::ECStructClassCP GetStructType() const { BeAssert((m_dataType.IsStruct() || m_dataType.IsStructArray()) && m_structType != nullptr); return m_structType; }
 
         //! Gets the ECProperty backing the specified column
-        //! @note When called from an IECSqlArrayReader for a primitive array property,
-        //! this method will return nullptr, as no ECProperties exist for elements of a primitive array.
+        //! @note When called from an IECSqlValue for an array property, this method will return nullptr.
         //! @return ECProperty backing the column represented by this info object.
         ECN::ECPropertyCP GetProperty() const { return m_property; }
 
@@ -238,9 +248,6 @@ struct ECSqlColumnInfo
         //! If this is a generated property, calling GetProperty returns the generated ECProperty
         //! which provides metadata about the computed field. GetProperty does not return a property of the FROM or JOIN classes
         //! in this case as there is no such matching property.
-        //! However, if the generated property is just an alias for the original property, the generated ECProperty carries 
-        //! the custom attribute @c DefinitionMetaData from the standard ECSchema @em Bentley_Standard_CustomAttributes 
-        //! that points back to the original ECProperty.
         //!
         //! @e Example
         //! For the ECSQL <c>SELECT AssetID, Length * Breadth AS Area FROM myschema.Cubicle</c> the first column (@c AssetID) would 

@@ -18,28 +18,20 @@ struct ECSqlStatementBase;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlField : public IECSqlValue
     {
-public:
-    typedef std::vector<std::unique_ptr<ECSqlField>> Collection;
-
 protected:
     ECSqlColumnInfo m_ecsqlColumnInfo;
+    bool m_requiresOnAfterStep = false;
+    bool m_requiresOnAfterReset = false;
 
 private:
-    static Collection* s_emptyChildCollection;
     ECSqlStatementBase& m_ecsqlStatement;
 
-    ECSqlColumnInfoCR _GetColumnInfo() const override;
+    ECSqlColumnInfoCR _GetColumnInfo() const override { return m_ecsqlColumnInfo; }
 
     virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
-    virtual Collection const& _GetChildren() const { return GetEmptyChildCollection(); }
-
-    static Collection const& GetEmptyChildCollection();
 
 protected:
-    bool m_requiresOnAfterStep;
-    bool m_requiresOnAfterReset;
-
     ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
         : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
@@ -50,14 +42,10 @@ protected:
 public:
     virtual ~ECSqlField() {}
 
-    Collection const& GetChildren() const { return _GetChildren(); }
-
     bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
-    ECSqlStatus OnAfterStep();
+    ECSqlStatus OnAfterStep() { return _OnAfterStep(); }
     bool RequiresOnAfterReset() const { return m_requiresOnAfterReset; }
-    ECSqlStatus OnAfterReset();
-
-    static Utf8CP GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType);
+    ECSqlStatus OnAfterReset() { return _OnAfterReset(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

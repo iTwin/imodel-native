@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECSqlBinder : public ECSqlBinder
+struct PrimitiveECSqlBinder final : public ECSqlBinder
     {
 private:
     int m_sqliteIndex;

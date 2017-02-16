@@ -8,14 +8,13 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
-#include "IECSqlPrimitiveValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct PointECSqlField : public ECSqlField, IECSqlPrimitiveValue
+struct PointECSqlField final : public ECSqlField
     {
 private:
     int m_xColumnIndex;
@@ -23,10 +22,6 @@ private:
     int m_zColumnIndex;
 
     bool _IsNull() const override;
-
-    IECSqlPrimitiveValue const& _GetPrimitive() const override;
-    IECSqlStructValue const& _GetStruct() const override;
-    IECSqlArrayValue const& _GetArray() const override;
 
     void const* _GetBlob(int* blobSize) const override;
     bool _GetBoolean() const override;
@@ -39,6 +34,12 @@ private:
     DPoint2d _GetPoint2d() const override;
     DPoint3d _GetPoint3d() const override;
     IGeometryPtr _GetGeometry() const override;
+
+    IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
+    IECSqlValueIterable const& _GetStructIterable() const override;
+
+    int _GetArrayLength() const override;
+    IECSqlValueIterable const& _GetArrayIterable() const override;
 
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 

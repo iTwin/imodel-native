@@ -40,14 +40,19 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     return GetECDb();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 ECDb& ECDbTestFixture::Reopen()
     {
+    EXPECT_TRUE(m_ecdb.IsDbOpen()) << "Don't call Reopen on a closed ECDb";
     
     if (m_ecdb.IsDbOpen()) 
         {
-        BeFileName ecdbFileName = BeFileName(m_ecdb.GetDbFileName());
+        BeFileName ecdbFileName(m_ecdb.GetDbFileName());
+        const bool isReadonly = m_ecdb.IsReadonly();
         m_ecdb.CloseDb();
-        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite)));
         }
 
     return GetECDb();

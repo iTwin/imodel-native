@@ -25,7 +25,7 @@ private:
     void AssertBaseClasses(ECClassCR expectedClass);
     void AssertEnumerationDefs(ECSchemaCR expectedSchema);
     void AssertEnumerationDef(ECEnumerationCR expectedEnum, ECSqlStatement const& actualEnumerationDefRow);
-    void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlStructValue const& actualEnumValue);
+    void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlValue const& actualEnumValue);
     void AssertKindOfQuantityDefs(ECSchemaCR expectedSchema);
     void AssertKindOfQuantityDef(KindOfQuantityCR expectedKoq, ECSqlStatement const& actualKoqDefRow);
     void AssertPropertyDefs(ECClassCR expectedClass);
@@ -406,12 +406,11 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
                 }
 
             int actualValueCount = 0;
-            for (IECSqlValue const* arrayElem : val.GetArray())
+            for (IECSqlValue const& arrayElem : val.GetArrayIterable())
                 {
                 ECEnumeratorCP expectedValue = expectedValues[(size_t) actualValueCount];
                 ASSERT_TRUE(expectedValue != nullptr);
-                IECSqlStructValue const& actualValue = arrayElem->GetStruct();
-                AssertEnumerationValue(*expectedValue, actualValue);
+                AssertEnumerationValue(*expectedValue, arrayElem);
                 actualValueCount++;
                 }
 
@@ -424,12 +423,10 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 //---------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlStructValue const& actualEnumValue)
+void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlValue const& actualEnumValue)
     {
-    const int actualStructMemberCount = actualEnumValue.GetMemberCount();
-    for (int j = 0; j < actualStructMemberCount; j++)
+    for (IECSqlValue const& memberVal : actualEnumValue.GetStructIterable())
         {
-        IECSqlValue const& memberVal = actualEnumValue.GetValue(j);
         ASSERT_TRUE(memberVal.GetColumnInfo().GetProperty() != nullptr);
         Utf8StringCR memberName = memberVal.GetColumnInfo().GetProperty()->GetName();
 
@@ -583,13 +580,12 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
                 ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.AlternativePresentationUnits";
             else
                 {
-                IECSqlArrayValue const& arrayVal = val.GetArray();
-                ASSERT_EQ((int) expectedKoq.GetAlternativePresentationUnitList().size(), arrayVal.GetArrayLength()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                ASSERT_EQ((int) expectedKoq.GetAlternativePresentationUnitList().size(), val.GetArrayLength()) << "KindOfQuantityDef.AlternativePresentationUnits";
 
                 size_t i = 0;
-                for (IECSqlValue const* arrayElementVal : arrayVal)
+                for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), arrayElementVal->GetText()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.AlternativePresentationUnits";
                     i++;
                     }
                 }

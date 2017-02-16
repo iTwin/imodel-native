@@ -192,7 +192,6 @@
     <ClInclude Include="ECSql\ExpHelper.h" />
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
     <ClInclude Include="ECSql\IdECSqlBinder.h" />
-    <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
     <ClInclude Include="ECSql\InsertStatementExp.h" />
     <ClInclude Include="ECSql\JoinExp.h" />
     <ClInclude Include="ECSql\ListExp.h" />

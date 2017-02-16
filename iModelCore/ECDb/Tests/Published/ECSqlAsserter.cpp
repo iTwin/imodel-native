@@ -352,9 +352,8 @@ void ECSqlSelectAsserter::AssertCurrentCell(ECSqlTestItem const& testItem, ECSql
         }
     else if (dataType.IsStruct() || dataType.IsNavigation())
         {
-        IECSqlStructValue const& structValue = ecsqlValue.GetStruct();
-        for (int i = 0; i < structValue.GetMemberCount(); i++)
-            AssertCurrentCell(testItem, statement, structValue.GetValue(i), &dataType, isInStructArray);
+        for (IECSqlValue const& memberVal : ecsqlValue.GetStructIterable())
+            AssertCurrentCell(testItem, statement, memberVal, &dataType, isInStructArray);
         }
     else if (dataType.IsNavigation())
         {        
@@ -362,11 +361,10 @@ void ECSqlSelectAsserter::AssertCurrentCell(ECSqlTestItem const& testItem, ECSql
         }
     else // array
         {
-        IECSqlArrayValue const& arrayValue = ecsqlValue.GetArray();
         if (!isInStructArray)
             isInStructArray = dataType.IsStructArray();
 
-        AssertArrayCell(testItem, statement, arrayValue, dataType, isInStructArray);
+        AssertArrayCell(testItem, statement, ecsqlValue, dataType, isInStructArray);
         }
     }
 
@@ -391,11 +389,11 @@ void ECSqlSelectAsserter::AssertCurrentCell(ECSqlTestItem const& testItem, ECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectAsserter::AssertArrayCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& arrayValue, ECTypeDescriptor const& arrayType, bool isInStructArray) const
+void ECSqlSelectAsserter::AssertArrayCell(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& arrayValue, ECTypeDescriptor const& arrayType, bool isInStructArray) const
     {
-    for (IECSqlValue const* arrayElement : arrayValue)
+    for (IECSqlValue const& arrayElement : arrayValue.GetArrayIterable())
         {
-        AssertCurrentCell(testItem, statement, *arrayElement, &arrayType, isInStructArray);
+        AssertCurrentCell(testItem, statement, arrayElement, &arrayType, isInStructArray);
         }
     }
 
@@ -476,10 +474,10 @@ ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallLis
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_String),
                                 [&value] () { value.GetText(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreateStructTypeDescriptor(),
-                                [&value] () { value.GetStruct(); }));
+                                [&value] () { value.GetStructIterable().begin(); }));
     //using struct array descriptor here, but will use it as array descriptor generically
     list.push_back(GetValueCall(ECTypeDescriptor::CreateStructArrayTypeDescriptor(),
-                                [&value] () { value.GetArray(); }));
+                                [&value] () { value.GetArrayLength(); }));
 
     return list;
     }
@@ -535,9 +533,9 @@ Utf8String ECSqlSelectAsserter::GetValueCallToString(ECTypeDescriptor const& dat
         return str;
         }
     else if (dataType.IsStruct())
-        return "GetStruct";
+        return "GetStructIterable().begin()";
     else
-        return "GetArray";
+        return "GetArrayLength()";
 
     }
 //---------------------------------------------------------------------------------------

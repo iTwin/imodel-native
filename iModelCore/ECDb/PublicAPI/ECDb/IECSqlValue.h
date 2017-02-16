@@ -14,12 +14,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#if !defined (DOCUMENTATION_GENERATOR)
-struct IECSqlPrimitiveValue;
-#endif
-
-struct IECSqlStructValue;
-struct IECSqlArrayValue;
+struct IECSqlValueIterable;
 
 //=======================================================================================
 //! The IECSqlValue represents the value of a specific ECSQL column in the current
@@ -30,21 +25,38 @@ struct IECSqlArrayValue;
 struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
     {
     private:
-        virtual ECSqlColumnInfoCR _GetColumnInfo() const = 0;
+        virtual ECSqlColumnInfo const& _GetColumnInfo() const = 0;
 
         virtual bool _IsNull() const = 0;
+        virtual void const* _GetBlob(int* blobSize) const = 0;
+        virtual bool _GetBoolean() const = 0;
+        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const = 0;
+        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const = 0;
+        virtual double _GetDouble() const = 0;
+        virtual int _GetInt() const = 0;
+        virtual int64_t _GetInt64() const = 0;
+        virtual IGeometryPtr _GetGeometry() const = 0;
+        virtual DPoint2d _GetPoint2d() const = 0;
+        virtual DPoint3d _GetPoint3d() const = 0;
+        virtual Utf8CP _GetText() const = 0;
 
-        virtual IECSqlPrimitiveValue const& _GetPrimitive() const = 0;
-        virtual IECSqlStructValue const& _GetStruct() const = 0;
-        virtual IECSqlArrayValue const& _GetArray() const = 0;
+        virtual IECSqlValue const& _GetStructMemberValue(Utf8CP structMemberName) const = 0;
+        virtual IECSqlValueIterable const& _GetStructIterable() const = 0;
 
-
+        virtual int _GetArrayLength() const = 0;
+        virtual IECSqlValueIterable const& _GetArrayIterable() const = 0;
+    
+    protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //not inlined to prevent being called outside ECDb
+        IECSqlValue();
+#endif
     public:
         virtual ~IECSqlValue() {}
 
         //! Gets the metadata of this value
         //! @return ECSQL column metadata.
-        ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo() const;
+        ECDB_EXPORT ECSqlColumnInfo const& GetColumnInfo() const;
 
         //! Indicates whether the value is %NULL or not.
         //! @remarks When is a compound value %NULL?
@@ -175,104 +187,100 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         template <class TBeInt64Id>
         TBeInt64Id GetNavigation(ECN::ECClassId* relationshipECClassId)  const { return TBeInt64Id(GetNavigation(relationshipECClassId).GetValueUnchecked()); }
 
-        //! Used to access the value if it is a struct value
-        //! @return Struct value
-        //! @note Possible errors:
-        //! - property data type is not an ECStruct
-        ECDB_EXPORT IECSqlStructValue const& GetStruct() const;
+        //! Returns the value of the struct member of this struct IECSqlValue
+        //! with the given struct member name
+        //! @param[in] structMemberName Property name of the requested for which the value is to be retrieved
+        //! @note this can only called for struct values
+        //! @return Value of the requested struct member
+        ECDB_EXPORT IECSqlValue const& operator[] (Utf8CP structMemberName) const;
 
-        //! Used to access the value if it is an array value
-        //! @return Array value
-        //! @note Possible errors:
-        //! - property data type is not an array
-        ECDB_EXPORT IECSqlArrayValue const& GetArray() const;
-    };
+        //! Gets an iterable for iterating the struct members of this struct IECSqlValue
+        //! @note this can only be called for struct values
+        //! @return struct value iterable
+        ECDB_EXPORT IECSqlValueIterable const& GetStructIterable() const;
 
-//=======================================================================================
-//! Represents the struct value of a specific ECSQL column in the current
-//! row of the result set of an ECSqlStatement.
-//! @ingroup ECDbGroup
-// @bsiclass                                                 Krischan.Eberle    03/2014
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructValue : NonCopyableClass
-    {
-    private:
-        virtual int _GetMemberCount() const = 0;
-        virtual IECSqlValue const& _GetValue(int  columnIndex) const = 0;
-        
-    public:
-        virtual ~IECSqlStructValue() {}
-
-        //! Returns the number of struct members this struct value has.
-        //! @return number of struct members of this struct value.
-        ECDB_EXPORT int GetMemberCount() const;
-
-        //! Returns the value of the struct member at the given index
-        ECDB_EXPORT IECSqlValue const& GetValue(int structMemberIndex) const;
-    };
-
-
-//=======================================================================================
-//! Represents the array value of a specific ECSQL column in the current
-//! row of the result set of an ECSqlStatement.
-//! @ingroup ECDbGroup
-// @bsiclass                                                 Krischan.Eberle    03/2014
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayValue : NonCopyableClass
-    {
-    public:
-        //=======================================================================================
-        //! An iterator to iterate over the array elements of an IECSqlArrayValue
-        // @bsiclass                                                 Krischan.Eberle    03/2014
-        //+===============+===============+===============+===============+===============+======
-        struct const_iterator : std::iterator<std::forward_iterator_tag, IECSqlValue const*>
-            {
-            private:
-                IECSqlArrayValue const* m_arrayValue;
-
-                bool IsAtEnd() const { return IsEndIterator() || m_arrayValue->_IsAtEnd(); }
-                bool IsEndIterator() const { return m_arrayValue == nullptr; }
-
-            public:
-                // end iterator
-                const_iterator() : m_arrayValue(nullptr) {}
-                ECDB_EXPORT explicit const_iterator(IECSqlArrayValue const& arrayValue);
-                ~const_iterator() {}
-                //copyable
-                const_iterator(const_iterator const& rhs) : m_arrayValue(rhs.m_arrayValue) {}
-                ECDB_EXPORT const_iterator& operator= (const_iterator const& rhs);
-                //moveable
-                const_iterator(const_iterator&& rhs) : m_arrayValue(std::move(rhs.m_arrayValue)) { rhs.m_arrayValue = nullptr; }
-                ECDB_EXPORT const_iterator& operator= (const_iterator&& rhs);
-
-                ECDB_EXPORT IECSqlValue const* operator* () const;
-                ECDB_EXPORT const_iterator& operator++ ();
-                ECDB_EXPORT bool operator== (const_iterator const& rhs) const;
-                bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
-            };
-    private:
-        virtual void _MoveNext(bool onInitializingIterator = false) const = 0;
-        virtual bool _IsAtEnd() const = 0;
-        virtual IECSqlValue const* _GetCurrent() const = 0;
-        virtual int _GetArrayLength() const = 0;
-
-    public:
-        virtual ~IECSqlArrayValue() {}
-
-        //! Gets an iterator for iterating the array
-        //! @remarks This invalidates any other already existing iterators of the same IECSqlArrayValue.
-        //! @return Array iterator
-        ECDB_EXPORT const_iterator begin() const;
-        //! Gets the array's end iterator
-        //! @return Array's end iterator
-        ECDB_EXPORT const_iterator end() const;
-
-        //! Gets the number of elements in the array.
-        //! @remarks If the array length is not needed upfront, prefer to iterate through the array using
-        //! its iterator and count the instances while going. Calling GetArrayLength can be costly as it might require
-        //! %ECDb to perform a separate query into the %ECDb file.
+        //! Gets the number of elements in this array IECSqlValue
+        //! @note this can only called for array values
         //! @return number of elements in the array
         ECDB_EXPORT int GetArrayLength() const;
+
+        //! Gets an iterable for iterating the array elements of this array IECSqlValue
+        //! @note this can only be called for array values
+        //! @return array value iterable
+        ECDB_EXPORT IECSqlValueIterable const& GetArrayIterable() const;
+    };
+
+
+//=======================================================================================
+//! An iterable to iterate over the array elements or struct members of an IECSqlValue
+//! @see IECSqlValue::GetArrayIterable, IECSqlValue::GetStructIterable
+// @bsiclass                                                 Krischan.Eberle    02/2017
+//+===============+===============+===============+===============+===============+======
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlValueIterable : NonCopyableClass
+    {
+    public:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    02/2017
+        //+===============+===============+===============+===============+===============+======
+        struct EXPORT_VTABLE_ATTRIBUTE IIteratorState : NonCopyableClass
+            {
+            protected:
+                //not inlined to prevent being called outside ECDb
+                IIteratorState();
+
+            public:
+                virtual ~IIteratorState() {}
+
+                virtual std::unique_ptr<IIteratorState> _Copy() const = 0;
+                virtual void _MoveToNext(bool onInitializingIterator) const = 0;
+                virtual bool _IsAtEnd() const = 0;
+                virtual IECSqlValue const& _GetCurrent() const = 0;
+            };
+#endif
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    02/2017
+        //+===============+===============+===============+===============+===============+======
+        struct const_iterator final : std::iterator<std::forward_iterator_tag, IECSqlValue const*>
+            {
+            private:
+                std::unique_ptr<IIteratorState> m_state = nullptr;
+
+            public:
+#if !defined (DOCUMENTATION_GENERATOR)
+                const_iterator() {}
+                //! normal iterator
+                explicit const_iterator(std::unique_ptr<IIteratorState>);
+#endif
+                ~const_iterator() {}
+
+                //copyable
+                ECDB_EXPORT const_iterator(const_iterator const&);
+                ECDB_EXPORT const_iterator& operator=(const_iterator const&);
+                //moveable
+                const_iterator(const_iterator&& rhs) : m_state(std::move(rhs.m_state)) {}
+                ECDB_EXPORT const_iterator& operator=(const_iterator&&);
+
+                ECDB_EXPORT IECSqlValue const& operator*() const;
+                ECDB_EXPORT const_iterator& operator++();
+                ECDB_EXPORT bool operator==(const_iterator const&) const;
+                bool operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
+            };
+
+    private:
+        virtual const_iterator _CreateIterator() const = 0;
+
+    protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //not inlined to prevent being called outside ECDb
+        IECSqlValueIterable();
+#endif
+    public:
+        virtual ~IECSqlValueIterable() {}
+
+        ECDB_EXPORT const_iterator begin() const;
+        const_iterator end() const { return const_iterator(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
