@@ -29,39 +29,29 @@ namespace Json {
 
    class Value;
 
-   /** \brief Abstract class for writers.
-    */
-   class JSON_API Writer
-   {
-   public:
-      virtual ~Writer();
-
-      virtual Utf8StringAlias write( const Value &root ) = 0;
-   };
-
    /** \brief Outputs a Value in <a HREF="http://www.json.org">JSON</a> format without formatting (not human friendly).
     *
     * The JSON document is written in a single line. It is not intended for 'human' consumption,
     * but may be usefull to support feature such as RPC where bandwith is limited.
     * \sa Reader, Value
     */
-   class JSON_API FastWriter : public Writer
+   class JSON_API FastWriter 
    {
-   public:
-      FastWriter();
-      virtual ~FastWriter(){}
-
-      void enableYAMLCompatibility();
-
    public: // overridden from Writer
-      virtual Utf8StringAlias write( const Value &root );
-      static Utf8StringAlias ToString (const Value &root );
+        Utf8StringAlias write( const Value &root );
+        static Utf8StringAlias ToString (const Value &root ) 
+        {
+        if (nullValue == root.type()) 
+            return Utf8String();
+
+        FastWriter writer;
+        writer.writeValue (root);
+        return writer.document_;
+        }
 
    private:
       void writeValue( const Value &value );
-
       Utf8StringAlias document_;
-      bool yamlCompatiblityEnabled_;
    };
 
    /** \brief Writes a Value in <a HREF="http://www.json.org">JSON</a> format in a human friendly way.
@@ -79,18 +69,17 @@ namespace Json {
     *       object or non empty array, then print one value per line.
     *
     */
-   class JSON_API StyledWriter: public Writer
+   class JSON_API StyledWriter
    {
    public:
       StyledWriter();
-      virtual ~StyledWriter(){}
 
    public: // overridden from Writer
       /** \brief Serialize a Value in <a HREF="http://www.json.org">JSON</a> format.
        * \param root Value to serialize.
        * \return String containing the JSON document that represents the root value.
        */
-      virtual Utf8StringAlias write( const Value &root );
+      Utf8StringAlias write( const Value &root );
 
    private:
       void writeValue( const Value &value );
@@ -113,10 +102,8 @@ namespace Json {
       bool addChildValues_;
    };
 
-# if defined(JSON_HAS_INT64)
    Utf8StringAlias JSON_API valueToString( Int value );
    Utf8StringAlias JSON_API valueToString( UInt value );
-# endif // if defined(JSON_HAS_INT64)
    Utf8StringAlias JSON_API valueToString( LargestInt value );
    Utf8StringAlias JSON_API valueToString( LargestUInt value );
    Utf8StringAlias JSON_API valueToString( double value );

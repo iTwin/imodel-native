@@ -6,23 +6,18 @@
 #if !defined(JSON_IS_AMALGAMATION)
 # include <json/value.h>
 # include <json/writer.h>
-# ifndef JSON_USE_SIMPLE_INTERNAL_ALLOCATOR
-#  include "json_batchallocator.h"
-# endif // #ifndef JSON_USE_SIMPLE_INTERNAL_ALLOCATOR
 #endif // if !defined(JSON_IS_AMALGAMATION)
+
 #include <utility>
 #include <stdexcept>
 #include <cstring>
-#ifdef JSON_USE_CPPTL
-# include <cpptl/conststring.h>
-#endif
 #include <cstddef>    // size_t
 #include <Bentley/BeAssert.h>
 #include <math.h>
 
 #define JSON_ASSERT_UNREACHABLE BeAssert( false )
 #define JSON_ASSERT( condition ) BeAssert( condition );  // @todo <= change this into an exception throw
-#define JSON_FAIL_MESSAGE( message ) {BeAssert(false && message); throw std::runtime_error( message );}
+#define JSON_FAIL_MESSAGE( message ) {BeAssert(false && message);}
 #define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) JSON_FAIL_MESSAGE( message )
 
 BEGIN_BENTLEY_NAMESPACE
@@ -39,259 +34,19 @@ const LargestInt Value::minLargestInt = LargestInt( ~(LargestUInt(-1)/2) );
 const LargestInt Value::maxLargestInt = LargestInt( LargestUInt(-1)/2 );
 const LargestUInt Value::maxLargestUInt = LargestUInt(-1);
 
-
-/// Unknown size marker
-static const unsigned int unknown = (unsigned)-1;
-
-
-/** Duplicates the specified string value.
- * @param value Pointer to the string to duplicate. Must be zero-terminated if
- *              length is "unknown".
- * @param length Length of the value. if equals to unknown, then it will be
- *               computed using strlen(value).
- * @return Pointer on the duplicate instance of string.
- */
-static inline char *
-duplicateStringValue( const char *value, 
-                      unsigned int length = unknown )
-{
-   if ( length == unknown )
-      length = (unsigned int)strlen(value);
-   char *newString = static_cast<char *>( malloc( length + 1 ) );
-   JSON_ASSERT_MESSAGE( newString != 0, "Failed to allocate string value buffer" );
-   memcpy( newString, value, length );
-   newString[length] = 0;
-   return newString;
-}
-
-
-/** Free the string duplicated by duplicateStringValue().
- */
-static inline void 
-releaseStringValue( char *value )
-{
-   if ( value )
-      free( value );
-}
-
 } // namespace Json
 
-
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// ValueInternals...
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
 #if !defined(JSON_IS_AMALGAMATION)
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-#  include "json_internalarray.inl"
-#  include "json_internalmap.inl"
-# endif // JSON_VALUE_USE_INTERNAL_MAP
-
 # include "json_valueiterator.inl"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
 namespace Json {
 
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// class Value::CZString
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-# ifndef JSON_VALUE_USE_INTERNAL_MAP
-
-// Notes: index_ indicates if the string was allocated when
-// a string is stored.
-
-Value::CZString::CZString( ArrayIndex index )
-   : cstr_( 0 )
-   , index_( index )
-{
-}
-
-Value::CZString::CZString( const char *cstr, DuplicationPolicy allocate )
-   : cstr_( allocate == duplicate ? duplicateStringValue(cstr) 
-                                  : cstr )
-   , index_( allocate )
-{
-}
-
-Value::CZString::CZString( const CZString &other )
-: cstr_( other.index_ != noDuplication &&  other.cstr_ != 0
-                ?  duplicateStringValue( other.cstr_ )
-                : other.cstr_ )
-   , index_( other.cstr_ ? (other.index_ == noDuplication ? noDuplication : duplicate)
-                         : other.index_ )
-{
-}
-
-Value::CZString::~CZString()
-{
-   if ( cstr_  &&  index_ == duplicate )
-      releaseStringValue( const_cast<char *>( cstr_ ) );
-}
-
-void 
-Value::CZString::swap( CZString &other )
-{
-   std::swap( cstr_, other.cstr_ );
-   std::swap( index_, other.index_ );
-}
-
-Value::CZString &
-Value::CZString::operator =( const CZString &other )
-{
-   CZString temp( other );
-   swap( temp );
-   return *this;
-}
-
-bool 
-Value::CZString::operator<( const CZString &other ) const 
-{
-   if ( cstr_ )
-      return strcmp( cstr_, other.cstr_ ) < 0;
-   return index_ < other.index_;
-}
-
-bool 
-Value::CZString::operator==( const CZString &other ) const 
-{
-   if ( cstr_ )
-      return strcmp( cstr_, other.cstr_ ) == 0;
-   return index_ == other.index_;
-}
-
-
-ArrayIndex 
-Value::CZString::index() const
-{
-   return index_;
-}
-
-
-const char *
-Value::CZString::c_str() const
-{
-   return cstr_;
-}
-
-bool 
-Value::CZString::isStaticString() const
-{
-   return index_ == noDuplication;
-}
-
-#endif // ifndef JSON_VALUE_USE_INTERNAL_MAP
-
-
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// class Value::Value
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////
-
-/*! \internal Default constructor initialization must be equivalent to:
- * memset( this, 0, sizeof(Value) )
- * This optimization is used in ValueInternalMap fast allocator.
- */
-Value::Value( ValueType type )
-   : type_( type )
-   , allocated_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   switch ( type )
-   {
-   case nullValue:
-      break;
-   case intValue:
-   case uintValue:
-      value_.int_ = 0;
-      break;
-   case realValue:
-      value_.real_ = 0.0;
-      break;
-   case stringValue:
-      value_.string_ = 0;
-      break;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-   case objectValue:
-      value_.map_ = new ObjectValues();
-      break;
-#else
-   case arrayValue:
-      value_.array_ = arrayAllocator()->newArray();
-      break;
-   case objectValue:
-      value_.map_ = mapAllocator()->newMap();
-      break;
-#endif
-   case booleanValue:
-      value_.bool_ = false;
-      break;
-   default:
-      JSON_ASSERT_UNREACHABLE;
-   }
-}
-
-Value::Value( UInt value )
-   : type_( uintValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.uint_ = value;
-}
-
-Value::Value( Int value )
-   : type_( intValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.int_ = value;
-}
-
-#if defined(JSON_HAS_INT64)
-
-Value::Value( Int64 value )
-   : type_( intValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.int_ = value;
-}
-
-Value::Value( UInt64 value )
-   : type_( uintValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.uint_ = value;
-}
-
-#endif // if defined(JSON_HAS_INT64)
-
-// BeJsonCpp
 #if defined (__APPLE__)
 #if !defined (__LP64__)
 Value::Value( UInt32 value )
    : type_( uintValue )
    , comments_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = (UInt) value;
@@ -300,9 +55,6 @@ Value::Value( UInt32 value )
 Value::Value( long value )
    : type_( intValue )
    , comments_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = value;
@@ -310,9 +62,6 @@ Value::Value( long value )
 Value::Value( unsigned long value )
    : type_( uintValue )
    , comments_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = value;
@@ -320,232 +69,10 @@ Value::Value( unsigned long value )
 #endif
 #endif
 
-Value::Value( double value )
-   : type_( realValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   // Bentley change: NaN handling
-#ifdef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
-   if (std::isnan( value ))
-#else
-   if (isnan( value ))
-#endif
-   {
-      // the problem is with the caller so assert in debug builds, but convert value to null in optimized builds to prevent downstream issues
-      BeAssert (false);
-      type_ = nullValue;
-      return;
-   }
-
-   value_.real_ = value;
-}
-
-Value::Value( const char *value )
-   : type_( stringValue )
-   , allocated_( true )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.string_ = duplicateStringValue( value ? value : "" ); // Bentley change to support NULL
-}
-
-
-Value::Value( const char *beginValue, 
-              const char *endValue )
-   : type_( stringValue )
-   , allocated_( true )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.string_ = duplicateStringValue( beginValue, 
-                                          (unsigned int)(endValue - beginValue) );
-}
-
-
-Value::Value( const Utf8String &value )
-   : type_( stringValue )
-   , allocated_( true )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.string_ = duplicateStringValue( value.c_str(), 
-                                          (unsigned int)value.length() );
-
-}
-
-Value::Value( const StaticString &value )
-   : type_( stringValue )
-   , allocated_( false )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.string_ = const_cast<char *>( value.c_str() );
-}
-
-
-# ifdef JSON_USE_CPPTL
-Value::Value( const CppTL::ConstString &value )
-   : type_( stringValue )
-   , allocated_( true )
-   , comments_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.string_ = duplicateStringValue( value, value.length() );
-}
-# endif
-
-Value::Value( bool value )
-   : type_( booleanValue )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   value_.bool_ = value;
-}
-
-
-Value::Value( const Value &other )
-   : type_( other.type_ )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   switch ( type_ )
-   {
-   case nullValue:
-   case intValue:
-   case uintValue:
-   case realValue:
-   case booleanValue:
-      value_ = other.value_;
-      break;
-   case stringValue:
-      if ( other.value_.string_ )
-      {
-         value_.string_ = duplicateStringValue( other.value_.string_ );
-         allocated_ = true;
-      }
-      else
-         value_.string_ = 0;
-      break;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-   case objectValue:
-      value_.map_ = new ObjectValues( *other.value_.map_ );
-      break;
-#else
-   case arrayValue:
-      value_.array_ = arrayAllocator()->newArrayCopy( *other.value_.array_ );
-      break;
-   case objectValue:
-      value_.map_ = mapAllocator()->newMapCopy( *other.value_.map_ );
-      break;
-#endif
-   default:
-      JSON_ASSERT_UNREACHABLE;
-   }
-}
-
-// BENTLEY CHANGE: added the move constructor
-Value::Value( Value &&other )
-   : type_( ValueType::nullValue )
-   , allocated_( 0 )
-# ifdef JSON_VALUE_USE_INTERNAL_MAP
-   , itemIsUsed_( 0 )
-#endif
-{
-   swap(other);
-}
-
-
-Value::~Value()
-{
-   switch ( type_ )
-   {
-   case nullValue:
-   case intValue:
-   case uintValue:
-   case realValue:
-   case booleanValue:
-      break;
-   case stringValue:
-      if ( allocated_ )
-         releaseStringValue( value_.string_ );
-      break;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-   case objectValue:
-      delete value_.map_;
-      break;
-#else
-   case arrayValue:
-      arrayAllocator()->destructArray( value_.array_ );
-      break;
-   case objectValue:
-      mapAllocator()->destructMap( value_.map_ );
-      break;
-#endif
-   default:
-      JSON_ASSERT_UNREACHABLE;
-   }
-}
-
-Value &
-Value::operator=( const Value &other )
-{
-   Value temp( other );
-   swap( temp );
-   return *this;
-}
-
-// BENTLEY CHANGE: added the move assignment operator
-Value &
-Value::operator=( Value &&other )
-{
-   swap(other);
-   return *this;
-}
-
-void 
-Value::swap( Value &other )
-{
-   ValueType temp = type_;
-   type_ = other.type_;
-   other.type_ = temp;
-   std::swap( value_, other.value_ );
-   int temp2 = allocated_;
-   allocated_ = other.allocated_;
-   other.allocated_ = temp2;
-}
-
-ValueType 
-Value::type() const
-{
-   return type_;
-}
-
-
-int 
-Value::compare( const Value &other ) const
-{
-   if ( *this < other )
-      return -1;
-   if ( *this > other )
-      return 1;
-   return 0;
-}
-
-
-bool 
-Value::operator <( const Value &other ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::operator <( const Value &other ) const
 {
    int typeDelta = type_ - other.type_;
    if ( typeDelta )
@@ -567,7 +94,6 @@ Value::operator <( const Value &other ) const
              || ( other.value_.string_  
                   &&  value_.string_  
                   && strcmp( value_.string_, other.value_.string_ ) < 0 );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    case arrayValue:
    case objectValue:
       {
@@ -576,38 +102,16 @@ Value::operator <( const Value &other ) const
             return delta < 0;
          return (*value_.map_) < (*other.value_.map_);
       }
-#else
-   case arrayValue:
-      return value_.array_->compare( *(other.value_.array_) ) < 0;
-   case objectValue:
-      return value_.map_->compare( *(other.value_.map_) ) < 0;
-#endif
    default:
       JSON_ASSERT_UNREACHABLE;
    }
    return false;  // unreachable
 }
 
-bool 
-Value::operator <=( const Value &other ) const
-{
-   return !(other < *this);
-}
-
-bool 
-Value::operator >=( const Value &other ) const
-{
-   return !(*this < other);
-}
-
-bool 
-Value::operator >( const Value &other ) const
-{
-   return other < *this;
-}
-
-bool 
-Value::operator ==( const Value &other ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::operator ==( const Value &other ) const
 {
    //if ( type_ != other.type_ )
    // GCC 2.95.3 says:
@@ -633,71 +137,28 @@ Value::operator ==( const Value &other ) const
              || ( other.value_.string_  
                   &&  value_.string_  
                   && strcmp( value_.string_, other.value_.string_ ) == 0 );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    case arrayValue:
    case objectValue:
       return value_.map_->size() == other.value_.map_->size()
              && (*value_.map_) == (*other.value_.map_);
-#else
-   case arrayValue:
-      return value_.array_->compare( *(other.value_.array_) ) == 0;
-   case objectValue:
-      return value_.map_->compare( *(other.value_.map_) ) == 0;
-#endif
    default:
       JSON_ASSERT_UNREACHABLE;
    }
    return false;  // unreachable
 }
 
-bool 
-Value::operator !=( const Value &other ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::operator !=( const Value &other ) const
 {
    return !( *this == other );
 }
 
-const char *
-Value::asCString() const
-{
-   JSON_ASSERT( type_ == stringValue );
-   return value_.string_;
-}
-
-
-Utf8String 
-Value::asString() const
-{
-   switch ( type_ )
-   {
-   case nullValue:
-      return "";
-   case stringValue:
-      return value_.string_ ? value_.string_ : "";
-   case booleanValue:
-      return value_.bool_ ? "true" : "false";
-   case intValue:
-   case uintValue:
-   case realValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE( "Type is not convertible to string" );
-   default:
-      JSON_ASSERT_UNREACHABLE;
-   }
-   return ""; // unreachable
-}
-
-# ifdef JSON_USE_CPPTL
-CppTL::ConstString 
-Value::asConstString() const
-{
-   return CppTL::ConstString( asString().c_str() );
-}
-# endif
-
-
-Value::Int 
-Value::asInt() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::Int Value::asInt() const
 {
    switch ( type_ )
    {
@@ -724,9 +185,10 @@ Value::asInt() const
    return 0; // unreachable;
 }
 
-
-Value::UInt 
-Value::asUInt() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::UInt Value::asUInt() const
 {
    switch ( type_ )
    {
@@ -754,11 +216,10 @@ Value::asUInt() const
    return 0; // unreachable;
 }
 
-
-# if defined(JSON_HAS_INT64)
-
-Value::Int64
-Value::asInt64() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::Int64 Value::asInt64() const
 {
    switch ( type_ )
    {
@@ -785,9 +246,10 @@ Value::asInt64() const
    return 0; // unreachable;
 }
 
-
-Value::UInt64
-Value::asUInt64() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::UInt64 Value::asUInt64() const
 {
    switch ( type_ )
    {
@@ -813,33 +275,11 @@ Value::asUInt64() const
    }
    return 0; // unreachable;
 }
-# endif // if defined(JSON_HAS_INT64)
 
-
-LargestInt 
-Value::asLargestInt() const
-{
-#if defined(JSON_NO_INT64)
-    return asInt();
-#else
-    return asInt64();
-#endif
-}
-
-
-LargestUInt 
-Value::asLargestUInt() const
-{
-#if defined(JSON_NO_INT64)
-    return asUInt();
-#else
-    return asUInt64();
-#endif
-}
-
-
-double 
-Value::asDouble() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+double Value::asDouble() const
 {
    switch ( type_ )
    {
@@ -867,8 +307,10 @@ Value::asDouble() const
    return 0; // unreachable;
 }
 
-float
-Value::asFloat() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+float Value::asFloat() const
 {
    switch ( type_ )
    {
@@ -896,8 +338,10 @@ Value::asFloat() const
    return 0.0f; // unreachable;
 }
 
-bool 
-Value::asBool() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::asBool() const
 {
    switch ( type_ )
    {
@@ -921,9 +365,10 @@ Value::asBool() const
    return false; // unreachable;
 }
 
-
-bool 
-Value::isConvertibleTo( ValueType other ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::isConvertibleTo( ValueType other ) const
 {
    switch ( type_ )
    {
@@ -972,10 +417,11 @@ Value::isConvertibleTo( ValueType other ) const
    return false; // unreachable;
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 /// Number of values in array or object
-ArrayIndex 
-Value::size() const
+ArrayIndex Value::size() const
 {
    switch ( type_ )
    {
@@ -986,7 +432,6 @@ Value::size() const
    case booleanValue:
    case stringValue:
       return 0;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    case arrayValue:  // size of the array is highest index + 1
       if ( !value_.map_->empty() )
       {
@@ -997,68 +442,38 @@ Value::size() const
       return 0;
    case objectValue:
       return ArrayIndex( value_.map_->size() );
-#else
-   case arrayValue:
-      return Int( value_.array_->size() );
-   case objectValue:
-      return Int( value_.map_->size() );
-#endif
    default:
       JSON_ASSERT_UNREACHABLE;
    }
    return 0; // unreachable;
 }
 
-
-bool 
-Value::empty() const
-{
-   if ( isNull() || isArray() || isObject() )
-      return size() == 0u;
-   else
-      return false;
-}
-
-
-bool
-Value::operator!() const
-{
-   return isNull();
-}
-
-
-void 
-Value::clear()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Value::clear()
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == arrayValue  || type_ == objectValue );
 
    switch ( type_ )
    {
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    case arrayValue:
    case objectValue:
       value_.map_->clear();
       break;
-#else
-   case arrayValue:
-      value_.array_->clear();
-      break;
-   case objectValue:
-      value_.map_->clear();
-      break;
-#endif
    default:
       break;
    }
 }
 
-void 
-Value::resize( ArrayIndex newSize )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Value::resize( ArrayIndex newSize )
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == arrayValue );
    if ( type_ == nullValue )
       *this = Value( arrayValue );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    ArrayIndex oldSize = size();
    if ( newSize == 0 )
       clear();
@@ -1072,19 +487,16 @@ Value::resize( ArrayIndex newSize )
       }
       BeAssert( size() == newSize );
    }
-#else
-   value_.array_->resize( newSize );
-#endif
 }
 
-
-Value &
-Value::operator[]( ArrayIndex index )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value & Value::operator[](ArrayIndex index)
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == arrayValue );
    if ( type_ == nullValue )
       *this = Value( arrayValue );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    CZString key( index );
    ObjectValues::iterator it = value_.map_->lower_bound( key );
    if ( it != value_.map_->end()  &&  (*it).first == key )
@@ -1093,62 +505,31 @@ Value::operator[]( ArrayIndex index )
    ObjectValues::value_type defaultValue( key, null );
    it = value_.map_->insert( it, defaultValue );
    return (*it).second;
-#else
-   return value_.array_->resolveReference( index );
-#endif
 }
 
-
-Value &
-Value::operator[]( int index )
-{
-   JSON_ASSERT( index >= 0 );
-   return (*this)[ ArrayIndex(index) ];
-}
-
-
-const Value &
-Value::operator[]( ArrayIndex index ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+const Value & Value::operator[](ArrayIndex index) const
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == arrayValue );
    if ( type_ == nullValue )
       return null;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    CZString key( index );
    ObjectValues::const_iterator it = value_.map_->find( key );
    if ( it == value_.map_->end() )
       return null;
    return (*it).second;
-#else
-   Value *value = value_.array_->find( index );
-   return value ? *value : null;
-#endif
 }
 
-
-const Value &
-Value::operator[]( int index ) const
-{
-   JSON_ASSERT( index >= 0 );
-   return (*this)[ ArrayIndex(index) ];
-}
-
-
-Value &
-Value::operator[]( const char *key )
-{
-   return resolveReference( key, false );
-}
-
-
-Value &
-Value::resolveReference( const char *key, 
-                         bool isStatic )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value & Value::resolveReference(const char *key, bool isStatic)
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == objectValue );
    if ( type_ == nullValue )
       *this = Value( objectValue );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    CZString actualKey( key, isStatic ? CZString::noDuplication 
                                      : CZString::duplicateOnCopy );
    ObjectValues::iterator it = value_.map_->lower_bound( actualKey );
@@ -1159,114 +540,73 @@ Value::resolveReference( const char *key,
    it = value_.map_->insert( it, defaultValue );
    Value &value = (*it).second;
    return value;
-#else
-   return value_.map_->resolveReference( key, isStatic );
-#endif
 }
 
-
-Value 
-Value::get( ArrayIndex index, 
-            const Value &defaultValue ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value Value::get(ArrayIndex index, const Value &defaultValue) const
 {
    const Value *value = &((*this)[index]);
    return value == &null ? defaultValue : *value;
 }
 
-
-bool 
-Value::isValidIndex( ArrayIndex index ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Value::isValidIndex(ArrayIndex index) const
 {
    return index < size();
 }
 
-
-
-const Value &
-Value::operator[]( const char *key ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+const Value & Value::operator[](const char *key) const
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == objectValue );
    if ( type_ == nullValue )
       return null;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    CZString actualKey( key, CZString::noDuplication );
    ObjectValues::const_iterator it = value_.map_->find( actualKey );
    if ( it == value_.map_->end() )
       return null;
    return (*it).second;
-#else
-   const Value *value = value_.map_->find( key );
-   return value ? *value : null;
-#endif
 }
 
-
-Value &
-Value::operator[]( const Utf8String &key )
-{
-   return (*this)[ key.c_str() ];
-}
-
-
-const Value &
-Value::operator[]( const Utf8String &key ) const
-{
-   return (*this)[ key.c_str() ];
-}
-
-Value &
-Value::operator[]( const StaticString &key )
-{
-   return resolveReference( key, true );
-}
-
-
-# ifdef JSON_USE_CPPTL
-Value &
-Value::operator[]( const CppTL::ConstString &key )
-{
-   return (*this)[ key.c_str() ];
-}
-
-
-const Value &
-Value::operator[]( const CppTL::ConstString &key ) const
-{
-   return (*this)[ key.c_str() ];
-}
-# endif
-
-
-Value &
-Value::append( const Value &value )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value& Value::append( const Value &value )
 {
    return (*this)[size()] = value;
 }
 
-
-Value 
-Value::get( const char *key, 
-            const Value &defaultValue ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value Value::get( const char *key, const Value &defaultValue ) const
 {
    const Value *value = &((*this)[key]);
    return value == &null ? defaultValue : *value;
 }
 
-
-Value 
-Value::get( const Utf8String &key,
-            const Value &defaultValue ) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value Value::get( const Utf8String &key, const Value &defaultValue ) const
 {
    return get( key.c_str(), defaultValue );
 }
 
-Value
-Value::removeMember( const char* key )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value Value::removeMember( const char* key )
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == objectValue );
    if ( type_ == nullValue )
       return null;
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    CZString actualKey( key, CZString::noDuplication );
    ObjectValues::iterator it = value_.map_->find( actualKey );
    if ( it == value_.map_->end() )
@@ -1274,24 +614,11 @@ Value::removeMember( const char* key )
    Value old(it->second);
    value_.map_->erase(it);
    return old;
-#else
-   Value *value = value_.map_->find( key );
-   if (value){
-      Value old(*value);
-      value_.map_.remove( key );
-      return old;
-   } else {
-      return null;
-   }
-#endif
 }
 
-Value
-Value::removeMember( const Utf8String &key )
-{
-   return removeMember( key.c_str() );
-}
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Value::removeIndex(ArrayIndex index, Value* removed) {
   if (type_ != arrayValue) {
     return false;
@@ -1315,308 +642,103 @@ bool Value::removeIndex(ArrayIndex index, Value* removed) {
   return true;
 }
 
-# ifdef JSON_USE_CPPTL
-Value 
-Value::get( const CppTL::ConstString &key,
-            const Value &defaultValue ) const
-{
-   return get( key.c_str(), defaultValue );
-}
-# endif
-
-bool 
-Value::isMember( const char *key ) const
-{
-   const Value *value = &((*this)[key]);
-   return value != &null;
-}
-
-
-bool 
-Value::isMember( const Utf8String &key ) const
-{
-   return isMember( key.c_str() );
-}
-
-
-# ifdef JSON_USE_CPPTL
-bool 
-Value::isMember( const CppTL::ConstString &key ) const
-{
-   return isMember( key.c_str() );
-}
-#endif
-
-Value::Members 
-Value::getMemberNames() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::Members Value::getMemberNames() const
 {
    JSON_ASSERT( type_ == nullValue  ||  type_ == objectValue );
    if ( type_ == nullValue )
        return Value::Members();
    Members members;
    members.reserve( value_.map_->size() );
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
    ObjectValues::const_iterator it = value_.map_->begin();
    ObjectValues::const_iterator itEnd = value_.map_->end();
    for ( ; it != itEnd; ++it )
       members.push_back( Utf8String( (*it).first.c_str() ) );
-#else
-   ValueInternalMap::IteratorState it;
-   ValueInternalMap::IteratorState itEnd;
-   value_.map_->makeBeginIterator( it );
-   value_.map_->makeEndIterator( itEnd );
-   for ( ; !ValueInternalMap::equals( it, itEnd ); ValueInternalMap::increment(it) )
-      members.push_back( Utf8String( ValueInternalMap::key( it ) ) );
-#endif
    return members;
 }
-//
-//# ifdef JSON_USE_CPPTL
-//EnumMemberNames
-//Value::enumMemberNames() const
-//{
-//   if ( type_ == objectValue )
-//   {
-//      return CppTL::Enum::any(  CppTL::Enum::transform(
-//         CppTL::Enum::keys( *(value_.map_), CppTL::Type<const CZString &>() ),
-//         MemberNamesTransform() ) );
-//   }
-//   return EnumMemberNames();
-//}
-//
-//
-//EnumValues 
-//Value::enumValues() const
-//{
-//   if ( type_ == objectValue  ||  type_ == arrayValue )
-//      return CppTL::Enum::anyValues( *(value_.map_), 
-//                                     CppTL::Type<const Value &>() );
-//   return EnumValues();
-//}
-//
-//# endif
 
-
-bool
-Value::isNull() const
-{
-   return type_ == nullValue;
-}
-
-
-bool 
-Value::isBool() const
-{
-   return type_ == booleanValue;
-}
-
-
-bool 
-Value::isInt() const
-{
-   return type_ == intValue;
-}
-
-
-bool 
-Value::isUInt() const
-{
-   return type_ == uintValue;
-}
-
-
-bool 
-Value::isIntegral() const
-{
-   return type_ == intValue  
-          ||  type_ == uintValue  
-          ||  type_ == booleanValue;
-}
-
-
-bool 
-Value::isDouble() const
-{
-   return type_ == realValue;
-}
-
-
-bool 
-Value::isNumeric() const
-{
-   return isIntegral() || isDouble();
-}
-
-
-bool 
-Value::isString() const
-{
-   return type_ == stringValue;
-}
-
-
-bool 
-Value::isArray() const
-{
-   return type_ == nullValue  ||  type_ == arrayValue;
-}
-
-
-bool 
-Value::isObject() const
-{
-   return type_ == nullValue  ||  type_ == objectValue;
-}
-
-Utf8String 
-Value::toStyledString() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Value::toStyledString() const
 {
    StyledWriter writer;
    return writer.write( *this );
 }
 
-
-Value::const_iterator 
-Value::begin() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::const_iterator Value::begin() const
 {
    switch ( type_ )
    {
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-      if ( value_.array_ )
-      {
-         ValueInternalArray::IteratorState it;
-         value_.array_->makeBeginIterator( it );
-         return const_iterator( it );
-      }
-      break;
-   case objectValue:
-      if ( value_.map_ )
-      {
-         ValueInternalMap::IteratorState it;
-         value_.map_->makeBeginIterator( it );
-         return const_iterator( it );
-      }
-      break;
-#else
    case arrayValue:
    case objectValue:
       if ( value_.map_ )
          return const_iterator( value_.map_->begin() );
       break;
-#endif
    default:
       break;
    }
    return const_iterator();
 }
 
-Value::const_iterator 
-Value::end() const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::const_iterator Value::end() const
 {
    switch ( type_ )
    {
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-      if ( value_.array_ )
-      {
-         ValueInternalArray::IteratorState it;
-         value_.array_->makeEndIterator( it );
-         return const_iterator( it );
-      }
-      break;
-   case objectValue:
-      if ( value_.map_ )
-      {
-         ValueInternalMap::IteratorState it;
-         value_.map_->makeEndIterator( it );
-         return const_iterator( it );
-      }
-      break;
-#else
    case arrayValue:
    case objectValue:
       if ( value_.map_ )
          return const_iterator( value_.map_->end() );
       break;
-#endif
    default:
       break;
    }
    return const_iterator();
 }
 
-
-Value::iterator 
-Value::begin()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::iterator Value::begin()
 {
    switch ( type_ )
    {
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-      if ( value_.array_ )
-      {
-         ValueInternalArray::IteratorState it;
-         value_.array_->makeBeginIterator( it );
-         return iterator( it );
-      }
-      break;
-   case objectValue:
-      if ( value_.map_ )
-      {
-         ValueInternalMap::IteratorState it;
-         value_.map_->makeBeginIterator( it );
-         return iterator( it );
-      }
-      break;
-#else
    case arrayValue:
    case objectValue:
       if ( value_.map_ )
          return iterator( value_.map_->begin() );
       break;
-#endif
    default:
       break;
    }
    return iterator();
 }
 
-Value::iterator 
-Value::end()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Value::iterator Value::end()
 {
    switch ( type_ )
    {
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-   case arrayValue:
-      if ( value_.array_ )
-      {
-         ValueInternalArray::IteratorState it;
-         value_.array_->makeEndIterator( it );
-         return iterator( it );
-      }
-      break;
-   case objectValue:
-      if ( value_.map_ )
-      {
-         ValueInternalMap::IteratorState it;
-         value_.map_->makeEndIterator( it );
-         return iterator( it );
-      }
-      break;
-#else
    case arrayValue:
    case objectValue:
       if ( value_.map_ )
          return iterator( value_.map_->end() );
       break;
-#endif
    default:
       break;
    }
    return iterator();
 }
-
 
 // class PathArgument
 // //////////////////////////////////////////////////////////////////

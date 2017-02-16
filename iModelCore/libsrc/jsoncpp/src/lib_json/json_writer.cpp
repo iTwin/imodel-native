@@ -194,29 +194,6 @@ Utf8String valueToQuotedString( const char *value )
    return result;
 }
 
-// Class Writer
-// //////////////////////////////////////////////////////////////////
-Writer::~Writer()
-{
-}
-
-
-// Class FastWriter
-// //////////////////////////////////////////////////////////////////
-
-FastWriter::FastWriter()
-   : yamlCompatiblityEnabled_( false )
-{
-}
-
-
-void 
-FastWriter::enableYAMLCompatibility()
-{
-   yamlCompatiblityEnabled_ = true;
-}
-
-
 Utf8String 
 FastWriter::write( const Value &root )
 {
@@ -224,16 +201,6 @@ FastWriter::write( const Value &root )
    writeValue( root );
    document_ += "\n";
    return document_;
-}
-
-Utf8String FastWriter::ToString( const Value &root )
-{
-   if (nullValue == root.type()) 
-     return "";
-
-    FastWriter writer;
-    writer.writeValue (root);
-   return writer.document_;
 }
 
 void 
@@ -284,8 +251,7 @@ FastWriter::writeValue( const Value &value )
             if ( it != members.begin() )
                document_ += ",";
             document_ += valueToQuotedString( name.c_str() );
-            document_ += yamlCompatiblityEnabled_ ? ": " 
-                                                  : ":";
+            document_ += ":";
             writeValue( value[name] );
          }
          document_ += "}";
