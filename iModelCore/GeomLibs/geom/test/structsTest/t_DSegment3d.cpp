@@ -548,3 +548,21 @@ TEST(DSegment3d, PickupPutdown)
         Check::Near (segment1.point[1], point1, "End point");
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DSegment3d, StarttoEnd)
+    {
+    DSegment3d seg3 = DSegment3d::FromZero();
+    Check::True(seg3.IsSinglePoint());
+
+    DRay3d ray = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(8, 8, 8));
+    DSegment3d segm = DSegment3d::From(ray);
+    Check::False(segm.IsSinglePoint());
+    DVec3d vec3d = segm.VectorStartToEnd();
+    double mag1 = vec3d.Magnitude();
+    DRange3d range;
+    segm.GetRange(range);
+    double mag2 = range.high.Magnitude() - range.low.Magnitude();
+    Check::Near(mag1, mag2);
+    }

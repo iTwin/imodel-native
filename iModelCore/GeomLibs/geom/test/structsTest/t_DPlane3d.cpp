@@ -232,8 +232,7 @@ TEST(DPlane3d, PlaneFrom3Points)
     DPoint3d origin = DPoint3d::From(1, 2, 3);
     DPoint3d point1 = DPoint3d::From(12, 11, 9);
     DPoint3d point2 = DPoint3d::From(4, 6, 9);
-    DPlane3d plane1;
-    plane1.InitFrom3Points(origin, point1, point2);
+    DPlane3d plane1 = DPlane3d::From3Points(origin, point1, point2);
     
     DVec3d vecA = DVec3d::FromStartEnd(origin, point1);
     DVec3d vecB = DVec3d::FromStartEnd(origin, point2);
@@ -245,4 +244,26 @@ TEST(DPlane3d, PlaneFrom3Points)
     Check::Near(normal.y, planeEquation.y);
     Check::Near(normal.z, planeEquation.z);
     Check::Near(15, planeEquation.w);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, PointProjectionOnPlane)
+    {
+    //random point projection on plane
+    double nrm1[] = { 1, 0, 0 };
+    DVec3d normal = DVec3d::FromArray(nrm1);
+    double distance = 6;
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(normal, distance);
+
+    DPoint3d pntToProject = DPoint3d::From(10, 10, 10);
+    DPoint3d projection;
+    plane.ProjectPoint(projection, pntToProject);
+
+    DVec3d vec3d = DVec3d::FromStartEnd(plane.origin, pntToProject);
+    double intm = vec3d.DotProduct(normal) / normal.MagnitudeSquared();
+    normal.Scale(intm);
+    pntToProject.Subtract(normal);
+
+    Check::Near(pntToProject, projection);
     }

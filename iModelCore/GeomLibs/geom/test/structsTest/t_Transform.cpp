@@ -1359,3 +1359,119 @@ TEST(Transform, GetRotationPart)
     tr.GetMatrix(rt2);
     Check::Near(rt1, rt2);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, RigidTransform)
+    {
+    Transform tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()));
+    Check::True(tr.IsRigid());
+    Transform tr2 = Transform::FromRowValues(1, 0, 0, 1,
+                                   0, 0.5, -0.866, 2,
+                                   0, 0.866, 0.5, 1);
+    Check::False(tr2.IsRigid());
+    DPoint3d translate;
+    
+    Transform tr3 = Transform::FromRowValues(1, 0, 0, 3,
+                                             0, 1, 0, 3,
+                                             0, 0, 1, 3);
+    
+    Check::True(tr3.IsTranslate(translate));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, IsUniformScale) 
+    {
+    Transform tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()));
+    DPoint3d tre;
+    double scale;
+    Check::False(tr.IsUniformScale(tre, scale));
+    Check::Near(scale, 1);
+    Transform tr3 = Transform::FromRowValues(3, 0, 0, 0,
+                                             0, 2, 0, 0,
+                                             0, 0, 1, 0);
+    Check::False(tr3.IsUniformScale(tre, scale));
+    Check::Near(scale, 1);
+    tr3 = Transform::FromRowValues(3, 0, 0, 0,
+                                   0, 3, 0, 0,
+                                   0, 0, 3, 0);
+    Check::True(tr3.IsUniformScale(tre, scale));
+    Check::Near(scale, 3);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, RotationAroundLine)
+    {
+    Transform tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()));
+    DPoint3d point;
+    DVec3d line;
+    double angle;
+    Check::True(tr.IsRotateAroundLine(point, line, angle));
+    Check::Near(angle, Angle::FromDegrees(60).Radians());
+    tr = Transform::FromRowValues(3, 0, 0, 0,
+                                  0, 3, 0, 0,
+                                  0, 0, 3, 0);
+    Check::False(tr.IsRotateAroundLine(point, line, angle));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, MultiplyTranspose)
+    {
+    Transform tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(180).Radians()));
+    DPoint3d point = DPoint3d::From(4, 7, 3);
+    tr.MultiplyTranspose(point);
+    Check::Near(point, DPoint3d::From(4, -7, -3));
+
+    tr = Transform::FromRowValues(1, 0, 0, 3,
+                                  0, Angle::FromDegrees(180).Cos(), -Angle::FromDegrees(180).Sin(), 2,
+                                  0, Angle::FromDegrees(180).Sin(), Angle::FromDegrees(180).Cos(), 4);
+    point = DPoint3d::FromZero();
+    tr.MultiplyTranspose(point, 4, 7, 3);
+    Check::Near(point, DPoint3d::From(7, -5, 1));
+
+    //multiply with array of points
+    DPoint3d inPoints[] = { DPoint3d::From(4, 5, 3),
+                            DPoint3d::From(0.04, 1.05, 0.309),
+                            DPoint3d::From(4, -5, 3.3),
+                            DPoint3d::From(-9.4, 5.1, 3) };
+    DPoint3d outPoints[4], outPointsCopy[4];
+    outPointsCopy[0] = inPoints[0];
+    outPointsCopy[1] = inPoints[1];
+    outPointsCopy[2] = inPoints[2];
+    outPointsCopy[3] = inPoints[3];
+    tr.MultiplyTranspose(outPoints, inPoints, 4);
+    tr.MultiplyTranspose(inPoints, 4);
+    tr.MultiplyTranspose(outPointsCopy, 4);
+    Check::Near(inPoints[0], outPoints[0]);
+    Check::Near(outPointsCopy[0], outPoints[0]);
+    Check::Near(inPoints[1], outPoints[1]);
+    Check::Near(outPointsCopy[1], outPoints[1]);
+    Check::Near(inPoints[2], outPoints[2]);
+    Check::Near(outPointsCopy[2], outPoints[2]);
+    Check::Near(inPoints[3], outPoints[3]);
+    Check::Near(outPointsCopy[3], outPoints[3]);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, Transform2Dto3D) 
+    {
+    Transform tr = Transform::FromRowValues(1, 0, 0, 3,
+                                  0, Angle::FromDegrees(180).Cos(), -Angle::FromDegrees(180).Sin(), 2,
+                                  0, Angle::FromDegrees(180).Sin(), Angle::FromDegrees(180).Cos(), 4);
+    
+    bvector<DPoint3d> outPoints;
+    bvector<DPoint2d> inPoints = { DPoint2d::From(4, 5),
+                                   DPoint2d::From(0.04, 1.05),
+                                   DPoint2d::From(4, -5),
+                                   DPoint2d::From(-9.4, 5.1) };
+    tr.Multiply(outPoints, inPoints);
+    
+    Check::Near(outPoints[0].x, 7); Check::Near(outPoints[0].y, -3); Check::Near(outPoints[0].z, 4);
+    Check::Near(outPoints[1].x, 3.04); Check::Near(outPoints[1].y, 0.95); Check::Near(outPoints[1].z, 4);
+    Check::Near(outPoints[2].x, 7); Check::Near(outPoints[2].y, 7); Check::Near(outPoints[2].z, 4);
+    Check::Near(outPoints[3].x, -6.4); Check::Near(outPoints[3].y, -3.1); Check::Near(outPoints[3].z, 4);
+    }
