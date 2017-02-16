@@ -30,6 +30,20 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_CLASS_Group                 "Group"
 #define GENERIC_CLASS_GroupModel            "GroupModel"
 #define GENERIC_CLASS_MultiAspect           "MultiAspect"
+#define GENERIC_CLASS_Callout               "Callout"
+#define GENERIC_CLASS_SectionCallout        "SectionCallout"
+#define GENERIC_CLASS_ElevationCallout      "ElevationCallout"
+#define GENERIC_CLASS_PlanCallout           "PlanCallout"
+#define GENERIC_CLASS_DetailCallout         "DetailCallout"
+#define GENERIC_CLASS_TitleText             "TitleText"
+#define GENERIC_CLASS_DetailingSymbol       "DetailingSymbol"
+#define GENERIC_CLASS_ViewAttachmentLabel   "ViewAttachmentLabel"
+
+#define GENERIC_ViewAttachmentLabel_ViewAttachment "ViewAttachment"
+#define GENERIC_Callout_DrawingModel        "DrawingModel"
+
+#define GENERIC_REL_ViewAttachmentLabelAnnotatesViewAttachment "ViewAttachmentLabelAnnotatesViewAttachment"
+#define GENERIC_REL_CalloutRefersToDrawingModel  "CalloutRefersToDrawingModel"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
