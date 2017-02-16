@@ -3424,10 +3424,6 @@ bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, Dis
         BeAssert(false && "Failed to triangulate...");
         return false;
         }
-    else
-        {
-        BeAssert(clone->IsTriangulated());
-        }
 
     if (m_haveTransform)
         clone->Transform(Transform::FromProduct(m_transform, transform));
