@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/providerproxy.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -373,12 +373,16 @@ bool EmergencyLogProvider::IsActive ( void )
 
     if ( UNKNOWN_LOGGING_PROVIDER == m_emergencyProviderType )
         {   
+PUSH_MSVC_IGNORE(4996)
         char const* env = getenv ( "EMERGENCY_LOGGING_SEVERITY" );
+POP_MSVC_IGNORE
         WString sevStr (env? env: "", false);
 
         SEVERITY sev = GetSeverityFromText ( sevStr.c_str() );
         
+PUSH_MSVC_IGNORE(4996)
         env = getenv ( "EMERGENCY_LOGGING" );
+POP_MSVC_IGNORE
         WString val (env? env: "", false);
 
         if ( val.EqualsI ( L"CONSOLE" ))

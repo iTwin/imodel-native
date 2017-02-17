@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/fileprovider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -53,7 +53,9 @@ int SimpleFileProvider::openlog ( void )
     closelog();
 
     Utf8String aname (m_name);
+PUSH_MSVC_IGNORE(4996)
     FILE* pFile = fopen ( aname.c_str(), "a");
+POP_MSVC_IGNORE
 
     if ( NULL == pFile  )
         {
