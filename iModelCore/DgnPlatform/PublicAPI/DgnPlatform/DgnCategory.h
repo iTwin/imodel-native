@@ -34,6 +34,9 @@ typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
 //! A sub-category of a category.
 //! @ingroup GROUP_DgnCategory
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/17
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DefinitionElement);

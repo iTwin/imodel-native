@@ -2028,6 +2028,7 @@ public:
         return (int) m_native->SetPropertyValue (utf8Name.c_str(), *nativeValue);
         }
 
+#if defined (BENTLEY_CHANGE)
     /**
      * Get a handle to a user property on this element.
      * @note If the user property does not already exist, this function will create it.
@@ -2065,6 +2066,7 @@ public:
         Utf8String utf8Name (namePinned);
         m_native->RemoveUserProperty (utf8Name.c_str());
         }
+#endif
 
     /** Cast this element to GeometrySource if possible */
     GeometrySource^ ToGeometrySource()

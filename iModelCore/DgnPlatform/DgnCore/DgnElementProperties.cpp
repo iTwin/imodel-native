@@ -349,25 +349,15 @@ bool DgnElement::_Equals(DgnElementCR other, DgnElement::ComparePropertyFilter c
             return false;
         }
 
+    if (ToJsonPropString() != other.ToJsonPropString())
+        return false;
+
     ElementECInstanceAdapter ecOther(other);
     ECValuesCollection otherProperties(ecOther);
     for (auto const& otherProp : otherProperties)
         {
         if (filter._ExcludeProperty(otherProp))
             continue;
-
-        auto const& propName = otherProp.GetValueAccessor().GetECProperty()->GetName();
-
-        if (propName.Equals("UserProperties")) // _GetPropertyValue does not work for user props
-            {
-            if (nullptr == m_userProperties)
-                LoadUserProperties();
-            if (nullptr == other.m_userProperties)
-                other.LoadUserProperties();
-            if (!m_userProperties->ToString().Equals(other.m_userProperties->ToString()))
-                return false;
-            continue;
-            }
 
         if (!_EqualProperty(otherProp, other))
             return false;
@@ -1293,11 +1283,11 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECClassId relClassId)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DgnElementId id, DgnClassId relClassId)
     {
     ECValue value;
     if (id.IsValid())
-        relClassId.IsValid() ? value.SetNavigationInfo(id, relClassId) : value.SetNavigationInfo(id);
+        relClassId.IsValid() ? value.SetNavigationInfo(id, (ECN::ECClassId)(relClassId.GetValue())) : value.SetNavigationInfo(id);
     else
         value.SetToNull();
 
