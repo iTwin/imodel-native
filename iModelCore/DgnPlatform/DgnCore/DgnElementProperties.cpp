@@ -1283,11 +1283,11 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECClassId relClassId)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DgnElementId id, DgnClassId relClassId)
     {
     ECValue value;
     if (id.IsValid())
-        relClassId.IsValid() ? value.SetNavigationInfo(id, relClassId) : value.SetNavigationInfo(id);
+        relClassId.IsValid() ? value.SetNavigationInfo(id, (ECN::ECClassId)(relClassId.GetValue())) : value.SetNavigationInfo(id);
     else
         value.SetToNull();
 

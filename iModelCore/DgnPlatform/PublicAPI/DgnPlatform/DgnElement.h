@@ -1779,8 +1779,11 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
+    //! @param[in] propertyName The name of the navigation property
+    //! @param[in] elementId The DgnElementId that identifies the target element
+    //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
     //! @note Passing an invalid ID will cause a null value to be set.
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, ECN::ECClassId relClassId);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId());
     //! Set a string ECProperty by name
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set the three property values that back a YPR

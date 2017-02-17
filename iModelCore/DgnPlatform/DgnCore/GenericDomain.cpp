@@ -65,6 +65,26 @@ DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/17
+//---------------------------------------------------------------------------------------
+static void createGenericCodeSpecs(DgnDbR db)
+    {
+    CodeSpecPtr disciplineCodeSpec = CodeSpec::Create(db, GENERIC_CODESPEC_ViewAttachmentLabel, CodeScopeSpec::CreateModelScope());
+    if (disciplineCodeSpec.IsValid())
+        disciplineCodeSpec->Insert();
+
+    BeAssert(db.CodeSpecs().QueryCodeSpecId(GENERIC_CODESPEC_ViewAttachmentLabel).IsValid());    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/17
+//---------------------------------------------------------------------------------------
+void GenericDomain::_OnSchemaImported(DgnDbR db) const
+    {
+    createGenericCodeSpecs(db);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2016
 //---------------------------------------------------------------------------------------
 GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, DgnCategoryId categoryId)
