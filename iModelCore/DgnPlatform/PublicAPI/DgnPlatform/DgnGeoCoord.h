@@ -79,6 +79,9 @@ private:
 public:
     DGNPLATFORM_EXPORT bool GetDatumOrEllipsoidInUserLibrary();
 
+    // This method is only ever called while converting from DgnV8 to BIM files.
+    DGNPLATFORM_EXPORT void SetGlobalOriginAndUnitScaling (DPoint3d& globalOrigin, double uorsPerBaseUnit);
+
     /*---------------------------------------------------------------------------------**//**
     * Creates an instance of DgnGCS  for the given model, looking up the Coordinate
     * System parameters from the Coordinate System Library by name.
