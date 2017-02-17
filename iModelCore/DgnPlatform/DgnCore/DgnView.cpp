@@ -32,31 +32,31 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace ViewProperties
 {
-    static Utf8CP str_ModelSelector() {return "ModelSelector";}
-    static Utf8CP str_CategorySelector() {return "CategorySelector";}
-    static Utf8CP str_DisplayStyle() {return "DisplayStyle";}
-    static Utf8CP str_BackgroundColor(){return "backgroundColor";}
-    static Utf8CP str_ViewFlags() {return "viewflags";}
-    static Utf8CP str_SubCategory() {return "SubCategory";}
-    static Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
-    static Utf8CP str_LensAngle() {return "LensAngle";}
-    static Utf8CP str_FocusDistance() {return "FocusDistance";}
-    static Utf8CP str_EyePoint() {return "EyePoint";}
-    static Utf8CP str_BaseModel() {return "BaseModel";}
-    static Utf8CP str_Origin() {return "Origin";}
-    static Utf8CP str_Extents() {return "Extents";}
-    static Utf8CP str_RotationAngle() {return "RotationAngle";}
-    static Utf8CP str_Yaw() {return "Yaw";}
-    static Utf8CP str_Pitch() {return "Pitch";}
-    static Utf8CP str_Roll() {return "Roll";}
-    static Utf8CP str_AspectSkew() {return "AspectSkew";}
-    static Utf8CP str_Width() {return "width";}
-    static Utf8CP str_Height() {return "height";}
-    static Utf8CP str_Format() {return "format";}
-    static Utf8CP str_Jpeg() {return "jpeg";}
-    static Utf8CP str_Png() {return "png";}
-    static Utf8CP str_Clip() {return "clip";}
-    static Utf8CP str_IsCameraOn() {return "IsCameraOn";}
+    static constexpr Utf8CP str_ModelSelector() {return "ModelSelector";}
+    static constexpr Utf8CP str_CategorySelector() {return "CategorySelector";}
+    static constexpr Utf8CP str_DisplayStyle() {return "DisplayStyle";}
+    static constexpr Utf8CP str_BackgroundColor(){return "backgroundColor";}
+    static constexpr Utf8CP str_ViewFlags() {return "viewflags";}
+    static constexpr Utf8CP str_SubCategory() {return "SubCategory";}
+    static constexpr Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
+    static constexpr Utf8CP str_LensAngle() {return "LensAngle";}
+    static constexpr Utf8CP str_FocusDistance() {return "FocusDistance";}
+    static constexpr Utf8CP str_EyePoint() {return "EyePoint";}
+    static constexpr Utf8CP str_BaseModel() {return "BaseModel";}
+    static constexpr Utf8CP str_Origin() {return "Origin";}
+    static constexpr Utf8CP str_Extents() {return "Extents";}
+    static constexpr Utf8CP str_RotationAngle() {return "RotationAngle";}
+    static constexpr Utf8CP str_Yaw() {return "Yaw";}
+    static constexpr Utf8CP str_Pitch() {return "Pitch";}
+    static constexpr Utf8CP str_Roll() {return "Roll";}
+    static constexpr Utf8CP str_AspectSkew() {return "AspectSkew";}
+    static constexpr Utf8CP str_Width() {return "width";}
+    static constexpr Utf8CP str_Height() {return "height";}
+    static constexpr Utf8CP str_Format() {return "format";}
+    static constexpr Utf8CP str_Jpeg() {return "jpeg";}
+    static constexpr Utf8CP str_Png() {return "png";}
+    static constexpr Utf8CP str_Clip() {return "clip";}
+    static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
 };
 
 using namespace ViewProperties;

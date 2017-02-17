@@ -813,7 +813,7 @@ protected:
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
     void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
@@ -831,7 +831,7 @@ public:
 
     void RemoveRangeIndex() {m_rangeIndex.reset();}
 
-    RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
+    RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}

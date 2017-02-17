@@ -1069,8 +1069,8 @@ public:
 private:
     template<class T> void CallAppData(T const& caller) const;
     Utf8String ToJsonPropString() const;
-    static Utf8CP str_UserProps() {return "UserProps";}
-    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[str_UserProps()];}
+    static constexpr Utf8CP str_UserProps() {return "UserProps";}
+    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[Json::StaticString(str_UserProps())];}
 
 protected:
     //! @private
@@ -1699,7 +1699,7 @@ public:
     //! Remove a set of Json Properties on this element
     void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.RemoveMember(nameSpace);}
 
-    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(str_UserProps()).GetMember(nameSpace);}
+    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(Json::StaticString(str_UserProps())).GetMember(nameSpace);}
 
     void SetUserProperties(Utf8CP nameSpace, JsonValueCR value) {GetUserPropsR().GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
 

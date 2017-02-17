@@ -62,7 +62,7 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static Utf8CP str_Styles() {return "Styles";}
+    static constexpr Utf8CP str_Styles() {return "Styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     bool EqualState(DisplayStyleCR other) const {return ToJson()==other.ToJson();}
@@ -70,8 +70,9 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+
     JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
-    JsonValueR GetStylesR() {return m_jsonProperties[str_Styles()];}
+    JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
 
 public:
     //! Construct a new DisplayStyle.
@@ -359,9 +360,9 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static Utf8CP str_Source() {return "Source";}
-    static Utf8CP str_Descr() {return "Descr";}
-    static Utf8CP str_ViewDetails() {return "ViewDetails";}
+    static constexpr Utf8CP str_Source() {return "Source";}
+    static constexpr Utf8CP str_Descr() {return "Descr";}
+    static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
     static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector); 
