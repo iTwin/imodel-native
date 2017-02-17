@@ -6,6 +6,9 @@
 
     <ECEntityClass typeName="DetailingSymbol">
         <!-- Mimics the like-named V8 type -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <BaseClass>bis:GraphicalElement2d</BaseClass>
     </ECEntityClass>
 
@@ -32,6 +35,9 @@
     <ECEntityClass typeName="ViewAttachmentLabel">
         <!-- Maps to the V8 type DrawingBoundary -->
         <!-- Its CodeValue is the section/elevation/plan/detail "id" -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <BaseClass>DetailingSymbol</BaseClass>
         <ECNavigationProperty propertyName="ViewAttachment" relationshipName="ViewAttachmentLabelAnnotatesViewAttachment" direction="Forward" readOnly="True">
         </ECNavigationProperty>
@@ -48,12 +54,15 @@
             <Class class="Callout"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by" >
-            <Class class="bis:Drawing"/>
+            <Class class="bis:DrawingModel"/>
         </Target>
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Callout">
         <!-- Mimics the like-named V8 type -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <BaseClass>DetailingSymbol</BaseClass>
         <ECNavigationProperty propertyName="DrawingModel" relationshipName="CalloutRefersToDrawingModel" direction="Forward" readOnly="True">
         </ECNavigationProperty>

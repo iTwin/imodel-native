@@ -1435,6 +1435,8 @@ protected:
     //! @param other    The other element
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
 
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECInstanceId, DgnClassId relClassId);
+
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
 
     void RemapAutoHandledNavigationproperties(DgnImportContext&);
@@ -1782,8 +1784,16 @@ public:
     //! @param[in] propertyName The name of the navigation property
     //! @param[in] elementId The DgnElementId that identifies the target element
     //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
-    //! @note Passing an invalid ID will cause a null value to be set.
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId());
+    //! @note Passing an invalid elementId will cause a null value to be set.
+    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId()) 
+        {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(elementId.GetValueUnchecked()), relClassId);}
+    //! Set an ECNavigationProperty by name
+    //! @param[in] propertyName The name of the navigation property
+    //! @param[in] modelId Identifies the target model
+    //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
+    //! @note Passing an invalid modelId will cause a null value to be set.
+    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnModelId modelId, DgnClassId relClassId = DgnClassId())
+        {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(modelId.GetValueUnchecked()), relClassId);}
     //! Set a string ECProperty by name
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set the three property values that back a YPR

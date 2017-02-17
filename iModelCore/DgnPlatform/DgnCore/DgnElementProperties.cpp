@@ -1283,7 +1283,7 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DgnElementId id, DgnClassId relClassId)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECInstanceId id, DgnClassId relClassId)
     {
     ECValue value;
     if (id.IsValid())
