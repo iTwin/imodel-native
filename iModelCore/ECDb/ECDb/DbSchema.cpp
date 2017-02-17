@@ -1445,6 +1445,20 @@ bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        2/2017
+//---------------------------------------------------------------------------------------
+int DbColumn::GetIndex() const
+    {
+    const bvector<DbColumn const*> const& columns = GetTable().GetColumns();
+    for (int i = 0; i < columns.size(); i++)
+        if (columns[i] == this)
+            return i;
+
+    BeAssert(false && "Column must exist in the table");
+    return -1;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus DbColumn::SetKind(Kind kind)
