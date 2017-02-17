@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/DgnECPerformanceTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,10 +19,10 @@ struct PerformanceDgnECTests : public PerformanceTestFixture
 
         static double s_increment;
 
-        StatusInt CreateArbitraryElement (DgnElementPtr& out, DgnModelR model);
+        StatusInt CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId);
 
     protected:
-        PerformanceDgnECTests() : PerformanceTestFixture() {} 
+        PerformanceDgnECTests() : PerformanceTestFixture() {}
         void RunInsertTests(ECN::ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName);
         void RunQueryTests(ECN::ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName);
     };
