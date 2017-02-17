@@ -6,17 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include "../TestFixture/GenericDgnModelTestFixture.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnElementDependency.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
-#define LOCALIZED_STR(str) str
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -53,19 +46,14 @@ struct TestElementDrivesElementHandlerShouldFail
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct TransactionManagerTests : public ::testing::Test
+struct TransactionManagerTests : public DgnDbTestFixture
 {
 public:
-    ScopedDgnHost m_host;
-    DgnDbPtr      m_db;
-    DgnModelId    m_defaultModelId;
-    DgnCategoryId m_defaultCategoryId;
-
     TransactionManagerTests();
     ~TransactionManagerTests();
+
     void CloseDb() { m_db->CloseDb(); }
     DgnModelR GetDefaultModel() { return *m_db->Models().GetModel(m_defaultModelId); }
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
     void SetUpTestDgnDb(WCharCP destFileName, int initialInstanceCount);
@@ -87,7 +75,6 @@ struct ElementDependencyGraph : TransactionManagerTests
     WString GetTestFileName(WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
 
-    CachedECSqlStatementPtr GetSelectElementDrivesElementById();
     void SetUpForRelationshipTests(WCharCP testname);
     ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
 
@@ -180,32 +167,6 @@ TransactionManagerTests::~TransactionManagerTests()
 }
 
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
-{
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
-    ASSERT_TRUE(m_db.IsValid());
-    ASSERT_TRUE(result == BE_SQLITE_OK);
-
-    TestDataManager::MustBeBriefcase(m_db, mode);
-    ASSERT_TRUE(m_db->IsBriefcase());
-    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
-
-    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_db));
-    //m_db->SaveChanges(); need this?
-
-    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
-    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(defaultModel.IsValid());
-
-    m_defaultCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
-}
-/*---------------------------------------------------------------------------------**//**
 * Method to create the Db with elements. Close and then open it for next operations
 * @bsimethod                                                    Majd.Uddin      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -216,11 +177,18 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
+    seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
     {
-        SetupProject(L"3dMetricGeneral.ibim", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
+        SetupSeedProject(seedFileName.c_str());
+
+        m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
+        DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
+        ASSERT_TRUE(defaultModel.IsValid());
+
+        m_defaultCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
 
         for (auto i = 0; i<initialInstanceCount; ++i)
             InsertElement(Utf8PrintfString("X%d", i).c_str());
@@ -245,7 +213,8 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
+    m_defaultCategoryId = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, "TestCategory"));
+    EXPECT_TRUE(m_defaultCategoryId.IsValid());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,25 +256,6 @@ WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
 ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 {
     return TestElementDrivesElementHandler::GetECClass(*m_db);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
-    {
-    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
-    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
-
-    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
-{
-    SetupProject(L"3dMetricGeneral.ibim", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,7 +432,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, Deep_Small)
 {
-    SetUpForRelationshipTests(L"PerformanceDeep1");
+    SetUpTestDgnDb(L"PerformanceDeep1.ibim", 1000000);
 
     static size_t s_nElements = 10000;
 
@@ -575,7 +525,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
 {
-    SetUpForRelationshipTests(L"PerformanceShallow");
+    SetUpTestDgnDb(L"PerformanceShallow.ibim", 1000000);
 
     //  Create the "root" Element. All other Elements will depend on this.
     DgnElementCPtr rootElement = InsertElement("Root");
@@ -742,7 +692,7 @@ TEST_F(Performance_ElementDependencyGraph, TPS_Small)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, TPS_Medium)
 {
-    SetUpTestDgnDb(L"TPS_Small.i.bim", 100000);
+    SetUpTestDgnDb(L"TPS_Medium.i.bim", 100000);
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
@@ -755,7 +705,7 @@ TEST_F(Performance_ElementDependencyGraph, TPS_Medium)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, TPS_Large)
 {
-    SetUpTestDgnDb(L"TPS_Small.i.bim", 1000000);
+    SetUpTestDgnDb(L"TPS_Large.i.bim", 1000000);
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
