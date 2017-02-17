@@ -99,8 +99,8 @@ void SchemaImportTestFixture::AssertForMapCorruptionCausedByMultiInheritence()
                               [ec_PropertyMap].[ColumnId]
                     HAVING COUNT (*) > 1)
             )sql"));
-
-    if (stmt.Step() == BE_SQLITE_ROW)
+     
+    if (stmt.Step() == BE_SQLITE_ROW && !stmt.IsColumnNull(0))
         {
         ASSERT_TRUE(false) << "Found following error in mapping\r\n" << stmt.GetValueText(0);
         }
