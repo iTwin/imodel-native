@@ -61,6 +61,7 @@
         <SubPart PartName="Eula"                PartFile="Eula"                         Repository="Miscdev-Eula" />
         <Bindings>
             <Libs>Delivery\DgnGeoCoord.lib</Libs>
+            <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\DgnGeoCoord.lib</Libs>
             <Files ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery\$(shlibprefix)DgnGeoCoord$(ApiNumber)$(shlibext)
             </Files> 
         </Bindings>
