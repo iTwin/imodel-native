@@ -1449,8 +1449,8 @@ bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
 //---------------------------------------------------------------------------------------
 int DbColumn::GetIndex() const
     {
-    const bvector<DbColumn const*> const& columns = GetTable().GetColumns();
-    for (int i = 0; i < columns.size(); i++)
+    bvector<DbColumn const*> const& columns = GetTable().GetColumns();
+    for (size_t i = 0; i < columns.size(); i++)
         if (columns[i] == this)
             return i;
 
