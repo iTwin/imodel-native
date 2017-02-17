@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/LinkElement.h>
+#include <DgnPlatform/GenericDomain.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -74,6 +75,11 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DefinitionModelPtr InsertDefinitionModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a GroupInformationModel
+    //! @note Also creates a GroupInformationPartition for the GroupInformationModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static GenericGroupModelPtr InsertGroupInformationModel(DgnDbR, Utf8CP partitionName);
+
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
                                       StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
@@ -105,6 +111,9 @@ public:
     //! @note Instead of using this method you should explicitly insert a SpatialCategory as part of the test setup
     //! @see InsertSpatialCategory
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
+
+    //! Insert a new SubCategory
+    static DgnSubCategoryId InsertSubCategory(DgnDbR, DgnCategoryId, Utf8CP, ColorDefCR);
 
     //! Insert a new CodeSpec
     static CodeSpecId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);

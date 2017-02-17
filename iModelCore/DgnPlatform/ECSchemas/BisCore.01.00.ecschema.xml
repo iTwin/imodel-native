@@ -505,25 +505,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RecipeElement" modifier="Abstract" displayLabel="Recipe" description="Defines a recipe for generating a type.">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="OutputCategory" typeName="long">
-            <!-- WIP: Should be NavigationProperty -->
-            <!-- IsNullable = False -->
-        </ECProperty>
-        <!--
-        <ECNavigationProperty propertyName="OutputCategory" relationshipName="RecipeSpecifiesOutputCategory" direction="Forward">
-        </ECNavigationProperty>
-        -->
     </ECEntityClass>
-    <!--
-    <ECRelationshipClass typeName="RecipeSpecifiesOutputCategory" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
-            <Class class="RecipeElement" />
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="generates" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    -->
     <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -577,6 +559,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="NestedTypeLocation2d" displayLabel="2D Nested Type Location" description="Identifies the location where a nested Type inserts into a Recipe.">
+        <!-- WIP: Remove? -->
         <BaseClass>GraphicalElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -598,6 +581,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="NestedTypeLocation2dRefersToType" strength="referencing" modifier="None">
+        <!-- WIP: Remove? -->
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
@@ -2119,7 +2103,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SpatialIndex">
+    <ECEntityClass typeName="SpatialIndex" modifier="Sealed" displayLabel="Spatial Index">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>ExistingTable</MapStrategy>

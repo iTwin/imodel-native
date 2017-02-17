@@ -166,6 +166,22 @@ DefinitionModelPtr DgnDbTestUtils::InsertDefinitionModel(DgnDbR db, Utf8CP parti
     return model;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           02/2017
+//---------------------------------------------------------------------------------------
+GenericGroupModelPtr DgnDbTestUtils::InsertGroupInformationModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    GroupInformationPartitionCPtr partition = GroupInformationPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    GenericGroupModelPtr model = GenericGroupModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,6 +304,21 @@ DgnCategoryId DgnDbTestUtils::GetFirstSpatialCategoryId(DgnDbR db)
     DgnCategoryId categoryId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
     EXPECT_TRUE(categoryId.IsValid());
     return categoryId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           02/2017
+//---------------------------------------------------------------------------------------
+DgnSubCategoryId DgnDbTestUtils::InsertSubCategory(DgnDbR db, DgnCategoryId categoryId, Utf8CP name, ColorDefCR color)
+    {
+    MUST_HAVE_HOST(DgnSubCategoryId());
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    DgnSubCategoryPtr newSubCategory = new DgnSubCategory(DgnSubCategory::CreateParams(db, categoryId, name, appearance));
+    EXPECT_TRUE(newSubCategory.IsValid());
+    DgnSubCategoryCPtr insertedSubCategory = newSubCategory->Insert();
+    EXPECT_TRUE(insertedSubCategory.IsValid());
+    return insertedSubCategory->GetSubCategoryId();
     }
 
 //---------------------------------------------------------------------------------------

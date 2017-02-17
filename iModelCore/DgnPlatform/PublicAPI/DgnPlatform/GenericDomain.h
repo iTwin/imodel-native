@@ -145,7 +145,7 @@ protected:
     explicit GenericGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static GenericGroupPtr Create(GenericGroupModelCR model, DgnCodeCR code = DgnCode());
+    DGNPLATFORM_EXPORT static GenericGroupPtr Create(GenericGroupModelR model, DgnCodeCR code = DgnCode());
 };
 
 //=======================================================================================

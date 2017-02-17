@@ -2787,9 +2787,6 @@ protected:
 public:
     PhysicalRecipeCP ToPhysicalRecipe() const {return _ToPhysicalRecipe();}             //!< more efficient substitute for dynamic_cast<PhysicalRecipeCP>(el)
     GraphicalRecipe2dCP ToGraphicalRecipe2d() const {return _ToGraphicalRecipe2d();}    //!< more efficient substitute for dynamic_cast<GraphicalRecipe2dCP>(el)
-
-    DgnDbStatus SetOutputCategory(DgnCategoryId categoryId) {return SetPropertyValue("OutputCategory", static_cast<int64_t>(categoryId.GetValueUnchecked()));}
-    DgnCategoryId GetOutputCategoryId() const {return DgnCategoryId(GetPropertyValueUInt64("OutputCategory"));}
 };
 
 //=======================================================================================
@@ -3369,7 +3366,6 @@ protected:
     DgnCloneContext& m_context;
     bool m_copyChildren;
     bool m_copyGroups;
-    bool m_preserveOriginalModels;
 
 public:
     DGNPLATFORM_EXPORT ElementCopier(DgnCloneContext& c);
@@ -3381,9 +3377,6 @@ public:
 
     //! Specify if group members should be deep-copied or not. The default is no, do not deep-copy group members.
     void SetCopyGroups(bool b) {m_copyGroups=b;}
-
-    //! Specify if child elements and group members should be copied into the parent/group element's destination model. If not, children and members are copied to their own models. The default is, yes, preserve original models.
-    void SetPreserveOriginalModels(bool b) {m_preserveOriginalModels=b;}
 
     //! Make a persistent copy of a specified Physical element and its children.
     //! This function copies the input element's children, unless you call SetCopyChildren and pass false.

@@ -3164,7 +3164,7 @@ DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false), m_preserveOriginalModels(true)
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -3209,7 +3209,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
             if (!sourceChildElement.IsValid())
                 continue;
 
-            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
+            MakeCopy(nullptr, targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
             }
         }
 
