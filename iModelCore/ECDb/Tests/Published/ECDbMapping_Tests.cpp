@@ -13294,9 +13294,60 @@ TEST_F(ECDbMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+    }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Affan.Khan                         01/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
+    {
+    SetupECDb("useecinstanceidasfk3.ecdb",
+        SchemaItem(R"xml(
+    <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Parent">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Child" >
+            <ECCustomAttributes>
+                <ClassMap xmlns='ECDbMap.02.00'>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="ChildName" typeName="string" />
+            <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildrenBase" direction="Backward" />
+            <ECProperty propertyName="Phone" typeName="string" />
+            <ECProperty propertyName="Address" typeName="string" />
+        </ECEntityClass>
+        <ECRelationshipClass typeName="ParentHasChildrenBase" strength="embedding" modifier="Abstract">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
+                <Class class="Parent" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                <Class class="Child"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml"));
 
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    Statement stmt;
+    stmt.Prepare(GetECDb(), "PRAGMA table_info(ts3_Child)");
+    int indexOfParentId = -1;
+    int indexOfParentRelECClassId = -1;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (strcmp(stmt.GetValueText(1), "ParentId") == 0)
+            indexOfParentId = stmt.GetValueInt(0);
+        else if (strcmp(stmt.GetValueText(1), "ParentRelECClassId") == 0)
+            indexOfParentRelECClassId = stmt.GetValueInt(0);
+        }
 
-    //S1,Z1 is wrong for ClassB
+    ASSERT_EQ(3, indexOfParentId) << "ParentId must be at position 3 after ChildName column";
+    ASSERT_EQ(4, indexOfParentRelECClassId) << "ParentRelECClassId must be next to ParentId column";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

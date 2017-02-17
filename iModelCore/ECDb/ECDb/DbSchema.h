@@ -181,7 +181,7 @@ public:
         {}
 
     ~DbColumn() {}
-
+    int GetIndex() const;
     DbColumnId GetId() const { return m_id; }
     PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Utf8StringCR GetName() const { return m_name; }
