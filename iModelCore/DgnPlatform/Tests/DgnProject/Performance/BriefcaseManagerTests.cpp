@@ -6,16 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-#include "../TestFixture/GenericDgnModelTestFixture.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-#include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_DGNDB_UNIT_TESTS_NAMESPACE
@@ -51,11 +44,10 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/16
 //=======================================================================================
-struct BriefcasePerformanceTest : ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
+struct BriefcasePerformanceTest : public DgnDbTestFixture, DgnPlatformLib::Host::RepositoryAdmin
 {
 public:
     mutable PerformanceRepositoryManager    m_server;
-    ScopedDgnHost                           m_host;
 
     BriefcasePerformanceTest() { RegisterServer(); }
     ~BriefcasePerformanceTest() { UnregisterServer(); }
@@ -65,9 +57,9 @@ public:
 
     IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
 
-    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId=BeBriefcaseId(2), WCharCP baseFile=L"3dMetricGeneral.ibim");
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId=BeBriefcaseId(2));
 
-    template<typename T> static void Time(Utf8CP descr, T func)
+    template<typename T> static void Time(Utf8CP descr, uint32_t numCount, T func)
         {
         printf("%s: ", Utf8String::IsNullOrEmpty(descr) ? "Execution" : descr);
 
@@ -75,6 +67,7 @@ public:
         func();
         timer.Stop();
         printf("%f seconds\n", timer.GetElapsedSeconds());
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numCount, descr);
         }
 };
 
@@ -86,7 +79,7 @@ struct CodesPerformanceTest : BriefcasePerformanceTest
 protected:
     int         m_codeValueIndex = 0;
     int         m_codeValueBatch = 0;
-    DgnDbPtr    m_db;
+
 public:
     void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
 
@@ -107,7 +100,7 @@ struct LocksPerformanceTest : BriefcasePerformanceTest
 {
 protected:
     uint64_t        m_elementId = 0x00ff000000ff0000;
-    DgnDbPtr        m_db;
+
 public:
     void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
 
@@ -164,25 +157,20 @@ RepositoryStatus PerformanceRepositoryManager::_QueryStates(DgnLockInfoSet&, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr BriefcasePerformanceTest::SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile)
+DgnDbPtr BriefcasePerformanceTest::SetupDb(WCharCP testFile, BeBriefcaseId bcId)
     {
-    BeFileName testFileName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8);
-    testFileName.AppendToPath(testFile);
+    SetupSeedProject(testFile);
 
-    BeFileName outFileName;
-    EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFileName.c_str(), __FILE__));
-    auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_TRUE(db.IsValid());
-    if (!db.IsValid())
+    if (!m_db.IsValid())
         return nullptr;
 
-    if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
+    if (bcId.GetValue() != m_db->GetBriefcaseId().GetValue())
         {
-        TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
-        db->ChangeBriefcaseId(bcId);
+        TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+        m_db->ChangeBriefcaseId(bcId);
         }
 
-    return db;
+    return m_db;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,7 +192,7 @@ void CodesPerformanceTest::TimeReserveCodes(uint32_t numCodes)
     {
     DgnCodeSet codes = PopulateCodeSet(numCodes);
     Utf8PrintfString descr("Reserve %u codes", numCodes);
-    Time(descr.c_str(), [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().ReserveCodes(codes).Result()); });
+    Time(descr.c_str(), numCodes, [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().ReserveCodes(codes).Result()); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,7 +214,7 @@ void LocksPerformanceTest::TimeAcquireLocks(uint32_t numLocks)
     {
     LockRequest req = PopulateLockRequest(numLocks);
     Utf8PrintfString descr("Acquire %u locks", numLocks);
-    Time(descr.c_str(), [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().AcquireLocks(req).Result()); });
+    Time(descr.c_str(), numLocks, [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().AcquireLocks(req).Result()); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -245,12 +233,12 @@ TEST_F(CodesPerformanceTest, ReserveCodes)
 * though we request the same number of codes each time.
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CodesPerformanceTest, ReserveCodesInChunksOf100)
+TEST_F(CodesPerformanceTest, ReserveCodesInChunksOf1000)
     {
     Setup(L"ReserveCodesInChunksOf100.bim");
 
-    for (uint32_t i = 0; i < 100; i++)
-        TimeReserveCodes(100);
+    for (uint32_t i = 0; i < 10; i++)
+        TimeReserveCodes(1000);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,8 +259,6 @@ TEST_F(LocksPerformanceTest, AcquireLocksInChunks)
     {
     Setup(L"AcquireLocksInChunks.bim");
 
-    for (uint32_t i = 0; i < 100; i++)
-        TimeAcquireLocks(100);
+    for (uint32_t i = 0; i < 10; i++)
+        TimeAcquireLocks(1000);
     }
-
-
