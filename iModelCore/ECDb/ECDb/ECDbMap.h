@@ -45,7 +45,7 @@ struct ECDbMap :NonCopyableClass
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixIns);
 
-        BentleyStatus LogInvalidMultiInheritanceLegacyIssues() const;
+        BentleyStatus LogInvalidLegacyClassInheritanceIssues() const;
 
     public:
         explicit ECDbMap(ECDbCR ecdb);

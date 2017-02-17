@@ -190,7 +190,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
         return ERROR;
         }
 
-    LogInvalidMultiInheritanceLegacyIssues();
+    LogInvalidLegacyClassInheritanceIssues();
 
     ClearCache();
     m_schemaImportContext = nullptr;
@@ -946,9 +946,9 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::LogInvalidMultiInheritanceLegacyIssues() const
+BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
     {
-    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidLegacyMultiInheritanceCases");
+    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidLegacyClassInheritance");
     const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
     const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_FATAL;
     if (!diagLogger->isSeverityEnabled(diagSeverity) && !LOG.isSeverityEnabled(logSeverity))
@@ -972,7 +972,7 @@ BentleyStatus ECDbMap::LogInvalidMultiInheritanceLegacyIssues() const
         INNER JOIN ec_Class PC ON PC.Id=ec_Property.ClassId
         INNER JOIN ec_Schema PS ON PS.Id=PC.SchemaId
         WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn
-        " GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
+                                     " GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
         {
         return ERROR;
         }
@@ -994,75 +994,75 @@ BentleyStatus ECDbMap::LogInvalidMultiInheritanceLegacyIssues() const
     return SUCCESS;
     /* API approach
     for (auto const& kvPair : m_classMapDictionary)
-        {
-        ClassMap const& classMap = *kvPair.second;
-        if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-            continue;
+    {
+    ClassMap const& classMap = *kvPair.second;
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+    continue;
 
-        bmap<DbColumnId, bvector<PropertyMap const*>> columnPropMapMap;
-        bmap<DbColumnId, DbColumn const*> columnMap;
-        for (PropertyMap const* propMap : classMap.GetPropertyMaps())
-            {
-            GetColumnsPropertyMapVisitor visitor;
-            if (SUCCESS != propMap->AcceptVisitor(visitor))
-                {
-                BeAssert(false);
-                return ERROR;
-                }
+    bmap<DbColumnId, bvector<PropertyMap const*>> columnPropMapMap;
+    bmap<DbColumnId, DbColumn const*> columnMap;
+    for (PropertyMap const* propMap : classMap.GetPropertyMaps())
+    {
+    GetColumnsPropertyMapVisitor visitor;
+    if (SUCCESS != propMap->AcceptVisitor(visitor))
+    {
+    BeAssert(false);
+    return ERROR;
+    }
 
-            if (visitor.GetColumnCount() <= visitor.GetVirtualColumnCount())
-                continue;
+    if (visitor.GetColumnCount() <= visitor.GetVirtualColumnCount())
+    continue;
 
-            for (DbColumn const* col : visitor.GetColumns())
-                {
-                if (col->GetPersistenceType() == PersistenceType::Virtual)
-                    continue;
+    for (DbColumn const* col : visitor.GetColumns())
+    {
+    if (col->GetPersistenceType() == PersistenceType::Virtual)
+    continue;
 
-                columnPropMapMap[col->GetId()].push_back(propMap);
-                columnMap[col->GetId()] = col;
-                }
-            }
+    columnPropMapMap[col->GetId()].push_back(propMap);
+    columnMap[col->GetId()] = col;
+    }
+    }
 
-        Utf8String schemaName = classMap.GetClass().GetSchema().GetFullSchemaName();
-        Utf8CP className = classMap.GetClass().GetName().c_str();
-        
-        Utf8String issuesJson("[");
-        bool isFirstIssue = true;
-        for (bpair<DbColumnId, bvector<PropertyMap const*>> const& kvPair : columnPropMapMap)
-            {
-            if (kvPair.second.size() <= 1)
-                continue;
+    Utf8String schemaName = classMap.GetClass().GetSchema().GetFullSchemaName();
+    Utf8CP className = classMap.GetClass().GetName().c_str();
 
-            Utf8String propMapsJson;
-            bool isFirstPropMap = true;
-            for (PropertyMap const* propMap : kvPair.second)
-                {
-                if (!isFirstPropMap)
-                    propMapsJson.append(",");
+    Utf8String issuesJson("[");
+    bool isFirstIssue = true;
+    for (bpair<DbColumnId, bvector<PropertyMap const*>> const& kvPair : columnPropMapMap)
+    {
+    if (kvPair.second.size() <= 1)
+    continue;
 
-                propMapsJson.append("\"").append(propMap->GetAccessString()).append("\"");
-                isFirstPropMap = false;
-                }
+    Utf8String propMapsJson;
+    bool isFirstPropMap = true;
+    for (PropertyMap const* propMap : kvPair.second)
+    {
+    if (!isFirstPropMap)
+    propMapsJson.append(",");
 
-            DbColumnId colId = kvPair.first;
-            DbColumn const* col = columnMap[colId];
+    propMapsJson.append("\"").append(propMap->GetAccessString()).append("\"");
+    isFirstPropMap = false;
+    }
 
-            Utf8String columnIssueJson;
-            columnIssueJson.Sprintf(R"json("{"Column":"%s","Table":"%s","Properties":[%s]})json", col->GetName().c_str(), col->GetTable().GetName().c_str(), propMapsJson.c_str());
+    DbColumnId colId = kvPair.first;
+    DbColumn const* col = columnMap[colId];
 
-            if (!isFirstIssue)
-                issuesJson.append(",");
+    Utf8String columnIssueJson;
+    columnIssueJson.Sprintf(R"json("{"Column":"%s","Table":"%s","Properties":[%s]})json", col->GetName().c_str(), col->GetTable().GetName().c_str(), propMapsJson.c_str());
 
-            issuesJson.append(columnIssueJson);
+    if (!isFirstIssue)
+    issuesJson.append(",");
 
-            isFirstIssue = false;
-            }
+    issuesJson.append(columnIssueJson);
+
+    isFirstIssue = false;
+    }
 
 
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,\"%s\"", ecdbFileName, schemaName.c_str(), className, issuesJson.c_str());
-        LOG.messagev(logSeverity, "ECClass with invalid class inheritance. resulting in data: %s - %s", classMap.GetClass().GetFullName(), issuesJson.c_str());
-        }
-        */
+    diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,\"%s\"", ecdbFileName, schemaName.c_str(), className, issuesJson.c_str());
+    LOG.messagev(logSeverity, "ECClass with invalid class inheritance. resulting in data: %s - %s", classMap.GetClass().GetFullName(), issuesJson.c_str());
+    }
+    */
     return SUCCESS;
     }
 
