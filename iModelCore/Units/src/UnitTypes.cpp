@@ -127,25 +127,42 @@ double FastIntegerPower(double a, uint32_t n)
     return product;
     }
 
-double Unit::Convert(double value, UnitCP toUnit) const
+UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) const
     {
     if (nullptr == toUnit)
         {
         LOG.errorv("Cannot convert from %s to a null toUnit, returning a conversion factor of 0.0", this->GetName());
-        return 0.0;
+        return UnitsProblemCode::UncomparableUnits;
         }
 
     if (IsInverseUnit() && toUnit->IsInverseUnit() || !(IsInverseUnit() || toUnit->IsInverseUnit()))
-        return DoNumericConversion(value, *toUnit);
-
+        {
+        return DoNumericConversion(converted, value, *toUnit);
+        }
     // TODO: Do better check here
-    if (value == 0.0)
-        return 0.0;
-
+    //if (value == 0.0)
+    //    return 0.0;
+    double temp;
+    UnitsProblemCode prob;
     if (IsInverseUnit())
-        return DoNumericConversion(1.0 / value, *toUnit);
-    
-    return 1.0 / DoNumericConversion(value, *toUnit);
+        {
+        if (IsNegligible(value))
+            {
+            converted = 0.0;
+            prob =  UnitsProblemCode::InvertingZero;
+            }
+        else
+            prob = DoNumericConversion(converted, 1.0 / value, *toUnit);
+        }
+    else
+        {
+        prob = DoNumericConversion(temp, value, *toUnit);
+        if (UnitsProblemCode::NoProblem != prob || IsNegligible(temp))
+            converted = 0.0;
+        else
+            converted = 1.0 / temp;
+        }
+    return prob;
     }
 
 bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
@@ -207,12 +224,13 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
     return true;
     }
 
-double Unit::DoNumericConversion(double value, UnitCR toUnit) const
+UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, UnitCR toUnit) const
     {
     uint64_t index = GetId();
     index = index << 32;
     index |= toUnit.GetId();
 
+    converted = 0.0;
     Conversion conversion;
     if (!UnitRegistry::Instance().TryGetConversion(index, conversion))
         {
@@ -223,15 +241,12 @@ double Unit::DoNumericConversion(double value, UnitCR toUnit) const
     if (conversion.Factor == 0.0)
         {
         LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit.GetName());
-        return 0.0;
+        return UnitsProblemCode::UncomparableUnits;
         }
 
     LOG.infov("Conversion factor: %.17g, offset: %.17g", conversion.Factor, conversion.Offset);
-    value *= conversion.Factor;
-
-    value += conversion.Offset;
-
-    return value;
+    converted = value * conversion.Factor + conversion.Offset;
+    return UnitsProblemCode::NoProblem;
     }
 
 Utf8String Unit::GetUnitSignature() const

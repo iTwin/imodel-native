@@ -100,12 +100,31 @@ BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
         return SUCCESS;
         }
 
-    value = m_unit->Convert(m_magnitude, unit);
+    m_unit->Convert(value, m_magnitude, unit);
     if (value == 0.0)
         return ERROR;
 
     return SUCCESS;
     }
+
+
+UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) const
+    {
+    if (m_unit == unit)
+        {
+        value = m_magnitude;
+        return UnitsProblemCode::NoProblem;
+        }
+
+    //UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) const
+    m_unit->Convert(value, m_magnitude, unit);
+    if (value == 0.0)
+        return UnitsProblemCode::UncomparableUnits;
+
+    return UnitsProblemCode::NoProblem;
+    }
+
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16

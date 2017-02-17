@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/UnitsTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -168,7 +168,8 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
 
     PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
 
-    double convertedVal = fromUnit->Convert(fromVal, targetUnit);;
+    double convertedVal;
+    fromUnit->Convert(convertedVal, fromVal, targetUnit);
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
     //if (nullptr == q)
@@ -1217,8 +1218,9 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
         UnitCP firstUnit = *phenomenon->GetUnits().begin();
         for (auto const& unit : phenomenon->GetUnits())
             {
-            double conversion = firstUnit->Convert(42, unit);
-            ASSERT_FALSE(BeNumerical::BeIsnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
+            double converted;
+            firstUnit->Convert(converted, 42, unit);
+            ASSERT_FALSE(BeNumerical::BeIsnan(converted)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
             ++numConversions;
             }
         }

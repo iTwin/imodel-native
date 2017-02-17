@@ -46,7 +46,8 @@ size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
             {
             UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
             }
-        double rat = unit->Convert(1.0, subunit);
+        double rat;
+        unit->Convert(rat, 1.0, subunit);
         if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
             return static_cast<size_t>(rat);
         else
@@ -494,7 +495,8 @@ size_t QuantityTriadSpec::UnitRatio(UnitCP major, UnitCP minor)
     {
     if (nullptr != major && nullptr != minor && (major->GetPhenomenon() == minor->GetPhenomenon()))
         {
-        double rat = major->Convert(1.0, minor);
+        double rat;
+        major->Convert(rat, 1.0, minor);
         if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
             return static_cast<int>(rat);
         }

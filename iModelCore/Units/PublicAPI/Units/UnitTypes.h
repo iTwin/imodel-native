@@ -17,6 +17,14 @@ UNITS_TYPEDEFS(Phenomenon)
 UNITS_TYPEDEFS(Expression)
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
+enum class UnitsProblemCode
+    {
+    NoProblem = 0,
+    UncomparableUnits = 31,     //!< Units provided on the argument list are not comparable
+    InvalidUnitName = 32,       //!< Not-recognizd unit name or unit is not associated with a Phenomenon
+    InvertingZero = 33
+    };
+
 typedef bvector<Utf8String> Utf8Vector;
 
 struct UnitRegistry;
@@ -92,6 +100,7 @@ private:
     UnitCP          m_parent;
     bool            m_isConstant;
 
+
     static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     static UnitP Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
 
@@ -109,13 +118,13 @@ private:
     UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
     bool    IsInverseUnit() const { return nullptr != m_parent; }
     
-    double  DoNumericConversion(double value, UnitCR toUnit) const;
+    UnitsProblemCode  DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
     bool    GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
     UNITS_EXPORT Utf8String GetParsedUnitExpression() const;
-    UNITS_EXPORT double Convert(double value, UnitCP toUnit) const;
+    UNITS_EXPORT UnitsProblemCode Convert(double& converted, double value, UnitCP toUnit) const;
 
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
@@ -125,7 +134,8 @@ public:
 
     UnitCP MultiplyUnit (UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
-};
+    static bool IsNegligible(double dval) { return (1.0e-16 > dval); }
+    };
 
 struct Phenomenon final : UnitsSymbol
     {

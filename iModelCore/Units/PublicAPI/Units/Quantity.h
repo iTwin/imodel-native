@@ -34,9 +34,11 @@ private:
 
     //BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
     BentleyStatus ConvertTo(UnitCP unit, double& value) const;
+    UnitsProblemCode GetConvertedMagnitude(double& value, UnitCP unit) const;
+
 public:
 
-    UNITS_EXPORT  bool IsNullQuantity() const;
+    UNITS_EXPORT  bool IsNullQuantity() const;// { return (0.0 == m_magnitude && nullptr == m_unit); }
     UNITS_EXPORT  Quantity(QuantityCR rhs);
  //   UNITS_EXPORT static QuantityCP Create (double magnitude, Utf8CP unitName);
     UNITS_EXPORT Quantity(double magnitude, UnitCR unit);
