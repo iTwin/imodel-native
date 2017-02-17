@@ -29,7 +29,7 @@ DEFINE_REF_COUNTED_PTR(Loader)
 //=======================================================================================
 struct PointCloudFileThread : BeFolly::ThreadPool
     {
-    PointCloudFileThread() : ThreadPool(1, "RasterFile") {}
+    PointCloudFileThread() : ThreadPool(1, "PointCloud") {}
     static PointCloudFileThread& Get() { static folly::Singleton<PointCloudFileThread> s_pool; return *s_pool.try_get_fast(); }
     };
 
@@ -84,9 +84,11 @@ BentleyStatus DoGetFromSource()
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
     size_t                      nBatchPoints = 0;
-    bvector<FPoint3d>           batchPoints(s_maxTileBatchCount), points;
+    bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
+    QuantizedPointList          points;
     bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
     Transform                   dgnToTile, cloudToTile;
+    DRange3d                    tileRange = tile.GetRange();
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
@@ -99,16 +101,14 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            FPoint3d        fPoint = { (float) tmpPoint.x, (float) tmpPoint.y, (float) tmpPoint.z };
-
-            points.push_back(fPoint);
+            points.push_back(IGraphicBuilder::QuantizedPoint(tileRange, tmpPoint));
             if (colorsPresent)
                 colors.push_back(batchColors[i]);
             }
         }
     m_saveToCache = true;
 
-    if (points.size() > s_maxLeafPointCount)
+    if (points.size() < s_maxLeafPointCount)
         tile.SetIsLeaf();
 
     // TODO - Add technique for monochrome point clouds...
@@ -117,11 +117,20 @@ BentleyStatus DoGetFromSource()
 
     Json::Value     featureTable;
     bool            rgbPresent = colors.size() == points.size();
+    DVec3d          tileRangeDiagonal = tileRange.DiagonalVector();
 
     featureTable["POINTS_LENGTH"] = points.size();
     featureTable["POSITION"]["byteOffset"] = 0;
+
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(tileRange.low.x);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(tileRange.low.y);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(tileRange.low.z);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.x);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.y);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.z);
+
     if (rgbPresent)
-        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(FPoint3d);
+        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(IGraphicBuilder::QuantizedPoint);
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
@@ -130,7 +139,7 @@ BentleyStatus DoGetFromSource()
     m_tileBytes.Append((uint8_t const*) featureTableStr.c_str(), featureTableStrLen);
     if (!points.empty())
         {
-        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(FPoint3d));
+        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(IGraphicBuilder::QuantizedPoint));
         if (rgbPresent)
             m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
         }
@@ -214,7 +223,7 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
         m_points.resize(nPoints);                                      
         
         streamBuffer.SetPos(binaryPos + (positionOffset = featureTable["POSITION"]["byteOffset"].asUInt()));;
-        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(FPoint3d)))
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(IGraphicBuilder::QuantizedPoint)))
             {
             BeAssert(false);
             return ERROR;
@@ -246,7 +255,7 @@ BentleyStatus Tile::AddGraphics ()
         auto&                       root   = static_cast<RootCR>(GetRoot());
         Render::GraphicBuilderPtr   graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
 
-        graphic->AddPointCloud((int) m_points.size(), DPoint3d::FromZero(), &m_points.front(), (ByteCP) m_colors.data());
+        graphic->AddPointCloud((int) m_points.size(), m_range, &m_points.front(), (ByteCP) m_colors.data());
         graphic->Close();
         AddGraphic(*graphic);
         }
