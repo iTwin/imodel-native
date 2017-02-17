@@ -15,7 +15,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
     {
     protected:
         static const CodeSpecId s_codeSpecId;
-        static const int s_instanceCount = 500000;
+        static const int s_instanceCount = 50000;
         static Utf8CP const s_textVal;
         static const int64_t s_int64Val = 20000000LL;
         static const double s_doubleVal;
@@ -136,7 +136,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         ASSERT_TRUE(insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
-        const ECInstanceId id((uint64_t) (i + 10));
+        const ECInstanceId id((uint64_t) (i + 100));
         stmt.BindId(1, id);
         stmt.BindId(2, modelId);
         stmt.BindId(3, s_codeSpecId);
@@ -211,7 +211,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         ASSERT_TRUE(updateStmt != nullptr);
         updateStmts.push_back(updateStmt);
 
-        const ECInstanceId id((uint64_t) (i + 10));
+        const ECInstanceId id((uint64_t) (i + 100));
         insertStmt->BindId(1, id);
         insertStmt->BindId(2, modelId);
         insertStmt->BindId(3, s_codeSpecId);
@@ -275,7 +275,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
 
         CachedECSqlStatement& stmt = *insertStmt;
 
-        const ECInstanceId id((uint64_t) (i + 10));
+        const ECInstanceId id((uint64_t) (i + 100));
         stmt.BindId(stmt.GetParameterIndex("ecinstanceid"), id);
         stmt.BindId(stmt.GetParameterIndex("modelid"), modelId);
         stmt.BindId(stmt.GetParameterIndex("codespecid"), s_codeSpecId);
