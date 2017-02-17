@@ -89,7 +89,7 @@
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="CodeSpec" modifier="Sealed" displayLabel="Code Specification" description="A Code Specification determines how the code for an element is generated and validated.">
+    <ECEntityClass typeName="CodeSpec" modifier="Sealed" displayLabel="Code Specification" description="A Code Specification captures the rules for encoding and decoding significant business information into and from a Code (string). This specification is used to generate and validate Codes.">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>

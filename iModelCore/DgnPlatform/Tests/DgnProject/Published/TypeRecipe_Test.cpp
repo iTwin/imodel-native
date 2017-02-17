@@ -638,7 +638,7 @@ DgnCategoryId TypeTests::DetermineCategoryId(TypeDefinitionElementCR type)
 //---------------------------------------------------------------------------------------
 ElementIterator TypeTests::MakeElementIteratorWhereModel(Utf8CP elementClassName, DgnModelCR model)
     {
-    Utf8PrintfString whereClause("WHERE Model.Id=%" PRIu64, model.GetModelId());
+    Utf8PrintfString whereClause("WHERE Model.Id=%" PRIu64, model.GetModelId().GetValue());
     return model.GetDgnDb().Elements().MakeIterator(elementClassName, whereClause.c_str());
     }
 
@@ -737,7 +737,11 @@ bool TypeTests::IsNestedTypeLocation(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 bool TypeTests::IsInstanceSpecific(DgnElementCR element)
     {
+#if 0 // WIP!!!
     return element.GetUserProperty(USERPROP_IsInstanceSpecific()).GetValueBoolean();
+#else
+    return false;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -745,7 +749,9 @@ bool TypeTests::IsInstanceSpecific(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific)
     {
+#if 0 // WIP!!!
     element.GetUserProperty(USERPROP_IsInstanceSpecific()).SetValueBoolean(isInstanceSpecific);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -753,7 +759,11 @@ void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific
 //---------------------------------------------------------------------------------------
 Utf8CP TypeTests::GetValueExpression(DgnElementCR element)
     {
+#if 0 // WIP!!!
     return element.GetUserProperty(USERPROP_ValueExpression()).GetValueText();
+#else
+    return "";
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -761,7 +771,9 @@ Utf8CP TypeTests::GetValueExpression(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 void TypeTests::SetValueExpression(DgnElementR element, Utf8CP expression)
     {
+#if 0 // WIP!!!
     element.GetUserProperty(USERPROP_ValueExpression()).SetValueText(expression);
+#endif
     }
 
 //---------------------------------------------------------------------------------------

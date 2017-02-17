@@ -139,6 +139,7 @@ typedef bvector<Utf8String> CodeFragmentStringList;
 typedef CodeFragmentStringList const& CodeFragmentStringListCR;
 
 //=======================================================================================
+//! A CodeSpec captures the rules for encoding and decoding significant business information into and from a Code (string). 
 //! A CodeSpec determines how DgnCodes for elements are generated and validated.
 //! There are 2 general types of codes:
 //!   - User/Application-supplied: The user/application supplies a DgnCode and the CodeSpec

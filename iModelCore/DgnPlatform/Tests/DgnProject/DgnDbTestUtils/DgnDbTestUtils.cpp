@@ -13,7 +13,6 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
-#include <DgnPlatform/Sheet.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

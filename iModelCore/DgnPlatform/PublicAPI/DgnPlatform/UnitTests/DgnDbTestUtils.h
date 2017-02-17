@@ -12,10 +12,7 @@
 // WARNING:   DgnDisplayTests, DgnClientFxTests, ConstructionPlanningTests, etc.
 //=======================================================================================
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnCategory.h>
-#include <DgnPlatform/DgnView.h>
-#include <DgnPlatform/LinkElement.h>
+#include <DgnPlatform/DgnCoreAPI.h>
 #include <DgnPlatform/GenericDomain.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

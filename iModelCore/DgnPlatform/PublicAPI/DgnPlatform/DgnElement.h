@@ -2882,7 +2882,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GraphicalRecipe2d : RecipeElement
     friend struct dgn_ElementHandler::GraphicalRecipe2d;
 
 protected:
-    virtual GraphicalRecipe2dCP _ToGraphicalRecipe2d() const {return this;}
+    GraphicalRecipe2dCP _ToGraphicalRecipe2d() const override {return this;}
     explicit GraphicalRecipe2d(CreateParams const& params) : T_Super(params) {}
 
 public:
