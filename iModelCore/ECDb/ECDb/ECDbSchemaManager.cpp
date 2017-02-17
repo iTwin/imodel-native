@@ -13,7 +13,14 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+// --------------------------------------------------------------------------------------
+//Back door for converter
+// @bsimethod                               Krischan.Eberle           02/2017
+//---------------+---------------+---------------+---------------+---------------+------
+extern "C" ECDB_EXPORT BentleyStatus ecdbV8Legacy_importECSchemas(ECDbCR ecdb, bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const* token)
+    {
+    return ecdb.Schemas().ImportECSchemas(schemas, true, token);
+    }
 
 //******************************** ECDbSchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
@@ -147,14 +154,24 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
         InsertSchemaInDependencyOrderedList(schemas, &referencedSchema);
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
     {
+    return ImportECSchemas(schemas, false, schemaImportToken);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                     06/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, ECSchemaImportToken const* schemaImportToken) const
+    {
     PERFLOG_START("ECDb", "ECSchema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
-    const BentleyStatus stat = DoImportECSchemas(schemas, schemaImportToken);
+    SchemaImportContext ctx(doNotFailSchemaValidationForLegacyIssues);
+    const BentleyStatus stat = DoImportECSchemas(ctx, schemas, schemaImportToken);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
     m_ecdb.ClearECDbCache();
     m_ecdb.FireAfterECSchemaImportEvent();
@@ -165,7 +182,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
+BentleyStatus ECDbSchemaManager::DoImportECSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, ECSchemaImportToken const* schemaImportToken) const
     {
     ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECSchemaImportPermissionPolicyAssertion(GetECDb(), schemaImportToken));
     if (!policy.IsSupported())
@@ -195,18 +212,17 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     if (ViewGenerator::DropUpdatableViews(GetECDb()) != SUCCESS)
         return ERROR;
 
-    SchemaImportContext context;
-    if (SUCCESS != PersistECSchemas(context, schemas))
+    if (SUCCESS != PersistECSchemas(ctx, schemas))
         return ERROR;
 
-    ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
+    ECSchemaCompareContext& compareContext = ctx.GetECSchemaCompareContext();
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
     if (compareContext.ReloadContextECSchemas(*this) == ERROR)
         return ERROR;
 
-    if (SUCCESS != GetDbMap().MapSchemas(context))
+    if (SUCCESS != GetDbMap().MapSchemas(ctx))
         return ERROR;
 
     return ViewGenerator::CreateUpdatableViews(GetECDb());
@@ -305,19 +321,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
 
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
 
-    ECSchemaValidationResult validationResult;
-    bool isValid = ECSchemaValidator::ValidateSchemas(validationResult, dependencyOrderedPrimarySchemas);
-    if (validationResult.HasErrors())
-        {
-        std::vector<Utf8String> errorMessages;
-        validationResult.ToString(errorMessages);
-
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. Details: ");
-
-        for (Utf8StringCR errorMessage : errorMessages)
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(errorMessage.c_str());
-        }
-
+    const bool isValid = ECSchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), dependencyOrderedPrimarySchemas, context.DoNotFailSchemaValidationForLegacyIssues());
     if (!isValid)
         return ERROR;
 

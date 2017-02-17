@@ -40,11 +40,9 @@ void IssueReporter::Report(Utf8CP message, ...) const
     if (Utf8String::IsNullOrEmpty(message))
         return;
 
-    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
-
     BeMutexHolder lock(m_mutex);
-
-    if (m_issueListener != nullptr || isLogSeverityEnabled)
+    bool isLogSeverityEnabled = false;
+    if (IsEnabled(&isLogSeverityEnabled))
         {
         va_list args;
         va_start(args, message);
@@ -56,10 +54,22 @@ void IssueReporter::Report(Utf8CP message, ...) const
             m_issueListener->ReportIssue(formattedMessage.c_str());
 
         if (isLogSeverityEnabled)
-            LOG.error(formattedMessage.c_str());
+            LOG.message(s_logSeverity, formattedMessage.c_str());
 
         va_end(args);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IssueReporter::IsEnabled(bool* isLogEnabled /*= nullptr*/) const
+    {
+    const bool canLog = LOG.isSeverityEnabled(s_logSeverity);
+    if (isLogEnabled != nullptr)
+        *isLogEnabled = canLog;
+
+    return m_issueListener != nullptr || canLog;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
