@@ -18,12 +18,6 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewAttachmentLabelAnnotatesViewAttachment" strengthDirection="Backward" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <!-- Note remove this later. We are only doing this to work around a bug in ECDb mapping. -->
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="annotates" >
             <Class class="ViewAttachmentLabel"/>
         </Source>
@@ -44,12 +38,6 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CalloutRefersToDrawingModel" strengthDirection="Backward" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <!-- Note remove this later. We are only doing this to work around a bug in ECDb mapping. -->
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="refers to" >
             <Class class="Callout"/>
         </Source>
