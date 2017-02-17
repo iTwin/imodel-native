@@ -237,11 +237,6 @@ DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
     {
-    auto geom = el.ToGeometrySource();
-
-    if (geom && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
-        return DgnDbStatus::WrongModel;
-
     return T_Super::_OnInsertElement(el);;
     }
 
