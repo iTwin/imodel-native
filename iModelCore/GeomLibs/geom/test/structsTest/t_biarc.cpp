@@ -141,3 +141,59 @@ TEST(Biarc,TangentArcChain)
 
     Check::ClearGeometry ("Biarc.TangentArcChain");
     }
+
+bvector<DPoint3d> CreateArrow (DPoint3dCR startPoint, DVec3dCR vectorA, double headSize, double vectorLength = 0.0)
+    {
+    DVec3d vectorU, vectorV;
+    DVec3d vector = vectorA;
+    if (vectorLength != 0.0)
+        vector.ScaleToLength (vectorLength);
+    vectorU.Normalize (vector);
+    vectorU.ScaleToLength (headSize);
+    vectorV = DVec3d::FromCCWPerpendicularXY (vectorU);
+    DPoint3d headPoint = startPoint + vector;
+    double a = 2 * headSize;
+    return bvector<DPoint3d> {startPoint, headPoint,
+        headPoint - a * vectorU + headSize * vectorV,
+        headPoint - a * vectorU - headSize * vectorV,
+        headPoint
+        };
+    }
+
+
+TEST(Biarc,LoopBack)
+    {
+    DPoint3d startPoint = DPoint3d::From (0,0,0);
+    DVec3d   startTangent = DVec3d::From (-1,2,0);
+    DVec3d   endTangent = DVec3d::From (0, -1, 0);
+    Check::SaveTransformed (CreateArrow(startPoint, startTangent, 0.2, 1.0));
+    for (double a : bvector<double> {-3,-2,-1,1,2,3})
+        {
+        DVec3d   endTangentShift = DVec3d::From (a,0,0);
+        Check::SaveTransformed (CreateArrow(startPoint + endTangentShift, endTangent, 0.2, 1.0));
+        }
+
+    double refRadians = startTangent.AngleToXY (endTangent);
+    if (refRadians < 0.0)
+        refRadians = Angle::TwoPi () + refRadians;
+
+    Angle q1 = Angle::FromRadians (refRadians / 3.0);
+    auto curve1 = CurveCurve::ConstructTangentArcChain (
+                startPoint, startTangent, DVec3d::UnitZ (),
+                bvector<double> {5,3,4},
+                bvector<Angle> {q1,q1,q1}
+                );
+    Check::SaveTransformed (*curve1);
+// reverse by radius negation 
+    Angle q2 = Angle::FromRadians ((Angle::TwoPi () - refRadians) / 3.0);
+    auto curve2 = CurveCurve::ConstructTangentArcChain (
+                startPoint, startTangent, DVec3d::UnitZ (),
+                bvector<double> {-5,-3,-4},
+                bvector<Angle> {q2,q2,q2}
+                );
+    Check::SaveTransformed (*curve2);
+
+
+
+    Check::ClearGeometry ("Biarc.LoopBack");
+    }
