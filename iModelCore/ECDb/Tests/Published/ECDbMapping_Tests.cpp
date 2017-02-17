@@ -12621,6 +12621,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(22, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
@@ -12743,6 +12744,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(34, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -12821,7 +12823,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STRNE("S1-ClassC", stmt.GetValueText(1));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
+    stmt.Finalize(); 
     }
 
 //---------------------------------------------------------------------------------------
@@ -12914,6 +12916,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_EQ(3, stmt.GetValueInt64(2));
     ASSERT_EQ(55, stmt.GetValueInt64(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13012,6 +13015,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     stmt.Finalize();
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13160,6 +13164,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
     GetECDb().SaveChanges();
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13266,6 +13271,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipMappedToSharedColumn)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+    AssertForMapCorruptionCausedByMultiInheritence();
     }
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Affan.Khan                         01/17
@@ -13321,6 +13327,71 @@ TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
     ASSERT_EQ(3, indexOfParentId) << "ParentId must be at position 3 after ChildName column";
     ASSERT_EQ(4, indexOfParentRelECClassId) << "ParentRelECClassId must be next to ParentId column";
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
+    {
+    SetupECDb("useecinstanceidasfk3.ecdb",
+        SchemaItem(R"xml(
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECEntityClass typeName='MxBase' modifier='Abstract'>
+            <ECCustomAttributes>"
+                <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <ECProperty propertyName='MxBase_Prop' typeName='long' />
+        </ECEntityClass>"
+        <ECEntityClass typeName='MxA' modifier='Abstract'>
+            <ECCustomAttributes>
+                <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <BaseClass>MxBase</BaseClass>
+            <ECProperty propertyName='MxA_Prop' typeName='long' />
+        </ECEntityClass>
+        <ECEntityClass typeName='MxB' modifier='Abstract'>
+            <ECCustomAttributes>
+                <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <BaseClass>MxBase</BaseClass>
+            <ECProperty propertyName='MxB_Prop' typeName='long' />
+        </ECEntityClass>
+        <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns='ECDbMap.02.00'>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns='ECDbMap.02.00'>
+                    <SharedColumnCount>10</SharedColumnCount>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Base_Prop" typeName="long" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Child" >
+            <BaseClass>Base</BaseClass>
+            <BaseClass>MxA</BaseClass>
+            <BaseClass>MxB</BaseClass>
+            <ECProperty propertyName="Child_Prop" typeName="long" />
+        </ECEntityClass>
+    </ECSchema>)xml"));
+  
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    AssertForMapCorruptionCausedByMultiInheritence();
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
  

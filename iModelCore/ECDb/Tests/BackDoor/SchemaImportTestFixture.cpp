@@ -75,6 +75,37 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                       02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertForMapCorruptionCausedByMultiInheritence()
+    {
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), R"sql(
+            SELECT GROUP_CONCAT ([Message], CHAR (13)) [Messages]
+            FROM   (SELECT 'ECClass "' || [ec_Schema].[Alias] || ':' || [ec_Class].[Name] || '" has more than one properties "' || GROUP_CONCAT ([PS].[Alias] || ':' || [PC].[Name] || '.' || [ec_PropertyPath].[AccessString]) || '" that are mapped to same column "' || [ec_Table].[name] || ':' || [ec_Column].[Name] || '"' [Message]
+                    FROM   [ec_PropertyMap]
+                           INNER JOIN [ec_Column] ON [ec_Column].[Id] = [ec_PropertyMap].[ColumnId]
+                           INNER JOIN [ec_Class] ON [ec_Class].[Id] = [ec_PropertyMap].[ClassId]
+                           INNER JOIN [ec_Schema] ON [ec_Schema].[Id] = [ec_Class].[SchemaId]
+                           INNER JOIN [ec_PropertyPath] ON [ec_PropertyPath].[Id] = [ec_PropertyMap].[PropertyPathId]
+                           INNER JOIN [ec_Table] ON [ec_Table].[Id] = [ec_Column].[TableId]
+                           INNER JOIN [ec_Property] ON [ec_Property].[Id] = [ec_PropertyPath].[RootPropertyId]
+                           INNER JOIN [ec_Class] [PC] ON [PC].[Id] = [ec_Property].[ClassId]
+                           INNER JOIN [ec_Schema] [PS] ON [PS].[Id] = [PC].[SchemaId]
+                    WHERE  [ec_Column].[IsVirtual] = 0
+                           AND [ec_Column].[ColumnKind] & 128
+                    GROUP  BY [ec_PropertyMap].[ClassId], 
+                              [ec_PropertyMap].[ColumnId]
+                    HAVING COUNT (*) > 1)
+            )sql"));
+
+    if (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ASSERT_TRUE(false) << "Found following error in mapping\r\n" << stmt.GetValueText(0);
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
