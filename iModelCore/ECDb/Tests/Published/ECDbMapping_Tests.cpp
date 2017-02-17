@@ -11,88 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-#if 0
-enum class ClassType
-    {
-    Base,
-    Derived,
-    };
-struct Derived;
-struct Base
-    {
-    private:
-        ClassType m_type;
-        virtual Derived const* _GetDerivedCP() const { return nullptr; }
-    protected:
-        Base(ClassType type) :m_type(type)
-            {}
-    public:
-        Base() :m_type(ClassType::Base)
-            {}
-        ClassType GetType() const { return m_type; }
-        Derived const* GetDerivedCP_UsingVirtualMethod() const { return _GetDerivedCP(); }
-        Derived const* GetDerivedCP_DynamicCast() const;
-        Derived const* GetDerivedCP_StaticCastByType() const;
-    };
 
-struct Derived : Base
-    {
-    private:
-        virtual Derived const* _GetDerivedCP() const override { return this; }
-    protected:
-        Derived(ClassType type) :Base(type)
-            {}
-    public:
-        Derived() :Base(ClassType::Derived)
-            {}
-    };
-
-
-
-
-Derived const* Base::GetDerivedCP_DynamicCast() const { return dynamic_cast<Derived const*>(this); }
-Derived const* Base::GetDerivedCP_StaticCastByType() const { if (GetType() == ClassType::Derived) return static_cast<Derived const*>(this); return nullptr; }
-
-TEST_F(ECDbMappingTestFixture, PerfCast)
-    {
-
-
-    Base const* base;
-    //Derived const* derived;
-    Derived instanceDerived;
-    base = &instanceDerived;
-    const int max = 1000000000;
-    StopWatch timer;
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_DynamicCast();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_DynamicCast() %.4f sec\r\n", timer.GetElapsedSeconds());
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_UsingVirtualMethod();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_UsingVirtualMethod() %.4f sec\r\n", timer.GetElapsedSeconds());
-    timer.Start();
-    for (int i = 0; i < max; i++)
-        {
-        Derived const* c = base->GetDerivedCP_StaticCastByType();
-        if (c == nullptr) { ASSERT_TRUE(false); }
-        }
-
-    timer.Stop();
-    printf("base->GetDerivedCP_StaticCastByType() %.4f sec\r\n", timer.GetElapsedSeconds());
-
-    }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -12908,7 +12827,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -12995,15 +12914,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd)
     ASSERT_EQ(3, stmt.GetValueInt64(2));
     ASSERT_EQ(55, stmt.GetValueInt64(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-
-    stmt.Finalize();
-    //S1,Z1 is wrong for ClassB
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -13045,6 +12961,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
             "  </ECRelationshipClass>"
             "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
             "      <BaseClass>CarHasEndPoint</BaseClass>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
             "      <ECProperty propertyName='Rule' typeName='string' />"
             "  </ECRelationshipClass>"
             "  <ECEntityClass typeName='Car'>"
@@ -13068,27 +12990,34 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd2)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     GetECDb().SaveChanges();
 
-#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
-
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)");
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
     GetECDb().SaveChanges();
-    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
-
-
-
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')")) << GetECDb().GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
+    stmt.Finalize();
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    //S1,Z1 is wrong for ClassB
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
+TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
     {
     SetupECDb("diamond_problem3.ecdb",
         SchemaItem("Diamond Problem",
@@ -13197,6 +13126,12 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
         "  </ECRelationshipClass>"
         "  <ECRelationshipClass typeName='CarHasEndPoint2' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
         "      <BaseClass>CarHasEndPoint</BaseClass>"
+        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+        "         <Class class='Car' />"
+        "     </Source>"
+        "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+        "        <Class class='IEndPoint' />"
+        "     </Target>"
         "      <ECProperty propertyName='Rule' typeName='string' />"
         "  </ECRelationshipClass>"
         "  <ECEntityClass typeName='Car'>"
@@ -13225,8 +13160,167 @@ TEST_F(ECDbMappingTestFixture, MixInAsRelationshipEnd3)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
     GetECDb().SaveChanges();
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
-
-
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, RelationshipMappedToSharedColumn)
+    {
+    SetupECDb("diamond_problem3.ecdb",
+        SchemaItem("Diamond Problem",
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+            "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <ClassMap xmlns='ECDbMap.02.00'>"
+            "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "          </ClassMap>"
+            "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "          <ShareColumns xmlns='ECDbMap.02.00'>"
+            "              <SharedColumnCount>10</SharedColumnCount>"
+            "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "          </ShareColumns>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+            "      <ECCustomAttributes>"
+            "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "          </IsMixin>"
+            "      </ECCustomAttributes>"
+            "      <ECProperty propertyName='www' typeName='long' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='BaseRelationship' strength='holding' strengthDirection='Forward' modifier='Abstract'>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
+            "  </ECRelationshipClass>"
+            "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+            "      <BaseClass>BaseRelationship</BaseClass>"
+            "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+            "         <Class class='Car' />"
+            "     </Source>"
+            "      <Target multiplicity='(0..N)' polymorphic='True' roleLabel='B'>"
+            "        <Class class='IEndPoint' />"
+            "     </Target>"
+            "  </ECRelationshipClass>"
+            "  <ECEntityClass typeName='Car'>"
+            "      <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Engine'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Volumn' typeName='double' />"
+            "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Sterring'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <BaseClass>IEndPoint</BaseClass>"
+            "      <ECProperty propertyName='Type' typeName='string' />"
+            "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Tire'>"
+            "      <BaseClass>Equipment</BaseClass>"
+            "      <ECProperty propertyName='Diameter' typeName='double' />"
+            "  </ECEntityClass>"
+
+            "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().SaveChanges();
+
+#define ASSERT_ECSQL_INSERT(X, Y) {ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(X, Y)); ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());}
+
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Car            (Name                ) VALUES ('BMW-S')");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,53 )");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,53)");
+    ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter      ) VALUES ('CODE-3', 15.0)");
+
+
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt64(0));
+    ASSERT_EQ(53, stmt.GetValueInt64(1));
+    ASSERT_EQ(1, stmt.GetValueInt64(2));
+    ASSERT_EQ(51, stmt.GetValueInt64(3));
+    ASSERT_EQ(2, stmt.GetValueInt64(4));
+    ASSERT_EQ(54, stmt.GetValueInt64(5));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_EQ(3, stmt.GetValueInt64(0));
+    ASSERT_EQ(53, stmt.GetValueInt64(1));
+    ASSERT_EQ(1, stmt.GetValueInt64(2));
+    ASSERT_EQ(51, stmt.GetValueInt64(3));
+    ASSERT_EQ(3, stmt.GetValueInt64(4));
+    ASSERT_EQ(56, stmt.GetValueInt64(5));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize(); 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+    }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Affan.Khan                         01/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
+    {
+    SetupECDb("useecinstanceidasfk3.ecdb",
+        SchemaItem(R"xml(
+    <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Parent">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Child" >
+            <ECCustomAttributes>
+                <ClassMap xmlns='ECDbMap.02.00'>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="ChildName" typeName="string" />
+            <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildrenBase" direction="Backward" />
+            <ECProperty propertyName="Phone" typeName="string" />
+            <ECProperty propertyName="Address" typeName="string" />
+        </ECEntityClass>
+        <ECRelationshipClass typeName="ParentHasChildrenBase" strength="embedding" modifier="Abstract">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
+                <Class class="Parent" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                <Class class="Child"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml"));
+
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    Statement stmt;
+    stmt.Prepare(GetECDb(), "PRAGMA table_info(ts3_Child)");
+    int indexOfParentId = -1;
+    int indexOfParentRelECClassId = -1;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (strcmp(stmt.GetValueText(1), "ParentId") == 0)
+            indexOfParentId = stmt.GetValueInt(0);
+        else if (strcmp(stmt.GetValueText(1), "ParentRelECClassId") == 0)
+            indexOfParentRelECClassId = stmt.GetValueInt(0);
+        }
+
+    ASSERT_EQ(3, indexOfParentId) << "ParentId must be at position 3 after ChildName column";
+    ASSERT_EQ(4, indexOfParentRelECClassId) << "ParentRelECClassId must be next to ParentId column";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
  

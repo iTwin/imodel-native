@@ -104,7 +104,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);
                 ~ColumnFactory(){}
                 DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
-                DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
+                DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
         
             };
 
@@ -189,7 +189,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         void AddIndexToRelationshipEnd();
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
-        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, Utf8StringCR colName, bool makeNotNull) const;
+        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, Utf8StringCR colName, bool makeNotNull, int position) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         BentleyStatus DetermineFkColumns(ColumnLists&, RelationshipMappingInfo const&);

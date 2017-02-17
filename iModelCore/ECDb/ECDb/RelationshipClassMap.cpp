@@ -342,7 +342,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         {
         DbTable& fkTable = fkCol->GetTableR();
         const bool makeRelClassIdColNotNull = fkCol->DoNotAllowDbNull();
-        DbColumn* relClassIdCol = CreateRelECClassIdColumn(columns.GetColumnFactory(), fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull);
+        DbColumn* relClassIdCol = CreateRelECClassIdColumn(columns.GetColumnFactory(), fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull, fkCol->GetIndex()+1);
         if (relClassIdCol == nullptr)
             {
             BeAssert(false && "Could not create RelClassId col");
@@ -548,7 +548,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& colfactory, DbTable& table, Utf8StringCR relClassIdColName, bool makeNotNull) const
+DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& colfactory, DbTable& table, Utf8StringCR relClassIdColName, bool makeNotNull, int position) const
     {
     BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
     PersistenceType persType = PersistenceType::Physical;
@@ -572,7 +572,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
     if (!canEdit)
         table.GetEditHandleR().BeginEdit();
 
-    relClassIdCol = colfactory.AllocateForeignKeyRelECClassId(table, relClassIdColName, persType);
+    relClassIdCol = colfactory.AllocateForeignKeyRelECClassId(table, relClassIdColName, persType, position);
     if (relClassIdCol == nullptr)
         return nullptr;
 
@@ -1763,12 +1763,12 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType)
+DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
     {
     const DbColumn::Type colType = DbColumn::Type::Integer;
     const DbColumn::Kind colKind = DbColumn::Kind::RelECClassId;
     if (m_relInfo.GetFkMappingInfo()->IsPhysicalFk() || persType == PersistenceType::Virtual)
-        return table.CreateColumn(colName, colType, colKind, persType);
+        return table.CreateColumn(colName, colType, position, colKind, persType);
 
     auto itor = m_constraintClassMaps.find(&table);
     if (itor == m_constraintClassMaps.end())
@@ -1782,7 +1782,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
     if (!rootClassMap->GetMapStrategy().IsTablePerHierarchy() ||
         rootClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
         {
-        return table.CreateColumn(colName, colType, colKind, persType);
+        return table.CreateColumn(colName, colType, position, colKind, persType);
         }
 
     ECDbSystemSchemaHelper const& systemSchemaHelper = m_relMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();

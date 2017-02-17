@@ -759,7 +759,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context& ctx, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto)
     {
     const bool requiresJoin = sourceJoinInfo.RequiresJoin() || targetJoinInfo.RequiresJoin();
-    ToSqlVisitor sqlVisitor(contextTable, contextTable.GetName().c_str(), true, false);
+    ToSqlVisitor sqlVisitor(ctx, contextTable, contextTable.GetName().c_str(), true, false);
     viewSql.Append("SELECT ");
     //ECInstanceId
     if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
@@ -795,7 +795,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetSourceECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlVisitor constraintSqlVisitor(*table, contextTable.GetName().c_str(), true, false);
+            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), true, false);
             relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
             BeAssert(!constraintSqlVisitor.GetResultSet().empty());
             viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
@@ -828,7 +828,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetTargetECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlVisitor constraintSqlVisitor(*table, contextTable.GetName().c_str(), true, false);
+            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), true, false);
             relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
             BeAssert(!constraintSqlVisitor.GetResultSet().empty());
             viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
@@ -966,7 +966,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         // System property never require a join but therefor requireJoinToTableForDataProperties = nullptr if no data property was choosen
         if (propertyMap->IsSystem())
             {
-            ToSqlVisitor toSqlVisitor(contextTable, systemContextTableAlias, true, ctx.GetViewType() == ViewType::ECClassView);
+            ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, true, ctx.GetViewType() == ViewType::ECClassView);
             if (SUCCESS != propertyMap->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
@@ -985,7 +985,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
         if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
             {
-            ToSqlVisitor toSqlVisitor(*requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
+            ToSqlVisitor toSqlVisitor(ctx, *requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
 
             if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
@@ -1022,7 +1022,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             }
 
         //no join needed
-        ToSqlVisitor toSqlVisitor(contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
+        ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
         if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
             {
             BeAssert(false);
@@ -1252,8 +1252,8 @@ bool ViewGenerator::SelectFromViewContext::IsInSelectClause(Utf8StringCR exp) co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ViewGenerator::ToSqlVisitor::ToSqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassView)
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)
+ViewGenerator::ToSqlVisitor::ToSqlVisitor(Context const& context, DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassView)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps),m_context(context) 
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
@@ -1313,10 +1313,9 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
         relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
     else
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
-
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-    if (idPropMap.GetColumn().IsShared())
+    if (m_context.GetViewType() == ViewType::ECClassView)
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
     else
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
