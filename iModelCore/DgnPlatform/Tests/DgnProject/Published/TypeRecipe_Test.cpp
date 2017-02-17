@@ -8,6 +8,10 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
+#define JSON_NAMESPACE_TypeTests        "TypeTests"
+#define JSON_PROP_IsInstanceSpecific    "IsInstanceSpecific"
+#define JSON_PROP_ValueExpression       "ValueExpression"
+
 USING_NAMESPACE_BENTLEY_DPTEST
 
 //========================================================================================
@@ -15,9 +19,6 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //========================================================================================
 struct TypeTests : public DgnDbTestFixture
 {
-    static Utf8CP USERPROP_IsInstanceSpecific() {return "IsInstanceSpecific";}
-    static Utf8CP USERPROP_ValueExpression() {return "ValueExpression";}
-
     GraphicalRecipe2dCPtr InsertRecipe2d(DefinitionModelR, Utf8CP);
     GraphicalType2dCPtr InsertType2d(DefinitionModelR, Utf8CP, GraphicalRecipe2dCR);
 
@@ -737,11 +738,8 @@ bool TypeTests::IsNestedTypeLocation(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 bool TypeTests::IsInstanceSpecific(DgnElementCR element)
     {
-#if 0 // WIP!!!
-    return element.GetUserProperty(USERPROP_IsInstanceSpecific()).GetValueBoolean();
-#else
-    return false;
-#endif
+    ECN::AdHocJsonValueCR jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
+    return jsonObj.get(JSON_PROP_IsInstanceSpecific, false).asBool();
     }
 
 //---------------------------------------------------------------------------------------
@@ -749,9 +747,9 @@ bool TypeTests::IsInstanceSpecific(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific)
     {
-#if 0 // WIP!!!
-    element.GetUserProperty(USERPROP_IsInstanceSpecific()).SetValueBoolean(isInstanceSpecific);
-#endif
+    Json::Value jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
+    jsonObj[JSON_PROP_IsInstanceSpecific] = isInstanceSpecific;
+    element.SetJsonProperties(JSON_NAMESPACE_TypeTests, jsonObj);
     }
 
 //---------------------------------------------------------------------------------------
@@ -759,11 +757,8 @@ void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific
 //---------------------------------------------------------------------------------------
 Utf8CP TypeTests::GetValueExpression(DgnElementCR element)
     {
-#if 0 // WIP!!!
-    return element.GetUserProperty(USERPROP_ValueExpression()).GetValueText();
-#else
-    return "";
-#endif
+    ECN::AdHocJsonValueCR jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
+    return jsonObj.get(JSON_PROP_ValueExpression, "").asCString();
     }
 
 //---------------------------------------------------------------------------------------
@@ -771,9 +766,9 @@ Utf8CP TypeTests::GetValueExpression(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 void TypeTests::SetValueExpression(DgnElementR element, Utf8CP expression)
     {
-#if 0 // WIP!!!
-    element.GetUserProperty(USERPROP_ValueExpression()).SetValueText(expression);
-#endif
+    Json::Value jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
+    jsonObj[JSON_PROP_ValueExpression] = expression;
+    element.SetJsonProperties(JSON_NAMESPACE_TypeTests, jsonObj);
     }
 
 //---------------------------------------------------------------------------------------
