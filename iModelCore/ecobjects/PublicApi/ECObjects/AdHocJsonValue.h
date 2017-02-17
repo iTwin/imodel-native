@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/AdHocJsonContainer.h $
+|     $Source: PublicApi/ECObjects/AdHocJsonValue.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

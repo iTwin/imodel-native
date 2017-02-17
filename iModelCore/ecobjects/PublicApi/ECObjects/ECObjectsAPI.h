@@ -68,7 +68,7 @@ capture this information.
 #include <ECObjects/StandardCustomAttributeHelper.h>
 #include <ECObjects/ECDiff.h>
 #include <Bentley/ScopedArray.h>
-#include <ECObjects/AdHocJsonContainer.h>
+#include <ECObjects/AdHocJsonValue.h>
 #include <ECObjects/ECJsonUtilities.h>
 #include <ECObjects/ECRelationshipPath.h>
 
