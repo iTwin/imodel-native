@@ -2444,7 +2444,7 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
     return _GetChildrenNodes();
     }
 
-bvector<IScalableMeshNodeEditPtr> IScalableMeshNode::EditChildrenNodes()
+bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
     return _EditChildrenNodes();
     }
