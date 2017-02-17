@@ -481,6 +481,34 @@ bool reverse                  //!<  [in] true to do reverse blend (e.g in a righ
     return curves;
     }
 
+
+//! Construct a sequence of arcs that have given radii and sweeps and join each other with tangent continuity.
+CurveVectorPtr CurveCurve::ConstructTangentArcChain
+(
+DPoint3dCR startPoint,          //!< [in] corner of nominal sharp turn.
+DVec3dCR   startTangent,         //!< [in] outbound vector on A side.
+DVec3dCR   planeNormal,     //!< [in] normal vector for plane of arc.
+bvector<double> radii,       //!< [in] vector of successive radii on the transition.
+bvector<Angle> angles       //!< [in] angles for successive arcs.
+)
+    {
+    DPoint3d xyz = startPoint;
+    DVec3d currentTangent = startTangent;
+    auto curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    for(size_t i = 0; i < radii.size () && i < angles.size (); i++)
+        {
+
+        auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (xyz, currentTangent, planeNormal, radii[i], angles[i].Radians ());
+        if (!arc.IsValid ())
+            return nullptr;
+        curves->push_back (ICurvePrimitive::CreateArc (arc.Value ()));
+        curves->back ()->FractionToPoint (1.0, xyz, currentTangent);
+        }
+    return curves;
+    }
+
+
+
 //! Construct a line-line-arc-line-line transition within the corner defined by point and vectors.
 CurveVectorPtr ConstructSymmetricFilletAndTaper
 (

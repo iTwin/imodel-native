@@ -93,3 +93,51 @@ TEST(Biarc,TEST1)
 
     Check::ClearGeometry ("Biarc.TEST1");
     }
+
+void testTangentArcChain (bvector<double> const &radii, bvector<Angle> const &angles, size_t negateIndex = SIZE_MAX)
+    {
+    bvector<double>radiiA = radii;
+    if (negateIndex < radiiA.size ())
+        radiiA[negateIndex] *= -1.0;
+    DPoint3d startPoint = DPoint3d::From (0,0,0);
+    auto cv = CurveCurve::ConstructTangentArcChain (
+            DPoint3d::From (0,0,0),
+            DVec3d::From (0,1,0), DVec3d::UnitZ (),
+            radiiA, angles);
+    if (Check::True (cv.IsValid ()))
+        {
+        DRange3d range;
+        cv->GetRange (range);
+        Check::Shift (startPoint - range.low);
+        double ticSize = 0.04 * range.low.Distance (range.high);
+        SaveAndRestoreCheckTransform shifter (1.0 + range.XLength (),0,0);
+        Check::SaveTransformed (*cv);
+        for (size_t i = 1; i < cv->size (); i++)
+            {
+            auto ray = cv->at(i)->FractionToPointAndUnitTangent (0.0);
+            if (ray.IsValid ())
+                {
+                auto perp = DVec3d::FromCrossProduct (ray.Value ().direction, DVec3d::UnitZ ());
+                Check::SaveTransformed (bvector<DPoint3d> {ray.Value ().origin, ray.Value ().origin + ticSize * perp});
+                }
+            }
+        }
+
+    }
+TEST(Biarc,TangentArcChain)
+    {
+    // simple S curves ..
+    for (double degrees : bvector<double> {10,20,40})
+        testTangentArcChain (
+            bvector<double> {-5, 5},
+            bvector<Angle> {Angle::FromDegrees (degrees), Angle::FromDegrees (degrees)}
+            );
+
+
+    bvector<double>  radii {1,2,1, 4};
+    bvector<Angle> angles {Angle::FromDegrees (25), Angle::FromDegrees (40), Angle::FromDegrees (40), Angle::FromDegrees (20)};
+    for (size_t i = 0; i < radii.size () + 1; i++)
+        testTangentArcChain (radii, angles, i == 0 ? radii.size () : i - 1);
+
+    Check::ClearGeometry ("Biarc.TangentArcChain");
+    }
