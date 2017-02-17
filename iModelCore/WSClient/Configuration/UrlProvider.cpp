@@ -158,6 +158,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
+    "BIMReviewShare",
+    "https://dev-bimreviewshare.bentley.com",
+    "https://qa-bimreviewshare.bentley.com",
+    "https://bimreviewshare.bentley.com",
+    &s_urlRegistry
+);
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
