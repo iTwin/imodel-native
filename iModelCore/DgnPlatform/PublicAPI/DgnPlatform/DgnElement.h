@@ -517,9 +517,8 @@ public:
 *
 * <h2>User-Defined Properties</h2>
 * The user or application may add properties that are not defined by the ECClass to a particular instance. 
-* User-defined properties are stored together in JSON format in a single column called "UserProperties" on an instance. ECSQL select statements may
-* query UserProperties using ECSQL's JSON functions.
-* See DgnElement::GetUserProperty for how to add, update, and query individual user properties in C++.
+* User-defined properties are stored together in Json format in the JsonProperties of an element. ECSQL select statements may
+* query User Properties using ECSQL's JSON functions.
 * 
 * <h2>Class-Defined Properties</h2>
 * Properties that are defined by the ECClass are defined for every instance. 
@@ -734,12 +733,12 @@ public:
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return isOriginal? DropMe::Yes: DropMe::No;}
 
-        //! Called after an update to the element was reversed by undo.
-        //! @param[in] original the original DgnElement (after undo)
-        //! @param[in] modified the modified DgnElement (before undo)
+        //! Called after a change set representing an update to the element was applied to the database
+        //! @param[in] original the original DgnElement (after applying the change)
+        //! @param[in] modified the modified DgnElement (before applying the change)
         //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+        virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
@@ -1067,14 +1066,11 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-
 private:
     template<class T> void CallAppData(T const& caller) const;
-
-    void LoadUserProperties() const;
-    void UnloadUserProperties() const;
-    DgnDbStatus SaveUserProperties() const;
-    void CopyUserProperties(DgnElementCR other);
+    Utf8String ToJsonPropString() const;
+    static constexpr Utf8CP str_UserProps() {return "UserProps";}
+    ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[Json::StaticString(str_UserProps())];}
 
 protected:
     //! @private
@@ -1110,7 +1106,7 @@ protected:
     DgnCode m_code;
     BeSQLite::BeGuid m_federationGuid;
     Utf8String m_userLabel;
-    mutable ECN::AdHocJsonContainerP m_userProperties;
+    ECN::AdHocJsonValue m_jsonProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
@@ -1158,6 +1154,15 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
+    //! Called whenever the JsonProperties of this element are loaded. You can override this method if you have internal state derived from JsonProperties.
+    //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties() 
+    virtual void _OnLoadedJsonProperties() {}
+
+    //! Called before the JsonProperties of this element are saved as a Json string. 
+    //! You can override this method to store internal state into JsonProperties before they are saved.
+    //! @note If you override this method, you @em must call T_Super::_OnSaveJsonProperties() 
+    virtual void _OnSaveJsonProperties() {}
+
      //! argument for _BindWriteParams
     enum class ForInsert : bool {No=false, Yes=true};
 
@@ -1184,9 +1189,9 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnImported.
     virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
-    //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
-    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
+    //! Called after a change representing addition of a DgnElement was applied to the database
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedAdd.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedAdd() const;
 
     //! Called when this element is about to be replace its original element in the DgnDb.
     //! @param [in] original the original state of this element.
@@ -1209,13 +1214,13 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
     DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
 
-    //! Called after a DgnElement was successfully updated from a replacment element and it now holds the data from the replacement.
+    //! Called after a DgnElement was successfully updated from a replacement element and it now holds the data from the replacement.
     //! @note If you override this method, you @em must call T_Super::_OnUpdateFinished.
     virtual void _OnUpdateFinished() const {}
 
-    //! Called after an update to this DgnElement was reversed by undo. The element will be in its original (pre-change, post-undo) state.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedUpdate.
-    DGNPLATFORM_EXPORT virtual void _OnReversedUpdate(DgnElementCR changed) const;
+    //! Called after a change set representing an update to this DgnElement was applied to the database. In the case of an undo, the element will be in its original (pre-change, post-undo) state.
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedUpdate.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedUpdate(DgnElementCR changed) const;
 
     //! Called when an element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to control when/if their instances are deleted.
@@ -1231,9 +1236,9 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
-    //! Called after a DgnElement that was previously added has been removed by undo.
-    //! @note If you override this method, you @em must call T_Super::_OnReversedAdd.
-    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
+    //! Called after a change representing delete of a DgnElement was applied to the database
+    //! @note If you override this method, you @em must call T_Super::_OnAppliedDelete.
+    DGNPLATFORM_EXPORT virtual void _OnAppliedDelete() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.
@@ -1430,6 +1435,8 @@ protected:
     //! @param other    The other element
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
 
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECInstanceId, DgnClassId relClassId);
+
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
 
     void RemapAutoHandledNavigationproperties(DgnImportContext&);
@@ -1554,8 +1561,7 @@ public:
     //! @param source   The element to compare with
     //! @param filter   Optional. The properties to exclude from the comparison.
     //! @return true if this element's properties are equivalent to the source element's properties.
-    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, ComparePropertyFilter const& filter = 
-                                   ComparePropertyFilter(ComparePropertyFilter::Ignore::WriteOnly)) const;
+    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, ComparePropertyFilter const& filter = ComparePropertyFilter(ComparePropertyFilter::Ignore::WriteOnly)) const;
 
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, ComparePropertyFilter const& filter) const;
 
@@ -1682,24 +1688,27 @@ public:
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     DGNPLATFORM_EXPORT RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
+    //! @name JsonProperties 
+    //! @{
+    //! Get the current value of a set of Json Properties on this element
+    ECN::AdHocJsonValueCR GetJsonProperties(Utf8CP nameSpace) const {return m_jsonProperties.GetMember(nameSpace);}
+
+    //! Change the value of a set of Json Properties on this element
+    void SetJsonProperties(Utf8CP nameSpace, JsonValueCR value) {m_jsonProperties.GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
+
+    //! Remove a set of Json Properties on this element
+    void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.RemoveMember(nameSpace);}
+
+    ECN::AdHocJsonValueCR GetUserProperties(Utf8CP nameSpace) const {return GetJsonProperties(Json::StaticString(str_UserProps())).GetMember(nameSpace);}
+
+    void SetUserProperties(Utf8CP nameSpace, JsonValueCR value) {GetUserPropsR().GetMemberR(nameSpace) = (ECN::AdHocJsonValueCR) value;}
+
+    void RemoveUserProperties(Utf8CP nameSpace) {GetUserPropsR().RemoveMember(nameSpace);}
+
+    /** @} */
+
     //! @name Properties 
     //! @{
-    //! Get the user property on this DgnElement to get or set its value. Also see @ref ElementProperties.
-    //! @param[in] name Name of the user property
-    //! @remarks The element needs to be held in memory to access the returned property value. 
-    DGNPLATFORM_EXPORT ECN::AdHocJsonPropertyValue GetUserProperty(Utf8CP name) const;
-
-    //! Returns true if the Element contains the user property. Also see @ref ElementProperties.
-    //! @param[in] name Name of the user property
-    DGNPLATFORM_EXPORT bool ContainsUserProperty(Utf8CP name) const;
-
-    //! Get a user property on this DgnElement. Also see @ref ElementProperties.
-    //! @param[in] name Name of the user property
-    DGNPLATFORM_EXPORT void RemoveUserProperty(Utf8CP name);
-
-    //! Clear all the user properties on this DgnElement. Also see @ref ElementProperties.
-    DGNPLATFORM_EXPORT void ClearUserProperties();
-
     //! Get the index of the property
     //! @param[out] index       The index of the property in the ECClass
     //! @param[in] accessString The access setring. For simple properties, this is the name of the property. For struct members, this is the dot-separated path to the member.
@@ -1772,8 +1781,19 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
-    //! @note Passing an invalid ID will cause a null value to be set.
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, ECN::ECClassId relClassId);
+    //! @param[in] propertyName The name of the navigation property
+    //! @param[in] elementId The DgnElementId that identifies the target element
+    //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
+    //! @note Passing an invalid elementId will cause a null value to be set.
+    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId()) 
+        {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(elementId.GetValueUnchecked()), relClassId);}
+    //! Set an ECNavigationProperty by name
+    //! @param[in] propertyName The name of the navigation property
+    //! @param[in] modelId Identifies the target model
+    //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
+    //! @note Passing an invalid modelId will cause a null value to be set.
+    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnModelId modelId, DgnClassId relClassId = DgnClassId())
+        {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(modelId.GetValueUnchecked()), relClassId);}
     //! Set a string ECProperty by name
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set the three property values that back a YPR
@@ -2152,8 +2172,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _OnDeleted() const override;
-    DGNPLATFORM_EXPORT void _OnReversedAdd() const override;
-    DGNPLATFORM_EXPORT void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnAppliedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnAppliedAdd() const override;
     DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
@@ -3195,7 +3215,7 @@ private:
     void Destroy();
     void AddToPool(DgnElementCR) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);

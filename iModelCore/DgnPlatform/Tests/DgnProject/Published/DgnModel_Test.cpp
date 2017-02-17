@@ -95,6 +95,8 @@ void DgnModelTests::TestRangeIndex3d()
     EXPECT_TRUE(count == 4);
 
     model->RemoveRangeIndex();  // drop the range index and recreate it from a query
+    AxisAlignedBox3d range = model->QueryModelRange();
+
     model->FillRangeIndex();
     rangeIndex = model->GetRangeIndex();
     EXPECT_TRUE(4 == rangeIndex->GetCount());
@@ -107,7 +109,6 @@ void DgnModelTests::TestRangeIndex3d()
         ++count;
         }
     
-    AxisAlignedBox3d range = model->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
     DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
@@ -201,10 +202,14 @@ void DgnModelTests::TestRangeIndex2d()
     DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 1.0);
     AxisAlignedBox3d box(low, high);
 
-    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
     AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
-    EXPECT_TRUE(box.IsEqual(range2d, .00000001));
-    EXPECT_TRUE(indexbox2d.IsEqual(range2d, .00001));
+    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
+    drawingModel->ToGeometricModelP()->RemoveRangeIndex();  // drop the range so query wo
+    AxisAlignedBox3d range2d2 = drawingModel->ToGeometricModel()->QueryModelRange();
+
+    EXPECT_TRUE(box.IsEqual(range2d2, .00000001));
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d2, .00001)); // float vs. double
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d));  // should be identical, they both come from range index
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -518,6 +523,7 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetNumerator());
     ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetDenominator());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/

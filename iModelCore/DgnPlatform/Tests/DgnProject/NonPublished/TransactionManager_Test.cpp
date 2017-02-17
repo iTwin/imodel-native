@@ -24,16 +24,16 @@ BEGIN_UNNAMED_NAMESPACE
 struct TxnMonitorVerifier : TxnMonitor
     {
     bool m_OnTxnClosedCalled;
-    bool m_OnTxnReversedCalled;
+    bool m_OnTxnAppliedCalled;
     bset<BeInt64Id> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
     void Clear();
     void _OnCommit(TxnManager&) override;
-    void _OnReversedChanges(TxnManager&) override {m_OnTxnReversedCalled = true;}
+    void _OnAppliedChanges(TxnManager&) override {m_OnTxnAppliedCalled = true;}
 
-    bool IsEmpty() const { return !m_OnTxnClosedCalled && !m_OnTxnReversedCalled && !HasInstances(); }
+    bool IsEmpty() const { return !m_OnTxnClosedCalled && !m_OnTxnAppliedCalled && !HasInstances(); }
     bool HasInstances() const { return m_adds.size() + m_deletes.size() + m_mods.size() > 0; }
     };
 
@@ -82,7 +82,7 @@ TxnMonitorVerifier::~TxnMonitorVerifier()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnMonitorVerifier::Clear()
     {
-    m_OnTxnClosedCalled = m_OnTxnReversedCalled = false;
+    m_OnTxnClosedCalled = m_OnTxnAppliedCalled = false;
     m_adds.clear(); m_deletes.clear(); m_mods.clear();
     }
 
@@ -663,7 +663,7 @@ struct ModelTxnMonitor : TxnMonitor
         }
 
     void _OnCommit(TxnManager& mgr) override {CollectChanges(mgr);}
-    void _OnReversedChanges(TxnManager& mgr) override {CollectChanges(mgr);}
+    void _OnAppliedChanges(TxnManager& mgr) override {CollectChanges(mgr);}
     void _OnUndoRedo(TxnManager& mgr, TxnAction action) override {CollectChanges(mgr);}
 
     void Clear() { m_changes.clear(); }
@@ -1134,13 +1134,13 @@ TEST_F(DynamicTxnsTest, TxnMonitors)
     EXPECT_TRUE(monitor.IsEmpty());
 
     txns.ReverseSingleTxn();
-    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_TRUE(monitor.m_OnTxnAppliedCalled);
     EXPECT_FALSE(monitor.HasInstances());
     EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
 
     monitor.Clear();
     txns.ReinstateTxn();
-    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_TRUE(monitor.m_OnTxnAppliedCalled);
     EXPECT_FALSE(monitor.HasInstances());
     EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
 
@@ -1158,13 +1158,13 @@ TEST_F(DynamicTxnsTest, TxnMonitors)
 
     monitor.Clear();
     txns.ReverseTxns(2);
-    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_TRUE(monitor.m_OnTxnAppliedCalled);
     EXPECT_FALSE(monitor.HasInstances());
 
     monitor.Clear();
     txns.ReinstateTxn();
     txns.ReinstateTxn();
-    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_TRUE(monitor.m_OnTxnAppliedCalled);
     EXPECT_FALSE(monitor.HasInstances());
     EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
 

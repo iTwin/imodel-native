@@ -847,7 +847,7 @@ private:
 
 public:
     GeometryParams() {}
-    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId) {}
+    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId.IsValid() ? subCategoryId : DgnCategory::GetDefaultSubCategoryId(categoryId)) {}
 
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
@@ -891,8 +891,8 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two GeometryParams.
-    DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
+    //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
+    DGNPLATFORM_EXPORT bool IsEquivalent(GeometryParamsCR) const;
 
     //! copy operator
     DGNPLATFORM_EXPORT GeometryParamsR operator=(GeometryParamsCR rhs);

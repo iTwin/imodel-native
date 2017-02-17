@@ -456,10 +456,10 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson" displayLabel="User Properties" description="Ad-hoc per instance name/value pairs.">
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json">
             <ECCustomAttributes>
                 <CustomHandledProperty>
-                    <StatementTypes>0</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
@@ -1733,16 +1733,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Data" typeName="string" extendedTypeName="Json">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
@@ -1978,9 +1969,6 @@
     <ECEntityClass typeName="DisplayStyle" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECProperty propertyName="Styles" typeName="string" extendedTypeName="Json">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="DisplayStyle3d" displayLabel="3D Display Style">
@@ -1993,9 +1981,6 @@
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" typeName="int"/>
-        <ECProperty propertyName="Details" typeName="string">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>

@@ -592,7 +592,9 @@ void Tile::Draw(DrawArgsR args, int depth) const
 
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
         DPoint3d center = args.GetTileCenter(*this);
-        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+
+        static double   s_minPixelSizeAtPoint = 1.0E-3;
+        double          pixelSize = radius / std::max (s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 
@@ -734,9 +736,9 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
 * Add the Render::Graphics from all tiles that were found from this draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(RootR root)
+void DrawArgs::DrawGraphics()
     {
-    ViewFlags flags = root._GetDrawViewFlags(m_context);
+    ViewFlags flags = m_root._GetDrawViewFlags(m_context);
     DrawBranch(flags, m_graphics, 0.0, "Main");
     DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
     DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
@@ -835,7 +837,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
         args.Clear(); // clear graphics/missing from previous attempt
         }
 
-    args.DrawGraphics(*this);
+    args.DrawGraphics();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -943,7 +945,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderList
         }
 
     args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(m_root);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
+    args.DrawGraphics();  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 

@@ -44,39 +44,32 @@ public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(DgnMaterial::T_Super::CreateParams);
-        Utf8String  m_descr;
 
         //! Constructor from base class. Primarily for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR descr="") : T_Super(params), m_descr(descr) {}
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for creating a material.
         //! @param[in]      db               The DgnDb in which the material will reside
         //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's DgnCode.
         //! @param[in]      materialName     The name of the material. This becomes the value of the material's DgnCode.
         //! @param[in]      parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
-        //! @param[in]      descr            Optional description of the material.
         //! @note The combination of palette and material name must be unique within the DgnDb.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, 
-                    DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId=DgnMaterialId());
 
         Utf8String GetPaletteName() const {return m_code.GetScope();} //!< Return the palette name
         Utf8String GetMaterialName() const {return m_code.GetValue();} //!< Return the material name
     };
 
-private:
-    Json::Value m_assets;
-    Utf8String  m_descr;
-
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    static Utf8CP constexpr str_Assets() {return "Assets";}
+    JsonValueCR GetAssets() const {return m_jsonProperties[str_Assets()];}
+    JsonValueR GetAssetsR() {return m_jsonProperties[str_Assets()];}
+
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
 
-    Utf8String ToJson() const;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     
@@ -84,16 +77,14 @@ public:
     static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
 
     //! Construct a new DgnMaterial with the specified parameters
-    explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_descr(params.m_descr) {}
+    explicit DgnMaterial(CreateParams const& params) : T_Super(params) {}
 
     DgnMaterialId GetMaterialId() const {return DgnMaterialId(GetElementId().GetValue());} //!< Returns the Id of this material.
     Utf8String GetPaletteName() const {return GetCode().GetScope();} //!< Returns the palette name
     Utf8String GetMaterialName() const {return GetCode().GetValue();} //!< Returns the material name
 
-    Utf8StringCR GetDescr() const {return m_descr;} //!< Returns the material description
     DgnMaterialId GetParentMaterialId() const {return DgnMaterialId(GetParentId().GetValueUnchecked());} //!< Returns the ID of this material's parent material
     DgnMaterialCPtr GetParentMaterial() const {return GetParentId().IsValid() ? GetDgnDb().Elements().Get<DgnMaterial>(GetParentId()) : nullptr;} //!< Returns this material's parent material, if one exists.
-    void SetDescr(Utf8StringCR descr) {m_descr = descr;} //!< Sets the material description
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement);} //!< Returns the class ID used for material elements.
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for material elements.
@@ -103,13 +94,13 @@ public:
     DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnMaterial>(*this, status);} //!< Updates this material in the DgnDb and returns the updated persistent material
 
     //! Get an asset of the material as a Json value.
-    JsonValueCR GetAsset(Utf8CP asset) const {return m_assets[asset];}
-    JsonValueR GetAssetR(Utf8CP asset) {return m_assets[asset];}
+    JsonValueCR GetAsset(Utf8CP asset) const {return GetAssets()[asset];}
+    JsonValueR GetAssetR(Utf8CP asset) {return GetAssetsR()[asset];}
 
     //! Set an asset of material from a Json value.
     //! @param[in] name asset name -- "RenderMaterial", "Physical" etc.
     //! @param[in] value The Json value for the asset.
-    void SetAsset(Utf8CP name, JsonValueCR value) {m_assets[name] = value;}
+    void SetAsset(Utf8CP name, JsonValueCR value) {GetAssetsR()[name] = value;}
 
     //! Get the rendering asset.
     RenderingAssetCR GetRenderingAsset() const {return (RenderingAssetCR) GetAsset(MATERIAL_ASSET_Rendering);}
@@ -197,7 +188,6 @@ namespace dgn_ElementHandler
     struct Material : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

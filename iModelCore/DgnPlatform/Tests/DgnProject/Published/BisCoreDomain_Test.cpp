@@ -50,7 +50,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedColumnNames.push_back("ParentId");
         expectedColumnNames.push_back("ParentRelECClassId");
         expectedColumnNames.push_back("UserLabel");
-        expectedColumnNames.push_back("UserProperties");
+        expectedColumnNames.push_back("JsonProperties");
         expectedColumnNames.push_back("LastMod");
 
         while (BE_SQLITE_ROW == statement.Step())

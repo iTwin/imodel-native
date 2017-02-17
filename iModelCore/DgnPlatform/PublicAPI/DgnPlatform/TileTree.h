@@ -415,7 +415,7 @@ struct DrawArgs : TileArgs
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
-    DGNPLATFORM_EXPORT void DrawGraphics(RootR); // place all entries into a GraphicBranch and send it to the ViewContext.
+    DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
 };
 

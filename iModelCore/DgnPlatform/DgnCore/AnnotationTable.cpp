@@ -715,11 +715,10 @@ AnnotationTableCellIndex    AnnotationTableCellIndex::GetCellIndex(ECSqlStatemen
         return AnnotationTableCellIndex();
 
     AnnotationTableCellIndex    cellIndex;
-    IECSqlStructValue const& cellIndexValue = statement.GetValueStruct(columnIndex);
+    IECSqlValue const& cellIndexValue = statement.GetValue(columnIndex);
 
-    for (int iMember = 0; iMember < cellIndexValue.GetMemberCount(); iMember++)
+    for (IECSqlValue const& memberValue : cellIndexValue.GetStructIterable())
         {
-        IECSqlValue const& memberValue = cellIndexValue.GetValue(iMember);
         ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
 
         if (UNEXPECTED_CONDITION (memberProperty == nullptr))
