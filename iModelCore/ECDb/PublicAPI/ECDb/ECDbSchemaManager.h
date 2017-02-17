@@ -80,7 +80,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDbMap* m_dbMap;
         BeMutex& m_mutex;
 
-        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const*) const;
+        BentleyStatus DoImportECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const*) const;
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
@@ -117,6 +117,11 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpdate
         ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const* token = nullptr) const;
+
+#if !defined (DOCUMENTATION_GENERATOR)
+        //only for legacy support which cannot yet follow the strict bim rules
+        BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, ECSchemaImportToken const* token = nullptr) const;
+#endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for

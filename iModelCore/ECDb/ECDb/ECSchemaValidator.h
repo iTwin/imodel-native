@@ -22,18 +22,20 @@ struct ECSchemaValidator
         ECSchemaValidator();
         ~ECSchemaValidator();
 
-        static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR);
+        static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR, bool doNotFailOnLegacyIssues);
         static bool ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR);
 
+        static void Log(IssueReporter const&, ECSchemaValidationResult const&);
+
     public:
-        static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaCP> const&);
+        static bool ValidateSchemas(IssueReporter const&, bvector<ECN::ECSchemaCP> const&, bool doNotFailOnLegacyIssues);
     };
 
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaValidationRule
+struct IECSchemaValidationRule
     {
     public:
         //=======================================================================================
@@ -50,42 +52,37 @@ struct ECSchemaValidationRule
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      06/2014
         //+===============+===============+===============+===============+===============+======
-        struct Error
+        struct IError
             {
             private:
                 Type m_ruleType;
 
-                virtual Utf8String _ToString() const = 0;
+                virtual void _Log(IssueReporter const&) const = 0;
 
             protected:
-                explicit Error(Type ruleType) : m_ruleType(ruleType) {}
+                explicit IError(Type ruleType) : m_ruleType(ruleType) {}
 
             public:
-                virtual ~Error() {}
+                virtual ~IError() {}
 
-                Utf8String ToString() const { return _ToString(); }
+                void Log(IssueReporter const& issues) const { return _Log(issues); }
                 Type GetRuleType() const { return m_ruleType; }
             };
     private:
         Type m_type;
 
-        virtual bool _ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema) { return true; }
-        virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) { return true; }
-        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) { return true; }
-        virtual std::unique_ptr<Error> _GetError() const = 0;
+        virtual bool _ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return true; }
+        virtual bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const { return true; }
 
     protected:
-        explicit ECSchemaValidationRule(Type type) : m_type(type) {}
+        explicit IECSchemaValidationRule(Type type) : m_type(type) {}
 
         Type GetType() const { return m_type; }
     public:
-        virtual ~ECSchemaValidationRule() {}
+        virtual ~IECSchemaValidationRule() {}
 
-        bool ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema) { return _ValidateSchemas(schemas, schema); }
-        bool ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) { return _ValidateSchema(schema, ecClass); }
-        bool ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) { return _ValidateClass(ecClass, ecProperty); }
-
-        void AddErrorToResult(ECSchemaValidationResult& result) const;
+        bool ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return _ValidateSchema(result, schema, ecClass); }
+        bool ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const { return _ValidateClass(result, ecClass, ecProperty); }
     };
 
 //=======================================================================================
@@ -94,18 +91,16 @@ struct ECSchemaValidationRule
 struct ECSchemaValidationResult final : NonCopyableClass
     {
     private:
-        std::vector<std::unique_ptr<ECSchemaValidationRule::Error>> m_errors;
+        std::map<const IECSchemaValidationRule::Type, std::unique_ptr<IECSchemaValidationRule::IError>> m_errors;
 
     public:
         ECSchemaValidationResult() {}
 
-        void AddError(std::unique_ptr<ECSchemaValidationRule::Error> error);
+        IECSchemaValidationRule::IError& AddError(std::unique_ptr<IECSchemaValidationRule::IError> error);
 
-        bool HasErrors() const { return !m_errors.empty(); }
+        IECSchemaValidationRule::IError* operator[](IECSchemaValidationRule::Type);
 
-        std::vector<std::unique_ptr<ECSchemaValidationRule::Error>> const& GetErrors() const { return m_errors; }
-
-        void ToString(std::vector<Utf8String>& errorMessages) const;
+        std::map<const IECSchemaValidationRule::Type, std::unique_ptr<IECSchemaValidationRule::IError>> const& GetErrors() const { return m_errors; }
     };
 
 
@@ -113,13 +108,13 @@ struct ECSchemaValidationResult final : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2017
 //+===============+===============+===============+===============+===============+======
-struct ValidBaseClassesRule final : ECSchemaValidationRule
+struct ValidBaseClassesRule final : IECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      02/2017
         //+===============+===============+===============+===============+===============+======
-        struct Error final : ECSchemaValidationRule::Error
+        struct Error final : IError
             {
             enum class Kind
                 {
@@ -129,25 +124,24 @@ struct ValidBaseClassesRule final : ECSchemaValidationRule
                 };
 
             private:
-                ECN::ECSchemaCR m_ecSchema;
-                std::vector<std::pair<ECN::ECClassCP, Kind>> m_violatingClasses;
-                Utf8String _ToString() const override;
+                std::map<ECN::ECSchemaCP, std::vector<std::pair<ECN::ECClassCP, Kind>>> m_violatingClasses;
+                bool m_doNotFailForLegacyIssues = false;
+
+                void _Log(IssueReporter const&) const override;
 
             public:
-                Error(Type ruleType, ECN::ECSchemaCR schema) : ECSchemaValidationRule::Error(ruleType), m_ecSchema(schema) {}
+                explicit Error(bool doNotFailForLegacyIssues) : IError(Type::ValidBaseClasses), m_doNotFailForLegacyIssues(doNotFailForLegacyIssues) {}
                 ~Error() {}
 
-                void AddViolatingClass(ECN::ECClassCR ecClass, Kind kind) { m_violatingClasses.push_back(std::make_pair(&ecClass, kind)); }
-                bool HasErrors() const { return !m_violatingClasses.empty(); }
+                void AddViolatingClass(ECN::ECClassCR ecClass, Kind kind) { m_violatingClasses[&ecClass.GetSchema()].push_back(std::make_pair(&ecClass, kind)); }
             };
 
-        mutable std::unique_ptr<Error> m_error;
+        bool m_doNotFailForLegacyIssues = false;
 
-        bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR, ECN::ECClassCR) const override;
 
     public:
-        explicit ValidBaseClassesRule(ECN::ECSchemaCR);
+        explicit ValidBaseClassesRule(bool doNotFailForLegacyIssues) : IECSchemaValidationRule(Type::ValidBaseClasses), m_doNotFailForLegacyIssues(doNotFailForLegacyIssues) {}
         ~ValidBaseClassesRule() {}
     };
 
@@ -156,35 +150,30 @@ struct ValidBaseClassesRule final : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
-struct NoPropertiesOfSameTypeAsClassRule final : ECSchemaValidationRule
+struct NoPropertiesOfSameTypeAsClassRule final : IECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      06/2014
         //+===============+===============+===============+===============+===============+======
-        struct Error final : ECSchemaValidationRule::Error
+        struct Error final : IError
             {
             private:
-                ECN::ECClassCR m_ecClass;
-                std::vector<ECN::ECPropertyCP> m_invalidProperties;
+                std::map<ECN::ECClassCP, std::vector<ECN::ECPropertyCP>> m_invalidProperties;
 
-                Utf8String _ToString() const override;
+                void _Log(IssueReporter const&) const override;
 
             public:
-                Error(Type ruleType, ECN::ECClassCR ecClass) : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass) {}
+                Error() : IError(Type::NoPropertiesOfSameTypeAsClass) {}
                 ~Error() {}
 
-                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties.push_back(&prop); }
-                bool HasErrors() const { return !m_invalidProperties.empty(); }
+                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties[&prop.GetClass()].push_back(&prop); }
             };
 
-        mutable std::unique_ptr<Error> m_error;
-
-        bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
-        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
 
     public:
-        explicit NoPropertiesOfSameTypeAsClassRule(ECN::ECClassCR ecClass);
+        NoPropertiesOfSameTypeAsClassRule() : IECSchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass) {}
         ~NoPropertiesOfSameTypeAsClassRule() {}
     };
 
@@ -192,13 +181,13 @@ struct NoPropertiesOfSameTypeAsClassRule final : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct ValidRelationshipRule final : ECSchemaValidationRule
+struct ValidRelationshipRule final : IECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      07/2015
         //+===============+===============+===============+===============+===============+======
-        struct Error final : ECSchemaValidationRule::Error
+        struct Error final : IError
             {
             enum class Kind
                 {
@@ -223,42 +212,37 @@ struct ValidRelationshipRule final : ECSchemaValidationRule
                         }
                     };
 
-            ECN:: ECSchemaCR m_ecSchema;
-            std::vector<Inconsistency> m_inconsistencies;
+            std::map<ECN::ECSchemaCP, std::vector<Inconsistency>> m_inconsistencies;
 
-            Utf8String _ToString() const override;
+            void _Log(IssueReporter const&) const override;
 
 
             public:
-                Error(Type ruleType, ECN::ECSchemaCR ecSchema) : ECSchemaValidationRule::Error(ruleType), m_ecSchema(ecSchema) {}
+                Error() : IError(Type::ValidRelationshipClass) {}
                 ~Error() {}
 
-                void AddInconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies.push_back(Inconsistency(relClass, kind, relClassAsConstraint)); }
-                bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
+                void AddInconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies[&relClass.GetSchema()].push_back(Inconsistency(relClass, kind, relClassAsConstraint)); }
             };
 
-        mutable std::unique_ptr<Error> m_error;
+        bool _ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const override;
 
-        bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
-
-        bool ValidateConstraint(ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
+        bool ValidateConstraint(Error&, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
     public:
-        explicit ValidRelationshipRule(ECN::ECSchemaCR);
+        ValidRelationshipRule() : IECSchemaValidationRule(Type::ValidRelationshipClass) {}
         ~ValidRelationshipRule() {}
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      10/2016
 //+===============+===============+===============+===============+===============+======
-struct ValidNavigationPropertyRule final : ECSchemaValidationRule
+struct ValidNavigationPropertyRule final : IECSchemaValidationRule
     {
     private:
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      10/2016
         //+===============+===============+===============+===============+===============+======
-        struct Error final : ECSchemaValidationRule::Error
+        struct Error final : IError
             {
             enum class Kind
                 {
@@ -276,27 +260,22 @@ struct ValidNavigationPropertyRule final : ECSchemaValidationRule
                         {}
                     };
 
-                ECN::ECClassCP m_ecClass;
-                std::vector<Inconsistency> m_inconsistencies;
+                std::map<ECN::ECClassCP, std::vector<Inconsistency>> m_inconsistencies;
 
-                Utf8String _ToString() const override;
+                void _Log(IssueReporter const&) const override;
 
 
             public:
-                explicit Error(Type ruleType, ECN::ECClassCR ecClass) : ECSchemaValidationRule::Error(ruleType), m_ecClass(&ecClass) {}
+                Error() : IError(Type::ValidNavigationProperty) {}
                 ~Error() {}
 
-                void AddInconsistency(ECN::NavigationECPropertyCR navProp, Kind kind) { m_inconsistencies.push_back(Inconsistency(navProp, kind)); }
-                bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
+                void AddInconsistency(ECN::NavigationECPropertyCR navProp, Kind kind) { m_inconsistencies[&navProp.GetClass()].push_back(Inconsistency(navProp, kind)); }
             };
 
-        mutable std::unique_ptr<Error> m_error;
-
-        bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
-        std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
 
     public:
-        explicit ValidNavigationPropertyRule(ECN::ECClassCR);
+        ValidNavigationPropertyRule() : IECSchemaValidationRule(Type::ValidNavigationProperty) {}
         ~ValidNavigationPropertyRule() {}
     };
 

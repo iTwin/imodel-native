@@ -16,16 +16,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaCP> const& schemas)
+bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
     {
+    ECSchemaValidationResult result;
     bool valid = true;
     for (ECSchemaCP schema : schemas)
         {
-        bool succeeded = ValidateSchema(result, *schema);
+        bool succeeded = ValidateSchema(result, *schema, doNotFailOnLegacyIssues);
         if (!succeeded)
             valid = false;
         }
 
+    Log(issues, result);
     return valid;
     }
 
@@ -33,18 +35,18 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
+bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, bool doNotFailOnLegacyIssues)
     {
-    std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidBaseClassesRule(schema)));
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule(schema)));
+    std::vector<std::unique_ptr<IECSchemaValidationRule>> validationTasks;
+    validationTasks.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
+    validationTasks.push_back(std::make_unique<ValidRelationshipRule>());
 
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (std::unique_ptr<ECSchemaValidationRule> const& task : validationTasks)
+        for (std::unique_ptr<IECSchemaValidationRule>& task : validationTasks)
             {
-            bool succeeded = task->ValidateSchema(schema, *ecClass);
+            bool succeeded = task->ValidateSchema(result, schema, *ecClass);
             if (!succeeded)
                 valid = false;
             }
@@ -52,11 +54,6 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
         bool succeeded = ValidateClass(result, *ecClass);
         if (!succeeded)
             valid = false;
-        }
-
-    for (std::unique_ptr<ECSchemaValidationRule> const& task : validationTasks)
-        {
-        task->AddErrorToResult(result);
         }
 
     return valid;
@@ -68,87 +65,78 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
 //static
 bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
     {
-    std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoPropertiesOfSameTypeAsClassRule(ecClass)));
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidNavigationPropertyRule(ecClass)));
+    std::vector<std::unique_ptr<IECSchemaValidationRule>> validationTasks;
+    validationTasks.push_back(std::make_unique<NoPropertiesOfSameTypeAsClassRule>());
+    validationTasks.push_back(std::make_unique<ValidNavigationPropertyRule>());
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties(true))
         {
-        for (std::unique_ptr<ECSchemaValidationRule>& task : validationTasks)
+        for (std::unique_ptr<IECSchemaValidationRule>& task : validationTasks)
             {
-            bool succeeded = task->ValidateClass(ecClass, *prop);
+            bool succeeded = task->ValidateClass(result, ecClass, *prop);
             if (!succeeded)
                 valid = false;
             }
-        }
-
-    for (std::unique_ptr<ECSchemaValidationRule>& task : validationTasks)
-        {
-        task->AddErrorToResult(result);
         }
 
     return valid;
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    02/2017
+//---------------------------------------------------------------------------------------
+//static
+void ECSchemaValidator::Log(IssueReporter const& issues, ECSchemaValidationResult const& result)
+    {
+    for (std::pair<const IECSchemaValidationRule::Type, std::unique_ptr<IECSchemaValidationRule::IError>> const& error : result.GetErrors())
+        {
+        error.second->Log(issues);
+        }
+    }
+
 //**********************************************************************
 // ECSchemaValidationResult
 //**********************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
+// @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-void ECSchemaValidationResult::AddError(std::unique_ptr<ECSchemaValidationRule::Error> error)
+IECSchemaValidationRule::IError* ECSchemaValidationResult::operator[](IECSchemaValidationRule::Type ruleType)
     {
-    m_errors.push_back(std::move(error));
+    auto it = m_errors.find(ruleType);
+    if (it == m_errors.end())
+        return nullptr;
+
+    return it->second.get();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-void ECSchemaValidationResult::ToString(std::vector<Utf8String>& errorMessages) const
-    {
-    for (auto& error : m_errors)
-        {
-        errorMessages.push_back(error->ToString());
-        }
-    }
-
-
-//**********************************************************************
-// ECSchemaValidationRule
-//**********************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-void ECSchemaValidationRule::AddErrorToResult(ECSchemaValidationResult& result) const
-    {
-    auto error = _GetError();
-    if (error != nullptr)
-        result.AddError(std::move(error));
-    }
-
-
-//**********************************************************************
-// NoMultiInheritanceRule
-//**********************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-ValidBaseClassesRule::ValidBaseClassesRule(ECN::ECSchemaCR schema)
-    : ECSchemaValidationRule(Type::ValidBaseClasses), m_error(nullptr)
+IECSchemaValidationRule::IError& ECSchemaValidationResult::AddError(std::unique_ptr<IECSchemaValidationRule::IError> error)
     {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), schema));
+    IECSchemaValidationRule::IError* errorP = error.get();
+    m_errors[errorP->GetRuleType()] = std::move(error);
+    return *errorP;
     }
+
+//**********************************************************************
+// ValidBaseClassesRule
+//**********************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidBaseClassesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ValidBaseClassesRule::_ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
+    IError* errorP = result[GetType()];
+    if (errorP == nullptr)
+        errorP = &result.AddError(std::make_unique<Error>(m_doNotFailForLegacyIssues));
+    
+    Error& error = *static_cast<Error*>(errorP);
+
     ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
     if (baseClasses.empty())
         return true;
@@ -159,10 +147,13 @@ bool ValidBaseClassesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassC
         {
         if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
             {
-            m_error->AddViolatingClass(ecClass, Error::Kind::AbstractClassHasNonAbstractBaseClass);
+            error.AddViolatingClass(ecClass, Error::Kind::AbstractClassHasNonAbstractBaseClass);
+
+            if (m_doNotFailForLegacyIssues)
+                continue; //in legacy mode we log all issues as warning, so do not return on first issue
+
             return false;
             }
-
 
         if (isFirstBaseClass)
             {
@@ -173,7 +164,11 @@ bool ValidBaseClassesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassC
         ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
         if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
             {
-            m_error->AddViolatingClass(ecClass, Error::Kind::MultiInheritance);
+            error.AddViolatingClass(ecClass, Error::Kind::MultiInheritance);
+
+            if (m_doNotFailForLegacyIssues)
+                continue; //in legacy mode we log all issues as warning, so do not return on first issue
+
             return false;
             }
         }
@@ -184,47 +179,48 @@ bool ValidBaseClassesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> ValidBaseClassesRule::_GetError() const
+void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (!m_error->HasErrors())
-        return nullptr;
-
-    return std::move(m_error);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2017
-//---------------------------------------------------------------------------------------
-Utf8String ValidBaseClassesRule::Error::_ToString() const
-    {
-    if (!HasErrors())
-        return "";
+    if (m_violatingClasses.empty() || !issues.IsEnabled())
+        return;
 
     Utf8String violatingClassesStr;
-    for (std::pair<ECClassCP, Kind> const& violatingClass : m_violatingClasses)
+    for (auto const& kvPair : m_violatingClasses)
         {
-        violatingClassesStr.append(violatingClass.first->GetName()).append(": ");
-        
-        switch (violatingClass.second)
+        ECSchemaCR schema = *kvPair.first;
+        for (std::pair<ECClassCP, Kind> const& violatingClass : kvPair.second)
             {
-                case Kind::AbstractClassHasNonAbstractBaseClass:
-                    violatingClassesStr.append("An abstract class must not have a non-abstract base class.");
-                    break;
+            violatingClassesStr.append(violatingClass.first->GetName()).append(": ");
 
-                case Kind::MultiInheritance:
-                    violatingClassesStr.append("Multi-inheritance is not supported. Use mixins instead.");
-                    break;
+            switch (violatingClass.second)
+                {
+                    case Kind::AbstractClassHasNonAbstractBaseClass:
+                        violatingClassesStr.append("An abstract class must not have a non-abstract base class.");
+                        break;
 
-                default:
-                    BeAssert(false);
+                    case Kind::MultiInheritance:
+                        violatingClassesStr.append("Multi-inheritance is not supported. Use mixins instead.");
+                        break;
+
+                    default:
+                        BeAssert(false);
+                }
             }
+
+        if (m_doNotFailForLegacyIssues)
+            {
+            if (LOG.isSeverityEnabled(NativeLogging::LOG_WARNING))
+                {
+                LOG.warningv("ECSchema '%s' contains ECClasses with base classes which are invalid but support for legacy reasons. "
+                             "This can lead to data corruption. Violating ECClasses: %s",
+                             schema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
+                }
+            return;
+            }
+
+        issues.Report("ECSchema '%s' contains ECClasses with invalid base classes. Violating ECClasses: %s",
+                      schema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
         }
-
-    Utf8String str;
-    str.Sprintf("ECSchema '%s' contains ECClasses with invalid base classes. Violating ECClasses: %s",
-            m_ecSchema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
-
-    return str;
     }
 
 //**********************************************************************
@@ -234,18 +230,14 @@ Utf8String ValidBaseClassesRule::Error::_ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-NoPropertiesOfSameTypeAsClassRule::NoPropertiesOfSameTypeAsClassRule(ECClassCR ecClass)
-    : ECSchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass), m_error(nullptr)
+bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
     {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
-    }
+    IError* errorP = result[GetType()];
+    if (errorP == nullptr)
+        errorP = &result.AddError(std::make_unique<Error>());
 
+    Error& error = *static_cast<Error*>(errorP);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
-    {
     ECClassCP structType = nullptr;
     if (ecProperty.GetIsStruct())
         structType = &ecProperty.GetAsStructProperty()->GetType();
@@ -261,20 +253,9 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, E
 
     bool isValid = !structType->Is(&ecClass);
     if (!isValid)
-        m_error->AddInvalidProperty(ecProperty);
+        error.AddInvalidProperty(ecProperty);
 
     return isValid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule::_GetError() const
-    {
-    if (!m_error->HasErrors())
-        return nullptr;
-
-    return std::move(m_error);
     }
 
 //**********************************************************************
@@ -283,65 +264,65 @@ std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
+void NoPropertiesOfSameTypeAsClassRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (!HasErrors())
-        return "";
+    if (m_invalidProperties.empty() || !issues.IsEnabled())
+        return;
 
-    Utf8String violatingPropsStr;
-
-    bool isFirstProp = true;
-    for (ECPropertyCP violatingProp : m_invalidProperties)
+    for (auto const& kvPair : m_invalidProperties)
         {
-        if (!isFirstProp)
-            violatingPropsStr.append(", ");
+        ECClassCR ecClass = *kvPair.first;
 
-        violatingPropsStr.append(violatingProp->GetName());
-        isFirstProp = false;
+        Utf8String violatingPropsStr;
+
+        bool isFirstProp = true;
+        for (ECPropertyCP violatingProp : kvPair.second)
+            {
+            if (!isFirstProp)
+                violatingPropsStr.append(", ");
+
+            violatingPropsStr.append(violatingProp->GetName());
+            isFirstProp = false;
+            }
+
+        issues.Report("ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.",
+                      ecClass.GetFullName(), violatingPropsStr.c_str());
         }
-
-    Utf8String str;
-    str.Sprintf("ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.",
-                m_ecClass.GetFullName(), violatingPropsStr.c_str());
-
-    return str;
     }
 
 //**********************************************************************
 // ValidRelationshipRule
 //**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-ValidRelationshipRule::ValidRelationshipRule(ECN::ECSchemaCR schema)
-    : ECSchemaValidationRule(Type::ValidRelationshipClass), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), schema));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ValidRelationshipRule::_ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         return true;
 
-    return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
+    IError* errorP = result[GetType()];
+    if (errorP == nullptr)
+        errorP = &result.AddError(std::make_unique<Error>());
+
+    Error& error = *static_cast<Error*>(errorP);
+
+    return ValidateConstraint(error, *relClass, relClass->GetSource()) && ValidateConstraint(error, *relClass, relClass->GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
+bool ValidRelationshipRule::ValidateConstraint(Error& error, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        m_error->AddInconsistency(relClass, Error::Kind::HasIncompleteConstraintDefinition);
+        error.AddInconsistency(relClass, Error::Kind::HasIncompleteConstraintDefinition);
         return false;
         }
 
@@ -350,31 +331,19 @@ bool ValidRelationshipRule::ValidateConstraint(ECN::ECRelationshipClassCR relCla
         {
         if (ClassMap::IsAnyClass(*constraintClass))
             {
-            m_error->AddInconsistency(relClass, Error::Kind::HasAnyClassConstraint);
+            error.AddInconsistency(relClass, Error::Kind::HasAnyClassConstraint);
             valid = false;
             }
 
         ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
-            m_error->AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
+            error.AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
             valid = false;
             }
         }
 
     return valid;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipRule::_GetError() const
-    {
-    if (!m_error->HasInconsistencies())
-        return nullptr;
-
-    return std::move(m_error);
     }
 
 
@@ -385,59 +354,55 @@ std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipRule::_GetError(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-Utf8String ValidRelationshipRule::Error::_ToString() const
+void ValidRelationshipRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (!HasInconsistencies())
-        return "";
+    if (m_inconsistencies.empty() || !issues.IsEnabled())
+        return;
 
-    Utf8String str("ECSchema '");
-    str.append(m_ecSchema.GetFullSchemaName()).append("' contains invalid ECRelationshipClasses : ");
-    bool isFirstItem = true;
-    for (Inconsistency const& inconsistency : m_inconsistencies)
+    for (auto const& kvPair : m_inconsistencies)
         {
-        if (!isFirstItem)
-            str.append(" - ");
+        ECSchemaCR schema = *kvPair.first;
 
-        str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
-
-        const Kind kind = inconsistency.m_kind;
-        if (Enum::Contains(kind, Kind::HasAdditionalProperties))
-            str.append(" It has a base class, and it defines ECProperties. This is only allowed for ECRelationshipClasses which don't have any base classes.");
-
-        if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
-            str.append(" AnyClass must not be used as constraint.");
-
-        if (Enum::Contains(kind, Kind::HasRelationshipClassAsConstraint))
+        Utf8String str;
+        bool isFirstItem = true;
+        for (Inconsistency const& inconsistency : kvPair.second)
             {
-            BeAssert(inconsistency.m_relationshipClassAsConstraintClass != nullptr);
-            str.append(" The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
+            if (!isFirstItem)
+                str.append(" - ");
+
+            str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
+
+            const Kind kind = inconsistency.m_kind;
+            if (Enum::Contains(kind, Kind::HasAdditionalProperties))
+                str.append(" It has a base class, and it defines ECProperties. This is only allowed for ECRelationshipClasses which don't have any base classes.");
+
+            if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
+                str.append(" AnyClass must not be used as constraint.");
+
+            if (Enum::Contains(kind, Kind::HasRelationshipClassAsConstraint))
+                {
+                BeAssert(inconsistency.m_relationshipClassAsConstraintClass != nullptr);
+                str.append(" The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
+                }
+
+            if (Enum::Contains(kind, Kind::HasIncompleteConstraintDefinition))
+                str.append(" The relationship class is not abstract and therefore constraints must be defined.");
+
+            isFirstItem = false;
             }
 
-        if (Enum::Contains(kind, Kind::HasIncompleteConstraintDefinition))
-            str.append(" The relationship class is not abstract and therefore constraints must be defined.");
-
-        isFirstItem = false;
+        issues.Report("ECSchema '%s' contains invalid ECRelationshipClasses: %s", schema.GetFullSchemaName().c_str(), str.c_str());
         }
-
-    return str;
     }
 
 //**********************************************************************
-// ValidRelationshipRule
+// ValidNavigationPropertyRule
 //**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2016
-//---------------------------------------------------------------------------------------
-ValidNavigationPropertyRule::ValidNavigationPropertyRule(ECClassCR ecClass)
-    : ECSchemaValidationRule(Type::ValidNavigationProperty), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-bool ValidNavigationPropertyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool ValidNavigationPropertyRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
     {
     NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
     if (navProp == nullptr)
@@ -445,7 +410,12 @@ bool ValidNavigationPropertyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::EC
 
     if (navProp->IsMultiple())
         {
-        m_error->AddInconsistency(*navProp, Error::Kind::MultiplicityGreaterThanOne);
+        IError* errorP = result[GetType()];
+        if (errorP == nullptr)
+            errorP = &result.AddError(std::make_unique<Error>());
+
+        Error& error = *static_cast<Error*>(errorP);
+        error.AddInconsistency(*navProp, Error::Kind::MultiplicityGreaterThanOne);
         return false;
         }
 
@@ -456,45 +426,38 @@ bool ValidNavigationPropertyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-Utf8String ValidNavigationPropertyRule::Error::_ToString() const
+void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
     {
-    if (!HasInconsistencies())
-        return "";
+    if (m_inconsistencies.empty() || !issues.IsEnabled())
+        return;
 
-    Utf8String str("ECClass '");
-    str.append(m_ecClass->GetFullName()).append("' contains invalid NavigationECProperties: ");
-
-    bool isFirstItem = true;
-    for (Inconsistency const& inconsistency : m_inconsistencies)
+    for (auto const& kvPair : m_inconsistencies)
         {
-        if (!isFirstItem)
-            str.append(" - ");
+        ECClassCR ecClass = *kvPair.first;
 
-        const Kind kind = inconsistency.m_kind;
-        if (Enum::Contains(kind, Kind::MultiplicityGreaterThanOne))
+        Utf8String str;
+        bool isFirstItem = true;
+        for (Inconsistency const& inconsistency : kvPair.second)
             {
-            NavigationECProperty const& navProp = *inconsistency.m_navProp;
-            ECRelationshipClassCR relClass = *navProp.GetRelationshipClass();
-            ECRelationshipConstraintCR toConstraint = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
-            str.append("NavigationECProperty '").append(navProp.GetName());
-            str.append("' has a multiplicity of '").append(toConstraint.GetMultiplicity().ToString().c_str());
-            str.append("ECDb only supports NavigationECProperties with a maximum multiplicity of 1.");
+            if (!isFirstItem)
+                str.append(" - ");
+
+            const Kind kind = inconsistency.m_kind;
+            if (Enum::Contains(kind, Kind::MultiplicityGreaterThanOne))
+                {
+                NavigationECProperty const& navProp = *inconsistency.m_navProp;
+                ECRelationshipClassCR relClass = *navProp.GetRelationshipClass();
+                ECRelationshipConstraintCR toConstraint = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
+                str.append("NavigationECProperty '").append(navProp.GetName());
+                str.append("' has a multiplicity of '").append(toConstraint.GetMultiplicity().ToString().c_str());
+                str.append("ECDb only supports NavigationECProperties with a maximum multiplicity of 1.");
+                }
+
+            isFirstItem = false;
             }
 
-        isFirstItem = false;
+        issues.Report("ECClass '%s' contains invalid NavigationECProperties: %s", ecClass.GetFullName(), str.c_str());
         }
-
-    return str;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2016
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> ValidNavigationPropertyRule::_GetError() const
-    {
-    if (!m_error->HasInconsistencies())
-        return nullptr;
-
-    return std::move(m_error);
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
