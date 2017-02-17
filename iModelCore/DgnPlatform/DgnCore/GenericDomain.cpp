@@ -26,6 +26,9 @@ namespace generic_ElementHandler
     HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
     HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericGraphic3dHandler)
+    HANDLER_DEFINE_MEMBERS(GenericDetailingSymbolHandler)
+    HANDLER_DEFINE_MEMBERS(GenericCalloutHandler)
+    HANDLER_DEFINE_MEMBERS(GenericViewAttachmentLabelHandler)
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -40,6 +43,9 @@ GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain"
     RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericGraphic3dHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericDetailingSymbolHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericCalloutHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericViewAttachmentLabelHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -62,6 +68,26 @@ DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
     DgnDbStatus importSchemaStatus = genericDomain.ImportSchema(db, genericDomainSchemaFile);
     BeAssert(DgnDbStatus::Success == importSchemaStatus);
     return importSchemaStatus;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/17
+//---------------------------------------------------------------------------------------
+static void createGenericCodeSpecs(DgnDbR db)
+    {
+    CodeSpecPtr disciplineCodeSpec = CodeSpec::Create(db, GENERIC_CODESPEC_ViewAttachmentLabel, CodeScopeSpec::CreateModelScope());
+    if (disciplineCodeSpec.IsValid())
+        disciplineCodeSpec->Insert();
+
+    BeAssert(db.CodeSpecs().QueryCodeSpecId(GENERIC_CODESPEC_ViewAttachmentLabel).IsValid());    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/17
+//---------------------------------------------------------------------------------------
+void GenericDomain::_OnSchemaImported(DgnDbR db) const
+    {
+    createGenericCodeSpecs(db);
     }
 
 //---------------------------------------------------------------------------------------
@@ -160,4 +186,96 @@ DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
 
     BeAssert(false);
     return DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId GenericCallout::FindViewAttachment() const
+    {
+    auto drawingModelId = GetDrawingModel();
+    if (!drawingModelId.IsValid())
+        return DgnElementId();
+
+    auto& db = GetDgnDb();
+    auto findViewAttachment = db.GetPreparedECSqlStatement(
+        "SELECT viewAttachment.ECInstanceId FROM bis.ViewAttachment viewAttachment, bis.ViewDefinition2d view2d"
+        " WHERE (viewAttachment.[View].Id = view2d.ECInstanceId) AND (view2d.BaseModel.Id = ?)");
+    findViewAttachment->BindId(1, drawingModelId);
+    if (BE_SQLITE_ROW != findViewAttachment->Step())
+        return DgnElementId();
+
+    return findViewAttachment->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId GenericViewAttachmentLabel::FindFromViewAttachment(DgnDbR db, DgnElementId vaid)
+    {
+    auto findLabel = db.GetPreparedECSqlStatement(
+        "SELECT label.ECInstanceId FROM generic.ViewAttachmentLabel label"
+        " WHERE (label.ViewAttachment.Id = ?)");
+    findLabel->BindId(1, vaid);
+    if (BE_SQLITE_ROW != findLabel->Step())
+        return DgnElementId();
+
+    return findLabel->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+    {
+    auto& db = viewAttachment.GetDgnDb();
+    auto findCallout = db.GetPreparedECSqlStatement(
+        "SELECT callout.ECInstanceId FROM bis.ViewDefinition2d view2d, generic.Callout callout"
+        " WHERE (callout.DrawingModel.Id = view2d.BaseModel.Id) AND (view2d.ECInstanceId = ?)");
+    findCallout->BindId(1, viewAttachment.GetAttachedViewId());
+    if (BE_SQLITE_ROW != findCallout->Step())
+        return DgnElementId();
+
+    return findCallout->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCalloutCR callout)
+    {
+    auto& db = callout.GetDgnDb();
+    GenericCalloutDestination dest;
+    dest.m_drawingModel = db.Models().Get<DrawingModel>(callout.GetDrawingModel());
+    dest.m_viewAttachment = db.Elements().Get<Sheet::ViewAttachment>(callout.FindViewAttachment());
+    if (!dest.m_viewAttachment.IsValid())
+        return dest;
+    auto labelId = GenericViewAttachmentLabel::FindFromViewAttachment(db, dest.m_viewAttachment->GetElementId());
+    dest.m_viewAttachmentLabel = db.Elements().Get<GenericViewAttachmentLabel>(labelId);
+    dest.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, dest.m_viewAttachment->GetModel()->GetModelId()));
+
+#ifndef NDEBUG
+    // check that the reverse lookup works
+    if (dest.m_viewAttachmentLabel.IsValid())
+        {
+        auto loc = GenericCalloutLocation::FindCalloutFor(*dest.m_viewAttachmentLabel);
+        BeAssert(loc.GetCallout() == &callout);
+        }
+#endif
+
+    return dest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericCalloutLocation GenericCalloutLocation::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+    {
+    auto& db = viewAttachment.GetDgnDb();
+    GenericCalloutLocation loc;
+    loc.m_callout = db.Elements().Get<GenericCallout>(GenericViewAttachmentLabel::FindCalloutFor(viewAttachment));
+    if (!loc.m_callout.IsValid())
+        return loc;
+    loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
+    return loc;
     }

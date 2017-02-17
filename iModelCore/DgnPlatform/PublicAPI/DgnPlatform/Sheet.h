@@ -43,6 +43,9 @@ public:
 
     //! Create a SheetModel that breaks down the specified Sheet element
     DGNPLATFORM_EXPORT static ModelPtr Create(ElementCR sheet);
+
+    //! Find the first SheetViewDefinition that displays the specified sheet model.
+    DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 };
 
 //=======================================================================================
@@ -53,12 +56,12 @@ struct EXPORT_VTABLE_ATTRIBUTE Element : Document
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
 protected:
-    static Utf8CP str_Scale() {return "Scale";}
-    static Utf8CP str_Height() {return "Height";}
-    static Utf8CP str_Number() {return "Number";}
-    static Utf8CP str_Width() {return "Width";}
-    static Utf8CP str_Template() {return "Template";}
-    static Utf8CP str_Border() {return "Border";}
+    static constexpr Utf8CP str_Scale() {return "Scale";}
+    static constexpr Utf8CP str_Height() {return "Height";}
+    static constexpr Utf8CP str_Number() {return "Number";}
+    static constexpr Utf8CP str_Width() {return "Width";}
+    static constexpr Utf8CP str_Template() {return "Template";}
+    static constexpr Utf8CP str_Border() {return "Border";}
 
 public:
     explicit Element(CreateParams const& params) : T_Super(params) {}
@@ -134,9 +137,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
 
 protected:
-    static Utf8CP str_View() {return "View";}
-    static Utf8CP str_DisplayPriority() {return "DisplayPriority";}
-    static Utf8CP str_Scale() {return "Scale";}
+    static constexpr Utf8CP str_View() {return "View";}
+    static constexpr Utf8CP str_DisplayPriority() {return "DisplayPriority";}
+    static constexpr Utf8CP str_Scale() {return "Scale";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}

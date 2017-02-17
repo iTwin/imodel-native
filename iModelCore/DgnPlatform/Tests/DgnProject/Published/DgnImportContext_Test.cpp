@@ -291,8 +291,7 @@ static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rm
     // Note that textureids will be different. So, we must compare only values that are not IDs.
     // *** NEEDS WORK: Need a way to compare RenderMaterial and its various assets, such as textures
     return lmat->GetMaterialName() == rmat->GetMaterialName()
-        && lmat->GetPaletteName() == rmat->GetPaletteName()
-        && lmat->GetDescr() == rmat->GetDescr();
+        && lmat->GetPaletteName() == rmat->GetPaletteName();
     }
 
 //---------------------------------------------------------------------------------------

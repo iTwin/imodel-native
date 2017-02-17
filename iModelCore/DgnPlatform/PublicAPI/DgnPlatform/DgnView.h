@@ -57,21 +57,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     friend struct ViewDefinition;
 
 protected:
-    mutable Json::Value m_styles;
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
+    static constexpr Utf8CP str_Styles() {return "Styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     bool EqualState(DisplayStyleCR other) const {return ToJson()==other.ToJson();}
-    DGNPLATFORM_EXPORT virtual void _Load();
-    DGNPLATFORM_EXPORT virtual void _Save();
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
+    DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+
+    JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
+    JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
 
 public:
     //! Construct a new DisplayStyle.
@@ -82,22 +83,22 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
-    void CopyAllStyles(DisplayStyle const& rhs) {m_styles = rhs.m_styles;}
+    void CopyAllStyles(DisplayStyle const& rhs) {GetStylesR() = rhs.GetStyles();}
 
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
-    JsonValueCR GetStyle(Utf8CP name) const {return m_styles[name];}
+    JsonValueCR GetStyle(Utf8CP name) const {return GetStyles()[name];}
 
     //! Set a Style in this DisplayStyle.
     //! @param[in] name The name of the Style
     //! @param[in] value The value for the the Style
     //! @note  This only changes the Style in memory. It will be saved when/if the DisplayStyle is saved.
-    void SetStyle(Utf8CP name, JsonValueCR value) {m_styles[name] = value;}
+    void SetStyle(Utf8CP name, JsonValueCR value) {GetStylesR()[name] = value;}
 
     //! Remove a Style from this DisplayStyle.
     //! @param[in] name The name of the Style to remove
     //! @note  This only changes the Style in memory. It will be saved when/if the DisplayStyle is saved.
-    void RemoveStyle(Utf8CP name) {m_styles.removeMember(name);}
+    void RemoveStyle(Utf8CP name) {GetStylesR().removeMember(name);}
 
     //! Get the background color for this DisplayStyle
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
@@ -173,8 +174,8 @@ public:
 protected:
     EnvironmentDisplay m_environment;
 
-    DGNPLATFORM_EXPORT void _Load() override;
-    DGNPLATFORM_EXPORT void _Save() override;
+    DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
+    DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
 
@@ -357,19 +358,17 @@ protected:
     DgnElementId m_displayStyleId;
     mutable CategorySelectorPtr m_categorySelector;
     mutable DisplayStylePtr m_displayStyle;
-    Json::Value m_details;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static Utf8CP str_Source() {return "Source";}
-    static Utf8CP str_Descr() {return "Descr";}
+    static constexpr Utf8CP str_Source() {return "Source";}
+    static constexpr Utf8CP str_Descr() {return "Descr";}
+    static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
     static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector); 
                                                                            if (params.m_displayStyle.IsValid()) SetDisplayStyle(*params.m_displayStyle);}
 
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
-    virtual void _Load() {}
-    virtual void _Save() {}
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -401,11 +400,13 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     Utf8String ToDetailJson();
+    JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
+    JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
 
 public:
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
 
-    //! Determine whether two ViewDefinitions are "equal", including their unsaved "state"
+    //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
     Utf8String GetDescr() const {return GetPropertyValueString(str_Descr());} //!< Get description
@@ -419,14 +420,15 @@ public:
 
     /** @name ViewDefinition Details */
     /** @{ */
-    //! Get the current valuue of a view detail 
-    JsonValueCR GetDetail(Utf8CP name) const {return m_details[name];}
 
-    //! Change the valuue of a view detail 
-    void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value;}
+    //! Get the current value of a view detail 
+    JsonValueCR GetDetail(Utf8CP name) const {return GetDetails()[name];}
+
+    //! Change the value of a view detail 
+    void SetDetail(Utf8CP name, JsonValueCR value) {GetDetailsR()[name] = value;}
 
     //! Remove a view detail 
-    void RemoveDetail(Utf8CP name) {m_details.removeMember(name);}
+    void RemoveDetail(Utf8CP name) {GetDetailsR().removeMember(name);}
     /** @} */
 
     //! Inserts into the database and returns the new persistent copy.
@@ -1302,7 +1304,6 @@ namespace ViewElementHandler
     struct ViewDisplayStyle : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DisplayStyle, ViewDisplayStyle, Definition, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct ViewDisplayStyle3d : ViewDisplayStyle

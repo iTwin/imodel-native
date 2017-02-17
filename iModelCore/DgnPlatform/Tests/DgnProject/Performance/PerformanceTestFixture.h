@@ -37,8 +37,6 @@ protected:
     static Utf8CP const TEST_COMPLEX_SCHEMA_NAME;
     static const int TESTCLASS_INSTANCE_COUNT;
 
-    Dgn::ScopedDgnHost m_host;
-
 protected:
     PerformanceTestFixture() {};
     virtual ~PerformanceTestFixture () {};
