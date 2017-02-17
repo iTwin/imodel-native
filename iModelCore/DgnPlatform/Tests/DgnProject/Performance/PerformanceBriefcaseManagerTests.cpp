@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Performance/BriefcaseManagerTests.cpp $
+|  $Source: Tests/DgnProject/Performance/PerformanceBriefcaseManagerTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -32,83 +32,83 @@ using Response = IBriefcaseManager::Response;
 // @bsistruct                                                   Paul.Connelly   10/16
 //=======================================================================================
 struct PerformanceRepositoryManager : IRepositoryManager
-{
-public:
-    Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
-    RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
-    RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
-    RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
-};
+    {
+    public:
+        Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
+        RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
+        RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
+        RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
+        RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/16
 //=======================================================================================
 struct BriefcasePerformanceTest : public DgnDbTestFixture, DgnPlatformLib::Host::RepositoryAdmin
-{
-public:
-    mutable PerformanceRepositoryManager    m_server;
+    {
+    public:
+        mutable PerformanceRepositoryManager    m_server;
 
-    BriefcasePerformanceTest() { RegisterServer(); }
-    ~BriefcasePerformanceTest() { UnregisterServer(); }
+        BriefcasePerformanceTest() { RegisterServer(); }
+        ~BriefcasePerformanceTest() { UnregisterServer(); }
 
-    void RegisterServer() { m_host.SetRepositoryAdmin(this); }
-    void UnregisterServer() { m_host.SetRepositoryAdmin(nullptr); }
+        void RegisterServer() { m_host.SetRepositoryAdmin(this); }
+        void UnregisterServer() { m_host.SetRepositoryAdmin(nullptr); }
 
-    IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
+        IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
 
-    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId=BeBriefcaseId(2));
+        DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId = BeBriefcaseId(2));
 
-    template<typename T> static void Time(Utf8CP descr, uint32_t numCount, T func)
-        {
-        printf("%s: ", Utf8String::IsNullOrEmpty(descr) ? "Execution" : descr);
+        template<typename T> static void Time(Utf8CP descr, uint32_t numCount, T func)
+            {
+            printf("%s: ", Utf8String::IsNullOrEmpty(descr) ? "Execution" : descr);
 
-        StopWatch timer(true);
-        func();
-        timer.Stop();
-        printf("%f seconds\n", timer.GetElapsedSeconds());
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numCount, descr);
-        }
-};
+            StopWatch timer(true);
+            func();
+            timer.Stop();
+            printf("%f seconds\n", timer.GetElapsedSeconds());
+            LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numCount, descr);
+            }
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/16
 //=======================================================================================
 struct CodesPerformanceTest : BriefcasePerformanceTest
-{
-protected:
-    int         m_codeValueIndex = 0;
-    int         m_codeValueBatch = 0;
+    {
+    protected:
+        int         m_codeValueIndex = 0;
+        int         m_codeValueBatch = 0;
 
-public:
-    void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
+    public:
+        void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
 
-    DgnCode GetNextCode()
-        {
-        Utf8PrintfString name("%i-%i", m_codeValueBatch, m_codeValueIndex++);
-        return DgnMaterial::CreateCode(*m_db, "HOUSE", name);
-        }
+        DgnCode GetNextCode()
+            {
+            Utf8PrintfString name("%i-%i", m_codeValueBatch, m_codeValueIndex++);
+            return DgnMaterial::CreateCode(*m_db, "HOUSE", name);
+            }
 
-    DgnCodeSet PopulateCodeSet(uint32_t numCodes);
-    void TimeReserveCodes(uint32_t numCodes);
-};
+        DgnCodeSet PopulateCodeSet(uint32_t numCodes);
+        void TimeReserveCodes(uint32_t numCodes);
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/16
 //=======================================================================================
 struct LocksPerformanceTest : BriefcasePerformanceTest
-{
-protected:
-    uint64_t        m_elementId = 0x00ff000000ff0000;
+    {
+    protected:
+        uint64_t        m_elementId = 0x00ff000000ff0000;
 
-public:
-    void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
+    public:
+        void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
 
-    DgnElementId GetNextElementId() { return DgnElementId(m_elementId++); }
+        DgnElementId GetNextElementId() { return DgnElementId(m_elementId++); }
 
-    LockRequest PopulateLockRequest(uint32_t numLocks);
-    void TimeAcquireLocks(uint32_t numLocks);
-};
+        LockRequest PopulateLockRequest(uint32_t numLocks);
+        void TimeAcquireLocks(uint32_t numLocks);
+    };
 
 END_UNNAMED_NAMESPACE
 
@@ -192,7 +192,7 @@ void CodesPerformanceTest::TimeReserveCodes(uint32_t numCodes)
     {
     DgnCodeSet codes = PopulateCodeSet(numCodes);
     Utf8PrintfString descr("Reserve %u codes", numCodes);
-    Time(descr.c_str(), numCodes, [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().ReserveCodes(codes).Result()); });
+    Time(descr.c_str(), numCodes, [&] () { EXPECT_STATUS(Success, m_db->BriefcaseManager().ReserveCodes(codes).Result()); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,7 +214,7 @@ void LocksPerformanceTest::TimeAcquireLocks(uint32_t numLocks)
     {
     LockRequest req = PopulateLockRequest(numLocks);
     Utf8PrintfString descr("Acquire %u locks", numLocks);
-    Time(descr.c_str(), numLocks, [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().AcquireLocks(req).Result()); });
+    Time(descr.c_str(), numLocks, [&] () { EXPECT_STATUS(Success, m_db->BriefcaseManager().AcquireLocks(req).Result()); });
     }
 
 /*---------------------------------------------------------------------------------**//**

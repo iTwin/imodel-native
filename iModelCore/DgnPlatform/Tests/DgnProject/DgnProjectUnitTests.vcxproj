@@ -65,10 +65,10 @@
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
+    <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
-    <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationFrame_Test.cpp" />
