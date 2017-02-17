@@ -1015,7 +1015,8 @@ void DrawArgs::RequestMissingTiles(RootR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::RequestTiles(MissingNodesCR missingNodes)
     {
-        uint32_t numCanceled = 0;
+    uint32_t numCanceled = 0;
+
         {
         // First cancel any loading/queued tiles which are no longer needed
         BeMutexHolder lock(m_cv.GetMutex());

@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                                                                                                                                                     .
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
@@ -1244,11 +1244,27 @@ struct IGraphicBuilder
         void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
         bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
     };
+    //=======================================================================================
+    // @bsistruct                                                   Ray.Bentley     01/2017
+    //=======================================================================================
+    struct QuantizedPoint
+    {
+        uint16_t        m_x;
+        uint16_t        m_y;
+        uint16_t        m_z;
+    
+        QuantizedPoint() { };
+        DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
+        DGNPLATFORM_EXPORT DPoint3d Unquantized(DRange3dCR range) const;
+        DGNPLATFORM_EXPORT FPoint3d UnquantizedAboutCenter(DRange3dCR range) const;
+    };
+
 
     struct TileCorners
     {
         DPoint3d m_pts[4];
     };
+
 
 protected:
     friend struct GraphicBuilder;
@@ -1283,6 +1299,7 @@ protected:
     virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
+    DGNPLATFORM_EXPORT virtual void _AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors);
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
 };
@@ -1417,6 +1434,9 @@ public:
 
     //! Draw a 3D point cloud.
     void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
+
+    //! Draw a 3D point cloud from quantized points.
+    void AddPointCloud(int32_t numPoints, DRange3dCR range, IGraphicBuilder::QuantizedPoint const* quantizedPoints, ByteCP colors) {m_builder->_AddPointCloud(numPoints, range, quantizedPoints, colors);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     void AddBody(IBRepEntityCR entity) {m_builder->_AddBody(entity);}
