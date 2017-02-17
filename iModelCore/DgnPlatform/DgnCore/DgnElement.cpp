@@ -30,7 +30,7 @@
 
 namespace ElementStrings
 {
-    static Utf8CP str_Variables() {return "Variables";}
+    static constexpr Utf8CP str_Variables() {return "Variables";}
 };
 
 using namespace ElementStrings;

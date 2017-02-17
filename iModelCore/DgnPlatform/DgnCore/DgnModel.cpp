@@ -765,7 +765,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     {
-    if (nullptr==m_rangeIndex)
+    if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
@@ -778,7 +778,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
     {
-    if (nullptr==m_rangeIndex)
+    if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP origGeom = original.ToGeometrySource();
@@ -1389,10 +1389,25 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Note: Only returns a valid range if the range index is loaded.
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d GeometricModel::_QueryModelRange() const
+    {
+    auto rangeIndex = GetRangeIndex();
+    return rangeIndex ? AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d()) : AxisAlignedBox3d();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
     {
+    auto range = T_Super::_QueryModelRange();   // if we have a range index already loaded, use it rather than querying
+    if (range.IsValid()) // was it valid?
+        return range;   // yes, we're done
+
+    // NOTE: we can't use the persistent range index, because it has elements from all models, not just this one.
     Statement stmt(m_dgndb,
         "SELECT DGN_bbox_union("
             "DGN_placement_aabb("
@@ -1403,7 +1418,7 @@ AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement3d) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.ElementId");
+        " WHERE e.ModelId=? AND e.Id=g.ElementId AND g.Origin_X IS NOT NULL");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -1422,6 +1437,11 @@ AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
     {
+    auto range = T_Super::_QueryModelRange();   // if we have a range index already loaded, use it rather than querying
+    if (range.IsValid()) // was it valid?
+        return range;   // yes, we're done
+
+    // NOTE: there is no persistent range index for 2d models (they're each in a separate coordinate space)
     Statement stmt(m_dgndb,
         "SELECT DGN_bbox_union("
             "DGN_placement_aabb("
@@ -1432,7 +1452,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,-1,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,1))))"
         " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement2d) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.ElementId");
+        " WHERE e.ModelId=? AND e.Id=g.ElementId AND g.Origin_X IS NOT NULL");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -1458,7 +1478,7 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+static void logPerformance(StopWatch& stopWatch, Utf8CP description, ...)
     {
     stopWatch.Stop();
     const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
@@ -1631,7 +1651,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
 
     StopWatch timer(true);
     DbResult stepResult = sstmt.Step();
-    LogPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetSql(), sourceModel.GetModelId().GetValue());
+    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetSql(), sourceModel.GetModelId().GetValue());
     while (BE_SQLITE_ROW == stepResult)
         {
         istmt.Reset();
@@ -1668,8 +1688,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
 
         timer.Start();
         stepResult = sstmt.Step();
-        LogPerformance(timer, "Statement.Step for %s", sstmt.GetSql());
-
+        logPerformance(timer, "Statement.Step for %s", sstmt.GetSql());
         }
 
     return DgnDbStatus::Success;
@@ -1687,10 +1706,10 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
 
     StopWatch timer(true);
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementGroupsMembers), "GroupId", "MemberId", nullptr, {"MemberPriority"});
-    LogPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
+    logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
-    LogPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
+    logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
     BIS_TABLE(BIS_REL_CategorySelectorsReferToCategories)
@@ -1715,19 +1734,19 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     StopWatch timer(true);
     if (DgnDbStatus::Success != (status = _ImportElementsFrom(sourceModel, importer)))
         return status;
-    LogPerformance(timer, "Import elements time");
+    logPerformance(timer, "Import elements time");
 
     timer.Start();
     if (DgnDbStatus::Success != (status = _ImportElementAspectsFrom(sourceModel, importer)))
         return status;
-    LogPerformance(timer, "Import element aspects time");
+    logPerformance(timer, "Import element aspects time");
 
     timer.Start();
     if (DgnDbStatus::Success != (status = _ImportECRelationshipsFrom(sourceModel, importer)))
         return status;
-    LogPerformance(timer, "Import ECRelationships time");
+    logPerformance(timer, "Import ECRelationships time");
 
-    LogPerformance(totalTimer, "Total contents import time");
+    logPerformance(totalTimer, "Total contents import time");
 
     return DgnDbStatus::Success;
     }
@@ -1757,7 +1776,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
         return nullptr;
 
     stat = DgnDbStatus::Success;
-    LogPerformance(totalTimer, "Total import time");
+    logPerformance(totalTimer, "Total import time");
     return newModel;
     }
 

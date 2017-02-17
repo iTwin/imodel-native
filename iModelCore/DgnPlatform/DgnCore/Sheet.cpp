@@ -18,7 +18,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 }
 namespace SheetStrings
 {
-static Utf8CP str_Clip() {return "Clip";}
+static constexpr Utf8CP str_Clip() {return "Clip";}
 };
 END_SHEET_NAMESPACE
 

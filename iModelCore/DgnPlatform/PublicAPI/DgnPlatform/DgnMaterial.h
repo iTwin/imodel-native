@@ -61,7 +61,7 @@ public:
     };
 
 protected:
-    static Utf8CP str_Assets() {return "Assets";}
+    static Utf8CP constexpr str_Assets() {return "Assets";}
     JsonValueCR GetAssets() const {return m_jsonProperties[str_Assets()];}
     JsonValueR GetAssetsR() {return m_jsonProperties[str_Assets()];}
 
