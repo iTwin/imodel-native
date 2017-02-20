@@ -240,11 +240,11 @@ static bool s_dontShowMesh = false;
 
 
 
-void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNodes,
-                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
-                              ViewContextR                                context, 
-                              const Transform&                            smToDgnUorTransform,
-                              ScalableMeshDisplayCacheManager*            mgr)
+void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+                             bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
+                             ViewContextR                                context, 
+                             const Transform&                            smToDgnUorTransform,
+                             ScalableMeshDisplayCacheManager*            mgr)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -687,6 +687,88 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     return m_progressiveQueryEngine;
     }
 
+void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+            bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes, 
+            ViewContextR                                viewContext, 
+            const Transform&                            smToDgnUorTransform)
+    {
+    assert(DrawPurpose::Pick == viewContext.GetDrawPurpose());
+    
+        {
+        viewContext.PushTransform(smToDgnUorTransform);
+        IPickGeomP  pickGeom = viewContext.GetIPickGeom();
+        DPoint3d pt;
+        pickGeom->_GetPickPointView().GetProjectedXYZ(pt);
+        viewContext.ViewToNpc(&pt, &pt, 1);
+        DPoint3d endPt = pt;
+        endPt.z = 1;
+        pt.z = 0;
+
+        viewContext.NpcToView(&pt, &pt, 1);
+        viewContext.ViewToLocal(&pt, &pt, 1);
+
+        viewContext.NpcToView(&endPt, &endPt, 1);
+        viewContext.ViewToLocal(&endPt, &endPt, 1);
+
+        DRay3d ray = DRay3d::FromOriginAndVector(pt, DVec3d::FromStartEndNormalize(pt, endPt));
+
+        for (auto& node : meshNodes)
+            {
+            DRange3d nodeBox = node->GetContentExtent();
+            double paramA, paramB;
+            DPoint3d pointA, pointB;
+            if (!nodeBox.IntersectRay(paramA, paramB, pointA, pointB, pt, ray.direction)) continue;
+            bvector<SmCachedDisplayMesh*> cachedMeshes;
+            bvector<bpair<bool, uint64_t>>  texIDs;
+
+            if (SUCCESS == node->GetCachedMeshes(cachedMeshes, texIDs))
+                {
+                for (auto& cachedMesh : cachedMeshes)
+                    {
+                    QvElem* qvElem = 0;
+                    if (cachedMesh != 0)
+                        {
+                        qvElem = cachedMesh->m_qvElem;
+                        }
+                    if (qvElem != 0)
+                        {
+                        viewContext.GetIViewDraw().DrawQvElem(qvElem);
+                        }
+                    }
+                }
+            }
+
+        for (auto& node : overviewMeshNodes)
+            {
+            DRange3d nodeBox = node->GetContentExtent();
+            double paramA, paramB;
+            DPoint3d pointA, pointB;
+            if (!nodeBox.IntersectRay(paramA, paramB, pointA, pointB, pt, ray.direction)) continue;
+            bvector<SmCachedDisplayMesh*> cachedMeshes;
+            bvector<bpair<bool, uint64_t>> texIDs;
+
+            if (SUCCESS == node->GetCachedMeshes(cachedMeshes, texIDs))
+                {
+                for (auto& cachedMesh : cachedMeshes)
+                    {
+                    QvElem* qvElem = 0;
+                    if (cachedMesh != 0)
+                        {
+                        qvElem = cachedMesh->m_qvElem;
+                        }
+                    if (qvElem != 0)
+                        {
+                        viewContext.GetIViewDraw().DrawQvElem(qvElem);
+                        }
+                    }
+                }
+            }
+        viewContext.PopTransformClip();        
+        return;
+        }
+    }
+
+
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
@@ -703,6 +785,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         m_tryOpen = true;
         }
     if (m_smPtr == 0) return; //if open failed, we can't draw anything
+
+
+    if (DrawPurpose::Pick == context.GetDrawPurpose() && m_currentDrawingInfoPtr.IsValid())
+        {        
+        DoPick(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform);
+        }
 
     //On first draw, we make sure all models know which of the rendered models "belong" to each other and set the groups accordingly.
     if (!m_loadedAllModels)
