@@ -2030,7 +2030,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         {
         if (pkColumns.size() > 1)
             {
-            LOG.errorv("Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s", existingTableName);
+            LOG.errorv("Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s", table->GetName().c_str());
             return nullptr;
             }
 
@@ -2043,7 +2043,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     else
         {
         LOG.errorv("ECInstanceId column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
-                   primaryKeyColName.c_str(), existingTableName);
+                   primaryKeyColName.c_str(), table->GetName().c_str());
         return nullptr;
         }
 
