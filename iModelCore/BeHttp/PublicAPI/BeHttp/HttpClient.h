@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpClient.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,6 +52,8 @@ public:
 
     // Use percent escape for URLs
     BEHTTP_EXPORT static Utf8String EscapeString(Utf8StringCR inStr);
+    // Unsecape percent encoding
+    BEHTTP_EXPORT static Utf8String UnescapeString (Utf8StringCR inStr);
 
     //! Handle date formats specified in RFC 822 (updated by RFC 1123), RFC 850 (obsoleted by RFC 1036) and ANSI C's asctime() format.
     BEHTTP_EXPORT static BentleyStatus HttpDateToUnixMillis(uint64_t& unixMilliseconds, Utf8CP dateStr);

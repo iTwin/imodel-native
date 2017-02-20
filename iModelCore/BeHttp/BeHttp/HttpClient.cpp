@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/HttpClient.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpClient.h>
@@ -90,6 +90,21 @@ Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
 #endif
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jonathan Que     02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HttpClient::UnescapeString (Utf8StringCR inStr)
+    {
+#if defined (HTTP_LIB_CURL)
+    Utf8P unescapedStr = curl_unescape (inStr.c_str(), (int)inStr.length());
+    Utf8String outStr = unescapedStr;
+    curl_free (unescapedStr);
+    return outStr;
+#else
+    return BeStringUtilities::UriDecode (inStr.c_str ());
+#endif
+    }
+    
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
