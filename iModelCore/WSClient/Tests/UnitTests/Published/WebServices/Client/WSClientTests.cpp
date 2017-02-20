@@ -66,7 +66,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::BadRequest, "Foo Error Message"));
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();

@@ -40,7 +40,7 @@ void ServerInfoProvider::EnableWsgServerHeader(bool enable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     m_listeners.push_back(listener);
     }
 
@@ -49,7 +49,7 @@ void ServerInfoProvider::RegisterServerInfoListener(std::weak_ptr<IWSClient::ISe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     auto listenerPtr = listener.lock();
     m_listeners.erase(std::remove_if(m_listeners.begin(), m_listeners.end(),
         [=] (std::weak_ptr<IWSClient::IServerInfoListener> candidateWeakPtr)
@@ -171,7 +171,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, ICancellationTokenPtr ct)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     if (!forceQuery && CanUseCachedInfo())
         return CreateCompletedAsyncTask(WSInfoResult::Success(m_serverInfo));
 
@@ -179,7 +179,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
         {
         return GetInfo(ct)->Then<WSInfoResult>([=] (WSInfoResult result)
             {
-            BeCriticalSectionHolder lock(m_mutex);
+            BeMutexHolder lock(m_mutex);
 
             if (!result.IsSuccess())
                 return WSInfoResult::Error(result.GetError());
@@ -197,6 +197,6 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::InvalidateInfo()
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     m_serverInfoUpdated = 0;
     }

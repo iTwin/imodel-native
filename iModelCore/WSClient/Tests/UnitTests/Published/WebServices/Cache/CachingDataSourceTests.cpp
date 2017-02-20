@@ -503,7 +503,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsR
     BeTest::SetFailOnAssert(true);
 
     ASSERT_FALSE(result.IsSuccess());
-    ASSERT_EQ(ICachingDataSource::Status::RepositorySchemaError, result.GetError().GetStatus());
+    ASSERT_EQ(ICachingDataSource::Status::SchemaError, result.GetError().GetStatus());
     ASSERT_FALSE(result.GetError().GetMessage().empty());
     }
 

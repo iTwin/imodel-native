@@ -776,7 +776,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.A");
@@ -821,7 +821,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.A");
@@ -866,7 +866,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.A");

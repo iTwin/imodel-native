@@ -762,7 +762,7 @@ ICancellationTokenPtr ct
             if (confirmationId.empty())
                 return;
 
-            HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
+            Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
             request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
             request.PerformAsync()->Then([=] (Http::Response& response)
                 {

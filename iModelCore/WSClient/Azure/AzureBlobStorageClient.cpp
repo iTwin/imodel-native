@@ -57,7 +57,7 @@ ICancellationTokenPtr           ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-AzureResult AzureBlobStorageClient::ResolveFinalResponse(HttpResponseCR httpResponse)
+AzureResult AzureBlobStorageClient::ResolveFinalResponse(Http::ResponseCR httpResponse)
     {
     if (!httpResponse.IsSuccess())
         return AzureResult::Error(httpResponse);
@@ -121,7 +121,7 @@ ICancellationTokenPtr ct
             progressCallback((double) chunkNumber * (double) chunkSize + bytesTransfered, (double) fileSize);
         };
 
-    HttpRequest request(blockUrl, "PUT", m_customHandler);
+    Http::Request request(blockUrl, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
     SetCommonRequestOptions(request, Http::Request::RetryOption::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, onBlockProgress, ct);

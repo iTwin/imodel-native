@@ -402,7 +402,9 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
 #endif
         if (createRepositoryResult.IsSuccess())
             {
-            JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Json::Value json;
+            createRepositoryResult.GetValue().GetJson(json);
+            JsonValueCR repositoryInstance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             auto repositoryInfo = RepositoryInfo::Parse(repositoryInstance, m_serverUrl);
             finalResult->SetSuccess(repositoryInfo);
             return;
@@ -912,9 +914,11 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(briefcaseResult.GetError()));
         }
 
-            JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::Parse(instance);
-            FileInfoPtr fileInfo = FileInfo::Parse(instance);
+    Json::Value json;
+    briefcaseResult.GetValue().GetJson(json);
+    JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+    DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::Parse(instance);
+    FileInfoPtr fileInfo = FileInfo::Parse(instance);
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
