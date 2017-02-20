@@ -160,7 +160,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["ThumbnailURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + thumbnailDocument.Replace("/", "~2f");
                 }
-            instance["ThumbnailLoginKey"].StringValue = "IMS";
+            instance["ThumbnailLoginKey"].StringValue = IndexConstants.RdsLoginKey;
             //DataProvider
             //DataProviderName
 
@@ -296,10 +296,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance["CommunicationProtocol"].StringValue = m_rdsDataFetcher.RdsUrlBase.Split(':')[0];
             instance["Streamed"].NativeValue = true;
-            //LoginKey
-            instance["LoginMethod"].StringValue = "IMS";
-            //RegistrationPage
-            //OrganisationPage
+            instance["LoginKey"].StringValue = IndexConstants.RdsLoginKey;
+            instance["LoginMethod"].StringValue = IndexConstants.RdsLoginMethod;
+            instance["RegistrationPage"].StringValue = IndexConstants.RdsRegistrationPage;
+            instance["OrganisationPage"].StringValue = IndexConstants.RdsOrganisationPage;
             instance["Name"].StringValue = IndexConstants.RdsSourceName;
             instance["URL"].StringValue = m_rdsDataFetcher.RdsUrlBase;
             //ServerContactInformation

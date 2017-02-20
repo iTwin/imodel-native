@@ -93,7 +93,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("16.147", instance.GetPropertyValue("AccuracyInMeters").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("ResolutionInMeters").IsNull, "The content of the instance was not set properly.");
                 Assert.AreEqual(m_rdsUrlBaseTest + "Document/" + instance.InstanceId + "~2f" + "Testdir~2fTestFile", instance.GetPropertyValue("ThumbnailURL").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("IMS", instance.GetPropertyValue("ThumbnailLoginKey").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("BentleyCONNECT", instance.GetPropertyValue("ThumbnailLoginKey").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("DataProvider").IsNull, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("DataProviderName").IsNull, "The content of the instance was not set properly.");
                 Assert.AreEqual("Landsat 8", instance.GetPropertyValue("Dataset").StringValue, "The content of the instance was not set properly.");
@@ -214,10 +214,10 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("05610e4c-79d4-43ef-a9e5-e02e6328d843", instance.InstanceId, "The content of the instance was not set properly.");
                 Assert.AreEqual(m_rdsUrlBaseTest.Split(':')[0], instance.GetPropertyValue("CommunicationProtocol").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue((bool) instance.GetPropertyValue("Streamed").NativeValue, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("LoginKey").IsNull, "The content of the instance was not set properly.");
-                Assert.AreEqual("IMS", instance.GetPropertyValue("LoginMethod").StringValue, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("RegistrationPage").IsNull, "The content of the instance was not set properly.");
-                Assert.IsTrue(instance.GetPropertyValue("OrganisationPage").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("BentleyCONNECT", instance.GetPropertyValue("LoginKey").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("CUSTOM", instance.GetPropertyValue("LoginMethod").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("https://ims.bentley.com/IMS/Registration/", instance.GetPropertyValue("RegistrationPage").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("https://www.bentley.com/", instance.GetPropertyValue("OrganisationPage").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("RealityDataService", instance.GetPropertyValue("Name").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual(m_rdsUrlBaseTest, instance.GetPropertyValue("URL").StringValue, "The content of the instance was not set properly.");
                 Assert.IsTrue(instance.GetPropertyValue("ServerContactInformation").IsNull, "The content of the instance was not set properly.");

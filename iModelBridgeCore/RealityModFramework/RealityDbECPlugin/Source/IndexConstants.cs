@@ -25,6 +25,10 @@ namespace IndexECPlugin.Source
         public const string RdsDocumentClass = "Document/";
         public const string RdsSubAPIString = "RDS";
         public const string RdsSourceName = "RealityDataService";
+        public const string RdsLoginKey = "BentleyCONNECT";
+        public const string RdsLoginMethod = "CUSTOM";
+        public const string RdsRegistrationPage = "https://ims.bentley.com/IMS/Registration/";
+        public const string RdsOrganisationPage = "https://www.bentley.com/";
 
         //Usgs
         public const string UsgsTermsOfUse = "https://www2.usgs.gov/laws/info_policies.html";

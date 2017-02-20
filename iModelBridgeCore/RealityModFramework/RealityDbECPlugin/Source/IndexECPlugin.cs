@@ -112,7 +112,7 @@ namespace IndexECPlugin.Source
             get
                 {
                 string ftConnectionString = ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString");
-                if ( null == m_usageTrackingSender && ftConnectionString != null)
+                if ( null == m_usageTrackingSender && !String.IsNullOrEmpty(ftConnectionString))
                     m_usageTrackingSender = new FeatureSender(ConfigurationRoot.GetAppSetting("RECPFeatureTrackingConnectionString"));
                 return m_usageTrackingSender;
                 }

@@ -625,9 +625,9 @@ namespace IndexECPlugin.Source.Helpers
         if(server != null)
             {
             genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginKey") == null || server.GetPropertyValue("LoginKey").IsNull) ? null : server.GetPropertyValue("LoginKey").StringValue;
-            genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginMethod") == null || server.GetPropertyValue("LoginMethod").IsNull) ? null : server.GetPropertyValue("LoginMethod").StringValue;
-            genericInfo.ServerLoginKey = (server.GetPropertyValue("RegistrationPage") == null || server.GetPropertyValue("RegistrationPage").IsNull) ? null : server.GetPropertyValue("RegistrationPage").StringValue;
-            genericInfo.ServerLoginKey = (server.GetPropertyValue("OrganisationPage") == null || server.GetPropertyValue("OrganisationPage").IsNull) ? null : server.GetPropertyValue("OrganisationPage").StringValue;
+            genericInfo.ServerLoginMethod = (server.GetPropertyValue("LoginMethod") == null || server.GetPropertyValue("LoginMethod").IsNull) ? null : server.GetPropertyValue("LoginMethod").StringValue;
+            genericInfo.ServerRegistrationPage = (server.GetPropertyValue("RegistrationPage") == null || server.GetPropertyValue("RegistrationPage").IsNull) ? null : server.GetPropertyValue("RegistrationPage").StringValue;
+            genericInfo.ServerOrganisationPage = (server.GetPropertyValue("OrganisationPage") == null || server.GetPropertyValue("OrganisationPage").IsNull) ? null : server.GetPropertyValue("OrganisationPage").StringValue;
             }
 
 
