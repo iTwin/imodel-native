@@ -16,7 +16,6 @@
 
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
-#define VALUE_ContentType_Json          "application/json"
 
 #define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
@@ -489,7 +488,7 @@ ICancellationTokenPtr ct
             url = GetUrl(CreatePostQueryPath(CreateClassSubPath(query.GetSchemaName(), classes)), "");
             request = m_configuration->GetHttpClient().CreatePostRequest(url);
             request.SetRequestBody(HttpStringBody::Create(query.ToQueryString()));
-            request.GetHeaders().SetContentType(VALUE_ContentType_Json);
+            request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
             }
         else
             {
@@ -535,7 +534,7 @@ IWSRepositoryClient::RequestOptionsPtr options
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
         }
 
-    request.GetHeaders().SetContentType(VALUE_ContentType_Json);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     request.SetRequestBody(changeset);
     request.SetCancellationToken(ct);
@@ -600,7 +599,7 @@ ICancellationTokenPtr ct
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), VALUE_ContentType_Json);
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), REQUESTHEADER_ContentType_ApplicationJson);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -650,7 +649,7 @@ ICancellationTokenPtr ct
     instanceJson["instanceId"] = objectId.remoteId;
     instanceJson["properties"] = propertiesJson;
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), VALUE_ContentType_Json);
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), REQUESTHEADER_ContentType_ApplicationJson);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
