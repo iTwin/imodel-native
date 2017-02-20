@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebTestsHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WebTestsHelper.h"
@@ -60,7 +60,7 @@ Http::Response UnitTests::StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr bo
 Http::Response UnitTests::StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers)
     {
     auto newHeaders = headers;
-    newHeaders["Content-Type"] = "application/json";
+    newHeaders["Content-Type"] = REQUESTHEADER_ContentType_ApplicationJson;
     return StubHttpResponse(httpStatus, body, newHeaders);
     }
 
