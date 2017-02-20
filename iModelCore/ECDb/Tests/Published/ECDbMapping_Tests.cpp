@@ -12646,7 +12646,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(22, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
@@ -12769,7 +12768,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(34, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -12944,7 +12942,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_EQ(3, stmt.GetValueInt64(2));
     ASSERT_EQ(55, stmt.GetValueInt64(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13043,7 +13040,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     stmt.Finalize();
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13192,7 +13188,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
     GetECDb().SaveChanges();
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13299,11 +13294,11 @@ TEST_F(ECDbMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Affan.Khan                         01/17
-    //+---------------+---------------+---------------+---------------+---------------+------
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
     {
     SetupECDb("useecinstanceidasfk3.ecdb",
@@ -13417,7 +13412,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
 
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 

@@ -36,7 +36,7 @@ void SchemaImportTestFixture::AssertSchemaImport(SchemaItem const& testItem, Utf
 void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, SchemaItem const& testItem, Utf8CP ecdbFileName) const
     {
     asserted = true;
-    ASSERT_EQ (BE_SQLITE_OK, CreateECDb(ecdb, ecdbFileName));
+    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(ecdb, ecdbFileName));
     AssertSchemaImport(asserted, ecdb, testItem);
     }
 
@@ -48,63 +48,74 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     asserted = true;
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
-
-    if (!testItem.m_expectedToSucceed)
-        BeTest::SetFailOnAssert(false);
-
-    bool deserializationFailed = false;
-    if (SUCCESS != ReadECSchemaFromString(context, ecdb, testItem))
+    BeTest::SetFailOnAssert(false);
+    const BentleyStatus deserializeStat = ReadECSchemaFromString(context, ecdb, testItem);
+    BeTest::SetFailOnAssert(true);
+    if (SUCCESS != deserializeStat)
         {
         ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed";
-        deserializationFailed = true;
+        asserted = false;
+        return;
         }
 
-    if (!deserializationFailed)
-        {
-        Savepoint sp(const_cast<ECDbR>(ecdb), "ECSChema Import");
-        BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
-        if (schemaImportStatus == SUCCESS)
-            sp.Commit();
-        else
-            sp.Cancel();
+    Savepoint sp(const_cast<ECDbR>(ecdb), "ECSchema Import");
+    BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
+    if (schemaImportStatus == SUCCESS)
+        sp.Commit();
+    else
+        sp.Cancel();
 
-        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_assertMessage.c_str();
-        }
+    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_assertMessage.c_str();
+
+    if (SUCCESS == schemaImportStatus)
+        ASSERT_EQ(testItem.m_expectedToSucceed, !HasDataCorruptingMappingIssues(ecdb)) << testItem.m_assertMessage.c_str();
+
     asserted = false;
-    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                       02/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertForMapCorruptionCausedByMultiInheritence()
+//static
+bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    EXPECT_TRUE(ecdb.IsDbOpen());
+
+    if (!ecdb.IsDbOpen())
+        return true;
+
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), R"sql(
-            SELECT GROUP_CONCAT ([Message], CHAR (13)) [Messages]
-            FROM   (SELECT 'ECClass "' || [ec_Schema].[Alias] || ':' || [ec_Class].[Name] || '" has more than one properties "' || GROUP_CONCAT ([PS].[Alias] || ':' || [PC].[Name] || '.' || [ec_PropertyPath].[AccessString]) || '" that are mapped to same column "' || [ec_Table].[name] || ':' || [ec_Column].[Name] || '"' [Message]
-                    FROM   [ec_PropertyMap]
-                           INNER JOIN [ec_Column] ON [ec_Column].[Id] = [ec_PropertyMap].[ColumnId]
-                           INNER JOIN [ec_Class] ON [ec_Class].[Id] = [ec_PropertyMap].[ClassId]
-                           INNER JOIN [ec_Schema] ON [ec_Schema].[Id] = [ec_Class].[SchemaId]
-                           INNER JOIN [ec_PropertyPath] ON [ec_PropertyPath].[Id] = [ec_PropertyMap].[PropertyPathId]
-                           INNER JOIN [ec_Table] ON [ec_Table].[Id] = [ec_Column].[TableId]
-                           INNER JOIN [ec_Property] ON [ec_Property].[Id] = [ec_PropertyPath].[RootPropertyId]
-                           INNER JOIN [ec_Class] [PC] ON [PC].[Id] = [ec_Property].[ClassId]
-                           INNER JOIN [ec_Schema] [PS] ON [PS].[Id] = [PC].[SchemaId]
-                    WHERE  [ec_Column].[IsVirtual] = 0
-                           AND [ec_Column].[ColumnKind] & 128
-                    GROUP  BY [ec_PropertyMap].[ClassId], 
-                              [ec_PropertyMap].[ColumnId]
-                    HAVING COUNT (*) > 1)
-            )sql"));
-     
-    if (stmt.Step() == BE_SQLITE_ROW && !stmt.IsColumnNull(0))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
+                                     R"sql(
+        SELECT ec_Schema.Name, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
+        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString,'|') || ']'
+        FROM ec_PropertyMap
+        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
+        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
+        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
+        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
+        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
+        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
+        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
+        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
+        WHERE ec_Column.IsVirtual=0 AND (ec_Column.ColumnKind & 128=128)
+        GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1)sql"))
         {
-        ASSERT_TRUE(false) << "Found following error in mapping\r\n" << stmt.GetValueText(0);
+        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
+        return true;
         }
+    
+    bool hasError = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        hasError = true;
+        LOG.errorv("ECClass '%s:%s' with invalid mapping. Multiple properties map to the same column: %s:%s | %s", stmt.GetValueText(0),
+                   stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueText(4));
+        }
+
+    return hasError;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------

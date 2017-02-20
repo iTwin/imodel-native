@@ -1648,7 +1648,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType persType)
+DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnKind, PersistenceType persType)
     {
     DbTable& table = GetPrimaryTable();
     const bool wasEditMode = table.GetEditHandle().CanEdit();
@@ -1658,26 +1658,25 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
     DbColumn* column = table.FindColumnP(columnName);
     if (column != nullptr)
         {
-        if (!Enum::Intersects(column->GetKind(), columnId))
-            column->AddKind(columnId);
+        if (!Enum::Intersects(column->GetKind(), columnKind))
+            column->AddKind(columnKind);
 
         return column;
         }
 
     persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetPersistenceType() == PersistenceType::Physical)
+    if (table.GetPersistenceType() == PersistenceType::Physical && persType == PersistenceType::Virtual)
         {
-        if (persType == PersistenceType::Virtual)
+        if (columnKind == DbColumn::Kind::SourceECInstanceId || columnKind == DbColumn::Kind::TargetECInstanceId)
             {
-            if (columnId == DbColumn::Kind::SourceECInstanceId || columnId == DbColumn::Kind::TargetECInstanceId)
-                {
-                BeAssert(false);
-                return nullptr;
-                }
+            LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for SourceECInstanceId or TargetECInstanceId in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.", 
+                       GetClass().GetFullName(), table.GetName().c_str());
+            return nullptr;
             }
         }
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnId, persType);
+        
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnKind, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();
@@ -1716,6 +1715,9 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
         defaultConstraintClassId = ECClassId();
     }
 //************************RelationshipClassEndTableMap::ColumnFactory********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
 RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
     :m_relMap(relMap), m_relInfo(relInfo) 
     {
@@ -1803,25 +1805,28 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
     ECDbMap const& ecdbMap = m_relMap.GetDbMap();
     ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
 
-    std::function<void(ECClassCR)> traverseConstraintClass =
-        [&](ECClassCR constraintClass)
+    std::function<void(ECDbMap const&, ECClassCR, ECN::ECRelationshipConstraintCR)> traverseConstraintClass;
+    traverseConstraintClass = [this, &traverseConstraintClass] (ECDbMap const& ecdbMap, ECClassCR constraintClass, ECN::ECRelationshipConstraintCR constraint)
         {
-        if (ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass))
+        ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
+        if (classMap != nullptr)
             {
             m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
             }
 
-        if (constraint.GetIsPolymorphic())
-            for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
-                traverseConstraintClass(*derivedClass);
+        if (!constraint.GetIsPolymorphic())
+            return;
+
+        for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
+            traverseConstraintClass(ecdbMap, *derivedClass, constraint);
         };
 
-        for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
-            {
-            traverseConstraintClass(*constraintClass);
-            }
+    for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
+        {
+        traverseConstraintClass(ecdbMap, *constraintClass, constraint);
+        }
     }
 
 

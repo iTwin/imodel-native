@@ -184,7 +184,6 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
     
     if (SUCCESS != PurgeOrphanTables())
         {
-        BeAssert(false);
         ClearCache();
         m_schemaImportContext = nullptr;
         return ERROR;
@@ -958,10 +957,8 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, 
-        json('{"Column":"' || ec_Column.Name || '","Table":"' || ec_Table.Name || '","Properties":[' || 
-        GROUP_CONCAT('"' || PS.Alias || ':' || PC.Name || '.' || ec_PropertyPath.AccessString || '"') || ']}')
+        R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
+        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString, '|') || ']'
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
@@ -969,10 +966,10 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
         INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
         INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
         INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class PC ON PC.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema PS ON PS.Id=PC.SchemaId
-        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn
-                                     " GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
+        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
+        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
+        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") "
+        "GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
         {
         return ERROR;
         }
@@ -980,15 +977,17 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP schemaName = stmt.GetValueText(0);
+        Utf8CP schemaAlias = stmt.GetValueText(1);
         Utf8CP className = stmt.GetValueText(2);
-        Utf8CP issuesJson = stmt.GetValueText(3);
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,\"%s\"",
-                             ecdbFileName, schemaName,
-                             stmt.GetValueText(1), //schema alias
-                             className, issuesJson);
+        Utf8CP tableName = stmt.GetValueText(3);
+        Utf8CP colName = stmt.GetValueText(4);
+        Utf8CP mappedProps = stmt.GetValueText(5);
+        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%s,%s",
+                             ecdbFileName, schemaName, schemaAlias,
+                             className, tableName, colName, mappedProps);
 
-        LOG.messagev(logSeverity, "ECClass with invalid class inheritance resulting in data corruption: %s:%s - %s",
-                     schemaName, className, issuesJson);
+        LOG.messagev(logSeverity, "ECClass with invalid class inheritance resulting in data corruption: %s:%s - Column: %s:%s Mapped Properties: %s",
+                     schemaName, className, tableName, colName, mappedProps);
         }
 
     return SUCCESS;

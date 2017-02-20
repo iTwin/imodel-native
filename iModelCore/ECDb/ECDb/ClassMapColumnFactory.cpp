@@ -27,18 +27,18 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
 void ClassMapColumnFactory::Initialize()const
     {
     UsedColumnFinder::ColumnMap columnMap;
-    if (UsedColumnFinder::Find(columnMap, m_classMap) == SUCCESS)
+    if (SUCCESS != UsedColumnFinder::Find(columnMap, m_classMap))
         {
-        for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
-            {
-            AddColumnToCache(*entry.second, entry.first);
-            }
-
+        BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
         return;
         }
 
-    BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
+    for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
+        {
+        AddColumnToCache(*entry.second, entry.first);
+        }
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -214,10 +214,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
 
     DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Physical);
     if (newColumn == nullptr)
-        {
-        BeAssert(false && "Failed to create column");
         return nullptr;
-        }
 
     if (effectiveNotNullConstraint)
         newColumn->GetConstraintsR().SetNotNullConstraint();
@@ -682,7 +679,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
     if (QueryRelevantMixIns() != SUCCESS)
         return ERROR;
 
-    //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
+    //Find implementation for mixins and also remove the mixin from queue that has implementation as part of deepest mapped classes
     if (ResolveMixins() != SUCCESS)
         return ERROR;
 
