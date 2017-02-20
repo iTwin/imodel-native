@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/Reader/ThreeMXReader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -100,6 +100,11 @@ static bool readNodeInfo (const Json::Value& pt, S3NodeInfo& nodeInfo, string& n
 	err = "Malformed bbMax";
 	return false;
 	}
+
+    nodeInfo.m_range = DRange3d::From(
+        DPoint3d::From(bbMin[0], bbMin[1], bbMin[2]),
+        DPoint3d::From(bbMax[0], bbMax[1], bbMax[2])
+    );
 
     sphereDiameter = 0;
     for (int i = 0; i < 3; i++) 

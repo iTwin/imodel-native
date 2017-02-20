@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ThreeMxSchema/ThreeMXReader.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -19,6 +19,7 @@ BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct S3NodeInfo
 {
+	DRange3d                    m_range;
 	DPoint3d                    m_center;
 	double                      m_radius;
 	double                      m_dMax;
@@ -47,21 +48,21 @@ struct BaseSceneNode
 public:
 	// read .3mx file
 	// failure: returns false, error message in err
-	 static BentleyStatus Read3MX(std::istream& in, S3SceneInfo& outSceneInfo, std::string& err);
-	 static BentleyStatus Read3MX(BeFileNameCR filename, S3SceneInfo& outSceneInfo, std::string& err);
+    THREEMX_SCHEMA_EXPORT static BentleyStatus Read3MX(std::istream& in, S3SceneInfo& outSceneInfo, std::string& err);
+    THREEMX_SCHEMA_EXPORT static BentleyStatus Read3MX(BeFileNameCR filename, S3SceneInfo& outSceneInfo, std::string& err);
 };
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct BaseMeshNode
+struct EXPORT_VTABLE_ATTRIBUTE BaseMeshNode
 {
 
 public:
 	// read .3mxb file
 	// failure: returns false, error message in err
-	 BentleyStatus Read3MXB(std::istream& in, std::string& err);
-	 BentleyStatus Read3MXB(BeFileNameCR filename, std::string& err);
+    THREEMX_SCHEMA_EXPORT BentleyStatus Read3MXB(std::istream& in, std::string& err);
+    THREEMX_SCHEMA_EXPORT BentleyStatus Read3MXB(BeFileNameCR filename, std::string& err);
 
 	virtual ~BaseMeshNode() {}
 
