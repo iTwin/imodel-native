@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerEventParser.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
@@ -132,7 +132,7 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 		objectIds,
 		(*data)[DgnDbServerEvent::LockEventProperties::LockType].asString(),
 		(*data)[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
-		(*data)[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
+		(*data)[DgnDbServerEvent::LockEventProperties::BriefcaseId].asInt(),
 		(*data)[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString()
 	    );
     }
@@ -151,7 +151,7 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
 		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
 		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
 		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
-	    (*data)[DgnDbServerEvent::RevisionEventProperties::BriefcaseId].asString()
+	    (*data)[DgnDbServerEvent::RevisionEventProperties::BriefcaseId].asInt()
 	    );
     }
 
@@ -200,7 +200,7 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 		values,
 		(*data)[DgnDbServerEvent::CodeEventProperties::Reserved].asString(),
 		(*data)[DgnDbServerEvent::CodeEventProperties::Used].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asInt(),
 		(*data)[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
 	    );
     }
@@ -217,7 +217,7 @@ DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEven
 	    (
 		(*data)[DgnDbServerEvent::EventTopic].asString(),
 		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		(*data)[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asString(),
+		(*data)[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asInt(),
 		deletedEventType
 	    );
     }

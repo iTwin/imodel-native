@@ -633,7 +633,6 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    FileInfoPtr fileInfo = FileInfo::Create(*db, "");
     auto readResult = RepositoryInfo::ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
@@ -658,6 +657,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
             return;
             }
 
+        FileInfoPtr fileInfo = FileInfo::Create(*db, "");
         auto connection = connectionResult.GetValue();
         connection->ValidateBriefcase(fileInfo->GetFileId(), briefcaseId, cancellationToken)
             ->Then([=] (DgnDbServerStatusResultCR validationResult)
@@ -668,7 +668,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
                 finalResult->SetError(validationResult.GetError());
                 return;
                 }
-            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
+            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connection);
             if (doSync)
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
