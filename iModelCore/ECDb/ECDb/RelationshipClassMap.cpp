@@ -342,7 +342,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         {
         DbTable& fkTable = fkCol->GetTableR();
         const bool makeRelClassIdColNotNull = fkCol->DoNotAllowDbNull();
-        DbColumn* relClassIdCol = CreateRelECClassIdColumn(columns.GetColumnFactory(), fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull, fkCol->GetIndex()+1);
+        DbColumn* relClassIdCol = CreateRelECClassIdColumn(columns.GetColumnFactory(), fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull, fkCol->DeterminePosition() + 1);
         if (relClassIdCol == nullptr)
             {
             BeAssert(false && "Could not create RelClassId col");

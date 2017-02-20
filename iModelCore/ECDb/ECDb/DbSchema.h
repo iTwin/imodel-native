@@ -181,7 +181,6 @@ public:
         {}
 
     ~DbColumn() {}
-    int GetIndex() const;
     DbColumnId GetId() const { return m_id; }
     PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Utf8StringCR GetName() const { return m_name; }
@@ -199,6 +198,9 @@ public:
     BentleyStatus MakeNonVirtual();
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
+
+    //!@return position of this column in its table (0-based index).
+    int DeterminePosition() const;
 
     static Utf8CP TypeToSql(DbColumn::Type);
     static bool IsCompatible(Type lhs, Type rhs);

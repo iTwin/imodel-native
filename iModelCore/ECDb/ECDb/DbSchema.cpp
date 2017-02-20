@@ -1447,12 +1447,14 @@ bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        2/2017
 //---------------------------------------------------------------------------------------
-int DbColumn::GetIndex() const
+int DbColumn::DeterminePosition() const
     {
-    const bvector<DbColumn const*> const& columns = GetTable().GetColumns();
-    for (int i = 0; i < columns.size(); i++)
+    bvector<DbColumn const*> const& columns = GetTable().GetColumns();
+    for (size_t i = 0; i < columns.size(); i++)
+        {
         if (columns[i] == this)
-            return i;
+            return (int) i;
+        }
 
     BeAssert(false && "Column must exist in the table");
     return -1;
