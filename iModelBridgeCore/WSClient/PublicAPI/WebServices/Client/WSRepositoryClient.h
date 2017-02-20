@@ -264,13 +264,13 @@ struct IWSRepositoryClient::RequestOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSRepositoryClient : public IWSRepositoryClient
     {
-    struct ClientConfig;
+    struct Configuration;
 
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
         mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
-        std::shared_ptr<struct ClientConfig> m_config;
+        std::shared_ptr<struct Configuration> m_config;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
@@ -299,7 +299,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials) override;
-        WSCLIENT_EXPORT ClientConfig& Config();
+        WSCLIENT_EXPORT Configuration& Config();
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
@@ -402,7 +402,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     julius.cepukenas    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSRepositoryClient::ClientConfig
+struct WSRepositoryClient::Configuration
     {
     public:
         friend WSRepositoryClient;
@@ -411,8 +411,8 @@ struct WSRepositoryClient::ClientConfig
         ClientConnection& m_connection;
 
     private:
-        ClientConfig& operator= (const ClientConfig&) = delete;
-        ClientConfig(ClientConnection& connection) : m_connection(connection) {};
+        Configuration& operator= (const Configuration&) = delete;
+        Configuration(ClientConnection& connection) : m_connection(connection) {};
 
     public:
         //! Set the options of whether requests sent or responses retrieved should be compressed.
@@ -429,6 +429,9 @@ struct WSRepositoryClient::ClientConfig
 
         WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const;
         WSCLIENT_EXPORT size_t GetMaxUrlLength() const;
+
+        // TODO: Move WSRepositoryClient::SetCredentials WSRepositoryClient::SetFileDownloadLimit methods
+        // to configuration struct
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
