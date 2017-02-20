@@ -2,7 +2,7 @@
  |
  |     $Source: Tasks/AsyncTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTask.h>
@@ -131,6 +131,14 @@ void AsyncTask::AddParentTask (std::shared_ptr<AsyncTask> task)
     {
     BeMutexHolder lock (m_completedCV.GetMutex());
 
+    AddParentTaskNoLock(task);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Benediktas.Lipnickas   10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTask::AddParentTaskNoLock (std::shared_ptr<AsyncTask> task)
+    {
     m_parentTasks.insert (task);
     }
 
@@ -159,8 +167,6 @@ bset<std::shared_ptr<AsyncTask>> AsyncTask::GetParentTasks ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::AddSubTaskNoLock (std::shared_ptr<AsyncTask> task)
     {
-    task->AddParentTask (shared_from_this ());
-
     m_subTasks.insert (task);
     }
 
@@ -169,9 +175,14 @@ void AsyncTask::AddSubTaskNoLock (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::AddSubTask (std::shared_ptr<AsyncTask> task)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder childLock(task->m_mutex);
+    if (task->IsCompleted())
+        return;
+
+    BeMutexHolder lock(m_mutex);
 
     AddSubTaskNoLock (task);
+    task->AddParentTaskNoLock(shared_from_this());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -218,7 +229,9 @@ void AsyncTask::OnCompleted (BeMutexHolder& lock)
 
         for (auto taskSchedulerPair : thenTasksCopy)
             {
-            AddSubTaskNoLock (taskSchedulerPair.first);
+            auto childTask = taskSchedulerPair.first;
+            AddSubTaskNoLock(childTask);
+            childTask->AddParentTask(shared_from_this());
             }
 
         lock.unlock ();
@@ -356,7 +369,7 @@ BEGIN_BENTLEY_TASKS_NAMESPACE
 AsyncTaskPtr<void> CreateCompletedAsyncTask ()
     {
     auto task = std::make_shared<PackagedAsyncTask<void>> ([=]{});
-    task->Execute ();
+    task->Execute();
     return task;
     }
 
