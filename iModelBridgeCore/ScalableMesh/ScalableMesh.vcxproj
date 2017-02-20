@@ -423,6 +423,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.hpp" />
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshDefs.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshUtilityFunctions.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshCivilDTMSource.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.h" />
@@ -646,6 +647,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
+    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshGroup.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
