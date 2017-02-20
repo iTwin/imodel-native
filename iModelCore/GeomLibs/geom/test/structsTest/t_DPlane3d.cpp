@@ -282,19 +282,6 @@ TEST(DPlane3d, ZeroPlane)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    02/17
 //---------------------------------------------------------------------------------------
-TEST(DPlane3d, InitFromArray)
-    {
-    bvector<DPoint3d> points = { DPoint3d::From(3,3,3),
-                                DPoint3d::From(3,4,3),
-                                DPoint3d::From(3.5,4,3),
-                                DPoint3d::From(3.1,3.1,3.1) };
-    DPlane3d plane;
-    double maxAbsDistance;
-    Check::False(plane.InitFromArray(points, maxAbsDistance));
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Farhad.Kabir                    02/17
-//---------------------------------------------------------------------------------------
 TEST(DPlane3d, VectorProjectionOnNormal)
     {
     DPlane3d plane = DPlane3d::FromNormalAndDistance(DVec3d::From(0, 1, 0), 6);
