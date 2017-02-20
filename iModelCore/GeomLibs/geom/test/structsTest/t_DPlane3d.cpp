@@ -267,3 +267,39 @@ TEST(DPlane3d, PointProjectionOnPlane)
 
     Check::Near(pntToProject, projection);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, ZeroPlane)
+    {
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(DVec3d::From(0, 0, 0), 0);
+    Check::True(plane.IsZero());
+    Check::False(plane.Normalize());
+    DPlane3d planeNonZero = DPlane3d::FromNormalAndDistance(DVec3d::From(1, 2, 1), 6);
+    Check::False(plane.IsZero());
+    Check::True(plane.Normalize());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, InitFromArray)
+    {
+    bvector<DPoint3d> points = { DPoint3d::From(3,3,3),
+                                DPoint3d::From(3,4,3),
+                                DPoint3d::From(3.5,4,3),
+                                DPoint3d::From(3.1,3.1,3.1) };
+    DPlane3d plane;
+    double maxAbsDistance;
+    Check::False(plane.InitFromArray(points, maxAbsDistance));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, VectorProjectionOnNormal)
+    {
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(DVec3d::From(0, 1, 0), 6);
+    DVec3d vector = DVec3d::From(7, 8, 7);
+    double projection = plane.EvaluateVector(vector);
+    double projectionExpected = plane.normal.DotProduct(vector);
+    Check::Near(projectionExpected, projection);
+    }
