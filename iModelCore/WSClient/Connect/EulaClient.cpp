@@ -2,7 +2,7 @@
  |
  |     $Source: Connect/EulaClient.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -49,7 +49,7 @@ AsyncTaskPtr<EulaResult> EulaClient::ResetEula(Utf8StringCR username)
         Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + usernameLowerCase;
 
         Http::Request request = CreateRequest(eulaUrl, url, "POST");
-        request.GetHeaders().SetContentType("application/json");
+        request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
         request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
@@ -79,7 +79,7 @@ AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA/state";
 
         Http::Request request = CreateRequest(eulaUrl, url, "GET");
-        request.GetHeaders().SetAccept("application/json");
+        request.GetHeaders().SetAccept(REQUESTHEADER_ContentType_ApplicationJson);
 
         request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
@@ -118,7 +118,7 @@ AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA";
 
         Http::Request request = CreateRequest(eulaUrl, url, "GET");
-        request.GetHeaders().SetAccept("application/json");
+        request.GetHeaders().SetAccept(REQUESTHEADER_ContentType_ApplicationJson);
 
         request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {

@@ -2,7 +2,7 @@
  |
  |     $Source: Licensing/UsageTracking.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -73,7 +73,7 @@ AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(bvector<Us
 
     HttpClient client(nullptr, s_httpHandler);
     Http::Request request = client.CreatePostRequest(GetServiceUrl());
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     Utf8String body = Json::FastWriter().write(usageList);
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
@@ -110,7 +110,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
 
     HttpClient client(nullptr, s_httpHandler);
     Http::Request request = client.CreateGetRequest(getURL);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
     Http::Response httpResponse = request.Perform().get();
@@ -130,7 +130,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
 
     HttpClient client(nullptr, s_httpHandler);
     Http::Request request = client.CreateGetRequest(url);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
     Http::Response httpResponse = request.Perform().get();

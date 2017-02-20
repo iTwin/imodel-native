@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ImsClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -127,7 +127,7 @@ uint64_t lifetime
     HttpClient client(m_clientInfo, UrlProvider::GetSecurityConfigurator(m_httpHandler));
     Http::Request request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetAuthorization(authorization);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
     request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
 
