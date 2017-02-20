@@ -260,7 +260,9 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
         {
         if (result.IsSuccess())
             {
-            JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Json::Value json;
+            result.GetValue().GetJson(json);
+            JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             finalResult->SetSuccess(FileInfo::Parse(instance, fileInfo));
             return;
             }
@@ -2145,7 +2147,9 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
                 return DgnDbServerBriefcaseInfoResult::Error(result.GetError());
                 }
 
-            JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Json::Value json;
+            result.GetValue().GetJson(json);
+            JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::Parse(instance));
             });
         });
@@ -2399,7 +2403,9 @@ AzureServiceBusSASDTOTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(
         {
         if (result.IsSuccess())
             {
-            AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
+            Json::Value json;
+            result.GetValue().GetJson(json);
+            AzureServiceBusSASDTOPtr ptr = CreateEventSAS(json);
             if (ptr == nullptr)
                 {
                 finalResult->SetError(DgnDbServerError::Id::NoSASFound);
@@ -3054,7 +3060,9 @@ ICancellationTokenPtr           cancellationToken
                 }
         
             // Stage 2. Upload revision file. 
-            JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Json::Value json;
+            initializePushResult.GetValue().GetJson(json);
+            JsonValueCR revisionInstance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
             ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
             Utf8StringCR url = revisionInstance[ServerSchema::Properties][ServerSchema::Property::URL].asString();

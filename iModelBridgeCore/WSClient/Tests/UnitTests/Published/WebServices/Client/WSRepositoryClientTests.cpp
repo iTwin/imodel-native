@@ -1547,7 +1547,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_Con
                 }
             })");
 
-    EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    Json::Value json;
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(json));
+    EXPECT_EQ(expectedObject, json);
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
@@ -1610,9 +1612,8 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndR
     ASSERT_TRUE(response.IsSuccess());
 
     // Assert
-    auto a = response.GetValue().GetObject().toStyledString();
     rapidjson::Document responseJson;
-    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(responseJson));
 
     bmap<ObjectId, ObjectId> ids;
     EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
@@ -1695,7 +1696,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_Pas
     auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
 
     ASSERT_TRUE(response.IsSuccess());
-    EXPECT_EQ(responseObject, response.GetValue().GetObject());
+    Json::Value json;
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(json));
+    EXPECT_EQ(responseObject, json);
     }
 
 #ifdef USE_GTEST

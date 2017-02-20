@@ -947,9 +947,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPa
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
 
     bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache.CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &partialQuery));
+    ASSERT_EQ(CacheStatus::OK, cache.CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
-    ASSERT_EQ(SUCCESS, cache.CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &fullQuery));
+    ASSERT_EQ(CacheStatus::OK, cache.CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &fullQuery));
     ASSERT_THAT(rejected, IsEmpty());
 
     ASSERT_TRUE(cache.IsResponseCached(fullResponseKey));
@@ -958,7 +958,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPa
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
 
-    ASSERT_EQ(SUCCESS, cache.CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
+    ASSERT_EQ(CacheStatus::OK, cache.CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
     ASSERT_EQ("Partial", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     ASSERT_FALSE(cache.GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());

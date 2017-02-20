@@ -74,7 +74,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
 
     private:
         AzureBlobStorageClient(IHttpHandlerPtr customHandler);
-        static AzureResult ResolveFinalResponse(HttpResponseCR httpResponse);
+        static AzureResult ResolveFinalResponse(Http::ResponseCR httpResponse);
         AsyncTaskPtr<AzureResult> SendChunkAndContinue
             (
             Utf8StringCR url,

@@ -103,11 +103,7 @@ m_status(status)
         }
     else if (status == ICachingDataSource::Status::InternalCacheError)
         {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCacheError);
-        }
-    else if (status == ICachingDataSource::Status::RepositorySchemaError)
-        {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_RepositorySchemaError);
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCache);
         }
     else if (status == ICachingDataSource::Status::DataNotCached)
         {
