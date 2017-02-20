@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerCodeEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
         bvector<Utf8String> m_values;
         Utf8String m_reserved;
         Utf8String m_used;
-        Utf8String m_briefcaseId;
+        int        m_briefcaseId;
         Utf8String m_usedWithRevision;
 
         DgnDbServerCodeEvent
@@ -35,7 +35,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
             bvector<Utf8String> values,
             Utf8String reserved,
             Utf8String used,
-            Utf8String briefcaseId,
+            int        briefcaseId,
             Utf8String usedWithRevision
             );
 
@@ -49,7 +49,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
             bvector<Utf8String> values,
             Utf8String reserved,
             Utf8String used,
-            Utf8String briefcaseId,
+            int        briefcaseId,
             Utf8String usedWithRevision
             );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
@@ -60,7 +60,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
         DGNDBSERVERCLIENT_EXPORT bvector<Utf8String> GetValues();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetReserved();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetUsed();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
+        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetUsedWithRevision();
     };
 

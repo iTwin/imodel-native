@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerLockEvent.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/Events/DgnDbServerLockEvent.h>
@@ -20,7 +20,7 @@ Utf8String fromSubscriptionId,
 bvector<Utf8String> objectIds, 
 Utf8String lockType, 
 Utf8String lockLevel, 
-Utf8String briefcaseId, 
+int        briefcaseId, 
 Utf8String releasedWithRevision
 )
     {
@@ -43,7 +43,7 @@ Utf8String fromSubscriptionId,
 bvector<Utf8String> objectIds, 
 Utf8String lockType, 
 Utf8String lockLevel, 
-Utf8String briefcaseId, 
+int        briefcaseId, 
 Utf8String releasedWithRevision
 )
     {
@@ -104,7 +104,7 @@ Utf8String DgnDbServerLockEvent::GetLockLevel()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Caleb.Shafer						06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetBriefcaseId()
+int DgnDbServerLockEvent::GetBriefcaseId()
     {
     return m_briefcaseId;
     }
