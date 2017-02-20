@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -462,7 +462,7 @@ void CurlHttpRequest::SetupCurl()
         BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
         caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
             
-        BeAssert(caBundlePath.DoesPathExist());
+        BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root.");
         curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
         }
     else
