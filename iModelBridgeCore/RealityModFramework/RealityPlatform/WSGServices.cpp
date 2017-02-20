@@ -34,9 +34,8 @@ static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
     return written;
 }
 
-WSGRequest::WSGRequest()
+CurlConstructor::CurlConstructor()
     {
-    s_instance = this;
     RefreshToken();
 
     WChar exePath[MAX_PATH];
@@ -48,6 +47,11 @@ WSGRequest::WSGRequest()
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
     }
 
+WSGRequest::WSGRequest() : CurlConstructor()
+    {
+    s_instance = this;
+    }
+
 WSGRequest* WSGRequest::s_instance = nullptr;
 WSGRequest& WSGRequest::GetInstance()
     {
@@ -56,7 +60,7 @@ WSGRequest& WSGRequest::GetInstance()
     return *s_instance;
     }
 
-void WSGRequest::RefreshToken()
+void CurlConstructor::RefreshToken()
     {
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
@@ -95,33 +99,36 @@ void WSGRequest::RefreshToken()
 
     m_token = "Authorization: Token ";
     m_token.append(charToken);
+    
+    delete lpwstrToken;
+    delete charToken;
     }
 
 Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
     {
-    result = 0;
+    result = RequestType::Body;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
 Utf8String WSGRequest::PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
     {
-    result = 1;
+    result = RequestType::Header;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
 Utf8String WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
     {
-    result = 2;
+    result = RequestType::BodyNoToken;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
-Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file) const
     {
-    auto curl = curl_easy_init();
+    CURL* curl = curl_easy_init();
     if (nullptr == curl)
         {
-        result = CURLcode::CURLE_FAILED_INIT;
-        return "";
+        code = CURLcode::CURLE_FAILED_INIT;
+        return curl;
         }
 
     //Adjusting headers for the POST method
@@ -132,10 +139,11 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, wsgRequest.GetRequestPayload().c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
         }
+
     bvector<Utf8String> wsgHeaders = wsgRequest.GetRequestHeader();
     for (Utf8String header : wsgHeaders)
         headers = curl_slist_append(headers, header.c_str());
-    if(result != 2)
+    if(code != RequestType::BodyNoToken)
         headers = curl_slist_append(headers, m_token.c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
@@ -146,30 +154,46 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
 
-    Utf8StringP curlString = new Utf8String();
+    return curl;
+    }
+
+CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, int verifyPeer, FILE* file, bool retry) const
+    {
+    CURL* curl = PrepareCurl(wsgRequest, result, verifyPeer, file);
+
     if (file != nullptr)
         {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         }
-    else if (result == 0)
-        {
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, curlString);
-        }
-    else if (result == 1)
+    else if (result == RequestType::Header)
         {
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, curlString);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, returnString);
         Utf8StringP dummyString = new Utf8String(); //if you don't handle the body, it gets printed to the output
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, dummyString);
+        delete dummyString;
         }
+    else
+        {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, returnString);
+        }
+
+    return curl;
+    }
+
+Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+    {
+    Utf8StringP curlString = new Utf8String();
+    auto curl = PrepareRequest(wsgRequest, result, curlString, verifyPeer, file, retry);
 
     result = (int)curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
     Utf8String returnString = *curlString;
+    //delete curlString;
     if (returnString.Contains("Token is not valid") && retry)
         {
         WSGRequest::GetInstance().RefreshToken();
@@ -279,9 +303,10 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
     bvector<NavNode> returnVector = bvector<NavNode>();
     WSGNavRootRequest* navRoot = new WSGNavRootRequest(server.GetServerName(), server.GetVersion(), repoId);
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navRoot, status, 0);
 
+    delete navRoot;
     Json::Value instances(Json::objectValue);
     if((status != CURLE_OK) || !Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
         return returnVector; 
@@ -304,9 +329,10 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 
     bvector<NavNode> returnVector = bvector<NavNode>();
     WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, navString);
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
 
+    delete navNode;
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || !Json::Reader::Parse(returnJsonString, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
         return returnVector;
@@ -446,6 +472,7 @@ void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("&$top=");
     BeStringUtilities::FormatUInt64(buf, m_pageSize);
     m_httpRequestString.append(buf);
+    delete buf;
     }
 
 bvector<Utf8String> WSGServer::GetPlugins() const
@@ -459,7 +486,7 @@ bvector<Utf8String> WSGServer::GetPlugins() const
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
@@ -486,7 +513,7 @@ Utf8String WSGServer::GetVersion() const
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
-    int status = 1;
+    int status = RequestType::Header;
 
     Utf8String returnString = WSGRequest::GetInstance().PerformHeaderRequest(wsgurl, status, m_verifyPeer);
 
@@ -517,7 +544,7 @@ bvector<Utf8String> WSGServer::GetRepositories() const
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
     
     Json::Value instances(Json::objectValue);
@@ -547,7 +574,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
@@ -578,7 +605,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
 
     bvector<Utf8String> returnVec = bvector<Utf8String>();
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     Json::Value instances(Json::objectValue);
@@ -607,7 +634,7 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
     serverName.append("']");
     WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
-    int status = 0;
+    int status = RequestType::Body;
     Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
 
     bvector<Utf8String> props;

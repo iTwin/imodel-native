@@ -14,11 +14,14 @@
 #include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
 
+#include <Bentley/BeFile.h>
+#include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <sql.h>
 #include <sqlext.h>
 
+#define CHUNK_SIZE                  (512*1024) - 1 //512Kb CURL_MAX_READ_SIZE
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
@@ -285,6 +288,30 @@ struct RealityDataFilterCreator
     REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersOR(bvector<Utf8String> filters);
     };
 
+enum class RealityDataField
+    {
+    Id,
+    Enterprise,
+    ContainerName,
+    Name,
+    Dataset,
+    Description,
+    RootDocument,
+    Size,
+    Classification,
+    Type,
+    Footprint,
+    ThumbnailDocument,
+    MetadataURL,
+    ResolutionInMeters,
+    AccuracyInMeters,
+    PublicAccess,
+    Listable,
+    ModifiedTimestamp,
+    CreatedTimestamp,
+    OwnedBy
+    };
+
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
 //! This class represents a spatial request for SpatialEntityWithDetails class object.
@@ -296,31 +323,6 @@ struct RealityDataFilterCreator
 struct RealityDataPagedRequest : public WSGPagedRequest
     {
 public:
-    enum class RealityDataField
-    {
-        Id,
-        Enterprise,
-        ContainerName,
-        Name,
-        Dataset,
-        Description,
-        RootDocument,
-        Size,
-        Classification,
-        Type,
-        Footprint,
-        ThumbnailDocument,
-        MetadataURL,
-        ResolutionInMeters,
-        AccuracyInMeters,
-        PublicAccess,
-        Listable,
-        ModifiedTimestamp,
-        CreatedTimestamp,
-        OwnedBy
-    };
-
-
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
     //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
@@ -395,6 +397,181 @@ typedef std::function<void(int index, void *pClient, int ErrorCode, const char* 
 //! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
 typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
 
+struct RealityDataServiceCreate : public RealityDataUrl
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    bool m_listable;
+    };
+
+struct RealityDataFileUpload : public RealityDataUrl
+    {
+public:
+    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
+        m_azureServer(azureServer), m_index(index), m_uploadedSize(0)
+        {
+        /*struct stat file_info;
+        stat(filename.GetNameUtf8().c_str(), &file_info);
+        m_filesize = file_info.st_size;*/
+
+        Utf8String fileFromRoot = filename.GetNameUtf8();
+        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
+        m_fileUrl = "/";
+        m_fileUrl.append(fileFromRoot);
+        m_fileUrl.ReplaceAll("\\","/");
+
+        //testFile = fopen(filename.GetNameUtf8().c_str(), "r");
+
+        BeFileStatus status = m_fileStream.Open(filename.GetName(), BeFileAccess::Read);
+        BeAssert(status == BeFileStatus::Success);
+
+        m_fileStream.GetSize((uint64_t)m_filesize);
+        m_requestType = HttpRequestType::PUT_Request;
+
+        //m_currentChunk = (Byte*) malloc(CHUNK_SIZE);//unit8_t[CHUNK_SIZE];//malloc(CHUNK_SIZE + 1);//new char[CHUNK_SIZE];
+        m_currentChunk.resize(CHUNK_SIZE);
+        }
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
+        {
+        if (!m_validRequestString)
+            _PrepareHttpRequestStringAndPayload();
+
+        BeAssert(m_validRequestString);
+        BeAssert(m_httpRequestString.size() != 0);
+
+        m_requestWithToken = m_httpRequestString;
+        m_requestWithToken.append(m_azureToken);
+
+        return m_requestWithToken;
+        };
+
+    /*REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRequestPayload() const override
+    {
+        if (!m_validRequestString)
+            _PrepareHttpRequestStringAndPayload();
+
+        BeAssert(m_validRequestString);
+
+        return (char*)GetChunk();
+    }*/
+
+    REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
+
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending() { return m_uploadedSize == m_filesize; }
+
+    REALITYDATAPLATFORM_EXPORT uint32_t GetMessageSize() { return m_uploadedSizeStep; }
+
+    uint64_t GetFileSize() const { return m_filesize; }
+
+    BeFile& GetFileStream() { return m_fileStream; }
+
+    void UpdateUploadedSize();
+
+    REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
+        {
+        if (!m_validRequestString)
+            _PrepareHttpRequestStringAndPayload();
+
+        BeAssert(m_validRequestString);
+
+        /*if(m_requestHeader.size() > 4)
+            m_requestHeader.pop_back();*/
+        m_requestHeader.push_back(m_chunkStep);
+
+        return m_requestHeader;
+        } //might not be necessary
+
+    REALITYDATAPLATFORM_EXPORT Byte* GetChunk() { return &m_currentChunk[0]; }
+
+    //FILE*                   testFile;
+    size_t                  m_index;
+protected:
+    void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    Utf8String              m_fileUrl;
+
+    BeFile                  m_fileStream;
+    uint64_t                m_filesize;
+    uint64_t                m_uploadedSize;
+    uint32_t                m_uploadedSizeStep;
+    Utf8String              m_azureServer;
+    Utf8String              m_chunkStep;
+    float                   m_progressStep;
+    RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
+    RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
+    Utf8String              m_azureToken;
+    mutable Utf8String      m_requestWithToken;
+    bvector<Byte>           m_currentChunk;
+    };
+
+struct AzureWriteHandshake : public RealityDataUrl
+    {
+public:
+    AzureWriteHandshake(Utf8String sourcePath) { m_id = sourcePath; }
+    Utf8StringR GetJsonResponse() { return jsonResponse; }
+protected:
+    virtual void _PrepareHttpRequestStringAndPayload() const override;
+private:
+    Utf8String jsonResponse;
+    AzureWriteHandshake();
+    };
+
+struct UploadReport
+    {
+    size_t                  packageId;
+    bmap<WString, RealityDataFileUpload*> results;
+    ~UploadReport()
+        {
+        /*for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
+            delete (it->second);*/
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
+        {
+        /*BeXmlWriterPtr writer = BeXmlWriter::Create();
+        BeAssert(writer.IsValid());
+        writer->SetIndentation(2);
+
+        //writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
+
+        writer->WriteElementStart("RealityDataDownload_DownloadReport");
+            {
+            writer->WriteAttribute("PackageId", packageId);
+            writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
+
+            for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
+                {
+                writer->WriteElementStart("File");
+                    {
+                    writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
+                    RealityDataFileUpload* tr = it->second;
+                    writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
+                    writer->WriteAttribute("filesize", tr->filesize);
+                    writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                    for (size_t i = 0; i < tr->retries.size(); ++i)
+                        {
+                        writer->WriteElementStart("DownloadAttempt");
+                            {
+                            writer->WriteAttribute("attemptNo", i + 1);
+                            writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
+                            writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
+                            }
+                        writer->WriteElementEnd();
+                        }
+                    }
+                writer->WriteElementEnd();
+                }
+            }
+        writer->WriteElementEnd();
+        writer->ToString(report);*/
+        }
+    };
+
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
 //! RealityDataServiceUpload
@@ -420,8 +597,9 @@ typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
 //! One and only one of SetSourcePath(), SetSourceFile() or SetSourceFiles()
 //!  will be called.
 //=====================================================================================
-struct RealityDataServiceUpload : public RefCountedBase
+struct RealityDataServiceUpload : public CurlConstructor
     {
+
     //where the curl upload ended, either in success or failure
     struct UploadResult
         {
@@ -429,22 +607,35 @@ struct RealityDataServiceUpload : public RefCountedBase
         size_t                  uploadProgress; //a percentage of how much of the file was successfully downloaded
         };
 
+    REALITYDATAPLATFORM_EXPORT static Utf8String PackageProperties(bmap<RealityDataField, Utf8String> properties);
+
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false);
+
+    REALITYDATAPLATFORM_EXPORT ~RealityDataServiceUpload()
+        {
+        for(int i=0; i < m_filesToUpload.size(); i++)
+            delete m_filesToUpload[i];
+
+        delete m_handshakeRequest;
+        }
+
     //! Set the source path which, all files and folders located in this path will be uploaded
     //!  to the designated reality data
-    //! @param sourcePath indicates the source path that will be considered the root of the reality data.
+    //! @param sourcePath indicates the source path that will be considered the base folder of the reality data.
     //!  all files and folders will recursively be scanned and uploaded.
     //! @param rootDocument The root document for the reality data or empty if the root document
     //!  must not be set or modified. This document is specified relative to the root source path.
     //! @param thumbnailDocument The thumbnail document. It must designate a JPG or PNG file providing a
     //!  a visual overview of the reality data.
 	//! Keep in mind that you can upload 1 to many files
-    REALITYDATAPLATFORM_EXPORT void SetSourcePath(Utf8String sourcePath, Utf8String rootDocument = "", Utf8String thumbnailDocument = "");
+    REALITYDATAPLATFORM_EXPORT void SetSourcePath(Utf8String sourcePath, Utf8String rootDocument = "", Utf8String thumbnailDocument = "")
+    {m_sourcePath = sourcePath; m_rootDocument = rootDocument; m_thumbnailDocument = thumbnailDocument;}
 
     //! Sets the RealityDataID that also designates the container to which the data is uploaded
-    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8String realityDataId);
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8String realityDataId) { m_id = realityDataId; }
 
     //! Set proxy informations
-    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+    //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
 
     //! Set certificate path for https upload.
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; };
@@ -457,20 +648,48 @@ struct RealityDataServiceUpload : public RefCountedBase
                                                                    {m_pHeartbeatFunc = pi_func;};
 
     //! Set callback to know to status, upload done or error.
-    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
+    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
+    
+    REALITYDATAPLATFORM_EXPORT bool IsValidUpload() { return m_filesToUpload.size() > 0; }
 
     //! Start the upload progress for all links.
-    //TODO: REALITYDATAPLATFORM_EXPORT UploadReport* Perform();
+    REALITYDATAPLATFORM_EXPORT UploadReport* Perform();
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
+
+protected:
+    void CreateUpload(Utf8String properties);
+    BentleyStatus ParseHandshakeResponse(Utf8String json);
 
 private:
-    Utf8String m_id;
-    Utf8String m_proxyUrl;
-    Utf8String m_proxyCreds;
-    BeFileName m_certPath;
+    void SetupCurlforFile(RealityDataUrl* upload, int verifyPeer);
+    void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
+    bvector<RealityDataFileUpload*>         m_filesToUpload;
+
+    AzureWriteHandshake*        m_handshakeRequest;
+
+    Utf8String                  m_sourcePath;
+    Utf8String                  m_rootDocument;
+    Utf8String                  m_thumbnailDocument;
+    void*                       m_pCurlHandle;
+
+    Utf8String                  m_id;
+    Utf8String                  m_filename;
+    Utf8String                  m_proxyUrl;
+    Utf8String                  m_proxyCreds;
+    BeFileName                  m_certPath;
     RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
-    float m_progressStep;
+    float                       m_progressStep;
     RealityDataServiceUpload_StatusCallBack m_pStatusFunc;
     RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
+
+    Utf8String                  m_azureServer;
+    Utf8String                  m_azureToken;
+    Utf8String                  m_payload;
+    bvector<Utf8String>         m_headers;
+    bool                        m_overwrite;
+
+    UploadReport                m_ulReport;
     };
 
 //=====================================================================================
@@ -549,45 +768,42 @@ public:
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(RealityDataPagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(RealityDataByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request);
 
     //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequestR request, FILE* file);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request);
 
     //! Returns a list of RealityData objects that belongs to the enterprise.
     //! Notice that the enterprise is not usually provided and the enterprise of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(RealityDataListByEnterprisePagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationshipByProjectIdRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(RealityDataProjectRelationshipByProjectIdPagedRequestCR request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static BentleyStatus PagedRequestToJSON(RealityDataPagedRequestPtr request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static BentleyStatus PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static BentleyStatus RequestToJSON(RealityDataUrlPtr request, Utf8StringR jsonResponse);
-
-    //! Returns a RealityDataServiceUpload object
-    REALITYDATAPLATFORM_EXPORT static RealityDataServiceUploadPtr CreateUpload();
+    REALITYDATAPLATFORM_EXPORT static BentleyStatus RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse);
 
 private:
     static Utf8String s_realityDataServer;
