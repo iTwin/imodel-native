@@ -49,12 +49,12 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\BimConsole\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\BimConsole\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\BimConsole\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\BimConsole\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)\Winx64\build\BimConsole\</NMakeOutput>
+    <NMakeOutput>$(OutRoot)\Winx64\Product\BimConsole\BimConsole.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
