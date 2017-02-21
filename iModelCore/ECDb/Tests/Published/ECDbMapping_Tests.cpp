@@ -12348,9 +12348,8 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     GetECDb().SaveChanges();
-    //This does not work with overflow property
-    //ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     }
 
 //---------------------------------------------------------------------------------------
