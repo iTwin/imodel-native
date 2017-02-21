@@ -335,6 +335,13 @@ ICancellationTokenPtr ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSRepositoryClient::Configuration::SetCompressionOptions(CompressionOptions options)
     {
+    if (options.IsRequestCompressionEnabled())
+        {
+        options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+        options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationXml);
+        options.AddSupportedType(REQUESTHEADER_ContentType_TextHtml);
+        }
+
     m_connection.GetConfiguration().GetHttpClient().SetCompressionOptions(options);
     }
 
