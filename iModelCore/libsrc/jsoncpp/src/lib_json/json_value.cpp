@@ -114,13 +114,9 @@ bool Value::operator <(JsonValueCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Value::operator ==(JsonValueCR other) const
 {
-   //if (type_ != other.type_)
-   // GCC 2.95.3 says:
-   // attempt to take address of bit-field structure member `Json::Value::type_'
-   // Beats me, but a temp solves the problem.
-   int temp = other.type_;
-   if (type_ != temp)
+   if (type_ != other.type_)
       return false;
+
    switch (type_)
    {
    case nullValue:
@@ -140,8 +136,7 @@ bool Value::operator ==(JsonValueCR other) const
                   && strcmp(value_.string_, other.value_.string_) == 0);
    case arrayValue:
    case objectValue:
-      return value_.map_->size() == other.value_.map_->size()
-             && (*value_.map_) == (*other.value_.map_);
+      return (*value_.map_) == (*other.value_.map_);
    default:
       JSON_ASSERT_UNREACHABLE;
    }
