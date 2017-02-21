@@ -1407,17 +1407,24 @@ TEST(RotMatrix, FromQuaternion)
     DPoint3d subjectPoint = DPoint3d::From(1, -1, 2);
     DPoint3d subjectPointCpy = subjectPoint;
     rotQuaternion.Multiply(subjectPoint);
+
     printf("%f  %f  \n", (10 + 4 * sqrt(3)) / 8, subjectPoint.x);
     printf("%f  %f  \n", (1 + 2 * sqrt(3)) / 8, subjectPoint.y);
-    printf("%f  %f  \n", (14 - 3 * sqrt(3)) / 8, subjectPoint.z);
+    printf("%f  %f  \n \n", (14 - 3 * sqrt(3)) / 8, subjectPoint.z);
     Check::Near((10 + 4 * sqrt(3)) / 8, subjectPoint.x);
     Check::Near((1 + 2 * sqrt(3)) / 8, subjectPoint.y);
     Check::Near((14 - 3 * sqrt(3)) / 8, subjectPoint.z);
+
     DPoint4d quanternionPoint;
     rotQuaternion.GetQuaternion(quanternionPoint, false);
+    
     double quanternion[] = { quanternionPoint.x,quanternionPoint.y,quanternionPoint.z, quanternionPoint.w };
     RotMatrix rotQuaternion2 = RotMatrix::FromQuaternion(quanternion);
-    rotQuaternion.Multiply(subjectPointCpy);
+    rotQuaternion2.Multiply(subjectPointCpy);
+
+    printf("%f  %f  \n", subjectPointCpy.x, subjectPoint.x);
+    printf("%f  %f  \n", subjectPointCpy.y, subjectPoint.y);
+    printf("%f  %f  \n \n", subjectPointCpy.z, subjectPoint.z);
     Check::Near(subjectPointCpy.x, subjectPoint.x);
     Check::Near(subjectPointCpy.y, subjectPoint.y);
     Check::Near(subjectPointCpy.z, subjectPoint.z);

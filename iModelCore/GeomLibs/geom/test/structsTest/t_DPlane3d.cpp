@@ -276,7 +276,7 @@ TEST(DPlane3d, ZeroPlane)
     Check::True(plane.IsZero());
     Check::False(plane.Normalize());
     DPlane3d planeNonZero = DPlane3d::FromNormalAndDistance(DVec3d::From(1, 2, 1), 6);
-    Check::False(plane.IsZero());
+    Check::False(planeNonZero.IsZero());
     Check::True(plane.Normalize());
     }
 //---------------------------------------------------------------------------------------
