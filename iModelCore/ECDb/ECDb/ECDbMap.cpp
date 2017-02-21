@@ -217,7 +217,7 @@ std::vector<ECClassCP> ECDbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         03/2016
 //---------------------------------------------------------------------------------------
-void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixIns)
+void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins)
     {
     if (doneList.find(&ecclass) != doneList.end())
         return;
@@ -225,16 +225,16 @@ void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList
     doneList.insert(&ecclass);
     if (!ecclass.HasBaseClasses())
         {
-        ECEntityClassCP entityClass = ecclass.IsEntityClass() ? static_cast<ECEntityClassCP>(&ecclass) : nullptr;
+        ECEntityClassCP entityClass = ecclass.IsEntityClass() ? ecclass.GetEntityClassCP() : nullptr;
         if (rootClassSet.find(&ecclass) == rootClassSet.end())
             {
             rootClassSet.insert(&ecclass);
-            if (auto relationship = ecclass.GetRelationshipClassCP())
-                rootRelationshipList.push_back(relationship);
+            if (ecclass.IsRelationshipClass())
+                rootRelationshipList.push_back(ecclass.GetRelationshipClassCP());
             else
                 {
                 if (entityClass && entityClass->IsMixin())
-                    rootMixIns.push_back(entityClass);
+                    rootMixins.push_back(entityClass);
                 else
                     rootClassList.push_back(&ecclass);
                 }
@@ -251,7 +251,7 @@ void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList
         if (doneList.find(baseClass) != doneList.end())
             return;
 
-        GatherRootClasses(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixIns);
+        GatherRootClasses(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
         }
     }
 //---------------------------------------------------------------------------------------
@@ -435,33 +435,13 @@ BentleyStatus ECDbMap::DoMapSchemas() const
          existingClassMap->Update();
          }
 
-     bool isCurrentIsMixIn = false;
-     if (ecClass.IsEntityClass())
-         {
-         ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(&ecClass);
-         if (entityClass->IsMixin())
-             {
-             isCurrentIsMixIn = true;
-             }
-         }
+     const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();
 
-     for (ECClassP childClass : ecClass.GetDerivedClasses())
+     for (ECClassCP childClass : ecClass.GetDerivedClasses())
          {
-         bool isChildIsMixIn = false;
-         if (isCurrentIsMixIn)
-             {
-             if (childClass->IsEntityClass())
-                 {
-                 ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(childClass);
-                 if (entityClass->IsMixin())
-                     {
-                     isChildIsMixIn = true;
-                     }
-                 }
-             }
-
-         //Only map mixIn hiearchy but stop if you find a none-mixin class.
-         if (isCurrentIsMixIn && !isChildIsMixIn)
+         const bool isChildIsMixin = childClass->IsEntityClass() && childClass->GetEntityClassCP()->IsMixin();
+         //Only map mixin hierarchy but stop if you find a non-mixin class.
+         if (isCurrentIsMixin && !isChildIsMixin)
              continue;
 
          ClassMappingStatus status = MapClass(*childClass);
@@ -968,7 +948,7 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
     {
     NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidLegacyClassInheritance");
     const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
-    const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_FATAL;
+    const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_ERROR;
     if (!diagLogger->isSeverityEnabled(diagSeverity) && !LOG.isSeverityEnabled(logSeverity))
         return SUCCESS;
 

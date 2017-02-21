@@ -32,7 +32,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         {
             case Exp::Type::Select:
             {
-            status = ECSqlSelectPreparer::Prepare(context, static_cast<SelectStatementExp const&> (exp));
+            status = ECSqlSelectPreparer::Prepare(context, exp.GetAs<SelectStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -41,7 +41,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Insert:
             {
-            status = ECSqlInsertPreparer::Prepare(context, static_cast<InsertStatementExp const&> (exp));
+            status = ECSqlInsertPreparer::Prepare(context, exp.GetAs<InsertStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -50,7 +50,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Update:
             {
-            status = ECSqlUpdatePreparer::Prepare(context, static_cast<UpdateStatementExp const&> (exp));
+            status = ECSqlUpdatePreparer::Prepare(context, exp.GetAs<UpdateStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -59,7 +59,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer::Prepare(context, static_cast<DeleteStatementExp const&> (exp));
+            status = ECSqlDeletePreparer::Prepare(context, exp.GetAs<DeleteStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -81,7 +81,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ALL or ANY expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
@@ -91,15 +91,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BetweenRangeValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BetweenRangeValueExp const& exp)
     {
     NativeSqlBuilder::List lowerBoundSqlTokens;
-    auto status = PrepareValueExp(lowerBoundSqlTokens, ctx, exp->GetLowerBoundOperand());
+    ECSqlStatus status = PrepareValueExp(lowerBoundSqlTokens, ctx, *exp.GetLowerBoundOperand());
     if (!status.IsSuccess())
         return status;
 
     NativeSqlBuilder::List upperBoundSqlTokens;
-    status = PrepareValueExp(upperBoundSqlTokens, ctx, exp->GetUpperBoundOperand());
+    status = PrepareValueExp(upperBoundSqlTokens, ctx, *exp.GetUpperBoundOperand());
     if (!status.IsSuccess())
         return status;
 
@@ -114,11 +114,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List
     for (size_t i = 0; i < tokenCount; i++)
         {
         NativeSqlBuilder sql;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             sql.AppendParenLeft();
 
         sql.Append(lowerBoundSqlTokens[i]).Append(" AND ").Append(upperBoundSqlTokens[i]);
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             sql.AppendParenRight();
 
         nativeSqlSnippets.push_back(sql);
@@ -131,15 +131,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryValueExp const& exp)
     {
     NativeSqlBuilder::List lhsSqlTokens;
-    auto status = PrepareValueExp(lhsSqlTokens, ctx, exp->GetLeftOperand());
+    ECSqlStatus status = PrepareValueExp(lhsSqlTokens, ctx, *exp.GetLeftOperand());
     if (!status.IsSuccess())
         return status;
 
     NativeSqlBuilder::List rhsSqlTokens;
-    status = PrepareValueExp(rhsSqlTokens, ctx, exp->GetRightOperand());
+    status = PrepareValueExp(rhsSqlTokens, ctx, *exp.GetRightOperand());
     if (!status.IsSuccess())
         return status;
 
@@ -153,12 +153,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
     for (size_t i = 0; i < tokenCount; i++)
         {
         NativeSqlBuilder nativeSqlBuilder;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenLeft();
 
-        nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(exp->GetOperator()).AppendSpace().Append(rhsSqlTokens[i]);
+        nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(exp.GetOperator()).AppendSpace().Append(rhsSqlTokens[i]);
 
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back(move(nativeSqlBuilder));
@@ -171,11 +171,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const& exp)
     {
-    const BooleanSqlOperator op = exp->GetOperator();
-    ComputedExp const* lhsOperand = exp->GetLeftOperand();
-    ComputedExp const* rhsOperand = exp->GetRightOperand();
+    const BooleanSqlOperator op = exp.GetOperator();
+    ComputedExp const* lhsOperand = exp.GetLeftOperand();
+    ComputedExp const* rhsOperand = exp.GetRightOperand();
 
     const bool lhsIsNullExp = IsNullExp(*lhsOperand);
     const bool rhsIsNullExp = IsNullExp(*rhsOperand);
@@ -184,7 +184,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     NativeSqlBuilder::List rhsNativeSqlSnippets;
     if (!lhsIsNullExp)
         {
-        auto status = PrepareComputedExp(lhsNativeSqlSnippets, ctx, lhsOperand);
+        ECSqlStatus status = PrepareComputedExp(lhsNativeSqlSnippets, ctx, *lhsOperand);
         if (!status.IsSuccess())
             return status;
 
@@ -198,7 +198,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
 
     if (!rhsIsNullExp)
         {
-        auto status = PrepareComputedExp(rhsNativeSqlSnippets, ctx, rhsOperand);
+        ECSqlStatus status = PrepareComputedExp(rhsNativeSqlSnippets, ctx, *rhsOperand);
         if (!status.IsSuccess())
             return status;
 
@@ -213,13 +213,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         {
         //if both operands are NULL, pass 1 as sql snippet count
         size_t targetSqliteSnippetCount = rhsIsNullExp ? 1 : rhsNativeSqlSnippets.size();
-        PrepareNullLiteralValueExp(lhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (lhsOperand), targetSqliteSnippetCount);
+        PrepareNullLiteralValueExp(lhsNativeSqlSnippets, ctx, lhsOperand->GetAs<LiteralValueExp>(), targetSqliteSnippetCount);
         }
 
     if (rhsIsNullExp)
-        PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (rhsOperand), lhsNativeSqlSnippets.size());
+        PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, rhsOperand->GetAs<LiteralValueExp>(), lhsNativeSqlSnippets.size());
 
-    const auto nativeSqlSnippetCount = lhsNativeSqlSnippets.size();
+    const size_t nativeSqlSnippetCount = lhsNativeSqlSnippets.size();
     if (nativeSqlSnippetCount != rhsNativeSqlSnippets.size())
         {
         BeAssert(false && "Expression could not be translated into SQLite SQL. Operands yielded different number of SQLite SQL expressions.");
@@ -227,7 +227,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         }
 
     const BooleanSqlOperator logicalCompoundOp = DetermineCompoundLogicalOpForCompoundExpressions(op);
-    const bool wrapInParens = exp->HasParentheses() || nativeSqlSnippetCount > 1;
+    const bool wrapInParens = exp.HasParentheses() || nativeSqlSnippetCount > 1;
 
     NativeSqlBuilder sqlBuilder;
     if (wrapInParens)
@@ -260,15 +260,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanExp(NativeSqlBuilder::List& nativeSq
     switch (exp.GetType())
         {
             case Exp::Type::AllOrAny:
-                return PrepareAllOrAnyExp(ctx, static_cast<AllOrAnyExp const*> (&exp));
+                return PrepareAllOrAnyExp(ctx, exp.GetAs<AllOrAnyExp>());
             case Exp::Type::BinaryBoolean:
-                return PrepareBinaryBooleanExp(nativeSqlSnippets, ctx, static_cast<BinaryBooleanExp const*> (&exp));
+                return PrepareBinaryBooleanExp(nativeSqlSnippets, ctx, exp.GetAs<BinaryBooleanExp>());
             case Exp::Type::BooleanFactor:
-                return PrepareBooleanFactorExp(nativeSqlSnippets, ctx, static_cast<BooleanFactorExp const*> (&exp));
+                return PrepareBooleanFactorExp(nativeSqlSnippets, ctx, exp.GetAs<BooleanFactorExp>());
             case Exp::Type::SubqueryTest:
-                return PrepareSubqueryTestExp(ctx, static_cast<SubqueryTestExp const*> (&exp));
+                return PrepareSubqueryTestExp(ctx, exp.GetAs<SubqueryTestExp>());
             case Exp::Type::UnaryPredicate:
-                return PrepareUnaryPredicateExp(nativeSqlSnippets, ctx, static_cast<UnaryPredicateExp const*> (&exp));
+                return PrepareUnaryPredicateExp(nativeSqlSnippets, ctx, exp.GetAs<UnaryPredicateExp>());
 
             default:
                 BeAssert(false && "ECSqlPreparer::PrepareBooleanExp> Case not handled");
@@ -280,25 +280,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanExp(NativeSqlBuilder::List& nativeSq
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanFactorExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanFactorExp const& exp)
     {
     NativeSqlBuilder::List operandSqlSnippets;
-    auto status = PrepareBooleanExp(operandSqlSnippets, ctx, *exp->GetOperand());
+    ECSqlStatus status = PrepareBooleanExp(operandSqlSnippets, ctx, *exp.GetOperand());
     if (!status.IsSuccess())
         return status;
 
-    for (auto const& operandSqlSnippet : operandSqlSnippets)
+    for (NativeSqlBuilder const& operandSqlSnippet : operandSqlSnippets)
         {
         NativeSqlBuilder sqlBuilder;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             sqlBuilder.AppendParenLeft();
 
-        if (exp->HasNotOperator())
+        if (exp.HasNotOperator())
             sqlBuilder.Append("NOT ");
 
         sqlBuilder.Append(operandSqlSnippet);
 
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             sqlBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back(move(sqlBuilder));
@@ -311,20 +311,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& exp)
     {
-    ValueExp const* castOperand = exp->GetCastOperand();
-    if (!exp->NeedsCasting())
-        return PrepareValueExp(nativeSqlSnippets, ctx, castOperand);
+    ValueExp const* castOperand = exp.GetCastOperand();
+    if (!exp.NeedsCasting())
+        return PrepareValueExp(nativeSqlSnippets, ctx, *castOperand);
 
     const bool castOperandIsNull = IsNullExp(*castOperand);
     if (castOperandIsNull)
-        return PrepareNullCastExp(nativeSqlSnippets, ctx, *exp);
+        return PrepareNullCastExp(nativeSqlSnippets, ctx, exp);
 
     NativeSqlBuilder::List operandNativeSqlSnippets;
-    const ECSqlStatus stat = PrepareValueExp(operandNativeSqlSnippets, ctx, castOperand);
-        if (!stat.IsSuccess())
-            return stat;
+    const ECSqlStatus stat = PrepareValueExp(operandNativeSqlSnippets, ctx, *castOperand);
+    if (!stat.IsSuccess())
+        return stat;
 
     if (operandNativeSqlSnippets.empty())
         {
@@ -332,13 +332,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         return ECSqlStatus::Error;
         }
 
-    BeAssert(exp->GetTypeInfo().IsPrimitive() && "For now only primitive types supported as CAST target type.");
-    const PrimitiveType targetType = exp->GetTypeInfo().GetPrimitiveType();
+    BeAssert(exp.GetTypeInfo().IsPrimitive() && "For now only primitive types supported as CAST target type.");
+    const PrimitiveType targetType = exp.GetTypeInfo().GetPrimitiveType();
 
     for (size_t i = 0; i < operandNativeSqlSnippets.size(); i++)
         {
         NativeSqlBuilder nativeSqlBuilder;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenLeft();
 
         Utf8String castExpSnippet;
@@ -347,7 +347,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
         nativeSqlBuilder.Append(castExpSnippet.c_str(), false);
 
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back(move(nativeSqlBuilder));
@@ -581,17 +581,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
     switch (exp.GetType())
         {
             case Exp::Type::ClassName:
-                return PrepareClassNameExp(nativeSqlSnippets, ctx, static_cast<ClassNameExp const&>(exp));
+                return PrepareClassNameExp(nativeSqlSnippets, ctx, exp.GetAs<ClassNameExp>());
             case Exp::Type::CrossJoin:
-                return PrepareCrossJoinExp(ctx, static_cast<CrossJoinExp const&>(exp));
+                return PrepareCrossJoinExp(ctx, exp.GetAs<CrossJoinExp>());
             case Exp::Type::ECRelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, static_cast<ECRelationshipJoinExp const&>(exp));
+                return PrepareRelationshipJoinExp(ctx, exp.GetAs<ECRelationshipJoinExp>());
             case Exp::Type::NaturalJoin:
-                return PrepareNaturalJoinExp(ctx, static_cast<NaturalJoinExp const&>(exp));
+                return PrepareNaturalJoinExp(ctx, exp.GetAs<NaturalJoinExp>());
             case Exp::Type::QualifiedJoin:
-                return PrepareQualifiedJoinExp(ctx, static_cast<QualifiedJoinExp const&>(exp));
+                return PrepareQualifiedJoinExp(ctx, exp.GetAs<QualifiedJoinExp>());
             case Exp::Type::SubqueryRef:
-                return PrepareSubqueryRefExp(ctx, static_cast<SubqueryRefExp const*>(&exp));
+                return PrepareSubqueryRefExp(ctx, exp.GetAs<SubqueryRefExp>());
         }
 
     BeAssert(false && "Unhandled ClassRef expression case");
@@ -602,20 +602,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const& exp)
     {
     //all subclasses of BooleanExp are handled by PrepareBooleanExp
-    BooleanExp const* booleanExp = dynamic_cast<BooleanExp const*> (exp);
+    BooleanExp const* booleanExp = dynamic_cast<BooleanExp const*> (&exp);
     if (booleanExp != nullptr)
         return PrepareBooleanExp(nativeSqlSnippets, ctx, *booleanExp);
 
     //all subclasses of ValueExp are handled by PrepareValueExp
-    ValueExp const* valueExp = dynamic_cast<ValueExp const*> (exp);
+    ValueExp const* valueExp = dynamic_cast<ValueExp const*> (&exp);
     if (valueExp != nullptr)
-        return PrepareValueExp(nativeSqlSnippets, ctx, valueExp);
+        return PrepareValueExp(nativeSqlSnippets, ctx, *valueExp);
 
-    if (exp->GetType() == Exp::Type::ValueExpList)
-        return PrepareValueExpListExp(nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp), /* encloseInParentheses = */ true);
+    if (exp.GetType() == Exp::Type::ValueExpList)
+        return PrepareValueExpListExp(nativeSqlSnippets, ctx, exp.GetAs<ValueExpListExp>(), /* encloseInParentheses = */ true);
 
     BeAssert(false && "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
     return ECSqlStatus::Error;
@@ -625,20 +625,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp)
     {
     //WIP_ECSQL: Add support for PointXD
-    ECSqlTypeInfo const& typeInfo = exp->GetTypeInfo();
+    ECSqlTypeInfo const& typeInfo = exp.GetTypeInfo();
     if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
         {
         BeAssert(false && "Preparation of NULL expression must be called in context of the target expression.");
         return ECSqlStatus::Error;
         }
 
-    Utf8StringCR expValue = exp->GetValue();
+    Utf8StringCR expValue = exp.GetValue();
 
     NativeSqlBuilder nativeSqlBuilder;
-    if (exp->HasParentheses())
+    if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
 
     if (typeInfo.IsPrimitive())
@@ -647,7 +647,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
             {
                 case PRIMITIVETYPE_Boolean:
                 {
-                auto nativeSqlBooleanVal = exp->GetValueAsBoolean() ? "1" : "0";
+                Utf8CP nativeSqlBooleanVal = exp.GetValueAsBoolean() ? "1" : "0";
                 nativeSqlBuilder.Append(nativeSqlBooleanVal);
                 break;
                 }
@@ -678,7 +678,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
     else
         nativeSqlBuilder.Append(expValue.c_str());
 
-    if (exp->HasParentheses())
+    if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
     nativeSqlSnippets.push_back(move(nativeSqlBuilder));
@@ -689,7 +689,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareNullLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const* exp, size_t targetExpNativeSqlSnippetCount)
+ECSqlStatus ECSqlExpPreparer::PrepareNullLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp, size_t targetExpNativeSqlSnippetCount)
     {
     if (targetExpNativeSqlSnippetCount == 0)
         {
@@ -699,7 +699,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullLiteralValueExp(NativeSqlBuilder::List&
 
     for (size_t i = 0; i < targetExpNativeSqlSnippetCount; i++)
         {
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             nativeSqlSnippets.push_back(NativeSqlBuilder("(NULL)"));
         else
             nativeSqlSnippets.push_back(NativeSqlBuilder("NULL"));
@@ -723,18 +723,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp const* fromClause)
+ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp const& fromClause)
     {
-    auto& sqlGenerator = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilderR();
 
     sqlGenerator.Append("FROM ");
     bool isFirstItem = true;
-    for (auto classRefExp : fromClause->GetChildren())
+    for (Exp const* classRefExp : fromClause.GetChildren())
         {
         if (!isFirstItem)
             sqlGenerator.AppendComma();
 
-        auto status = PrepareClassRefExp(sqlGenerator, ctx, *static_cast<ClassRefExp const*> (classRefExp));
+        ECSqlStatus status = PrepareClassRefExp(sqlGenerator, ctx, classRefExp->GetAs<ClassRefExp>());
         if (!status.IsSuccess())
             return status;
 
@@ -748,15 +748,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp c
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupByExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupByExp const& exp)
     {
-    if (exp == nullptr)
-        return ECSqlStatus::Success;
-
     ctx.GetSqlBuilderR().Append(" GROUP BY ");
 
     NativeSqlBuilder::List groupingValuesSnippetList;
-    const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp(), /* encloseInParentheses = */ false);
+    const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, *exp.GetGroupingValueListExp(), /* encloseInParentheses = */ false);
     if (!stat.IsSuccess())
         return stat;
 
@@ -768,13 +765,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupB
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareHavingExp(ECSqlPrepareContext& ctx, HavingExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareHavingExp(ECSqlPrepareContext& ctx, HavingExp const& exp)
     {
-    if (exp == nullptr)
-        return ECSqlStatus::Success;
-
     ctx.GetSqlBuilderR().Append(" HAVING ");
-    return PrepareSearchConditionExp(ctx.GetSqlBuilderR(), ctx, *exp->GetSearchConditionExp());
+    return PrepareSearchConditionExp(ctx.GetSqlBuilderR(), ctx, *exp.GetSearchConditionExp());
     }
 
 
@@ -783,9 +777,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareHavingExp(ECSqlPrepareContext& ctx, HavingE
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const& exp)
     {
-    auto stat = PrepareValueExp(nativeSqlSnippets, ctx, exp->GetRhsExp());
+    ECSqlStatus stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetRhsExp());
     if (!stat.IsSuccess())
         return stat;
 
@@ -796,10 +790,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nat
         return ECSqlStatus::Error;
         }
 
-    if (exp->HasEscapeExp())
+    if (exp.HasEscapeExp())
         {
         NativeSqlBuilder::List escapeExpSqlSnippets;
-        auto stat = PrepareValueExp(escapeExpSqlSnippets, ctx, exp->GetEscapeExp());
+        ECSqlStatus stat = PrepareValueExp(escapeExpSqlSnippets, ctx, *exp.GetEscapeExp());
         if (!stat.IsSuccess())
             return stat;
 
@@ -820,25 +814,22 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nat
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp(ECSqlPrepareContext& ctx, LimitOffsetExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp(ECSqlPrepareContext& ctx, LimitOffsetExp const& exp)
     {
-    if (exp == nullptr)
-        return ECSqlStatus::Success;
-
     ctx.GetSqlBuilderR().Append(" LIMIT ");
 
     NativeSqlBuilder::List sqlSnippets;
-    auto stat = PrepareValueExp(sqlSnippets, ctx, exp->GetLimitExp());
+    ECSqlStatus stat = PrepareValueExp(sqlSnippets, ctx, *exp.GetLimitExp());
     if (!stat.IsSuccess())
         return stat;
 
     ctx.GetSqlBuilderR().Append(sqlSnippets[0]);
 
-    if (exp->HasOffset())
+    if (exp.HasOffset())
         {
         ctx.GetSqlBuilderR().Append(" OFFSET ");
         sqlSnippets.clear();
-        auto stat = PrepareValueExp(sqlSnippets, ctx, exp->GetOffsetExp());
+        ECSqlStatus stat = PrepareValueExp(sqlSnippets, ctx, *exp.GetOffsetExp());
         if (!stat.IsSuccess())
             return stat;
 
@@ -862,21 +853,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp(ECSqlPrepareContext& ctx, Na
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderByExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderByExp const& exp)
     {
-    ctx.PushScope(*exp);
+    ctx.PushScope(exp);
 
     NativeSqlBuilder orderBySqlBuilder;
     bool isFirstSpec = true;
-    for (Exp const* child : exp->GetChildren())
+    for (Exp const* child : exp.GetChildren())
         {
-        OrderBySpecExp const* specification = static_cast<OrderBySpecExp const*> (child);
+        OrderBySpecExp const& specification =child->GetAs<OrderBySpecExp>();
 
-        ComputedExp const* sortExp = specification->GetSortExpression();
+        ComputedExp const* sortExp = specification.GetSortExpression();
         NativeSqlBuilder::List sqlSnippets;
         bool isPredicate = dynamic_cast<BooleanExp const*>(sortExp) != nullptr;
         //can validly return empty snippets (e.g. if prop ref maps to virtual column
-        ECSqlStatus r = PrepareComputedExp(sqlSnippets, ctx, sortExp);
+        ECSqlStatus r = PrepareComputedExp(sqlSnippets, ctx, *sortExp);
         if (!r.IsSuccess())
             return r;
 
@@ -892,7 +883,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
                 }
 
             orderBySqlBuilder.Append(sqlSnippet);
-            switch (specification->GetSortDirection())
+            switch (specification.GetSortDirection())
                 {
                     case OrderBySpecExp::SortDirection::Ascending:
                     {
@@ -923,20 +914,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const& exp)
     {
-    BeAssert(exp->GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
+    BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
     
-    Utf8CP parameterName = exp->GetParameterName();
-    auto& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
+    Utf8CP parameterName = exp.GetParameterName();
+    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     int nativeSqlParameterCount = -1;
     ECSqlBinder* binder = nullptr;
-    const auto binderAlreadyExists = exp->IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, parameterName);
+    const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, parameterName);
     if (binderAlreadyExists)
         nativeSqlParameterCount = binder->GetMappedSqlParameterCount();
     else
         {
-        binder = ecsqlParameterMap.AddBinder(ctx, *exp);
+        binder = ecsqlParameterMap.AddBinder(ctx, exp);
         if (binder == nullptr)
             return ECSqlStatus::Error;
 
@@ -946,17 +937,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     for (int i = 0; i < nativeSqlParameterCount; i++)
         {
         NativeSqlBuilder parameterBuilder;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             parameterBuilder.AppendParenLeft();
 
         if (binderAlreadyExists)
             parameterBuilder.AppendParameter(parameterName, i, 0);
         else
             {
-            parameterBuilder.AppendParameter(parameterName, exp->GetParameterIndex(), i, ctx.NextParameterIndex());
+            parameterBuilder.AppendParameter(parameterName, exp.GetParameterIndex(), i, ctx.NextParameterIndex());
             }
 
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             parameterBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back(move(parameterBuilder));
@@ -971,7 +962,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, QualifiedJoinExp const& exp)
     {
-    auto& sqlBuilder = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilderR();
     ECSqlStatus r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetFromClassRef());
     if (!r.IsSuccess())
         return r;
@@ -1012,16 +1003,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
 
     if (exp.GetJoinSpec()->GetType() == Exp::Type::JoinCondition)
         {
-        auto joinCondition = static_cast<JoinConditionExp const*>(exp.GetJoinSpec());
+        JoinConditionExp const& joinCondition = exp.GetJoinSpec()->GetAs<JoinConditionExp>();
         sqlBuilder.Append(" ON ");
 
         NativeSqlBuilder::List sqlSnippets;
-        r = PrepareBooleanExp(sqlSnippets, ctx, *joinCondition->GetSearchCondition());
+        r = PrepareBooleanExp(sqlSnippets, ctx, *joinCondition.GetSearchCondition());
         if (!r.IsSuccess())
             return r;
 
         bool isFirstSnippet = true;
-        for (auto const& sqlSnippet : sqlSnippets)
+        for (NativeSqlBuilder const& sqlSnippet : sqlSnippets)
             {
             if (!isFirstSnippet)
                 sqlBuilder.Append("AND ");
@@ -1047,7 +1038,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const& exp)
     {
     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Query expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
@@ -1064,12 +1055,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     ECSqlStatus r;
 
-    auto& sql = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sql = ctx.GetSqlBuilderR();
 
     ///Resolve direction of the relationship
-    auto& fromEP = exp.GetResolvedFromEndPoint();
-    auto& toEP = exp.GetResolvedToEndPoint();
-    auto direction = exp.GetDirection();
+    ECRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
+    ECRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
+    JoinDirection direction = exp.GetDirection();
 
     enum class TriState
         {
@@ -1088,11 +1079,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                     case JoinDirection::Forward:
                     {
                     fromIsSource = TriState::True;
-                    } break;
+                    } 
+                    break;
                     case JoinDirection::Backward:
                     {
                     fromIsSource = TriState::False;
-                    } break;
+                    } 
+                    break;
                 };
             break;
             }
@@ -1108,7 +1101,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 }
 
             fromIsSource = TriState::True;
-            } break;
+            } 
+            break;
             case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
@@ -1121,7 +1115,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 }
 
             fromIsSource = TriState::False;
-            } break;
+            }
+            break;
         }
 
     PRECONDITION(fromIsSource != TriState::None, ECSqlStatus::Error);
@@ -1139,7 +1134,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         toRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
         }
 
-    auto const& relationshipClassNameExp = exp.GetRelationshipClass();
+    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClass();
 
     //Render previous sql part as is
     r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
@@ -1195,7 +1190,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     
-    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>()->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
     if (fromRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1242,7 +1237,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>()->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
     if (toRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1320,10 +1315,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& native
             {
             //for functions we only support args of single column primitive types so far, therefore an ECSQL NULL
             //always means a single SQLite NULL
-            status = PrepareNullLiteralValueExp(nativeSqlArgumentList, ctx, static_cast<LiteralValueExp const*> (argExp), 1);
+            status = PrepareNullLiteralValueExp(nativeSqlArgumentList, ctx, argExp->GetAs<LiteralValueExp>(), 1);
             }
         else
-            status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
+            status = PrepareValueExp(nativeSqlArgumentList, ctx, argExp->GetAs<ValueExp>());
 
         if (!status.IsSuccess())
             return status;
@@ -1351,8 +1346,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
     bool wrapInParens = false;
     if (searchConditionExp.GetType() == Exp::Type::BinaryBoolean)
         {
-        BinaryBooleanExp const* binaryBoolExp = static_cast<BinaryBooleanExp const*> (&searchConditionExp);
-        if (binaryBoolExp->GetOperator() == BooleanSqlOperator::Or)
+        if (searchConditionExp.GetAs<BinaryBooleanExp>().GetOperator() == BooleanSqlOperator::Or)
             wrapInParens = true;
         }
 
@@ -1371,10 +1365,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const& exp)
     {
     ctx.GetSqlBuilderR().AppendParenLeft();
-    auto stat = ECSqlSelectPreparer::Prepare(ctx, *exp->GetQuery());
+    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *exp.GetQuery());
     ctx.GetSqlBuilderR().AppendParenRight();
     return stat;
     }
@@ -1383,14 +1377,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, SubqueryRefExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, SubqueryRefExp const& exp)
     {
-    auto status = PrepareSubqueryExp(ctx, exp->GetSubquery());
+    ECSqlStatus status = PrepareSubqueryExp(ctx, *exp.GetSubquery());
     if (!status.IsSuccess())
         return status;
 
-    if (!exp->GetAlias().empty())
-        ctx.GetSqlBuilderR().AppendSpace().AppendQuoted(exp->GetAlias().c_str());
+    if (!exp.GetAlias().empty())
+        ctx.GetSqlBuilderR().AppendSpace().AppendQuoted(exp.GetAlias().c_str());
 
     return ECSqlStatus::Success;
     }
@@ -1399,7 +1393,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, Su
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, SubqueryTestExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, SubqueryTestExp const& exp)
     {
     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("SubqueryTest expression not supported.");
     return ECSqlStatus::InvalidECSql;
@@ -1409,11 +1403,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, S
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const& exp)
     {
     Utf8String a = ctx.GetSqlBuilder().ToString();
     ctx.GetSqlBuilderR().Push(true);
-    auto st = PrepareSubqueryExp(ctx, exp->GetQuery());
+    ECSqlStatus st = PrepareSubqueryExp(ctx, *exp.GetQuery());
     nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilderR().Pop().c_str()));
     return st;
     }
@@ -1422,34 +1416,34 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& na
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareUnaryPredicateExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryPredicateExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareUnaryPredicateExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryPredicateExp const& exp)
     {
-    return PrepareValueExp(nativeSqlSnippets, ctx, exp->GetValueExp());
+    return PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetValueExp());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryValueExp const& exp)
     {
     NativeSqlBuilder::List unaryOperandSqlBuilders;
-    auto status = PrepareValueExp(unaryOperandSqlBuilders, ctx, exp->GetOperand());
+    ECSqlStatus status = PrepareValueExp(unaryOperandSqlBuilders, ctx, *exp.GetOperand());
     if (!status.IsSuccess())
         return status;
 
     BeAssert(unaryOperandSqlBuilders.size() <= 1 && "UnaryExp with Points and non-primitive types not supported yet.");
 
-    const UnarySqlOperator unaryOp = exp->GetOperator();
+    const UnarySqlOperator unaryOp = exp.GetOperator();
     for (NativeSqlBuilder const& unaryOperandSqlBuilder : unaryOperandSqlBuilders)
         {
         NativeSqlBuilder unaryExpBuilder;
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             unaryExpBuilder.AppendParenLeft();
 
         unaryExpBuilder.Append(unaryOp).Append(unaryOperandSqlBuilder);
 
-        if (exp->HasParentheses())
+        if (exp.HasParentheses())
             unaryExpBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back(move(unaryExpBuilder));
@@ -1462,30 +1456,30 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativ
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const& exp)
     {
-    switch (exp->GetType())
+    switch (exp.GetType())
         {
             case Exp::Type::BetweenRangeValue:
-                return PrepareBetweenRangeValueExp(nativeSqlSnippets, ctx, static_cast<BetweenRangeValueExp const*> (exp));
+                return PrepareBetweenRangeValueExp(nativeSqlSnippets, ctx, exp.GetAs<BetweenRangeValueExp>());
             case Exp::Type::BinaryValue:
-                return PrepareBinaryValueExp(nativeSqlSnippets, ctx, static_cast<BinaryValueExp const*> (exp));
+                return PrepareBinaryValueExp(nativeSqlSnippets, ctx, exp.GetAs<BinaryValueExp>());
             case Exp::Type::Cast:
-                return PrepareCastExp(nativeSqlSnippets, ctx, static_cast<CastExp const*> (exp));
+                return PrepareCastExp(nativeSqlSnippets, ctx, exp.GetAs<CastExp>());
             case Exp::Type::LiteralValue:
-                return PrepareLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (exp));
+                return PrepareLiteralValueExp(nativeSqlSnippets, ctx, exp.GetAs<LiteralValueExp>());
             case Exp::Type::FunctionCall:
-                return PrepareFunctionCallExp(nativeSqlSnippets, ctx, *static_cast<FunctionCallExp const*> (exp));
+                return PrepareFunctionCallExp(nativeSqlSnippets, ctx, exp.GetAs<FunctionCallExp>());
             case Exp::Type::LikeRhsValue:
-                return PrepareLikeRhsValueExp(nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
+                return PrepareLikeRhsValueExp(nativeSqlSnippets, ctx, exp.GetAs<LikeRhsValueExp>());
             case Exp::Type::Parameter:
-                return PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp));
+                return PrepareParameterExp(nativeSqlSnippets, ctx, exp.GetAs<ParameterExp>());
             case Exp::Type::PropertyName:
-                return ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
+                return ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, exp.GetAs<PropertyNameExp>());
             case Exp::Type::SubqueryValue:
-                return PrepareSubqueryValueExp(nativeSqlSnippets, ctx, static_cast<SubqueryValueExp const*> (exp));
+                return PrepareSubqueryValueExp(nativeSqlSnippets, ctx, exp.GetAs<SubqueryValueExp>());
             case Exp::Type::UnaryValue:
-                return PrepareUnaryValueExp(nativeSqlSnippets, ctx, static_cast<UnaryValueExp const*> (exp));
+                return PrepareUnaryValueExp(nativeSqlSnippets, ctx, exp.GetAs<UnaryValueExp>());
             default:
                 break;
         }
@@ -1498,14 +1492,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, bool encloseInParentheses)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const& exp, bool encloseInParentheses)
     {
     BeAssert(nativeSqlSnippets.empty());
-    auto isFirstExp = true;
-    for (auto valueExp : exp->GetChildren())
+    bool isFirstExp = true;
+    for (Exp const* valueExp : exp.GetChildren())
         {
         NativeSqlBuilder::List listItemExpBuilders;
-        auto stat = PrepareValueExp(listItemExpBuilders, ctx, static_cast<ValueExp const*> (valueExp));
+        auto stat = PrepareValueExp(listItemExpBuilders, ctx, valueExp->GetAs<ValueExp>());
         if (!stat.IsSuccess())
             return stat;
 
@@ -1541,11 +1535,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::List& nat
 // @bsimethod                                    Krischan.Eberle                11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, ValueExpListExp const& exp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists)
     {
     BeAssert(nativeSqlSnippetLists.empty());
     size_t index = 0;
-    for (Exp const* valueExp : exp->GetChildren())
+    for (Exp const* valueExp : exp.GetChildren())
         {
         BeAssert(valueExp != nullptr);
 
@@ -1557,21 +1551,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         //In that case the respective value exp does not need to be prepared either.
         ECSqlStatus stat = ECSqlStatus::Success;
         if (valueExp->IsParameterExp())
-            {
-            BeAssert(dynamic_cast<ParameterExp const*> (valueExp) != nullptr);
-            stat = PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (valueExp));
-            }
+            stat = PrepareParameterExp(nativeSqlSnippets, ctx, valueExp->GetAs<ParameterExp>());
         else if (IsNullExp(*valueExp))
             {
             if (targetNativeSqlSnippetCount > 0)
                 {
                 //if value is null exp, we need to pass target operand snippets
                 BeAssert(dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
-                stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), targetNativeSqlSnippetCount);
+                stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, valueExp->GetAs<LiteralValueExp>(), targetNativeSqlSnippetCount);
                 }
             }
         else if (targetNativeSqlSnippetCount > 0)
-            stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
+            stat = PrepareValueExp(nativeSqlSnippets, ctx, valueExp->GetAs<ValueExp>());
 
         if (!stat.IsSuccess())
             return stat;
@@ -1587,13 +1578,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const& exp)
     {
-    if (exp == nullptr)
-        return ECSqlStatus::Success;
-
     nativeSqlSnippet.Append(" WHERE ");
-    return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp->GetSearchConditionExp());
+    return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp.GetSearchConditionExp());
     }
 
 //-----------------------------------------------------------------------------------------

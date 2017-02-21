@@ -210,7 +210,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     if (propMap == nullptr)
         return SUCCESS;
 
-    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>()->GetColumn());
+    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>().GetColumn());
     if (currentTimeStampColumn.IsShared())
         {
         LOG.warningv("ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
@@ -304,9 +304,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (propertyMap->GetType() == PropertyMap::Type::Navigation)
             {
-            NavigationPropertyMap const* navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
-            if (!navPropertyMap->IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
+            NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap.IsComplete())
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
             }
         }
 
@@ -320,9 +320,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (property->GetIsNavigation())
             {
-            NavigationPropertyMap const* navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
-            if (!navPropertyMap->IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
+            NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap.IsComplete())
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
             }
         }
 
@@ -609,7 +609,7 @@ BentleyStatus ClassMap::Update()
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
             //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>()->GetTable()) != SUCCESS)
+            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
                 {
                 BeAssert(false && "Failed to save table");
                 return ERROR;
@@ -636,7 +636,7 @@ ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     if (propMap == nullptr)
         return nullptr;
 
-    return propMap->GetAs<ECInstanceIdPropertyMap>();
+    return &propMap->GetAs<ECInstanceIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -648,7 +648,7 @@ ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     if (propMap == nullptr)
         return nullptr;
 
-    return propMap->GetAs<ECClassIdPropertyMap>();
+    return &propMap->GetAs<ECClassIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------

@@ -23,7 +23,7 @@ private:
     size_t m_valuesExpIndex;
     bool m_isOriginalPropertyNameListUnset;
 
-    RangeClasssInfo::List m_finalizeParsingArgCache;
+    RangeClassInfo::List m_finalizeParsingArgCache;
 
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;

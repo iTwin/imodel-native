@@ -2019,7 +2019,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         if (colInfo.GetPrimaryKeyOrdinal() > 0)
             {
             pkColumns.push_back(column);
-            pkOrdinals.push_back(static_cast<size_t>(colInfo.GetPrimaryKeyOrdinal() - 1));
+            pkOrdinals.push_back((size_t) (colInfo.GetPrimaryKeyOrdinal() - 1));
             }
 
         if (column->GetName().EqualsIAscii(primaryKeyColName))

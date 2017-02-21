@@ -36,7 +36,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
             }
 
         if (info->GetPrimaryECInstanceIdParameterIndex() > 0)
-            parentOfJoinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECInstanceIdParameterIndex()));
+            parentOfJoinedTableStmt->SetECInstanceIdBinder((int) info->GetPrimaryECInstanceIdParameterIndex());
         }
 
 
@@ -81,9 +81,9 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
         }
 
     if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
-        return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, static_cast<RelationshipClassLinkTableMap const&> (classMap));
+        return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
 
-    return PrepareInsertIntoEndTableRelationship(ctx, nativeSqlSnippets, exp, static_cast<RelationshipClassEndTableMap const&> (classMap));
+    return PrepareInsertIntoEndTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassEndTableMap>());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -206,7 +206,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     size_t index = 0;
     for (Exp const* childExp : propNameListExp->GetChildren())
         {
-        PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (childExp);
+        PropertyNameExp const& propNameExp = childExp->GetAs<PropertyNameExp> ();
 
         NativeSqlBuilder::List nativeSqlSnippets;
         ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
@@ -217,7 +217,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         index++;
         }
 
-    status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp(), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
+    status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, *exp.GetValuesExp(), insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
     if (!status.IsSuccess())
         return status;
 
@@ -440,17 +440,17 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         {
         if (!isEndTableRelationship)
             {
-            LiteralValueExp const* constValueExp = static_cast<LiteralValueExp const*> (valueExp);
-            ECInstanceId instanceId((uint64_t) constValueExp->GetValueAsInt64());
+            LiteralValueExp const& constValueExp = valueExp->GetAs<LiteralValueExp>();
+            ECInstanceId instanceId((uint64_t) constValueExp.GetValueAsInt64());
             preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, instanceId));
             }
         }
     else if (expType == Exp::Type::Parameter)
         {
-        ParameterExp const* paramExp = static_cast<ParameterExp const*> (valueExp);
+        ParameterExp const& paramExp = valueExp->GetAs<ParameterExp>();
 
         ECSqlBinder* ecinstanceidBinder = nullptr;
-        auto stat = preparedStatement->GetParameterMapR ().TryGetBinder(ecinstanceidBinder, paramExp->GetParameterIndex());
+        ECSqlStatus stat = preparedStatement->GetParameterMapR ().TryGetBinder(ecinstanceidBinder, paramExp.GetParameterIndex());
         if (!stat.IsSuccess())
             {
             BeAssert(false && "Could not find ECInstanceId parameter binder.");

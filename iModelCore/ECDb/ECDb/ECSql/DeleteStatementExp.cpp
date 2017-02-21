@@ -37,8 +37,8 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         auto classNameExp = GetClassNameExp ();
-        RangeClasssInfo::List classList;
-        classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
+        RangeClassInfo::List classList;
+        classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
         m_finalizeParsingArgCache = move (classList);
         ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
 

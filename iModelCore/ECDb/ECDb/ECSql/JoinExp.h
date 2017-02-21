@@ -170,7 +170,7 @@ struct ECRelationshipJoinExp final : JoinExp
                 void SetLocation(ClassLocation location, bool append)
                     {
                     if (append)
-                        m_location = static_cast<ClassLocation>(static_cast<int>(m_location) | static_cast<int>(location));
+                        m_location = static_cast<ClassLocation>((int) m_location | (int) location);
                     else
                         m_location = location;
                     }

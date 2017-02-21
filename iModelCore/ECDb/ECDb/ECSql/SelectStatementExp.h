@@ -68,7 +68,7 @@ struct DerivedPropertyExp final : Exp
 struct FromExp final : Exp
     {
     private:
-        void FindRangeClassRefs(RangeClasssInfo::List&, ClassRefExp const&,RangeClasssInfo::Scope) const;
+        void FindRangeClassRefs(RangeClassInfo::List&, ClassRefExp const&,RangeClassInfo::Scope) const;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -80,13 +80,13 @@ struct FromExp final : Exp
 
         BentleyStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
 
-        RangeClasssInfo::List FindRangeClassRefExpressions() const;
+        RangeClassInfo::List FindRangeClassRefExpressions() const;
 
         //-----------------------------------------------------------------------------------------
         // @bsimethod                                    Affan.Khan                       05/2013
         //For subquery it return "" if subquery has no alias
         //+---------------+---------------+---------------+---------------+---------------+------
-        void FindRangeClassRefs(RangeClasssInfo::List&, RangeClasssInfo::Scope scope = RangeClasssInfo::Scope::Local) const;
+        void FindRangeClassRefs(RangeClassInfo::List&, RangeClassInfo::Scope scope = RangeClassInfo::Scope::Local) const;
     };
 
 struct ValueExpListExp;
@@ -217,8 +217,8 @@ struct OrderByExp final : Exp
 struct SelectClauseExp final : Exp
     {
     private:
-        BentleyStatus ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClasssInfo::List const&);
-        BentleyStatus ReplaceAsteriskExpressions(RangeClasssInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpressions(RangeClassInfo::List const&);
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -269,7 +269,7 @@ struct SingleSelectStatementExp final : QueryExp
         int m_limitOffsetClauseIndex;
         int m_optionsClauseIndex;
 
-        RangeClasssInfo::List m_finalizeParsingArgCache;
+        RangeClassInfo::List m_finalizeParsingArgCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 

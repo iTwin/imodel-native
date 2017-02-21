@@ -16,20 +16,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const* exp)
+ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp)
     {
-    BeAssert(exp != nullptr);
-    if (exp->IsPropertyRef())
-        return PrepareInSubqueryRef(nativeSqlSnippets, ctx, *exp);
+    if (exp.IsPropertyRef())
+        return PrepareInSubqueryRef(nativeSqlSnippets, ctx, exp);
 
-    PropertyMap const& propMap = exp->GetPropertyMap();
+    PropertyMap const& propMap = exp.GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
     if (!NeedsPreparation(ctx, currentScope, propMap))
         return ECSqlStatus::Success;
 
     Utf8String classIdentifier;
-    ECSqlStatus stat = DetermineClassIdentifier(classIdentifier, currentScope, *exp, propMap);
+    ECSqlStatus stat = DetermineClassIdentifier(classIdentifier, currentScope, exp, propMap);
     if (!stat.IsSuccess())
         return stat;
 
@@ -38,13 +37,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Delete)
         {
         if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause) &&
-            propMap.IsSystem() && propMap.GetAs<SystemPropertyMap>()->GetTables().size() > 1)
+            propMap.IsSystem() && propMap.GetAs<SystemPropertyMap>().GetTables().size() > 1)
             {
-            BeAssert(exp->GetClassRefExp()->GetType() == Exp::Type::ClassName);
-            if (exp->GetClassRefExp()->GetType() != Exp::Type::ClassName)
+            BeAssert(exp.GetClassRefExp()->GetType() == Exp::Type::ClassName);
+            if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
                 return ECSqlStatus::Error;
 
-            ClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
+            ClassMap const& classMap = exp.GetClassRefExp()->GetAs<ClassNameExp>().GetInfo().GetMap();
             if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
                 {
                 ECClassId rootClassId = classMap.GetTphHelper()->DetermineTphRootClassId();
@@ -66,10 +65,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     switch (effectivePropMap->GetType())
         {
             case PropertyMap::Type::ConstraintECClassId:
-                return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, *exp, *effectivePropMap->GetAs<ConstraintECClassIdPropertyMap>(), classIdentifier.c_str());
+                return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, exp, effectivePropMap->GetAs<ConstraintECClassIdPropertyMap>(), classIdentifier.c_str());
 
             default:
-                PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, *exp, *effectivePropMap, classIdentifier.c_str());
+                PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, exp, *effectivePropMap, classIdentifier.c_str());
                 return ECSqlStatus::Success;
         }
     }
@@ -90,7 +89,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         }
  
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
+    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? &propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
     const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount();
 

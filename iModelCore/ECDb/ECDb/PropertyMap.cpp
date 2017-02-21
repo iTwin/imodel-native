@@ -181,7 +181,7 @@ DataPropertyMap const* CompoundDataPropertyMap::Find(Utf8CP accessString) const
     if (propMap == nullptr)
         return nullptr;
 
-    return propMap->GetAs<DataPropertyMap>();
+    return &propMap->GetAs<DataPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -326,7 +326,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
     {
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<PrimitivePropertyMap>();
+    return propMap->GetAs<PrimitivePropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -336,7 +336,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetY() const
     {
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<PrimitivePropertyMap>();
+    return propMap->GetAs<PrimitivePropertyMap>();
     }
 
 //************************************Point3dPropertyMap********************
@@ -413,7 +413,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
     {
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<PrimitivePropertyMap>();
+    return propMap->GetAs<PrimitivePropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -423,7 +423,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetY() const
     {
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<PrimitivePropertyMap>();
+    return propMap->GetAs<PrimitivePropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -433,7 +433,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetZ() const
     {
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<PrimitivePropertyMap>();
+    return propMap->GetAs<PrimitivePropertyMap>();
     }
 
 //************************************StructPropertyMap********************
@@ -490,7 +490,7 @@ NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdProperty
     BeAssert(m_isComplete);
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<IdPropertyMap>();
+    return propMap->GetAs<IdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -501,7 +501,7 @@ NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::Get
     BeAssert(m_isComplete);
     PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
     BeAssert(propMap != nullptr);
-    return *propMap->GetAs<RelECClassIdPropertyMap>();
+    return propMap->GetAs<RelECClassIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -653,14 +653,14 @@ RefCountedPtr<SystemPropertyMap> PropertyMapCopier::CreateCopy(SystemPropertyMap
         return ECInstanceIdPropertyMap::CreateInstance(newContext, columns);
 
     if (propertyMap.GetType() == PropertyMap::Type::ECClassId)
-        return ECClassIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ECClassIdPropertyMap>()->GetDefaultECClassId(), columns);
+        return ECClassIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ECClassIdPropertyMap>().GetDefaultECClassId(), columns);
 
     if (propertyMap.GetType() == PropertyMap::Type::ConstraintECInstanceId)
-        return ConstraintECInstanceIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>()->GetEnd(), columns);
+        return ConstraintECInstanceIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>().GetEnd(), columns);
 
     if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
         {
-        ConstraintECClassIdPropertyMap const& constraintECClassIdPropMap = *propertyMap.GetAs<ConstraintECClassIdPropertyMap>();
+        ConstraintECClassIdPropertyMap const& constraintECClassIdPropMap = propertyMap.GetAs<ConstraintECClassIdPropertyMap>();
         return ConstraintECClassIdPropertyMap::CreateInstance(newContext, constraintECClassIdPropMap.GetDefaultECClassId(), constraintECClassIdPropMap.GetEnd(), columns);
         }
 
@@ -693,35 +693,35 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
         {
             case PropertyMap::Type::Primitive:
             {
-            PrimitivePropertyMap const& primPropMap = *propertyMap.GetAs<PrimitivePropertyMap>();
+            PrimitivePropertyMap const& primPropMap = propertyMap.GetAs<PrimitivePropertyMap>();
             PrimitiveECPropertyCP prop = primPropMap.GetProperty().GetAsPrimitiveProperty();
             return PrimitivePropertyMap::CreateInstance(newContext, parentPropMap, *prop, primPropMap.GetColumn());
             }
 
             case PropertyMap::Type::Point2d:
             {
-            Point2dPropertyMap const& ptPropMap = *propertyMap.GetAs<Point2dPropertyMap>();
+            Point2dPropertyMap const& ptPropMap = propertyMap.GetAs<Point2dPropertyMap>();
             PrimitiveECPropertyCP prop = ptPropMap.GetProperty().GetAsPrimitiveProperty();
             return Point2dPropertyMap::CreateInstance(newContext, parentPropMap, *prop, ptPropMap.GetX().GetColumn(), ptPropMap.GetY().GetColumn());
             }
 
             case PropertyMap::Type::Point3d:
             {
-            Point3dPropertyMap const& ptPropMap = *propertyMap.GetAs<Point3dPropertyMap>();
+            Point3dPropertyMap const& ptPropMap = propertyMap.GetAs<Point3dPropertyMap>();
             PrimitiveECPropertyCP prop = ptPropMap.GetProperty().GetAsPrimitiveProperty();
             return Point3dPropertyMap::CreateInstance(newContext, parentPropMap, *prop, ptPropMap.GetX().GetColumn(), ptPropMap.GetY().GetColumn(), ptPropMap.GetZ().GetColumn());
             }
 
             case PropertyMap::Type::PrimitiveArray:
             {
-            PrimitiveArrayPropertyMap const& arrayPropMap = *propertyMap.GetAs<PrimitiveArrayPropertyMap>();
+            PrimitiveArrayPropertyMap const& arrayPropMap = propertyMap.GetAs<PrimitiveArrayPropertyMap>();
             PrimitiveArrayECPropertyCP prop = arrayPropMap.GetProperty().GetAsPrimitiveArrayProperty();
             return PrimitiveArrayPropertyMap::CreateInstance(newContext, parentPropMap, *prop, arrayPropMap.GetColumn());
             }
 
             case PropertyMap::Type::StructArray:
             {
-            StructArrayPropertyMap const& arrayPropMap = *propertyMap.GetAs<StructArrayPropertyMap>();
+            StructArrayPropertyMap const& arrayPropMap = propertyMap.GetAs<StructArrayPropertyMap>();
             StructArrayECPropertyCP prop = arrayPropMap.GetProperty().GetAsStructArrayProperty();
             return StructArrayPropertyMap::CreateInstance(newContext, parentPropMap, *prop, arrayPropMap.GetColumn());
             }
@@ -729,7 +729,7 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
             case PropertyMap::Type::Struct:
             {
             StructPropertyMapBuilder builder(newContext, parentPropMap, *propertyMap.GetProperty().GetAsStructProperty());
-            StructPropertyMap const& structPropMap = *propertyMap.GetAs<StructPropertyMap>();
+            StructPropertyMap const& structPropMap = propertyMap.GetAs<StructPropertyMap>();
             for (DataPropertyMap const* memberPropMap : structPropMap)
                 {
                 RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &builder.GetPropertyMapUnderConstruction());
@@ -765,7 +765,7 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
                 return nullptr;
                 }
 
-            NavigationPropertyMap const& navPropMap = *propertyMap.GetAs<NavigationPropertyMap>();
+            NavigationPropertyMap const& navPropMap = propertyMap.GetAs<NavigationPropertyMap>();
             if (navPropMap.IsComplete())
                 {
                 NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = navPropMap.GetRelECClassIdPropertyMap();

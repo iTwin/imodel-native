@@ -142,7 +142,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         if (relIt == relClassIds.end())
             relClassIds[relationshipId] = end;
         else
-            relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
+            relClassIds[relationshipId] = (RelationshipEnd) ((int) (relIt->second) | (int) (end));
         }
 
     return relClassIds;
@@ -186,7 +186,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         if (constraintIt == constraintClassIds.end())
             constraintClassIds[constraintClassId] = end;
         else
-            constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int) (constraintIt->second) | (int) (end));
+            constraintClassIds[constraintClassId] = (RelationshipEnd) ((int) (constraintIt->second) | (int) (end));
         }
 
     return constraintClassIds;
@@ -387,7 +387,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     std::set<ECClassId> derviedClassSet;
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
+        RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
         for (DbTable const* endTable : relClassMap.GetTables())
             {
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
