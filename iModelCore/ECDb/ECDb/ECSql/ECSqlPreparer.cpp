@@ -605,12 +605,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const* exp)
     {
     //all subclasses of BooleanExp are handled by PrepareBooleanExp
-    auto booleanExp = dynamic_cast<BooleanExp const*> (exp);
+    BooleanExp const* booleanExp = dynamic_cast<BooleanExp const*> (exp);
     if (booleanExp != nullptr)
         return PrepareBooleanExp(nativeSqlSnippets, ctx, *booleanExp);
 
     //all subclasses of ValueExp are handled by PrepareValueExp
-    auto valueExp = dynamic_cast<ValueExp const*> (exp);
+    ValueExp const* valueExp = dynamic_cast<ValueExp const*> (exp);
     if (valueExp != nullptr)
         return PrepareValueExp(nativeSqlSnippets, ctx, valueExp);
 
@@ -628,14 +628,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeS
 ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const* exp)
     {
     //WIP_ECSQL: Add support for PointXD
-    auto const& typeInfo = exp->GetTypeInfo();
+    ECSqlTypeInfo const& typeInfo = exp->GetTypeInfo();
     if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
         {
         BeAssert(false && "Preparation of NULL expression must be called in context of the target expression.");
         return ECSqlStatus::Error;
         }
 
-    auto expValue = exp->GetValue().c_str();
+    Utf8StringCR expValue = exp->GetValue();
 
     NativeSqlBuilder nativeSqlBuilder;
     if (exp->HasParentheses())
@@ -645,10 +645,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
         {
         switch (typeInfo.GetPrimitiveType())
             {
-                case PRIMITIVETYPE_Binary:
-                    nativeSqlBuilder.Append("X").Append(expValue);
-                    break;
-
                 case PRIMITIVETYPE_Boolean:
                 {
                 auto nativeSqlBooleanVal = exp->GetValueAsBoolean() ? "1" : "0";
@@ -661,10 +657,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
                 //Note: CURRENT_TIMESTAMP in SQLite returns a UTC timestamp. ECSQL specifies CURRENT_TIMESTAMP as UTC, too,
                 //so no conversion needed.
                 nativeSqlBuilder.Append("JULIANDAY (");
-                if (BeStringUtilities::Strnicmp(expValue, "CURRENT", 7) == 0)
-                    nativeSqlBuilder.Append(expValue);
+                if (expValue.StartsWithIAscii("CURRENT"))
+                    nativeSqlBuilder.Append(expValue.c_str());
                 else
-                    nativeSqlBuilder.AppendQuoted(expValue);
+                    nativeSqlBuilder.AppendQuoted(expValue.c_str());
 
                 nativeSqlBuilder.AppendParenRight();
                 break;
@@ -675,12 +671,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
                     break;
 
                 default:
-                    nativeSqlBuilder.Append(expValue);
+                    nativeSqlBuilder.Append(expValue.c_str());
                     break;
             }
         }
     else
-        nativeSqlBuilder.Append(expValue);
+        nativeSqlBuilder.Append(expValue.c_str());
 
     if (exp->HasParentheses())
         nativeSqlBuilder.AppendParenRight();
@@ -872,20 +868,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
 
     NativeSqlBuilder orderBySqlBuilder;
     bool isFirstSpec = true;
-    for (auto const child : exp->GetChildren())
+    for (Exp const* child : exp->GetChildren())
         {
-        auto specification = static_cast<OrderBySpecExp const*> (child);
+        OrderBySpecExp const* specification = static_cast<OrderBySpecExp const*> (child);
 
-        auto sortExp = specification->GetSortExpression();
+        ComputedExp const* sortExp = specification->GetSortExpression();
         NativeSqlBuilder::List sqlSnippets;
         bool isPredicate = dynamic_cast<BooleanExp const*>(sortExp) != nullptr;
         //can validly return empty snippets (e.g. if prop ref maps to virtual column
-        auto r = PrepareComputedExp(sqlSnippets, ctx, sortExp);
+        ECSqlStatus r = PrepareComputedExp(sqlSnippets, ctx, sortExp);
         if (!r.IsSuccess())
             return r;
 
         bool isFirstSnippet = true;
-        for (auto const& sqlSnippet : sqlSnippets)
+        for (NativeSqlBuilder const& sqlSnippet : sqlSnippets)
             {
             if (!isFirstSpec)
                 {

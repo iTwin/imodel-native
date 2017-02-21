@@ -5438,52 +5438,6 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan Eberle                     02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SelectFromMixin)
-    {
-    ECDbCR ecdb = SetupECDb("selectfrommixinerror.ecdb", SchemaItem("<?xml version = '1.0' encoding = 'utf-8'?>"
-                                                                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                                    "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
-                                                                    "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                                                    "  <ECEntityClass typeName='Base' modifier='Abstract' >"
-                                                                    "    <ECCustomAttributes>"
-                                                                    "        <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                    "            <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                    "        </ClassMap>"
-                                                                    "        <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                                                    "        <ShareColumns xmlns='ECDbMap.02.00'/>"
-                                                                    "    </ECCustomAttributes>"
-                                                                    "    <ECProperty propertyName='Base_Prop1' typeName='string' />"
-                                                                    "  </ECEntityClass>"
-                                                                    "  <ECEntityClass typeName='Sub1' modifier='Abstract'>"
-                                                                    "    <BaseClass>Base</BaseClass>"
-                                                                    "    <ECProperty propertyName='Sub1_Prop1' typeName='string' />"
-                                                                    "  </ECEntityClass>"
-                                                                    "  <ECEntityClass typeName='IMixin' modifier='Abstract'>"
-                                                                    "        <ECCustomAttributes>"
-                                                                    "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                                                    "            <AppliesToEntityClass>Sub1</AppliesToEntityClass>"
-                                                                    "          </IsMixin>"
-                                                                    "        </ECCustomAttributes>"
-                                                                    "    <ECProperty propertyName='IMixin_Prop1' typeName='string' />"
-                                                                    "  </ECEntityClass>"
-                                                                    "  <ECEntityClass typeName='Sub12' modifier='Abstract'>"
-                                                                    "    <BaseClass>Sub1</BaseClass>"
-                                                                    "    <ECProperty propertyName='Sub12_Prop1' typeName='string' />"
-                                                                    "  </ECEntityClass>"
-                                                                    "  <ECEntityClass typeName='MyClass' >"
-                                                                    "    <BaseClass>Sub12</BaseClass>"
-                                                                    "    <BaseClass>IMixin</BaseClass>"
-                                                                    "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
-                                                                    "  </ECEntityClass>"
-                                                                    "</ECSchema>"));
-
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?"));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
@@ -12633,11 +12587,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour1]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB1 FROM Foo.IBehaviour1 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-3", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-4", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-5", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-6", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-7", stmt.GetValueText(0));
@@ -12647,11 +12600,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour2]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-4", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-4", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-5", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-6", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -12659,11 +12611,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour3]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB3 FROM Foo.IBehaviour3 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-3", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-4", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }
@@ -12743,7 +12694,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(43, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -12853,17 +12804,17 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(54, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFaceA ORDER BY P2 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFaceA ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(23, stmt.GetValueInt64(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(22, stmt.GetValueInt64(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(23, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P3 FROM ts.IXFaceB ORDER BY P3 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P3 FROM ts.IXFaceB ORDER BY P3 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(31, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());

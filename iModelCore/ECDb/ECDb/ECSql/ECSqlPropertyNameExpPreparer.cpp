@@ -74,10 +74,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         }
     }
 
-//Alias
-//  UPDATE
-//  INSERT
-//  DELETE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -107,7 +103,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         switch (currentScope.GetExp().GetType())
             {
                 case Exp::Type::AssignmentList: //UPDATE SET clause
-                case Exp::Type::OrderBy:
                     return false;
             }
         }
