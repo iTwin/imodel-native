@@ -725,3 +725,16 @@ Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
     return tileToSheet;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
+    {
+    auto findViewOfSheet = db.GetPreparedECSqlStatement(
+        "SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView"
+        " WHERE (sheetView.BaseModel.Id = ?)");
+    findViewOfSheet->BindId(1, mid);
+    if (BE_SQLITE_ROW != findViewOfSheet->Step())
+        return DgnElementId();
+    return findViewOfSheet->GetValueId<DgnElementId>(0);
+    }

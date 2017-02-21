@@ -1781,6 +1781,7 @@ TEST_F(DgnElementTests, FederationGuid)
 TEST_F(DgnElementTests, PhysicalTypeCRUD)
     {
     SetupSeedProject();
+    DefinitionModelPtr typeModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "PhysicalTypes");
 
     DgnClassId physicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
     ASSERT_TRUE(physicalTypeRelClassId.IsValid());
@@ -1791,9 +1792,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     // insert some sample PhysicalTypes
     for (int32_t i=0; i<_countof(physicalTypeId); i++)
         {
-        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*m_db);
+        Utf8PrintfString name("PhysicalType%" PRIi32, i);
+        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*typeModel, name.c_str());
         ASSERT_TRUE(physicalType.IsValid());
-        physicalType->SetUserLabel(Utf8PrintfString("PhysicalType%d", i).c_str());
         physicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
         physicalType->SetIntProperty(i);
         ASSERT_TRUE(physicalType->Insert().IsValid());
@@ -1884,6 +1885,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 TEST_F(DgnElementTests, GraphicalType2dCRUD)
     {
     SetupSeedProject();
+    DefinitionModelPtr typesModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "GraphicalTypes");
 
     DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
     ASSERT_TRUE(graphicalTypeRelClassId.IsValid());
@@ -1891,12 +1893,11 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
     DgnElementId graphicalTypeId[3];
     DgnElementId elementId;
 
-    // insert some sample GraphicalType2ds
+    // insert some sample GraphicalTypes
     for (int32_t i=0; i<_countof(graphicalTypeId); i++)
         {
-        TestGraphicalType2dPtr graphicalType = TestGraphicalType2d::Create(*m_db);
+        TestGraphicalType2dPtr graphicalType = TestGraphicalType2d::Create(*typesModel, Utf8PrintfString("GraphicalType%d", i).c_str());
         ASSERT_TRUE(graphicalType.IsValid());
-        graphicalType->SetUserLabel(Utf8PrintfString("GraphicalType2d%d", i).c_str());
         graphicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
         graphicalType->SetIntProperty(i);
         ASSERT_TRUE(graphicalType->Insert().IsValid());

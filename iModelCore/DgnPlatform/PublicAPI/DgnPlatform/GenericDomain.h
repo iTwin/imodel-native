@@ -14,11 +14,17 @@ DGNPLATFORM_TYPEDEFS(GenericGroup)
 DGNPLATFORM_TYPEDEFS(GenericGroupModel)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
+DGNPLATFORM_TYPEDEFS(GenericCallout)
+DGNPLATFORM_TYPEDEFS(GenericDetailingSymbol)
+DGNPLATFORM_TYPEDEFS(GenericViewAttachmentLabel)
 
 DGNPLATFORM_REF_COUNTED_PTR(GenericGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericGroupModel)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
+DGNPLATFORM_REF_COUNTED_PTR(GenericCallout)
+DGNPLATFORM_REF_COUNTED_PTR(GenericDetailingSymbol)
+DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 
 #define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
 #define GENERIC_DOMAIN_NAME                 "Generic"
@@ -72,6 +78,121 @@ public:
     //! Import the ECSchema for the GenericDomain into the specified DgnDb
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 };
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericDetailingSymbol : GraphicalElement2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_DetailingSymbol, GraphicalElement2d);
+public:
+    explicit GenericDetailingSymbol(CreateParams const& params) : T_Super(params) {} 
+};
+
+//=======================================================================================
+//! Specifies that more information about the graphics on a sheet may be or should be 
+//! found on another sheet.
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericCallout : GenericDetailingSymbol
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Callout, GenericDetailingSymbol);
+public:
+    explicit GenericCallout(CreateParams const& params) : T_Super(params) {} 
+
+    //! Get the drawing model that fulfills this callout
+    DgnModelId GetDrawingModel() const {return GetPropertyValueId<DgnModelId>(GENERIC_Callout_DrawingModel);}
+    //! Set the drawing model that fulfills this callout
+    DgnDbStatus SetDrawingModel(DgnModelId v) {return SetPropertyValue(GENERIC_Callout_DrawingModel, v);}
+
+    //! Look up the Sheet::ViewAttachment on the sheet that shows the drawing that is referenced by this callout. This is the reverse of GenericViewAttachmentLabel::FindCallout.
+    DGNPLATFORM_EXPORT DgnElementId FindViewAttachment() const;
+};
+
+//=======================================================================================
+//! Identifies a ViewAttachment on a sheet as a labelled callout drawing.
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericViewAttachmentLabel : GenericDetailingSymbol
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_ViewAttachmentLabel, GenericDetailingSymbol);
+public:
+    explicit GenericViewAttachmentLabel(CreateParams const& params) : T_Super(params) {} 
+
+    //! Get the ViewAttachment that is annotated by this label
+    DgnElementId GetViewAttachment() const {return GetPropertyValueId<DgnElementId>(GENERIC_ViewAttachmentLabel_ViewAttachment);}
+
+    //! Convenience method to look up the ViewAttachment element
+    Sheet::ViewAttachmentCPtr GetViewAttachmentElement() const {return GetDgnDb().Elements().Get<Sheet::ViewAttachment>(GetViewAttachment());}
+
+    //! Set the ViewAttachment that is annotated by this label
+    DgnDbStatus SetViewAttachment(DgnElementId v) {return SetPropertyValue(GENERIC_ViewAttachmentLabel_ViewAttachment, v);}
+
+    //! Look up the ViewAttachmentLabel that labels the specified ViewAttachment. This is the reverse of GetViewAttachment.
+    DGNPLATFORM_EXPORT static DgnElementId FindFromViewAttachment(DgnDbR, DgnElementId viewAttachmentId);
+
+    //! Look up the ViewAttachmentLabel that labels the specified ViewAttachment. This is the reverse of GetViewAttachment.
+    static DgnElementId FindFromViewAttachment(Sheet::ViewAttachmentCR va) {return FindFromViewAttachment(va.GetDgnDb(), va.GetElementId());}
+
+    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of this ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    DgnElementId FindCallout() const {auto va = GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): DgnElementId();}
+
+    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    DGNPLATFORM_EXPORT static DgnElementId FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+};
+
+//=======================================================================================
+//! Information about where the called out drawing is displayed. 
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutDestination
+    {
+    private:
+    GenericViewAttachmentLabelCPtr m_viewAttachmentLabel;
+    DrawingModelCPtr m_drawingModel;
+    Sheet::ViewAttachmentCPtr m_viewAttachment;
+    SheetViewDefinitionCPtr m_sheetView;
+
+    public:
+    //! Find the drawing that is referenced by the callout, and locate the exact area of the sheet that it displays the drawing and the view of the sheet.
+    //! This is the reverse of GenericCalloutLocation::FindCalloutFor.
+    DGNPLATFORM_EXPORT static GenericCalloutDestination FindDestinationOf(GenericCalloutCR callout);
+
+    //! The drawing that is referenced by the callout
+    DrawingModelCPtr GetDrawingModel() const {return m_drawingModel;}
+    //! The label for the drawing
+    GenericViewAttachmentLabelCP GetViewAttachmentLabel() const {return m_viewAttachmentLabel.get();}
+    //! The area of the sheet that dislays the drawing. Note that the model that contains the returned ViewAttachment 
+    //! is the Sheet::Model to which the view of the drawing it attached.
+    Sheet::ViewAttachmentCP GetViewAttachment() const {return m_viewAttachment.get();} 
+    //! The view of the sheet that displays the drawing
+    SheetViewDefinitionCP GetSheetView() const {return m_sheetView.get();} 
+    };
+
+//=======================================================================================
+//! Information about where a callout is located and displayed. 
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutLocation
+    {
+    private:
+    GenericCalloutCPtr m_callout;
+    SheetViewDefinitionCPtr m_sheetView;
+
+    public:
+    //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
+    //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
+    DGNPLATFORM_EXPORT static GenericCalloutLocation FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+
+    //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
+    //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
+    static GenericCalloutLocation FindCalloutFor(GenericViewAttachmentLabelCR label) {auto va = label.GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): GenericCalloutLocation();}
+
+    //! The callout. The sheet that contains the callout is the model of the returned element.
+    GenericCalloutCP GetCallout() const {return m_callout.get();}
+    //! The view of the sheet that contains the callout
+    SheetViewDefinitionCP GetSheetView() const {return m_sheetView.get();} 
+    };
 
 //=======================================================================================
 //! A generic GenericGraphic3d is used by a conversion process when:
@@ -165,7 +286,7 @@ protected:
     explicit GenericGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static GenericGroupPtr Create(GenericGroupModelCR model, DgnCodeCR code = DgnCode());
+    DGNPLATFORM_EXPORT static GenericGroupPtr Create(GenericGroupModelR model, DgnCodeCR code = DgnCode());
 };
 
 //=======================================================================================
@@ -188,6 +309,24 @@ namespace generic_ModelHandler
 //=======================================================================================
 namespace generic_ElementHandler
 {
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericDetailingSymbolHandler : dgn_ElementHandler::Geometric2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_DetailingSymbol, GenericDetailingSymbol, GenericDetailingSymbolHandler, dgn_ElementHandler::Geometric2d, DGNPLATFORM_EXPORT)
+    };
+
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutHandler : GenericDetailingSymbolHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Callout, GenericCallout, GenericCalloutHandler, GenericDetailingSymbolHandler, DGNPLATFORM_EXPORT)
+    };
+
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericViewAttachmentLabelHandler : GenericDetailingSymbolHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_ViewAttachmentLabel, GenericViewAttachmentLabel, GenericViewAttachmentLabelHandler, GenericDetailingSymbolHandler, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for GenericGraphic3d
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3dHandler : dgn_ElementHandler::Geometric3d

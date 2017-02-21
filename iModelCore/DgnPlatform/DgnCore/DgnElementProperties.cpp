@@ -572,30 +572,22 @@ void ElementAutoHandledPropertiesECInstanceAdapter::SetDirty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
     {
+    // Thread-safety - Since properties are lazy-loaded, we must double-check and then do the loading all within a mutex
+    BeMutexHolder _v_(m_element.GetDgnDb().Elements().GetMutex());
+
+    if (DgnElement::PropState::Unknown != m_element.m_flags.m_propState)
+        return BSISUCCESS;
+
+    //  We need to load the auto-handled properties into memory
     BeAssert(IsValid());
     BeAssert(DgnElement::PropState::Unknown == m_element.m_flags.m_propState);
     
     ECSqlClassInfo& classInfo = m_element.GetDgnDb().Elements().FindClassInfo(m_element); // Note: This "Find" method will create a ClassInfo if necessary
-    if (classInfo.GetSelectEcPropsECSql().empty())
+    auto const& selectProps = m_element.GetDgnDb().Elements().GetSelectEcPropsECSql(classInfo, *m_eclass);
+    if (selectProps.empty())
         {
-        Utf8String props;
-        Utf8CP comma = "";
-        bvector<ECN::ECPropertyCP> autoHandledProperties;
-        for (auto prop : AutoHandledPropertiesCollection(*m_eclass, m_element.GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
-            {
-            Utf8StringCR propName = prop->GetName();
-            props.append(comma).append("[").append(propName).append("]");
-            comma = ",";
-            }
-
-        if (props.empty())
-            {
-            m_element.m_flags.m_propState = DgnElement::PropState::NotFound;
-            return BSIERROR;
-            }
-
-        classInfo.SetSelectEcPropsECSql(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter", 
-                                                             props.c_str(), m_eclass->GetECSqlName().c_str()));
+        m_element.m_flags.m_propState = DgnElement::PropState::NotFound;
+        return BSIERROR;
         }
 
     // *********************************************************************************************************
@@ -609,7 +601,7 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         AllocateBuffer(CalculateInitialAllocation(_GetClassLayout()));
         }
 
-    CachedECSqlStatementPtr stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
+    CachedECSqlStatementPtr stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(selectProps.c_str());
     if (stmt == nullptr)
         return BSIERROR;
 
@@ -702,6 +694,8 @@ void ECInstanceUpdaterCache::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, ECN::ECClassCR eclass)
     {
+    BeMutexHolder _v_(db.Elements().GetMutex());
+
     DgnClassId eclassId(eclass.GetId().GetValue());
   
     auto iupdater = m_updaters.find(eclassId);
@@ -1283,7 +1277,7 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DgnElementId id, DgnClassId relClassId)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECInstanceId id, DgnClassId relClassId)
     {
     ECValue value;
     if (id.IsValid())

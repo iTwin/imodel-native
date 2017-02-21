@@ -43,6 +43,9 @@ public:
 
     //! Create a SheetModel that breaks down the specified Sheet element
     DGNPLATFORM_EXPORT static ModelPtr Create(ElementCR sheet);
+
+    //! Find the first SheetViewDefinition that displays the specified sheet model.
+    DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 };
 
 //=======================================================================================

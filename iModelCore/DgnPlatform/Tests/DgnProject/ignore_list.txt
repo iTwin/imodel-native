@@ -27,3 +27,7 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
+
+#TFS 663732
+GetSetCustomHandledProprty.2dElementProprties
+GetSetCustomHandledProprty.3dElementProprties

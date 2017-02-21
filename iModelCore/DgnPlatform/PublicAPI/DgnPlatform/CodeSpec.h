@@ -23,11 +23,15 @@
 #define BIS_CODESPEC_Drawing                        BIS_CODESPEC(BIS_CLASS_Drawing)
 #define BIS_CODESPEC_DrawingCategory                BIS_CODESPEC(BIS_CLASS_DrawingCategory)
 #define BIS_CODESPEC_GeometryPart                   BIS_CODESPEC(BIS_CLASS_GeometryPart)
+#define BIS_CODESPEC_GraphicalType2d                BIS_CODESPEC(BIS_CLASS_GraphicalType2d)
+#define BIS_CODESPEC_GraphicalRecipe2d              BIS_CODESPEC(BIS_CLASS_GraphicalRecipe2d)
 #define BIS_CODESPEC_LightDefinition                BIS_CODESPEC(BIS_CLASS_LightDefinition)
 #define BIS_CODESPEC_LineStyle                      BIS_CODESPEC(BIS_CLASS_LineStyle)
 #define BIS_CODESPEC_LinkElement                    BIS_CODESPEC(BIS_CLASS_LinkElement)
 #define BIS_CODESPEC_MaterialElement                BIS_CODESPEC(BIS_CLASS_MaterialElement)
 #define BIS_CODESPEC_ModelSelector                  BIS_CODESPEC(BIS_CLASS_ModelSelector)
+#define BIS_CODESPEC_PhysicalType                   BIS_CODESPEC(BIS_CLASS_PhysicalType)
+#define BIS_CODESPEC_PhysicalRecipe                 BIS_CODESPEC(BIS_CLASS_PhysicalRecipe)
 #define BIS_CODESPEC_InformationPartitionElement    BIS_CODESPEC(BIS_CLASS_InformationPartitionElement)
 #define BIS_CODESPEC_Session                        BIS_CODESPEC(BIS_CLASS_Session)
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
@@ -135,6 +139,7 @@ typedef bvector<Utf8String> CodeFragmentStringList;
 typedef CodeFragmentStringList const& CodeFragmentStringListCR;
 
 //=======================================================================================
+//! A CodeSpec captures the rules for encoding and decoding significant business information into and from a Code (string). 
 //! A CodeSpec determines how DgnCodes for elements are generated and validated.
 //! There are 2 general types of codes:
 //!   - User/Application-supplied: The user/application supplies a DgnCode and the CodeSpec

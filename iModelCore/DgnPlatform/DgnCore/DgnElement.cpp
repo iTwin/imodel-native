@@ -457,9 +457,9 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
-    if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
+    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !label || !*label)
         return nullptr;
 
     SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
@@ -790,6 +790,60 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
         }
 
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingGraphicPtr DrawingGraphic::Create(GraphicalModel2dCR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::DrawingGraphic::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+NestedTypeLocation2dPtr NestedTypeLocation2d::Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR nestedType, DPoint2dCR location)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::NestedTypeLocation2d::GetHandler());
+    DgnClassId relClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_NestedTypeLocation2dRefersToType);
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
+        return nullptr;
+
+    NestedTypeLocation2dPtr nestedTypeLocation = new NestedTypeLocation2d(CreateParams(db, model.GetModelId(), classId, categoryId));
+    if (!nestedTypeLocation.IsValid())
+        return nullptr;
+
+    ICurvePrimitivePtr point = ICurvePrimitive::CreateLine(DSegment3d::From(location, location));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*nestedTypeLocation);
+    if (!point.IsValid() || !builder.IsValid() || !builder->Append(*point))
+        return nullptr;
+
+    if (BentleyStatus::SUCCESS != builder->Finish(*nestedTypeLocation))
+        return nullptr;
+
+    nestedTypeLocation->SetNestedType(nestedType.GetElementId(), relClassId);
+    nestedTypeLocation->SetLocation(location);
+    return nestedTypeLocation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalType2dCPtr NestedTypeLocation2d::GetNestedType() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalType2d>(GetNestedTypeId());
     }
 
 //=======================================================================================
@@ -2915,11 +2969,43 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<RecipeElement>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
     {
     return GetDgnDb().Elements().Get<PhysicalType>(GetPhysicalTypeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalRecipeCPtr PhysicalType::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<PhysicalRecipe>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalRecipe, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2931,9 +3017,33 @@ GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalRecipe2dCPtr GraphicalType2d::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalRecipe2d, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false), m_preserveOriginalModels(true)
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -2978,7 +3088,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
             if (!sourceChildElement.IsValid())
                 continue;
 
-            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
+            MakeCopy(nullptr, targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
             }
         }
 
