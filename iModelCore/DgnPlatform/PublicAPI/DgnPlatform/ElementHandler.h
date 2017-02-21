@@ -189,6 +189,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Dgn::SectionDrawing, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for InformationRecordElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecord : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordElement, InformationRecordElement, InformationRecord, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for DefinitionElement
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {

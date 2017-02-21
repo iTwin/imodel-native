@@ -476,6 +476,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="An Information Content Element is pure information.">
+        <!-- NOTE: Only platform can directly subclass from InformationContentElement. Everyone else should pick the most appropriate superclass. -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <BfoMapping xmlns="BisCore.01.00">
@@ -484,6 +485,17 @@
             </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="InformationRecordElement" modifier="Abstract" displayLabel="Information Record Element" description="An information element whose main purpose is to hold an information record.">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>32</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -687,7 +699,6 @@
     <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract" displayLabel="Information Reference" description="An information element whose main purpose is to reference something else.">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>

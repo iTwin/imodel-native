@@ -39,7 +39,7 @@ namespace dgn_ElementHandler
 {
     struct Element; 
     struct InformationCarrier; 
-    struct InformationContent; struct GroupInformation; struct Subject;
+    struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
     struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct NestedTypeLocation2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
@@ -2718,6 +2718,19 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
 
 protected:
     explicit InformationCarrierElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! An information element whose main purpose is to hold an information record.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationRecordElement : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationRecordElement, InformationContentElement);
+    friend struct dgn_ElementHandler::InformationRecord;
+
+protected:
+    explicit InformationRecordElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
