@@ -112,7 +112,7 @@ private:
     BeSQLite::LzmaDecoder m_lzmaDecoder;
     BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
     
-    BentleyStatus StartInput();
+    BeSQLite::DbResult StartInput();
     void FinishInput();
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
@@ -125,12 +125,27 @@ public:
 };
 
 //=======================================================================================
+//! ChangeSet used to apply revision changes to the local Db (sets up conflict handlers appropriately)
+// @bsiclass                                                 Ramanujam.Raman   02/17
+//=======================================================================================
+struct ApplyRevisionChangeSet : BeSQLite::ChangeSet
+{
+private:
+    DgnDbCR m_dgndb;
+public:
+    ApplyRevisionChangeSet(DgnDbCR dgndb) : m_dgndb(dgndb) {}
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
+};
+
+//=======================================================================================
 //! Utility to download and upload revisions of changes to/from the DgnDb. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct RevisionManager : NonCopyableClass
 {
 friend struct TxnManager;
+friend struct RevisionChangesFileReader;
+friend struct ApplyRevisionChangeSet;
 
 private:
     DgnDbR m_dgndb;
@@ -138,6 +153,8 @@ private:
     DgnRevisionPtr m_currentRevision;
 
     RevisionStatus SaveParentRevisionId(Utf8StringCR revisionId);
+    RevisionStatus SaveReversedRevisionId(Utf8StringCR revisionId);
+    RevisionStatus DeleteReversedRevisionId();
 
     Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
@@ -152,6 +169,7 @@ private:
 
     DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
     
+    static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 public:
     //! Constructor
     RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb) {}
@@ -162,13 +180,13 @@ public:
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
 
-    //! Get the parent revision id of any changes in the DgnDb
-    DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
-
     //! Merge a single revision to the Db
     //! @param[in] revision The revision to be merged
     //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
     DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
+
+    //! Get the Id of the last revision that was merged into or created from the Db. This is the parent for any new revisions that will be created. 
+    DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
     //! Start creating a new revision from the changes saved to the Db
     //! @return Newly created revision. Null if there was an error, or if 
@@ -203,6 +221,31 @@ public:
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
+
+    //! Reverses a previously merged revision
+    //! @param[in] revision The revision to be reversed. Must match the parent revision of the Db. i.e., the revisions
+    //! must be reversed in the opposite order of how were merged. 
+    //! @return RevisionStatus::Success if the revision was successfully reversed or some error status otherwise.
+    //! @remarks After reversals no changes can be committed to the DgnDb unless all the reversed revisions are reinstated
+    //! again. @see ReinstateRevision()
+    DGNPLATFORM_EXPORT RevisionStatus ReverseRevision(DgnRevisionCR revision);
+
+    //! Reinstates a previously reversed revision
+    //! @param[in] revision The revision to be reinstated. The parent of the revision must match the parent revision of the 
+    //! Db. i.e., the revisions must be reinstated in the opposite order of how they were reversed. 
+    //! @return RevisionStatus::Success if the revision was successfully reinstated or some error status otherwise.
+    //! @remarks After reinstating all the revisions, the user can make changes to the DgnDb and create new revisions
+    //! again. @see ReverseRevision()
+    DGNPLATFORM_EXPORT RevisionStatus ReinstateRevision(DgnRevisionCR revision);
+
+    //! Checks if the Db has reversed revisions
+    //! @see GetReversedRevisionId()
+    DGNPLATFORM_EXPORT bool HasReversedRevisions() const;
+
+    //! Get the last revision that the Db was reversed to
+    //! @remarks Returns an empty string if there aren't any reversed revisions. 
+    //! @see HasReversedRevisions()
+    DGNPLATFORM_EXPORT Utf8String GetReversedRevisionId() const;
 
     TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
 };

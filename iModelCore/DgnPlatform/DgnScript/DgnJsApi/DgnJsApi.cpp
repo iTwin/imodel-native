@@ -227,6 +227,7 @@ int32_t JsDgnElement::SetPropertyValue(Utf8StringCR name, JsECValueP v)
     return (int32_t) m_el->SetPropertyValue(name.c_str(), v->m_value);
     }
 
+#if defined (BENTLEY_CHANGE)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
@@ -253,6 +254,7 @@ void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
     DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
     m_el->RemoveUserProperty(name.c_str());
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
@@ -403,12 +405,10 @@ RepositoryStatus JsDgnModel::PopulateRequest(JsRepositoryRequestP req, BeSQLiteD
 //---------------------------------------------------------------------------------------
 struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     {
-    mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
     mutable Utf8String m_issue;
 
-    void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+    void _OnIssueReported(Utf8CP message) const override
         {
-        m_severity = severity;
         m_issue = message;
         }
     };
@@ -696,7 +696,7 @@ bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
 //---------------------------------------------------------------------------------------
 JsECSqlArrayValueP JsECSqlValue::GetArray()
     {
-    return new JsECSqlArrayValue(m_value->GetArray());
+    return new JsECSqlArrayValue(*m_value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -794,7 +794,7 @@ JsDRange3dP JsPreparedECSqlStatement::GetValueDRange3d(int32_t col)
 JsECSqlArrayValueP JsPreparedECSqlStatement::GetValueArray(int32_t col)
     {
     CHECK_GET_VALUE_ARGS(col, nullptr);
-    IECSqlArrayValue const& arrayValue = m_stmt->GetValueArray(col);
+    IECSqlValue const& arrayValue = m_stmt->GetValue(col);
     return new JsECSqlArrayValue(arrayValue);
     }
 

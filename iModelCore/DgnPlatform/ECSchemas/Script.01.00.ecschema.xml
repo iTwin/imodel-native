@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Script" nameSpacePrefix="doc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="Script" nameSpacePrefix="script" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
@@ -21,7 +21,6 @@
         <ECEnumerator value="ES5" displayLabel="ECMAScript Version 5"/>
         <ECEnumerator value="ES6" displayLabel="ECMAScript Version 6"/>
     </ECEnumeration>
-
 
     <ECEntityClass typeName="Script" modifier="Abstract" description="Base class for an ECMAScript script that is stored in a bim. Scripts can play many roles in a bim. Roles are clarified by subclasses.">
         <ECCustomAttributes>

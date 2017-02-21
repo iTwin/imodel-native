@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnModel_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -95,6 +95,8 @@ void DgnModelTests::TestRangeIndex3d()
     EXPECT_TRUE(count == 4);
 
     model->RemoveRangeIndex();  // drop the range index and recreate it from a query
+    AxisAlignedBox3d range = model->QueryModelRange();
+
     model->FillRangeIndex();
     rangeIndex = model->GetRangeIndex();
     EXPECT_TRUE(4 == rangeIndex->GetCount());
@@ -107,7 +109,6 @@ void DgnModelTests::TestRangeIndex3d()
         ++count;
         }
     
-    AxisAlignedBox3d range = model->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
     DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
@@ -197,14 +198,18 @@ void DgnModelTests::TestRangeIndex2d()
 
     m_db->SaveChanges();
 
-    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
-    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -1.0);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 1.0);
     AxisAlignedBox3d box(low, high);
 
-    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
     AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
-    EXPECT_TRUE(box.IsEqual(range2d, .00000001));
-    EXPECT_TRUE(indexbox2d.IsEqual(range2d, .00001));
+    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
+    drawingModel->ToGeometricModelP()->RemoveRangeIndex();  // drop the range so query wo
+    AxisAlignedBox3d range2d2 = drawingModel->ToGeometricModel()->QueryModelRange();
+
+    EXPECT_TRUE(box.IsEqual(range2d2, .00000001));
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d2, .00001)); // float vs. double
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d));  // should be identical, they both come from range index
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -518,6 +523,7 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetNumerator());
     ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetDenominator());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -551,4 +557,82 @@ TEST_F(DgnModelTests, CodeUniqueness)
     DgnDbStatus stat;
     ASSERT_FALSE(ele->Update(&stat).IsValid());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
+    // Update Dgncode by getting uniqueDgncode
+    updatepartitionCode = InformationPartitionElement::CreateUniqueCode(*m_db->Elements().GetRootSubject(), "Testcode2");
+    ele->SetCode(updatepartitionCode);
+    ASSERT_TRUE(updatepartitionCode == ele->GetCode());
+    DgnElementCPtr updatedele = ele->Update(&stat);
+    ASSERT_TRUE(updatedele.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(updatepartitionCode == updatedele->GetCode());
    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, DefinitionModelCreation)
+    {
+    // TODO how to create DefinitionElement and insert
+    SetupSeedProject();
+    DefinitionPartitionCPtr defp = DefinitionPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement", "This is new DefinitionPartition");
+    ASSERT_TRUE(defp.IsValid());
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "DefinitionPartitionElement"));
+    DefinitionModelPtr defmodel = DefinitionModel::CreateAndInsert(*defp);
+    ASSERT_TRUE(defmodel.IsValid());
+    ASSERT_EQ(defmodel->GetModeledElementId(), defp->GetElementId());
+    DefinitionModelPtr defmodelt = DefinitionModel::CreateAndInsert(*defp);
+    ASSERT_FALSE(defmodelt.IsValid());
+
+    DefinitionPartitionPtr defp_c = DefinitionPartition::Create(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement2", "This is second DefinitionPartition");
+    DefinitionPartitionCPtr defp2 = m_db->Elements().Insert<DefinitionPartition>(*defp_c);
+    ASSERT_TRUE(defp2.IsValid());
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "DefinitionPartitionElement2"));
+    DefinitionModelPtr defmodel2c=DefinitionModel::Create(*defp2);
+    ASSERT_TRUE(defmodel2c.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success ,defmodel2c->Insert());
+    ASSERT_EQ(defmodel2c->GetModeledElementId(), defp2->GetElementId());
+    ASSERT_EQ(defmodel->DictionaryId(), defmodel2c->DictionaryId());
+
+    DgnCode partitionCode1 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement");
+    DgnElementId eleId1=m_db->Elements().QueryElementIdByCode(partitionCode1);
+    RefCountedCPtr<InformationPartitionElement> Infele1 = m_db->Elements().Get<InformationPartitionElement>(eleId1);
+    ASSERT_EQ(Infele1->GetDescription(), "This is new DefinitionPartition");
+
+    DgnCode partitionCode2 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "DefinitionPartitionElement2");
+    DgnElementId eleId2 = m_db->Elements().QueryElementIdByCode(partitionCode2);
+    RefCountedCPtr<InformationPartitionElement> Infele2 = m_db->Elements().Get<InformationPartitionElement>(eleId2);
+    ASSERT_EQ(Infele2->GetDescription(), "This is second DefinitionPartition");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, GenericGroupModelCreation)
+    {
+    SetupSeedProject();
+    GroupInformationPartitionPtr ginfop=GroupInformationPartition::Create(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement", "This is GroupInformationPartitionElement");
+    DgnElementCPtr elep = ginfop->Insert();
+    ASSERT_TRUE(elep.IsValid());
+    GenericGroupModelPtr genricgroupmodel=GenericGroupModel::CreateAndInsert(*elep);
+    ASSERT_TRUE(genricgroupmodel.IsValid());
+    GenericGroupPtr group=GenericGroup::Create(*genricgroupmodel);
+    DgnElementCPtr ele=group->Insert();
+    ASSERT_TRUE(ele.IsValid());
+    ASSERT_EQ(ele->GetModelId(), genricgroupmodel->GetModeledElementId());
+
+    GroupInformationPartitionCPtr ginfop2 = GroupInformationPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement2", "GroupInformationPartitionElement2");
+    ASSERT_TRUE(ginfop2.IsValid());
+    GenericGroupModelPtr genricgroupmodelc = GenericGroupModel::Create(*ginfop2);
+    ASSERT_EQ(DgnDbStatus::Success, genricgroupmodelc->Insert());
+    GenericGroupPtr group2 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele2 = group2->Insert();
+    ASSERT_TRUE(ele2.IsValid());
+    ASSERT_EQ(ele2->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    GenericGroupPtr group3 = GenericGroup::Create(*genricgroupmodelc);
+    DgnElementCPtr ele3 = group3->Insert();
+    ASSERT_TRUE(ele3.IsValid());
+    ASSERT_EQ(ele3->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    bvector<DgnModelId> idList;
+    idList =m_db->Models().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_GroupModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    ASSERT_EQ(2,idList.size());
+    ASSERT_EQ(genricgroupmodel->GetModelId(), idList[0]);
+    ASSERT_EQ(genricgroupmodelc->GetModelId(), idList[1]);
+    }

@@ -24,12 +24,12 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 enum DgnDbSchemaValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 12,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 14,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
     DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the schema supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 12,
+    DGNDB_SUPPORTED_VERSION_Minor = 14,
 };
 
 //=======================================================================================
@@ -162,9 +162,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     };
 
 private:
-    BeSQLite::EC::ECCrudWriteToken const* m_eccrudWriteToken; //owned and released by ECDb
-    BeSQLite::EC::DbSchemaModificationToken const* m_dbSchemaModificationToken; //owned and released by ECDb
-
     void Destroy();
 
 protected:
@@ -343,16 +340,17 @@ public:
     static void VerifyCpuPoolThread() {VerifyThread(ThreadId::CpuPool);}   //!< assert that this is one of the CpuPool threads
 /** @} */
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    //!Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
-    //!or other non-read EC CRUD operations.
-    //!Otherwise the preparation of the ECSQL or the write operation will fail.
-    //!@return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    //! Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
+    //! or other non-read EC CRUD operations.
+    //! Otherwise the preparation of the ECSQL or the write operation will fail.
+    //! @return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    //! @private
     BeSQLite::EC::ECCrudWriteToken const* GetECCrudWriteToken() const; //not inlined as it must not be called externally
-    //!Gets the permission token to perform a data-modifying ECSchema import/update
-    //!@return DB schema modification token. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
-    BeSQLite::EC::DbSchemaModificationToken const* GetDbSchemaModificationToken() const; //not inlined as it must not be called externally
-#endif
+
+    //! Gets the permission token to perform a ECSchema import/update
+    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
+    //! @private
+    BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
 };
 
 END_BENTLEY_DGN_NAMESPACE

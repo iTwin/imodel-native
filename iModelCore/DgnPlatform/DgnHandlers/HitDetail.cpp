@@ -330,10 +330,9 @@ size_t GeomDetail::GetPointCount() const
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
             return m_primitive->GetLineStringCP ()->size();
-
-        default:
-            return 0;
         }
+
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,10 +354,9 @@ bool GeomDetail::IsValidEdgeHit() const
         case HitGeomType::Curve:
         case HitGeomType::Arc:
             return true;
-
-        default:
-            return false;
         }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,10 +364,7 @@ bool GeomDetail::IsValidEdgeHit() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
     {
-    if (!m_primitive.IsValid())
-        return NULL;
-
-    return m_primitive->GetId();
+    return m_primitive.IsValid() ? m_primitive->GetId() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -395,6 +390,7 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_she
     m_geomDetail        = from.m_geomDetail;
     m_elemTopo          = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
     m_subSelectionMode  = from.m_subSelectionMode;
+    m_hitDescription    = from.m_hitDescription;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -429,10 +425,7 @@ DgnModelP HitDetail::GetDgnModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr HitDetail::GetElement() const
     {
-    if (!m_elementId.IsValid())
-        return nullptr;
-
-    return GetDgnDb().Elements().FindLoadedElement(m_elementId);
+    return GetDgnDb().Elements().GetElement(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -507,6 +500,22 @@ bool HitDetail::_IsSameHit(HitDetailCP otherHit) const
         return false;
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HitDetail::GetInfoString(Utf8CP delimiter) const
+    {
+    Utf8String out;
+    if (m_hitDescription.IsValid())
+        out = m_hitDescription->GetDescription() + delimiter;
+
+    auto el = GetElement();
+    if (el.IsValid())
+        out += el->GetInfoString(delimiter);
+
+    return out.Trim();
     }
 
 /*---------------------------------------------------------------------------------**//**

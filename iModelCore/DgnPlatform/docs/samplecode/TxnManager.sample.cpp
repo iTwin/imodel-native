@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/TxnManager.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ TxnManager_TxnMonitor_ElementsByClass_Includes.sampleCode
@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_DGN
 struct TestTxnMonitor : TxnMonitor
     {
     void _OnCommit(TxnManager&) override;
-    void _OnReversedChanges(TxnManager&) override {;}
+    void _OnAppliedChanges(TxnManager&) override {;}
     void CheckClass(TxnManager&, DgnClassId);
     void CheckClassOrSubClasses(TxnManager&, DgnClassId);
     };

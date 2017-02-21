@@ -149,11 +149,15 @@ static_assert((int)RepositoryStatus::ServerUnavailable == REPOSITORY_ERROR_BASE 
 enum class RevisionStatus : int
     {
     Success = SUCCESS, //!< Success
+    ApplyError, //!< Error applying a revision when reversing or reinstating it
     ChangeTrackingNotEnabled = REVISION_ERROR_BASE + 1, //!< Change tracking has not been enabled. The Revision API mandates this.
     CorruptedChangeStream, //!< Contents of the change stream does not match the Revision
     FileNotFound, //!< File containing the changes to the revision is not found
     FileWriteError, //!< Error writing the contents of the revision to the backing change stream file
+    HasLocalChanges, //!< Cannot perform the operation since the Db has local changes
+    HasUncommittedChanges, //!< Cannot perform the operation since current transaction has uncommitted changes
     InvalidId, //!< Invalid Revision Id
+    InvalidVersion, //! !< Invalid version of the revision
     InDynamicTransaction, //!< Cannot perform the operation since system is in the middle of a dynamic transaction
     IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
     IsNotCreatingRevision, //!< Cannot perform operation since the system is not creating a revision
@@ -161,10 +165,9 @@ enum class RevisionStatus : int
     MergePropagationError, //!< Error propagating the changes after the merge
     NothingToMerge, //!< No revisions to merge
     NoTransactions, //!< No transactions are available to create a revision
-    SQLiteError, //!< Error performing a SQLite operation on the Db
-    TransactionHasUnsavedChanges, //!< Cannot perform the operation since current transaction has unsaved changes
-    WrongDgnDb, //!< Revision originated in a different Db
     ParentMismatch, //!< Parent revision of the Db does not match the parent id of the revision
+    SQLiteError, //!< Error performing a SQLite operation on the Db
+    WrongDgnDb, //!< Revision originated in a different Db
     };
 
 //=======================================================================================

@@ -426,6 +426,9 @@ DgnCode DgnSubCategory::_GenerateDefaultCode() const
     }
 
 static Utf8CP APPEARANCE_Invisible  = "invisible";
+static Utf8CP APPEARANCE_DontPlot   = "dontPlot";
+static Utf8CP APPEARANCE_DontSnap   = "dontSnap";
+static Utf8CP APPEARANCE_DontLocate = "dontLocate";
 static Utf8CP APPEARANCE_Color      = "color";
 static Utf8CP APPEARANCE_Weight     = "weight";
 static Utf8CP APPEARANCE_Style      = "style";
@@ -445,6 +448,9 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
         return;
 
     m_invisible = val.get(APPEARANCE_Invisible, false).asBool();
+    m_dontPlot = val.get(APPEARANCE_DontPlot, false).asBool();
+    m_dontSnap = val.get(APPEARANCE_DontSnap, false).asBool();
+    m_dontLocate = val.get(APPEARANCE_DontLocate, false).asBool();
     m_color  = ColorDef(val[APPEARANCE_Color].asUInt());
     m_weight = val[APPEARANCE_Weight].asUInt();
     if (val.isMember(APPEARANCE_Style))
@@ -468,6 +474,9 @@ Utf8String DgnSubCategory::Appearance::ToJson() const
     Json::Value val;
 
     if (m_invisible)            val[APPEARANCE_Invisible] = true;
+    if (m_dontPlot)             val[APPEARANCE_DontPlot] = true;
+    if (m_dontSnap)             val[APPEARANCE_DontSnap] = true;
+    if (m_dontLocate)           val[APPEARANCE_DontLocate] = true;
     if (ColorDef::Black() != m_color)  val[APPEARANCE_Color]  = m_color.GetValue();
     if (0 != m_weight)          val[APPEARANCE_Weight] = m_weight;
     if (m_style.IsValid())      val[APPEARANCE_Style]  = m_style.GetValue();
@@ -738,7 +747,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
     DgnCategoryId categoryId;
         {
         ECValue v;
-        if (ECObjectsStatus::Success != properties.GetValue(v, "ParentId") || v.IsNull())
+        if (ECObjectsStatus::Success != properties.GetValue(v, "Parent") || v.IsNull())
             {
             stat = DgnDbStatus::InvalidParent;
             return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
@@ -786,7 +795,10 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN:
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
+    bset<Utf8String> ignoreProps;
+    ignoreProps.insert("Parent");
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, false, ignoreProps);
+
     stat = ele->_SetPropertyValues(properties, filter);
     return (DgnDbStatus::Success == stat) ? ele : nullptr;
     }
@@ -865,7 +877,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             },
         [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsInteger())
+            if (!value.IsUtf8())
                 return DgnDbStatus::BadArg;
             auto& el = (DgnSubCategory&) elIn;
             el.m_data.m_appearance.FromJson(value.GetUtf8CP());

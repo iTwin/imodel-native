@@ -85,7 +85,7 @@ private:
 
     void Save(TxnManager& mgr) { if (&mgr.GetDgnDb() == &GetDgnDb()) Save(); }
     void _OnCommit(TxnManager& mgr) override { Save(mgr); }
-    void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
+    void _OnAppliedChanges(TxnManager& mgr) override { Save(mgr); }
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
     RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {

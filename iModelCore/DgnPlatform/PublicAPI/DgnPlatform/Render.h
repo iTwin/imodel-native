@@ -147,23 +147,24 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
-        Initialize,
+        BeginHeal,
+        ChangeDecorations,
+        ChangeDynamics,
+        ChangeRenderPlan,
         ChangeScene,
         ChangeTerrain,
-        ChangeRenderPlan,
-        ChangeDynamics,
-        ChangeDecorations,
-        DrawProgressive,
+        DefineGeometryTexture,
+        DestroyTarget,
         DrawFrame,
-        Redraw,
-        BeginHeal,
+        DrawProgressive,
+        FindNearestZ,
         FinishHeal,
         Heal,
-        DefineGeometryTexture,
-        FindNearestZ,
+        Initialize,
         ReadImage,
-        DestroyTarget,
+        Redraw,
         RenderTile,
+        ResetTarget,
     };
 
     //! The outcome of the processing of a Task.
@@ -846,7 +847,7 @@ private:
 
 public:
     GeometryParams() {}
-    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId) {}
+    GeometryParams(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId = DgnSubCategoryId()) : m_categoryId(categoryId), m_subCategoryId(subCategoryId.IsValid() ? subCategoryId : DgnCategory::GetDefaultSubCategoryId(categoryId)) {}
 
     DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
@@ -890,8 +891,8 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two GeometryParams.
-    DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
+    //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
+    DGNPLATFORM_EXPORT bool IsEquivalent(GeometryParamsCR) const;
 
     //! copy operator
     DGNPLATFORM_EXPORT GeometryParamsR operator=(GeometryParamsCR rhs);
@@ -1252,8 +1253,8 @@ protected:
     virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
-    virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR) const = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
+    virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
 };
 
 //=======================================================================================
@@ -1279,7 +1280,7 @@ public:
     GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
     template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
 
-    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
+    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
 
     operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
     DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
@@ -1456,7 +1457,7 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {m_builder->_AddSubGraphic(graphic, subToGraphic, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {m_builder->_AddSubGraphic(graphic, subToGraphic, params, clip);}
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
@@ -1772,7 +1773,6 @@ protected:
     DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
-    static double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
 
 public:
     struct Debug
@@ -1783,6 +1783,7 @@ public:
         static void Show();
     };
     virtual void _OnDestroy() {}
+    virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_terrain=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
     virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
@@ -1803,6 +1804,7 @@ public:
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
+    DGNVIEW_EXPORT virtual void _QueueReset();
     DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
@@ -1832,8 +1834,11 @@ public:
 #endif
         }
 
-    static int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
-    static double DepthFromDisplayPriority(int32_t priority){return Get2dFrustumDepth() * (double) priority / (double) GetMaxDisplayPriority();}
+    static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
+    static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
+    static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
+    static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
+    static double DepthFromDisplayPriority(int32_t priority) {return 0;}// GetDisplayPriorityFactor() * (double) priority;}
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;

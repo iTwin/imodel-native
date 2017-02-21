@@ -309,25 +309,25 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnInsertedElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
-    //! @param[in] element The element that was just reinstatted.
+    //! Called after a change representing addition of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
+    //! @param[in] element The element that was just added.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedDeleteElement(DgnElementCR element) {}
+    virtual void _OnAppliedAddElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
+    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {}
 
-    //! Called after an DgnElement that was previously updated has been reversed by undo.
+    //! Called after a change representing DgnElement in this model was updated by applying a change set.
     //! @param[in] original The element in its original state. This is the state before the original change (the current state)
-    //! @param[in] modified The element in its post-changed (now reversed) state.
+    //! @param[in] modified The element in its post-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
+    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
@@ -335,11 +335,11 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnDeletedElement(DgnElementCR element) {}
 
-    //! Called after a DgnElement in this DgnModel has been removed by undo
-    //! @param[in] element The element that was just deleted by undo.
+    //! Called after a change representing deletion of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
+    //! @param[in] element The element that was just deleted by applying a change set.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnReversedAddElement(DgnElementCR element) {}
+    virtual void _OnAppliedDeleteElement(DgnElementCR element) {}
 
     /** @} */
 
@@ -389,6 +389,7 @@ protected:
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
     virtual SpatialLocationModelCP _ToSpatialLocationModel() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
+    virtual DrawingModelCP _ToDrawingModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual Sheet::ModelCP _ToSheetModel() const {return nullptr;}
     /** @} */
@@ -503,6 +504,7 @@ public:
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
     SpatialLocationModelCP ToSpatialLocationModel() const {return _ToSpatialLocationModel();} //!< more efficient substitute for dynamic_cast<SpatialLocationModelCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
+    DrawingModelCP ToDrawingModel() const {return _ToDrawingModel();} //!< more efficient substitute for dynamic_cast<DrawingModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     Sheet::ModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
@@ -514,6 +516,7 @@ public:
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
     SpatialLocationModelP ToSpatialLocationModelP() {return const_cast<SpatialLocationModelP>(_ToSpatialLocationModel());} //!< more efficient substitute for dynamic_cast<SpatialLocationModelP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
+    DrawingModelP ToDrawingModelP() {return const_cast<DrawingModelP>(_ToDrawingModel());} //!< more efficient substitute for dynamic_cast<DrawingModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     Sheet::ModelP ToSheetModelP() {return const_cast<Sheet::ModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
@@ -527,6 +530,7 @@ public:
     bool IsInformationModel() const {return nullptr != ToInformationModel();}
     bool IsDefinitionModel() const {return nullptr != ToDefinitionModel();}
     bool IsSheetModel() const {return nullptr != ToSheetModel();}
+    bool IsDrawingModel() const {return nullptr != ToDrawingModel();}
     bool IsDictionaryModel() const {return DictionaryId() == GetModelId();}
     //@}
 
@@ -809,13 +813,13 @@ protected:
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
-    void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
+    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
-    void _OnReversedAddElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnReversedAddElement(element);}
+    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
     void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
-    void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnReversedUpdateElement(modified, original);}
+    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
@@ -827,7 +831,7 @@ public:
 
     void RemoveRangeIndex() {m_rangeIndex.reset();}
 
-    RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
+    RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
@@ -925,9 +929,6 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
-
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement);
 };
 
 //=======================================================================================
@@ -1101,6 +1102,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
+
+    DrawingModelCP _ToDrawingModel() const override {return this;}
 
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element

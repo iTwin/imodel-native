@@ -120,33 +120,6 @@ BentleyStatus LsComponent::StrokeContinuousArc(LineStyleContextR context, LineSt
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void arcAddStrokes(DEllipse3dCR ellipse, bvector<DPoint3d>& points, IFacetOptionsCR options) // NEEDSWORK: Add method to DEllipse3d?
-    {
-    size_t count = options.EllipseStrokeCount(ellipse);
-    DPoint3d startPoint, endPoint;
-    ellipse.EvaluateEndPoints(startPoint, endPoint);
-        
-    PolylineOps::AddContinuationStartPoint(points, startPoint, true);
-
-    if (count > 1)
-        {
-        double df = 1.0 / (double) (count - 1);
-
-        for (size_t i = 1; i < count - 1; i++)
-            {
-            DPoint3d xyz;
-
-            ellipse.FractionParameterToPoint(xyz, i*df);;
-            points.push_back(xyz);
-            }
-        }
-
-    points.push_back(endPoint);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbR lsSymb, DEllipse3dCR arc, bool is3d, double zDepth, bool isClosed) const
@@ -156,7 +129,7 @@ StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbR ls
 
     bvector<DPoint3d> points;
 
-    arcAddStrokes(arc, points, lsContext.GetFacetOptions());
+    PolylineOps::AddStrokes(arc, points, lsContext.GetFacetOptions());
 
     if (points.size() < 2)
         return ERROR;

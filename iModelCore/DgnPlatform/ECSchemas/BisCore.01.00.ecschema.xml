@@ -177,7 +177,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="A container for persisting physical elements and modeling physical space.">
+    <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="A container for persisting physical elements that model physical space.">
         <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -249,7 +249,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model" description="The singleton container for repository-related definition elements.">
+    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model" description="The singleton container for repository-specific definition elements.">
         <BaseClass>DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -456,10 +456,10 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson" displayLabel="User Properties" description="Ad-hoc per instance name/value pairs.">
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json">
             <ECCustomAttributes>
                 <CustomHandledProperty>
-                    <StatementTypes>0</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
@@ -498,15 +498,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalTemplate" modifier="Abstract" displayLabel="Physical Template">
-        <BaseClass>DefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type">
+    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -524,7 +516,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type">
+    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type" description="Defines a set of properties (the 'type') that can be associated with a 2D Graphical Element.">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1657,16 +1649,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Data" typeName="string" extendedTypeName="Json">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
@@ -1902,9 +1885,6 @@
     <ECEntityClass typeName="DisplayStyle" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECProperty propertyName="Styles" typeName="string" extendedTypeName="Json">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="DisplayStyle3d" displayLabel="3D Display Style">
@@ -1917,9 +1897,6 @@
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" typeName="int"/>
-        <ECProperty propertyName="Details" typeName="string">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>
@@ -1959,6 +1936,9 @@
     <ECEntityClass typeName="CameraViewDefinition" displayLabel="Camera View Definition" description="A spatial view that shows a perspective projection.">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="IsCameraOn" typeName="boolean" displayLabel="Is Camera On" description="Is the camera actually turned on?">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Eye Point" description="Camera eye point">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>

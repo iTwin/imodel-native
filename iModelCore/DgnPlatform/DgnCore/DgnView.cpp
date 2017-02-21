@@ -32,32 +32,31 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace ViewProperties
 {
-    static Utf8CP str_ModelSelector() {return "ModelSelector";}
-    static Utf8CP str_CategorySelector() {return "CategorySelector";}
-    static Utf8CP str_DisplayStyle() {return "DisplayStyle";}
-    static Utf8CP str_BackgroundColor(){return "backgroundColor";}
-    static Utf8CP str_ViewFlags() {return "viewflags";}
-    static Utf8CP str_Styles() {return "Styles";}
-    static Utf8CP str_Details() {return "Details";}
-    static Utf8CP str_SubCategory() {return "SubCategory";}
-    static Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
-    static Utf8CP str_LensAngle() {return "LensAngle";}
-    static Utf8CP str_FocusDistance() {return "FocusDistance";}
-    static Utf8CP str_EyePoint() {return "EyePoint";}
-    static Utf8CP str_BaseModel() {return "BaseModel";}
-    static Utf8CP str_Origin() {return "Origin";}
-    static Utf8CP str_Extents() {return "Extents";}
-    static Utf8CP str_RotationAngle() {return "RotationAngle";}
-    static Utf8CP str_Yaw() {return "Yaw";}
-    static Utf8CP str_Pitch() {return "Pitch";}
-    static Utf8CP str_Roll() {return "Roll";}
-    static Utf8CP str_AspectSkew() {return "AspectSkew";}
-    static Utf8CP str_Width() {return "width";}
-    static Utf8CP str_Height() {return "height";}
-    static Utf8CP str_Format() {return "format";}
-    static Utf8CP str_Jpeg() {return "jpeg";}
-    static Utf8CP str_Png() {return "png";}
-    static Utf8CP str_Clip() {return "clip";}
+    static constexpr Utf8CP str_ModelSelector() {return "ModelSelector";}
+    static constexpr Utf8CP str_CategorySelector() {return "CategorySelector";}
+    static constexpr Utf8CP str_DisplayStyle() {return "DisplayStyle";}
+    static constexpr Utf8CP str_BackgroundColor(){return "backgroundColor";}
+    static constexpr Utf8CP str_ViewFlags() {return "viewflags";}
+    static constexpr Utf8CP str_SubCategory() {return "SubCategory";}
+    static constexpr Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
+    static constexpr Utf8CP str_LensAngle() {return "LensAngle";}
+    static constexpr Utf8CP str_FocusDistance() {return "FocusDistance";}
+    static constexpr Utf8CP str_EyePoint() {return "EyePoint";}
+    static constexpr Utf8CP str_BaseModel() {return "BaseModel";}
+    static constexpr Utf8CP str_Origin() {return "Origin";}
+    static constexpr Utf8CP str_Extents() {return "Extents";}
+    static constexpr Utf8CP str_RotationAngle() {return "RotationAngle";}
+    static constexpr Utf8CP str_Yaw() {return "Yaw";}
+    static constexpr Utf8CP str_Pitch() {return "Pitch";}
+    static constexpr Utf8CP str_Roll() {return "Roll";}
+    static constexpr Utf8CP str_AspectSkew() {return "AspectSkew";}
+    static constexpr Utf8CP str_Width() {return "width";}
+    static constexpr Utf8CP str_Height() {return "height";}
+    static constexpr Utf8CP str_Format() {return "format";}
+    static constexpr Utf8CP str_Jpeg() {return "jpeg";}
+    static constexpr Utf8CP str_Png() {return "png";}
+    static constexpr Utf8CP str_Clip() {return "clip";}
+    static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
 };
 
 using namespace ViewProperties;
@@ -186,8 +185,6 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindText(stmt.GetParameterIndex(str_Details()), ToDetailJson().c_str(), IECSqlBinder::MakeCopy::Yes);
-    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,8 +192,8 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ViewDefinition::ToDetailJson()
     {
-    _Save();
-    return Json::FastWriter::ToString(m_details);
+    _OnSaveJsonProperties();
+    return Json::FastWriter::ToString(GetDetails());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,9 +251,6 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
     m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
-    Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(str_Details())), m_details);
-    _Load();
-
     return DgnDbStatus::Success;
     }
 
@@ -272,7 +266,6 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     m_displayStyleId = other.m_displayStyleId;
     m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
     m_displayStyle = other.m_displayStyle.IsValid() ? other.m_displayStyle->MakeCopy<DisplayStyle>() : nullptr;
-    m_details = other.m_details;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1018,6 +1011,8 @@ void CameraViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forI
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
     BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1028,6 +1023,7 @@ void CameraViewDefinition::_CopyFrom(DgnElementCR el)
     T_Super::_CopyFrom(el);
     auto other = static_cast<CameraViewDefinitionCP>(&el);
     m_camera = other->m_camera;
+    m_isCameraOn = other->m_isCameraOn;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1042,6 +1038,7 @@ DgnDbStatus CameraViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement
     m_camera.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
     m_camera.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
     m_camera.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
+    SetCameraOn(stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn())));
 
     return DgnDbStatus::Success;
     }
@@ -1055,7 +1052,7 @@ bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
         return false;
 
     auto& other = (CameraViewDefinition&) in;
-    return m_camera.IsEqual(other.m_camera);
+    return (IsCameraOn() == other.IsCameraOn()) && m_camera.IsEqual(other.m_camera);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1146,7 +1143,6 @@ void DisplayStyle::_CopyFrom(DgnElementCR el)
 
     auto& other = static_cast<DisplayStyleCR>(el);
 
-    m_styles = other.m_styles;
     m_viewFlags = other.m_viewFlags;
     m_subCategories = other.m_subCategories;
     m_subCategoryOverrides = other.m_subCategoryOverrides;
@@ -1155,31 +1151,7 @@ void DisplayStyle::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
-    {
-    T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(str_Styles()), ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(str_Styles())), m_styles);
-    _Load();
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::_Load()
+void DisplayStyle::_OnLoadedJsonProperties()
     {
     m_viewFlags.FromJson(GetStyle(str_ViewFlags()));
 
@@ -1203,14 +1175,14 @@ void DisplayStyle::_Load()
 Utf8String DisplayStyle::ToJson() const
     {
     auto& ncThis = const_cast<DisplayStyleR>(*this);
-    ncThis._Save();
-    return Json::FastWriter::ToString(m_styles);
+    ncThis._OnSaveJsonProperties();
+    return Json::FastWriter::ToString(GetStyles());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::_Save()
+void DisplayStyle::_OnSaveJsonProperties()
     {
     SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
 
@@ -1266,15 +1238,15 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
-            value.SetLong(viewDef.GetDisplayStyleId().GetValue());
+            value.SetNavigationInfo(viewDef.GetDisplayStyleId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
 
-            DgnElementId id((uint64_t) value.GetLong());
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto style = el.GetDgnDb().Elements().Get<Dgn::DisplayStyle>(id);
             if (!style.IsValid())
                 return DgnDbStatus::BadArg;
@@ -1288,15 +1260,15 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
-            value.SetLong(viewDef.GetCategorySelectorId().GetValue());
+            value.SetNavigationInfo(viewDef.GetCategorySelectorId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
 
-            DgnElementId id((uint64_t) value.GetLong());
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto cats = el.GetDgnDb().Elements().Get<Dgn::CategorySelector>(id);
             if (!cats.IsValid())
                 return DgnDbStatus::BadArg;
@@ -1306,23 +1278,6 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, str_Details(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            value.SetUtf8CP(viewDef.ToDetailJson().c_str());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsUtf8())
-                return DgnDbStatus::BadArg;
-
-            ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            Json::Reader::Parse(value.GetUtf8CP(), viewDef.m_details);
-            viewDef._Load();
-            return DgnDbStatus::Success;
-            });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1464,12 +1419,14 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
         [](ECValueR value, DgnElementCR el)
             {
             SpatialViewDefinitionCR viewDef = (SpatialViewDefinitionCR)el;
-            value.SetLong(viewDef.GetModelSelectorId().GetValue());
+            value.SetNavigationInfo(viewDef.GetModelSelectorId());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            DgnElementId id((uint64_t) value.GetLong());
+            if (!value.IsNavigation())
+                return DgnDbStatus::BadArg;
+            DgnElementId id = value.GetNavigationInfo().GetId<DgnElementId>();
             auto modelSel = el.GetDgnDb().Elements().Get<ModelSelector>(id);
             if (!modelSel.IsValid())
                 return DgnDbStatus::BadArg;
@@ -1525,7 +1482,7 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
         [](ECValueR value, DgnElementCR el)
             {
             CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetLong(viewDef.GetFocusDistance());
+            value.SetDouble(viewDef.GetFocusDistance());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
@@ -1537,29 +1494,21 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
             viewDef.SetFocusDistance(value.GetDouble());
             return DgnDbStatus::Success;
             });
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDisplayStyle::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-    params.RegisterPropertyAccessors(layout, str_Styles(), 
+    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
         [](ECValueR value, DgnElementCR el)
             {
-            DisplayStyleCR style = (DisplayStyleCR) el;
-            value.SetUtf8CP(style.ToJson().c_str());
+            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
+            value.SetBoolean(viewDef.IsCameraOn());
             return DgnDbStatus::Success;
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsUtf8())
+            if (!value.IsBoolean())
                 return DgnDbStatus::BadArg;
 
-            DisplayStyleR style = (DisplayStyleR) el;
-            Json::Reader::Parse(value.GetUtf8CP(), style.m_styles);
-            style._Load();
+            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
+            viewDef.SetCameraOn(value.GetBoolean());
             return DgnDbStatus::Success;
             });
     }

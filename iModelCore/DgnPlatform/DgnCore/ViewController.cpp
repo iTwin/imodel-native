@@ -11,25 +11,25 @@
 
 namespace StyleJson
 {
-    static Utf8CP str_Acs()            {return "acs";}
-    static Utf8CP str_Grid()           {return "grid";}
-    static Utf8CP str_HiddenEdges()    {return "hidEdges";}
-    static Utf8CP str_ClipVolume()     {return "clipVol";}
-    static Utf8CP str_NoConstruction() {return "noConstruct";}
-    static Utf8CP str_NoDimension()    {return "noDim";}
-    static Utf8CP str_NoFill()         {return "noFill";}
-    static Utf8CP str_NoLighting()     {return "noLighting";}
-    static Utf8CP str_NoMaterial()     {return "noMaterial";}
-    static Utf8CP str_NoPattern()      {return "noPattern";}
-    static Utf8CP str_NoSceneLight()   {return "noSceneLight";}
-    static Utf8CP str_NoStyle()        {return "noStyle";}
-    static Utf8CP str_NoText()         {return "noText";}
-    static Utf8CP str_NoTexture()      {return "noTexture";}
-    static Utf8CP str_NoTransparency() {return "noTransp";}
-    static Utf8CP str_NoWeight()       {return "noWeight";}
-    static Utf8CP str_RenderMode()     {return "renderMode";}
-    static Utf8CP str_Shadows()        {return "shadows";}
-    static Utf8CP str_VisibleEdges()   {return "visEdges";}
+    static constexpr Utf8CP str_Acs()            {return "acs";}
+    static constexpr Utf8CP str_Grid()           {return "grid";}
+    static constexpr Utf8CP str_HiddenEdges()    {return "hidEdges";}
+    static constexpr Utf8CP str_ClipVolume()     {return "clipVol";}
+    static constexpr Utf8CP str_NoConstruction() {return "noConstruct";}
+    static constexpr Utf8CP str_NoDimension()    {return "noDim";}
+    static constexpr Utf8CP str_NoFill()         {return "noFill";}
+    static constexpr Utf8CP str_NoLighting()     {return "noLighting";}
+    static constexpr Utf8CP str_NoMaterial()     {return "noMaterial";}
+    static constexpr Utf8CP str_NoPattern()      {return "noPattern";}
+    static constexpr Utf8CP str_NoSceneLight()   {return "noSceneLight";}
+    static constexpr Utf8CP str_NoStyle()        {return "noStyle";}
+    static constexpr Utf8CP str_NoText()         {return "noText";}
+    static constexpr Utf8CP str_NoTexture()      {return "noTexture";}
+    static constexpr Utf8CP str_NoTransparency() {return "noTransp";}
+    static constexpr Utf8CP str_NoWeight()       {return "noWeight";}
+    static constexpr Utf8CP str_RenderMode()     {return "renderMode";}
+    static constexpr Utf8CP str_Shadows()        {return "shadows";}
+    static constexpr Utf8CP str_VisibleEdges()   {return "visEdges";}
 };
 
 using namespace StyleJson;
@@ -427,13 +427,11 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
-#if defined (BENTLEY_CHANGE)
-    if (compression >=(1.0 - s_flatViewFractionTolerance))
+    if (compression >= (1.0 - s_flatViewFractionTolerance))
         {
         SetCameraOn(false);
         return ViewportStatus::Success;
         }
-#endif
 
     DPoint3d viewOrg     = frustPts[NPC_000];
     DVec3d viewDelta     = GetExtents();
@@ -456,6 +454,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     SetFocusDistance(focusDistance);
     SetOrigin(viewOrg);
     SetExtents(viewDelta);
+    SetCameraOn(true);
     SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
@@ -499,9 +498,10 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     auto cameraView = ToCameraViewP();
     DPoint3d origNewDelta = newDelta;
 
-    if (nullptr != cameraView)
+    bool isCameraOn = cameraView && cameraView->IsCameraOn();
+    if (isCameraOn)
         {
-        // In a camera view, the only way to guarantee we can see the entire volume is to set delta at the front plane, not focus plane.
+        // If the camera is on, the only way to guarantee we can see the entire volume is to set delta at the front plane, not focus plane.
         // That generally causes the view to be too large (objects in it are too small), since we can't tell whether the objects are at
         // the front or back of the view. For this reason, don't attempt to add any "margin" to camera views.
         }
@@ -532,7 +532,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.Scale(1.04); // default "dilation"
         }
 
-    if (physView /* && Allow3dManipulations() */ && (nullptr == cameraView))
+    if (physView /* && Allow3dManipulations() */ && isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
         double diag = newDelta.MagnitudeXY ();
@@ -931,6 +931,9 @@ bool OrthographicViewController::_OnOrientationEvent(RotMatrixCR orientation, Or
 //---------------------------------------------------------------------------------------
 bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
+    if (!IsCameraOn())
+        return T_Super::_OnOrientationEvent(orientation, mode, ui);
+
     DVec3d forward, up;
     if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
         return false;
@@ -971,6 +974,9 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewDefinition::VerifyFocusPlane()
     {
+    if (!m_isCameraOn)
+        return;
+
     DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
     m_rotation.Multiply(eyeOrg);
 
@@ -1036,8 +1042,8 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
 
-    frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
-    backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
+    frontDist = std::max(frontDist, (.5 *DgnUnits::OneMeter())); 
+    backDist  = std::max(backDist, focusDist+(.5*DgnUnits::OneMeter()));
 
     if (backDist < focusDist) // make sure focus distance is in front of back distance.
         backDist = focusDist + DgnUnits::OneMillimeter();
@@ -1058,6 +1064,7 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     DPoint3d origin;
     origin.SumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
 
+    SetCameraOn(true);
     SetEyePoint(eyePoint);
     SetRotation(rotation);
     SetFocusDistance(focusDist);
@@ -1172,6 +1179,9 @@ DPoint3d ViewDefinition::GetCenter() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d CameraViewDefinition::_GetTargetPoint() const
     {
+    if (!IsCameraOn())
+        return T_Super::_GetTargetPoint();
+
     DVec3d viewZ;
     GetRotation().GetRow(viewZ, 2);
     DPoint3d target;

@@ -390,7 +390,7 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic) const
+Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
     SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
 
@@ -1362,7 +1362,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        Render::GraphicPtr graphic = _CreateSubGraphic(Transform::FromIdentity());
+        Render::GraphicPtr graphic = _CreateSubGraphic(Transform::FromIdentity(), nullptr);
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
@@ -1377,7 +1377,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        Render::GraphicBuilderPtr graphic = _CreateSubGraphic(text.ComputeTransform());
+        Render::GraphicBuilderPtr graphic = _CreateSubGraphic(text.ComputeTransform(), nullptr);
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.GetGraphic());
 
         if (nullptr == sGraphic)
@@ -1715,35 +1715,6 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
         }
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels)
-    {
-    // NEEDSWORK...Provide option to handle/ignore...
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = points[0];
-    shapePoints[1] = points[1];
-    shapePoints[2] = points[2];
-    shapePoints[3] = points[3];
-
-    _AddShape(5, shapePoints, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth)
-    {
-    std::valarray<DPoint3d> localPointsBuf3d(4);
-
-    copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
-    _AddRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1809,9 +1780,9 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corner
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) 
+void SimplifyGraphic::_AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip)
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER
+    // Nothing to do...
     }
 
 /*---------------------------------------------------------------------------------**//**

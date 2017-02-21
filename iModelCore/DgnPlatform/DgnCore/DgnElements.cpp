@@ -1002,7 +1002,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_parentRelClassId(params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
-    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
+    m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1014,9 +1014,6 @@ DgnElement::~DgnElement()
     {
     BeAssert(!IsPersistent());
     ClearAllAppData();
-
-    if (m_userProperties)
-        UnloadUserProperties();
 
     if (nullptr != m_ecPropertyData)
         bentleyAllocator_free(m_ecPropertyData);
@@ -1037,11 +1034,29 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_stmts(20), m_snapp
     }
 
 /*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnApply()
+    {
+    if (!m_txnMgr.IsInAbandon())
+        _OnValidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnApplied()
+    {
+    if (!m_txnMgr.IsInAbandon())
+        _OnValidated();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
+void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& change)
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Insert);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
@@ -1049,15 +1064,15 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
     // We need to load this element, since filled models need to register it 
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert(el.IsValid());
-    el->_OnReversedDelete();
+    el->_OnAppliedAdd();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& change)
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Delete);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
@@ -1065,15 +1080,15 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
     // see if we have this element in memory, if so call its _OnDelete method.
     DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid()) 
-        el->_OnReversedAdd(); // Note: this MUST be a DgnElementPtr, since we can't call _OnReversedAdd with an element with a zero ref count
+        el->_OnAppliedDelete(); // Note: this MUST be a DgnElementPtr, since we can't call _OnAppliedDelete with an element with a zero ref count
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change) 
     {
-    if (m_txnMgr.IsInUndoRedo())
+    if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Update);
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
@@ -1083,7 +1098,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
         BeAssert(postModified.IsValid());
-        postModified->_OnReversedUpdate(*el);
+        postModified->_OnAppliedUpdate(*el);
 
         elements.FinishUpdate(*postModified.get(), *el);
         }
@@ -1092,7 +1107,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const
+DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const
     {
     ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
@@ -1108,8 +1123,13 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
         return nullptr;
         }
 
+    if (jsonProps)
+        Json::Reader::Parse(jsonProps, el->m_jsonProperties);
+
     if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;
+
+    el->_OnLoadedJsonProperties();
 
     if (makePersistent)
         {
@@ -1127,10 +1147,10 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
+DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersistent) const
     {
-    enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,ParentRelClassId=7,FederationGuid=8};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,ParentRelClassId=7,FederationGuid=8,JsonProps=9};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1150,7 +1170,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
 
     createParams.SetElementId(elementId);
 
-    return LoadElement(createParams, makePersistent);
+    return LoadElement(createParams, stmt->GetValueText(Column::JsonProps), makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**

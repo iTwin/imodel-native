@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnMaterial_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -17,12 +17,10 @@ struct MaterialTest : public DgnDbTestFixture
 {
     void ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName);
 
-    DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
+    DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), DgnDbP pDb=nullptr)
         {
-        static int32_t s_jsonDummy = 0;
-        Utf8PrintfString value("value:%d", ++s_jsonDummy);
         DgnDbR db = nullptr != pDb ? *pDb : *m_db;
-        return DgnMaterial::CreateParams(db, palette, name, value, parent, descr);
+        return DgnMaterial::CreateParams(db, palette, name, parent);
         }
 
     template<typename T, typename U>
@@ -31,13 +29,11 @@ struct MaterialTest : public DgnDbTestFixture
         EXPECT_EQ(a.GetPaletteName(), b.GetPaletteName());
         EXPECT_EQ(a.GetMaterialName(), b.GetMaterialName());
         EXPECT_EQ(a.GetParentId(), b.GetParentId());
-        EXPECT_EQ(a.GetDescr(), b.GetDescr());
-        EXPECT_EQ(a.GetValue(), b.GetValue());
         }
 
     DgnMaterialCPtr CreateMaterial(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId(), DgnDbP pDb = nullptr)
         {
-        DgnMaterial material(MakeParams(palette, name, parentId, "", pDb));
+        DgnMaterial material(MakeParams(palette, name, parentId, pDb));
         return material.Insert();
         }
 };
@@ -56,9 +52,6 @@ TEST_F(MaterialTest, CRUD)
     EXPECT_TRUE(persistent->GetElementId().IsValid());
 
     Compare(*mat, *persistent);
-
-    mat->SetDescr("new description");
-    mat->SetValue("value:1234");
 
     DgnMaterialCPtr updatedMat = mat->Update();
     EXPECT_TRUE(updatedMat.IsValid());
@@ -216,31 +209,26 @@ TEST_F(MaterialTest, Iterate)
         {
         if (entry.GetId() == mat1->GetMaterialId())
             {
-            EXPECT_STREQ(mat1->GetDescr().c_str(), entry.GetDescr());
             EXPECT_STREQ(mat1->GetMaterialName().c_str(), entry.GetName());
             EXPECT_STREQ(mat1->GetPaletteName().c_str(), entry.GetPalette());
             }
         else if (entry.GetId() == mat2->GetMaterialId())
             {
-            EXPECT_STREQ(mat2->GetDescr().c_str(), entry.GetDescr());
             EXPECT_STREQ(mat2->GetMaterialName().c_str(), entry.GetName());
             EXPECT_STREQ(mat2->GetPaletteName().c_str(), entry.GetPalette());
             }
         else if (entry.GetId() == mat3->GetMaterialId())
             {
-            EXPECT_STREQ(mat3->GetDescr().c_str(), entry.GetDescr());
             EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
             EXPECT_STREQ(mat3->GetPaletteName().c_str(), entry.GetPalette());
             }
         else if (entry.GetId() == mat4->GetMaterialId())
             {
-            EXPECT_STREQ(mat4->GetDescr().c_str(), entry.GetDescr());
             EXPECT_STREQ(mat4->GetMaterialName().c_str(), entry.GetName());
             EXPECT_STREQ(mat4->GetPaletteName().c_str(), entry.GetPalette());
             }
         else if (entry.GetId() == mat5->GetMaterialId())
         {
-            EXPECT_STREQ(mat5->GetDescr().c_str(), entry.GetDescr());
             EXPECT_STREQ(mat5->GetMaterialName().c_str(), entry.GetName());
             EXPECT_STREQ(mat5->GetPaletteName().c_str(), entry.GetPalette());
         }

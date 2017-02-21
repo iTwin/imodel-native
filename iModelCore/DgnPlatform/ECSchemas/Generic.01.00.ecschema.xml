@@ -4,6 +4,78 @@
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
 
+    <ECEntityClass typeName="DetailingSymbol">
+        <!-- Mimics the like-named V8 type -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>bis:GraphicalElement2d</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TitleText">
+        <!-- Mimics the like-named V8 type -->
+        <BaseClass>DetailingSymbol</BaseClass>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ViewAttachmentLabelAnnotatesViewAttachment" strengthDirection="Backward" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="annotates" >
+            <Class class="ViewAttachmentLabel"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is annotated by" >
+            <Class class="bis:ViewAttachment"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ViewAttachmentLabel">
+        <!-- Maps to the V8 type DrawingBoundary -->
+        <!-- Its CodeValue is the section/elevation/plan/detail "id" -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>DetailingSymbol</BaseClass>
+        <ECNavigationProperty propertyName="ViewAttachment" relationshipName="ViewAttachmentLabelAnnotatesViewAttachment" direction="Forward" readOnly="True">
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="CalloutRefersToDrawingModel" strengthDirection="Backward" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="refers to" >
+            <Class class="Callout"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by" >
+            <Class class="bis:DrawingModel"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="Callout">
+        <!-- Mimics the like-named V8 type -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>DetailingSymbol</BaseClass>
+        <ECNavigationProperty propertyName="DrawingModel" relationshipName="CalloutRefersToDrawingModel" direction="Forward" readOnly="True">
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SectionCallout">
+        <!-- Mimics the like-named V8 type -->
+        <BaseClass>Callout</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ElevationCallout">
+        <!-- Mimics the like-named V8 type -->
+        <BaseClass>Callout</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PlanCallout">
+        <!-- Mimics the like-named V8 type -->
+        <BaseClass>Callout</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DetailCallout">
+        <!-- Mimics the like-named V8 type -->
+        <BaseClass>Callout</BaseClass>
+    </ECEntityClass>
+
     <ECEntityClass typeName="Graphic3d">
         <!-- A generic Graphic3d is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
@@ -14,7 +86,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalObject">
+    <ECEntityClass typeName="PhysicalObject" modifier="Sealed">
         <!-- A generic PhysicalObject is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a PhysicalObject -->

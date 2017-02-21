@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/ElementGraphics.fbs $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
 namespace BentleyB0200.Dgn.FB;
@@ -85,6 +85,24 @@ table OCBRepData
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
+table Image
+    {
+    drawBorder:ubyte;
+    useFillTint:ubyte;
+    tileCorner0:DPoint3d;
+    tileCorner1:DPoint3d;
+    tileCorner2:DPoint3d;
+    tileCorner3:DPoint3d;
+    width:uint;
+    height:uint;
+    format:uint;
+    byteData:[ubyte];
+
+    } // Image
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
 table GeometryPart
     {
     geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
@@ -92,6 +110,7 @@ table GeometryPart
     yaw:double;
     pitch:double;
     roll:double;
+    scale:double = 1.0;
 
     } // GeometryPart
 

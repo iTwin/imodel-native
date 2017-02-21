@@ -323,11 +323,11 @@ DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams c
 
 namespace WebMercatorStrings
 {
-static Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
-static Utf8CP str_MapService() {return "service";}
-static Utf8CP str_MapType() {return "map_type";}
-static Utf8CP str_GroundBias() {return "groundBias";}
-static Utf8CP str_Transparency() {return "transparency";}
+static constexpr Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
+static constexpr Utf8CP str_MapService() {return "service";}
+static constexpr Utf8CP str_MapType() {return "map_type";}
+static constexpr Utf8CP str_GroundBias() {return "groundBias";}
+static constexpr Utf8CP str_Transparency() {return "transparency";}
 };
 
 using namespace WebMercatorStrings;

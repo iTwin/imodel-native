@@ -16,7 +16,40 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
+//=======================================================================================
+// Class for small single tile raster image that may be included in a GeometryStream.
+// @bsistruct
+//=======================================================================================
+struct ImageGraphic : RefCountedBase
+{
+private:
+    Render::Image m_image;
+    Render::IGraphicBuilder::TileCorners m_corners;
+    bool m_drawBorder;
+    bool m_useFillTint;
+    Render::TexturePtr m_texture;
+
+protected:
+    ImageGraphic(Render::Image&& image, Render::IGraphicBuilder::TileCorners const& corners, bool drawBorder, bool useFillTint) : m_image(image), m_corners(corners), m_drawBorder(drawBorder), m_useFillTint(useFillTint) {}
+
+public:
+    static ImageGraphicPtr Create(Render::Image&& image, Render::IGraphicBuilder::TileCorners const& corners, bool drawBorder=false, bool useFillTint=false) {return new ImageGraphic(std::move(image), corners, drawBorder, useFillTint);}
+
+    ImageGraphicPtr Clone() const {Render::Image tmpImage = GetImage(); return new ImageGraphic(std::move(tmpImage), GetTileCorners(), GetDrawBorder(), GetUseFillTint());}
+    void ApplyTransform(TransformCR transform) {transform.Multiply(m_corners.m_pts, 4);}
+    DRange3d GetRange() const {DRange3d range = DRange3d::From(m_corners.m_pts, 4); return range;}
+
+    Render::ImageCR GetImage() const {return m_image;}
+    Render::IGraphicBuilder::TileCorners const& GetTileCorners() const {return m_corners;}
+    bool GetDrawBorder() const {return m_drawBorder;}
+    bool GetUseFillTint() const {return m_useFillTint;}
+    Render::TexturePtr GetTexture() const {return m_texture;}
+
+    DGNPLATFORM_EXPORT bool CreateTexture(ViewContextR); //!< NOTE: Must be called before AddToGraphic or AddToGraphic2d to have render target create texture from image.
+    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const; //!< NOTE: You must first call CreateTexture and ActivateGraphicParams to set texture tint and border color.
+    DGNPLATFORM_EXPORT void AddToGraphic2d(Render::GraphicBuilderR, double displayPriority) const; //!< NOTE: You must first call CreateTexture and ActivateGraphicParams to set texture tint and border color.
+
+}; // ImageGraphic
 
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
@@ -35,6 +68,7 @@ public:
         Polyface            = 5,
         BRepEntity          = 6,
         TextString          = 7,
+        Image               = 8,
     };
 
 protected:
@@ -48,6 +82,7 @@ protected:
     GeometricPrimitive(PolyfaceHeaderPtr const& source);
     GeometricPrimitive(IBRepEntityPtr const& source);
     GeometricPrimitive(TextStringPtr const& source);
+    GeometricPrimitive(ImageGraphicPtr const& source);
 
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
@@ -71,8 +106,9 @@ public:
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetAsPolyfaceHeader() const;
     DGNPLATFORM_EXPORT IBRepEntityPtr GetAsIBRepEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
+    DGNPLATFORM_EXPORT ImageGraphicPtr GetAsImage() const;
 
-    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const;
+    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const; // Convenience method - treats as 3d geometry.
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
@@ -88,6 +124,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityCR source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicCR source);
 
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorPtr const& source);
@@ -96,6 +133,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityPtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicPtr const& source);
 
 }; // GeometricPrimitive
 
@@ -169,6 +207,7 @@ struct GeometryStreamIO
         ParasolidBRep           = 25,   //!< Parasolid body
         BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
         BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 
+        Image                   = 28,   //!< Small single-tile raster image 
     };
 
     //=======================================================================================
@@ -229,6 +268,7 @@ struct GeometryStreamIO
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
         void Append(TextStringCR);
+        void Append(ImageGraphicCR);
         void Append(DRange3dCR);
     };
 
@@ -257,6 +297,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
+        bool Get(Operation const&, ImageGraphicPtr&) const;
         bool Get(Operation const&, DRange3dR) const;
     };
 
@@ -356,6 +397,7 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             BRepEntity          = 7,  //!< BRepEntity
             TextString          = 8,  //!< TextString
+            ImageGraphic        = 9,  //!< ImageGraphic
         };
 
     private:
@@ -567,6 +609,7 @@ public:
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private Current Placement2d as of last call to Append when creating a 2d GeometryStream
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
+    size_t GetCurrentSize() const {return m_writer.m_buffer.size();} //!< @private Current size of GeometryStream being constructed by this builder
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream(GeometryStreamR); //!< @private GeometryStream being constructed by this builder
 
     //! Return the GeometryStreamEntryId for the GeometricPrimitve last added to the builder. Used to identify a specific GeometricPrimitive in the GeometryStream in places like HitDetail.
@@ -637,6 +680,9 @@ public:
 
     //! Append a TextAnnotation to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append(TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
+
+    //! Append a ImageGraphic to builder in either local or world coordinates.
+    DGNPLATFORM_EXPORT bool Append(ImageGraphicCR, CoordSystem coord = CoordSystem::Local);
 
     //! @private Create builder for DgnGeometryPart from an existing GeometricElement's GeometryStream (can't contain parts).
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart(GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr);

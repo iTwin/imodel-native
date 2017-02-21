@@ -59,7 +59,7 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
     : m_props(eclass.GetProperties(true)), m_end(m_props.end()), m_stype(stype), m_wantCustomHandledProps(wantCustomHandledProps)
     {
     #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
-        printf("%s\n", eclass.GetName().c_str());
+        printf("%s\n", eclass.GetFullName());
         printf("---------------------------\n");
     #endif
     m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
@@ -85,7 +85,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
                     {
                     ECN::ECValue v;
                     if (ECN::ECObjectsStatus::Success == ca->GetValue(v, caprop->GetName().c_str()) && !v.IsNull())
-                        printf("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                        printf("\t\t%s=%s\n", caprop->GetName().c_str(), v.ToString().c_str());
                     else
                         printf ("\t\t%s (missing)\n", caprop->GetName().c_str());
                     }
@@ -151,7 +151,7 @@ static void importBisCoreSchema(DgnDbCR db)
     ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
     BeAssert(bisCoreSchema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetDbSchemaModificationToken());
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetECSchemaImportToken());
     BeAssert(status == SUCCESS);
     }
 
@@ -187,7 +187,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeSpec.Id,CodeScope,CodeValue) VALUES(?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope,CodeValue) VALUES(?,?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECCrudWriteToken()))
         {
@@ -198,9 +198,10 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(1, partitionId);
     statement.BindId(2, DgnModel::RepositoryModelId());
     statement.BindId(3, Elements().GetRootSubjectId());
-    statement.BindId(4, partitionCode.GetCodeSpecId());
-    statement.BindText(5, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(6, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(4, Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
+    statement.BindId(5, partitionCode.GetCodeSpecId());
+    statement.BindText(6, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);

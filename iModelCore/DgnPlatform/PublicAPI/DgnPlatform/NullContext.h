@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NullContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,8 +54,8 @@ struct NullContext : ViewContext
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
-        void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
+        void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override {return new NullGraphic();}
     };
 
 protected:
@@ -86,6 +86,7 @@ struct FitContext : NullContext
     RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
     bool IsRangeContained(RangeIndex::FBoxCR range) const;
     DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
+    DGNPLATFORM_EXPORT void ExtendFitRange(AxisAlignedBox3dCR elementBox);
 
     FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
     FitViewParams const& GetParams() const {return m_params;}

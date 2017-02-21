@@ -121,6 +121,8 @@ void BimConsole::Setup()
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());
 
+    AddCommand(std::make_shared<ValidateCommand>());
+
     AddCommand(std::make_shared<DebugCommand>());
 
     auto exitCommand = std::make_shared<ExitCommand>();
@@ -170,7 +172,8 @@ int BimConsole::WaitForUserInput()
     while (ReadLine(cmd))
         {
         cmd.Trim();
-        RunCommand(cmd);
+        if (!cmd.empty())
+            RunCommand(cmd);
         }
 
     return 0;
@@ -234,18 +237,16 @@ bool BimConsole::ReadLine(Utf8StringR cmd)
         fgets(m_readBuffer, sizeof(m_readBuffer), GetIn());
         if (feof(GetIn()))
             return false;
+
         cmd.append(m_readBuffer);
-        if (cmd.size() > 0)
-            {
-            if (cmd[0] == COMMAND_PREFIX || cmd[cmd.size() -1] == ECSQLSTATEMENT_DELIMITER)
-                return true;
-            else
-                {
-                Write(" > ");
-                cmd.append("\t");
-                }
-            }
+        cmd.TrimEnd();
+        if (!cmd.empty() && (cmd[0] == COMMAND_PREFIX || cmd.EndsWithIAscii(";")))
+            return true;
+
+        Write("   > ");
+        cmd.append(" ");
         }
+
     return false;
     }
 

@@ -255,12 +255,6 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TestPhysicalTemplate">
-        <BaseClass>bis:PhysicalTemplate</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="TestPhysicalType">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>

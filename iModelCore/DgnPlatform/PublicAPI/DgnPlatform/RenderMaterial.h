@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderMaterial.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,14 +12,13 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(RenderingAsset)
+
 //=======================================================================================
 // @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
-struct JsonRenderMaterial
+struct RenderingAsset : Json::Value
 {
-protected:
-    Json::Value m_value;
-
 public:
     struct Default
     {
@@ -87,7 +86,7 @@ public:
             Inches                 = 6,
         };
 
-        Json::Value const& m_value;
+        JsonValueCR m_value;
         Type m_type;
 
         bool IsValid() const {return !m_value.isNull();}
@@ -108,19 +107,19 @@ public:
     }; // TextureMap
 
     DGNPLATFORM_EXPORT BentleyStatus Relocate(DgnImportContext& context);
-    DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
 
-    double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
-    void SetDouble(Utf8CP name, double val) {m_value[name]=val;}
-    bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
-    void SetBool(Utf8CP name, bool val) {m_value[name]=val;}
+    double GetDouble(Utf8CP name, double defaultVal) const {return !GetValue(name).isDouble() ? defaultVal : GetValue(name).asDouble();}
+    void SetDouble(Utf8CP name, double val) {GetValueR(name)=val;}
+    bool GetBool(Utf8CP name, bool defaultVal) const {return !GetValue(name).isBool() ? defaultVal : GetValue(name).asBool();}
+    void SetBool(Utf8CP name, bool val) {GetValueR(name)=val;}
     DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
     DGNPLATFORM_EXPORT void SetColor(Utf8CP name, RgbFactor);
-    Json::Value& GetValueR() {return m_value;}
-    Json::Value const& GetValue() const {return m_value;}
-    bool IsValid() const {return !m_value.isNull();}
+    JsonValueCR GetValue(Utf8CP name) const {return (*this)[name];}
+    JsonValueR GetValueR(Utf8CP name) {return (*this)[name];}
+    bool IsValid() const {return !isNull();}
 
-    DGNPLATFORM_EXPORT TextureMap GetPatternMap();
+    DGNPLATFORM_EXPORT TextureMap GetPatternMap() const;
+    DGNPLATFORM_EXPORT static RenderingAssetCP Load(DgnMaterialId materialId, DgnDbR dgnDb);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

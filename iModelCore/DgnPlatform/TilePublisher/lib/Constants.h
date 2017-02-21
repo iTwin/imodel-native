@@ -139,7 +139,7 @@ static std::string s_computeLighting =
 "float specularIntensity = 0.0;\n"
 "computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir1, .35, specularExponent);\n"
 "computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir2, .45, specularExponent);\n"
-"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, czm_sunDirectionWC, .25, specularExponent);\n"
+"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, czm_sunDirectionEC, .25, specularExponent);\n"
 "vec3   diffuseAndAmbient = inputColor.rgb * min (1.0, diffuseIntensity + ambient);\n"
 "vec3   specular = specularColor.rgb * min (1.0, specularIntensity);\n"
 "return vec4 (diffuseAndAmbient + specular, inputColor.a);\n"

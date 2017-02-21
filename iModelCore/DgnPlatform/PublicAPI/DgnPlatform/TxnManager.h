@@ -63,7 +63,7 @@ enum class TxnAction
 struct TxnMonitor
 {
     virtual void _OnCommit(TxnManager&) {}
-    virtual void _OnReversedChanges(TxnManager&) {}
+    virtual void _OnAppliedChanges(TxnManager&) {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
@@ -122,29 +122,28 @@ struct TxnTable : RefCountedBase
     virtual void _OnValidated() {}
     //@}
 
-    //! @name Reversing previously committed changesets via undo/redo.
+    //! @name Applying change sets (undo/redo of transactions, applying/reversing/reinstating of revisions)
     //@{
-    //! Called before a set of Txns are undone/redone. TxnTables that use temporary tables can prepare them in this method.
-    //! After this method is called one or more _OnReversedxxx methods will be called, followed finally by a call to _OnReversed
-    virtual void _OnReverse() {}
+    //! Called before a set of changes are applied to the Db. TxnTables that use temporary tables can prepare them in this method.
+    //! After this method is called one or more _OnAppliedxxx methods will be called, followed finally by a call to _OnApplied
+    virtual void _OnApply() {}
 
-    //! Called after undo/redo of a set of Txns is complete. TxnTables that create temporary tables can empty them in this method.
-    virtual void _OnReversed() {}
+    //! Called after a set of change sets are applied to the Db. TxnTables that create temporary tables can empty them in this method.
+    virtual void _OnApplied() {}
 
-    //! Called when an add of a row in this TxnTable was reversed via undo or redo.
-    //! @param[in] change The data for a previously added row that is now deleted. All data will be in the "old values" of change.
-    //! @note If you wish to determine whether the action that caused this call was an undo or a redo, call m_txnMgr.GetCurrentAction()
-    virtual void _OnReversedAdd(BeSQLite::Changes::Change const& change) {}
+    //! Called after applying a delete record from the change set
+    //! @param[in] change The change record for the delete. All data will be in the "old values" of change.
+    //! @note Use m_txnMgr.GetCurrentAction() to determine the action (undo, redo, merge, etc.) that caused this call
+    virtual void _OnAppliedDelete(BeSQLite::Changes::Change const& change) {}
 
-    //! Called when a delete of a row in this TxnTable was reversed via undo or redo.
-    //! @param[in] change The data for a previously deleted row that is now back. All data will be in the "new values" of change.
-    virtual void _OnReversedDelete(BeSQLite::Changes::Change const& change) {}
+    //! Called after applying an add record from the change set
+    //! @param[in] change The change record for the add. All data will be in the "new values" of change.
+    virtual void _OnAppliedAdd(BeSQLite::Changes::Change const& change) {}
 
-    //! Called when a delete of a row in this TxnTable was reversed via undo or redo.
-    //! @param[in] change The data for a previously deleted row that is now back in place. The pre-changed data about the
-    //! row will be in the "old values" of change, and the post-changed data will be in the "new values".
-    //! Columns that are unchanged are in neither values.
-    virtual void _OnReversedUpdate(BeSQLite::Changes::Change const& change) {}
+    //! Called after apply an update record from the change set
+    //! @param[in] change The change recor for the update. The pre-changed data about the row will be in the "old values" of change, 
+    //! and the post-changed data will be in the "new values". Columns that are unchanged are in neither values.
+    virtual void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) {}
     //@}
 };
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
@@ -310,9 +309,8 @@ private:
     void ReadChangeSet(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
-    void ApplyChanges(TxnId, TxnAction);
-    void OnChangesetApplied(BeSQLite::ChangeSet& changeset, TxnAction);
-    void OnChangesApplied(BeSQLite::Changes const&, TxnAction);
+    void ApplyTxnChanges(TxnId, TxnAction);
+    void OnChangesApplied(BeSQLite::IChangeSet& changeset);
     OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
     DgnDbStatus ReinstateActions(TxnRange& revTxn);
     bool PrepareForUndo();
@@ -320,9 +318,10 @@ private:
     BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     TxnTable* FindTxnTable(Utf8CP tableName) const;
-    BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
-    bool IsMultiTxnMember(TxnId rowid);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeSet, TxnAction txnAction);
+    bool IsMultiTxnMember(TxnId rowid) const;
     RevisionStatus MergeRevision(DgnRevisionCR revision);
+    RevisionStatus ApplyRevision(DgnRevisionCR revision, bool reverse);
     void CancelDynamics();
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -368,7 +367,7 @@ public:
     DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
 
     //! Get the description of a previously committed Txn, given its TxnId.
-    DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
+    DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId) const;
 
     //! Get a description of the operation that would be reversed by calling ReverseTxns(1).
     //! This is useful for showing the operation that would be undone, for example in a pull-down menu.
@@ -403,14 +402,14 @@ public:
     //! otherwise it will always return TxnAction::None
     TxnAction GetCurrentAction() const {return m_action;}
 
-    //! Returns true if the TxnManager is in the process of undoing or redoing txns. This can be called from inside TxnTable methods only,
+    //! Returns true if the TxnManager is in the process of abandoning txns. This can be called from inside TxnTable methods only,
     //! otherwise it will always return false
-    bool IsInUndoRedo() const {return TxnAction::Reverse==m_action || TxnAction::Reinstate==m_action;}
+    bool IsInAbandon() const { return TxnAction::Abandon == m_action; }
 
     //! Get the TxnId of the current Txn.
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
     //! @see   ReverseTo CancelTo
-    TxnId GetCurrentTxnId() {return m_curr;}
+    TxnId GetCurrentTxnId() const {return m_curr;}
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
@@ -434,11 +433,11 @@ public:
 
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
-    bool IsUndoPossible() {return GetSessionStartId() < GetCurrentTxnId();}
+    bool IsUndoPossible() const {return GetSessionStartId() < GetCurrentTxnId();}
 
     //! Query if there are currently any reinstateable (redoable) changes
     //! @return True if there are currently any reinstate-able (redoable) changes
-    bool IsRedoPossible() {return !m_reversedTxn.empty();}
+    bool IsRedoPossible() const {return !m_reversedTxn.empty();}
 
     enum class AllowCrossSessions {Yes=1, No=0};
     //! Reverse (undo) the most recent operation(s).
@@ -560,11 +559,11 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
-        void _OnReverse() override {_OnValidate();}
-        void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
-        void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
-        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
-        void _OnReversed() override {_OnValidated();}
+        void _OnApply() override;
+        void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
+        void _OnAppliedDelete(BeSQLite::Changes::Change const&) override;
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnApplied() override;
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
         void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId);
@@ -615,11 +614,11 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
-        void _OnReverse() override {_OnValidate();}
-        void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
-        void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
-        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
-        void _OnReversed() override {_OnValidated();}
+        void _OnApply() override;
+        void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
+        void _OnAppliedDelete(BeSQLite::Changes::Change const&) override;
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnApplied() override;
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
 
@@ -734,7 +733,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const override {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
         void _Initialize() override {}
-        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
     };
 };
 

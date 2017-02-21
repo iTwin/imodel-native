@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationFrameStyle_Test.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -47,23 +47,27 @@ TEST_F(AnnotationFrameStyleTest, PropertyBagTypes)
     double horizontalPadding = 2.1;                                                             STYLE_PTR->SetHorizontalPadding(horizontalPadding);\
     bool isFillEnabled =true;                                                                   STYLE_PTR->SetIsFillEnabled(isFillEnabled);\
     bool isStrokeCloud =false;                                                                  STYLE_PTR->SetIsStrokeCloud(isStrokeCloud);\
-    bool isStrokeEnabled =false;                                                                STYLE_PTR->SetIsStrokeEnabled(isStrokeEnabled);\
+    bool isStrokeEnabled =true;                                                                 STYLE_PTR->SetIsStrokeEnabled(isStrokeEnabled);\
     ColorDef strokeColor(0xff, 0x00, 0x00);                                                     STYLE_PTR->SetStrokeColorValue(strokeColor);\
     uint32_t strokeWeight=3;                                                                    STYLE_PTR->SetStrokeWeight(strokeWeight); \
     AnnotationFrameType type = AnnotationFrameType::Circle;                                     STYLE_PTR->SetType(type); \
-    double verticalPadding = 2.1;                                                               STYLE_PTR->SetVerticalPadding(verticalPadding);
+    double verticalPadding = 2.1;                                                               STYLE_PTR->SetVerticalPadding(verticalPadding);\
+    AnnotationColorType fillcolortype = AnnotationColorType::RGBA;                              STYLE_PTR->SetFillColorType(fillcolortype);\
+    AnnotationColorType strokecolortype = AnnotationColorType::RGBA;                            STYLE_PTR->SetStrokeColorType(strokecolortype);
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
     EXPECT_TRUE(cloudBulgeFactor == STYLE_PTR->GetCloudBulgeFactor());\
     EXPECT_TRUE(cloudDiameterFactor == STYLE_PTR->GetCloudDiameterFactor());\
+    EXPECT_TRUE(fillcolortype == STYLE_PTR->GetFillColorType());\
     EXPECT_TRUE(fillColor == STYLE_PTR->GetFillColorValue());\
     EXPECT_TRUE(fillTransparency == STYLE_PTR->GetFillTransparency());\
     EXPECT_TRUE(horizontalPadding == STYLE_PTR->GetHorizontalPadding());\
     EXPECT_TRUE(isFillEnabled == STYLE_PTR->IsFillEnabled());\
     EXPECT_TRUE(isStrokeCloud == STYLE_PTR->IsStrokeCloud());\
-    EXPECT_TRUE(isStrokeEnabled == STYLE_PTR->IsStrokeCloud());\
+    EXPECT_TRUE(isStrokeEnabled == STYLE_PTR->IsStrokeEnabled());\
+    EXPECT_TRUE(strokecolortype == STYLE_PTR->GetStrokeColorType());\
     EXPECT_TRUE(strokeColor == STYLE_PTR->GetStrokeColorValue());\
     EXPECT_TRUE(strokeWeight == STYLE_PTR->GetStrokeWeight());\
     EXPECT_TRUE(type == STYLE_PTR->GetType());\
