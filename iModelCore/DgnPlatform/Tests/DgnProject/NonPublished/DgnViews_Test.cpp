@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnViews_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -203,7 +203,7 @@ TEST_F(DgnViewElemTest, CRUD)
     // Create a new view
     CameraViewDefinition tempView(*m_db, "TestView", );
     tempView.SetDescr("Test Description");
-    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
+    tempView.SetModelSelector(*DgnDbTestUtils::InsertModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
 
     DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1)); // FIXME: Need to point at a DrawingModel!
     tempView2.SetDescr("TestDrawingView Description");

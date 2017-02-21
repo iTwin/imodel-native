@@ -32,15 +32,17 @@ struct ECSqlClassInfo
 
 private:
     friend struct ECSqlClassParams;
+    friend struct DgnElements;
 
     Utf8String  m_select;
-    Utf8String  m_selectEcProps;
+    Utf8String  m_selectEcProps; // lazy-initialized by DgnElements::GetSelectEcPropsECSql using its mutex
     Utf8String  m_insert;
     Utf8String  m_update;
     uint16_t    m_updateParameterIndex;
     bmap<uint32_t, uint32_t> m_autoPropertyStatementType; // non-default statement types found for auto-handled properties
     bmap<uint32_t, bpair<T_ElementPropGet, T_ElementPropSet>> m_propertyAccessors; // custom-handled property get and set functions
     bmap<uint32_t, T_ElementPropValidator> m_autoPropertyValidators; // auto-handled property custom validation functions
+
 public:
     //! @private
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
@@ -58,11 +60,6 @@ public:
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
     //! @private
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
-
-    //! @private
-    void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
-    //! @private
-    Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
 
     //! Register the C++ functions that should be used to access custom-handled properties by name. @see DgnElement::_GetPropertyValue
     //! @param layout The layout of the element's class

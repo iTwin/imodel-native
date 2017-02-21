@@ -400,6 +400,9 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth)
         
         Transform toNpc;
         toNpc.InitFrom(*vp->GetWorldToNpcMap(), false);
+        toNpc.form3d[2][2] = 1.0;
+        toNpc.form3d[2][3] = 0;
+
         m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
         }
 
@@ -457,15 +460,13 @@ bool Attachment::Tree::Pick(PickContext& context)
     if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
         return false;
 
-    Transform sheetToTile;
-    sheetToTile.InverseOf(GetLocation());
-    Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
-
     if (m_clip.IsValid())
         {
+        Frustum frust = context.GetFrustum();   // this frustum is the pick aperture
+
         for (auto& primitive : *m_clip)
             {
-            if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(box.m_pts, NPC_CORNER_COUNT, false))
+            if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyFrustum(frust))
                 return false;
             }
         }
@@ -479,7 +480,14 @@ bool Attachment::Tree::Pick(PickContext& context)
 struct RectanglePoints
 {
     DPoint2d m_pts[5];
-    RectanglePoints(double x, double y) {memset(m_pts, 0, sizeof(m_pts)); m_pts[1].x=m_pts[2].x=x; m_pts[2].y=m_pts[3].y=y;}
+    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh) 
+        {
+        m_pts[0].x = m_pts[3].x = m_pts[4].x = xlow;
+        m_pts[0].y = m_pts[1].y = m_pts[4].y = ylow;
+        m_pts[1].x = m_pts[2].x = xhigh; 
+        m_pts[2].y = m_pts[3].y = yhigh;
+        
+        }
     operator DPoint2dP() {return m_pts;}
     operator DPoint2dCP() const {return m_pts;}
 };
@@ -551,19 +559,12 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(m_scale.x, m_scale.y, 1.0);
 
-    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
-    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(1.0/m_scale.x, 1.0/m_scale.y), 5, false, nullptr, nullptr, nullptr).get());
-    
-    auto attachClip = attach->GetClip();
-    if (attachClip.IsValid())
-        {
-        Transform sheetToNpc;
-        sheetToNpc.InverseOf(m_viewport->m_toParent);
-        attachClip->TransformInPlace(sheetToNpc);
-        m_clip->Append(*attachClip);
-        }
+    // set a clip volume around view, so we only show the original volume
+    m_clip = attach->GetClip();
+    if (!m_clip.IsValid())
+        m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y), 5, false, nullptr, nullptr, nullptr).get());
 
-    m_viewport->m_attachClips = m_clip->Clone(&trans); // save so we can get it to for hiliting.
+    m_viewport->m_clips = m_clip;
 
     SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
 
@@ -637,7 +638,7 @@ void Sheet::ViewController::_LoadState()
 void Sheet::ViewController::DrawBorder(ViewContextR context) const
     {
     Render::GraphicBuilderPtr border = context.CreateGraphic();
-    RectanglePoints rect(m_size.x, m_size.y);
+    RectanglePoints rect(0, 0, m_size.x, m_size.y);
     border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, GraphicParams::LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);
 

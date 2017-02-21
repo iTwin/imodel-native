@@ -125,7 +125,7 @@ GenericSpatialLocationPtr GenericSpatialLocation::Create(PhysicalModelR model, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-GenericGroupPtr GenericGroup::Create(GenericGroupModelCR model, DgnCodeCR code)
+GenericGroupPtr GenericGroup::Create(GenericGroupModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId modelId = model.GetModelId();
