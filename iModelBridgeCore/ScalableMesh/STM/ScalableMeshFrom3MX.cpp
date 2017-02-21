@@ -47,6 +47,9 @@ public:
         if (errorStat != SUCCESS)
             return false;
 
+        // To allow automatic conversion of elevation if applicable (e.g., from ellipsoid to geoid)
+        m_inputGCS->SetReprojectElevation(true);
+
         // If no output GCS is specified, set it to the input GCS
         if (m_outputGCS == nullptr) m_outputGCS = m_inputGCS;
 
