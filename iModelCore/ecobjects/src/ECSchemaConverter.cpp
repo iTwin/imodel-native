@@ -757,6 +757,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         newKOQName = newUnit->GetPhenomenon()->GetName();
 
     newKOQ = schema.GetKindOfQuantityP(newKOQName.c_str());
+    ECObjectsStatus status;
     if (nullptr != newKOQ)
         {
         if (!newKOQ->GetPersistenceUnit().Equals(newUnit->GetName()))
@@ -771,14 +772,24 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
             newKOQ = schema.GetKindOfQuantityP(validatedKoqName.GetName().c_str());
             if (nullptr == newKOQ)
                 {
-                schema.CreateKindOfQuantity(newKOQ, validatedKoqName.GetName().c_str());
+                if (ECObjectsStatus::Success != (status = schema.CreateKindOfQuantity(newKOQ, validatedKoqName.GetName().c_str())))
+                    {
+                    LOG.errorv("Failed to create KindOfQuantity, %s, from the unit '%s' defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
+                               validatedKoqName.GetName().c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
+                    return status;
+                    }
                 newKOQ->SetPersistenceUnit(newUnit->GetName());
                 }
             }
         }
     else
         {
-        schema.CreateKindOfQuantity(newKOQ, newKOQName.c_str());
+        if (ECObjectsStatus::Success != (status = schema.CreateKindOfQuantity(newKOQ, newKOQName.c_str())))
+            {
+            LOG.errorv("Failed to create KindOfQuantity, %s, from the unit '%s' defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
+                       newKOQName.c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
+            return status;
+            }
         newKOQ->SetPersistenceUnit(newUnit->GetName());
         }
 
