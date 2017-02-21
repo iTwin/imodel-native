@@ -121,6 +121,7 @@ namespace ServerSchema
         {
         static Utf8CP DetailedError_Locks = "DetailedError_Locks";
         static Utf8CP DetailedError_Codes = "DetailedError_Codes";
+        static Utf8CP SetMaximumInstances = "DetailedError_MaximumInstances";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
