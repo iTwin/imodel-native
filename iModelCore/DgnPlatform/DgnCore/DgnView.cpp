@@ -149,7 +149,7 @@ bool ViewDefinition::_EqualState(ViewDefinitionR other)
     if (!GetDisplayStyle().EqualState(other.GetDisplayStyle()))
         return false;
 
-    return ToDetailJson() == other.ToDetailJson();
+    return GetDetails() == other.GetDetails();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1052,7 +1052,11 @@ bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
         return false;
 
     auto& other = (CameraViewDefinition&) in;
-    return (IsCameraOn() == other.IsCameraOn()) && m_camera.IsEqual(other.m_camera);
+    if (IsCameraOn() != other.IsCameraOn())
+        return false;
+    
+    // if camera is off, don't compare cameras
+    return !IsCameraOn() || m_camera.IsEqual(other.m_camera);
     }
 
 /*---------------------------------------------------------------------------------**//**

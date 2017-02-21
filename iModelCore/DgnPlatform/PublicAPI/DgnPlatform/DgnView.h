@@ -65,7 +65,7 @@ protected:
     static constexpr Utf8CP str_Styles() {return "Styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
-    bool EqualState(DisplayStyleCR other) const {return ToJson()==other.ToJson();}
+    bool EqualState(DisplayStyleCR other) const {return GetStyles()==other.GetStyles();}
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
@@ -941,7 +941,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 
     public:
         static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
-        void InvalidateFocus() {m_focusDistance=-1.0;}
+        void InvalidateFocus() {m_focusDistance=0.0;}
         bool IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
         double GetFocusDistance() const {return m_focusDistance;}
         void SetFocusDistance(double dist) {m_focusDistance = dist;}
@@ -960,16 +960,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
     friend struct ViewController;
 
 protected:
-    bool m_isCameraOn = true;    //!< if true, m_camera is valid.
+    bool m_isCameraOn = false;    //!< if true, m_camera is valid.
     Camera m_camera;  //!< The camera used for this view.
 
-    explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) 
-        {
-        // not valid, but better than random
-        m_isCameraOn = false;
-        memset(&m_camera, 0, sizeof(m_camera));
-        m_camera.InvalidateFocus();
-        }
+    explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
@@ -979,8 +973,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     CameraViewDefinitionCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
-    bool _IsEyePointAbove(double elevation) const override {return !m_isCameraOn? T_Super::_IsEyePointAbove(elevation): (GetEyePoint().z > elevation);}
-    DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
+    bool _IsEyePointAbove(double elevation) const override {return !IsCameraOn() ? T_Super::_IsEyePointAbove(elevation) : (GetEyePoint().z > elevation);}
+    DPoint3d _ComputeEyePoint(Frustum const& frust) const override {return !IsCameraOn() ? T_Super::_ComputeEyePoint(frust) : GetEyePoint();}
     DGNPLATFORM_EXPORT void SaveCamera();
     DGNPLATFORM_EXPORT DPoint3d _GetTargetPoint() const override;
 

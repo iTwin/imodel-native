@@ -38,7 +38,7 @@ void Cache::Worker::Work()
             {
             BeMutexHolder lock(m_cache.m_cv.GetMutex());
 
-            if (!m_hasChanges)
+            if (!m_cache.IsStopped() && !m_hasChanges)
                 m_cache.m_cv.InfiniteWait(lock);
 
             while (m_saveTime > BeTimePoint::Now() && !m_cache.IsStopped())
@@ -94,7 +94,10 @@ Cache::~Cache()
 
     BeMutexHolder holder(m_cv.GetMutex()); 
     while (m_accessors>0 || m_saveActive || m_workerRunning) 
-        m_cv.InfiniteWait(holder);
+        {
+        m_cv.notify_all();
+        m_cv.RelativeWait(holder, 1000);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

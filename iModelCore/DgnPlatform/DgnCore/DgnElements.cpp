@@ -1604,6 +1604,35 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR DgnElements::GetSelectEcPropsECSql(ECSqlClassInfo& classInfo, ECN::ECClassCR ecclass) const
+    {
+    BeMutexHolder _v(m_mutex);  // guard lazy initialization of classInfo.m_selectEcProps
+
+    if (!classInfo.m_selectEcProps.empty())
+        return classInfo.m_selectEcProps;
+
+    Utf8String props;
+    Utf8CP comma = "";
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : AutoHandledPropertiesCollection(ecclass, GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
+        {
+        Utf8StringCR propName = prop->GetName();
+        props.append(comma).append("[").append(propName).append("]");
+        comma = ",";
+        }
+
+    if (props.empty())
+        return classInfo.m_selectEcProps = "";
+
+    classInfo.m_selectEcProps = Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter", 
+                                                            props.c_str(), ecclass.GetECSqlName().c_str());
+    return classInfo.m_selectEcProps;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
