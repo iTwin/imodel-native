@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/DictionaryTests/GCSSpecificTransformTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -177,6 +177,163 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT1)
 
     EXPECT_TRUE(currentGCS->GetVerticalDatumCode() == GeoCoordinates::vdcGeoid);
     }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT2)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText = L"PROJCS[\"WGS 84 / UTM zone 13N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-105],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32613\"]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT3)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText = L"PROJCS[\"WGS 84 / UTM zone 13N\",GEOGCS[\"EPSG:6326\",DATUM[\"EPSG:6326\",SPHEROID[\"EPSG:7030\",6378137.000,298.25722360]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse Mercator\"],PARAMETER[\"False Easting\",500000.000],PARAMETER[\"False Northing\",0.000],PARAMETER[\"Scale Reduction\",0.999600000000],PARAMETER[\"Central Meridian\",-105.00000000000003],PARAMETER[\"Origin Latitude\",0.00000000000000],UNIT[\"Meter\",1.00000000000000]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT4)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText = L"PROJCS[\"UTM84-13N\",GEOGCS[\"LL84\",DATUM[\"WGS84\",SPHEROID[\"WGS84\",6378137.000,298.25722293]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Universal Transverse Mercator System\"],PARAMETER[\"UTM Zone Number (1 - 60)\",13.0],PARAMETER[\"Hemisphere, North or South\",1.0],UNIT[\"Meter\",1.00000000000000]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT5)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText = L"COMPD_CS[\"WGS84/UTM17N + EGM96 geoid height\",PROJCS[\"WGS 84 / UTM zone 17N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-81],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32617\"]],VERT_CS[\"EGM96 geoid height\",VERT_DATUM[\"EGM96 geoid\",2005]]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT6)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+//    WString wellKnownText = L"PROJCS[\"NAD83(2011) / Florida East (ftUS)\",GEOGCS[\"NAD83(2011)\",DATUM[\"NAD83_National_Spatial_Reference_System_2011\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1116\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6318\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",24.33333333333333],PARAMETER[\"central_meridian\",-81],PARAMETER[\"scale_factor\",0.999941177],PARAMETER[\"false_easting\",656166.667],PARAMETER[\"false_northing\",0],UNIT[\"US survey foot\",0.3048006096012192,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],AUTHORITY[\"EPSG\",\"6438\"]]";
+
+    WString wellKnownText = L"PROJCS[\"NAD83(2011) / Florida East (ftUS)\",GEOGCS[\"NAD83(2011)\",DATUM[\"NAD_1983_2011\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1116\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6318\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",24.33333333333333],PARAMETER[\"central_meridian\",-81],PARAMETER[\"scale_factor\",0.999941177],PARAMETER[\"false_easting\",656166.667],PARAMETER[\"false_northing\",0],UNIT[\"US survey foot\",0.3048006096012192,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],AUTHORITY[\"EPSG\",\"6438\"]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, ElevationTransfo1)
+    {
+    GeoCoordinates::BaseGCSPtr fromGCS;
+    GeoCoordinates::BaseGCSPtr toGCS;
+
+   
+    fromGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    toGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText1 = L"PROJCS[\"WGS 84 / UTM zone 32N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",9],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32632\"]]";
+
+    WString wellKnownText2 = L"COMPD_CS[\"WGS 84 / UTM zone 32N + EGM96 geoid height\",PROJCS[\"WGS 84 / UTM zone32N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",9],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32632\"]],VERT_CS[\"EGM96 geoid height\",VERT_DATUM[\"EGM96 geoid\",2005,EXTENSION[\"PROJ4_GRIDS\",\"egm96_15.gtx\"],AUTHORITY[\"EPSG\",\"5171\"]],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Up\",UP],AUTHORITY[\"EPSG\",\"5773\"]]]";
+
+    EXPECT_TRUE(SUCCESS == fromGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText1.c_str()));
+
+
+    EXPECT_TRUE(fromGCS->IsValid());
+
+    EXPECT_TRUE(SUCCESS == toGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText2.c_str()));
+
+    EXPECT_TRUE(toGCS->IsValid());
+
+    fromGCS->SetReprojectElevation(true);
+    toGCS->SetReprojectElevation(true);
+
+    GeoPoint fromGeoPoint;
+    GeoPoint toGeoPoint;
+   
+
+    fromGeoPoint.longitude=6.6922634698675436;
+    fromGeoPoint.latitude=43.955776401074210;
+    fromGeoPoint.elevation=611.48800000000006;
+
+
+    EXPECT_TRUE(REPROJECT_Success == fromGCS->LatLongFromLatLong(toGeoPoint, fromGeoPoint, *toGCS));
+
+    EXPECT_TRUE(toGeoPoint.elevation != fromGeoPoint.elevation);
+
+
+    }
+
+//==================================================================================
+// Test generation WKT for london grid
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKTGenerationLondonGrid)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LondonGrid");
+
+    WString wellKnownText = L"";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::wktFlavorOGC, false));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
 
 //==================================================================================
 // Domain
