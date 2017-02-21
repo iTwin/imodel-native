@@ -1426,6 +1426,10 @@ void Check::Shift (double dx, double dy, double dz)
     s_transform = Transform::From (dx, dy, dz) * s_transform;
     }
 
+void Check::Shift (DVec3dCR shift)
+    {
+    s_transform = Transform::From (shift.x, shift.y, shift.z) * s_transform;
+    }
 
 
 Transform Check::GetTransform () {return s_transform;}

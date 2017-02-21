@@ -1393,3 +1393,38 @@ TEST(RotMatrix,IsRigidSignedScale)
         }
     
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/16
+//---------------------------------------------------------------------------------------
+TEST(RotMatrix, FromQuaternion)
+    {
+    //point (1,-1, 2) under the rotation by an angle of 60 degree about an axis in the yz-plane that is
+    //inclined at an angle of 60 to the positive y-axis
+
+    // quaternion =  (1/4 ) * j + (sqrt(3)/4 ) * k + (sqrt(3)/2 ) http://www.imsc.res.in/~knr/131129workshop/writeup_knr.pdf
+    RotMatrix rotQuaternion = RotMatrix::FromQuaternion(DPoint4d::From(0, 0.25, Angle::FromDegrees(60).Sin() / 2, Angle::FromDegrees(60).Sin()));
+    DPoint3d subjectPoint = DPoint3d::From(1, -1, 2);
+    DPoint3d subjectPointCpy = subjectPoint;
+    rotQuaternion.Multiply(subjectPoint);
+
+    printf("%f  %f  \n", (10 + 4 * sqrt(3)) / 8, subjectPoint.x);
+    printf("%f  %f  \n", (1 + 2 * sqrt(3)) / 8, subjectPoint.y);
+    printf("%f  %f  \n \n", (14 - 3 * sqrt(3)) / 8, subjectPoint.z);
+    Check::Near((10 + 4 * sqrt(3)) / 8, subjectPoint.x);
+    Check::Near((1 + 2 * sqrt(3)) / 8, subjectPoint.y);
+    Check::Near((14 - 3 * sqrt(3)) / 8, subjectPoint.z);
+
+    double quanternion[4];
+    rotQuaternion.GetQuaternion(quanternion, false);
+    
+    RotMatrix rotQuaternion2 = RotMatrix::FromQuaternion(quanternion);
+    rotQuaternion2.Multiply(subjectPointCpy);
+
+    printf("%f  %f  \n", subjectPointCpy.x, subjectPoint.x);
+    printf("%f  %f  \n", subjectPointCpy.y, subjectPoint.y);
+    printf("%f  %f  \n \n", subjectPointCpy.z, subjectPoint.z);
+    Check::Near(subjectPointCpy.x, subjectPoint.x);
+    Check::Near(subjectPointCpy.y, subjectPoint.y);
+    Check::Near(subjectPointCpy.z, subjectPoint.z);
+    }

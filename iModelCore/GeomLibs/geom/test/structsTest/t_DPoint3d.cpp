@@ -1349,3 +1349,18 @@ TEST(DPoint3d, ToleranceScale)
 
     DPoint3d::AlmostEqualXY(pntLeft, pntRight, tol);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPoint3d, OperatorOverload)
+    {
+    DPoint3d point = DPoint3d::From(0.1, 0.33, 0.11);
+    DVec3d vec = DVec3d::From(3, 2.2, 6.001);
+    DPoint3d pointCpy = point;
+    point += vec;
+    pointCpy.Add(vec);
+    Check::True(point == pointCpy);
+    point -= vec;
+    pointCpy.Subtract(vec);
+    Check::True(point == pointCpy);
+    }

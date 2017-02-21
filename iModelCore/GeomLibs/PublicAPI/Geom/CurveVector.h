@@ -1388,8 +1388,17 @@ DPoint3dCR corner,          //!< [in] corner of nominal sharp turn.
 DVec3dCR   vectorA,         //!< [in] outbound vector on A side.
 DVec3dCR   vectorB,         //!< [in] outbound vector on B side.
 bvector<double> radii,      //!< [in] vector of successive radii on the transition.
-bool revese = false         //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
+bool reverse = false         //!<  [in] true to do reverse blend (e.g in a right angle, construct 270 turn initially heading away from the corner)
+);
 
+//! Construct a sequence of arcs that have given radii and sweeps and join each other with tangent continuity.
+static GEOMDLLIMPEXP CurveVectorPtr ConstructTangentArcChain
+(
+DPoint3dCR startPoint,          //!< [in] corner of nominal sharp turn.
+DVec3dCR   startTangent,         //!< [in] outbound vector on A side.
+DVec3dCR   planeNormal,     //!< [in] normal vector for plane of arc.
+bvector<double> radii,       //!< [in] vector of arc radii
+bvector<Angle> angles       //!< [in] angles for arc sweeps
 );
 
 //! Search for a multi-radius blend near given start fractions.

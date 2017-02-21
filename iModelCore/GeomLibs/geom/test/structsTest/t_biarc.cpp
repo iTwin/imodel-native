@@ -93,3 +93,107 @@ TEST(Biarc,TEST1)
 
     Check::ClearGeometry ("Biarc.TEST1");
     }
+
+void testTangentArcChain (bvector<double> const &radii, bvector<Angle> const &angles, size_t negateIndex = SIZE_MAX)
+    {
+    bvector<double>radiiA = radii;
+    if (negateIndex < radiiA.size ())
+        radiiA[negateIndex] *= -1.0;
+    DPoint3d startPoint = DPoint3d::From (0,0,0);
+    auto cv = CurveCurve::ConstructTangentArcChain (
+            DPoint3d::From (0,0,0),
+            DVec3d::From (0,1,0), DVec3d::UnitZ (),
+            radiiA, angles);
+    if (Check::True (cv.IsValid ()))
+        {
+        DRange3d range;
+        cv->GetRange (range);
+        Check::Shift (startPoint - range.low);
+        double ticSize = 0.04 * range.low.Distance (range.high);
+        SaveAndRestoreCheckTransform shifter (1.0 + range.XLength (),0,0);
+        Check::SaveTransformed (*cv);
+        for (size_t i = 1; i < cv->size (); i++)
+            {
+            auto ray = cv->at(i)->FractionToPointAndUnitTangent (0.0);
+            if (ray.IsValid ())
+                {
+                auto perp = DVec3d::FromCrossProduct (ray.Value ().direction, DVec3d::UnitZ ());
+                Check::SaveTransformed (bvector<DPoint3d> {ray.Value ().origin, ray.Value ().origin + ticSize * perp});
+                }
+            }
+        }
+
+    }
+TEST(Biarc,TangentArcChain)
+    {
+    // simple S curves ..
+    for (double degrees : bvector<double> {10,20,40})
+        testTangentArcChain (
+            bvector<double> {-5, 5},
+            bvector<Angle> {Angle::FromDegrees (degrees), Angle::FromDegrees (degrees)}
+            );
+
+
+    bvector<double>  radii {1,2,1, 4};
+    bvector<Angle> angles {Angle::FromDegrees (25), Angle::FromDegrees (40), Angle::FromDegrees (40), Angle::FromDegrees (20)};
+    for (size_t i = 0; i < radii.size () + 1; i++)
+        testTangentArcChain (radii, angles, i == 0 ? radii.size () : i - 1);
+
+    Check::ClearGeometry ("Biarc.TangentArcChain");
+    }
+
+bvector<DPoint3d> CreateArrow (DPoint3dCR startPoint, DVec3dCR vectorA, double headSize, double vectorLength = 0.0)
+    {
+    DVec3d vectorU, vectorV;
+    DVec3d vector = vectorA;
+    if (vectorLength != 0.0)
+        vector.ScaleToLength (vectorLength);
+    vectorU.Normalize (vector);
+    vectorU.ScaleToLength (headSize);
+    vectorV = DVec3d::FromCCWPerpendicularXY (vectorU);
+    DPoint3d headPoint = startPoint + vector;
+    double a = 2 * headSize;
+    return bvector<DPoint3d> {startPoint, headPoint,
+        headPoint - a * vectorU + headSize * vectorV,
+        headPoint - a * vectorU - headSize * vectorV,
+        headPoint
+        };
+    }
+
+
+TEST(Biarc,LoopBack)
+    {
+    DPoint3d startPoint = DPoint3d::From (0,0,0);
+    DVec3d   startTangent = DVec3d::From (-1,2,0);
+    DVec3d   endTangent = DVec3d::From (0, -1, 0);
+    Check::SaveTransformed (CreateArrow(startPoint, startTangent, 0.2, 1.0));
+    for (double a : bvector<double> {-3,-2,-1,1,2,3})
+        {
+        DVec3d   endTangentShift = DVec3d::From (a,0,0);
+        Check::SaveTransformed (CreateArrow(startPoint + endTangentShift, endTangent, 0.2, 1.0));
+        }
+
+    double refRadians = startTangent.AngleToXY (endTangent);
+    if (refRadians < 0.0)
+        refRadians = Angle::TwoPi () + refRadians;
+
+    Angle q1 = Angle::FromRadians (refRadians / 3.0);
+    auto curve1 = CurveCurve::ConstructTangentArcChain (
+                startPoint, startTangent, DVec3d::UnitZ (),
+                bvector<double> {5,3,4},
+                bvector<Angle> {q1,q1,q1}
+                );
+    Check::SaveTransformed (*curve1);
+// reverse by radius negation 
+    Angle q2 = Angle::FromRadians ((Angle::TwoPi () - refRadians) / 3.0);
+    auto curve2 = CurveCurve::ConstructTangentArcChain (
+                startPoint, startTangent, DVec3d::UnitZ (),
+                bvector<double> {-5,-3,-4},
+                bvector<Angle> {q2,q2,q2}
+                );
+    Check::SaveTransformed (*curve2);
+
+
+
+    Check::ClearGeometry ("Biarc.LoopBack");
+    }

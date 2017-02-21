@@ -219,3 +219,33 @@ TEST(DMatrix4d, MultiplyAffine)
     Check::Near(ptsNonHom[2], ptsHomogeneous[2], "Homogeneous coordinates differ");
     Check::Near(ptsNonHom[3], ptsHomogeneous[3], "Homogeneous coordinates differ");
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, AdditionOverload)
+    {
+    DMatrix4d mat = DMatrix4d::FromRowValues(1, 0, 0, 0,
+                                             0, 2.1, 0.1, 0.002,
+                                             0, 0, 1, 0,
+                                             8.00002, 0, 0.1, 12);
+    DMatrix4d mat2 = DMatrix4d::FromRowValues(1, 0, 0, -0.11,
+                                              -8, 22.1, 0, 9.01,
+                                              7.3, 0, 1, 0,
+                                              0, 30, 0, 9.1);
+    DMatrix4d matCpy = mat;
+    mat.Add(mat2);
+    matCpy = matCpy + mat2;
+    Check::Near(mat, matCpy);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, MultiplicationOverload)
+    {
+    DMatrix4d mat = DMatrix4d::FromScaleAndTranslation(DPoint3d::From(2, 3, 1), DPoint3d::From(4, 4, 4));
+    DPoint4d point = DPoint4d::From(10, 10, 10, 1);
+    DPoint4d res = mat * point;
+    DPoint4d res2 =  mat.Multiply(DPoint3d::From(10, 10, 10), 1);
+    Check::Near(res, res2);
+    }

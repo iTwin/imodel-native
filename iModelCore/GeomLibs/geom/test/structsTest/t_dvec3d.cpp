@@ -1471,5 +1471,21 @@ TEST(DVec3d,RotateVectorAroundVectorByAngle)
     testRotateVectorAroundVectorByAngle (DVec3d::From (1,0,0), DVec3d::From (0,1,0), Angle::FromDegrees (-49.0));
     testRotateVectorAroundVectorByAngle (DVec3d::From (1,2,4), DVec3d::From (5,-2,1), Angle::FromDegrees (25.2));
     }
-    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DVec3d, OperatorOverload)
+    {
+    DVec3d vec0 = DVec3d::From(4, 2, 1);
+    DVec3d vec1 = DVec3d::From(5, 2, 8);
+    DVec3d sum;
+    sum = vec0 + vec1;
+    vec0 += vec1;
+    Check::True(sum == vec0);
+
+    DVec3d sub;
+    sub = vec0 - vec1;
+    sum -= vec1;
+    Check::True(sum == sub);
+    }
 //END_BENTLEY_NAMESPACE

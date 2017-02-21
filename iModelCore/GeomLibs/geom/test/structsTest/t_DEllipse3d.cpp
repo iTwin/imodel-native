@@ -2097,3 +2097,16 @@ TEST(DEllipse3d,SweepToPlane)
     // unused - DEllipse3d skewEllipse = DEllipse3d::From (0.2,2,1,   4,5,-1, 3,8,11, 0.0, Angle::Pi ());
     TestSweepToPlane (baseEllipse, skewTarget, slant);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DEllipse3d, RotatedAxes) 
+    {
+    DEllipse3d ellipse = DEllipse3d::From(0, 0, 0, 1, 1, 1, 2, 2, 2, 0.7, 0.5);
+    DEllipse3d ellipseShifted = DEllipse3d::FromRotatedAxes(ellipse, 0);
+    Check::Near(ellipseShifted.start, 0);
+    ellipseShifted = DEllipse3d::FromRotatedAxes(ellipse, 0.9);
+    Check::Near(ellipseShifted.start, 0.9);
+    Check::False(ellipseShifted.vector0 == ellipse.vector0);
+    Check::False(ellipseShifted.vector90 == ellipse.vector90);
+    }

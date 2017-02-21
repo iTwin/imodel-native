@@ -1803,14 +1803,15 @@ double fraction,                            //!< [in] fraction to evaluate ellip
 DPoint3dCR searchPoint                      //!< [in] search point.
 );
 
+//! Construct (if possible) two arcs that start at pointA with tangentA, join with tangent continuity, and end at pointB with tangentB.
 static bool Construct_Biarcs
 (
-DEllipse3dR arcA,
-DEllipse3dR arcB,
-DPoint3dCR pointA,
-DVec3dCR  tangentA,
-DPoint3dCR pointB,
-DVec3dCR  tangentB
+DEllipse3dR arcA,           //!< [out] First constructed arc
+DEllipse3dR arcB,           //!< [out] Second constructed arc
+DPoint3dCR pointA,          //!< [in] start point
+DVec3dCR  tangentA,         //!< [in] INBOUND (forward) tangent at start
+DPoint3dCR pointB,          //!< [in[ end point
+DVec3dCR  tangentB          //!< [in] OUTBOUND (forward) tangent at end point
 );
 #endif
 
