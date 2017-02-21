@@ -45,7 +45,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
-    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project"))->GetResult();
+    WSQuery query("GlobalSchema", "Project");
+    query.SetTop(100);
+    auto result = client->SendQueryRequest(query)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     auto resultStr = RapidJsonToString(result.GetValue().GetRapidJsonDocument());
     }

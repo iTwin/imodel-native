@@ -1518,7 +1518,7 @@ ICancellationTokenPtr ct
     ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
     if (!responseKey.IsValid())
         {
-        return CacheStatus::Error;
+        return CacheStatus::DataNotCached;
         }
 
     if (!response.IsModified())

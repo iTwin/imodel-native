@@ -1557,7 +1557,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
     EXPECT_TRUE(responseKey.GetParent().GetECClassId().IsValid());
 
-    EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_CachedInstanceAsParentInCache_Succeeds)
