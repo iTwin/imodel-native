@@ -462,7 +462,7 @@ void CurlHttpRequest::SetupCurl()
         BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
         caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
             
-        BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root.");
+        BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root and HttpClient::Initialize() was called.");
         curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
         }
     else
