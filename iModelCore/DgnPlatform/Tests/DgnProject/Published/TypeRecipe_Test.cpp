@@ -59,7 +59,7 @@ struct TypeTests : public DgnDbTestFixture
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
     DgnDbStatus AppendInstanceSpecificGeometry(GeometryBuilderR, DgnElementCR, GraphicalType2dCR, DPoint2dCR);
-    Utf8CP GetValueExpression(DgnElementCR);
+    Utf8String GetValueExpression(DgnElementCR);
     void SetValueExpression(DgnElementR, Utf8CP);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
 };
@@ -694,8 +694,8 @@ DgnDbStatus TypeTests::AppendInstanceSpecificGeometry(GeometryBuilderR builder, 
 
             if (GeometryCollection::Iterator::EntryType::TextString == geometryEntry.GetEntryType())
                 {
-                Utf8CP expression = GetValueExpression(*templateElement);
-                if (expression && *expression)
+                Utf8String expression = GetValueExpression(*templateElement);
+                if (!expression.empty())
                     {
                     TextStringPtr textString = geometry->GetAsTextString();
                     if (textString.IsValid())
@@ -703,7 +703,7 @@ DgnDbStatus TypeTests::AppendInstanceSpecificGeometry(GeometryBuilderR builder, 
                         ECN::ECValue value;
                         Utf8String valueAsString = "???";
 
-                        if ((DgnDbStatus::Success == element.GetPropertyValue(value, expression)) && !value.IsNull())
+                        if ((DgnDbStatus::Success == element.GetPropertyValue(value, expression.c_str())) && !value.IsNull())
                             valueAsString = value.ToString();
 
                         textString->SetText(valueAsString.c_str());
@@ -755,7 +755,7 @@ void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-Utf8CP TypeTests::GetValueExpression(DgnElementCR element)
+Utf8String TypeTests::GetValueExpression(DgnElementCR element)
     {
     ECN::AdHocJsonValueCR jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
     return jsonObj.get(JSON_PROP_ValueExpression, "").asCString();
