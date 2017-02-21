@@ -1293,11 +1293,14 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
     const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
 
     changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::Empty);
+    
+    if (static_cast<bool>(options & IBriefcaseManager::ResponseOptions::UnlimitedReporting))
+        changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::SetMaximumInstances, "-1");
 
-    if (IBriefcaseManager::ResponseOptions::None == options || IBriefcaseManager::ResponseOptions::LockState != options)
+    if (!static_cast<bool>(options & IBriefcaseManager::ResponseOptions::LockState))
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Locks, "false");
 
-    if (IBriefcaseManager::ResponseOptions::None == options || IBriefcaseManager::ResponseOptions::CodeState != options)
+    if (!static_cast<bool>(options & IBriefcaseManager::ResponseOptions::CodeState))
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Codes, "false");
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
