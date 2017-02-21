@@ -2517,6 +2517,7 @@ public:
     //! this will be saved with the changeset and reported as the operation that is "undone/redone" if this changeset is reversed or reinstated.
     //! @note, this will commit any nested transactions.
     BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName=nullptr);
+    DbResult SaveChanges(Utf8StringCR changesetName) {return SaveChanges(changesetName.c_str());}
 
     //! Abandon (cancel) the outermost transaction, discarding all changes since last save. Then, restart the transaction.
     //! @note, this will cancel any nested transactions.
