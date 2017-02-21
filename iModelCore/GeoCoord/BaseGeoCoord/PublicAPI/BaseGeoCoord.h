@@ -2136,7 +2136,6 @@ class MemberEnumerator;
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE Group
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Gets the name of the GCS Group
@@ -2205,7 +2204,6 @@ Group (WStringCR name, WStringCR description)
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE GroupEnumerator
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Moves to the next group
@@ -2253,7 +2251,6 @@ GroupEnumerator ();
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE MemberEnumerator
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Moves to the GCS group member
@@ -2908,7 +2905,6 @@ static EllipsoidCP CreateEllipsoid (WCharCP keyName, LibraryP sourceLibrary);
 BASEGEOCOORD_EXPORTED static EllipsoidCP CreateEllipsoid (CSEllipsoidDef const& ellipsoidDef, LibraryP sourceLibrary);
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3119,7 +3115,6 @@ EllipsoidEnumerator ();
 ~EllipsoidEnumerator ();
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3189,7 +3184,6 @@ Datum (CSDatumDef const& datum, LibraryP sourceLibrary);
 ~Datum();
 
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -3481,10 +3475,11 @@ WStringR            DatumAsASC
 BASEGEOCOORD_EXPORTED static DatumEnumeratorP CreateEnumerator();
 
 /*__PUBLISH_SECTION_END__*/
+
 /*---------------------------------------------------------------------------------**//**
-* Gets the CSMap group to which the Datum belongs.
-* @return   The CSMap group to which the Datum belongs.
-* @bsimethod                                                    Alain.Robert   2016/09
+* Gets the group name to which the Datum belongs.
+* @return   The group to which the Datum belongs.
+* @bsimethod                                                    Alain.Robert   2016/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED WCharCP           GetGroup (WStringR group) const;
 
@@ -3515,7 +3510,6 @@ DatumEnumerator ();
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~DatumEnumerator ();
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 public:
 /*---------------------------------------------------------------------------------**//**

@@ -3016,7 +3016,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
                  (upperParameterName == L"LONGITUDE OF NATURAL ORIGIN") ||
                  (upperParameterName == L"CENTRAL POINT LONGITUDE") ||
                  (upperParameterName == L"CENTERLONG") ||
-                 (upperParameterName == L"LONGITUDE OF PROJECTION CENTRE"))
+                 (upperParameterName == L"LONGITUDE OF PROJECTION CENTRE") ||
+                 (upperParameterName == L"ORIGIN LONGITUDE"))
         {
         switch (coordinateSystem.GetProjectionCode())
             {
@@ -6754,20 +6755,20 @@ bool                 anyWord
     // the number of mixed case should always equal or exceed the number of uppercase. Exceed happens when you enter something such that strupr(string).Equals(string).
     BeAssert (numMixedCase >= numUpperCase);
 
-    char concatString[4096];
-    strcpy (concatString, m_csParameters->csdef.key_nm);
-    strcat (concatString, m_csParameters->csdef.dat_knm);
-    strcat (concatString, m_csParameters->csdef.elp_knm);
-    strcat (concatString, m_csParameters->csdef.desc_nm);
-    strcat (concatString, m_csParameters->csdef.group);
-    strcat (concatString, m_csParameters->csdef.locatn);
-    strcat (concatString, m_csParameters->csdef.source);
+    // Use a string object to avoid static security analysis error about potentiall unterminated strings.
+    AString concatString(m_csParameters->csdef.key_nm); 
+    concatString.append(m_csParameters->csdef.dat_knm);
+    concatString.append(m_csParameters->csdef.elp_knm);
+    concatString.append(m_csParameters->csdef.desc_nm);
+    concatString.append(m_csParameters->csdef.group);
+    concatString.append(m_csParameters->csdef.locatn);
+    concatString.append(m_csParameters->csdef.source);
     int epsgCode;
     if (0 != (epsgCode = GetEPSGCode (true)))
         {
         char epsgString[40];
         sprintf (epsgString, "%d", epsgCode);
-        strcat (concatString, epsgString);
+        concatString.append(epsgString);
         }
 
     int score=0;
@@ -6780,25 +6781,24 @@ bool                 anyWord
         for (int iString=0; iString < numMixedCase; iString++, iScoreMultiple--)
             {
             char const* searchString        = matchStrings[iString];
-            if (NULL != strstr (concatString, searchString))
+            if (NULL != strstr (concatString.c_str(), searchString))
                 score += iScoreMultiple * 10;
             }
 
         // second half of the input strings are the upper case versions.
-        BeStringUtilities::Strupr (concatString);
+        std::transform(concatString.begin(), concatString.end(), concatString.begin(), ::toupper);
         iScoreMultiple = numMixedCase + 1;
         for (int iString=numMixedCase; iString < numMixedCase + numUpperCase; iString++, iScoreMultiple--)
             {
             char const* searchString        = matchStrings[iString];
-            if (NULL != strstr (concatString, searchString))
+            if (NULL != strstr (concatString.c_str(), searchString))
                 score += iScoreMultiple * 7;
             }
         }
     else
         {
-        char upperCaseConcatString[4096];
-        strcpy (upperCaseConcatString, concatString);
-        BeStringUtilities::Strupr (upperCaseConcatString);
+        AString upperCaseConcatString(concatString);
+        std::transform(upperCaseConcatString.begin(), upperCaseConcatString.end(), upperCaseConcatString.begin(), ::toupper);
 
         // can match any word, so use a score based on the word position, and whether it matches the original or upper case.
         // first half of the input strings are the users typed-in case versions. Those are more valuable matches.
@@ -6808,9 +6808,9 @@ bool                 anyWord
             char const* searchString            = matchStrings[iString];
             char const* upperCaseSearchString   = matchStrings[numMixedCase + iString];
 
-            if (NULL != strstr (concatString, searchString))
+            if (NULL != strstr (concatString.c_str(), searchString))
                 score += iScoreMultiple * 10;
-            else if ( (iString < numUpperCase) && (NULL != strstr (upperCaseConcatString, upperCaseSearchString)) )
+            else if ( (iString < numUpperCase) && (NULL != strstr (upperCaseConcatString.c_str(), upperCaseSearchString)) )
                 score += iScoreMultiple * 7;
             else
                 return 0;
@@ -10483,7 +10483,12 @@ bvector<GeoPoint>&    shape
 
     switch (projectionCode)
         {
-        case pcvCassini : // Not so sure about this one ... check http://www.radicalcartography.net/?projectionref
+        case pcvCassini : 
+            {
+            return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, 
+                                                   GetCentralMeridian(), 80.0, 
+                                                   89.9);
+            }
         case pcvEckertIV :
         case pcvEckertVI :
         case pcvMillerCylindrical :

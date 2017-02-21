@@ -3,7 +3,7 @@
 |
 |   $Source: BaseGeoCoord/EllipsoidEditingPanel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -118,7 +118,7 @@ void            SetInstanceList (ECI::ECInstanceList^ instanceList)
 void            PropertyValueChangedHandler (System::Object^ sender, ECI::ECPropertyValueChangedEventArgs^ args)
     {
     // every time any property changes, validate that the name is unique, and set enabled state of OK button.
-    bool    inSystemLibrary;
+    bool    inSystemLibrary = true;
     bool    isOk = true;
     
     // find the name

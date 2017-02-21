@@ -10,7 +10,7 @@
 
     <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="G06">
+    <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="B02">
         <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoordHeaderFiles" />
         <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
@@ -24,13 +24,12 @@
     </Part>
 
     <!-- To Use the GeoCoordManaged part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke" ApiNumber="G06">
+    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="ECObjectsManaged"  PartFile="ecf"                Repository="ecf"/>
+        <SubPart PartName="ECObjectsManaged"            PartFile="ecf"                  Repository="ecf"/>
+        <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <Bindings>
-            <Libs>Delivery/Bentley.GeoCoord.lib</Libs>
-            <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery/Bentley.GeoCoord$(ApiNumber).dll
+            <Assemblies>Delivery/Bentley.GeoCoord.dll
                 <TransKit SourceDirectory="Delivery/GeoCoordManaged/transkit" />
             </Assemblies>
         </Bindings>
@@ -57,7 +56,7 @@
     </Part>
     <!-- ******************************** Unit Tests ************************************** -->
     
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
         <Bindings>
@@ -80,7 +79,7 @@
     </Product>    
     
     <!-- Define a gtest program to run the tests -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="GeoCoord-Tests"/>
          <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -95,7 +94,7 @@
         <Directories DirectoryListName="GeoCoordGTestsDir"/>
     </Product>
     
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeoCoord-GTest/GeoCoordTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeoCoord-GTest/GeoCoordTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeoCoord-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

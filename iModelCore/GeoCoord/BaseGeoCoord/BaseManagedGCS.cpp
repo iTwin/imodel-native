@@ -23,18 +23,18 @@ extern "C" struct   cs_Unittab_     cs_Unittab[];
 #pragma managed
 
 #using      <mscorlib.dll>
-#using      <Bentley.ECObjects.2.0.dll>
+#using      <Bentley.ECObjects3.dll>
 #using      <System.dll>
 #using      <System.Drawing.dll>
 #using      <System.Windows.Forms.dll>
 #using      <system.Xml.dll>
 #using      <GeoCoordExceptions.netmodule>        // C# netmodule
 #using      <Bentley.Platform.dll>
-#using      <Bentley.Geometry.2.0.dll>
+#using      <Bentley.GeometryNET.dll>
+#using      <Bentley.GeometryNET.Structs.dll>
 #using      <Bentley.UI.dll>
 
-BEGIN_BENTLEY_API_NAMESPACE
-
+namespace Bentley {
 namespace GeoCoordinatesNET {
 
 namespace SRSC  = System::Resources;
@@ -62,7 +62,7 @@ namespace ECXML = Bentley::ECObjects::XML;
 namespace ECE   = Bentley::ECObjects::Expressions;
 namespace BUCWG = Bentley::UI::Controls::WinForms::GroupPanel;
 namespace GEOM  = Bentley::GeometryNET;
-namespace BGC   = Bentley::GeoCoordinates;
+namespace BGC   = BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 // this makes it so we can use just String, rather than System::String all over the place.
@@ -153,7 +153,7 @@ static void                     AddUserLibrary (String^ libPath, String^ guiName
     // this technique of getting an ansi string from a managed string requires a temporarily allocated string on the unmanaged heap.
     BI::ScopedString pathString (libPath);
     BI::ScopedString guiString (guiName);
-    Bentley::GeoCoordinates::LibraryManager::Instance()->AddUserLibrary (pathString.Uni(), guiString.Uni());
+    GeoCoordinates::LibraryManager::Instance()->AddUserLibrary (pathString.Uni(), guiString.Uni());
     }
 
 // these overloads are used from GeoCoordinateInterop in mstngeocoord.cpp
@@ -2201,7 +2201,7 @@ bool GCSMemberEnumerator::MoveNext
                 if (0 < BGC::CSMap::CS_csEnumByGroup (m_currentIndex, groupName.Ansi(), &csGroupList))
                     {
                     // found a coordinate system.
-                    m_current = gcnew BaseGCS (WString(csGroupList.key_nm).c_str());
+                    m_current = gcnew BaseGCS (WString (csGroupList.key_nm, false).c_str());
                     return true;
                     }
                 return false;
@@ -2228,7 +2228,7 @@ bool GCSMemberEnumerator::MoveNext
                 char        csKeyName[1024];
                 if (0 < BGC::CSMap::CS_csEnum (m_currentIndex, csKeyName, sizeof(csKeyName)))
                     {
-                    m_current = gcnew BaseGCS (WString(csKeyName).c_str());
+                    m_current = gcnew BaseGCS (WString(csKeyName, false).c_str());
                     return true;
                     }
                 return false;
@@ -2280,7 +2280,7 @@ bool GCSNameEnumerator::MoveNext
         char        csKeyName[1024];
         if (0 < BGC::CSMap::CS_csEnum (m_currentIndex, csKeyName, sizeof(csKeyName)))
             {
-            m_current = gcnew String (WString (csKeyName).c_str());
+            m_current = gcnew String (WString (csKeyName, false).c_str());
             return true;
             }
         }
@@ -10909,11 +10909,11 @@ void            LibrarySelectionControl::EditEllipsoidsClickEvent (System::Objec
     delete form;
     }
 
-}   // End of GeocoordinatesNET Namespace
+}   // End of GeocoordinatesNET namespace
 
-END_BENTLEY_API_NAMESPACE
+}   // End of Bentley namespace
 
-namespace BGC   = Bentley::GeoCoordinates;
+namespace BGC   = BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 namespace BGCN  = Bentley::GeoCoordinatesNET;
 namespace SWF   = System::Windows::Forms;
 
