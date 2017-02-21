@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -76,15 +76,18 @@ struct ProgressInfo
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     julius.cepukenas 11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CurlHttpRequest::ShouldCompressRequestBody(HttpBodyPtr request, CompressionOptionsCR options)
+bool CurlHttpRequest::ShouldCompressRequestBody(Request request)
     {
-    if (request == nullptr)
+    if (request.GetRequestBody() == nullptr)
         return false;
 
-    if (!options.IsRequestCompressionEnabled())
+    if (!request.GetCompressionOptions().IsRequestCompressionEnabled())
         return false;
 
-    return options.GetMinimumSizeToCompress() <= request->GetLength();
+    if (!request.GetCompressionOptions().IsContentTypeSupported(request.GetHeaders().GetContentType()))
+        return false;
+
+    return request.GetCompressionOptions().GetMinimumSizeToCompress() <= request.GetRequestBody()->GetLength();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -510,7 +513,7 @@ void CurlHttpRequest::SetupHeaders()
         m_headers = curl_slist_append(m_headers, header.c_str());
         }
 
-    if (ShouldCompressRequestBody(m_httpRequest.GetRequestBody(), m_httpRequest.GetCompressionOptions()))
+    if (ShouldCompressRequestBody(m_httpRequest))
         {
         header.Sprintf("%s: %s", "Content-Encoding", "gzip");
         m_headers = curl_slist_append(m_headers, header.c_str());
@@ -553,7 +556,7 @@ void CurlHttpRequest::PrepareRequest()
         else
             {
             requestBody = m_httpRequest.GetRequestBody();
-            if (ShouldCompressRequestBody(requestBody, m_httpRequest.GetCompressionOptions()))
+            if (ShouldCompressRequestBody(m_httpRequest))
                 requestBody = HttpCompressedBody::Create(requestBody);
 
             requestBody->Open();
