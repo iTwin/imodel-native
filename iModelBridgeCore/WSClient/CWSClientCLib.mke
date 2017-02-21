@@ -2,7 +2,7 @@
 #
 #     $Source: CWSClientCLib.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # this is only used if compiling for the WinRT target.
@@ -10,6 +10,12 @@ ENABLE_CPP_CX_EXTENSIONS    = 1
 
 %include mdl.mki
 
+CompileOptionsMki           = $(_MakeFilePath)CWSClientCLibOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Building the ConnectWebServicesClientC library
+#--------------------------------------------------------------------------------------
 CWSClientCSourceDirectory       = $(_MakeFilePath)
 CWSClientCPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
 BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
@@ -17,20 +23,6 @@ BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
 o = $(OutputRootDir)build/WSClient/ConnectC/
 always:
     !~@mkdir $(o)
-
-
-#--------------------------------------------------------------------------------------
-#   Building the ConnectWebServicesClientC library
-#--------------------------------------------------------------------------------------
-nameToDefine = __CWSCC_DLL_BUILD__
-%include cdefapnd.mki
-
-#--------------------------------------------------------------------------------------
-#   iOS-specific
-#--------------------------------------------------------------------------------------
-AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
-# Ignore unknown pragmas
-LLVMCommonCompOpts + -Wno-unknown-pragmas
 
 #--------------------------------------------------------------------------------------
 #   Compile

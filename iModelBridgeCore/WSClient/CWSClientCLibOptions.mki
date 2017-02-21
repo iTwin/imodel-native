@@ -1,27 +1,22 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ClientLibCompileOptions.mki $
+#     $Source: CWSClientCLibOptions.mki $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-ENABLE_CPP_CX_EXTENSIONS = 1
+# this is only used if compiling for the WinRT target.
+ENABLE_CPP_CX_EXTENSIONS    = 1
 
 # target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
 %if !defined (__mdlMKI__)
     %include mdl.mki
 %endif
 
-%if $(TARGET_PLATFORM)=="Windows"
-    # Ignore inheritance via dominance warning
-    cDefs + -wd4250
-%endif
-
 #--------------------------------------------------------------------------------------
-#   Building the WebServicesClient library
+#   Building the ConnectWebServicesClientC library
 #--------------------------------------------------------------------------------------
-nameToDefine = __WSCLIENT_DLL_BUILD__
+nameToDefine = __CWSCC_DLL_BUILD__
 %include cdefapnd.mki
 
 #--------------------------------------------------------------------------------------
@@ -36,4 +31,9 @@ LLVMCommonCompOpts + -Wno-unknown-pragmas
 	LLVMCommonCompOpts + -DDEBUG=1 -g
 	#LLVMDebugOpts + -DDEBUG=1 -g
 %endif
+
+%message ----------------------------
+%message  CWSClientCLibOptions.mki  called
+%message ----------------------------
+
 
