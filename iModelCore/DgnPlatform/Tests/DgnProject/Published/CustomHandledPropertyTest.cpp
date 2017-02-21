@@ -243,7 +243,7 @@ TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 2dElementProprties2)
+TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
