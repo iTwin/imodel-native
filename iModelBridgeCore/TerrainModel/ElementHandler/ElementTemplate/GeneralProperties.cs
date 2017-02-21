@@ -97,17 +97,21 @@ namespace Bentley.TerrainModel.ElementTemplate
 
             if (property != null && !property.IsNull)
                 {
-                LevelHandle level;
+                LevelId levelId = 0;
 
                 if (property.StringValue == "")
-                    level = element.GetElement ().DgnModel.GetFileLevelCache ().GetLevel (64);
+                    levelId = 64;
                 else
-                    level = element.GetElement ().DgnModel.GetFileLevelCache ().GetLevelByName (property.StringValue, true);
-
-                if (level == null || !level.IsValid)
-                    level = element.GetElement ().DgnModel.GetFileLevelCache ().CreateLevel (property.StringValue);
-                if (level != null && level.IsValid)
-                    element.LevelId = level.LevelId;  // ToDo need to work out if Level doesn't exist.
+                    {
+                    levelId = Bentley.TerrainModelNET.Element.ElementTemplateAdmin.GetLevelIdFromName(property.StringValue, element.GetElement().DgnModelRef);
+                    }
+                if (levelId == 0)
+                    {
+                    LevelHandle level = element.GetElement().DgnModel.GetFileLevelCache().CreateLevel(property.StringValue);
+                    if (null != level)
+                        levelId = level.LevelId;
+                    }
+                element.LevelId = levelId;
                 }
 
             // If Transparency is required.
@@ -148,7 +152,7 @@ namespace Bentley.TerrainModel.ElementTemplate
             if (property == null)
                 property = structValue.FindPropertyValue (prefix + "_SpotTextStyles", false, false, false);
             if (property != null && !property.IsNull)
-                element.TextStyle = DgnTextStyle.GetByName (property.StringValue, element.GetElement ().DgnModelRef.GetDgnFile ());
+                element.TextStyleId = Bentley.TerrainModelNET.Element.ElementTemplateAdmin.GetTextStyleIdFromName(property.StringValue, element.GetElement().DgnModelRef);
 
             property = structValue.FindPropertyValue (prefix + "_PrefixText", false, false, false);
             if (property == null)

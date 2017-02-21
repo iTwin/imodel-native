@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,23 +20,23 @@ public enum class DTMContourSmoothingMethod:long
     None = 0,
 
     /// <summary>
-    /// TODO Spu: Ask what to put here. 
+    /// TODO Spu: Ask what to put here.
     /// Todo SPU: Ask whether we should use a DTM constant here ?
     /// </summary>
     Vertex = 1,
 
     /// <summary>
-    /// TODO Spu: Ask what to put here. 
+    /// TODO Spu: Ask what to put here.
     /// Todo SPU: Ask whether we should use a DTM constant here ?
     /// </summary>
     Spline  = 2,
 
     /// <summary>
-    /// TODO Spu: Ask what to put here. 
+    /// TODO Spu: Ask what to put here.
     /// Todo SPU: Ask whether we should use a DTM constant here ?
     /// </summary>
     SplineWithoutOverLapDetection  = 3
-    };            
+    };
 
 //=======================================================================================
 // @bsiclass                                                   Steve.Jones 09/10
@@ -215,7 +215,7 @@ public ref class DTMFeatureElement : public DTMSubElement
         //=======================================================================================
         property Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes GetFeatureType
             {
-            Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes get(); 
+            Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes get();
             }
 
     };
@@ -238,11 +238,21 @@ public ref class DTMSubElementTextStyle : public DTMSubElement
     //=======================================================================================
     // @bsimethod                                                   Steve.Jones 01/11
     //=======================================================================================
-    property DGNET::DgnTextStyle^ TextStyle
-        {
-        DGNET::DgnTextStyle^ get(); 
-        void set (DGNET::DgnTextStyle^ value);
-        }
+        property DGNET::DgnTextStyle^ TextStyle
+            {
+            DGNET::DgnTextStyle^ get();
+            void set (DGNET::DgnTextStyle^ value);
+            }
+
+    //=======================================================================================
+    // @bsimethod                                                   Daryl.Holmwood 02/17
+    //=======================================================================================
+        property DGNET::ElementId TextStyleId
+            {
+            DGNET::ElementId get();
+            void set (DGNET::ElementId value);
+            }
+
     };
 
 //=======================================================================================
@@ -426,7 +436,7 @@ public ref class DTMContourElement : public DTMSubElementTextStyle
         // @bsimethod                                                   Daryl.Holmwood 07/10
         //=======================================================================================
         property System::Int32 DepressionLineStyle
-            { 
+            {
             System::Int32 get();
             void set (System::Int32 value);
             }
@@ -556,7 +566,7 @@ public ref class DTMPointElement : public DTMSubElementTextStyle
 
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 08/10
-        //=======================================================================================		
+        //=======================================================================================
         property int CellType
             {
             int get();
@@ -678,7 +688,7 @@ public ref class DTMCatchmentAreaElement : public DTMSubElement
     public:
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 08/10
-        //=======================================================================================		
+        //=======================================================================================
         property double CatchmentAreaMinimumDepth
             {
             double get();
@@ -779,10 +789,10 @@ internal:
         return gcnew DTMElement (eh);
         }
 
-    internal: 
+    internal:
         DTMFeatureElement^ GetFeatureElement (Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes type);
 
-    public: 
+    public:
 
         DTMElement (Bentley::DgnPlatformNET::DgnModel^ model, Element^ templateElement, TerrainModelNET::DTM^ dtm);
 
@@ -860,7 +870,7 @@ internal:
             {
             DTMFeatureElement^ get();
             }
-        
+
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 10/10
         //=======================================================================================
@@ -868,7 +878,7 @@ internal:
             {
             DTMFeatureElement^ get();
             }
-        
+
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 10/10
         //=======================================================================================

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug Local LKG|Win32">
       <Configuration>Debug Local LKG</Configuration>
@@ -152,7 +152,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
@@ -181,12 +181,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -N0  re HeaderFiles Core</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 re HeaderFiles Core -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -N0 re HeaderFiles Core --bmakeOpt="-a"</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
