@@ -1415,10 +1415,9 @@ TEST(RotMatrix, FromQuaternion)
     Check::Near((1 + 2 * sqrt(3)) / 8, subjectPoint.y);
     Check::Near((14 - 3 * sqrt(3)) / 8, subjectPoint.z);
 
-    DPoint4d quanternionPoint;
-    rotQuaternion.GetQuaternion(quanternionPoint, false);
+    double quanternion[4];
+    rotQuaternion.GetQuaternion(quanternion, false);
     
-    double quanternion[] = { quanternionPoint.x,quanternionPoint.y,quanternionPoint.z, quanternionPoint.w };
     RotMatrix rotQuaternion2 = RotMatrix::FromQuaternion(quanternion);
     rotQuaternion2.Multiply(subjectPointCpy);
 
