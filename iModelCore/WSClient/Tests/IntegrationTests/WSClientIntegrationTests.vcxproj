@@ -41,10 +41,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\build\WSClientIntegrationTests\WSClientIntegrationTests.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-IntegrationGTest\WSClientIntegrationTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests *WebServices* *google*</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices* *google* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</IncludePath>

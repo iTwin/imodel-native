@@ -1181,6 +1181,12 @@
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnDbServerClient\DgnDbServerPreDownloadManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />

@@ -93,7 +93,7 @@ void WSClientBaseTest::InitLogging()
         NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
         NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-	return;
+        return;
         }
 #endif
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
