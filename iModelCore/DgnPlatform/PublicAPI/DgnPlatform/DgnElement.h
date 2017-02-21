@@ -3120,7 +3120,12 @@ private:
 public:
     BeMutex& GetMutex() {return m_mutex;}
 
+    //! @private
+    Utf8StringCR GetSelectEcPropsECSql(ECSqlClassInfo&, ECN::ECClassCR) const;
+
+    //! @private
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
+    
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
 
