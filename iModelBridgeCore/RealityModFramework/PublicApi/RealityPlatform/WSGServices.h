@@ -43,7 +43,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! Finally the last one is specialised to build URL intended to obtain list
 //! of objects using pages, sort orders, etc.
 //=====================================================================================
-struct WSGURL : public RefCountedBase
+struct WSGURL
     {
 public:
 
@@ -110,7 +110,7 @@ public:
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRepoId() const;
 
     //! Returns the full http request string
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetHttpRequestString() const
         {
         if (!m_validRequestString)
             _PrepareHttpRequestStringAndPayload();
@@ -121,7 +121,7 @@ public:
         return m_httpRequestString;
         };
 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRequestPayload() const
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRequestPayload() const
         {
         if (!m_validRequestString)
             _PrepareHttpRequestStringAndPayload();
@@ -131,7 +131,7 @@ public:
         return m_requestPayload;
         }
 
-    REALITYDATAPLATFORM_EXPORT bvector<Utf8String> const & GetRequestHeader() const
+    REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const
         {
         if (!m_validRequestString)
             _PrepareHttpRequestStringAndPayload();
@@ -148,8 +148,6 @@ public:
 
 protected:
     // Default constructor
-
-
     void SetServerName(Utf8String serverName);
     void SetPluginName(Utf8String pluginName);
     void SetVersion(Utf8String version);
@@ -157,7 +155,6 @@ protected:
     void SetSchema(Utf8String schema);
     void SetInterface(WSGInterface _interface);
     void SetRepoId(Utf8String repoId);
-
 
     virtual void _PrepareHttpRequestStringAndPayload() const;
 
@@ -179,8 +176,15 @@ protected:
     mutable HttpRequestType m_requestType;
     };
 
+enum RequestType
+    {
+    Body = 0,
+    Header = 1,
+    BodyNoToken = 2
+    };
+
 struct NavNode
-{
+    {
 public:
     REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
 
@@ -202,7 +206,7 @@ private:
 
     Utf8String m_rootNode;
     Utf8String m_rootId;
-};
+    };
 
 struct WSGServer; //forward declaration
 
@@ -369,27 +373,38 @@ private:
     mutable Utf8String m_version;
     };
 
-struct WSGRequest
+struct CurlConstructor
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT Utf8String GetToken() { return m_token; }
+    REALITYDATAPLATFORM_EXPORT void RefreshToken();
+    REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
+    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
+
+protected:
+    CurlConstructor();
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file) const;
+
+    Utf8String m_token;
+    BeFileName m_certificatePath;
+    };
+
+struct WSGRequest : public CurlConstructor
     {
 private:
     static WSGRequest* s_instance;
-    Utf8String m_token;
-    BeFileName m_certificatePath;
 
     Utf8String _PerformRequest(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();
-    REALITYDATAPLATFORM_EXPORT void RefreshToken();
     WSGRequest();
-
-    REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
-    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
 
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string. If a FILE is provided, the result will be written to a file
     REALITYDATAPLATFORM_EXPORT Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
     REALITYDATAPLATFORM_EXPORT Utf8String PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
     REALITYDATAPLATFORM_EXPORT Utf8String PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
     };
 
 
