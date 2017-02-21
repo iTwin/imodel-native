@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #ifdef _MSC_VER
@@ -61,6 +61,7 @@ extern "C" int32_t csCoefFrmt;
 extern "C" const uint32_t KcsNmInvNumber;
 
 #if defined (GEOCOORD_ENHANCEMENT)
+extern  bool CS_wktEllipsoidLookUp (const char* ellipsoidNameInWkt, char* csEllipsoidName);
 extern  bool CS_wktDatumLookUp (const char* datumNameInWkt, char* csDatumName);
 #endif
 
@@ -182,6 +183,21 @@ double  val2
 
     return (scaledDiff < 1e-11);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   10/2016
+* Compares two distances. The tolerance applied is automatically 0.001 which is the
+* cartographic accuracy and round off values for most distances.
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            distanceSame
+(
+double  val1,
+double  val2
+)
+    {
+    return (fabs(val1 - val2) <= 0.001);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu St-Pierre   04/08
@@ -1029,6 +1045,25 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool    WKTEllipsoidLookup (WCharCP name, WStringR alternateName) const
+    {
+    char        mbAlternateName[100];
+    AString     mbName (name);
+    if (CS_wktEllipsoidLookUp (mbName.c_str(), mbAlternateName))
+        {
+        alternateName.AssignA (mbAlternateName);
+        return true;
+        }
+    else
+        {
+        alternateName.clear();
+        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool    WKTDatumLookup (WCharCP name, WStringR alternateName) const
     {
     char        mbAlternateName[100];
@@ -1043,6 +1078,24 @@ bool    WKTDatumLookup (WCharCP name, WStringR alternateName) const
         alternateName.clear();
         return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+int     FindEllipsoidIndex (WCharCP ellipsoidName) const
+    {
+    AString mbEllipsoidName (ellipsoidName);
+    int     index;
+    int     foundIndex = -1;
+    char    elKeyName[128];
+    for (index = 0; ((foundIndex < 0) && (0 < CSMap::CS_elEnum (index, elKeyName, sizeof(elKeyName)))); index++)
+        {
+        if (0 == BeStringUtilities::Stricmp (mbEllipsoidName.c_str(), elKeyName))
+            foundIndex = index;
+        }
+
+    return foundIndex;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1162,63 +1215,90 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
         }
 
 
-    // Check if datum name is known ...
-    WString finalDatumName;
-    DatumCP namedDatum = Datum::CreateDatum (name.c_str());
-    if (namedDatum == NULL || ! namedDatum->IsValid())
+    // Check that there is a datum name even specified
+    // If there are none then likely this represents and ellipsoid-based unspecified datum coordinate system
+    // In such case this ellipsoid may already been set in the GCS and nothing needs be done except nullify the datum code
+    if (0 == name.length())
         {
-        // Datum not found ... try with authority ID if defined
-        if (authorityID.length() > 0)
-            {
-            namedDatum = Datum::CreateDatum (authorityID.c_str());
-            if (namedDatum != NULL && namedDatum->IsValid())
-                finalDatumName = authorityID;
-            }
+        coordinateSystem.SetDatumCode (-1);        
         }
     else
-        finalDatumName = name;
-
-#if defined (GEOCOORD_ENHANCEMENT)
-
-    if (finalDatumName.length() == 0)
         {
-        // We do not have the datum name yet ... try looking it up in the alias table.
-        WString     alternateName;
 
-        if (WKTDatumLookup (name.c_str(), alternateName))
-            {
-            namedDatum = Datum::CreateDatum (alternateName.c_str());
-            if (namedDatum != NULL && namedDatum->IsValid())
-                finalDatumName = alternateName;
-            }
+        // Check if datum name is known ...
+        WString finalDatumName;
+        DatumCP namedDatum = Datum::CreateDatum (name.c_str());
+        WString deprecated = L"LEGACY";
+        WString groupName;
+        bool finalNameDeprecated = false;
 
-        // Either there is no alias or the alias is not good ... if authority ID is present ...
-        if ((finalDatumName.length() == 0) && (authorityID.length() != 0))
+        if (namedDatum == NULL || ! namedDatum->IsValid())
             {
-            if (WKTDatumLookup (authorityID.c_str(), alternateName))
+            // Datum not found ... try with authority ID if defined and not deprecated
+            if (authorityID.length() > 0)
                 {
-                // Alternate name should be valid
                 namedDatum = Datum::CreateDatum (authorityID.c_str());
                 if (namedDatum != NULL && namedDatum->IsValid())
+                    {
+                    finalNameDeprecated = (0 == deprecated.CompareTo(namedDatum->GetGroup(groupName)));
                     finalDatumName = authorityID;
+                    }
                 }
             }
-        }
-#endif
-
-    if (finalDatumName.length() != 0)
-        {
-        // We have a datum name ... we simply need to set it now ... in order to do this we need the code
-        int foundIndex = FindDatumIndex (finalDatumName.c_str());
-
-        if (foundIndex >= 0)
-            coordinateSystem.SetDatumCode (foundIndex);
+        else
+            {
+            finalDatumName = name; 
+            finalNameDeprecated = (0 == deprecated.CompareTo(namedDatum->GetGroup(groupName)));
+            }
+    
+    #if defined (GEOCOORD_ENHANCEMENT)
+    
+        if ((finalDatumName.length() == 0) || finalNameDeprecated)
+            {
+            // We do not have the datum name yet ... try looking it up in the alias table.
+            WString     alternateName;
+    
+            if (WKTDatumLookup (name.c_str(), alternateName))
+                {
+                namedDatum = Datum::CreateDatum (alternateName.c_str());
+                if (namedDatum != NULL && namedDatum->IsValid())
+                    {
+                    if ((finalDatumName.length() == 0) || (finalNameDeprecated && (0 != deprecated.CompareTo(namedDatum->GetGroup(groupName)))))
+                        finalDatumName = alternateName;
+                    }
+                }
+    
+            // Either there is no alias or the alias is not good ... if authority ID is present ...
+            if ((finalDatumName.length() == 0) && (authorityID.length() != 0))
+                {
+                if (WKTDatumLookup (authorityID.c_str(), alternateName))
+                    {
+                    // Alternate name should be valid
+                    namedDatum = Datum::CreateDatum (authorityID.c_str());
+                    if (namedDatum != NULL && namedDatum->IsValid())
+                        {
+                        if ((finalDatumName.length() == 0) || (finalNameDeprecated && (0 != deprecated.CompareTo(namedDatum->GetGroup(groupName)))))
+                            finalDatumName = authorityID;
+                        }
+                    }
+                }
+            }
+    #endif
+    
+        if (finalDatumName.length() != 0)
+            {
+            // We have a datum name ... we simply need to set it now ... in order to do this we need the code
+            int foundIndex = FindDatumIndex (finalDatumName.c_str());
+    
+            if (foundIndex >= 0)
+                coordinateSystem.SetDatumCode (foundIndex);
+            else
+                return ERROR;
+    
+            }
         else
             return ERROR;
-
-        }
-    else
-        return ERROR;
+    }
 
     return status;
     }
@@ -1293,10 +1373,79 @@ StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
 
     wkt = wkt.substr(1);
 
-    // At the moment since WKT does not currently support ellipsoid based coordinate system and
-    // We do not support custom datums we will simply ignore the spheroid definition (although it is parsed out)
-    // If we want to allow ellipsoid based GCS originating from unrecognised datums we may do so
-    // by setting the ellipsoid definition here.!
+    // Here we set the ellipsoid code even though it will likely be overridden when the datum is later set.
+    // This allows for the support of ellipsoid-based GCS that specify no datum.
+    coordinateSystem.SetDatumCode(-1);
+
+    if (0 == name.length())
+        {
+        coordinateSystem.SetEllipsoidCode (-1);        
+        }
+    else
+        {
+
+        // Check if ellipsoid name is known ...
+        WString finalEllipsoidName;
+        EllipsoidCP namedEllipsoid = Ellipsoid::CreateEllipsoid (name.c_str());
+
+        if (namedEllipsoid == NULL || ! namedEllipsoid->IsValid())
+            {
+            // Datum not found ... try with authority ID if defined and not deprecated
+            if (authorityID.length() > 0)
+                {
+                namedEllipsoid = Ellipsoid::CreateEllipsoid (authorityID.c_str());
+                if (namedEllipsoid != NULL && namedEllipsoid->IsValid())
+                    finalEllipsoidName = authorityID;
+                }
+            }
+        else
+            {
+            finalEllipsoidName = name; 
+            }
+
+    #if defined (GEOCOORD_ENHANCEMENT)
+    
+        if (finalEllipsoidName.length() == 0)
+            {
+            // We do not have the datum name yet ... try looking it up in the alias table.
+            WString     alternateName;
+    
+            if (WKTEllipsoidLookup (name.c_str(), alternateName))
+                {
+                namedEllipsoid = Ellipsoid::CreateEllipsoid (alternateName.c_str());
+                if (namedEllipsoid != NULL && namedEllipsoid->IsValid())
+                    finalEllipsoidName = alternateName;
+                }
+    
+            // Either there is no alias or the alias is not good ... if authority ID is present ...
+            if ((finalEllipsoidName.length() == 0) && (authorityID.length() != 0))
+                {
+                if (WKTEllipsoidLookup (authorityID.c_str(), alternateName))
+                    {
+                    // Alternate name should be valid
+                    namedEllipsoid = Ellipsoid::CreateEllipsoid (authorityID.c_str());
+                    if (namedEllipsoid != NULL && namedEllipsoid->IsValid())
+                        finalEllipsoidName = authorityID;
+                    }
+                }
+            }
+    #endif
+    
+        if (finalEllipsoidName.length() != 0)
+            {
+            // We have a datum name ... we simply need to set it now ... in order to do this we need the code
+            int foundIndex = FindEllipsoidIndex (finalEllipsoidName.c_str());
+    
+            if (foundIndex >= 0)
+                {
+                coordinateSystem.SetEllipsoidCode (foundIndex);
+                }
+            else
+                coordinateSystem.SetEllipsoidCode (-1);          
+            }
+        else
+            coordinateSystem.SetEllipsoidCode (-1);        
+    }
 
     return status;
     }
@@ -2348,120 +2497,274 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
         ID = BaseGCS::pcvUnity;
     if ((upperMethodName == L"ALBERS") ||
         (upperMethodName == L"ALBERS_CONIC_EQUAL_AREA") ||  // Added OGR Name
-        (upperMethodName == L"ALBERS CONICAL EQUAL AREA"))   // Oracle name
+        (upperMethodName == L"ALBERS CONICAL EQUAL AREA") ||   // Oracle name
+        (upperMethodName == L"ALBERS EQUAL AREAAE") ||   
+        (upperMethodName == L"ALBERS EQUAL AREA CONIC") ||   
+        (upperMethodName == L"AE") ||   
+        (upperMethodName == L"ALBERS EQUAL AREAAE") ||   
+        (upperMethodName == L"CT_ALBERSEQUALAREA"))
         ID = BaseGCS::pcvAlbersEqualArea;
     else if ((upperMethodName == L"LAMBERT_CONFORMAL_CONIC") ||
              (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_2SP") || // OGR name
              (upperMethodName == L"LAMBERT CONFORMAL CONIC") || // Oracle name
-             (upperMethodName == L"LAMBERT CONFORMAL CONIC, TWO STANDARD PARALLELS")) // Some weird variant encountered in POD files
+             (upperMethodName == L"CT_LAMBERTCONFCONIC_2SP") || // WKT Variation
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC, TWO STANDARD PARALLELS") ||
+             (upperMethodName == L"LM") ||
+             (upperMethodName == L"LCC") ||
+             (upperMethodName == L"LAMBERT CONIC CONFORMAL (2SP)")) 
         ID = BaseGCS::pcvLambertConformalConicTwoParallel;
-    else if (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_1SP") // Name from OGR
+    else if ((upperMethodName == L"LAMBERT_CONFORMAL_CONIC_1SP") || // Name from OGR
+             (upperMethodName == L"CT_LAMBERTCONFCONIC_1SP") ||
+             (upperMethodName == L"LAMBERT_CONIC_CONFORMAL_1SP") ||
+             (upperMethodName == L"LAMBERT CONIC CONFORMAL (1SP)") ||
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC, SINGLE STANDARD PARALLEL") )
         ID = BaseGCS::pcvLambertConformalConicOneParallel;
     else if ((upperMethodName == L"MERCATOR") ||
-             (upperMethodName == L"MERCATOR_2SP")) // Added OGR Name
+             (upperMethodName == L"MERCATOR_2SP") ||
+             (upperMethodName == L"MERCATOR (2SP)") ||
+             (upperMethodName == L"MERCATOR CYLINDRICAL WITH STANDARD PARALLEL") ||
+             (upperMethodName == L"CT_MERCATOR")) 
         ID = BaseGCS::pcvMercator;
-    else if (upperMethodName == L"MERCATOR_1SP") // Name from OGR
+    else if ((upperMethodName == L"MERCATOR_1SP") ||
+             (upperMethodName == L"MERCATOR (1SP)") ||
+             (upperMethodName == L"MERCATOR CYLINDRICAL PROJECTION WITH SCALE REDUCTION") ||
+             (upperMethodName == L"MERCATOR CYLINDRICAL WITH SCALE REDUCTION"))
         ID = BaseGCS::pcvMercatorScaleReduction;
     else if ((upperMethodName == L"POLAR_STEREOGRAPHIC") ||
-             (upperMethodName == L"POLAR STEREOGRAPHIC"))
-        ID = BaseGCS::pcvPolarStereographic;
-    else if (upperMethodName == L"OBLIQUE_STEREOGRAPHIC") // Name comes from OGR
+             (upperMethodName == L"POLAR STEREOGRAPHIC") ||
+             (upperMethodName == L"POLAR STEROGRAPHIC") ||
+             (upperMethodName == L"STEREOGRAPHIC_NORTH_POLE") ||
+             (upperMethodName == L"STEREOGRAPHIC_SOUTH_POLE") ||
+             (upperMethodName == L"POLAR_STEROGRAPHIC") ||
+             (upperMethodName == L"CT_POLARSTEREOGRAPHIC"))
+        ID = BaseGCS::pcvPolarStereographic;    
+    else if ((upperMethodName == L"MODIFIED STEROGRAPHIC PROJECTION") ||
+             (upperMethodName == L"MODIFIED STEREOGRAPHIC PROJECTION") ||
+             (upperMethodName == L"MODIFIED_STEROGRAPHIC_PROJECTION") ||
+             (upperMethodName == L"MODIFIED_STEREOGRAPHIC_PROJECTION") ||
+             (upperMethodName == L"MODIFIED_STEROGRAPHIC") ||
+             (upperMethodName == L"MODIFIED_STEREOGRAPHIC") ||
+             (upperMethodName == L"MODIFIED STEROGRAPHIC") ||
+             (upperMethodName == L"MODIFIED STEREOGRAPHIC"))
+        ID = BaseGCS::pcvModifiedStereographic;
+    else if ((upperMethodName == L"OBLIQUE_STEREOGRAPHIC") ||
+             (upperMethodName == L"OBLIQUE STEREOGRAPHIC") ||
+             (upperMethodName == L"OBLIQUE STEROGRAPHIC") ||
+             (upperMethodName == L"CT_OBLIQUESTEREOGRAPHIC") ||
+             (upperMethodName == L"DOUBLE_STEREOGRAPHIC") )
         ID = BaseGCS::pcvObliqueStereographic;
-    else if (upperMethodName == L"POLYCONIC")
+    else if ((upperMethodName == L"POLYCONIC") ||
+             (upperMethodName == L"CT_POLYCONIC") ||
+             (upperMethodName == L"AMERICAN_POLYCONIC") ||
+             (upperMethodName == L"AMERICAN POLYCONIC") ||
+             (upperMethodName == L"AMERICAN POLYCONIC PROJECTION")   )
         ID = BaseGCS::pcvAmericanPolyconic;
+    else if ((upperMethodName == L"LALLEMAND IMW MODIFIED POLYCONIC") ||
+             (upperMethodName == L"LALLEMAND IMW MODIFIED POLYCONIC PROJECTION"))
+        ID = BaseGCS::pcvModifiedPolyconic;
     else if ((upperMethodName == L"EQUIDISTANT_CONIC") ||
              (upperMethodName == L"EQUIDISTANT CONIC"))
         ID = BaseGCS::pcvEquidistantConic;
-    else if (upperMethodName == L"GAUSS_KRUGER")
+    else if ((upperMethodName == L"GAUSS_KRUGER") ||
+             (upperMethodName == L"GAUSS KRUGER") ||
+             (upperMethodName == L"GAUSSKRUGER"))
         ID = BaseGCS::pcvGaussKrugerTranverseMercator;
     else if ((upperMethodName == L"TRANSVERSE_MERCATOR") ||
              (upperMethodName == L"TRANSVERSE MERCATOR") ||
+             (upperMethodName == L"TM") ||
+             (upperMethodName == L"TRANSVERSE MERCATOR PER J. P. SNYDER") ||
              (upperMethodName == L"CT_TRANSVERSEMERCATOR") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_21") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_22") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_23") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_24") ||
+             (upperMethodName == L"TRANSVERSE MERCATOR FINNISH KKJ") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_25"))
         ID = BaseGCS::pcvTransverseMercator;
 #if defined(TOTAL_SPECIAL)
     else if (upperMethodName == L"TRANSVERSE_MERCATOR_COMPLEX")
         ID = BaseGCS::pcvTotalTransverseMercatorBF;
 #endif
-    else if (upperMethodName == L"STEREOGRAPHIC")
+    else if ((upperMethodName == L"STEREOGRAPHIC") ||
+             (upperMethodName == L"OBLIQUE STEROGRAPHIC, PER SNYDER") ||
+             (upperMethodName == L"OBLIQUE STEROGRAPHIC PROJECTION, PER SNYDER (USA)"))
         ID = BaseGCS::pcvSnyderObliqueStereographic;
     else if ((upperMethodName == L"LAMBERT_AZIMUTHAL_EQUAL_AREA") ||
-             (upperMethodName == L"LAMBERT AZIMUTHAL EQUAL AREA"))
+             (upperMethodName == L"LAMBERT AZIMUTHAL EQUAL AREA") ||
+             (upperMethodName == L"LAMBERT_AZIMUTHAL_EQUAL_AREA_SPHERICAL") ||
+             (upperMethodName == L"LAMBERT AZIMUTHAL EQUAL AREA (SPHERICAL)") ||
+             (upperMethodName == L"CT_LAMBERTAZIMUTHALEQUALAREA"))
         ID = BaseGCS::pcvLambertEqualAreaAzimuthal;
     else if ((upperMethodName == L"AZIMUTHAL_EQUIDISTANT") ||
-             (upperMethodName == L"AZIMUTHAL EQUIDISTANT")) // Oracle name
+             (upperMethodName == L"AZIMUTHAL EQUIDISTANT") ||
+             (upperMethodName == L"CT_LAMBERTAZIMUTHALEQUIDISTANT") ||
+             (upperMethodName == L"LAMBERT AZIMUTHAL EQUIDISTANT") ||
+             (upperMethodName == L"LAMBERT_AZIMUTHAL_EQUIDISTANT"))
         ID = BaseGCS::pcvLambertEquidistantAzimuthal;
     else if ((upperMethodName == L"EQUIDISTANT_CYLINDRICAL") ||
-             (upperMethodName == L"EQUIRECTANGULAR"))
-        ID = BaseGCS::pcvEquidistantCylindrical;
-    else if (upperMethodName == L"GNOMONIC")
+             (upperMethodName == L"EQUIRECTANGULAR") ||
+             (upperMethodName == L"EQUIDISTANT CYLINDRICAL") ||
+             (upperMethodName == L"EQUIDISTANT CYLINDRICAL PROJECTION (DEPRECATED: SPHERICAL ONLY)") ||
+             (upperMethodName == L"CT_EQUIRECTANGULAR") ||
+             (upperMethodName == L"EQUIDISTANT CYLINDRICAL PROJECTION (ELLIPSOIDAL OR SPHERICAL)"))
+        ID = BaseGCS::pcvEquidistantCylindricalEllipsoid; // This replaces pcvEquidistantCylindrical which was spherical only
+    else if ((upperMethodName == L"GNOMONIC") ||
+             (upperMethodName == L"GNOMONIC PROJECTION"))
         ID = BaseGCS::pcvGnomonic;
-    else if (upperMethodName == L"ORTHOGRAPHIC")
+    else if ((upperMethodName == L"ORTHOGRAPHIC") ||
+             (upperMethodName == L"ORTHOGRAPHIC PROJECTION"))
         ID = BaseGCS::pcvOrthographic;
-    else if (upperMethodName == L"SINUSOIDAL")
+    else if ((upperMethodName == L"SINUSOIDAL") ||
+             (upperMethodName == L"CT_SINUSOIDAL"))
         ID = BaseGCS::pcvSinusoidal;
-#ifdef NOT_YET
 // Support of Krovak projection is just too much error prone ... There are various ways to express it and sometimes the
 // angle complements appear provided instead of angles proper.
 // Users should simply select the appropriate projection in dictionary for the moment
-    else if (upperMethodName == L"KROVAK")
+    else if ((upperMethodName == L"KROVAK") ||
+             (upperMethodName == L"KROVAK OBLIQUE CONFORMAL CONIC") ||
+             (upperMethodName == L"KROVAK OBLIQUE CONIC CONFORMAL") ||
+             (upperMethodName == L"KROVAK_OBLIQUE_CONIC_CONFORMAL"))
         ID = BaseGCS::pcvCzechKrovak; // ?? cs_PRJCOD_KRVK95
-#endif
     else if ((upperMethodName == L"MILLER_CYLINDRICAL") ||
+             (upperMethodName == L"CT_MILLERCYLINDRICAL") ||
+             (upperMethodName == L"MILLER") ||
              (upperMethodName == L"MILLER CYLINDRICAL"))
         ID = BaseGCS::pcvMillerCylindrical;
     else if ((upperMethodName == L"VAN_DER_GRINTEN_I") ||
              (upperMethodName == L"VANDERGRINTEN") ||
+             (upperMethodName == L"CT_VANDERGRINTEN") ||
              (upperMethodName == L"VAN DER GRINTEN"))
         ID = BaseGCS::pcvVanderGrinten;
     else if ((upperMethodName == L"HOTINE_OBLIQUE_MERCATOR_AZIMUTHAL_NATURAL_ORIGIN") ||
+             (upperMethodName == L"HOTINE_OBLIQUE_MERCATOR_AZIMUTH_NATURAL_ORIGIN") ||
              (upperMethodName == L"HOTINE OBLIQUE MERCATOR") ||
-             (upperMethodName == L"HOTINE_OBLIQUE_MERCATOR"))
+             (upperMethodName == L"HOTINE_OBLIQUE_MERCATOR") ||
+             (upperMethodName == L"CT_OBLIQUEMERCATOR_HOTINE") ||
+             (upperMethodName == L"ALASKA VARIATION OF HOTINE OBLIQUE MERCATOR")  ||
+             (upperMethodName == L"OBLIQUE_MERCATOR") ||
+             (upperMethodName == L"OBLIQUE MERCATOR") ||
+             (upperMethodName == L"CT_OBLIQUEMERCATOR"))
         ID = BaseGCS::pcvHotineObliqueMercator1XY;
+    else if (upperMethodName == L"RECTIFIED SKEW ORTHOMORPHIC, AZIMUTH AT PROJECTION CENTER")
+        ID = BaseGCS::pcvRectifiedSkewOrthomorphic;
     else if (upperMethodName == L"RECTIFIED_SKEW_ORTHOMORPHIC_NATURAL_ORIGIN")
         ID = BaseGCS::pcvRectifiedSkewOrthomorphic;
-    else if (upperMethodName == L"ROBINSON")
+    else if ((upperMethodName == L"ROBINSON CYLINDRICAL") ||
+             (upperMethodName == L"ROBINSON") ||
+             (upperMethodName == L"CT_ROBINSON"))
         ID = BaseGCS::pcvRobinsonCylindrical;
     else if ((upperMethodName == L"INTERRUPTED_GOODE_HOMOLSINE") ||
              (upperMethodName == L"INTERRUPTED GOODE HOMOLSINE") ||
+             (upperMethodName == L"GOODE HOMOLSINE") ||
+             (upperMethodName == L"GOODE HOMOLOSINE PROJECTION") ||
              (upperMethodName == L"GOODE_HOMOLSINE"))
         ID = BaseGCS::pcvGoodeHomolosine;
     else if ((upperMethodName == L"MOLLWEIDE") ||
             (upperMethodName == L"INTERRUPTED MOLLWEIDE"))
         ID = BaseGCS::pcvMollweide;
     else if ((upperMethodName == L"ECKERT_IV") ||
+             (upperMethodName == L"EKERT PSEUDOCYLINDRICAL, NUMBER IV") ||
              (upperMethodName == L"ECKERT IV"))
         ID = BaseGCS::pcvEckertIV;
     else if ((upperMethodName == L"ECKERT_VI") ||
+             (upperMethodName == L"EKERT PSEUDOCYLINDRICAL, NUMBER VI") ||
              (upperMethodName == L"ECKERT VI"))
         ID = BaseGCS::pcvEckertVI;
     else if ((upperMethodName == L"LAMBERT_CONFORMAL_CONIC_2SP_BELGIUM") ||
-             (upperMethodName == L"LAMBERT CONFORMAL CONIC (BELGIUM 1972)"))
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC (BELGIUM 1972)") ||
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC, BELGIAN VARIATION") ||
+             (upperMethodName == L"LAMBERT_CONIC_CONFORMAL_2SP_BELGIUM") ||
+             (upperMethodName == L"LAMBERT CONIC CONFORMAL (2SP BELGIUM)"))
         ID = BaseGCS::pcvLambertConformalConicBelgian;
     else if ((upperMethodName == L"NEW_ZEALAND_MAP_GRID") ||
-             (upperMethodName == L"NEW ZEALAND MAP GRID"))
+             (upperMethodName == L"NEW ZEALAND MAP GRID") ||
+             (upperMethodName == L"NEW ZEALAND NATIONAL GRID") ||
+             (upperMethodName == L"CT_NEWZEALANDMAPGRID"))
         ID = BaseGCS::pcvNewZealandNationalGrid;
     else if ((upperMethodName == L"CYLINDRICAL_EQUAL_AREA") ||
+             (upperMethodName == L"NORMAL ASPECT, EQUAL AREA CYLINDRICAL") ||
+             (upperMethodName == L"NORMAL ASPECT, EQUAL AREA CYLINDRICAL PROJECTION") ||
              (upperMethodName == L"CYLINDRICAL EQUAL AREA"))
         ID = BaseGCS::pcvEqualAreaAuthalicNormal;
+    else if ((upperMethodName == L"TRANSVERSE ASPECT, EQUAL AREA CYLINDRICAL") ||
+             (upperMethodName == L"TRANSVERSE ASPECT, EQUAL AREA CYLINDRICAL PROJECTION"))
+        ID = BaseGCS::pcvEqualAreaAuthalicTransverse;
     else if ((upperMethodName == L"SWISS_OBLIQUE_CYLINDRICAL")||
+             (upperMethodName == L"SWISS OBLIQUE CYLINDRICAL") ||
              (upperMethodName == L"SWISS_OBLIQUE_MERCATOR") ||
-             (upperMethodName == L"SWISS OBLIQUE MERCATOR"))
+             (upperMethodName == L"SWISS OBLIQUE MERCATOR") ||
+             (upperMethodName == L"CT_SWISSOBLIQUECYLINDRICAL") ||
+             (upperMethodName == L"HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER") ||
+             (upperMethodName == L"RECTIFIED SKEW ORTHOMORPHIC, FALSE ORIGIN AND AZIMUTH AT CENTER"))
         ID = BaseGCS::pcvObliqueCylindricalSwiss;
-#ifdef NOT_YET
 // Something wrong in our interpretation of Bonne projection ... to be done
 // No hurry this one is very rarely used (if at all)
-    else if (upperMethodName == L"BONNE")
+    else if ((upperMethodName == L"BONNE") ||
+             (upperMethodName == L"BONNE PSEUDOCONICAL PROJECTION") ||
+             (upperMethodName == L"BONNE PSEUDOCONICAL"))
         ID = BaseGCS::pcvBonne;
-#endif
-    else if ((upperMethodName == L"CASSINI") || (upperMethodName == L"CASSINI_SOLDNER")) // Added OGR Name
+    else if ((upperMethodName == L"CASSINI") ||
+             (upperMethodName == L"CASSINI_SOLDNER") || 
+             (upperMethodName == L"CT_CASSINISOLDNER") ||
+             (upperMethodName == L"CASSINI-SOLDNER")) 
         ID = BaseGCS::pcvCassini;
     else if (upperMethodName == L"WINKEL_TRIPEL")
         ID = BaseGCS::pcvWinkelTripel;
+    else if ((upperMethodName == L"UNIVERSAL TRANSVERSE MERCATOR SYSTEM") ||
+             (upperMethodName == L"UTM") ||
+             (upperMethodName == L"TRANSVERSE MERCATOR ZONED GRID SYSTEM"))
+        ID = BaseGCS::pcvUniversalTransverseMercator;
+    else if (upperMethodName == L"TRANSVERSE MERCATOR, WISCONSIN COUNTY VARIATION")
+        ID = BaseGCS::pcvTransverseMercatorWisconsin;
+    else if (upperMethodName == L"LAMBERT CONFORMAL CONIC, WISCONSIN COUNTY VARIATION")
+        ID = BaseGCS::pcvLambertConformalConicWisconsin;
+    else if (upperMethodName == L"TRANSVERSE MERCATOR, MINNESOTA DOT VARIATION")
+        ID = BaseGCS::pcvTransverseMercatorMinnesota;
+    else if (upperMethodName == L"LAMBERT CONFORMAL CONIC, MINNESOTA DOT VARIATION")
+        ID = BaseGCS::pcvLambertConformalConicMinnesota;
+    else if ((upperMethodName == L"DANISH SYSTEM 34, UTM + POLYNOMIALS (PRE-1999 VINTAGE)") ||
+             (upperMethodName == L"DANISH SYSTEM 34 (PRE-1999)"))
+        ID = BaseGCS::pcvTransverseMercatorDenmarkSys34;
+    else if (upperMethodName == L"TRANSVERSE MERCATOR DANISH SYSTEM 34 JYLLAND-FYN")
+        ID = BaseGCS::pcvTransverseMercatorDenmarkSys34;
+    else if ((upperMethodName == L"DANISH SYSTEM 34, UTM + POLYNOMIALS (1999 VINTAGE)") ||
+             (upperMethodName == L"DANISH SYSTEM 34 (1999)"))
+        ID = BaseGCS::pcvTransverseMercatorDenmarkSys3499;
+    else if ((upperMethodName == L"OBLIQUE CYLINDRICAL") ||
+             (upperMethodName == L"OBLIQUE CYLINDRICAL PROJECTION (GENERALIZED)"))
+        ID = BaseGCS::pcvObliqueCylindricalHungary;
+    else if ((upperMethodName == L"LAMBERT TANGENTIAL CONFORMAL CONIC PROJECTION") ||
+             (upperMethodName == L"LAMBERT TANGENTIAL") ||
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC") ||
+             (upperMethodName == L"LAMBERT TANGENTIAL CONFORMAL CONIC"))
+        ID = BaseGCS::pcvLambertTangential;
+    else if (upperMethodName == L"POPULAR VISUALISATION PSEUDO MERCATOR") 
+        ID = BaseGCS::pcvPopularVisualizationPseudoMercator;    
+    else if (upperMethodName == L"ORDNANCE SURVEY NATIONAL GRID TRANSFORMATION OF 2002") 
+        ID = BaseGCS::pcvTransverseMercatorOstn02;
+    else if (upperMethodName == L"ORDNANCE SURVEY NATIONAL GRID TRANSFORMATION OF 1997") 
+        ID = BaseGCS::pcvTransverseMercatorOstn97;
+    else if ((upperMethodName == L"PLATE CARREE") ||
+             (upperMethodName == L"PLATE_CARREE") ||
+             (upperMethodName == L"SIMPLE CYLINDRICAL") ||
+             (upperMethodName == L"SIMPLE_CYLINDRICAL") ||
+             (upperMethodName == L"PLATE CARREE / SIMPLE CYLINDRICAL"))
+        ID = BaseGCS::pcvPlateCarree;
+    else if ((upperMethodName == L"BIPOLAR OBLIQUE CONFORMAL CONIC") ||
+             (upperMethodName == L"BIPOLAR OBLIQUE CONFORMAL CONIC PROJECTION"))
+        ID = BaseGCS::pcvBipolarObliqueConformalConic;
+    else if ((upperMethodName == L"SOUTH ORIENTED TRANSVERSE MERCATOR") ||
+             (upperMethodName == L"TRANSVERSE_MERCATOR_SOUTH_ORIENTATED") ||
+             (upperMethodName == L"CT_TRANSVERSEMERCATOR_SOUTHORIENTED") ||
+             (upperMethodName == L"TRANSVERSE MERCATOR (SOUTH ORIENTATED)"))
+        ID = BaseGCS::pcvSouthOrientedTransverseMercator;
+    else if ((upperMethodName == L"TRANSVERSE MERCATOR WITH AFFINE POST PROCESS") ||
+             (upperMethodName == L"TRANSVERSE MERCATOR (GAUSS/KRUGER) WITH AFFINE POST PROCESS"))
+        ID = BaseGCS::pcvTransverseMercatorAffinePostProcess;
+    else if (upperMethodName == L"LAMBERT CONFORMAL CONIC (2SP) WITH AFFINE POST PROCESS") 
+        ID = BaseGCS::pcvLambertConformalConicAffinePostProcess;  
+    else if (upperMethodName == L"RECTIFIED SKEW ORTHOMORPHIC, SKEW AZIMUTH AT RECTIFIED ORIGIN")
+        ID = BaseGCS::pcvRectifiedSkewOrthomorphicOrigin;
 
 // The following known WKT names have no mapping to CSMAP entries.
 
@@ -2515,25 +2818,15 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
 // cs_PRJCOD_HOM2XY
 // cs_PRJCOD_MSTRO
 // cs_PRJCOD_SOTRM
-// cs_PRJCOD_UTM
 // cs_PRJCOD_RSKEWC
 // cs_PRJCOD_OBQCYL
 // cs_PRJCOD_OSTN97
 // cs_PRJCOD_OSTN02
 // cs_PRJCOD_SYS34_99
 // cs_PRJCOD_SYS34_01
-// cs_PRJCOD_EDCYLE
-// cs_PRJCOD_PCARREE
-// cs_PRJCOD_MRCATPV
 // cs_PRJCOD_AZEDE
 // cs_PRJCOD_PSTROSL
 // cs_PRJCOD_TRMERAF
-// cs_PRJCOD_MODPC
-// cs_PRJCOD_BPCNC
-// cs_PRJCOD_MNDOTL
-// cs_PRJCOD_WCCSL
-// cs_PRJCOD_MNDOTT
-// cs_PRJCOD_WCCST
 // cs_PRJCOD_RSKEWO
 // cs_PRJCOD_TRMRKRG
 
@@ -2562,21 +2855,29 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
 StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStringValue, double parameterValue, double conversionToDegree, BaseGCSR coordinateSystem) const
     {
 
+
+
     // Obtain uppercase value
     WString upperParameterName = parameterName;
     std::transform(upperParameterName.begin(), upperParameterName.end(), upperParameterName.begin(), (int (*)(int))std::toupper);
 
-
     if ((upperParameterName == L"FALSE_EASTING") ||
-        (upperParameterName == L"FALSEEASTING"))
+        (upperParameterName == L"FALSEEASTING") ||
+        (upperParameterName == L"FALSE EASTING"))
         coordinateSystem.SetFalseEasting (parameterValue);
     else if ((upperParameterName == L"FALSE_NORTHING") ||
-             (upperParameterName == L"FALSENORTHING"))
+             (upperParameterName == L"FALSENORTHING") ||
+             (upperParameterName == L"FALSE NORTHING"))
         coordinateSystem.SetFalseNorthing (parameterValue);
     else if ((upperParameterName == L"LATITUDE_OF_ORIGIN") ||
              (upperParameterName == L"LATITUDE_OF_CENTER") ||
              (upperParameterName == L"CENTRAL_PARALLEL") ||
-             (upperParameterName == L"NATORIGINLAT"))
+             (upperParameterName == L"NATORIGINLAT") ||
+             (upperParameterName == L"LATITUDE OF NATURAL ORIGIN") ||
+             (upperParameterName == L"ORIGIN LATITUDE") ||
+             (upperParameterName == L"CENTERLAT") ||
+             (upperParameterName == L"CENTRAL POINT LATITUDE") ||
+             (upperParameterName == L"LATITUDE OF PROJECTION CENTRE") )
         {
         if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
@@ -2584,50 +2885,138 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         else
             coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree);
         }
-    else if (upperParameterName == L"CENTRAL_MERIDIAN")
+    else if ( (upperParameterName == L"CENTRAL_MERIDIAN") ||
+              (upperParameterName == L"CENTRAL MERIDIAN") )
         {
         if ((BaseGCS::pcvObliqueCylindricalSwiss == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem.GetProjectionCode()) ||     // This fixes TR# 288399
             (BaseGCS::pcvLambertConformalConicBelgian == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicMinnesota == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicWisconsin == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvEquidistantConic == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertEquidistantAzimuthal == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertEqualAreaAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvAlbersEqualArea == coordinateSystem.GetProjectionCode()) )
-            coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree);
+            {
+            if (SUCCESS != coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree))
+                return ERROR;
+            }
         else if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
                  (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
-            coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree);
+            {
+            if (SUCCESS != coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree))
+               return ERROR;
+            }
         else
-            coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
+            {
+            if (SUCCESS != coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree))
+                return ERROR;
+            }
         }
     else if ((upperParameterName == L"SCALE_FACTOR") ||
-             (upperParameterName == L"SCALEATNATORIGIN"))
-        coordinateSystem.SetScaleReduction (parameterValue);
-    else if (upperParameterName == L"STANDARD_PARALLEL_1")
+             (upperParameterName == L"SCALEATNATORIGIN") ||
+             (upperParameterName == L"SCALE FACTOR AT NATURAL ORIGIN") ||
+             (upperParameterName == L"SCALE REDUCTION"))
+        {
+        // WKT styles allow for mixup between Lambert Conformal Conic 2SP and with scale.
+        // The presence of a scale here indicates we may have been mistaken and switch to Lambert 1SP
+        if (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode())
+            coordinateSystem.SetProjectionCode (BaseGCS::pcvLambertConformalConicOneParallel);
+
+        if (SUCCESS != coordinateSystem.SetScaleReduction (parameterValue))
+            return ERROR;
+        }
+    else if (upperParameterName == L"STANDARD PARALLEL")
+        {
+        // Some variation use this field with a Mercator projection to indicate the prime meridian 
+        // of the geographic coordinate system is different than Greenwich but we would not know how to reapply to the longitude shift it implies
+        // All other projection should not use this parameter.
+        if (BaseGCS::pcvEquidistantCylindricalEllipsoid == coordinateSystem.GetProjectionCode())
+            {
+            if (SUCCESS != coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree))
+                return ERROR;
+            }
+        else if (BaseGCS::pcvMercator == coordinateSystem.GetProjectionCode())
+            {
+            if (SUCCESS != coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree))
+                return ERROR;
+            }
+        else
+            return ERROR;
+        }
+    else if ((upperParameterName == L"STANDARD_PARALLEL_1") ||
+             (upperParameterName == L"STDPARALLEL1") ||
+             (upperParameterName == L"STANDARD_PARALLEL1")|| 
+             (upperParameterName == L"LATITUDE OF 1ST STANDARD PARALLEL") ||
+             (upperParameterName == L"NORTHERN STANDARD PARALLEL"))
         {
         if (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode())
-            coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree); // Weird occurence !
+            {
+            if (SUCCESS != coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree)) // Weird occurence !
+                return ERROR;
+            }
         else
-            coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree);
+            {
+            if (SUCCESS != coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree))
+                return ERROR;
+            }
         }
-    else if (upperParameterName == L"STANDARD_PARALLEL_2")
-        coordinateSystem.SetStandardParallel2 (parameterValue * conversionToDegree);
-    else if (upperParameterName == L"AZIMUTH")
-        coordinateSystem.SetAzimuth (parameterValue * conversionToDegree);
-        else if (upperParameterName == L"ZONENUMBER")
-        coordinateSystem.SetUTMZone ((int)parameterValue);
-        else if (upperParameterName == L"HEMISPHERE")
+    else if ((upperParameterName == L"STANDARD_PARALLEL_2") ||
+             (upperParameterName == L"STDPARALLEL2") ||
+             (upperParameterName == L"STANDARD_PARALLEL2") ||
+             (upperParameterName == L"LATITUDE OF 2ND STANDARD PARALLEL") ||
+             (upperParameterName == L"SOUTHERN STANDARD PARALLEL"))
+        {
+        if (SUCCESS != coordinateSystem.SetStandardParallel2 (parameterValue * conversionToDegree))
+            return ERROR;
+        }
+    else if (upperParameterName == L"NORMAL PARALLEL")
+        {
+        if (SUCCESS != coordinateSystem.SetStandardParallel1(parameterValue * conversionToDegree))
+            return ERROR;
+        }
+    else if ((upperParameterName == L"AZIMUTH") ||
+             (upperParameterName == L"AZIMUTHANGLE") ||
+             (upperParameterName == L"GEODESIC AZIMUTH AT PROJECTION CENTER") ||
+             (upperParameterName == L"AZIMUTH OF INITIAL LINE") ||
+             (upperParameterName == L"RECTIFIED_GRID_ANGLE") ||
+             (upperParameterName == L"RECTIFIEDGRIDANGLE") ||
+             (upperParameterName == L"SKEW AZIMUTH AT RECTIFIED ORIGIN") ||
+             (upperParameterName == L"ANGLE FROM RECTIFIED TO SKEW GRID"))
+        {
+        if ((BaseGCS::pcvObliqueCylindricalSwiss != coordinateSystem.GetProjectionCode()) && // Swiss azimuth is implicit and needs(cannot) not be specified
+            (BaseGCS::pcvCzechKrovak != coordinateSystem.GetProjectionCode()))               // Krovak azimuth is implicit and needs(cannot) not be specified
+            if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
+                return ERROR;
+        }
+    else if ((upperParameterName == L"ZONENUMBER") || 
+             (upperParameterName == L"UTM ZONE NUMBER (1 - 60)"))
+        {
+        if (SUCCESS != coordinateSystem.SetUTMZone ((int)parameterValue))
+            return ERROR;
+        }
+    else if ((upperParameterName == L"HEMISPHERE") || (upperParameterName == L"HEMISPHERE, NORTH OR SOUTH"))
         {
         int hemisphere;
         if (parameterStringValue.length() == 0)
             hemisphere = 1;
-        else if (parameterStringValue == L"N")
+        else if ((parameterStringValue == L"N") || (parameterStringValue == L"1.0") || (parameterStringValue == L"1"))
             hemisphere = 1;
         else
             hemisphere = -1;
-        coordinateSystem.SetHemisphere (hemisphere);
+        if (SUCCESS != coordinateSystem.SetHemisphere (hemisphere))
+            return ERROR;
         }
         else if ((upperParameterName == L"LONGITUDE_OF_ORIGIN") ||
                  (upperParameterName == L"LONGITUDE_OF_CENTER") ||
-                 (upperParameterName == L"NATORIGINLONG"))
+                 (upperParameterName == L"NATORIGINLONG") ||
+                 (upperParameterName == L"LONGITUDE OF NATURAL ORIGIN") ||
+                 (upperParameterName == L"CENTRAL POINT LONGITUDE") ||
+                 (upperParameterName == L"CENTERLONG") ||
+                 (upperParameterName == L"LONGITUDE OF PROJECTION CENTRE"))
         {
         switch (coordinateSystem.GetProjectionCode())
             {
@@ -2643,23 +3032,58 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             case BaseGCS::pcvModifiedPolyconic:
             case BaseGCS::pcvTransverseMercatorMinnesota:
             case BaseGCS::pcvTransverseMercatorWisconsin:
-            case BaseGCS::pcvObliqueCylindricalSwiss:
-                coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
+                if (SUCCESS != coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree))
+                    return ERROR;
                 break;
 
             case BaseGCS::pcvHotineObliqueMercator1XY:
             case BaseGCS::pcvRectifiedSkewOrthomorphic:
-                coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree);
+                if (SUCCESS != coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree))
+                    return ERROR;
                 break;
             default:
-                coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree);
+                if (SUCCESS != coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree))
+                    return ERROR;
             }
         }
 
-        else if (upperParameterName == L"HEIGHT") // Elevation
-        coordinateSystem.SetElevationAboveGeoid (parameterValue);
-    else if (upperParameterName == L"PSEUDO_STANDARD_PARALLEL_1")
-        coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree);
+    else if ((upperParameterName == L"HEIGHT") || (upperParameterName == L"AVERAGE ELEVATION (SYSTEM UNIT)")) // Elevation
+        {
+        if (SUCCESS != coordinateSystem.SetElevationAboveGeoid (parameterValue))
+            return ERROR;
+        }
+    else if (upperParameterName == L"AVERAGE GEOID HEIGHT (METERS)") 
+        {
+        if (SUCCESS != coordinateSystem.SetGeoidSeparation (parameterValue))
+            return ERROR;
+        }
+    else if ((upperParameterName == L"PSEUDO_STANDARD_PARALLEL_1") ||
+             (upperParameterName == L"LATITUDE OF PSEUDO STANDARD PARALLEL"))
+        {
+        if (SUCCESS != coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree))
+            return ERROR;
+        }
+    else if (upperParameterName == L"OBLIQUE CONE STANDARD PARALLEL")
+        {
+        if (SUCCESS != coordinateSystem.SetStandardParallel1(parameterValue * conversionToDegree))
+            return ERROR;
+        }
+    else if (upperParameterName == L"OBLIQUE POLE LONGITUDE")
+        {
+        if (SUCCESS != coordinateSystem.SetPoint1Longitude(parameterValue * conversionToDegree)) // For Krovak projections
+            return ERROR;
+        }
+    else if (upperParameterName == L"OBLIQUE POLE LATITUDE")
+        {
+        if (SUCCESS != coordinateSystem.SetPoint1Latitude(parameterValue * conversionToDegree)) // For Krovak projections
+            return ERROR;
+        }
+    else if ((upperParameterName == L"REGION") ||
+             (upperParameterName == L"DANISH 34/45 REGION (1=J, 2=S, 3=B)"))
+        {
+        if (SUCCESS != coordinateSystem.SetDanishSys34Region((int)parameterValue)) // For Danish projections
+            return ERROR;
+        }
     else if (upperParameterName == L"XY_PLANE_ROTATION") // OGR weirdness ... Not really supported ... a variant for skew angle which is not supported by CSMAP
         return ERROR;
     else
@@ -5702,7 +6126,9 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
         *warning = SUCCESS;
 
     AString mbWellKnownText (wellKnownText);
-    StatusInt           status = CSMap::CS_wktToCsEx (&csDef, &csDatumDef, &csEllipsoidDef, wktFlavor, mbWellKnownText.c_str());
+    StatusInt           status = ERROR;
+
+    status = CSMap::CS_wktToCsEx (&csDef, &csDatumDef, &csEllipsoidDef, wktFlavor, mbWellKnownText.c_str());
 
     if (SUCCESS != status)
         {
@@ -5727,8 +6153,11 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     // We impose that the datum be known in the dictionary ... something the WKT parser does not require
     // If the datum is not part for the known datums then we set the return status to ERROR and the process will get cought
     // by the fallback solution.
-    if (NULL == CSMap::CS_dtdef (csDatumDef.key_nm))
+    CSDatumDef* datumFromDico = NULL;
+    if (NULL == (datumFromDico = CSMap::CS_dtdef (csDatumDef.key_nm)))
         status = ERROR;
+    else
+        CSMap::CS_free (datumFromDico);
 
     if (SUCCESS == status)
         {
@@ -5756,7 +6185,25 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     // of interpretating general WKTs but may have some difficulties with specific obscure projections
     // We thus use our parser only as a fallback solution, and any error that may occur
     // will simply be disregarded and previous CSMAP related error will be returned.
-    if (SUCCESS != status)
+    // NOTE: that CSMAP cannot parse correctly the following so we force our interpretation:
+    // Wisconsin TM in OGC flavor (does not extract elevation)
+    // Minnesota TM in OGC flavor (does not extract elevation)
+    // Minnesota LM in OGC flavor (does not extract elevation)
+    // Oblique mercator in Oracle 9 ... misses extraction of some parameters.
+    // Mercator in geotiff or Oracle does not parse standard arallel
+    // Lambert (confuses 2SP with TAN) in Oracle flavor .
+    if (SUCCESS != status || (m_csParameters->prj_code == cs_PRJCOD_WCCST && wktFlavorOGC == wktFlavor) || 
+                             (m_csParameters->prj_code == cs_PRJCOD_MNDOTT && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MNDOTL && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_HOM1XY && wktFlavorOracle9 == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTiff == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOracle == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOracle9 == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTools == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorEPSG == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_WCCSL && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor))
+                            
         {
         try {
 
@@ -5774,6 +6221,24 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                 {
                 // This must be done in case of error since the parser allocates the structure but cannot destroy it
                 CSMAP_FREE_AND_CLEAR (m_csParameters);
+
+                if (SUCCESS == status)
+                    {
+                    // If we get here it is because the CSMAP succeeded parsing yet it was one of the variation we did not support
+                    // we recreate the GCS as it was and hope CSMAP did a good job.
+                    if (NULL == (m_csParameters = CSMap::CScsloc2 (&csDef, &csDatumDef, &csEllipsoidDef)))
+                        {
+                        if (NULL != warningOrErrorMsg)
+                            {
+                            char    csErrorMsg[512];
+                            CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
+                            warningOrErrorMsg->AssignA (csErrorMsg);
+                            BeAssert (false);
+                            }
+                        m_csError = cs_Error;
+                        status = cs_Error;
+                        }
+                    }   
                 }
 
             }
@@ -9194,6 +9659,282 @@ bool            BaseGCS::IsEquivalent (BaseGCSCR compareTo) const
 
 #define SET_RETURN_OPT(var)   {var=true;if(stopFirstDifference) return false;}
 #define SET_RETURN(var)       {var=true;return false;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+inline double BaseGCSUtilGetUTMZoneCenterMeridian(int zoneNumber)
+    {
+    return ((zoneNumber - 30) * 6) - 3;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool     DatumEquivalent
+(
+CSDatum&    datum1,
+CSDatum&    datum2,
+bool tolerateEquivalentDifferencesWhenDeprecated
+)
+    {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
+    bool oneIsDeprecated = false;
+
+    // if keynames are the same we can skip this.
+    if ( (0 != datum1.key_nm[0]) && (0 != datum2.key_nm[0]) && (0 == strcmp (datum1.key_nm, datum2.key_nm)) )
+        return true;
+
+    if (!doubleSame (datum1.e_rad, datum2.e_rad))
+        return false;
+
+    if (!doubleSame (datum1.p_rad, datum2.p_rad))
+        return false;
+
+    if (!doubleSame (datum1.delta_X, datum2.delta_X))
+        return false;
+
+    if (!doubleSame (datum1.delta_Y, datum2.delta_Y))
+        return false;
+
+    if (!doubleSame (datum1.delta_Z, datum2.delta_Z))
+        return false;
+
+    if (!doubleSame (datum1.rot_X, datum2.rot_X))
+        return false;
+
+    if (!doubleSame (datum1.rot_Y, datum2.rot_Y))
+        return false;
+
+    if (!doubleSame (datum1.rot_Z, datum2.rot_Z))
+        return false;
+
+    if (datum1.to84_via != datum2.to84_via)
+        {
+        // If the methods are fundamentally equal ... we tolerate
+        // Note that we include MOLO / GEOCENTRIC or 3PARAMs is their delta values are zero
+        bool isNullTransfo1 = ((datum1.to84_via == cs_DTCTYP_NONE) || (datum1.to84_via == cs_DTCTYP_NAD83) || 
+                               (datum1.to84_via == cs_DTCTYP_WGS84) || (datum1.to84_via == cs_DTCTYP_ETRF89) || 
+                               (((datum1.to84_via == cs_DTCTYP_MOLO) || (datum1.to84_via == cs_DTCTYP_GEOCTR) || (datum1.to84_via == cs_DTCTYP_3PARM)) &&
+                                 (doubleSame(datum1.delta_X, 0.0) && doubleSame(datum1.delta_Y, 0.0) && doubleSame(datum1.delta_Z, 0.0))));
+        bool isNullTransfo2 = ((datum2.to84_via == cs_DTCTYP_NONE) || (datum2.to84_via == cs_DTCTYP_NAD83) || 
+                               (datum2.to84_via == cs_DTCTYP_WGS84) || (datum2.to84_via == cs_DTCTYP_ETRF89) ||
+                               (((datum2.to84_via == cs_DTCTYP_MOLO) || (datum2.to84_via == cs_DTCTYP_GEOCTR) || (datum2.to84_via == cs_DTCTYP_3PARM)) &&
+                                 (doubleSame(datum2.delta_X, 0.0) && doubleSame(datum2.delta_Y, 0.0) && doubleSame(datum2.delta_Z, 0.0))));
+
+        if (!(isNullTransfo1 && isNullTransfo2))
+            if (!tolerateEquivalentDifferencesWhenDeprecated)
+                return false;
+            else
+                {
+                // We tolerate some differences in the method when one is deprecated
+                // First check if the methods are possibly compatible
+                if (((datum1.to84_via == cs_DTCTYP_MOLO) || (datum1.to84_via == cs_DTCTYP_GEOCTR) || (datum1.to84_via == cs_DTCTYP_3PARM)) &&
+                    ((datum2.to84_via == cs_DTCTYP_MOLO) || (datum2.to84_via == cs_DTCTYP_GEOCTR) || (datum2.to84_via == cs_DTCTYP_3PARM)))
+                    {
+                    // Both datum use one of the transformations based on 3 parameters and we already know their parameters to be equal.
+                    // All we need to determine is if either datum is deprecated.
+                    // Unfortunately the CSDatum structure does not hold the group name which is used to store
+                    // the deprecated indication ("LEGACY")
+                    DatumCP datum1raw = Datum::CreateDatum(WString(datum1.key_nm, false).c_str());
+                    DatumCP datum2raw = Datum::CreateDatum(WString(datum2.key_nm, false).c_str());
+
+                    WString deprecated = L"LEGACY";
+                    WString groupName;
+                    bool deprecated1 = (0 == deprecated.CompareTo(datum1raw->GetGroup(groupName)));
+                    bool deprecated2 = (0 == deprecated.CompareTo(datum2raw->GetGroup(groupName)));
+
+                    datum1raw->Destroy();
+                    datum2raw->Destroy();
+                    oneIsDeprecated = deprecated1 || deprecated2; // This flag is used below for testing geodetic path.
+                    if (!deprecated1 && !deprecated2)
+                        return false;  // None are deprecated ... we consider different.
+                    }
+                else
+                    return false;
+                }
+        }
+
+    // Starting with latest version of csmap the geodetic transformation is not part of the 
+    // datum proper (except for fallback backward compatibility) so it may happen that
+    // datum have identical definitions but should be considered different.
+    // To verify we must generate the datum converter and verify they are equivalent
+    //
+    // Note that the following process may result into false-positives but we have decided that better be safe than sorry and
+    // go through an unrequired reprojection instead to taking the risk of considering datums equivalent while they are not.
+    CSDatumDef* wgs84Def = CSMap::CS_dtdef("WGS84");
+
+    // If we did not get the datum definition then we will consider the datums equivalent
+    if (NULL == wgs84Def)
+        return true;
+
+    CSDatum* wgs84 = CSdtloc1(wgs84Def);
+
+    if (NULL == wgs84)
+        {
+        return true;
+        }
+
+
+    CSDatumConvert* theDatumConverter1 = CSMap::CSdtcsu (&datum1, wgs84);
+    CSDatumConvert* theDatumConverter2 = CSMap::CSdtcsu (&datum2, wgs84);
+
+    // If no datum converter can be created we cannot judge the equivalence.
+    // We will consider the datums equal since in all likelyhood they effectively are.
+    if (NULL == theDatumConverter1 && NULL == theDatumConverter2)
+        return true;
+
+    // If only one is null then we will assume different datums since they would not result into
+    // any equivalent transformation
+    if (NULL != theDatumConverter1 && NULL == theDatumConverter2)
+        {
+        CSMap::CS_dtcls (theDatumConverter1);
+        return false;
+        }
+    if (NULL == theDatumConverter1 && NULL != theDatumConverter2)
+        {
+        CSMap::CS_dtcls (theDatumConverter2);
+        return false;
+        }
+
+
+    // Now we must analyse the datum converter to determine if the transformation is equivalent.
+    // Notice that there is no function provided by CSMAP for the purpose yet.
+    bool datumsEquivalent = true;
+
+    if (theDatumConverter1->xfrmCount != theDatumConverter2->xfrmCount)
+        datumsEquivalent = false;
+
+    // For every individual transformation part of the convertion path ...
+    for (int idxXForms=0 ; datumsEquivalent && (idxXForms < theDatumConverter1->xfrmCount); idxXForms++)
+        {
+        // Compare selected fields only
+        if ((theDatumConverter1->xforms[idxXForms]->methodCode != theDatumConverter1->xforms[idxXForms]->methodCode) ||
+            (theDatumConverter1->xforms[idxXForms]->isNullXfrm != theDatumConverter1->xforms[idxXForms]->isNullXfrm) ||
+            (theDatumConverter1->xforms[idxXForms]->maxItr != theDatumConverter1->xforms[idxXForms]->maxItr) ||
+            (theDatumConverter1->xforms[idxXForms]->inverseSupported != theDatumConverter1->xforms[idxXForms]->inverseSupported) ||
+            (theDatumConverter1->xforms[idxXForms]->maxIterations != theDatumConverter1->xforms[idxXForms]->maxIterations) ||
+            (theDatumConverter1->xforms[idxXForms]->userDirection != theDatumConverter1->xforms[idxXForms]->userDirection) ||
+            (theDatumConverter1->xforms[idxXForms]->cnvrgValue != theDatumConverter1->xforms[idxXForms]->cnvrgValue) ||
+            (theDatumConverter1->xforms[idxXForms]->errorValue != theDatumConverter1->xforms[idxXForms]->errorValue) ||
+            (theDatumConverter1->xforms[idxXForms]->accuracy != theDatumConverter1->xforms[idxXForms]->accuracy))
+            datumsEquivalent = false;
+
+        // So far so good but now we must check the specific parameters. Except for grid shift files we can assume
+        // a simple compare will do the job.
+        // NOTE: Abridged Molodenski stores for debugging purposes the names of the datums
+        // as part of its structure. As the names may be different this would result into those being
+        // considered different. Since csmap has not  activated Abridged Molodenski yet an we do not intend to use it we will
+        // simply live with these eventual false-negatives.
+        // For grid shift files since the pointers to file names will be different even if refering to the same file we must be 
+        // more precise.
+        if (datumsEquivalent)
+            {
+            // If it is one of the grid shift file method
+            if ((cs_DTCPRMTYP_GRIDINTP & cs_DTCPRMTYP_MASK) == (theDatumConverter1->xforms[idxXForms]->methodCode & cs_DTCPRMTYP_MASK))
+                {
+                struct csGridi_* datum1GridXForm = (struct csGridi_*)&(theDatumConverter1->xforms[idxXForms]->xforms.gridi);
+                struct csGridi_* datum2GridXForm = (struct csGridi_*)&(theDatumConverter2->xforms[idxXForms]->xforms.gridi);
+
+                // First test the various numeric parameters
+                if ((datum1GridXForm->maxIterations != datum2GridXForm->maxIterations) ||
+                    (datum1GridXForm->userDirection != datum2GridXForm->userDirection) ||
+                    (datum1GridXForm->useBest != datum2GridXForm->useBest) ||
+                    (datum1GridXForm->fallbackDir != datum2GridXForm->fallbackDir) ||
+                    (datum1GridXForm->fileCount != datum2GridXForm->fileCount))
+                    datumsEquivalent = false;
+
+                // Fallback requires some detail checking
+                if (datumsEquivalent)
+                    {
+                    if (datum1GridXForm->fallback != datum2GridXForm->fallback)
+                        {
+                        // The fallbacks pointed may be different but then they must refer to the same fallback transform name.
+                        if ((NULL == datum1GridXForm->fallback) || (NULL == datum2GridXForm->fallback))
+                            datumsEquivalent = false;
+
+                        if ((datumsEquivalent) && (0 != strncmp(datum1GridXForm->fallback->xfrmName, datum2GridXForm->fallback->xfrmName, sizeof (datum2GridXForm->fallback->xfrmName))))
+                            datumsEquivalent = false;     
+                        }
+                    }
+
+                if (datumsEquivalent)
+                    {
+                    // All that remains is to compare file names and individual grid shift file method params. Notice that the order of the files is important
+                    // for grid shift files so we impose the exact same order also
+                    for (short fileIdx = 0 ; datumsEquivalent && (fileIdx < datum1GridXForm->fileCount) ; fileIdx++)
+                        {
+                        // Only selected fields are tested as the structure contains cache and buffering members.
+                        if ((datum1GridXForm->gridFiles[fileIdx]->direction != datum2GridXForm->gridFiles[fileIdx]->direction) ||
+                            (datum1GridXForm->gridFiles[fileIdx]->format != datum2GridXForm->gridFiles[fileIdx]->format) ||
+                            (datum1GridXForm->gridFiles[fileIdx]->density != datum2GridXForm->gridFiles[fileIdx]->density) ||
+                            (datum1GridXForm->gridFiles[fileIdx]->errorValue != datum2GridXForm->gridFiles[fileIdx]->errorValue) ||
+                            (datum1GridXForm->gridFiles[fileIdx]->cnvrgValue != datum2GridXForm->gridFiles[fileIdx]->cnvrgValue) ||
+                            (datum1GridXForm->gridFiles[fileIdx]->maxIterations != datum2GridXForm->gridFiles[fileIdx]->maxIterations))
+                            datumsEquivalent = false;
+
+                        // All that remains to check is the filename
+                        if (datumsEquivalent)
+                            {
+                            datumsEquivalent = (0 == strncmp(datum1GridXForm->gridFiles[fileIdx]->filePath, datum2GridXForm->gridFiles[fileIdx]->filePath, MAXPATH));
+                            }
+                        }
+                    }
+                }
+            else
+                {
+                // None of the other methods have pointer outside theuir structure except for Abridged Molodenski we do not use anyway
+                // and currently deactivated by csmap we simply compare byte-wise
+//                size_t sizeToCompare = sizeof(theDatumConverter1->xforms[idxXForms]) - (size_t)(((Byte*)(&(theDatumConverter1->xforms[idxXForms])) - (Byte*)(&(theDatumConverter1->xforms[idxXForms]->methodCode))));
+                size_t sizeToCompare = (size_t)(((Byte*)(&(theDatumConverter1->xforms[idxXForms]->xfrmName)) - (Byte*)(&(theDatumConverter1->xforms[idxXForms]->methodCode))));
+                datumsEquivalent = (0 == memcmp((Byte*) &(theDatumConverter1->xforms[idxXForms]->methodCode), (Byte*) &(theDatumConverter2->xforms[idxXForms]->methodCode), sizeToCompare));
+
+                if (!datumsEquivalent && oneIsDeprecated && tolerateEquivalentDifferencesWhenDeprecated)
+                    {
+                    
+                    // In some case we consider two different transformations as equivalent enough when the flag is set and at least
+                    if (((theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM)) &&
+                        ((theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM)))
+                        {
+                        if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) && 
+                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) && 
+                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
+                            datumsEquivalent = true; // They are basically similar so we revert the equivalence flag.
+                        }
+                    }
+
+                if (!datumsEquivalent) // If non equivalent whatever the deprecation state we tolerate many ways of expressing a null transformation
+                    {
+                    if (( (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || 
+                          (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_NULLX)) &&
+                        ( (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || 
+                          (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_NULLX)))
+                        {
+                        // If the transform parameters are equal to zero then even if not deprecated they may be identical
+                        if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) && 
+                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) && 
+                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
+                            {
+                            if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, 0.0) && 
+                                doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, 0.0) && 
+                                doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, 0.0))
+                                datumsEquivalent = true;
+                            }
+                        }
+                    }
+                } 
+            }
+        }
+        
+    // Release the datum converters.
+    CSMap::CS_dtcls (theDatumConverter1);
+    CSMap::CS_dtcls (theDatumConverter2);
+
+    return datumsEquivalent;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -9207,17 +9948,208 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     if (NULL == m_csParameters)
         return false;
 
-    // compare the easiest ones first.
+    CSDefinition    thisDef    = m_csParameters->csdef;
+    CSDefinition    compareDef = compareTo.m_csParameters->csdef;
 
-    // the projection codes have to match.
-    if (m_csParameters->prj_code != compareTo.m_csParameters->prj_code)
-        SET_RETURN_OPT (csDifferent)
 
-    // the projection flags have to match.
-    if (m_csParameters->prj_flags != compareTo.m_csParameters->prj_flags)
-        SET_RETURN_OPT (csDifferent)
+    // Identify different projection codes that are similar and may lead to equivalent coordinate systems
+    if ((m_csParameters->prj_code == cs_PRJCOD_UTM && compareTo.m_csParameters->prj_code == cs_PRJCOD_TRMER) ||
+        (m_csParameters->prj_code == cs_PRJCOD_TRMER && compareTo.m_csParameters->prj_code == cs_PRJCOD_UTM))
+        {
+        // UTM and Transverse mercator can be equivalent depending on the values of the parameters
+        // Obtain the zone and hemisphere of the UTM projection
+        int hemisphere;
+        int zone;
+        double falseEasting;
+        double falseNorthing;
+        double centralMeridian;
 
-    if (!HasEquivalentDatum (compareTo))
+        if (m_csParameters->prj_code == cs_PRJCOD_UTM)
+            {
+            hemisphere = GetHemisphere ();
+            zone = GetUTMZone();
+            falseEasting = compareTo.GetFalseEasting();
+            falseNorthing = compareTo.GetFalseNorthing();
+            centralMeridian = compareTo.GetCentralMeridian();
+            }
+        else
+            {
+            hemisphere = compareTo.GetHemisphere();
+            zone = compareTo.GetUTMZone();
+            falseEasting = GetFalseEasting();
+            falseNorthing = GetFalseNorthing();
+            centralMeridian = GetCentralMeridian();
+            }
+        if (!doubleSame (falseEasting, 500000))
+            SET_RETURN (csDifferent)
+
+        if (hemisphere == 1)
+            {
+            if (!doubleSame(0.0, falseNorthing))
+                SET_RETURN (csDifferent)
+            }
+        else
+            {
+            if (!doubleSame(10000000.0, falseNorthing))
+                SET_RETURN (csDifferent)
+            }
+
+        if (!doubleSame(centralMeridian, BaseGCSUtilGetUTMZoneCenterMeridian(zone) ))
+            SET_RETURN (csDifferent)
+        }
+    else if ((m_csParameters->prj_code == cs_PRJCOD_MRCAT && compareTo.m_csParameters->prj_code == cs_PRJCOD_MRCATK) ||
+             (m_csParameters->prj_code == cs_PRJCOD_MRCATK && compareTo.m_csParameters->prj_code == cs_PRJCOD_MRCAT))
+        {
+        // Mercator with scale reduction can be equivalent to mercator given the standard parallel expresses
+        // the equivalent scale reduction.
+        if (m_csParameters->prj_code == cs_PRJCOD_MRCATK)
+            {
+            double e_sq = m_csParameters->datum.ecent * m_csParameters->datum.ecent;
+            double stdParallel = CSmrcatPhiFromK (e_sq, m_csParameters->csdef.scl_red);
+            if (!doubleSame(stdParallel, compareTo.m_csParameters->csdef.prj_prm2))
+                SET_RETURN (csDifferent)
+            }
+        else
+            {
+            double e_sq = compareTo.m_csParameters->datum.ecent * compareTo.m_csParameters->datum.ecent;
+            double stdParallel = CSmrcatPhiFromK (e_sq, compareTo.m_csParameters->csdef.scl_red);
+            if (!doubleSame(stdParallel, m_csParameters->csdef.prj_prm2))
+                SET_RETURN (csDifferent)
+            }
+
+        if (!doubleSame (thisDef.prj_prm1, compareDef.prj_prm1))
+            SET_RETURN (csDifferent)
+
+        // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
+            SET_RETURN (csDifferent)
+    
+        // if the scale is not the same, they're not same units, can't be the same.
+        if (!doubleSame (thisDef.scale, compareDef.scale))
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!distanceSame (thisDef.x_off, compareDef.x_off) || !distanceSame (thisDef.y_off, compareDef.y_off)) )
+            SET_RETURN (csDifferent)
+    
+        // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
+        if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
+            SET_RETURN (csDifferent)
+
+        }
+    else if ((m_csParameters->prj_code == cs_PRJCOD_LMTAN && compareTo.m_csParameters->prj_code == cs_PRJCOD_LM1SP) ||
+             (m_csParameters->prj_code == cs_PRJCOD_LM1SP && compareTo.m_csParameters->prj_code == cs_PRJCOD_LMTAN))
+        {
+        // Note that Lambert tangential and Lambert 1 sp are technically identical (same parameters and all)
+
+        // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
+            SET_RETURN (csDifferent)
+    
+        // if the scale is not the same, they're not same units, can't be the same.
+        if (!doubleSame (thisDef.scale, compareDef.scale))
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!distanceSame (thisDef.x_off, compareDef.x_off) || !distanceSame (thisDef.y_off, compareDef.y_off)) )
+            SET_RETURN (csDifferent)
+    
+        // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
+        if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
+            SET_RETURN (csDifferent)
+
+        // No additional parameters for Lambert tangential and 1SP
+        }
+    else
+        {
+        // General case ...
+
+        // the projection codes have to match. 
+        if (m_csParameters->prj_code != compareTo.m_csParameters->prj_code)
+            SET_RETURN_OPT (csDifferent)
+
+        // the projection flags have to match.
+        if (m_csParameters->prj_flags != compareTo.m_csParameters->prj_flags)
+            SET_RETURN_OPT (csDifferent)
+
+        // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
+            SET_RETURN (csDifferent)
+    
+        // if the scale is not the same, they're not same units, can't be the same.
+        if (!doubleSame (thisDef.scale, compareDef.scale))
+            SET_RETURN (csDifferent)
+    
+        // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!distanceSame (thisDef.x_off, compareDef.x_off) || !distanceSame (thisDef.y_off, compareDef.y_off)) )
+            SET_RETURN (csDifferent)
+    
+        // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
+        if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
+            SET_RETURN (csDifferent)
+    
+
+
+        // find the parameter map for this projection
+        struct cs_PrjprmMap_ *mp;
+        for (mp = cs_PrjprmMap; mp->prj_code != cs_PRJCOD_END; mp++)
+            {
+            if (mp->prj_code == m_csParameters->prj_code)
+                break;
+            }
+
+        if (mp->prj_code == cs_PRJCOD_END)
+            return true;
+    
+        if ((cs_PRJCOD_LM2SP == m_csParameters->prj_code) || (cs_PRJCOD_LMBLG == m_csParameters->prj_code) || (cs_PRJCOD_ALBER == m_csParameters->prj_code) || (cs_PRJCOD_EDCNC == m_csParameters->prj_code))
+            {
+            // We process Lambert 2SP differently since the order of parallels is irrelevant
+            if ((!doubleSame(thisDef.prj_prm1,compareDef.prj_prm1) && !doubleSame(thisDef.prj_prm1,compareDef.prj_prm2)) || 
+                (!doubleSame(thisDef.prj_prm2,compareDef.prj_prm2) && !doubleSame(thisDef.prj_prm2,compareDef.prj_prm1)))
+                SET_RETURN (csDifferent)
+            }
+        else if (cs_PRJCOD_UNITY != m_csParameters->prj_code) // All others (except lat/long for which parameters are irrelevant)
+            {
+            // find which parameters are needed for the projection by using cs_prjprm, compare those.
+            double *thisDouble;
+            double *compareDouble;
+            int     iParam;
+            for (iParam = 0, thisDouble = &thisDef.prj_prm1, compareDouble = &compareDef.prj_prm1; iParam < 24; iParam++, thisDouble++, compareDouble++)
+                {
+                // if the parameter index is 0, then that parameter's not used. There are never any embedded 0's so we can stop at the first one we encounter.
+                // NOTE: we don't need to know what it's used for, just that it is used.
+                int parameterIndex = mp->prm_types[iParam];
+                if (parameterIndex <= 0)
+                    break;
+        
+                // for the northern/southern hemisphere parameter, 0 and 1 are the same.
+                if (cs_PRMCOD_HSNS == parameterIndex)
+                   {
+                   if ( (*thisDouble >= 0.0) != (*compareDouble >= 0.0) )
+                        SET_RETURN (csDifferent)
+                   }
+                else
+                    {
+                    if (!doubleSame (*thisDouble, *compareDouble))
+                        SET_RETURN (csDifferent)
+                    }
+                }
+            }
+        }
+
+    if (!DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, true))
         SET_RETURN_OPT (datumDifferent)
 
     if (m_verticalDatum != compareTo.m_verticalDatum)
@@ -9226,69 +10158,10 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     if (!LocalTransformer::IsEquivalent (m_localTransformer, compareTo.m_localTransformer))
         SET_RETURN_OPT (localTransformDifferent)
 
-    CSDefinition    thisDef    = m_csParameters->csdef;
-    CSDefinition    compareDef = compareTo.m_csParameters->csdef;
-
-    // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
-        SET_RETURN (csDifferent)
-
-    // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
-        SET_RETURN (csDifferent)
-
-    // if the scale is not the same, they're not same units, can't be the same.
-    if (!doubleSame (thisDef.scale, compareDef.scale))
-        SET_RETURN (csDifferent)
-
-    // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!doubleSame (thisDef.x_off, compareDef.x_off) || !doubleSame (thisDef.y_off, compareDef.y_off)) )
-        SET_RETURN (csDifferent)
-
-    // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
-    if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
-        SET_RETURN (csDifferent)
-
     // quads must match.
     if (thisDef.quad != compareDef.quad)
         SET_RETURN (csDifferent)
 
-    // find which parameters are needed for the projection by using cs_prjprm, compare those.
-
-    // find the parameter map for this projection
-    struct cs_PrjprmMap_ *mp;
-    for (mp = cs_PrjprmMap; mp->prj_code != cs_PRJCOD_END; mp++)
-        {
-        if (mp->prj_code == m_csParameters->prj_code)
-            break;
-        }
-
-    if (mp->prj_code == cs_PRJCOD_END)
-        return true;
-
-    double *thisDouble;
-    double *compareDouble;
-    int     iParam;
-    for (iParam = 0, thisDouble = &thisDef.prj_prm1, compareDouble = &compareDef.prj_prm1; iParam < 24; iParam++, thisDouble++, compareDouble++)
-        {
-        // if the parameter index is 0, then that parameter's not used. There are never any embedded 0's so we can stop at the first one we encounter.
-        // NOTE: we don't need to know what it's used for, just that it is used.
-        int parameterIndex = mp->prm_types[iParam];
-        if (parameterIndex <= 0)
-            break;
-
-        // for the northern/southern hemisphere parameter, 0 and 1 are the same.
-        if (cs_PRMCOD_HSNS == parameterIndex)
-           {
-           if ( (*thisDouble >= 0.0) != (*compareDouble >= 0.0) )
-                SET_RETURN (csDifferent)
-           }
-        else
-            {
-            if (!doubleSame (*thisDouble, *compareDouble))
-                SET_RETURN (csDifferent)
-            }
-        }
 
     return true;
     }
@@ -9527,13 +10400,7 @@ StatusInt BaseGCSUtilGetRangeAboutBoundMeridianAndBoundParallel   (bvector<GeoPo
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                Raymond.Gauthier    07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline double BaseGCSUtilGetUTMZoneCenterMeridian(int zoneNumber)
-    {
-    return ((zoneNumber - 30) * 6) - 3;
-    }
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -9673,18 +10540,18 @@ bvector<GeoPoint>&    shape
         case pcvPolarStereographicStandardLatitude :
         case pcvGnomonic :
         case pcvBipolarObliqueConformalConic :
-	    {
-	    // Eventually we will study more attentively how to
-	    // Compute the mathematical extent but for the moment we will limit to the
+	        {
+	        // Eventually we will study more attentively how to
+	        // Compute the mathematical extent but for the moment we will limit to the
             // user extent
-	    double minLongitude = GetMinimumUsefulLongitude();
-	    double maxLongitude = GetMaximumUsefulLongitude();
-	    double minLatitude = GetMinimumUsefulLatitude();
-	    double maxLatitude = GetMaximumUsefulLatitude();
-	    if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
-		{
-		return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
-		}
+            double minLongitude = GetMinimumUsefulLongitude();
+            double maxLongitude = GetMaximumUsefulLongitude();
+            double minLatitude = GetMinimumUsefulLatitude();
+            double maxLatitude = GetMaximumUsefulLatitude();
+            if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+            {
+            return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
+            }
 
             // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
             BaseGCSUtilGetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
@@ -11160,190 +12027,7 @@ WStringR GCSAsASC
     }
 #endif // DICTIONARY_MANAGEMENT_ONLY
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   07/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool     DatumEquivalent
-(
-CSDatum&    datum1,
-CSDatum&    datum2
-)
-    {
-    if (!BaseGCS::IsLibraryInitialized())
-        return false;
 
-    // if keynames are the same we can skip this.
-    if ( (0 != datum1.key_nm[0]) && (0 != datum2.key_nm[0]) && (0 == strcmp (datum1.key_nm, datum2.key_nm)) )
-        return true;
-
-    if (datum1.to84_via != datum2.to84_via)
-        return false;
-
-    if (!doubleSame (datum1.e_rad, datum2.e_rad))
-        return false;
-
-    if (!doubleSame (datum1.p_rad, datum2.p_rad))
-        return false;
-
-    if (!doubleSame (datum1.delta_X, datum2.delta_X))
-        return false;
-
-    if (!doubleSame (datum1.delta_Y, datum2.delta_Y))
-        return false;
-
-    if (!doubleSame (datum1.delta_Z, datum2.delta_Z))
-        return false;
-
-    if (!doubleSame (datum1.rot_X, datum2.rot_X))
-        return false;
-
-    if (!doubleSame (datum1.rot_Y, datum2.rot_Y))
-        return false;
-
-    if (!doubleSame (datum1.rot_Z, datum2.rot_Z))
-        return false;
-
-    // Starting with latest version of csmap the geodetic transformation is not part of the 
-    // datum proper (except for fallback backward compatibility) so it may happen that
-    // datum have identical definitions but should be considered different.
-    // To verify we must generate the datum converter and verify they are equivalent
-    //
-    // Note that the following process may result into false-positives but we have decided that better be safe than sorry and
-    // go through an unrequired reprojection instead to taking the risk of considering datums equivalent while they are not.
-    CSDatumDef* wgs84Def = CSMap::CS_dtdef("WGS84");
-
-    // If we did not get the datum definition then we will consider the datums equivalent
-    if (NULL == wgs84Def)
-        return true;
-
-    CSDatum* wgs84 = CSdtloc1(wgs84Def);
-
-    if (NULL == wgs84)
-        {
-        return true;
-        }
-
-
-    CSDatumConvert* theDatumConverter1 = CSMap::CSdtcsu (&datum1, wgs84);
-    CSDatumConvert* theDatumConverter2 = CSMap::CSdtcsu (&datum2, wgs84);
-
-    // If no datum converter can be created we cannot judge the equivalence.
-    // We will consider the datums equal since in all likelyhood they effectively are.
-    if (NULL == theDatumConverter1 && NULL == theDatumConverter2)
-        return true;
-
-    // If only one is null then we will assume different datums since they would not result into
-    // any equivalent transformation
-    if (NULL != theDatumConverter1 && NULL == theDatumConverter2)
-        {
-        CSMap::CS_dtcls (theDatumConverter1);
-        return false;
-        }
-    if (NULL == theDatumConverter1 && NULL != theDatumConverter2)
-        {
-        CSMap::CS_dtcls (theDatumConverter2);
-        return false;
-        }
-
-
-    // Now we must analyse the datum converter to determine if the transformation is equivalent.
-    // Notice that there is no function provided by CSMAP for the purpose yet.
-    bool datumsEquivalent = true;
-
-    if (theDatumConverter1->xfrmCount != theDatumConverter2->xfrmCount)
-        datumsEquivalent = false;
-
-    // For every individual transformation part of the convertion path ...
-    for (int idxXForms=0 ; datumsEquivalent && (idxXForms < theDatumConverter1->xfrmCount); idxXForms++)
-        {
-        // Compare selected fields only
-        if ((theDatumConverter1->xforms[idxXForms]->methodCode != theDatumConverter1->xforms[idxXForms]->methodCode) ||
-            (theDatumConverter1->xforms[idxXForms]->isNullXfrm != theDatumConverter1->xforms[idxXForms]->isNullXfrm) ||
-            (theDatumConverter1->xforms[idxXForms]->maxItr != theDatumConverter1->xforms[idxXForms]->maxItr) ||
-            (theDatumConverter1->xforms[idxXForms]->inverseSupported != theDatumConverter1->xforms[idxXForms]->inverseSupported) ||
-            (theDatumConverter1->xforms[idxXForms]->maxIterations != theDatumConverter1->xforms[idxXForms]->maxIterations) ||
-            (theDatumConverter1->xforms[idxXForms]->userDirection != theDatumConverter1->xforms[idxXForms]->userDirection) ||
-            (theDatumConverter1->xforms[idxXForms]->cnvrgValue != theDatumConverter1->xforms[idxXForms]->cnvrgValue) ||
-            (theDatumConverter1->xforms[idxXForms]->errorValue != theDatumConverter1->xforms[idxXForms]->errorValue) ||
-            (theDatumConverter1->xforms[idxXForms]->accuracy != theDatumConverter1->xforms[idxXForms]->accuracy))
-            datumsEquivalent = false;
-
-        // So far so good but now we must check the specific parameters. Except for grid shift files we can assume
-        // a simple compare will do the job.
-        // NOTE: Abridged Molodenski stores for debugging purposes the names of the datums
-        // as part of its structure. As the names may be different this would result into those being
-        // considered different. Since csmap has not  activated Abridged Molodenski yet an we do not intend to use it we will
-        // simply live with these eventual false-negatives.
-        // For grid shift files since the pointers to file names will be different even if refering to the same file we must be 
-        // more precise.
-        if (datumsEquivalent)
-            {
-            // If it is one of the grid shift file method
-            if ((cs_DTCPRMTYP_GRIDINTP & cs_DTCPRMTYP_MASK) == (theDatumConverter1->xforms[idxXForms]->methodCode & cs_DTCPRMTYP_MASK))
-                {
-                struct csGridi_* datum1GridXForm = (struct csGridi_*)&(theDatumConverter1->xforms[idxXForms]->xforms.gridi);
-                struct csGridi_* datum2GridXForm = (struct csGridi_*)&(theDatumConverter2->xforms[idxXForms]->xforms.gridi);
-
-                // First test the various numeric parameters
-                if ((datum1GridXForm->maxIterations != datum2GridXForm->maxIterations) ||
-                    (datum1GridXForm->userDirection != datum2GridXForm->userDirection) ||
-                    (datum1GridXForm->useBest != datum2GridXForm->useBest) ||
-                    (datum1GridXForm->fallbackDir != datum2GridXForm->fallbackDir) ||
-                    (datum1GridXForm->fileCount != datum2GridXForm->fileCount))
-                    datumsEquivalent = false;
-
-                // Fallback requires some detail checking
-                if (datumsEquivalent)
-                    {
-                    if (datum1GridXForm->fallback != datum2GridXForm->fallback)
-                        {
-                        // The fallbacks pointed may be different but then they must refer to the same fallback transform name.
-                        if ((NULL == datum1GridXForm->fallback) || (NULL == datum2GridXForm->fallback))
-                            datumsEquivalent = false;
-
-                        if ((datumsEquivalent) && (0 != strncmp(datum1GridXForm->fallback->xfrmName, datum2GridXForm->fallback->xfrmName, sizeof (datum2GridXForm->fallback->xfrmName))))
-                            datumsEquivalent = false;     
-                        }
-                    }
-
-                if (datumsEquivalent)
-                    {
-                    // All that remains is to compare file names and individual grid shift file method params. Notice that the order of the files is important
-                    // for grid shift files so we impose the exact same order also
-                    for (short fileIdx = 0 ; datumsEquivalent && (fileIdx < datum1GridXForm->fileCount) ; fileIdx++)
-                        {
-                        // Only selected fields are tested as the structure contains cache and buffering members.
-                        if ((datum1GridXForm->gridFiles[fileIdx]->direction != datum2GridXForm->gridFiles[fileIdx]->direction) ||
-                            (datum1GridXForm->gridFiles[fileIdx]->format != datum2GridXForm->gridFiles[fileIdx]->format) ||
-                            (datum1GridXForm->gridFiles[fileIdx]->density != datum2GridXForm->gridFiles[fileIdx]->density) ||
-                            (datum1GridXForm->gridFiles[fileIdx]->errorValue != datum2GridXForm->gridFiles[fileIdx]->errorValue) ||
-                            (datum1GridXForm->gridFiles[fileIdx]->cnvrgValue != datum2GridXForm->gridFiles[fileIdx]->cnvrgValue) ||
-                            (datum1GridXForm->gridFiles[fileIdx]->maxIterations != datum2GridXForm->gridFiles[fileIdx]->maxIterations))
-                            datumsEquivalent = false;
-
-                        // All that remains to check is the filename
-                        if (datumsEquivalent)
-                            {
-                            datumsEquivalent = (0 == strncmp(datum1GridXForm->gridFiles[fileIdx]->filePath, datum2GridXForm->gridFiles[fileIdx]->filePath, MAXPATH));
-                            }
-                        }
-                    }
-                }
-            else
-                {
-                // None of the other methods have pointer outside theuir structure except for Abridged Molodenski we do not use anyway
-                // and currently deactivated by csmap we simply compare byte-wise
-                datumsEquivalent = (0 == memcmp((Byte*) &(theDatumConverter1->xforms[idxXForms]), (Byte*) &(theDatumConverter2->xforms[idxXForms]), sizeof(theDatumConverter1->xforms[idxXForms])));
-                } 
-            }
-        }
-        
-    // Release the datum converters.
-    CSMap::CS_dtcls (theDatumConverter1);
-    CSMap::CS_dtcls (theDatumConverter2);
-
-    return datumsEquivalent;
-    }
 
 #ifdef UNUSED_CODE
 /*---------------------------------------------------------------------------------**//**
@@ -11367,7 +12051,7 @@ bool            BaseGCS::HasEquivalentDatum
 BaseGCSCR        compareTo
 ) const
     {
-    return DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum);
+    return DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11506,7 +12190,7 @@ bool    noSearch
                 CSDatum*       datum;
                 if (NULL != (datum = CSMap::CS_dtloc (dtKeyName)))
                     {
-                    if (DatumEquivalent (m_csParameters->datum, *datum))
+                    if (DatumEquivalent (m_csParameters->datum, *datum, false))
                         {
                         CSMap::CS_free (datum);
                         return epsgNum;
@@ -12152,18 +12836,18 @@ BaseGCSCR        destGCS         // => destination coordinate system
 * @bsimethod                                    Alain.Robert                  05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::ClearCache() const
-	{
-	// Clean up cache data so we release our hold upon other BaseGCS
+    {
+    // Clean up cache data so we release our hold upon other BaseGCS
     if (NULL != m_datumConverter)
         {
         m_datumConverter->Destroy();
         m_datumConverter = NULL;
         }
 
-	// Normally the caller is the pointed GCS of which the address is m_destinationGCS
-	// We do not need to unregister the present GCS from the list of pointed GCS of the caller.
-	m_destinationGCS = NULL;
-	}
+    // Normally the caller is the pointed GCS of which the address is m_destinationGCS
+    // We do not need to unregister the present GCS from the list of pointed GCS of the caller.
+    m_destinationGCS = NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alain.Robert                  05/2013
@@ -12246,10 +12930,10 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong3D (outLatLong, inLatLong);
     else
-		{
+        {
         outLatLong = inLatLong;
-	    status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
-		}
+        status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
+        }
 
     return status;
     }
@@ -12267,17 +12951,17 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
 
 
     // make sure datum converter is set up for the destination.
-	if (&destinationGCS != m_destinationGCS)
-		SetupDatumConverterFor (destinationGCS);
+    if (&destinationGCS != m_destinationGCS)
+        SetupDatumConverterFor (destinationGCS);
 
     ReprojectStatus status = REPROJECT_Success;
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong2D (outLatLong, inLatLong);
     else
-		{
+        {
         outLatLong = inLatLong;
-		status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
-		}
+        status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
+        }
 
     return status;
     }
@@ -14689,6 +15373,7 @@ int             CSMap::CScalcLlFromMgrs (CSMilitaryGrid* mg, GeoPoint2dP ll, con
 void            CSMap::CSdeleteMgrs (CSMilitaryGrid* mg) {::CSdeleteMgrs (mg);}
 void            CSMap::CS_llhToXyz (DPoint3dP xyz,const GeoPointCP llh, double e_rad, double e_sq) {::CS_llhToXyz((double*)xyz, (const double*)llh, e_rad, e_sq);}
 int             CSMap::CS_xyzToLlh (GeoPointP llh,const DPoint3dCP xyz, double e_rad, double e_sq) {return ::CS_xyzToLlh((double*)llh, (const double*)xyz, e_rad, e_sq);}
+double          CSMap::CSmrcatPhiFromK (double e_sq,double scl_red) {return ::CSmrcatPhiFromK(e_sq, scl_red);}
 
 
 

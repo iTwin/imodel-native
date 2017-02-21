@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -2427,6 +2427,9 @@ BASEGEOCOORD_EXPORTED static void             CSdeleteMgrs (CSMilitaryGrid* mg);
 BASEGEOCOORD_EXPORTED static void             CS_llhToXyz (DPoint3dP xyz, GeoPointCP llh, double e_rad, double e_sq);
 
 BASEGEOCOORD_EXPORTED static int              CS_xyzToLlh (GeoPointP llh , DPoint3dCP xyz, double e_rad, double e_sq);
+
+BASEGEOCOORD_EXPORTED static double           CSmrcatPhiFromK (double e_sq,double scl_red);
+
 
 };
 
