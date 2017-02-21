@@ -21,10 +21,6 @@
   typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
-#if defined (BEJSONCPP_ALLOW_IOSTREAM)
-# include <iostream>
-#endif
-
 BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
@@ -85,17 +81,6 @@ namespace Json {
       bool parse( std::istream &is,
                   Value &root,
                   bool collectComments = true );
-
-#if defined (BEJSONCPP_INCLUDE_DEPRECATED)
-      /** \brief Returns a user friendly string that list errors in the parsed document.
-       * \return Formatted error message with the list of errors with their location in 
-       *         the parsed document. An empty string is returned if no error occurred
-       *         during parsing.
-       * \deprecated Use getFormattedErrorMessages() instead (typo fix).
-       */
-      JSONCPP_DEPRECATED("Use getFormattedErrorMessages instead") 
-      Utf8StringAlias getFormatedErrorMessages() const;
-#endif
 
       /** \brief Returns a user friendly string that list errors in the parsed document.
        * \return Formatted error message with the list of errors with their location in 
@@ -180,11 +165,7 @@ namespace Json {
                                      int &line,
                                      int &column ) const;
       Utf8StringAlias getLocationLineAndColumn( Location location ) const;
-      void addComment( Location begin, 
-                       Location end, 
-                       CommentPlacement placement );
       void skipCommentTokens( Token &token );
-   
       typedef std::stack<Value *> Nodes;
       Nodes nodes_;
       Errors errors_;
@@ -192,38 +173,12 @@ namespace Json {
       Location begin_;
       Location end_;
       Location current_;
-      Location lastValueEnd_;
-      Value *lastValue_;
-      Utf8StringAlias commentsBefore_;
+//      Location lastValueEnd_;
+//      Value *lastValue_;
+//      Utf8StringAlias commentsBefore_;
       Features features_;
-      bool collectComments_;
+//      bool collectComments_;
    };
-
-   /** \brief Read from 'sin' into 'root'.
-
-    Always keep comments from the input JSON.
-
-    This can be used to read a file into a particular sub-object.
-    For example:
-    \code
-    Json::Value root;
-    cin >> root["dir"]["file"];
-    cout << root;
-    \endcode
-    Result:
-    \verbatim
-    {
-    "dir": {
-        "file": {
-        // The input stream JSON would be nested here.
-        }
-    }
-    }
-    \endverbatim
-    \throw std::exception on parse error.
-    \see Json::operator<<()
-   */
-   std::istream& operator>>( std::istream&, Value& );
 
 } // namespace Json
 END_BENTLEY_NAMESPACE
