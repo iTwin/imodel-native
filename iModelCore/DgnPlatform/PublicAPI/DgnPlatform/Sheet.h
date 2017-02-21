@@ -203,7 +203,7 @@ namespace Attachment
         Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
         Render::GraphicListPtr m_terrain;
-        ClipVectorCPtr m_attachClips;
+        ClipVectorCPtr m_clips;
 
         virtual void _QueueScene(UpdatePlan const& updatePlan);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
@@ -216,7 +216,7 @@ namespace Attachment
         Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
 
         DGNVIEW_EXPORT Viewport();
-        ClipVectorCP GetClips() const {return m_attachClips.get();}
+        ClipVectorCP GetAttachClips() const {return m_clips.get();}
     };
 
     //=======================================================================================
