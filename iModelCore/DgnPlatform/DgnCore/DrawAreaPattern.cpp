@@ -438,15 +438,17 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
     if (!clip.IsValid())
         return false;
 
-    DgnViewportP  vp = context.GetViewport();
-    bool          isSimplify = graphic.IsSimplifyGraphic();
-    bool          wasAborted = false;
-    DPoint2d      patOrg;
-    DPoint3d      tileCorners[8];
-    Transform     symbolTrans;
-    GraphicParams graphicParams;
+    DgnViewportP     vp = context.GetViewport();
+    bool             isSimplify = graphic.IsSimplifyGraphic();
+    bool             wasAborted = false;
+    DPoint2d         patOrg;
+    DPoint3d         tileCorners[8];
+    Transform        symbolTrans;
+    GraphicParams    graphicParams;
+    PatternParamsPtr pattern = params.GetPatternParamsP();
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
+    params.SetPatternParams(nullptr); // Need to clear so that we don't attempt to apply pattern to shapes in pattern symbol...
     context.CookGeometryParams(params, graphicParams);
 
     for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
@@ -484,6 +486,8 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
             graphic.AddSubGraphic(*partBuilder, symbolTrans, graphicParams, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
             }
         }
+
+    params.SetPatternParams(pattern.get());
 
     return wasAborted;
     }
