@@ -2382,6 +2382,18 @@ public:
 };
 
 //=======================================================================================
+//! A PhysicalPortion represents an arbitrary portion of a larger PhysicalElement that will be broken down in more detail in a separate (sub) PhysicalModel.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalPortion : PhysicalElement
+{
+    DEFINE_T_SUPER(PhysicalElement);
+protected:
+    explicit PhysicalPortion(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
 //! Examples include grid lines, parcel boundaries, and work areas.
 //! @ingroup GROUP_DgnElement
@@ -2393,6 +2405,18 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
     friend struct dgn_ElementHandler::SpatialLocation;
 protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A SpatialLocationPortion represents an arbitrary portion of a larger SpatialLocationElement that will be broken down in more detail in a separate (sub) SpatialLocationModel.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPortion : SpatialLocationElement
+{
+    DEFINE_T_SUPER(SpatialLocationElement);
+protected:
+    explicit SpatialLocationPortion(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
