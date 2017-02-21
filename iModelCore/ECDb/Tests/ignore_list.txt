@@ -31,3 +31,4 @@ ECSqlStatementTestFixture.ECSqlOnAbstractClassWithOrderbyClause
 
 #Fails to prepare ECSQL SELECT against mixin. Fails irregularly though.
 ECDbMappingTestFixture.BaseClassAndMixins_Diamond
+ECDbMappingTestFixture.SelectFromMixin

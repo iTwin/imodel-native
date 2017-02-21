@@ -204,11 +204,11 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        "SELECT CH.ClassId, CT.TableId FROM " TABLE_ClassHasTablesCache " CT"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " CH ON CH.ClassId = CT.ClassId"
-        "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
-        "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> " SQLVAL_MapStrategy_TablePerHierarchy
-        " AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <>" SQLVAL_DbTable_Type_Joined ")");
+        "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
 

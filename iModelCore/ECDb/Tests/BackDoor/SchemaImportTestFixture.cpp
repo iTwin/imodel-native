@@ -170,7 +170,6 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
         expectedDdl.append(" WHERE ").append(whereClause);
     
     Utf8String actualDdl = RetrieveDdl(ecdb, indexName, "index");
-    ASSERT_FALSE(actualDdl.empty());
     ASSERT_STRCASEEQ(expectedDdl.c_str(), actualDdl.c_str());
     }
 

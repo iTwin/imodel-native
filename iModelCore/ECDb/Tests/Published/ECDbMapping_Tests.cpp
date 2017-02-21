@@ -5437,6 +5437,54 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
         }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan Eberle                     02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, SelectFromMixin)
+    {
+    ECDbCR ecdb = SetupECDb("selectfrommixinerror.ecdb", SchemaItem("<?xml version = '1.0' encoding = 'utf-8'?>"
+                                                                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                    "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+                                                                    "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                    "  <ECEntityClass typeName='Base' modifier='Abstract' >"
+                                                                    "    <ECCustomAttributes>"
+                                                                    "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                    "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                    "        </ClassMap>"
+                                                                    "        <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                                                    "        <ShareColumns xmlns='ECDbMap.02.00'/>"
+                                                                    "    </ECCustomAttributes>"
+                                                                    "    <ECProperty propertyName='Base_Prop1' typeName='string' />"
+                                                                    "  </ECEntityClass>"
+                                                                    "  <ECEntityClass typeName='Sub1' modifier='Abstract'>"
+                                                                    "    <BaseClass>Base</BaseClass>"
+                                                                    "    <ECProperty propertyName='Sub1_Prop1' typeName='string' />"
+                                                                    "  </ECEntityClass>"
+                                                                    "  <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+                                                                    "        <ECCustomAttributes>"
+                                                                    "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                                                                    "            <AppliesToEntityClass>Sub1</AppliesToEntityClass>"
+                                                                    "          </IsMixin>"
+                                                                    "        </ECCustomAttributes>"
+                                                                    "    <ECProperty propertyName='IMixin_Prop1' typeName='string' />"
+                                                                    "  </ECEntityClass>"
+                                                                    "  <ECEntityClass typeName='Sub12' modifier='Abstract'>"
+                                                                    "    <BaseClass>Sub1</BaseClass>"
+                                                                    "    <ECProperty propertyName='Sub12_Prop1' typeName='string' />"
+                                                                    "  </ECEntityClass>"
+                                                                    "  <ECEntityClass typeName='MyClass' >"
+                                                                    "    <BaseClass>Sub12</BaseClass>"
+                                                                    "    <BaseClass>IMixin</BaseClass>"
+                                                                    "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
+                                                                    "  </ECEntityClass>"
+                                                                    "</ECSchema>"));
+
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?"));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6736,9 +6784,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(db, "uix_root", true, "ts8_Root", {"RootProp"});
 
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-                /* #TFS 555738
                 AssertIndex(db, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
-                */
                 AssertIndex(db, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
                 AssertIndex(db, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
                 AssertIndex(db, "uix_sub", true, "ts8_Sub", {"SubProp"});
@@ -6806,6 +6852,63 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, UserDefinedIndexOnMixin)
+    {
+    SchemaItem testItem("Index on mixin",
+                        "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
+                        "        <ECCustomAttributes>"
+                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                        "            </ClassMap>"
+                        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                        "        </ECCustomAttributes>"
+                        "        <ECProperty propertyName='RootProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+                        "        <ECCustomAttributes>"
+                        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
+                        "            </IsMixin>"
+                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+                        "                 <Indexes>"
+                        "                   <DbIndex>"
+                        "                       <IsUnique>True</IsUnique>"
+                        "                       <Name>uix_interface</Name>"
+                        "                       <Properties>"
+                        "                          <string>InterfaceProp</string>"
+                        "                       </Properties>"
+                        "                   </DbIndex>"
+                        "                 </Indexes>"
+                        "            </DbIndexList>"
+                        "        </ECCustomAttributes>"
+                        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Sub'>"
+                        "       <BaseClass>Root</BaseClass>"
+                        "       <BaseClass>Interface</BaseClass>"
+                        "        <ECProperty propertyName='SubProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='SubSub'>"
+                        "       <BaseClass>Sub</BaseClass>"
+                        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "</ECSchema>");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "userdefinedindexonmixin.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17

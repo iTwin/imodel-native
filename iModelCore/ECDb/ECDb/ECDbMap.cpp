@@ -678,6 +678,9 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
             bset<DbTable const*> alreadyProcessedTables;
             //table of index doesn't need to be processed again either, so put it in the set, too
             alreadyProcessedTables.insert(&indexTable);
+
+            bset<ECClassId> horizPartitionClassIds;
+            horizPartitionClassIds.insert(horizPartition.GetClassIds().begin(), horizPartition.GetClassIds().end());
             for (ECClassId derivedClassId : horizPartition.GetClassIds())
                 {
                 ECClassCP derivedClass = m_ecdb.Schemas().GetECClass(derivedClassId);
@@ -686,6 +689,22 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                     BeAssert(false);
                     return ERROR;
                     }
+
+                bool needsSeparateIndex = true;
+                for (ECClassCP baseClass : derivedClass->GetBaseClasses())
+                    {
+                    //if derivedClass is a subclass of another class of this horiz partition
+                    //we will not create an index for it. Indexes apply to subclasses implicitly, so 
+                    //no need to create a separate index per subclass
+                    if (horizPartitionClassIds.find(baseClass->GetId()) != horizPartitionClassIds.end())
+                        {
+                        needsSeparateIndex = false;
+                        break;
+                        }
+                    }
+                
+                if (!needsSeparateIndex)
+                    continue;
 
                 ClassMap const* derivedClassMap = GetClassMap(*derivedClass);
                 if (derivedClassMap == nullptr)
