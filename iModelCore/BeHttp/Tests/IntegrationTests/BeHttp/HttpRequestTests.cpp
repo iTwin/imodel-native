@@ -146,6 +146,17 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
+    {
+    Request request("http://httpbin.org/ip");
+
+    Response response = request.PerformAsync()->GetResult();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
 TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     {
     Request request(std::move(Request("http://httpbin.org/ip")));
@@ -275,7 +286,25 @@ TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     EXPECT_EQ(HttpStatus::Found, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
+TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChainedTask)
+    {
+    Response response;
+    Request request("http://httpbin.org/ip");
+
+    auto task = request.PerformAsync()->Then(
+        [&] (Http::Response& finishedResponse)
+        {
+        response = finishedResponse;
+        });
+
+    task->Wait();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
+TEST_F(HttpRequestTests, PerformAsync_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
     {
     auto responseBody = HttpStringBody::Create("SomeData");
     responseBody->SetPosition(3);
