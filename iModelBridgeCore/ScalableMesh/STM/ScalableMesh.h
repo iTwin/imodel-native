@@ -249,6 +249,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual __int64          _GetPointCount() override;
 
         virtual bool          _IsTerrain() override;
+
+        virtual bool          _IsTextured() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -402,6 +404,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual __int64          _GetPointCount() override;
 
         virtual bool          _IsTerrain() override;
+
+        virtual bool          _IsTextured() override { return false; }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 

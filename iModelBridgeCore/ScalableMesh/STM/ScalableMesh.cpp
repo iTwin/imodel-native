@@ -154,6 +154,11 @@ bool IScalableMesh::IsTerrain()
     return _IsTerrain();
     }
 
+bool IScalableMesh::IsTextured()
+    {
+    return _IsTextured();
+    }
+
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
     {
     return _GetRange(range);
@@ -1577,6 +1582,17 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
     if (m_scmIndexPtr != 0)
         {
         return m_scmIndexPtr->IsTerrain();
+        }
+    return false;
+
+    }
+
+template <class POINT> bool ScalableMesh<POINT>::_IsTextured()
+    {
+
+    if (m_scmIndexPtr != 0)
+        {
+        return m_scmIndexPtr->IsTextured() != IndexTexture::None;
         }
     return false;
 

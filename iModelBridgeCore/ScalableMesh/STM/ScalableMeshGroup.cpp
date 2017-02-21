@@ -68,6 +68,14 @@ bool          ScalableMeshGroup::_IsTerrain()
     return false;
     }
 
+bool          ScalableMeshGroup::_IsTextured()
+    {
+    for (auto& member : m_members)
+        if (member->IsTextured()) return true;
+
+    return false;
+    }
+
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface(DTMAnalysisType type)
     {
