@@ -25,6 +25,8 @@ namespace ServerSchema
     static Utf8CP InstanceAfterChange = "instanceAfterChange";
     static Utf8CP Instances = "instances";
     static Utf8CP Properties = "properties";
+    static Utf8CP RelationshipInstances = "relationshipInstances";
+    static Utf8CP RelatedInstance = "relatedInstance";
     static Utf8CP SchemaName = "schemaName";
     static Utf8CP ClassName = "className";
     namespace Schema
@@ -43,6 +45,7 @@ namespace ServerSchema
         static Utf8CP Briefcase = "BIMBriefcase";
         static Utf8CP Revision = "Revision";
         static Utf8CP File = "BIMFile";
+        static Utf8CP AccessKey = "AccessKey";
         static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
@@ -56,6 +59,7 @@ namespace ServerSchema
     namespace Relationship
         {
         static Utf8CP FollowingRevision = "FollowingRevision";
+        static Utf8CP FileAccessKey = "FileAccessKey";
         }
     namespace Property
         {
@@ -116,6 +120,8 @@ namespace ServerSchema
         static Utf8CP FileInitialized = "FileInitialized";
         static Utf8CP RepositoryInitialized = "RepositoryInitialized";
         static Utf8CP ContainingChanges = "ContainingChanges";
+        static Utf8CP UploadUrl = "UploadUrl";
+        static Utf8CP DownloadUrl = "DownloadUrl";
         }
     namespace ExtendedParameters
         {

@@ -11,6 +11,7 @@
 #include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
 #include <DgnDbServer/Client/DgnDbServerConfiguration.h>
 #include <Bentley/BeFileListIterator.h>
+#include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
@@ -204,7 +205,7 @@ ICancellationTokenPtr             cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
 
-    return repositoryConnectionP->GetRevisionById(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionInfoResultCR revisionResult)
+    return repositoryConnectionP->GetRevisionByIdInternal(revisionId, true, cancellationToken)->Then([=](DgnDbServerRevisionInfoResultCR revisionResult)
         {
         if (!revisionResult.IsSuccess())
             {
@@ -214,7 +215,8 @@ ICancellationTokenPtr             cancellationToken
             }
 
         auto revisionPtr = revisionResult.GetValue();
-        repositoryConnectionP->DownloadRevisionFileInternal(revisionId, revisionPtr->GetUrl(), revisionPreDownloadPath, callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
+        ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
+        repositoryConnectionP->DownloadFileInternal(revisionPreDownloadPath, fileObject, revisionPtr->GetFileAccessKey(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
             {
             if (!downloadResult.IsSuccess())
                 {

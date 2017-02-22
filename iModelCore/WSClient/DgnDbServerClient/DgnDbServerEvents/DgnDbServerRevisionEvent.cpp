@@ -87,9 +87,9 @@ Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
 //@bsimethod                                   Arvind.Venkateswaran             08/2016
 //---------------------------------------------------------------------------------------
 int DgnDbServerRevisionEvent::GetBriefcaseId()
-{
-	return m_briefcaseId;
-}
+    {
+    return m_briefcaseId;
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
