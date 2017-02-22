@@ -34,10 +34,10 @@ struct ArgMarshallInfo
 
 static bmap<DgnClassId, bvector<ArgMarshallInfo>> s_argMarshalling;
 static intptr_t s_homeThreadId;
-static size_t s_activeThreadCount;
-static thread_local BeJsEnvironmentP m_jsenv;
-static thread_local BeJsContextP m_context;
-static thread_local DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* m_notificationHandler;
+static size_t s_nonHomeThreadCount;
+static thread_local BeJsEnvironmentP s_jsenv;
+static thread_local BeJsContextP s_jscontext;
+static thread_local DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_jsnotificationHandler;
 static DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_defaultNotificationHandler;
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
@@ -289,7 +289,7 @@ void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
     bool anyLeft = false;
         {
         BeSystemMutexHolder _thread_safe_;
-        anyLeft = (s_activeThreadCount != 0);
+        anyLeft = (s_nonHomeThreadCount != 0);
         }
 
     if (!anyLeft)
@@ -312,7 +312,7 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
 void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     {
     //  Already initialized?
-    if (nullptr != m_jsenv)
+    if (nullptr != s_jsenv)
         {
         if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)      // To make this a little more foolproof, tolerate redundant calls to InitializeOnThread on home thread
 /*<=*/      return;
@@ -327,25 +327,25 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
         BeSystemMutexHolder _thread_safe_;
         if (BeThreadUtilities::GetCurrentThreadId() != s_homeThreadId)
             {
-            ++s_activeThreadCount;
-            tooMany = (s_activeThreadCount > 20);
+            ++s_nonHomeThreadCount;
+            tooMany = (s_nonHomeThreadCount > 20);
             }
         }
 
     if (tooMany)
         {
-        LOG.warningv("ScriptAdmin::InitializeOnThread called %lld times. Did you forget to call TerminateOnThread?", s_activeThreadCount);
+        LOG.warningv("ScriptAdmin::InitializeOnThread called %lld times. Did you forget to call TerminateOnThread?", s_nonHomeThreadCount);
         BeDataAssert(false && "ScriptAdmin::InitializeOnThread called many times. Did you forget to call TerminateOnThread?");
         }
 
     //  *********************************************
     //  Initialize the BeJsEnvironment
-    m_jsenv = new BeJsEnvironment;
+    s_jsenv = new BeJsEnvironment;
 
     //  *********************************************
     //  Initialize the DgnScriptContext
-    auto dgnScriptContext = new DgnScriptContext(*m_jsenv);
-    m_context = dgnScriptContext;
+    auto dgnScriptContext = new DgnScriptContext(*s_jsenv);
+    s_jscontext = dgnScriptContext;
 
     // First, register DgnJsApi's projections
     RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*dgnScriptContext));
@@ -376,7 +376,7 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)  // To make this a little more foolproof, don't terminate the JS environment on the home thread.
         return;
 
-    if (nullptr == m_jsenv)
+    if (nullptr == s_jsenv)
         {
         BeAssert(false && "Call ScriptAdmin::TerminateOnThread only once on a given thread");
         return;
@@ -385,21 +385,21 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     if (true)
         {
         BeSystemMutexHolder _thread_safe_;
-        --s_activeThreadCount;
+        --s_nonHomeThreadCount;
         }
 
     // Free the BeJsEnvironment and BeJsContext that were set up on this thread
-    if (nullptr != m_context)
+    if (nullptr != s_jscontext)
         {
-        delete m_context;
-        m_context = nullptr;
+        delete s_jscontext;
+        s_jscontext = nullptr;
         }
 
-    delete m_jsenv;
-    m_jsenv = nullptr;
+    delete s_jsenv;
+    s_jsenv = nullptr;
 
-    if (nullptr != m_notificationHandler)
-        m_notificationHandler = nullptr;
+    if (nullptr != s_jsnotificationHandler)
+        s_jsnotificationHandler = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,13 +407,13 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
 //---------------------------------------------------------------------------------------
 BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
-    if ((nullptr == m_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
+    if ((nullptr == s_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
         InitializeOnThread();
 
-    if (nullptr == m_jsenv)
+    if (nullptr == s_jsenv)
         throw "InitializeOnThread was not called";
 
-    return *m_jsenv;
+    return *s_jsenv;
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,13 +421,13 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
 //---------------------------------------------------------------------------------------
 BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
-    if ((nullptr == m_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
+    if ((nullptr == s_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
         InitializeOnThread();
 
-    if (nullptr == m_context)
+    if (nullptr == s_jscontext)
         throw "InitializeOnThread was not called";
 
-    return *m_context;
+    return *s_jscontext;
     }
 
 //---------------------------------------------------------------------------------------
@@ -435,8 +435,8 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
     {
-    ScriptNotificationHandler* was = m_notificationHandler;
-    m_notificationHandler = &h;
+    ScriptNotificationHandler* was = s_jsnotificationHandler;
+    s_jsnotificationHandler = &h;
     return was;
     }
 
@@ -445,8 +445,8 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Ho
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
     {
-    if (nullptr != m_notificationHandler)
-        return m_notificationHandler;
+    if (nullptr != s_jsnotificationHandler)
+        return s_jsnotificationHandler;
 
     BeSystemMutexHolder _thread_safe_;
 
