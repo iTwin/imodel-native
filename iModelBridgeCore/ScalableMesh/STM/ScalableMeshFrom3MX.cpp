@@ -1,16 +1,17 @@
 #include "ScalableMeshPCH.h"
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-#include <ThreeMxSchema/ThreeMXReader.h>
+#ifndef VANCOUVER_API
+    #include <ThreeMxSchema/ThreeMXReader.h>
+    #include <DgnPlatform/ImageUtilities.h>
+#else
+    #include <Acute3d/ThreeMXReader.h>
+    #include    <FreeImage/FreeImage.h>
+#endif
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
-#include <DgnPlatform/ImageUtilities.h>
 
-// Note: Only used for JPEG decompression, to be removed when porting the code to PP/DgnDb
-//#include <A3D/Common/Common.h>
-//#include <A3D/Images/Image.h>
-//#include <A3D/Images/IO.h>
 
 #include <stack>
 
@@ -94,7 +95,11 @@ public:
 
 
 // Class handling conversion of a single 3MXB file. It implements the BaseMeshNode interface used by ThreeMXReader
+#ifndef VANCOUVER_API
 class Convert3MXBFile : public ThreeMxSchema::BaseMeshNode
+#else
+class Convert3MXBFile : public BaseMeshNode
+#endif
 {
 public:
     // This struct stores the useful information collected about a node of a 3MXB file
@@ -119,8 +124,12 @@ private:
     bvector<Convert3MXBNode> m_nodeArray;            // Array of information collected about each node of the 3MXB file
     bvector<int64_t> m_textureIDArray;                // Array of texture IDs used in the 3MXB file
 
-                                                    // The virtual functions below are called while reading a 3MXB file        
+
+#ifndef VANCOUVER_API // The virtual functions below are called while reading a 3MXB file        
     virtual void  _PushNode(const ThreeMxSchema::S3NodeInfo& nodeInfo)
+#else
+    virtual void  _PushNode(const S3NodeInfo& nodeInfo)
+#endif
     {
         // Stop reading at the first error
         if (m_convertStatus != SMFrom3MXStatus::Success)
@@ -165,12 +174,9 @@ private:
         m_nodeArray.push_back(std::move(node));
     }
 
-    virtual void _PushJpegTexture(Byte const* data, size_t dataSize)
+#ifndef VANCOUVER_API
+    void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
     {
-        // Stop reading at the first error
-        if (m_convertStatus != SMFrom3MXStatus::Success)
-            return;
-
         // Decode the JPEG buffer
         ImageUtilities::RgbImageInfo outInfo, inInfo;
         memset(&inInfo, 0, sizeof(inInfo));
@@ -186,10 +192,10 @@ private:
         }
 
         // Transform the BGRA buffer into an RGB buffer
-        int w = outInfo.width;
-        int h = outInfo.height;
+        w = outInfo.width;
+        h = outInfo.height;
         size_t nPixels = w * h;
-        bvector<Byte> rgb(nPixels * 3);
+        rgb.resize(nPixels * 3);
         for (size_t i = 0; i < nPixels; i++)
         {
             rgb[3 * i] = bgra[4 * i + 2];
@@ -197,6 +203,49 @@ private:
             rgb[3 * i + 2] = bgra[4 * i];
         }
         bgra.clear(); // Free memory asap
+    }
+#else
+    void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
+    {
+        // Decode the JPEG buffer using freeimage
+        FIMEMORY*       memory = FreeImage_OpenMemory(const_cast <byte*> (data), (DWORD)dataSize);
+        FIBITMAP*       bitmap;
+
+        if (NULL != (bitmap = FreeImage_LoadFromMemory(FIF_JPEG, memory, JPEG_ACCURATE)))
+        {
+            width = FreeImage_GetWidth(bitmap);
+            height = FreeImage_GetHeight(bitmap);
+
+            byte const*     inP = FreeImage_GetBits(bitmap);
+            size_t          bufferSize = 3 * width * height;
+
+            rgb.resize(bufferSize);
+            for (byte* outP = &rgb.front(), *endP = outP + bufferSize; outP < endP; outP += 3, inP += 4)
+            {
+                outP[0] = inP[2];
+                outP[1] = inP[1];
+                outP[2] = inP[0];
+
+            }
+
+            FreeImage_Unload(bitmap);
+        }
+
+        FreeImage_CloseMemory(memory);
+    }
+#endif
+
+    virtual void _PushJpegTexture(Byte const* data, size_t dataSize)
+    {
+        // Stop reading at the first error
+        if (m_convertStatus != SMFrom3MXStatus::Success)
+            return;
+
+        bvector<Byte> rgb;
+        int w;
+        int h;
+
+        _DecodeJpegData(data, dataSize, rgb, w, h);
 
         // Add the texture to the Scalable Mesh and record its id
         int64_t texID = m_scMesh->AddTexture(w, h, 3, rgb.data());
@@ -522,10 +571,18 @@ public:
             return SMFrom3MXStatus::Canceled;
 
         // Read scene file
+
+#ifndef VANCOUVER_API
         ThreeMxSchema::S3SceneInfo sceneInfo;
         string sError;
         if (ThreeMxSchema::BaseSceneNode::Read3MX(input3MXPath, sceneInfo, sError) != SUCCESS)
             return SMFrom3MXStatus::Read3MXError;
+#else
+        S3SceneInfo sceneInfo;
+        string sError;
+        if (BaseSceneNode::Read3MX(input3MXPath, sceneInfo, sError) != SUCCESS)
+            return SMFrom3MXStatus::Read3MXError;
+#endif
 
         // Inform GCS handler of the input SRS
         if (!m_gcsHandler._SetInputGCS(sceneInfo.SRS.c_str()))

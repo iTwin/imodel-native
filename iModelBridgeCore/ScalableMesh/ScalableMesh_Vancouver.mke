@@ -320,14 +320,17 @@ $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeade
 
 #$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
-
-$(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h $(PCHHeaderDepends) ${MultiCompileDepends}
-
-$(o)MapBoxTextureProvider$(oext) : $(stmDir)MapBoxTextureProvider.cpp $(stmDir)MapBoxTextureProvider.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)MapboxTextureProvider$(oext) : $(stmDir)MapboxTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h ${MultiCompileDepends}
+
+$(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h ${MultiCompileDepends}
+
+#$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
+
+$(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
 
 ##-----------------------------------------------------------------------
 ##   Build Tile Publisher
@@ -476,7 +479,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)PCLWrapper.lib \
-    $(ContextSubpartsLibs)BeCurl.lib 
+    $(ContextSubpartsLibs)BeCurl.lib \
+	$(ContextSubpartsLibs)acute3dio.lib \
+	$(ContextSubpartsLibs)freeimage.lib
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \

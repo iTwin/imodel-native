@@ -17,9 +17,7 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
-extern bool s_stream_from_azure_using_curl;
 extern bool s_stream_using_cesium_3d_tiles_format;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
@@ -28,6 +26,7 @@ extern bool s_is_virtual_grouping;
 extern bool s_is_legacy_dataset;
 extern bool s_is_legacy_master_header;
 extern bool s_use_azure_sandbox;
+extern bool s_use_public_rds;
 extern bool s_use_qa_azure;
 
 //extern std::mutex fileMutex;
@@ -66,8 +65,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             
         SMNodeGroup::Ptr GetGroup(HPMBlockID blockID);
             
-        void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
-        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
+        void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const;
+        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize);
 
         void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const;
 
@@ -96,9 +95,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SetDataFormatType(FormatType formatType);
 
-        static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize);
+        static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize);
 
-        void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
+        void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize) const;
 
         static void SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile);
 
