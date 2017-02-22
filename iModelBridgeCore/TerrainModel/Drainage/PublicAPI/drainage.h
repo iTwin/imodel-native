@@ -61,7 +61,7 @@ struct DtmPondDesignCriteria
         {
         }
 
-    BENTLEYDTMDRAINAGE_EXPORT DTMPondResult  CreatePond(Bentley::TerrainModel::BcDTMPtr& pondDTM);
+    BENTLEYDTMDRAINAGE_EXPORT DTMPondResult  CreatePond(TerrainModel::BcDTMPtr& pondDTM);
         
     bvector<DPoint3d> points;
     double sideSlope = 1; // pondSlope
@@ -81,7 +81,7 @@ struct DtmPondDesignCriteria
     double crownWidth = 0;
     double cornerStrokeTolerance = 0;
     bool isBermFillOnly = false;
-    BcDTMP fillTinP = nullptr;
+    TerrainModel::BcDTMP fillTinP = nullptr;
     double fillSlope = 0;
     };
 #endif

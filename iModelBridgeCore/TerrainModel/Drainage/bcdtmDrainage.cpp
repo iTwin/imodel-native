@@ -728,9 +728,9 @@ DTMStatusInt BcDTMDrainage::ReturnCatchments
     
     }
 
-DTMPondResult DtmPondDesignCriteria::CreatePond(Bentley::TerrainModel::BcDTMPtr& dtm)
+DTMPondResult DtmPondDesignCriteria::CreatePond(TerrainModel::BcDTMPtr& dtm)
     {
-    dtm = Bentley::TerrainModel::BcDTM::Create ();
+    dtm = TerrainModel::BcDTM::Create ();
 
     if (bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(
         dtm->GetTinHandle(),
