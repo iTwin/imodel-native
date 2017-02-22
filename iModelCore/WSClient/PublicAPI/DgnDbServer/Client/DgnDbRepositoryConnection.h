@@ -223,7 +223,7 @@ private:
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     DgnDbServerFileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
-    DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadFileInternal 
+    DgnDbServerStatusTaskPtr DownloadFileInternal 
         (
         BeFileName localFile,
         ObjectIdCR fileId, 
@@ -256,7 +256,7 @@ private:
     DgnDbServerRevisionsInfoTaskPtr GetRevisionsAfterIdInternal(Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), bool parseAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets single revision by Id
-    DgnDbServerRevisionInfoTaskPtr DgnDbRepositoryConnection::GetRevisionByIdInternal(Utf8StringCR revisionId, bool parseAccessKey, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerRevisionInfoTaskPtr GetRevisionByIdInternal(Utf8StringCR revisionId, bool parseAccessKey, ICancellationTokenPtr cancellationToken) const;
 
     //! Download the revision files.
     DgnRevisionsTaskPtr DownloadRevisionsInternal(const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
