@@ -386,7 +386,7 @@ DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::Parse(RapidJsonValueCR pro
 //---------------------------------------------------------------------------------------
 void DgnDbServerFileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
     {
-    selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString, ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
     }
 
 //---------------------------------------------------------------------------------------
@@ -394,7 +394,7 @@ void DgnDbServerFileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectStri
 //---------------------------------------------------------------------------------------
 void DgnDbServerFileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString)
     {
-    selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString, ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
     }
 
 //---------------------------------------------------------------------------------------
