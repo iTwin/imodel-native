@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ChunkedUploadRequestTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -62,11 +62,11 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_
 TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequiredHandshakeHeaders)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
-    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), "application/xml");
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), REQUESTHEADER_ContentType_ApplicationXml);
 
     GetHandler().ExpectOneRequest().ForAnyRequest([] (Http::RequestCR request)
         {
-        EXPECT_STREQ("application/xml", request.GetHeaders().GetContentType());
+        EXPECT_STREQ(REQUESTHEADER_ContentType_ApplicationXml, request.GetHeaders().GetContentType());
         return StubHttpResponse(ConnectionStatus::Canceled);
         });
 
@@ -76,7 +76,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequi
 TEST_F(ChunkedUploadRequestTests, PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
-    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), "application/xml");
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), REQUESTHEADER_ContentType_ApplicationXml);
 
     GetHandler().ExpectOneRequest().ForAnyRequest(StubHttpResponse(HttpStatus::NotFound));
 

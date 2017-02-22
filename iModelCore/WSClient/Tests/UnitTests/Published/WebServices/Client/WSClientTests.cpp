@@ -113,7 +113,7 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -128,7 +128,7 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -140,7 +140,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_Retries
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(3);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "some other html", {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "some other html", {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::NotFound));
 

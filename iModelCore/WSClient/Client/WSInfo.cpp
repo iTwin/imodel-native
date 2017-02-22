@@ -151,7 +151,7 @@ void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, bool useWsgVersionHeade
 void WSInfo::ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
     Utf8String contentType = response.GetHeaders().GetContentType();
-    if (Utf8String::npos == contentType.find("application/json"))
+    if (Utf8String::npos == contentType.find(REQUESTHEADER_ContentType_ApplicationJson))
         {
         return;
         }
@@ -177,7 +177,7 @@ void WSInfo::ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& 
 void WSInfo::ParseAboutPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
     Utf8String contentType = response.GetHeaders().GetContentType();
-    if (Utf8String::npos == contentType.find("text/html"))
+    if (Utf8String::npos == contentType.find(REQUESTHEADER_ContentType_TextHtml))
         {
         return;
         }

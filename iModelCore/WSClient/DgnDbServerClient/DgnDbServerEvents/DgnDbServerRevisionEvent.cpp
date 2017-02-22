@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerRevisionEvent.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
@@ -19,7 +19,7 @@ Utf8String eventTopic,
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
 Utf8String revisionIndex,
-Utf8String briefcaseId
+int        briefcaseId
 )
     {
     m_eventTopic = eventTopic;
@@ -38,7 +38,7 @@ Utf8String eventTopic,
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
 Utf8String revisionIndex,
-Utf8String briefcaseId
+int        briefcaseId
 )
     {
     return std::shared_ptr<struct DgnDbServerRevisionEvent>
@@ -86,7 +86,7 @@ Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             08/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetBriefcaseId()
+int DgnDbServerRevisionEvent::GetBriefcaseId()
 {
 	return m_briefcaseId;
 }

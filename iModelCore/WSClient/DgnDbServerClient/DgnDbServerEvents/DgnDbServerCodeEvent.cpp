@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerCodeEvent.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/Events/DgnDbServerCodeEvent.h>
@@ -22,7 +22,7 @@ Utf8String codeNamespace,
 bvector<Utf8String> values,
 Utf8String reserved,
 Utf8String used,
-Utf8String briefcaseId,
+int        briefcaseId,
 Utf8String usedWithRevision
 )
     {
@@ -49,7 +49,7 @@ Utf8String codeNamespace,
 bvector<Utf8String> values,
 Utf8String reserved,
 Utf8String used,
-Utf8String briefcaseId,
+int        briefcaseId,
 Utf8String usedWithRevision
 )
     {
@@ -125,7 +125,7 @@ Utf8String DgnDbServerCodeEvent::GetUsed()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetBriefcaseId()
+int DgnDbServerCodeEvent::GetBriefcaseId()
     {
     return m_briefcaseId;
     }

@@ -325,7 +325,7 @@ bool WebApiV1::IsValidObjectsResponse(Http::ResponseCR response)
 +--------------------------------------------------------------------------------------*/
 bool WebApiV1::IsJsonResponse(Http::ResponseCR response)
     {
-    if (Utf8String(response.GetHeaders().GetContentType()).find("application/json") != Utf8String::npos)
+    if (Utf8String(response.GetHeaders().GetContentType()).find(REQUESTHEADER_ContentType_ApplicationJson) != Utf8String::npos)
         {
         return true;
         }
@@ -746,7 +746,7 @@ ICancellationTokenPtr ct
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
 
     request.SetResponseBody(body);
-    request.GetHeaders().SetAccept("application/xml");
+    request.GetHeaders().SetAccept(REQUESTHEADER_ContentType_ApplicationXml);
     request.SetDownloadProgressCallback(downloadProgressCallback);
     request.SetCancellationToken(ct);
 
@@ -862,7 +862,7 @@ ICancellationTokenPtr ct
 
             auto schemaDefContent = HttpResponseContent::Create(HttpStringBody::Create(schemaDefInstance.toStyledString()));
             schemaDefContent->GetHeaders().SetETag(result.GetValue().eTag);
-            schemaDefContent->GetHeaders().SetContentType("application/json");
+            schemaDefContent->GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
             schemaDefResponse = Http::Response(schemaDefContent, "", ConnectionStatus::OK, HttpStatus::OK);
             }
@@ -995,7 +995,7 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl(SERVICE_Objects, objectId.className, CreateParentQuery(parentObjectId), "v1.2");
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(propertiesStr), "application/json");
+    request.SetHandshakeRequestBody(HttpStringBody::Create(propertiesStr), REQUESTHEADER_ContentType_ApplicationJson);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -1031,7 +1031,7 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
 
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     if (!eTag.empty())
         {
         request.GetHeaders().SetIfMatch(eTag);
