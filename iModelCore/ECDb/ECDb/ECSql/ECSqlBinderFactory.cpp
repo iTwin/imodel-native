@@ -18,11 +18,10 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
     ComputedExp const* targetExp = parameterExp.GetTargetExp();
     if (targetExp != nullptr && targetExp->GetType() == Exp::Type::PropertyName)
         {
-        BeAssert(dynamic_cast<PropertyNameExp const*> (targetExp) != nullptr);
-        PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (targetExp);
-        ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp->GetSystemPropertyInfo();
+        PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
+        ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
         if (sysPropInfo.IsSystemProperty() && sysPropInfo.IsId())
-            return CreateIdBinder(ctx, propNameExp->GetPropertyMap(), sysPropInfo);
+            return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo);
         }
 
     return CreateBinder(ctx, parameterExp.GetTypeInfo());
@@ -133,7 +132,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
         //* the user provided ECInstanceId as end table relationships don't have their own ECInstanceId
         //* this end's class id (foreign end class id) as it is the same the end's class ECClassId. It cannot be set through
         //an ECSQL INSERT INTO ECRel.
-        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (propMap.GetClassMap());
+        RelationshipClassEndTableMap const& relClassMap = propMap.GetClassMap().GetAs<RelationshipClassEndTableMap>();
         if (sysPropertyInfo == ECSqlSystemPropertyInfo::ECInstanceId() || 
             sysPropertyInfo == (relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId()))
             return true;
@@ -143,7 +142,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
         {
             case PropertyMap::Type::ConstraintECClassId:
             {
-            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = *propMap.GetAs<ConstraintECClassIdPropertyMap>();
+            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = propMap.GetAs<ConstraintECClassIdPropertyMap>();
             if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
                 return true;
 
@@ -152,7 +151,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             return constraintClassIdPropMap.IsVirtual(*contextTable);
             }
             case PropertyMap::Type::NavigationRelECClassId:
-                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>()->IsVirtual();
+                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();
 
             default:
                 return false;

@@ -93,11 +93,11 @@ Utf8String DerivedPropertyExp::GetName() const
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
-        if (propertyNameExp->IsPropertyRef())
-            return propertyNameExp->GetPropertyRef()->LinkedTo().GetName();
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
+        if (propertyNameExp.IsPropertyRef())
+            return propertyNameExp.GetPropertyRef()->LinkedTo().GetName();
 
-        return propertyNameExp->GetPropertyPath().ToString();
+        return propertyNameExp.GetPropertyPath().ToString();
         }
 
     return GetExpression()->ToECSql();
@@ -114,9 +114,9 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
-        if (propertyNameExp->IsPropertyRef())
-            return propertyNameExp->GetPropertyRef()->LinkedTo().GetColumnAlias();
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
+        if (propertyNameExp.IsPropertyRef())
+            return propertyNameExp.GetPropertyRef()->LinkedTo().GetColumnAlias();
         }
 
     return m_columnAlias;
@@ -143,11 +143,11 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    RangeClasssInfo::List classExpList;
+    RangeClassInfo::List classExpList;
     FindRangeClassRefs(classExpList);
 
     RangeClassRefExp const* classExpComparand = nullptr;
-    for (RangeClasssInfo const& classExp : classExpList)
+    for (RangeClassInfo const& classExp : classExpList)
         {
         if (classExpComparand == nullptr)
             {
@@ -168,32 +168,32 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClasssInfo::List& classRefs, RangeClasssInfo::Scope scope) const
+void FromExp::FindRangeClassRefs(RangeClassInfo::List& classRefs, RangeClassInfo::Scope scope) const
     {
-    for (auto classRef : GetChildren())
-        FindRangeClassRefs(classRefs, *static_cast<ClassRefExp const*> (classRef), scope);
+    for (Exp const* classRef : GetChildren())
+        FindRangeClassRefs(classRefs, classRef->GetAs<ClassRefExp>(), scope);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClasssInfo::List& classRefs, ClassRefExp const& classRef, RangeClasssInfo::Scope scope) const
+void FromExp::FindRangeClassRefs(RangeClassInfo::List& classRefs, ClassRefExp const& classRef, RangeClassInfo::Scope scope) const
     {
     switch (classRef.GetType())
         {
             case Type::ClassName:
             case Type::SubqueryRef:
-                classRefs.push_back(RangeClasssInfo(static_cast<RangeClassRefExp const&>(classRef), scope)); break;
+                classRefs.push_back(RangeClassInfo(classRef.GetAs<RangeClassRefExp>(), scope)); break;
             case Type::QualifiedJoin:
             case Type::NaturalJoin:
             case Type::CrossJoin:
             case Type::ECRelationshipJoin:
             {
-            JoinExp const& join = static_cast<JoinExp const&>(classRef);
+            JoinExp const& join = classRef.GetAs<JoinExp>();
             FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
             FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
             if (classRef.GetType() == Type::ECRelationshipJoin)
-                FindRangeClassRefs(classRefs, static_cast<ECRelationshipJoinExp const&>(join).GetRelationshipClass(), scope);
+                FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClass(), scope);
             break;
             }
             default:
@@ -212,13 +212,13 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
         return ERROR;
         }
 
-    RangeClasssInfo::List existingRangeClassRefs;
+    RangeClassInfo::List existingRangeClassRefs;
     FindRangeClassRefs(existingRangeClassRefs);
 
-    RangeClasssInfo::List newRangeClassRefs;
+    RangeClassInfo::List newRangeClassRefs;
 
-    FindRangeClassRefs(newRangeClassRefs, *classRefExp, RangeClasssInfo::Scope::Local);
-    for (RangeClasssInfo const& newRangeCRef : newRangeClassRefs)
+    FindRangeClassRefs(newRangeClassRefs, *classRefExp, RangeClassInfo::Scope::Local);
+    for (RangeClassInfo const& newRangeCRef : newRangeClassRefs)
         {
         for (auto existingRangeCRef : existingRangeClassRefs)
             {
@@ -238,10 +238,10 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-RangeClasssInfo::List FromExp::FindRangeClassRefExpressions() const
+RangeClassInfo::List FromExp::FindRangeClassRefExpressions() const
     {
-    RangeClasssInfo::List rangeClassRefs;
-    FindRangeClassRefs(rangeClassRefs, RangeClasssInfo::Scope::Local);
+    RangeClassInfo::List rangeClassRefs;
+    FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Local);
     auto  isSubQuery = [] (Exp const& start, SingleSelectStatementExp const* end)
         {
         if (end == nullptr)
@@ -261,18 +261,20 @@ RangeClasssInfo::List FromExp::FindRangeClassRefExpressions() const
         };
 
 
-    SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
+    Exp const* parent = FindParent(Exp::Type::SingleSelect);
+    SingleSelectStatementExp const* cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
     Exp const* old = this;
     bool isTableSubQuery = isSubQuery(*old, cur);
     while (cur != nullptr && !isTableSubQuery)
         {        
         old = cur;
-        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
+        parent = cur->FindParent(Exp::Type::SingleSelect);
+        cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
         isTableSubQuery = isSubQuery(*old, cur);
         if (cur != nullptr && !isTableSubQuery)
             {
             if (cur->GetFrom() != this)
-                cur->GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClasssInfo::Scope::Inherited);
+                cur->GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Inherited);
             }
         }
 
@@ -393,7 +395,7 @@ LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_p
     m_limitExpIndex = AddChild(std::move(limitExp));
 
     if (offsetExp != nullptr)
-        m_offsetExpIndex = static_cast<int> (AddChild(std::move(offsetExp)));
+        m_offsetExpIndex =(int) AddChild(std::move(offsetExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -574,20 +576,20 @@ void OrderBySpecExp::AppendSortDirection(Utf8String& str, bool addLeadingBlank) 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClasssInfo::List const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassInfo::List const& rangeClassRefs)
     {
     std::vector<DerivedPropertyExp const*> propertyNameExpList;
-    for (auto childExp : GetChildren())
+    for (Exp const* childExp : GetChildren())
         {
-        DerivedPropertyExp const* derivedPropExp = static_cast<DerivedPropertyExp const*> (childExp);
-        if (derivedPropExp->GetExpression()->GetType() == Exp::Type::PropertyName)
-            propertyNameExpList.push_back(derivedPropExp);
+        DerivedPropertyExp const& derivedPropExp = childExp->GetAs<DerivedPropertyExp> ();
+        if (derivedPropExp.GetExpression()->GetType() == Exp::Type::PropertyName)
+            propertyNameExpList.push_back(&derivedPropExp);
         }
 
     for (DerivedPropertyExp const* propertyNameExp : propertyNameExpList)
         {
-        PropertyNameExp const* innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
-        if (Exp::IsAsteriskToken(innerExp->GetPropertyName()))
+        PropertyNameExp const& innerExp = propertyNameExp->GetExpression()->GetAs<PropertyNameExp>();
+        if (Exp::IsAsteriskToken(innerExp.GetPropertyName()))
             {
             if (SUCCESS != ReplaceAsteriskExpression(*propertyNameExp, rangeClassRefs))
                 return ERROR;
@@ -597,21 +599,20 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClasssInfo::List 
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        PropertyPath const& propertyPath = innerExp->GetPropertyPath();
+        PropertyPath const& propertyPath = innerExp.GetPropertyPath();
         //case: SELECT a.* from FOO a
         if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetPropertyName()))
             {
             Utf8CP alias = propertyPath[0].GetPropertyName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
-            for (RangeClasssInfo const& classRef : rangeClassRefs)
+            for (RangeClassInfo const& classRef : rangeClassRefs)
                 {
                 if (classRef.GetExp().GetId().Equals(alias))
                     {
-                    RangeClasssInfo::List classRefList;
+                    RangeClassInfo::List classRefList;
                     classRefList.push_back(classRef);
-                    auto stat = ReplaceAsteriskExpression(*propertyNameExp, classRefList);
-                    if (stat != SUCCESS)
-                        return stat;
+                    if (SUCCESS != ReplaceAsteriskExpression(*propertyNameExp, classRefList))
+                        return ERROR;
 
                     break;
                     }
@@ -625,7 +626,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClasssInfo::List 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClasssInfo::List const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const& rangeClassRefs)
     {
     std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (std::unique_ptr<PropertyNameExp>& propNameExp)
@@ -633,7 +634,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp cons
         derivedPropExpList.push_back(std::unique_ptr<Exp>(new DerivedPropertyExp(std::move(propNameExp), nullptr)));
         };
 
-    for (RangeClasssInfo const& classRef : rangeClassRefs)
+    for (RangeClassInfo const& classRef : rangeClassRefs)
         classRef.GetExp().CreatePropertyNameExpList(addDelegate);
 
     if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
@@ -654,7 +655,7 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         auto finalizeParseArgs = ctx.GetFinalizeParseArg();
         BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-        RangeClasssInfo::List const* rangeClassRefList = static_cast<RangeClasssInfo::List const*> (finalizeParseArgs);
+        RangeClassInfo::List const* rangeClassRefList = static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
         BeAssert(rangeClassRefList != nullptr);
         const auto stat = ReplaceAsteriskExpressions(*rangeClassRefList);
         if (stat != SUCCESS)
@@ -721,22 +722,22 @@ SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionTyp
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propertyName) const
     {
-    for (auto selectClauseExp : GetSelection()->GetChildren())
+    for (Exp const* selectClauseExp : GetSelection()->GetChildren())
         {
-        auto derivedPropertyExp = static_cast<DerivedPropertyExp const*> (selectClauseExp);
-        if (!derivedPropertyExp->GetColumnAlias().empty())
+        DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
+        if (!derivedPropertyExp.GetColumnAlias().empty())
             {
-            if (derivedPropertyExp->GetColumnAlias().Equals(propertyName))
-                return derivedPropertyExp;
+            if (derivedPropertyExp.GetColumnAlias().Equals(propertyName))
+                return &derivedPropertyExp;
             }
         else
             {
-            auto expr = derivedPropertyExp->GetExpression();
+            ValueExp const* expr = derivedPropertyExp.GetExpression();
             if (expr->GetType() == Type::PropertyName)
                 {
-                PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(expr);
-                if (strcmp(propertyNameExp->GetPropertyName(), propertyName) == 0)
-                    return derivedPropertyExp;
+                PropertyNameExp const& propertyNameExp = expr->GetAs<PropertyNameExp>();
+                if (strcmp(propertyNameExp.GetPropertyName(), propertyName) == 0)
+                    return &derivedPropertyExp;
                 }
             }
         }
@@ -826,8 +827,8 @@ BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(std::function<void(std:
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
-        DerivedPropertyExp const* selectClauseItemExp = static_cast<DerivedPropertyExp const*> (expr);
-        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(*this, *selectClauseItemExp));
+        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(*this, selectClauseItemExp));
         addDelegate(propNameExp);
         }
 

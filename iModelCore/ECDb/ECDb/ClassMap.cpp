@@ -210,7 +210,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     if (propMap == nullptr)
         return SUCCESS;
 
-    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>()->GetColumn());
+    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>().GetColumn());
     if (currentTimeStampColumn.IsShared())
         {
         LOG.warningv("ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
@@ -304,9 +304,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (propertyMap->GetType() == PropertyMap::Type::Navigation)
             {
-            NavigationPropertyMap const* navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
-            if (!navPropertyMap->IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
+            NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap.IsComplete())
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
             }
         }
 
@@ -320,9 +320,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (property->GetIsNavigation())
             {
-            NavigationPropertyMap const* navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
-            if (!navPropertyMap->IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
+            NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap.IsComplete())
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
             }
         }
 
@@ -342,7 +342,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
         std::vector<DbColumn const*> totalColumns;
         NativeSqlBuilder whereExpression;
 
-        bset<DbTable const*> involvedTables;
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
             PropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
@@ -366,12 +365,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             DbTable const& table = GetJoinedTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
-            if (columnVisitor.GetColumns().empty())
-                {
-                BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
-                return ERROR;
-                }
-
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
@@ -380,7 +373,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
+            if (columnVisitor.GetColumnCount() == 0)
                 {
                 if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
                     {
@@ -401,13 +394,10 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-
-            involvedTables.insert(&table);
             totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
-        DbTable* involvedTable =  const_cast<DbTable*>(*involvedTables.begin());
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(*involvedTable, indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
@@ -619,7 +609,7 @@ BentleyStatus ClassMap::Update()
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
             //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>()->GetTable()) != SUCCESS)
+            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
                 {
                 BeAssert(false && "Failed to save table");
                 return ERROR;
@@ -646,7 +636,7 @@ ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     if (propMap == nullptr)
         return nullptr;
 
-    return propMap->GetAs<ECInstanceIdPropertyMap>();
+    return &propMap->GetAs<ECInstanceIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -658,7 +648,7 @@ ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     if (propMap == nullptr)
         return nullptr;
 
-    return propMap->GetAs<ECClassIdPropertyMap>();
+    return &propMap->GetAs<ECClassIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------

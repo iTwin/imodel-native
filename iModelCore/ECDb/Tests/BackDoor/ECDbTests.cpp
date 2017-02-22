@@ -591,7 +591,7 @@ void ECDbTestUtility::AssignRandomValueToECInstance (ECValueP createdValue, IECI
 //static
 void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, ECPropertyCP ecProperty)
     {
-    srand((uint32_t) BeTimeUtilities::QueryMillisecondsCounter());
+    srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
     int randomNumber = rand();
     switch (type)
         {

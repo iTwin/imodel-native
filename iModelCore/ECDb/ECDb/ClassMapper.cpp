@@ -515,7 +515,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     ECDbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
     ECN::NavigationECPropertyCP navigationProperty = propertyMap.GetProperty().GetAsNavigationProperty();
-    RelationshipClassMap const* relClassMap = static_cast<RelationshipClassMap const*> (ecdbMap.GetClassMap(*navigationProperty->GetRelationshipClass()));
+    ClassMap const* relClassMap = ecdbMap.GetClassMap(*navigationProperty->GetRelationshipClass());
     if (relClassMap == nullptr)
         {
         BeAssert(false && "RelationshipClassMap should not be nullptr when finishing the NavigationPropMap");
@@ -530,7 +530,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         }
 
     //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
-    RelationshipClassEndTableMap const& endTableRelClassMap = *static_cast<RelationshipClassEndTableMap const*> (relClassMap);
+    RelationshipClassEndTableMap const& endTableRelClassMap = relClassMap->GetAs<RelationshipClassEndTableMap>();
     const ECRelationshipEnd foreignEnd = endTableRelClassMap.GetForeignEnd();
     const ECRelatedInstanceDirection navDirection = navigationProperty->GetDirection();
     if ((foreignEnd == ECRelationshipEnd_Source && navDirection == ECRelatedInstanceDirection::Backward) ||
@@ -541,19 +541,19 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
                                                                    "NavigationECProperties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
                                                                    "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
-                                                                   relClassMap->GetClass().GetFullName(), constraintEndName);
+                                                                   endTableRelClassMap.GetClass().GetFullName(), constraintEndName);
         return ERROR;
         }
 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
-    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, *relClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-    SingleColumnDataPropertyMap const* relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
+    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
+    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
 
     if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
         {
-        idProp = GetConstraintMap(*navigationProperty, *relClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable());
+        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedTable());
+        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable());
         }
 
     if (idProp == nullptr || relECClassIdProp == nullptr)
@@ -562,7 +562,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         return ERROR;
         }
 
-    return propertyMap.SetMembers(idProp->GetColumn(), relECClassIdProp->GetColumn(), relClassMap->GetRelationshipClass().GetId());
+    return propertyMap.SetMembers(idProp->GetColumn(), relECClassIdProp->GetColumn(), endTableRelClassMap.GetClass().GetId());
     }
 
 

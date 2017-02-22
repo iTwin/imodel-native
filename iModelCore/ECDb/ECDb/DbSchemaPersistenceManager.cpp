@@ -37,18 +37,6 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
         return ERROR;
         }
 
-    //Old SQL in case needed until LWC issue is fixed:
-    /*
-    "WITH RECURSIVE "
-    "BaseClassList(ClassId, BaseClassId) AS "
-    "("
-    "   SELECT Id, Id FROM ec_Class"
-    "   UNION"
-    "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-    "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-    ")"
-    "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))*/
-
     PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
     return SUCCESS;
     }

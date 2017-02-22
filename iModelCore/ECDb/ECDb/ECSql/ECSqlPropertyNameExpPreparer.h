@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,7 +41,7 @@ struct ECSqlPropertyNameExpPreparer
         //! indicates that property name expression is not needed in the native SQL counterpart. Callers therefore need to 
         //! check for emptiness of the resulting list
         //! @return ECSqlStatus::Success in case of success. Error code otherwise
-        static ECSqlStatus Prepare(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const*);
+        static ECSqlStatus Prepare(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const&);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -24,10 +24,10 @@ BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    StructPropertyMap const* structPropMap = typeInfo.GetPropertyMap()->GetAs<StructPropertyMap>();
+    StructPropertyMap const& structPropMap = typeInfo.GetPropertyMap()->GetAs<StructPropertyMap>();
 
     int totalMappedSqliteParameterCount = 0;
-    for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
+    for (PropertyMap const* memberPropMap : structPropMap) //GetChildren ensures the correct and always same order
         {
         std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, *memberPropMap);
         if (binder == nullptr)
@@ -35,7 +35,7 @@ BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
 
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount();
 
-        auto binderP = binder.get(); //cache raw pointer as it is needed after the unique_ptr has been moved into the collection
+        ECSqlBinder* binderP = binder.get(); //cache raw pointer as it is needed after the unique_ptr has been moved into the collection
         m_memberBinders[memberPropMap->GetProperty().GetId()] = std::move(binder);
 
         //for SetSqliteIndex we need a mapping from a given ECSqlComponent index to the respective member binder

@@ -19,6 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct IssueReporter : NonCopyableClass
     {
 private:
+    static const NativeLogging::SEVERITY s_logSeverity = NativeLogging::LOG_ERROR;
     mutable BeMutex m_mutex;
     ECDb::IIssueListener const* m_issueListener = nullptr;
 
@@ -30,6 +31,8 @@ public:
     void RemoveListener();
 
     void Report(Utf8CP message, ...) const;
+
+    bool IsEnabled(bool* isLogEnabled = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

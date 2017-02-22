@@ -488,7 +488,6 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
         return ClassMappingStatus::Success;
         }
 
-    BeAssert(ownTableBaseClassMap != nullptr);
     foundBaseClassMap = ownTableBaseClassMap;
     return ClassMappingStatus::Success;
     }

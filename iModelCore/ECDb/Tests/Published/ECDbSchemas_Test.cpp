@@ -109,16 +109,6 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Arturas.Januska                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbSchemaTests, ImportDiamondInheritanceECSchema)
-    {
-    ECDbCR ecdb = SetupECDb("DiamondInheritance.ecdb", BeFileName(L"DiamondInheritance.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int GetColumnCount(ECDbCR db, Utf8CP table)

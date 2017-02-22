@@ -146,13 +146,10 @@ struct ClassMap : RefCountedBase
 
     public:
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
-        BentleyStatus Update();
-        //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
-        //! Called during schema import when creating the class map from the imported ECClass 
-        ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
-        BentleyStatus Save(DbMapSaveContext&);
-        PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
+
+        template<typename TClassMap>
+        TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
+
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
@@ -177,6 +174,14 @@ struct ClassMap : RefCountedBase
         ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         Utf8String GetUpdatableViewName() const;
         DbTable const* ExpectingSingleTable() const;
+
+        //! Called when loading an existing class map from the ECDb file 
+        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
+        //! Called during schema import when creating the class map from the imported ECClass 
+        ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
+        BentleyStatus Save(DbMapSaveContext&);
+        BentleyStatus Update();
+        PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
 
         //! Rules:
         //! If MapStrategy != TPH: NotInherited

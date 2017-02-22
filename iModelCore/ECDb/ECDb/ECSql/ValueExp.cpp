@@ -540,7 +540,7 @@ bool LikeRhsValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Para
 ValueExp const* LikeRhsValueExp::GetEscapeExp() const
     {
     if (HasEscapeExp())
-        return GetChild<ValueExp>(static_cast<size_t> (m_escapeExpIndex));
+        return GetChild<ValueExp>((size_t) m_escapeExpIndex);
     else
         return nullptr;
     }

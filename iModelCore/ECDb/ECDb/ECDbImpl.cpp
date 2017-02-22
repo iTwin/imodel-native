@@ -294,8 +294,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
         return ERROR;
         }
 
-    PrimitivePropertyMap const* primPropMap = propMap->GetAs<PrimitivePropertyMap>();
-    DbColumn const& col = primPropMap->GetColumn();
+    DbColumn const& col = propMap->GetAs<PrimitivePropertyMap>().GetColumn();
 
     if (col.GetPersistenceType() == PersistenceType::Virtual)
         {
