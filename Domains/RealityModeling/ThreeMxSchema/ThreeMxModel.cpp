@@ -236,9 +236,9 @@ void ThreeMxModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
     }
 
-static Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
-static Utf8CP JSON_LOCATION() {return "Location";}
-static Utf8CP JSON_CLIP() {return "Clip";}
+static constexpr Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
+static constexpr Utf8CP JSON_LOCATION() {return "Location";}
+static constexpr Utf8CP JSON_CLIP() {return "Clip";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -246,12 +246,12 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
 
-    val[JSON_SCENE_FILE()] = m_sceneFile;
+    val[Json::StaticString(JSON_SCENE_FILE())] = m_sceneFile;
     if (!m_location.IsIdentity())
-        JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
+        JsonUtils::TransformToJson(val[Json::StaticString(JSON_LOCATION())], m_location);
 
     if (m_clip.IsValid())
-        val[JSON_CLIP()] = m_clip->ToJson();
+        val[Json::StaticString(JSON_CLIP())] = m_clip->ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,9 +509,7 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth)
     if (node._HasChildren() && node.IsNotLoaded())
         m_scene.LoadNodeSynchronous(node);
 
-
-    static size_t       s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
-
+    static size_t s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
         size_t      childIndex = 0;
