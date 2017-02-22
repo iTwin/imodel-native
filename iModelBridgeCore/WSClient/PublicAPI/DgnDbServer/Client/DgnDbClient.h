@@ -53,8 +53,8 @@ private:
                                                                  ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerStatusResult DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
-                                               FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
-                                               ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
+                                                ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
     DgnDbRepositoryConnectionResult CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const;

@@ -192,7 +192,7 @@ private:
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
     //! Creates a new file instance on the server. 
-    DgnDbServerFileTaskPtr   CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerFileTaskPtr CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Updates existing file instance on the server. 
     DgnDbServerStatusTaskPtr UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -201,7 +201,7 @@ private:
     DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Performs a file upload to azure blob storage.
-    DgnDbServerStatusTaskPtr AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url , Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerStatusTaskPtr AzureFileUpload(BeFileNameCR filePath, DgnDbServerFileAccessKeyPtr url , Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Uploads a BIM file to the server.
     DgnDbServerStatusTaskPtr UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -219,12 +219,18 @@ private:
     DgnDbServerFileTaskPtr GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the master file from the repository and initialize it as briefcase
-    DgnDbServerStatusResult DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
+    DgnDbServerStatusResult DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId,
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Download the file for this revision from server.
-    DgnDbServerStatusTaskPtr DownloadRevisionFileInternal(Utf8StringCR revisionId, Utf8StringCR revisionUrl, BeFileNameCR revisionFileName,
-        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerFileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadFileInternal 
+        (
+        BeFileName localFile,
+        ObjectIdCR fileId, 
+        DgnDbServerFileAccessKeyPtr fileAccessKey, 
+        Http::Request::ProgressCallbackCR callback, 
+        ICancellationTokenPtr cancellationToken
+        ) const;
 
     //! Download the file for this revision from server.
     DgnRevisionTaskPtr DownloadRevisionFile (DgnDbServerRevisionInfoPtr revision, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -235,10 +241,26 @@ private:
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query (repeated).
-    DgnDbServerRevisionsInfoTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsInfoTaskPtr RevisionsFromQuery (const WSQuery& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Get all revision information based on a query.
-    DgnDbServerRevisionsInfoTaskPtr RevisionsFromQueryInternal(const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsInfoTaskPtr RevisionsFromQueryInternal(const WSQuery& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get all of the revisions after the specific revision id.
+    DgnDbServerRevisionsInfoTaskPtr GetRevisionsInternal(const WSQuery& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get all of the revisions.
+    DgnDbServerRevisionsInfoTaskPtr GetAllRevisionsInternal(bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get all of the revisions after the specific revision id.
+    DgnDbServerRevisionsInfoTaskPtr GetRevisionsAfterIdInternal(Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), bool parseAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Gets single revision by Id
+    DgnDbServerRevisionInfoTaskPtr DgnDbRepositoryConnection::GetRevisionByIdInternal(Utf8StringCR revisionId, bool parseAccessKey, ICancellationTokenPtr cancellationToken) const;
+
+    //! Download the revision files.
+    DgnRevisionsTaskPtr DownloadRevisionsInternal(const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // This pointer needs to change to be generic
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -332,6 +354,9 @@ private:
 
     DgnDbServerStatusTaskPtr QueryUnavailableLocksInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
                                                            DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
+
+    WSQuery CreateRevisionsAfterIdQuery (Utf8StringCR revisionId, BeGuidCR fileId) const;
+    WSQuery CreateRevisionsByIdQuery(const bvector<DgnDbServerRevisionInfoPtr>& revisions) const;
 
 public:
     virtual ~DgnDbRepositoryConnection();
@@ -452,15 +477,23 @@ public:
     //! @return Asynchronous task that has the collection of file information as the result.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr GetMasterFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Download a copy of the master file from the repository
+    //! Download a copy of the file from the repository
     //! @param[in] localFile Location where the downloaded file should be placed.
-    //! @param[in] fileInfo Master file information retrieved from a query to server.
+    //! @param[in] fileId File id.
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that results in an error if the download failed.
-    //! @note Should use GetMasterFiles or GetMasterFilesById to get FileInfo instance.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadMasterFile(BeFileName localFile, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download a copy of the master file from the repository
+    //! @param[in] localFile Location where the downloaded file should be placed.
+    //! @param[in] fileId File id.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that results in an error if the download failed.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadMasterFile(BeFileName localFile, Utf8StringCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire briefcase id without downloading the briefcase file.
     //! @param[in] cancellationToken

@@ -8,9 +8,7 @@
 #include <DgnDbServer/Client/DgnDbClient.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <json/json.h>
-#include <DgnPlatform/TxnManager.h>
 #include <DgnPlatform/RevisionManager.h>
-#include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <DgnDbServer/Client/Logging.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
@@ -755,7 +753,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
     downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
-    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken);
+    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, callback, cancellationToken);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDownloadBriefcaseFile);
 #endif
@@ -811,9 +809,9 @@ DgnDbServerStatusResult DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnection
     {
     const Utf8String methodName = "DgnDbClient::DownloadBriefcase";
     if (!doSync)
-        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
+        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
 
-    DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
+    DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
