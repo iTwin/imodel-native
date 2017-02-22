@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/DateTimeConverter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DateTimeConverter.h"
@@ -199,19 +199,31 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
     //date fraction of julian day
     //Strip time fraction. As JD is based on noon, the JD value is shifted by half a day so that z represents an unambiguous day.
     //(technically this is the same as rounding the JD value to the next full day number)
-    const int z = (int) ((julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY);
+    BeAssert(std::numeric_limits<int32_t>::min() <= (julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY) && 
+        (julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY) <= std::numeric_limits<int32_t>::max());
 
-    const int g = (int) ((z - 1867216.25) / 36524.25);
-    const int a = z + 1 + g - g / 4;
-    const int b = a + 1524;
-    const int c = (int) ((b - 122.1) / 365.25);
-    const int d = (int) (c * 365.25);
-    const int e = (int) ((b - d) / 30.6001);
-    const int f = (int) (30.6001 * e);
+    const int32_t z = (int32_t) ((julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY);
 
-    const uint8_t day = (uint8_t) (b - d - f);
-    const uint8_t month = (uint8_t) (e < 14 ? e - 1 : e - 13);
-    const int16_t year = (int16_t) (month > 2 ? c - 4716 : c - 4715);
+    const int32_t g = (int32_t) ((z - 1867216.25) / 36524.25);
+    const int32_t a = z + 1 + g - g / 4;
+    const int32_t b = a + 1524;
+    const int32_t c = (int32_t) ((b - 122.1) / 365.25);
+    const int32_t d = (int32_t) (c * 365.25);
+    const int32_t e = (int32_t) ((b - d) / 30.6001);
+    const int32_t f = (int32_t) (30.6001 * e);
+
+    const int32_t dayRaw = b - d - f;
+    const int32_t monthRaw = e < 14 ? e - 1 : e - 13;
+    const int32_t yearRaw = monthRaw > 2 ? c - 4716 : c - 4715;
+
+    if (dayRaw < 0 || dayRaw > std::numeric_limits<uint8_t>::max() || 
+        monthRaw < 0 || monthRaw > std::numeric_limits<uint8_t>::max() ||
+        yearRaw < std::numeric_limits<int16_t>::min() || yearRaw > std::numeric_limits<int16_t>::max())
+        return ERROR;
+
+    const uint8_t day = (uint8_t) dayRaw;
+    const uint8_t month = (uint8_t) monthRaw;
+    const int16_t year = (int16_t) yearRaw;
 
     if (targetInfo.GetComponent() == DateTime::Component::Date)
         {
