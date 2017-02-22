@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/TerrainModel/TerrainModel.h $
 |
-| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,23 +59,23 @@
 #endif
 
 //__PUBLISH_SECTION_START__
-TERRAINMODEL_TYPEDEFS (BcDTM)
-TERRAINMODEL_TYPEDEFS (DTMFenceParams)
-TERRAINMODEL_TYPEDEFS (DTMContourParams)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
+TERRAINMODEL_TYPEDEFS(BcDTM)
+TERRAINMODEL_TYPEDEFS(DTMFenceParams)
+TERRAINMODEL_TYPEDEFS(DTMContourParams)
+TERRAINMODEL_TYPEDEFS(BcDTMDrapedLine)
+TERRAINMODEL_TYPEDEFS(BcDTMDrapedLinePoint)
 //__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
-TERRAINMODEL_TYPEDEFS (BcDTMMesh)
-TERRAINMODEL_TYPEDEFS (IBcDtmStream)
-TERRAINMODEL_TYPEDEFS (BcDTMFeatureEnumerator)
-TERRAINMODEL_TYPEDEFS (DTMFeatureEnumerator)
-TERRAINMODEL_TYPEDEFS (DTMMeshEnumerator)
+TERRAINMODEL_TYPEDEFS(BcDTMMeshFace)
+TERRAINMODEL_TYPEDEFS(BcDTMMesh)
+TERRAINMODEL_TYPEDEFS(IBcDtmStream)
+TERRAINMODEL_TYPEDEFS(BcDTMFeatureEnumerator)
+TERRAINMODEL_TYPEDEFS(DTMFeatureEnumerator)
+TERRAINMODEL_TYPEDEFS(DTMMeshEnumerator)
 
-TERRAINMODEL_TYPEDEFS (BcDTMFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMLinearFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMComplexLinearFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMSpot)
+TERRAINMODEL_TYPEDEFS(BcDTMFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMLinearFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMComplexLinearFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMSpot)
 
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTM, BcDTM, struct)
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, IBcDTMFeatureEnumerator, BcDTMFeatureEnumerator, struct)
@@ -315,6 +315,31 @@ enum class DTMDrapePointCode
     Tin = 1,
     Void = 2,
     PointOrLine = 3,
+    };
+
+///<summary> Enum for pond target - voume or elevation</summary>
+enum class DTMPondTarget
+    {
+    Volume = 1,
+    Elevation = 2
+    };
+
+///<summary> Enum for pond reference points - perimeter or invert</summary>
+enum class DTMPondDesignMethod
+    {
+    BottomUp = 1,
+    TopDown = 2,
+    };
+
+///<summary> Enum for the pond result</summary>
+enum class DTMPondResult
+    {
+    TargetObtained = 0,
+    TargetVolumeLessThanPondBoundary = 1,
+    TargetVolumeExceedsPondMaxVolume = 2,
+    NoDesignCriteria = 3,
+    NoReferencePoints = 4,
+    UnknownError = 5
     };
 
 /*

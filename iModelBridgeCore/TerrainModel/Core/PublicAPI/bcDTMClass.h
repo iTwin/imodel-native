@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMClass.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -219,7 +219,11 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
 
         static BENTLEYDTM_EXPORT BcDTMPtr CreateFromXyzFile (WCharCP fileNameP, double p2pTol, double p2lTol, long edgeOption, double maxSide) ;
 
-        static BENTLEYDTM_EXPORT BcDTMPtr DesignPondToTargetVolumeOrElevation (long* pondFlag, double* pondElevation, double* pondVolume, DPoint3dP points, long numPoints, long perimeterOrInvert,
+/////////////////////////////////////////////
+//  Obsolete functions
+/////////////////////////////////////////////
+    private:
+        static BENTLEYDTM_EXPORT BcDTMPtr DesignPondToTargetVolumeOrElevation(long* pondFlag, double* pondElevation, double* pondVolume, DPoint3dP points, long numPoints, long perimeterOrInvert,
             long targetVolumeOrElevation, double targetVolume, double targetElevation, double sideSlope, double freeBoard);
 
     protected:
