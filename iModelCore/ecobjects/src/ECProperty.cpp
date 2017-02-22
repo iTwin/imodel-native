@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -615,6 +615,8 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
         }
     else if (baseProperty.GetIsStruct())
+        return false;
+    else if (baseProperty.GetIsNavigation())
         return false;
     else
         {
