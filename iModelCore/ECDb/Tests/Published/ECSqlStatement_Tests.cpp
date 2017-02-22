@@ -793,6 +793,53 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                 09/16
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, DateTimeCast)
+    {
+    ECDbCR ecdb = SetupECDb("datetimecast.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    DateTime expectedDateOnly(2017, 2, 22);
+    DateTime expectedDtUtc(DateTime::Kind::Utc, 2017, 2, 22, 10, 4, 2);
+
+    ECInstanceKey key;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(DateOnly,DtUtc,S) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, expectedDateOnly)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(2, expectedDtUtc)) << stmt.GetECSql();
+    double jd = -1.0;
+    ASSERT_EQ(SUCCESS, expectedDateOnly.ToJulianDay(jd));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(3, jd)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //casts strip away the date time info as it is not part of the actual value. Same when inserting a DateTime object into a non-DateTime property.
+    //when retrieving those values, DateTime::Info is expected to be DateTime::Kind::Unspecified
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT DateOnly,DtUtc,CAST(DateOnly AS TEXT), CAST(DtUtc AS TEXT), CAST(DateOnly AS REAL), CAST(DtUtc AS REAL), CAST(DateOnly AS Date), CAST(DtUtc AS TimeStamp), S FROM ecsql.P WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_EQ(9, stmt.GetColumnCount()) << stmt.GetECSql();
+
+    EXPECT_TRUE(expectedDateOnly.Equals(stmt.GetValueDateTime(0))) << "Select clause item 0: Expected: " << expectedDateOnly.ToString().c_str() << " Actual: " << stmt.GetValueDateTime(0).ToString().c_str();
+    EXPECT_TRUE(expectedDtUtc.Equals(stmt.GetValueDateTime(1))) << "Select clause item 1: Expected: " << expectedDtUtc.ToString().c_str() << " Actual: " << stmt.GetValueDateTime(1).ToString().c_str();
+
+    for (int i = 2; i < stmt.GetColumnCount(); i++)
+        {
+        DateTime actual = stmt.GetValueDateTime(i);
+        
+        //Original DateTime::Info is always lost with cast or if not persisted in DateTime property
+        EXPECT_EQ(DateTime::Component::DateAndTime, actual.GetInfo().GetComponent()) << "Select clause item " << i << ": Expected: " << expectedDateOnly.ToString().c_str() << " Actual: " << actual.ToString().c_str();
+        EXPECT_EQ(DateTime::Kind::Unspecified, actual.GetInfo().GetKind()) << "Select clause item " << i << ": Expected: " << expectedDateOnly.ToString().c_str() << " Actual: " << actual.ToString().c_str();
+
+        if (i % 2 == 0)
+            EXPECT_TRUE(actual.Equals(DateTime(DateTime::Kind::Unspecified, expectedDateOnly.GetYear(), expectedDateOnly.GetMonth(), expectedDateOnly.GetDay(), 0, 0))) << "Select clause item " << i << " Actual: " << actual.ToString().c_str();
+        else
+            EXPECT_TRUE(actual.Equals(DateTime(DateTime::Kind::Unspecified, expectedDtUtc.GetYear(), expectedDtUtc.GetMonth(), expectedDtUtc.GetDay(), expectedDtUtc.GetHour(), expectedDtUtc.GetMinute(), expectedDtUtc.GetSecond()))) << "Select clause item " << i << " Actual: " << actual.ToString().c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
     {
     const int rowCountPerClass = 3;

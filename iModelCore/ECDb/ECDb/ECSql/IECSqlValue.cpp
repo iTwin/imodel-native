@@ -45,6 +45,13 @@ DateTime IECSqlValue::GetDateTime() const
     {
     DateTime::Info metadata;
     const uint64_t jdMsec = GetDateTimeJulianDaysMsec(metadata);
+    
+    //If GetDateTime is called on a select clause item which is an expression or not a DateTime ECProperty
+    //metadata is not available. This is not an error, we just take DateTime::Kind::Unspecified as default
+    //in this case
+    if (!metadata.IsValid())
+        metadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay(dt, jdMsec, metadata))
         {

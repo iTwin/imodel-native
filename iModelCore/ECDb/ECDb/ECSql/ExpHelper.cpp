@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ExpHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -23,7 +23,7 @@ BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8Stri
         primitiveType = PRIMITIVETYPE_Double;
     else if (type.EqualsI("long") || type.EqualsI("int64") || type.EqualsI("bigint"))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (type.EqualsI("string") || type.EqualsI("text"))
+    else if (type.EqualsI("string") || type.EqualsI("text") || type.EqualsI("varchar"))
         primitiveType = PRIMITIVETYPE_String;
     else if (type.EqualsI("timestamp") || type.EqualsI("datetime") || type.EqualsI("date"))
         primitiveType = PRIMITIVETYPE_DateTime;
