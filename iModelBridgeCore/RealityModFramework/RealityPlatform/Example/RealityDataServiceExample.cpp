@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
     Utf8String folderId = "ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2F";
     Utf8String documentId = "ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2FScene~2FProduction_Graz_3MX.3mx";
     Utf8String enterpriseId = "5e41126f-6875-400f-9f75-4492c99ee544";
-    //RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
-    RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
+    //RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
     std::cout << RealityDataService::GetServer() << std::endl;
     std::cout << RealityDataService::GetWSGProtocol() << std::endl;
@@ -41,12 +41,12 @@ int main(int argc, char *argv[])
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    /*BeFileName Montgomery = BeFileName("D:/RealityModFrameworkFolder");
+    BeFileName Montgomery = BeFileName("D:/RealityModFrameworkFolder");
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "604f9be9-e74f-4614-a23e-b02e2dc129f5", propertyString, true);
     if(upload->IsValidUpload())
         upload->Perform();
 
-    RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");*/
+    RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
     SpatialEntityPtr entity = RealityDataService::Request(*idReq);
