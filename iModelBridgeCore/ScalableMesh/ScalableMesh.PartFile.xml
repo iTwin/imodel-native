@@ -31,6 +31,7 @@
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+	   <SubPart PartName="ThreeMxSchema" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
       <SdkSource>ScalableMeshSDK</SdkSource>
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
