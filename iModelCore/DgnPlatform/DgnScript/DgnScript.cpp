@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScript.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -270,9 +270,21 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
-    m_jsenv = nullptr;
-    m_jsContext = nullptr;
-    m_notificationHandler = new ScriptNotificationHandler;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
+    {
+    if (m_contexts.size() <= 1)
+        return;
+
+    for (auto const& context : m_contexts)
+        {
+        LOG.errorv("BeJsContext for thread %llu not terminated", (uint64_t)context.first);
+        }
+    BeAssert(false && "Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,40 +292,34 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
-    if (nullptr != m_jsContext)
-        delete m_jsContext;
-
-    if (nullptr != m_jsenv)
-        delete m_jsenv;
+    CheckCleanup();
+    TerminateOnThread();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
+void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     {
-    if (nullptr == m_jsenv)
-        m_jsenv = new BeJsEnvironment;
-    return *m_jsenv;
-    }
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
-    {
-    if (nullptr != m_jsContext)
-        return *m_jsContext;
+    BeSystemMutexHolder _thread_safe_;
 
-    //  *************************************************************
-    //  Bootstrap the Bentley.Dgn "namespace"
-    //  *************************************************************
+    //  *********************************************
+    //  Initialize the BeJsEnvironment
+    auto i = m_jsenvs.find(tid);
+    if (i != m_jsenvs.end())
+/*<=*/  return;         // *** already initialized -- tolerate this ***
+
+    auto jsenv = m_jsenvs[tid] = new BeJsEnvironment;
+
+    //  *********************************************
     //  Initialize the DgnScriptContext
     auto dgnScriptContext = new DgnScriptContext(GetBeJsEnvironment());
-    m_jsContext = dgnScriptContext;
+    m_contexts[tid] = dgnScriptContext;
 
     // First, register DgnJsApi's projections
-    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*m_jsContext));
+    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*dgnScriptContext));
     ImportScriptLibrary("Bentley.Dgn-Core");
 
     // Next, allow DgnScriptContext to do some one-time setup work. This will involve evaluating some JS expressions.
@@ -324,16 +330,104 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     dgnScriptContext->Initialize();
 
 
-    //  *************************************************************
     //  Register other core projections here
-    //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*m_jsContext));
+    //  v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
+    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*dgnScriptContext));
     ImportScriptLibrary("Bentley.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
 
 
-    //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //  ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+    }
 
-    return *m_jsContext;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
+    {
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
+
+    BeSystemMutexHolder _thread_safe_;
+
+    // Free the BeJsEnvironment and BeJsContext that was set up on this thread
+    auto icontext = m_contexts.find(tid);
+    if (icontext != m_contexts.end())
+        {
+        delete icontext->second;
+        m_contexts.erase(icontext);
+        }
+
+    auto ijsenv = m_jsenvs.find(tid);
+    if (ijsenv != m_jsenvs.end())
+        {
+        delete ijsenv->second;
+        m_jsenvs.erase(ijsenv);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
+    {
+    BeSystemMutexHolder _thread_safe_;
+
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
+
+    auto i = m_jsenvs.find(tid);
+    if (i == m_jsenvs.end())
+        throw "InitializeOnThread was not called";
+
+    return *i->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
+    {
+    BeSystemMutexHolder _thread_safe_;
+
+    auto i = m_contexts.find(BeThreadUtilities::GetCurrentThreadId());
+    if (i == m_contexts.end())
+        throw "InitializeOnThread was not called";
+
+    return *i->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/17
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
+    {
+    BeSystemMutexHolder _thread_safe_;
+
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
+
+    ScriptNotificationHandler* was = nullptr;
+
+    auto i = m_notificationHandlers.find(BeThreadUtilities::GetCurrentThreadId());
+    if (i != m_notificationHandlers.end())
+        was = i->second;
+
+    m_notificationHandlers[tid] = &h;
+    
+    return was;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/17
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
+    {
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
+
+    BeSystemMutexHolder _thread_safe_;
+
+    auto i = m_notificationHandlers.find(tid);
+    if (i != m_notificationHandlers.end())
+        return i->second;
+
+    return m_notificationHandlers[tid] = new ScriptNotificationHandler; // we should always have a default notification handler
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,9 +462,10 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details)
     {
-    if (nullptr == m_notificationHandler)
+    auto nh = GetScriptNotificationHandler();
+    if (nullptr == nh)
         return;
-    m_notificationHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
+    nh->_HandleScriptError(GetDgnScriptContext(), category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,9 +481,10 @@ void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleScript
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP message)
     {
-    if (nullptr == m_notificationHandler)
+    auto nh = GetScriptNotificationHandler();
+    if (nullptr == nh)
         return;
-    m_notificationHandler->_HandleLogMessage(category, sev, message);
+    nh->_HandleLogMessage(category, sev, message);
     }
 
 //---------------------------------------------------------------------------------------
@@ -408,9 +504,6 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
         {
         ON_HOST_TERMINATE(entry.second.first, px);
         }
-
-    if (nullptr != m_notificationHandler)
-        ON_HOST_TERMINATE(m_notificationHandler, px);
 
     delete this;
     }
