@@ -43,11 +43,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
 
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
-
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
-
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
@@ -325,9 +321,7 @@ struct RealityDataPagedRequest : public WSGPagedRequest
 public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_requestType = HttpRequestType::GET_Request; m_sort = false; }
@@ -414,17 +408,11 @@ public:
         m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), 
         m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true)
         {
-        /*struct stat file_info;
-        stat(filename.GetNameUtf8().c_str(), &file_info);
-        m_filesize = file_info.st_size;*/
-
         Utf8String fileFromRoot = filename.GetNameUtf8();
         fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
         m_fileUrl = "/";
         m_fileUrl.append(fileFromRoot);
         m_fileUrl.ReplaceAll("\\","/");
-
-        //testFile = fopen(filename.GetNameUtf8().c_str(), "r+b");
 
         BeFileStatus status = m_fileStream.Open(filename.GetName(), BeFileAccess::Read);
         BeAssert(status == BeFileStatus::Success);
@@ -433,9 +421,6 @@ public:
         m_requestType = HttpRequestType::PUT_Request;
 
         m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
-
-        //m_currentChunk = (Byte*) malloc(CHUNK_SIZE);//unit8_t[CHUNK_SIZE];//malloc(CHUNK_SIZE + 1);//new char[CHUNK_SIZE];
-        //m_currentChunk.resize(CHUNK_SIZE);
         }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
@@ -449,32 +434,18 @@ public:
         m_requestWithToken = m_httpRequestString;
         m_requestWithToken.append(m_azureToken);
 
-        if(m_moreToSend)//m_uploadProgress < m_fileSize -1)
+        if(m_moreToSend)
             {
             m_requestWithToken.append("&comp=block&blockid=");
-
-            /*Utf8P blocIdString = new Utf8Char();
-            BeStringUtilities::FormatUInt64(blocIdString, m_chunkNumber);*/
             m_requestWithToken.append(m_chunkNumberString);
             }
         else
             {
             m_requestWithToken.append("&comp=blocklist");
-            // = false;
             }
 
         return m_requestWithToken;
         };
-
-    /*REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRequestPayload() const override
-    {
-        if (!m_validRequestString)
-            _PrepareHttpRequestStringAndPayload();
-
-        BeAssert(m_validRequestString);
-
-        return (char*)GetChunk();
-    }*/
 
     REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
 
@@ -490,7 +461,7 @@ public:
 
     BeFile& GetFileStream() { return m_fileStream; }
 
-    void UpdateUploadedSize();//uint32_t amount, void* ptr);
+    void UpdateUploadedSize();
 
     REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
         {
@@ -500,14 +471,10 @@ public:
         BeAssert(m_validRequestString);
 
         return m_requestHeader;
-        } //might not be necessary
-
-    //REALITYDATAPLATFORM_EXPORT Byte* GetChunk() { return &m_currentChunk[0]; }
+        } 
 
     REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
 
-
-    FILE*                   testFile;
     size_t                  m_index;
 protected:
     void _PrepareHttpRequestStringAndPayload() const override;
@@ -520,9 +487,7 @@ private:
     BeFile                  m_fileStream;
     uint64_t                m_fileSize;
 
-    //uint64_t                m_messageSize;
     uint64_t                m_chunkSize;
-    //uint64_t                m_chunkStart;
     uint64_t                m_chunkStop;
     uint32_t                m_chunkNumber;
     Utf8String              m_chunkNumberString;
@@ -534,7 +499,6 @@ private:
     RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
     Utf8String              m_azureToken;
     mutable Utf8String      m_requestWithToken;
-    //bvector<Byte>           m_currentChunk;
 
     Utf8String              m_blockList;
     };
@@ -557,8 +521,8 @@ struct UploadReport
     bmap<WString, RealityDataFileUpload*> results;
     ~UploadReport()
         {
-        /*for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
-            delete (it->second);*/
+        for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
+            delete (it->second);
         }
 
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
