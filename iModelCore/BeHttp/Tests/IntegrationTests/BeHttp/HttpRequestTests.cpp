@@ -437,6 +437,69 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
     options.EnableRequestCompression(true, 0);
+
+    request.SetCompressionOptions(options);
+
+    // Content-encoding should be added automaticly. 
+    // But by forcing it we check whether request is trully compressed by api
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+
+    Response response = request.Perform().get();
+
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Success)
+    {
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 0);
+
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.SetCompressionOptions(options);
+
+    // Content-encoding should be added automaticly. 
+    // But by forcing it we check whether request is trully compressed by api
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+
+    Response response = request.Perform().get();
+
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet_Success)
+    {
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 0);
+
+    //Add supported type matches type of the request
+    options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.SetCompressionOptions(options);
+
+    // Content-encoding should be added automaticly. 
+    // But by forcing it we check whether request is trully compressed by api
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+
+    Response response = request.Perform().get();
+
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, Perform_EnableRequestCompression_ContentEncodingHeaderAdded)
+    {
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 0);
+
+    //Do not add Content-encoding header. It should be added automaticly.
     request.SetCompressionOptions(options);
 
     Response response = request.Perform().get();
@@ -445,14 +508,39 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+TEST_F(HttpRequestTests, Perform_EnableRequestCompressionRequestNotCompressibleType_BadRequestError)
+    {
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 0);
+    options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationXml);
+    request.SetCompressionOptions(options);
+
+    //Force compression, thus checking if request is compressed by api
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+    Response response = request.Perform().get();
+
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
+    }
+
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
     request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
-    options.EnableRequestCompression(true, 10);
+    options.EnableRequestCompression(true, 7);
+
+    //Add supported type matches type of the request
+    options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
+
     request.SetCompressionOptions(options);
 
+    //Force compression, thus checking if request is compressed by api
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
     Response response = request.Perform().get();
     //Request was sucesfull but POST method is not allowed
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
@@ -463,9 +551,14 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerTh
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
     request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
+
+    //Add supported type matches type of the request
+    options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     options.EnableRequestCompression(true, 10);
     request.SetCompressionOptions(options);
 
+    //Force compression, thus checking if request is compressed by api
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
     Response response = request.Perform().get();

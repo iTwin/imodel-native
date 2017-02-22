@@ -169,7 +169,7 @@ Request HttpClient::CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag) co
     Request request = CreateRequest(url, "GET");
 
     request.GetHeaders().SetIfNoneMatch(etag);
-    request.GetHeaders().SetAccept("application/json");
+    request.GetHeaders().SetAccept(REQUESTHEADER_ContentType_ApplicationJson);
 
     return request;
     }

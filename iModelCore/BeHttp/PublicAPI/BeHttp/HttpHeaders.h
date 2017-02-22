@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/HttpHeaders.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,10 @@
 #include <Bentley/bmap.h>
 #include <Bentley/DateTime.h>
 #include <BeHttp/Http.h>
+
+#define REQUESTHEADER_ContentType_ApplicationJson "application/json"
+#define REQUESTHEADER_ContentType_ApplicationXml  "application/xml"
+#define REQUESTHEADER_ContentType_TextHtml        "text/html"
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 

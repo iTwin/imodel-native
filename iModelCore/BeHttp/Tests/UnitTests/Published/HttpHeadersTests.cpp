@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpHeadersTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,9 +26,9 @@ TEST_F(HttpHeadersTests, GetValue_SingleSetValue_ReturnsValue)
     {
     HttpHeaders headers;
 
-    headers.SetValue("Content-Type", "text/html");
+    headers.SetValue("Content-Type", REQUESTHEADER_ContentType_TextHtml);
 
-    EXPECT_STREQ("text/html", headers.GetValue("Content-Type"));
+    EXPECT_STREQ(REQUESTHEADER_ContentType_TextHtml, headers.GetValue("Content-Type"));
     }
 
 TEST_F(HttpHeadersTests, GetValue_SetValueAndAddValue_ReturnValuesCommaSeparated)
@@ -62,10 +62,10 @@ TEST_F(HttpHeadersTests, GetMap_ValuesSet_ReturnsMap)
     HttpHeaders headers;
 
     headers.SetValue("Server", "foo");
-    headers.SetValue("Content-Type", "text/html");
+    headers.SetValue("Content-Type", REQUESTHEADER_ContentType_TextHtml);
 
     EXPECT_EQ(2, headers.GetMap().size());
-    EXPECT_STREQ("text/html", headers.GetMap().find("Content-Type")->second.c_str());
+    EXPECT_STREQ(REQUESTHEADER_ContentType_TextHtml, headers.GetMap().find("Content-Type")->second.c_str());
     EXPECT_STREQ("foo", headers.GetMap().find("Server")->second.c_str());
     }
 

@@ -2,12 +2,13 @@
 |
 |     $Source: PublicAPI/BeHttp/CompressionOptions.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <BeHttp/Http.h>
+#include <BeHttp/IHttpHandler.h>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
@@ -16,6 +17,7 @@ struct CompressionOptions
     private:
         bool m_isRequestCmpressionEnabled       = false;
         uint64_t m_minimumRequestSizeToCompress =  1024;
+        bset<Utf8String>  m_supportedTypes;
 
     public:
         CompressionOptions(){}
@@ -30,6 +32,12 @@ struct CompressionOptions
 
         BEHTTP_EXPORT bool IsRequestCompressionEnabled() const {return m_isRequestCmpressionEnabled;}
         BEHTTP_EXPORT uint64_t GetMinimumSizeToCompress() const {return m_minimumRequestSizeToCompress;}
+
+        //! Add types of the request that can be compressed
+        //! @param[in] type
+        BEHTTP_EXPORT void AddSupportedType(Utf8String type) {m_supportedTypes.insert(type);}
+        BEHTTP_EXPORT bool IsContentTypeSupported(Utf8StringCR type) const
+            {return m_supportedTypes.empty() ? true : m_supportedTypes.find(type) != m_supportedTypes.end();}
     };
 
 typedef const CompressionOptions& CompressionOptionsCR;
